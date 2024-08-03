@@ -5,11 +5,11 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <llvm/IR/Type.h>
 
 #include <symboltablebuilder/TypeSpecifiers.h>
-#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -31,8 +31,8 @@ const char *const ERROBJ_NAME = "Error";
 const char *const TIOBJ_NAME = "TypeInfo";
 const char *const IITERATOR_NAME = "IIterator";
 const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
-const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
-const uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
+static constexpr uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
+static constexpr uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 
 // Typedefs
 using QualTypeList = std::vector<QualType>;

@@ -31,8 +31,8 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   QualTypeList paramTypes;
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
-    for (const NamedParam &param : namedParamList)
-      paramTypes.push_back(param.qualType);
+    for (const auto &[name, qualType, isOptional] : namedParamList)
+      paramTypes.push_back(qualType);
   }
 
   // Prepare type of function
@@ -109,18 +109,18 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Visit parameters
-  std::vector<const char *> paramNames;
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
+    std::vector<const char *> paramNames;
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
-    for (const NamedParam &param : namedParamList) {
-      paramNames.push_back(param.name);
-      paramTypes.push_back(param.qualType);
-      paramList.push_back({param.qualType, param.isOptional});
+    for (const auto &[name, qualType, isOptional] : namedParamList) {
+      paramNames.push_back(name);
+      paramTypes.push_back(qualType);
+      paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.qualType.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!qualType.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
@@ -215,7 +215,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -248,18 +248,18 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   }
 
   // Visit parameters
-  std::vector<const char *> paramNames;
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
+    std::vector<const char *> paramNames;
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
-    for (const NamedParam &param : namedParamList) {
-      paramNames.push_back(param.name);
-      paramTypes.push_back(param.qualType);
-      paramList.push_back({param.qualType, param.isOptional});
+    for (const auto &[name, qualType, isOptional] : namedParamList) {
+      paramNames.push_back(name);
+      paramTypes.push_back(qualType);
+      paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.qualType.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!qualType.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }
@@ -506,7 +506,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
     names.push_back(enumItem->itemName);
     // Check for duplicate value
     if (enumItem->hasValue) {
-      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end()) {
+      if (std::ranges::find(values, enumItem->itemValue) != values.end()) {
         softError(enumItem, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
         continue;
       }
@@ -524,7 +524,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
     itemEntry->updateType(intSymbolType, false);
     // Fill in value if not filled yet
     if (!enumItem->hasValue) {
-      while (std::find(values.begin(), values.end(), nextValue) != values.end())
+      while (std::ranges::find(values, nextValue) != values.end())
         nextValue++;
       enumItem->itemValue = nextValue;
       values.push_back(nextValue);

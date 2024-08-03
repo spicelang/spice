@@ -25,13 +25,13 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
 
   // Create compilation unit
-  std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir / sourceFileName);
+  std::filesystem::path absolutePath = absolute(sourceFileDir / sourceFileName);
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(
-      llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, producerString, irGenerator->cliOptions.optLevel > OptLevel::O0, "", 0, "",
-      llvm::DICompileUnit::FullDebug, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, producerString,
+                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
+                                             false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
@@ -181,7 +181,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   std::vector<llvm::Type *> fieldTypes;
   std::vector<SymbolTableEntry *> fieldEntries;
   QualTypeList fieldSymbolTypes;
-  for (const auto &[_, capture] : captures) {
+  for (const auto &[name, capture] : captures) {
     QualType captureType = capture.capturedSymbol->getQualType();
 
     // Capture by reference
@@ -222,7 +222,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
     return;
 
   const uint32_t lineNo = globalEntry->getDeclCodeLoc().line;
-  llvm::StringRef name = global->getName();
+  const llvm::StringRef name = global->getName();
   llvm::DIType *type = getDITypeForQualType(globalEntry->declNode, globalEntry->getQualType());
   const bool isLocal = globalEntry->getQualType().isPublic();
 
@@ -230,7 +230,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
 }
 
 void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
-                                                       const CodeLoc &codeLoc) {
+                                                       const CodeLoc &codeLoc) const {
   const uint32_t lineNo = codeLoc.line;
   const size_t sizeInBits = (length + 1) * 8; // +1 because of null-terminator
 
@@ -243,7 +243,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
     return;
 
   // Get symbol table entry
-  SymbolTableEntry *variableEntry = irGenerator->currentScope->lookupStrict(varName);
+  const SymbolTableEntry *variableEntry = irGenerator->currentScope->lookupStrict(varName);
   assert(variableEntry != nullptr);
   // Build debug info
   llvm::DIScope *scope = lexicalBlocks.top();
@@ -256,7 +256,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   else
     varInfo = diBuilder->createAutoVariable(scope, varName, diFile, lineNo, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
-  llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
+  const llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
   assert(debugLocation != nullptr);
   llvm::Instruction *prevInst = irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction();
   diBuilder->insertDeclare(address, varInfo, expr, debugLocation, prevInst);
@@ -268,11 +268,11 @@ void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
 
   assert(!lexicalBlocks.empty());
   llvm::DIScope *scope = lexicalBlocks.top();
-  llvm::DILocation *codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
+  const llvm::DILocation *codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
   irGenerator->builder.SetCurrentDebugLocation(codeLoc);
 }
 
-void DebugInfoGenerator::finalize() {
+void DebugInfoGenerator::finalize() const {
   if (irGenerator->cliOptions.generateDebugInfo)
     diBuilder->finalize();
 }
@@ -294,7 +294,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
   if (ty.isArray()) {
     llvm::DIType *itemTy = getDITypeForQualType(node, ty.getContained());
     const size_t size = ty.getArraySize();
-    llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
+    const llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
     return diBuilder->createArrayType(size, 0, itemTy, subscripts);
   }
 
@@ -332,7 +332,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
       return structTypeCache.at(hashKey);
 
     // Cache miss, generate struct type
-    Struct *spiceStruct = ty.getStruct(node);
+    const Struct *spiceStruct = ty.getStruct(node);
     assert(spiceStruct != nullptr);
 
     // Retrieve information about the struct
@@ -357,7 +357,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     std::vector<llvm::Metadata *> fieldTypes;
     for (size_t i = 0; i < spiceStruct->scope->getFieldCount(); i++) {
       // Get field entry
-      SymbolTableEntry *fieldEntry = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *fieldEntry = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
       if (fieldEntry->isImplicitField)
         continue;
@@ -384,14 +384,14 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
       return structTypeCache.at(hashKey);
 
     // Cache miss, generate interface type
-    Interface *spiceInterface = ty.getInterface(node);
+    const Interface *spiceInterface = ty.getInterface(node);
     assert(spiceInterface != nullptr);
 
     // Retrieve information about the interface
     const uint32_t lineNo = spiceInterface->getDeclCodeLoc().line;
     llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->sourceFile);
     assert(interfaceType != nullptr);
-    llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
+    const llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value();
 

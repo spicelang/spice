@@ -4,7 +4,6 @@
 
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/Scope.h>
-#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 
@@ -147,14 +146,14 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     if (!baseType.isSelfReferencingStructType()) {
       Scope *matchScope = baseType.getBodyScope()->parent;
       if (baseType.is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        const Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, node);
         if (!spiceStruct) {
           const std::string signature = Struct::getSignature(baseType.getSubType(), templateTypes);
           throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find struct '" + signature + "'");
         }
         type = type.getWithBodyScope(spiceStruct->scope);
       } else { // Interface
-        Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        const Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, node);
         if (!spiceInterface) {
           const std::string signature = Interface::getSignature(baseType.getSubType(), templateTypes);
           throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find interface '" + signature + "'");

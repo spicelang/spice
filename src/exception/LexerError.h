@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <exception>
 #include <string>
-#include <utility>
 
 namespace spice::compiler {
 
@@ -17,7 +16,7 @@ enum LexerErrorType : uint8_t { TOKENIZING_FAILED };
 /**
  * Custom exception for errors, occurring while lexing
  */
-class LexerError : public std::exception {
+class LexerError final : public std::exception {
 public:
   // Constructors
   LexerError(const CodeLoc &codeLoc, const LexerErrorType &type, const std::string &message);

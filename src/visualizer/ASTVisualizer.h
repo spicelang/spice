@@ -18,7 +18,7 @@ namespace spice::compiler {
  * Jobs:
  * - Visualize AST
  */
-class ASTVisualizer : private CompilerPass, public AbstractASTVisitor {
+class ASTVisualizer final : CompilerPass, public AbstractASTVisitor {
 public:
   // Constructors
   using CompilerPass::CompilerPass;
@@ -118,10 +118,10 @@ private:
     std::stringstream result;
 
     // Prepare strings
-    std::string typeName(CommonUtil::demangleTypeName(typeid(T).name()));
-    std::string codeLoc = node->codeLoc.toString();
-    std::string nodeName = typeName.substr(typeName.rfind("::") + 2);
-    std::string nodeId = codeLoc + "_" + nodeName;
+    const std::string typeName(CommonUtil::demangleTypeName(typeid(T).name()));
+    const std::string codeLoc = node->codeLoc.toString();
+    const std::string nodeName = typeName.substr(typeName.rfind("::") + 2);
+    const std::string nodeId = codeLoc + "_" + nodeName;
 
     // Build result
     result << nodeId << R"( [color="lightgreen",label=")" << nodeName << "\"];\n";

@@ -25,7 +25,7 @@ enum Likeliness : uint8_t {
 // Forward declarations
 class SourceFile;
 
-class IRGenerator : private CompilerPass, public ParallelizableASTVisitor {
+class IRGenerator final : CompilerPass, public ParallelizableASTVisitor {
 public:
   // Type definitions
   using ParamInfoList = std::vector<std::pair<std::string, SymbolTableEntry *>>;
@@ -118,9 +118,9 @@ public:
   llvm::Value *insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
-  llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const ASTNode *node);
+  llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult) const;
+  llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult) const;
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
@@ -129,27 +129,27 @@ public:
 private:
   // Private methods
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node);
-  llvm::BasicBlock *createBlock(const std::string &blockName = "");
+  llvm::BasicBlock *createBlock(const std::string &blockName = "") const;
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
                       Likeliness likeliness = UNSPECIFIED);
-  void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
+  void verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs, const QualType &rhsSType,
                               bool isDecl);
   llvm::Value *generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
-                                 const std::string &name = "", bool isVolatile = false);
+                                   const std::string &name = "", bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
-  llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
-  llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
+  llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;
+  llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc) const;
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
-  llvm::Type *buildCapturesContainerType(const CaptureMap &captures);
+  llvm::Type *buildCapturesContainerType(const CaptureMap &captures) const;
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
 
   // Generate implicit
@@ -157,24 +157,25 @@ private:
   void generateScopeCleanup(const StmtLstNode *node) const;
   llvm::Value *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   void generateProcCall(const Function *proc, std::vector<llvm::Value *> &args) const;
-  void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
+  void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
+                              const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
   llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);
   void generateCtorBodyPreamble(Scope *bodyScope);
   void generateDefaultCtor(const Function *ctorFunction);
-  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
+  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction) const;
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
-  void generateDtorBodyPreamble(const Function *dtorFunction);
+  void generateDtorBodyPreamble(const Function *dtorFunction) const;
   void generateDefaultDtor(const Function *dtorFunction);
   void generateTestMain();
 
   // Generate VTable
-  llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);
-  llvm::Constant *generateTypeInfo(StructBase *spiceStruct);
-  llvm::Constant *generateVTable(StructBase *spiceStruct);
-  void generateVTableInitializer(StructBase *spiceStruct);
+  llvm::Constant *generateTypeInfoName(StructBase *spiceStruct) const;
+  llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
+  llvm::Constant *generateVTable(StructBase *spiceStruct) const;
+  void generateVTableInitializer(const StructBase *spiceStruct) const;
 
   // Private members
   llvm::LLVMContext &context;

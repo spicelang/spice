@@ -8,6 +8,8 @@ namespace spice::compiler {
 
 class ASTVisitor : public AbstractASTVisitor {
 public:
+  virtual ~ASTVisitor() = default;
+
   // Visitor methods
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;

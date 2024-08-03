@@ -7,14 +7,14 @@
 namespace spice::compiler {
 
 // Bit indices from right to left
-const uint8_t BIT_INDEX_COMPOSITION = 0;
-const uint8_t BIT_INDEX_INLINE = 1;
-const uint8_t BIT_INDEX_PUBLIC = 2;
-const uint8_t BIT_INDEX_HEAP = 3;
-const uint8_t BIT_INDEX_UNSIGNED = 4;
-const uint8_t BIT_INDEX_SIGNED = 5;
-const uint8_t BIT_INDEX_CONST = 6;
-const uint8_t BIT_INDEX_MAX = BIT_INDEX_CONST; // Please adjust if something changes above
+static constexpr uint8_t BIT_INDEX_COMPOSITION = 0;
+static constexpr uint8_t BIT_INDEX_INLINE = 1;
+static constexpr uint8_t BIT_INDEX_PUBLIC = 2;
+static constexpr uint8_t BIT_INDEX_HEAP = 3;
+static constexpr uint8_t BIT_INDEX_UNSIGNED = 4;
+static constexpr uint8_t BIT_INDEX_SIGNED = 5;
+static constexpr uint8_t BIT_INDEX_CONST = 6;
+static constexpr uint8_t BIT_INDEX_MAX = BIT_INDEX_CONST; // Please adjust if something changes above
 
 class TypeSpecifiers {
 public:

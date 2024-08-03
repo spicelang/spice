@@ -14,7 +14,8 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *parentSourceFile, Ru
   const std::string importName = resolveNamePair(requestedModule).importName;
 
   // Check if the requested module is available already, if not load it
-  auto rtFile = isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
+  const auto rtFile =
+      isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
 
   // Add the dependency to the parent source file
   parentSourceFile->addDependency(rtFile, parentSourceFile->ast, importName, rtFile->filePath.string());
@@ -38,7 +39,7 @@ SourceFile *RuntimeModuleManager::getModule(RuntimeModule requestedModule) const
 
 bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) const { return modules.contains(requestedModule); }
 
-SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) {
+SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) const {
   const auto [importName, fileName] = resolveNamePair(requestedModule);
   const std::string fileNameWithExt = std::string(fileName) + ".spice";
   const std::filesystem::path filePath = FileUtil::getStdDir() / "runtime" / fileNameWithExt;

@@ -3,7 +3,6 @@
 #include "GlobalResourceManager.h"
 
 #include <SourceFile.h>
-#include <ast/ASTNodes.h>
 #include <global/TypeRegistry.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/StructManager.h>

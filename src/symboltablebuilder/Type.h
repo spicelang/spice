@@ -8,7 +8,6 @@
 
 #include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/TypeChain.h>
-#include <util/GlobalDefinitions.h>
 
 // LLVM forward declarations
 namespace llvm {

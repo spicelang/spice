@@ -17,7 +17,7 @@ public:
   CacheManager(const CacheManager &) = delete;
 
   // Public methods
-  bool lookupSourceFile(SourceFile *sourceFile);
+  bool lookupSourceFile(const SourceFile *sourceFile) const;
   void cacheSourceFile(const SourceFile *sourceFile);
 
 private:

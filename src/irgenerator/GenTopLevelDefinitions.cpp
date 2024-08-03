@@ -466,8 +466,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   std::vector<Struct *> manifestations = node->structManifestations;
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-  const auto comp = [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
-  std::sort(manifestations.begin(), manifestations.end(), comp);
+  const auto comp = [](const Struct *lhs, const Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  std::ranges::sort(manifestations, comp);
 
   for (Struct *spiceStruct : manifestations) {
     // Skip structs, that are not fully substantiated
@@ -483,7 +483,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     assert(currentScope);
 
     // Set LLVM type to the struct entry
-    SymbolTableEntry *structEntry = spiceStruct->entry;
+    const SymbolTableEntry *structEntry = spiceStruct->entry;
     assert(structEntry != nullptr);
 
     // Generate VTable if required
@@ -522,8 +522,8 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
   std::vector<Interface *> manifestations = node->interfaceManifestations;
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-  const auto comp = [](const Interface *lhs, Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
-  std::sort(manifestations.begin(), manifestations.end(), comp);
+  const auto comp = [](const Interface *lhs, const Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  std::ranges::sort(manifestations, comp);
 
   for (Interface *spiceInterface : manifestations) {
     // Skip interfaces, that are not fully substantiated
@@ -562,8 +562,8 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   const bool isConst = entryType.isConst();
 
   // Get correct type and linkage type
-  auto varType = std::any_cast<llvm::Type *>(visit(node->dataType()));
-  auto linkage = isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
+  const auto varType = std::any_cast<llvm::Type *>(visit(node->dataType()));
+  const auto linkage = isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
 
   // Create global var
   llvm::Value *varAddress = module->getOrInsertGlobal(node->varName, varType);
@@ -574,7 +574,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 
   // Set initializer
   if (node->hasValue) { // Set the constant value as variable initializer
-    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+    const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
     var->setInitializer(constantValue);
   } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
     llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());

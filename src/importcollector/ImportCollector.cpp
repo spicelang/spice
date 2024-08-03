@@ -6,7 +6,6 @@
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
-#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
 namespace spice::compiler {

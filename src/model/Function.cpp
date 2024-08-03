@@ -15,8 +15,8 @@ namespace spice::compiler {
  */
 QualTypeList Function::getParamTypes() const {
   QualTypeList newParamTypes;
-  for (const Param &param : paramList)
-    newParamTypes.push_back(param.qualType);
+  for (const auto &[qualType, isOptional] : paramList)
+    newParamTypes.push_back(qualType);
   return newParamTypes;
 }
 
@@ -107,11 +107,11 @@ std::string Function::getSignature(const std::string &name, const QualType &this
   // Parameter type string
   signature << "(";
   for (size_t i = 0; i < paramList.size(); i++) {
-    const Param &param = paramList.at(i);
+    const auto &[qualType, isOptional] = paramList.at(i);
     if (i > 0)
       signature << ",";
-    signature << param.qualType.getName(false, ignorePublic);
-    if (param.isOptional)
+    signature << qualType.getName(false, ignorePublic);
+    if (isOptional)
       signature << "?";
   }
   signature << ")";

@@ -2,7 +2,6 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 
@@ -118,17 +117,17 @@ llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr
   return builder.CreateStructGEP(type, basePtr, index, varName);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const ASTNode *node) {
   // Visit the given AST node
   auto exprResult = any_cast<LLVMExprResult>(visit(node));
-  return resolveValue(node, exprResult, accessScope);
+  return resolveValue(node, exprResult);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
-  return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
+llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &exprResult) const {
+  return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult);
 }
 
-llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult) const {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -141,12 +140,8 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
 
   assert(exprResult.ptr != nullptr || exprResult.refPtr != nullptr);
 
-  // Set access scope to current scope if nullptr gets passed
-  if (!accessScope)
-    accessScope = currentScope;
-
   // De-reference if reference type
-  QualType referencedType = qualType.removeReferenceWrapper();
+  const QualType referencedType = qualType.removeReferenceWrapper();
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
     exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
 
@@ -229,7 +224,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
-    std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
+    const std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
     return llvm::ConstantArray::get(arrayType, itemConstants);
   }
 
@@ -256,7 +251,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     // Add default value for each struct field
     for (size_t i = 0; i < fieldCount; i++) {
       // Get entry of the field
-      SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
 
       // Retrieve default field value
@@ -269,13 +264,13 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
       fieldConstants.push_back(defaultFieldValue);
     }
 
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
+    const auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
+    const auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
 
@@ -312,7 +307,7 @@ llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, 
   throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
-llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName /*=""*/) {
+llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName /*=""*/) const {
   return llvm::BasicBlock::Create(context, blockName);
 }
 
@@ -347,12 +342,12 @@ void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueB
     llvm::Metadata *name = llvm::MDString::get(context, "branch_weights");
     llvm::Metadata *trueBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 2000 : 1));
     llvm::Metadata *falseBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 1 : 2000));
-    auto profMetadata = llvm::MDNode::get(context, {name, trueBranchWeight, falseBranchWeight});
+    const auto profMetadata = llvm::MDNode::get(context, {name, trueBranchWeight, falseBranchWeight});
     jumpInst->setMetadata("prof", profMetadata);
   }
 }
 
-void IRGenerator::verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const {
+void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const {
   // Skip the verifying step if the verifier was disabled manually or debug info is emitted
   if (cliOptions.disableVerifier || cliOptions.generateDebugInfo)
     return;
@@ -378,9 +373,9 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
-  auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
-  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getQualType().isRef() ? lhs.refPtr : lhs.ptr;
-  return doAssignment(lhsAddress, lhs.entry, rhsNode);
+  auto [value, constant, ptr, refPtr, entry, node] = std::any_cast<LLVMExprResult>(visit(lhsNode));
+  llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? refPtr : ptr;
+  return doAssignment(lhsAddress, entry, rhsNode);
 }
 
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
@@ -485,7 +480,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 
   // We can load the value from the right side and store it to the left side
   // Retrieve value of the right side
-  llvm::Value *rhsValue = resolveValue(rhsSType, rhs, currentScope);
+  llvm::Value *rhsValue = resolveValue(rhsSType, rhs);
   // Store the value to the address
   insertStore(rhsValue, lhsAddress);
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
@@ -518,7 +513,7 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) co
   }
 }
 
-llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) {
+llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) const {
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
   // Create global
@@ -533,7 +528,7 @@ llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName
 }
 
 llvm::Constant *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value,
-                                                     const CodeLoc &codeLoc) {
+                                                     const CodeLoc &codeLoc) const {
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
   // Create global

@@ -4,11 +4,11 @@
 #include <driver/Driver.h>
 #include <exception/CliError.h>
 #include <exception/LexerError.h>
+#include <exception/LinkerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <typechecker/MacroDefs.h>
-#include <util/FileUtil.h>
 
 using namespace spice::compiler;
 
@@ -18,7 +18,7 @@ using namespace spice::compiler;
  * @param cliOptions Command line options
  * @return Successful or not
  */
-bool compileProject(CliOptions &cliOptions) {
+bool compileProject(const CliOptions &cliOptions) {
   try {
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager(cliOptions);

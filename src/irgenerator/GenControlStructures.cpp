@@ -95,11 +95,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Resolve iterator
   AssignExprNode *iteratorAssignNode = node->iteratorAssign();
-  QualType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
-  QualType iteratorType = iteratorOrIterableType;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
-    iteratorType = node->getIteratorFct->returnType;
     llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
 
     llvm::Value *iterator;

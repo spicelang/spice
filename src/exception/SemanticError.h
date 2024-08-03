@@ -119,7 +119,7 @@ enum SemanticErrorType : uint8_t {
 /**
  * Custom exception for errors, occurring in the semantic analysis phase
  */
-class SemanticError : public std::exception {
+class SemanticError final : public std::exception {
 public:
   // Constructors
   SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message, bool printErrorMessage = true);

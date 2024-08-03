@@ -69,15 +69,15 @@ void IROptimizer::optimizePostLink() {
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
   switch (cliOptions.optLevel) {
-  case OptLevel::O1:
+  case O1:
     return llvm::OptimizationLevel::O1;
-  case OptLevel::O2:
+  case O2:
     return llvm::OptimizationLevel::O2;
-  case OptLevel::O3:
+  case O3:
     return llvm::OptimizationLevel::O3;
-  case OptLevel::Os:
+  case Os:
     return llvm::OptimizationLevel::Os;
-  case OptLevel::Oz:
+  case Oz:
     return llvm::OptimizationLevel::Oz;
   default:
     return llvm::OptimizationLevel::O0;

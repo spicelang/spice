@@ -6,7 +6,7 @@
 
 #include <model/GenericType.h>
 #include <symboltablebuilder/Type.h>
-#include <symboltablebuilder/TypeSpecifiers.h>
+#include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/Function.h>
 

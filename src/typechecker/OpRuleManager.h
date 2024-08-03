@@ -4,10 +4,7 @@
 
 #include <tuple>
 
-#include <Token.h>
-
 #include <exception/SemanticError.h>
-#include <irgenerator/OpRuleConversionManager.h>
 #include <symboltablebuilder/Type.h>
 #include <typechecker/ExprResult.h>
 
@@ -17,9 +14,6 @@ namespace spice::compiler {
 class ASTNode;
 class TypeChecker;
 class GlobalResourceManager;
-
-// Helper macro to get the length of an array
-#define ARRAY_LENGTH(array) sizeof(array) / sizeof(*array)
 
 // Custom error message prefixes
 const char *const ERROR_MSG_RETURN = "Passed wrong data type to return statement";
@@ -32,7 +26,7 @@ using UnaryOpRule = std::tuple<SuperType, SuperType, bool>;
 using BinaryOpRule = std::tuple<SuperType, SuperType, SuperType, bool>;
 
 // Assign op rules
-const BinaryOpRule ASSIGN_OP_RULES[] = {
+static constexpr BinaryOpRule ASSIGN_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double = double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int = int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short = short -> short
@@ -44,7 +38,7 @@ const BinaryOpRule ASSIGN_OP_RULES[] = {
 };
 
 // Plus equal op rules
-const BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double += double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int += int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int += short -> int
@@ -60,7 +54,7 @@ const BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
 };
 
 // Minus equal op rules
-const BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double -= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int -= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int -= short -> int
@@ -76,7 +70,7 @@ const BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
 };
 
 // Mul equal op rules
-const BinaryOpRule MUL_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule MUL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double *= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int *= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int *= short -> int
@@ -91,7 +85,7 @@ const BinaryOpRule MUL_EQUAL_OP_RULES[] = {
 };
 
 // Div equal op rules
-const BinaryOpRule DIV_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule DIV_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double /= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int /= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int /= short -> int
@@ -106,7 +100,7 @@ const BinaryOpRule DIV_EQUAL_OP_RULES[] = {
 };
 
 // Rem equal op rules
-const BinaryOpRule REM_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule REM_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double %= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int %= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int %= short -> int
@@ -121,7 +115,7 @@ const BinaryOpRule REM_EQUAL_OP_RULES[] = {
 };
 
 // Shl equal op rules
-const BinaryOpRule SHL_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule SHL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int <<= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int <<= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int <<= long -> int
@@ -135,7 +129,7 @@ const BinaryOpRule SHL_EQUAL_OP_RULES[] = {
 };
 
 // Shr equal op rules
-const BinaryOpRule SHR_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule SHR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int >>= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int >>= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int >>= long -> int
@@ -149,7 +143,7 @@ const BinaryOpRule SHR_EQUAL_OP_RULES[] = {
 };
 
 // And equal op rules
-const BinaryOpRule AND_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule AND_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int &= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int &= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int &= long -> int
@@ -163,7 +157,7 @@ const BinaryOpRule AND_EQUAL_OP_RULES[] = {
 };
 
 // Or equal op rules
-const BinaryOpRule OR_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule OR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int |= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int |= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int |= long -> int
@@ -177,7 +171,7 @@ const BinaryOpRule OR_EQUAL_OP_RULES[] = {
 };
 
 // Xor equal op rules
-const BinaryOpRule XOR_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule XOR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int ^= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int ^= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int ^= long -> int
@@ -192,17 +186,17 @@ const BinaryOpRule XOR_EQUAL_OP_RULES[] = {
 };
 
 // Logical and op rules
-const BinaryOpRule LOGICAL_AND_OP_RULES[] = {
+static constexpr BinaryOpRule LOGICAL_AND_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false) // bool && bool -> bool
 };
 
 // Logical or op rules
-const BinaryOpRule LOGICAL_OR_OP_RULES[] = {
+static constexpr BinaryOpRule LOGICAL_OR_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false) // bool || bool -> bool
 };
 
 // Bitwise or op rules
-const BinaryOpRule BITWISE_OR_OP_RULES[] = {
+static constexpr BinaryOpRule BITWISE_OR_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int | int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short | short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long | long -> long
@@ -211,7 +205,7 @@ const BinaryOpRule BITWISE_OR_OP_RULES[] = {
 };
 
 // Bitwise xor op rules
-const BinaryOpRule BITWISE_XOR_OP_RULES[] = {
+static constexpr BinaryOpRule BITWISE_XOR_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int ^ int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short ^ short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long ^ long -> long
@@ -220,7 +214,7 @@ const BinaryOpRule BITWISE_XOR_OP_RULES[] = {
 };
 
 // Bitwise and op rules
-const BinaryOpRule BITWISE_AND_OP_RULES[] = {
+static constexpr BinaryOpRule BITWISE_AND_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int & int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short & short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long & long -> long
@@ -229,7 +223,7 @@ const BinaryOpRule BITWISE_AND_OP_RULES[] = {
 };
 
 // Equal op rules
-const BinaryOpRule EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false),       // double == double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),          // double == int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),        // double == short -> bool
@@ -261,7 +255,7 @@ const BinaryOpRule EQUAL_OP_RULES[] = {
 };
 
 // Not equal op rules
-const BinaryOpRule NOT_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule NOT_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false),       // double != double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),          // double != int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),        // double != short -> bool
@@ -293,7 +287,7 @@ const BinaryOpRule NOT_EQUAL_OP_RULES[] = {
 };
 
 // Less op rules
-const BinaryOpRule LESS_OP_RULES[] = {
+static constexpr BinaryOpRule LESS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double < double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double < int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double < short -> bool
@@ -315,7 +309,7 @@ const BinaryOpRule LESS_OP_RULES[] = {
 };
 
 // Greater op rules
-const BinaryOpRule GREATER_OP_RULES[] = {
+static constexpr BinaryOpRule GREATER_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double > double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double > int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double > short -> bool
@@ -337,7 +331,7 @@ const BinaryOpRule GREATER_OP_RULES[] = {
 };
 
 // Less equal op rules
-const BinaryOpRule LESS_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule LESS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double <= double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double <= int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double <= short -> bool
@@ -359,7 +353,7 @@ const BinaryOpRule LESS_EQUAL_OP_RULES[] = {
 };
 
 // Greater equal op rules
-const BinaryOpRule GREATER_EQUAL_OP_RULES[] = {
+static constexpr BinaryOpRule GREATER_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double >= double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double >= int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double >= short -> bool
@@ -381,7 +375,7 @@ const BinaryOpRule GREATER_EQUAL_OP_RULES[] = {
 };
 
 // Shift left op rules
-const BinaryOpRule SHIFT_LEFT_OP_RULES[] = {
+static constexpr BinaryOpRule SHIFT_LEFT_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int << int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int << short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),      // int << long -> int
@@ -398,7 +392,7 @@ const BinaryOpRule SHIFT_LEFT_OP_RULES[] = {
 };
 
 // Shift right op rules
-const BinaryOpRule SHIFT_RIGHT_OP_RULES[] = {
+static constexpr BinaryOpRule SHIFT_RIGHT_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int >> int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int >> short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),      // int >> long -> int
@@ -415,7 +409,7 @@ const BinaryOpRule SHIFT_RIGHT_OP_RULES[] = {
 };
 
 // Plus op rules
-const BinaryOpRule PLUS_OP_RULES[] = {
+static constexpr BinaryOpRule PLUS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double + double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double + int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double + short -> double
@@ -436,7 +430,7 @@ const BinaryOpRule PLUS_OP_RULES[] = {
 };
 
 // Minus op rules
-const BinaryOpRule MINUS_OP_RULES[] = {
+static constexpr BinaryOpRule MINUS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double - double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double - int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double - short -> double
@@ -457,7 +451,7 @@ const BinaryOpRule MINUS_OP_RULES[] = {
 };
 
 // Mul op rules
-const BinaryOpRule MUL_OP_RULES[] = {
+static constexpr BinaryOpRule MUL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double * double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double * int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double * short -> double
@@ -478,7 +472,7 @@ const BinaryOpRule MUL_OP_RULES[] = {
 };
 
 // Div op rules
-const BinaryOpRule DIV_OP_RULES[] = {
+static constexpr BinaryOpRule DIV_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double / double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double / int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double / short -> double
@@ -499,7 +493,7 @@ const BinaryOpRule DIV_OP_RULES[] = {
 };
 
 // Rem op rules
-const BinaryOpRule REM_OP_RULES[] = {
+static constexpr BinaryOpRule REM_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double % double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int % int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int % short -> int
@@ -513,7 +507,7 @@ const BinaryOpRule REM_OP_RULES[] = {
 };
 
 // Prefix Minus op rules
-const UnaryOpRule PREFIX_MINUS_OP_RULES[] = {
+static constexpr UnaryOpRule PREFIX_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),       // -int -> int
     UnaryOpRule(TY_DOUBLE, TY_DOUBLE, false), // -double -> double
     UnaryOpRule(TY_SHORT, TY_SHORT, false),   // -short -> short
@@ -521,26 +515,26 @@ const UnaryOpRule PREFIX_MINUS_OP_RULES[] = {
 };
 
 // Prefix Plus-Plus op rules
-const UnaryOpRule PREFIX_PLUS_PLUS_OP_RULES[] = {
+static constexpr UnaryOpRule PREFIX_PLUS_PLUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Prefix Minus-Minus op rules
-const UnaryOpRule PREFIX_MINUS_MINUS_OP_RULES[] = {
+static constexpr UnaryOpRule PREFIX_MINUS_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // in-- -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short-- -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long-- -> long
 };
 
 // Prefix not op rules
-const UnaryOpRule PREFIX_NOT_OP_RULES[] = {
+static constexpr UnaryOpRule PREFIX_NOT_OP_RULES[] = {
     UnaryOpRule(TY_BOOL, TY_BOOL, false), // !bool -> bool
 };
 
 // Prefix bitwise not op rules
-const UnaryOpRule PREFIX_BITWISE_NOT_OP_RULES[] = {
+static constexpr UnaryOpRule PREFIX_BITWISE_NOT_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // ~int -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // ~short -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // ~long -> long
@@ -548,21 +542,21 @@ const UnaryOpRule PREFIX_BITWISE_NOT_OP_RULES[] = {
 };
 
 // Postfix Plus-Plus op rules
-const UnaryOpRule POSTFIX_PLUS_PLUS_OP_RULES[] = {
+static constexpr UnaryOpRule POSTFIX_PLUS_PLUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Postfix Minus-Minus op rules
-const UnaryOpRule POSTFIX_MINUS_MINUS_OP_RULES[] = {
+static constexpr UnaryOpRule POSTFIX_MINUS_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Cast op rules
-const BinaryOpRule CAST_OP_RULES[] = {
+static constexpr BinaryOpRule CAST_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // (double) double -> double
     BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // (int) double -> int
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // (int) int -> int

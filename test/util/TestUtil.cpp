@@ -5,15 +5,14 @@
 #include "TestUtil.h"
 
 #include <dirent.h>
+#ifdef OS_UNIX
+#include <cstring> // Required by builds on Linux
+#endif
 
 #include <gtest/gtest.h>
 
 #include "util/CommonUtil.h"
 #include "util/FileUtil.h"
-
-#ifdef OS_UNIX
-#include <cstring> // Required by builds on Linux
-#endif
 
 namespace spice::testing {
 
@@ -22,7 +21,7 @@ using namespace spice::compiler;
 /**
  * Collect the test cases in a particular test suite
  *
- * @param suitePath Path to the test suite
+ * @param suiteName Name of the test suite
  * @param useSubDirs Use subdirectories as test cases
  * @return Vector of tests cases
  */
@@ -62,7 +61,7 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
  *
  * @param refPath Path to the reference file
  * @param getActualOutput Callback to execute the required steps to get the actual test output
- * @aaram modifyOutputFct Callback to modify the output before comparing it with the reference
+ * @param modifyOutputFct Callback to modify the output before comparing it with the reference
  *
  * @return True, if the ref file was found
  */
@@ -112,8 +111,8 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
  */
 std::vector<std::string> TestUtil::getSubdirs(const std::filesystem::path &basePath) {
   std::vector<std::string> subdirs;
-  struct dirent *ent;
   if (DIR *dir = opendir(basePath.string().c_str()); dir != nullptr) {
+    dirent *ent;
     while ((ent = readdir(dir)) != nullptr) {
       if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
         subdirs.emplace_back(ent->d_name);
@@ -147,10 +146,10 @@ std::vector<std::string> TestUtil::getFileContentLinesVector(const std::filesyst
  * @return Camel-cased string
  */
 std::string TestUtil::toCamelCase(std::string input) {
-  for (auto it = input.begin(); it != input.end(); it++) {
+  for (auto it = input.begin(); it != input.end(); ++it) {
     if (*it == '-' || *it == '_') {
       it = input.erase(it);
-      *it = (char)toupper(*it);
+      *it = static_cast<char>(toupper(*it));
     }
   }
   return input;
@@ -164,7 +163,7 @@ std::string TestUtil::toCamelCase(std::string input) {
  * @return Disabled or not
  */
 bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
-  if (std::filesystem::exists(testCase.testPath / CTL_SKIP_DISABLED))
+  if (exists(testCase.testPath / CTL_SKIP_DISABLED))
     return true;
   if (isGHActions && std::filesystem::exists(testCase.testPath / CTL_SKIP_GH))
     return true;

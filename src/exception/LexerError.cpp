@@ -27,11 +27,11 @@ const char *LexerError::what() const noexcept { return errorMessage.c_str(); }
 /**
  * Get the prefix of the error message for a particular error
  *
- * @param type Type of the error
+ * @param errorType Type of the error
  * @return Prefix string for the error type
  */
-std::string LexerError::getMessagePrefix(LexerErrorType type) {
-  switch (type) {
+std::string LexerError::getMessagePrefix(LexerErrorType errorType) {
+  switch (errorType) {
   case TOKENIZING_FAILED:
     return "Tokenizing failed";
   }

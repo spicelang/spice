@@ -209,8 +209,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   timer.stop();
 
   // Run first part of pipeline for the imported source file
-  for (const auto &dependency : dependencies)
-    dependency.second->runFrontEnd();
+  for (const auto &[name, sourceFile] : dependencies)
+    sourceFile->runFrontEnd();
 
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
 }
@@ -346,7 +346,7 @@ void SourceFile::runDefaultIROptimizer() {
 
   // Skip this stage if optimization is disabled
   const OptLevel optLevel = cliOptions.optLevel;
-  if (optLevel < OptLevel::O1 || optLevel > OptLevel::Oz)
+  if (optLevel < O1 || optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -378,7 +378,7 @@ void SourceFile::runPreLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (cliOptions.optLevel < OptLevel::O1 || cliOptions.optLevel > OptLevel::Oz)
+  if (cliOptions.optLevel < O1 || cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -433,7 +433,7 @@ void SourceFile::runPostLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (cliOptions.optLevel < OptLevel::O1 || cliOptions.optLevel > OptLevel::Oz)
+  if (cliOptions.optLevel < O1 || cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -476,7 +476,7 @@ void SourceFile::runObjectEmitter() {
   objectFilePath.replace_extension("o");
 
   // Emit object for this source file
-  ObjectEmitter objectEmitter(resourceManager, this);
+  const ObjectEmitter objectEmitter(resourceManager, this);
   objectEmitter.emit(objectFilePath);
 
   // Save assembly string in the compiler output
@@ -681,22 +681,22 @@ llvm::Type *SourceFile::getLLVMType(const Type *type) {
   return llvmType;
 }
 
-void SourceFile::checkForSoftErrors() {
+void SourceFile::checkForSoftErrors() const {
   // Check if there are any soft errors and if so, print them
   if (!resourceManager.errorManager.softErrors.empty()) {
     std::stringstream errorStream;
     errorStream << "There are unresolved errors. Please fix them and recompile.";
-    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
-      errorStream << "\n\n" << error.message;
+    for (const auto &[codeLoc, message] : resourceManager.errorManager.softErrors)
+      errorStream << "\n\n" << message;
     throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
   }
 }
 
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
-  for (const auto &dependency : dependencies) {
-    if (!dependency.second->isStdFile)
-      dependency.second->collectAndPrintWarnings();
+  for (const auto &[name, sourceFile] : dependencies) {
+    if (!sourceFile->isStdFile)
+      sourceFile->collectAndPrintWarnings();
   }
   // Collect warnings for this file
   if (!ignoreWarnings)
@@ -792,7 +792,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     // GCOV_EXCL_STOP
 
     // Write to dot file
-    std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
+    std::ranges::transform(outputName, outputName.begin(), ::tolower);
     dumpOutput(output, outputName, outputName + ".dot");
 
     // Generate SVG. This only works if the dot code was dumped into a file
@@ -818,7 +818,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
                                     uint64_t stageRuntime, unsigned short stageRuns) const {
   if (cliOptions.printDebugOutput) {
-    const char *const compilerStageIoTypeName[6] = {"Code", "Tokens", "CST", "AST", "IR", "Obj"};
+    static constexpr const char *const compilerStageIoTypeName[6] = {"Code", "Tokens", "CST", "AST", "IR", "Obj"};
     // Build output string
     std::stringstream outputStr;
     outputStr << "[" << stage << "] for " << fileName << ": ";

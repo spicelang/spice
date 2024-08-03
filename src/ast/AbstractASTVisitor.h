@@ -90,6 +90,9 @@ class CustomDataTypeNode;
 class FunctionDataTypeNode;
 
 class AbstractASTVisitor {
+protected:
+  ~AbstractASTVisitor() = default;
+
 public:
   // General visitor method
   std::any visit(ASTNode *node);

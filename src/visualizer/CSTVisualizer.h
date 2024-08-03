@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <utility>
-
 #include <SpiceLexer.h>
 #include <SpiceVisitor.h>
 
@@ -17,7 +15,7 @@ namespace spice::compiler {
  * Jobs:
  * - Visualize CST
  */
-class CSTVisualizer : private CompilerPass, public SpiceVisitor {
+class CSTVisualizer final : CompilerPass, public SpiceVisitor {
 public:
   // Constructors
   CSTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const SpiceLexer *lexer,

@@ -76,8 +76,8 @@ public:
 
 private:
   // Private methods
-  SourceFile *loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
-  static ModuleNamePair resolveNamePair(RuntimeModule requestedModule);
+  SourceFile *loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) const;
+  static ModuleNamePair resolveNamePair(RuntimeModule runtimeModule);
 
   // Private members
   GlobalResourceManager &resourceManager;

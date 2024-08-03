@@ -15,7 +15,7 @@ namespace spice::compiler {
 /**
  * Creates a file and writes fileContent to it.
  *
- * @param fileName File name
+ * @param filePath File path
  * @param fileContent String to write into the file
  */
 void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::string &fileContent) {
@@ -64,7 +64,7 @@ size_t FileUtil::getLineCount(const std::filesystem::path &filePath) {
 /**
  * Execute external command. Used to execute compiled binaries
  *
- * @param cmd Command to execute
+ * @param command Command to execute
  * @return Result struct
  */
 ExecResult FileUtil::exec(const std::string &command) {
@@ -143,7 +143,7 @@ std::string FileUtil::findLinkerInvoker() {
  */
 std::string FileUtil::findLinker() {
 #ifdef OS_UNIX
-  for (const std::string linkerName : {"mold", "lld", "gold", "ld"})
+  for (const std::string linkerName : {"mold", "ld.lld", "lld-link", "ld64.ddl", "gold", "ld"})
     for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerName))
         return path + linkerName;
@@ -163,14 +163,12 @@ std::string FileUtil::findLinker() {
  */
 std::filesystem::path FileUtil::getStdDir() {
 #ifdef OS_UNIX
-  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
-    return std::filesystem::path("/usr/lib/spice/std/");
+  if (exists(std::filesystem::path("/usr/lib/spice/std/")))
+    return {"/usr/lib/spice/std/"};
 #endif
-  if (std::getenv("SPICE_STD_DIR")) {
-    const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
-    if (std::filesystem::exists(stdPath))
+  if (std::getenv("SPICE_STD_DIR"))
+    if (const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR")); exists(stdPath))
       return stdPath;
-  }
   return ""; // GCOV_EXCL_LINE
 }
 
@@ -182,8 +180,7 @@ std::filesystem::path FileUtil::getStdDir() {
  */
 std::filesystem::path FileUtil::getBootstrapDir() {
   if (std::getenv("SPICE_BOOTSTRAP_DIR")) {
-    const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
-    if (std::filesystem::exists(stdPath))
+    if (const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR")); exists(stdPath))
       return stdPath;
   }
   return ""; // GCOV_EXCL_LINE

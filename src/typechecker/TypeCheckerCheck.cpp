@@ -4,7 +4,6 @@
 
 #include <SourceFile.h>
 #include <exception/SemanticError.h>
-#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 

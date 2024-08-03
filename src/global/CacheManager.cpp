@@ -7,12 +7,12 @@
 
 namespace spice::compiler {
 
-bool CacheManager::lookupSourceFile(SourceFile *sourceFile) {
-  std::filesystem::path symbolTableFilePath = cacheDir / (sourceFile->cacheKey + ".bson");
-  std::filesystem::path objectFilePath = cacheDir / (sourceFile->cacheKey + ".o");
+bool CacheManager::lookupSourceFile(const SourceFile *sourceFile) const {
+  const std::filesystem::path symbolTableFilePath = cacheDir / (sourceFile->cacheKey + ".bson");
+  const std::filesystem::path objectFilePath = cacheDir / (sourceFile->cacheKey + ".o");
 
   // Check if cache entry is available
-  if (!std::filesystem::exists(symbolTableFilePath) || !std::filesystem::exists(objectFilePath))
+  if (!exists(symbolTableFilePath) || !exists(objectFilePath))
     return false;
 
   // Load symbol table

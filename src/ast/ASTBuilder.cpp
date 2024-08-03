@@ -19,7 +19,7 @@ ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourc
     : CompilerPass(resourceManager, sourceFile), inputStream(inputStream) {}
 
 std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
-  auto entryNode = createNode<EntryNode>(ctx);
+  const auto entryNode = createNode<EntryNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -28,7 +28,7 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
 }
 
 std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
-  auto mainFctDefNode = createNode<MainFctDefNode>(ctx);
+  const auto mainFctDefNode = createNode<MainFctDefNode>(ctx);
 
   // Enrich
   mainFctDefNode->takesArgs = ctx->paramLst();
@@ -40,7 +40,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
 }
 
 std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  auto fctDefNode = createNode<FctDefNode>(ctx);
+  const auto fctDefNode = createNode<FctDefNode>(ctx);
 
   // Enrich
   fctDefNode->hasParams = ctx->paramLst();
@@ -65,7 +65,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-  auto procDefNode = createNode<ProcDefNode>(ctx);
+  const auto procDefNode = createNode<ProcDefNode>(ctx);
 
   // Enrich
   procDefNode->hasParams = ctx->paramLst();
@@ -87,7 +87,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
-  auto fctNameNode = createNode<FctNameNode>(ctx);
+  const auto fctNameNode = createNode<FctNameNode>(ctx);
 
   // Extract function name
   if (ctx->TYPE_IDENTIFIER()) {
@@ -110,7 +110,7 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
 }
 
 std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
-  auto structDefNode = createNode<StructDefNode>(ctx);
+  const auto structDefNode = createNode<StructDefNode>(ctx);
 
   // Enrich
   structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -134,7 +134,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
-  auto interfaceDefNode = createNode<InterfaceDefNode>(ctx);
+  const auto interfaceDefNode = createNode<InterfaceDefNode>(ctx);
 
   // Enrich
   interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -158,7 +158,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
-  auto enumDefNode = createNode<EnumDefNode>(ctx);
+  const auto enumDefNode = createNode<EnumDefNode>(ctx);
 
   // Enrich
   enumDefNode->enumName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -175,7 +175,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
-  auto genericTypeDefNode = createNode<GenericTypeDefNode>(ctx);
+  const auto genericTypeDefNode = createNode<GenericTypeDefNode>(ctx);
 
   // Enrich
   genericTypeDefNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -187,7 +187,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
 }
 
 std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
-  auto aliasDefNode = createNode<AliasDefNode>(ctx);
+  const auto aliasDefNode = createNode<AliasDefNode>(ctx);
 
   // Enrich
   aliasDefNode->aliasName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -201,7 +201,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
-  auto globalVarDefNode = createNode<GlobalVarDefNode>(ctx);
+  const auto globalVarDefNode = createNode<GlobalVarDefNode>(ctx);
 
   // Enrich
   globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -217,7 +217,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
-  auto extDeclNode = createNode<ExtDeclNode>(ctx);
+  const auto extDeclNode = createNode<ExtDeclNode>(ctx);
 
   // Enrich
   extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER());
@@ -237,7 +237,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
-  auto importDefNode = createNode<ImportDefNode>(ctx);
+  const auto importDefNode = createNode<ImportDefNode>(ctx);
 
   // Extract path
   const std::string pathStr = ctx->STRING_LIT()->getText();
@@ -250,7 +250,7 @@ std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
-  auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
+  const auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -259,7 +259,7 @@ std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
 }
 
 std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
-  auto forLoopNode = createNode<ForLoopNode>(ctx);
+  const auto forLoopNode = createNode<ForLoopNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -275,7 +275,7 @@ std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
 }
 
 std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
-  auto foreachLoopNode = createNode<ForeachLoopNode>(ctx);
+  const auto foreachLoopNode = createNode<ForeachLoopNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -294,7 +294,7 @@ std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
 }
 
 std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
-  auto whileLoopNode = createNode<WhileLoopNode>(ctx);
+  const auto whileLoopNode = createNode<WhileLoopNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -303,7 +303,7 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
-  auto doWhileLoopNode = createNode<DoWhileLoopNode>(ctx);
+  const auto doWhileLoopNode = createNode<DoWhileLoopNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -312,7 +312,7 @@ std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
-  auto ifStmtNode = createNode<IfStmtNode>(ctx);
+  const auto ifStmtNode = createNode<IfStmtNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -321,7 +321,7 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
-  auto elseStmtNode = createNode<ElseStmtNode>(ctx);
+  const auto elseStmtNode = createNode<ElseStmtNode>(ctx);
 
   // Enrich
   elseStmtNode->isElseIf = ctx->ifStmt();
@@ -333,7 +333,7 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
-  auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
+  const auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
 
   // Enrich
   switchStmtNode->hasDefaultBranch = ctx->defaultBranch();
@@ -345,7 +345,7 @@ std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
-  auto caseBranchNode = createNode<CaseBranchNode>(ctx);
+  const auto caseBranchNode = createNode<CaseBranchNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -354,7 +354,7 @@ std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
 }
 
 std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) {
-  auto defaultBranchNode = createNode<DefaultBranchNode>(ctx);
+  const auto defaultBranchNode = createNode<DefaultBranchNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -363,7 +363,7 @@ std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) 
 }
 
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
-  auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
+  const auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -372,7 +372,7 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
 }
 
 std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
-  auto stmtLstNode = createNode<StmtLstNode>(ctx);
+  const auto stmtLstNode = createNode<StmtLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -381,7 +381,7 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
-  auto typeLstNode = createNode<TypeLstNode>(ctx);
+  const auto typeLstNode = createNode<TypeLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -390,7 +390,7 @@ std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
-  auto typeAltsLstNode = createNode<TypeAltsLstNode>(ctx);
+  const auto typeAltsLstNode = createNode<TypeAltsLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -399,7 +399,7 @@ std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
-  auto paramLstNode = createNode<ParamLstNode>(ctx);
+  const auto paramLstNode = createNode<ParamLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -414,7 +414,7 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
-  auto argLstNode = createNode<ArgLstNode>(ctx);
+  const auto argLstNode = createNode<ArgLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -423,7 +423,7 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
-  auto enumItemLstNode = createNode<EnumItemLstNode>(ctx);
+  const auto enumItemLstNode = createNode<EnumItemLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -432,7 +432,7 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
-  auto enumItemNode = createNode<EnumItemNode>(ctx);
+  const auto enumItemNode = createNode<EnumItemNode>(ctx);
 
   // Enrich
   enumItemNode->itemName = getIdentifier(ctx->TYPE_IDENTIFIER());
@@ -445,7 +445,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
 }
 
 std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
-  auto fieldNode = createNode<FieldNode>(ctx);
+  const auto fieldNode = createNode<FieldNode>(ctx);
 
   // Enrich
   fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER());
@@ -460,7 +460,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
 }
 
 std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
-  auto signatureNode = createNode<SignatureNode>(ctx);
+  const auto signatureNode = createNode<SignatureNode>(ctx);
 
   // Extract method name
   signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
@@ -480,7 +480,7 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
 std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) { return visitChildren(ctx); }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
-  auto declStmtNode = createNode<DeclStmtNode>(ctx);
+  const auto declStmtNode = createNode<DeclStmtNode>(ctx);
 
   // Enrich
   declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
@@ -493,7 +493,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
-  auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
+  const auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -512,11 +512,11 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
-  auto specifierNode = createNode<SpecifierNode>(ctx);
+  const auto specifierNode = createNode<SpecifierNode>(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    auto token = spice_pointer_cast<TerminalNode *>(subTree);
-    size_t symbolType = token->getSymbol()->getType();
+    const auto token = spice_pointer_cast<TerminalNode *>(subTree);
+    const size_t symbolType = token->getSymbol()->getType();
     if (symbolType == SpiceParser::CONST)
       specifierNode->type = SpecifierNode::TY_CONST;
     else if (symbolType == SpiceParser::SIGNED)
@@ -539,7 +539,7 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
 }
 
 std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
-  auto modAttrNode = createNode<ModAttrNode>(ctx);
+  const auto modAttrNode = createNode<ModAttrNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -552,7 +552,7 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
 }
 
 std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) {
-  auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
+  const auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -561,7 +561,7 @@ std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *c
 }
 
 std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
-  auto lambdaAttrNode = createNode<LambdaAttrNode>(ctx);
+  const auto lambdaAttrNode = createNode<LambdaAttrNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -574,7 +574,7 @@ std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
 }
 
 std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
-  auto attrLstNode = createNode<AttrLstNode>(ctx);
+  const auto attrLstNode = createNode<AttrLstNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -583,7 +583,7 @@ std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
-  auto attrNode = createNode<AttrNode>(ctx);
+  const auto attrNode = createNode<AttrNode>(ctx);
 
   // Extract key
   for (const TerminalNode *keyFragment : ctx->IDENTIFIER()) {
@@ -614,19 +614,20 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
 }
 
 std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
-  auto caseConstantNode = createNode<CaseConstantNode>(ctx);
+  const auto caseConstantNode = createNode<CaseConstantNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
+        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = getIdentifier(t1);
       caseConstantNode->identifierFragments.push_back(fragment);
       if (!caseConstantNode->fqIdentifier.empty())
         caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
       caseConstantNode->fqIdentifier += fragment;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = getIdentifier(t2);
       caseConstantNode->identifierFragments.push_back(fragment);
@@ -640,7 +641,7 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
-  auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
+  const auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
 
   // Enrich
   returnStmtNode->hasReturnValue = ctx->assignExpr();
@@ -652,7 +653,7 @@ std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
-  auto breakStmtNode = createNode<BreakStmtNode>(ctx);
+  const auto breakStmtNode = createNode<BreakStmtNode>(ctx);
 
   // Extract number of breaks
   if (ctx->INT_LIT())
@@ -665,7 +666,7 @@ std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
-  auto continueStmtNode = createNode<ContinueStmtNode>(ctx);
+  const auto continueStmtNode = createNode<ContinueStmtNode>(ctx);
 
   // Extract number of continues
   if (ctx->INT_LIT())
@@ -678,7 +679,7 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) {
-  auto fallthroughStmtNode = createNode<FallthroughStmtNode>(ctx);
+  const auto fallthroughStmtNode = createNode<FallthroughStmtNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -687,10 +688,10 @@ std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *c
 }
 
 std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
-  auto assertStmtNode = createNode<AssertStmtNode>(ctx);
+  const auto assertStmtNode = createNode<AssertStmtNode>(ctx);
 
   // Enrich
-  antlr4::misc::Interval interval(ctx->assignExpr()->start->getStartIndex(), ctx->assignExpr()->stop->getStopIndex());
+  const antlr4::misc::Interval interval(ctx->assignExpr()->start->getStartIndex(), ctx->assignExpr()->stop->getStopIndex());
   assertStmtNode->expressionString = inputStream->getText(interval);
 
   // Visit children
@@ -707,7 +708,7 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
-  auto printfCallNode = createNode<PrintfCallNode>(ctx);
+  const auto printfCallNode = createNode<PrintfCallNode>(ctx);
 
   // Enrich
   std::string templatedString = ctx->STRING_LIT()->getText();
@@ -722,7 +723,7 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  auto sizeofCallNode = createNode<SizeofCallNode>(ctx);
+  const auto sizeofCallNode = createNode<SizeofCallNode>(ctx);
 
   // Check if type or value
   sizeofCallNode->isType = ctx->TYPE();
@@ -734,7 +735,7 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
-  auto alignofCallNode = createNode<AlignofCallNode>(ctx);
+  const auto alignofCallNode = createNode<AlignofCallNode>(ctx);
 
   // Check if type or value
   alignofCallNode->isType = ctx->TYPE();
@@ -746,7 +747,7 @@ std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
-  auto lenCallNode = createNode<LenCallNode>(ctx);
+  const auto lenCallNode = createNode<LenCallNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -755,7 +756,7 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
-  auto panicCallNode = createNode<PanicCallNode>(ctx);
+  const auto panicCallNode = createNode<PanicCallNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -764,7 +765,7 @@ std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
-  auto assignExprNode = createNode<AssignExprNode>(ctx);
+  const auto assignExprNode = createNode<AssignExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -773,7 +774,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
-  auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
+  const auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
   // Check if is shortened
   ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
@@ -785,7 +786,7 @@ std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
-  auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
+  const auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -794,7 +795,7 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
-  auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
+  const auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -803,7 +804,7 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
-  auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
+  const auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -812,7 +813,7 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
 }
 
 std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
-  auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
+  const auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -821,7 +822,7 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
 }
 
 std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
-  auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
+  const auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -830,7 +831,7 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
 }
 
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
-  auto equalityExprNode = createNode<EqualityExprNode>(ctx);
+  const auto equalityExprNode = createNode<EqualityExprNode>(ctx);
 
   // Extract operator
   if (ctx->EQUAL())
@@ -845,7 +846,7 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
-  auto relationalExprNode = createNode<RelationalExprNode>(ctx);
+  const auto relationalExprNode = createNode<RelationalExprNode>(ctx);
 
   // Extract operator
   if (ctx->LESS())
@@ -864,7 +865,7 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
-  auto shiftExprNode = createNode<ShiftExprNode>(ctx);
+  const auto shiftExprNode = createNode<ShiftExprNode>(ctx);
 
   // Extract operator
   if (!ctx->LESS().empty())
@@ -879,15 +880,16 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
-  auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
+  const auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, TY_INVALID);
-    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::MINUS)
+    else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
+             t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::MINUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, TY_INVALID);
   }
 
@@ -895,17 +897,19 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
-  auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
+  const auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, TY_INVALID);
-    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DIV)
+    else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
+             t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DIV)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, TY_INVALID);
-    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::REM)
+    else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
+             t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::REM)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, TY_INVALID);
   }
 
@@ -913,7 +917,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
-  auto castExprNode = createNode<CastExprNode>(ctx);
+  const auto castExprNode = createNode<CastExprNode>(ctx);
 
   // Enrich
   castExprNode->isCast = ctx->LPAREN();
@@ -925,7 +929,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
-  auto prefixUnaryExprNode = createNode<PrefixUnaryExprNode>(ctx);
+  const auto prefixUnaryExprNode = createNode<PrefixUnaryExprNode>(ctx);
 
   // Extract operator
   if (ctx->MINUS())
@@ -950,7 +954,7 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
-  auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
+  const auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
 
   // Extract operator
   if (ctx->LBRACKET()) {
@@ -971,19 +975,20 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-  auto atomicExprNode = createNode<AtomicExprNode>(ctx);
+  const auto atomicExprNode = createNode<AtomicExprNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
+        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       std::string fragment = getIdentifier(t1);
       atomicExprNode->identifierFragments.push_back(fragment);
       if (!atomicExprNode->fqIdentifier.empty())
         atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
       atomicExprNode->fqIdentifier += fragment;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       std::string fragment = getIdentifier(t2);
       atomicExprNode->identifierFragments.push_back(fragment);
@@ -997,7 +1002,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
-  auto valueNode = createNode<ValueNode>(ctx);
+  const auto valueNode = createNode<ValueNode>(ctx);
 
   // Enrich
   valueNode->isNil = ctx->NIL();
@@ -1009,37 +1014,37 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
 }
 
 std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
-  auto constantNode = createNode<ConstantNode>(ctx);
+  const auto constantNode = createNode<ConstantNode>(ctx);
 
   // Enrich
-  CompileTimeValue &value = constantNode->compileTimeValue;
+  auto &[doubleValue, intValue, shortValue, longValue, charValue, boolValue, stringValueOffset] = constantNode->compileTimeValue;
   if (ctx->DOUBLE_LIT()) {
     constantNode->type = ConstantNode::TYPE_DOUBLE;
-    value.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+    doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::TYPE_INT;
-    value.intValue = parseInt(ctx->INT_LIT());
+    intValue = parseInt(ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::TYPE_SHORT;
-    value.shortValue = parseShort(ctx->SHORT_LIT());
+    shortValue = parseShort(ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::TYPE_LONG;
-    value.longValue = parseLong(ctx->LONG_LIT());
+    longValue = parseLong(ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::TYPE_CHAR;
-    value.charValue = parseChar(ctx->CHAR_LIT());
+    charValue = parseChar(ctx->CHAR_LIT());
   } else if (ctx->STRING_LIT()) {
     // Save a pointer to the string in the compile time value
     constantNode->type = ConstantNode::TYPE_STRING;
-    value.stringValueOffset = resourceManager.compileTimeStringValues.size();
+    stringValueOffset = resourceManager.compileTimeStringValues.size();
     // Add the string to the global compile time string list
     resourceManager.compileTimeStringValues.push_back(parseString(ctx->STRING_LIT()->toString()));
   } else if (ctx->TRUE()) {
     constantNode->type = ConstantNode::TYPE_BOOL;
-    value.boolValue = true;
+    boolValue = true;
   } else if (ctx->FALSE()) {
     constantNode->type = ConstantNode::TYPE_BOOL;
-    value.boolValue = false;
+    boolValue = false;
   } else {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
@@ -1048,7 +1053,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
 }
 
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
-  auto fctCallNode = createNode<FctCallNode>(ctx);
+  const auto fctCallNode = createNode<FctCallNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -1058,19 +1063,21 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
   fctCallNode->hasTemplateTypes = fctCallNode->templateTypeLst();
 
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
+        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = t1->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
       fctCallNode->fqFunctionName += fragment;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = t2->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
       fctCallNode->fqFunctionName += fragment;
-    } else if (auto t3 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
                t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS) {
       fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
-    } else if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::DOT) {
+    } else if (const auto t4 = dynamic_cast<TerminalNode *>(subTree);
+               t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::DOT) {
       fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
     }
   }
@@ -1079,7 +1086,7 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
-  auto arrayInitializationNode = createNode<ArrayInitializationNode>(ctx);
+  const auto arrayInitializationNode = createNode<ArrayInitializationNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
@@ -1088,15 +1095,16 @@ std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
 }
 
 std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
-  auto structInstantiationNode = createNode<StructInstantiationNode>(ctx);
+  const auto structInstantiationNode = createNode<StructInstantiationNode>(ctx);
 
   // Enrich
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
+        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = t1->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
       structInstantiationNode->fqStructName += fragment + SCOPE_ACCESS_TOKEN;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = t2->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
@@ -1111,7 +1119,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 }
 
 std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
-  auto lambdaFuncNode = createNode<LambdaFuncNode>(ctx);
+  const auto lambdaFuncNode = createNode<LambdaFuncNode>(ctx);
 
   // Enrich
   lambdaFuncNode->hasParams = ctx->paramLst();
@@ -1123,7 +1131,7 @@ std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
 }
 
 std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
-  auto lambdaProcNode = createNode<LambdaProcNode>(ctx);
+  const auto lambdaProcNode = createNode<LambdaProcNode>(ctx);
 
   // Enrich
   lambdaProcNode->hasParams = ctx->paramLst();
@@ -1135,7 +1143,7 @@ std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
 }
 
 std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
-  auto lambdaExprNode = createNode<LambdaExprNode>(ctx);
+  const auto lambdaExprNode = createNode<LambdaExprNode>(ctx);
 
   // Enrich
   lambdaExprNode->hasParams = ctx->paramLst();
@@ -1147,28 +1155,29 @@ std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
-  auto dataTypeNode = createNode<DataTypeNode>(ctx);
+  const auto dataTypeNode = createNode<DataTypeNode>(ctx);
 
   // Enrich
   for (size_t i = 0; i < ctx->children.size(); i++) {
     antlr4::tree::ParseTree *subTree = ctx->children[i];
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL) {
       dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::BITWISE_AND) {
       dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_REF, false, 0);
-    } else if (auto t3 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
                t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
       subTree = ctx->children[i];
       bool hasSize = false;
       unsigned int hardCodedSize = 0;
       std::string sizeVarName;
-      if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
+      if (const auto t4 = dynamic_cast<TerminalNode *>(subTree);
+          t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
         hardCodedSize = std::stoi(t4->getSymbol()->getText());
         i++; // Consume INT_LIT
-      } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree);
+      } else if (const auto t5 = dynamic_cast<TerminalNode *>(subTree);
                  t5 != nullptr && t5->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
         hasSize = true;
         sizeVarName = getIdentifier(t5);
@@ -1185,7 +1194,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
 }
 
 std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
-  auto baseDataTypeNode = createNode<BaseDataTypeNode>(ctx);
+  const auto baseDataTypeNode = createNode<BaseDataTypeNode>(ctx);
 
   // Enrich
   if (ctx->TYPE_DOUBLE())
@@ -1220,15 +1229,15 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
 }
 
 std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
-  auto customDataTypeNode = createNode<CustomDataTypeNode>(ctx);
+  const auto customDataTypeNode = createNode<CustomDataTypeNode>(ctx);
 
   // Enrich
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = t1->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
                t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = t2->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
@@ -1243,7 +1252,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
 }
 
 std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) {
-  auto functionDataTypeNode = createNode<FunctionDataTypeNode>(ctx);
+  const auto functionDataTypeNode = createNode<FunctionDataTypeNode>(ctx);
 
   // Enrich
   functionDataTypeNode->isFunction = ctx->dataType();
@@ -1255,7 +1264,7 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
-  auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
+  const auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
 
   // Extract assign operator
   if (ctx->ASSIGN())
@@ -1287,7 +1296,7 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
 }
 
 std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) {
-  auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
+  const auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
 
   // Enrich
   if (ctx->PLUS())
@@ -1354,7 +1363,7 @@ template <typename T> T *ASTBuilder::concludeNode(T *node) {
 }
 
 int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
-  NumericParserCallback<int32_t> cb = [](const std::string &substr, short base, bool isSigned) -> int32_t {
+  const NumericParserCallback<int32_t> cb = [](const std::string &substr, short base, bool isSigned) -> int32_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT32_MAX : UINT32_MAX;
     const int64_t lowerLimit = isSigned ? INT32_MIN : 0;
@@ -1368,7 +1377,7 @@ int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
 }
 
 int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
-  NumericParserCallback<int16_t> cb = [](const std::string &substr, short base, bool isSigned) -> int16_t {
+  const NumericParserCallback<int16_t> cb = [](const std::string &substr, short base, bool isSigned) -> int16_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT16_MAX : UINT16_MAX;
     const int64_t lowerLimit = isSigned ? INT16_MIN : 0;
@@ -1384,14 +1393,14 @@ int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
 int64_t ASTBuilder::parseLong(TerminalNode *terminal) {
   const NumericParserCallback<int64_t> cb = [](const std::string &substr, short base, bool isSigned) -> int64_t {
     if (isSigned)
-      return static_cast<int64_t>(std::stoll(substr, nullptr, base));
+      return std::stoll(substr, nullptr, base);
     else
       return static_cast<int64_t>(std::stoull(substr, nullptr, base));
   };
   return parseNumeric(terminal, cb);
 }
 
-int8_t ASTBuilder::parseChar(TerminalNode *terminal) {
+int8_t ASTBuilder::parseChar(TerminalNode *terminal) const {
   const std::string input = terminal->toString();
   if (input.length() == 3) { // Normal char literals
     return input[1];
@@ -1480,7 +1489,7 @@ void ASTBuilder::replaceEscapeChars(std::string &input) {
   for (size_t readIndex = 0; readIndex < input.length(); ++readIndex, ++writeIndex) {
     if (input[readIndex] == '\\' && readIndex + 1 < input.length()) {
       char nextChar = input[readIndex + 1];
-      if (escapeMap.find(nextChar) != escapeMap.end()) {
+      if (escapeMap.contains(nextChar)) {
         // If the next character forms a valid escape sequence, replace it
         input[writeIndex] = escapeMap[nextChar];
         readIndex++; // Skip the next character as it's part of the escape sequence
@@ -1500,13 +1509,13 @@ void ASTBuilder::replaceEscapeChars(std::string &input) {
   input.resize(writeIndex);
 }
 
-std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {
+std::string ASTBuilder::getIdentifier(TerminalNode *terminal) const {
   std::string identifier = terminal->getText();
 
   // Check if the identifier is 'String' and this is no std source file
   bool isReserved = !sourceFile->isStdFile && (identifier == STROBJ_NAME || identifier == RESULTOBJ_NAME);
   // Check if the list of reserved keywords contains the given identifier
-  isReserved |= std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS);
+  isReserved |= std::ranges::find(RESERVED_KEYWORDS, identifier) != std::end(RESERVED_KEYWORDS);
   // Print error message
   if (isReserved) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);

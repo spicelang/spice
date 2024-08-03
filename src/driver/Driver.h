@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <utility>
-
 #include "../../lib/cli11/CLI11.hpp"
 
 namespace spice::compiler {
@@ -46,7 +44,7 @@ struct CliOptions {
   std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
   std::filesystem::path outputPath;       // Where the output binary goes.
-  BuildMode buildMode = BuildMode::DEBUG; // Default build mode is debug
+  BuildMode buildMode = DEBUG; // Default build mode is debug
   unsigned short compileJobCount = 0;     // 0 for auto
   bool ignoreCache = false;
   std::string llvmArgs;
@@ -64,7 +62,7 @@ struct CliOptions {
   } dumpSettings;
   bool namesForIRValues = false;
   bool useLifetimeMarkers = false;
-  OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
+  OptLevel optLevel = O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
   bool generateTestMain = false;

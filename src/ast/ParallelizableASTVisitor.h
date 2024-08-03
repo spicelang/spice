@@ -91,6 +91,9 @@ class FunctionDataTypeNode;
 
 class ParallelizableASTVisitor {
 public:
+  // Destructor
+  virtual ~ParallelizableASTVisitor() = default;
+
   // General visitor method
   std::any visit(const ASTNode *node);
   std::any visitChildren(const ASTNode *node);

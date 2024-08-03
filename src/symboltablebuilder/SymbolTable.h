@@ -41,13 +41,13 @@ public:
   SymbolTableEntry *insert(const std::string &name, ASTNode *declNode, bool isAnonymousSymbol = false);
   SymbolTableEntry *insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix = 0);
   SymbolTableEntry *copySymbol(const std::string &originalName, const std::string &newName);
-  SymbolTableEntry *lookup(const std::string &symbolName);
+  SymbolTableEntry *lookup(const std::string &name);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath);
   SymbolTableEntry *lookupStrictByIndex(unsigned int orderIndex);
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix = 0);
-  Capture *lookupCapture(const std::string &symbolName);
-  Capture *lookupCaptureStrict(const std::string &symbolName);
+  Capture *lookupCapture(const std::string &name);
+  Capture *lookupCaptureStrict(const std::string &name);
   void setCapturingRequired();
   void deleteAnonymous(const std::string &name);
   [[nodiscard]] nlohmann::json toJSON() const;

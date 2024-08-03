@@ -7,15 +7,14 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include <gtest/gtest.h>
-
-#include "util/FileUtil.h"
 
 namespace spice::testing {
 
 const char *const PATH_TEST_FILES = "./test-files/";
-const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
+static constexpr unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 extern bool updateRefs;
@@ -33,7 +32,7 @@ const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
 const char *const REF_NAME_TYPE_REGISTRY = "type-registry.out";
 const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
-const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
+static constexpr const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
 const char *const REF_NAME_GDB_OUTPUT = "debug.out";
 const char *const REF_NAME_ERROR_OUTPUT = "exception.out";
@@ -54,7 +53,7 @@ struct TestCase {
 };
 
 // Typedefs
-typedef const std::function<std::string(void)> &GetOutputFct;
+typedef const std::function<std::string()> &GetOutputFct;
 typedef const std::function<void(std::string &expectedOutput, std::string &actualOutput)> &ModifyOutputFct;
 
 class TestUtil {
@@ -71,7 +70,7 @@ public:
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
       const std::filesystem::path &refPath, GetOutputFct getActualOutput,
-      ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
+      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {});
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
   static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);

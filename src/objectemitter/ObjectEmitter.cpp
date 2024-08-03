@@ -11,7 +11,7 @@
 
 namespace spice::compiler {
 
-ObjectEmitter::ObjectEmitter(spice::compiler::GlobalResourceManager &resourceManager, spice::compiler::SourceFile *sourceFile)
+ObjectEmitter::ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile),
       module(cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule) {}
 
@@ -25,7 +25,7 @@ void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
     throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
-  const llvm::CodeGenFileType fileType = llvm::CodeGenFileType::ObjectFile;
+  constexpr auto fileType = llvm::CodeGenFileType::ObjectFile;
   if (sourceFile->targetMachine->addPassesToEmitFile(passManager, stream, nullptr, fileType, cliOptions.disableVerifier))
     throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
@@ -37,7 +37,7 @@ void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
 void ObjectEmitter::getASMString(std::string &output) const {
   RawStringOStream ostream(output);
   llvm::legacy::PassManager passManager;
-  const llvm::CodeGenFileType fileType = llvm::CodeGenFileType::AssemblyFile;
+  constexpr auto fileType = llvm::CodeGenFileType::AssemblyFile;
   if (sourceFile->targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, fileType, cliOptions.disableVerifier))
     throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 

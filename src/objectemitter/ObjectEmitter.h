@@ -4,14 +4,13 @@
 
 #include <CompilerPass.h>
 #include <SourceFile.h>
-#include <ast/ASTVisitor.h>
 
 namespace spice::compiler {
 
 // Forward declarations
 class GlobalResourceManager;
 
-class ObjectEmitter : private CompilerPass {
+class ObjectEmitter : CompilerPass {
 public:
   // Constructors
   ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile);

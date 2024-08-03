@@ -58,18 +58,17 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
     return;
 
   // Call all dtor functions
-  const StmtLstNode::ResourcesForManifestationToCleanup &resourcesToCleanup = node->resourcesToCleanup.at(manIdx);
-  for (auto [entry, dtor] : resourcesToCleanup.dtorFunctionsToCall)
+  const auto &[dtorFunctionsToCall, heapVarsToFree] = node->resourcesToCleanup.at(manIdx);
+  for (auto [entry, dtor] : dtorFunctionsToCall)
     generateCtorOrDtorCall(entry, dtor, {});
 
   // Deallocate all heap variables that go out of scope and are currently owned
-  for (SymbolTableEntry *entry : resourcesToCleanup.heapVarsToFree)
+  for (const SymbolTableEntry *entry : heapVarsToFree)
     generateDeallocCall(entry->getAddress());
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
-    std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-    for (SymbolTableEntry *var : vars) {
+    for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
       llvm::Value *address = var->getAddress();
       if (address == nullptr)
         continue;
@@ -122,7 +121,7 @@ void IRGenerator::generateProcCall(const Function *proc, std::vector<llvm::Value
   builder.CreateCall(callee, args);
 }
 
-void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
+void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
                                          const std::vector<llvm::Value *> &args) const {
   // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
   llvm::Value *structAddr;
@@ -168,7 +167,7 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
   }
 }
 
-llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc) {
+llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()> &generateBody, const Function *spiceFunc) {
   // Only focus on method procedures
   const ASTNode *node = spiceFunc->entry->declNode;
   assert(spiceFunc->isFunction());
@@ -181,25 +180,23 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   llvm::Type *returnType = spiceFunc->returnType.toLLVMType(sourceFile);
 
   // Get 'this' entry
-  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<llvm::Type *> paramTypes;
   SymbolTableEntry *thisEntry = nullptr;
   if (spiceFunc->isMethod()) {
     thisEntry = spiceFunc->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);
-    paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
     paramTypes.push_back(builder.getPtrTy());
   }
 
   // Get parameter types
-  for (const Param &param : spiceFunc->paramList) {
-    assert(!param.isOptional);
-    paramTypes.push_back(param.qualType.toLLVMType(sourceFile));
+  for (const auto &[qualType, isOptional] : spiceFunc->paramList) {
+    assert(!isOptional);
+    paramTypes.push_back(qualType.toLLVMType(sourceFile));
   }
 
   // Get function linkage
   const bool isPublic = spiceFunc->entry->getQualType().isPublic();
-  llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+  const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
   const std::string mangledName = spiceFunc->getMangledName();
@@ -265,7 +262,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   return fct;
 }
 
-llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc) {
+llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceProc) {
   // Only focus on method procedures
   const ASTNode *node = spiceProc->entry->declNode;
   assert(node != nullptr);
@@ -276,25 +273,23 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     return nullptr;
 
   // Get 'this' entry
-  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<llvm::Type *> paramTypes;
   SymbolTableEntry *thisEntry = nullptr;
   if (spiceProc->isMethod()) {
     thisEntry = spiceProc->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);
-    paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
     paramTypes.push_back(builder.getPtrTy());
   }
 
   // Get parameter types
-  for (const Param &param : spiceProc->paramList) {
-    assert(!param.isOptional);
-    paramTypes.push_back(param.qualType.toLLVMType(sourceFile));
+  for (const auto &[qualType, isOptional] : spiceProc->paramList) {
+    assert(!isOptional);
+    paramTypes.push_back(qualType.toLLVMType(sourceFile));
   }
 
   // Get function linkage
   const bool isPublic = spiceProc->entry->getQualType().isPublic();
-  llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+  const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
   const std::string mangledName = spiceProc->getMangledName();
@@ -366,7 +361,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   assert(structScope != nullptr);
 
   // Get struct address
-  SymbolTableEntry *thisEntry = bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  const SymbolTableEntry *thisEntry = bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
@@ -375,7 +370,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
 
   // Store VTable to first struct field if required
-  Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  const Struct *spiceStruct = structSymbolType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
   if (spiceStruct->vTableData.vtable != nullptr) {
     assert(spiceStruct->vTableData.vtableType != nullptr);
@@ -388,19 +383,18 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
 
     // Call ctor for struct fields
     const QualType &fieldType = fieldSymbol->getQualType();
-    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+    const auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
-      const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
-      if (ctorFunction)
+      if (const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false))
         generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
 
       continue;
@@ -433,17 +427,17 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
 
 void IRGenerator::generateDefaultCtor(const Function *ctorFunction) {
   assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
-  const std::function<void(void)> generateBody = [&]() { generateCtorBodyPreamble(ctorFunction->bodyScope); };
+  const std::function generateBody = [&] { generateCtorBodyPreamble(ctorFunction->bodyScope); };
   generateImplicitProcedure(generateBody, ctorFunction);
 }
 
-void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction) {
+void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction) const {
   // Retrieve struct scope
   Scope *structScope = copyCtorFunction->bodyScope->parent;
   assert(structScope != nullptr);
 
   // Get struct address
-  SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  const SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
@@ -452,7 +446,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -463,8 +457,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
-      const Function *ctorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
-      if (ctorFct) {
+      if (const Function *ctorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false)) {
         // Retrieve field address
         if (!thisAddressLoaded)
           thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
@@ -482,13 +475,13 @@ void IRGenerator::generateDefaultCopyCtor(const Function *copyCtorFunction) {
   generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
-void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
+void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
   // Retrieve struct scope
   Scope *structScope = dtorFunction->bodyScope->parent;
   assert(structScope != nullptr);
 
   // Get struct address
-  SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  const SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
@@ -497,7 +490,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -506,8 +499,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
     const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
-      const Function *dtorFct = FunctionManager::lookup(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
-      if (dtorFct)
+      if (const Function *dtorFct = FunctionManager::lookup(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false))
         generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;
     }
@@ -527,16 +519,16 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
 
 void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
   assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
-  const std::function<void(void)> generateBody = [&]() { generateDtorBodyPreamble(dtorFunction); };
+  const std::function generateBody = [&] { generateDtorBodyPreamble(dtorFunction); };
   generateImplicitProcedure(generateBody, dtorFunction);
 }
 
 void IRGenerator::generateTestMain() {
   // Collect all test functions
   std::vector<const std::vector<const Function *> *> tests;
-  for (const auto &sourceFile : resourceManager.sourceFiles)
-    if (!sourceFile.second->testFunctions.empty())
-      tests.push_back(&sourceFile.second->testFunctions);
+  for (const auto &[name, sourceFile] : resourceManager.sourceFiles)
+    if (!sourceFile->testFunctions.empty())
+      tests.push_back(&sourceFile->testFunctions);
 
   // Prepare printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
@@ -567,7 +559,7 @@ void IRGenerator::generateTestMain() {
   rootScope->createChildScope(testMain.getSignature(false), ScopeType::FUNC_PROC_BODY, nullptr);
 
   // Generate
-  const std::function<void(void)> generateBody = [&]() {
+  const std::function generateBody = [&] {
     // Prepare result variable
     llvm::Type *i32Ty = builder.getInt32Ty();
     llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
@@ -591,7 +583,7 @@ void IRGenerator::generateTestMain() {
 
         // Retrieve attribute list for the test function
         assert(testFunction->declNode->isFctOrProcDef());
-        auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
+        const auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
         assert(fctDefNode->attrs() != nullptr);
         const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
         assert(attrs->getAttrValueByName(ATTR_TEST)->boolValue); // The test attribute must be present

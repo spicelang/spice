@@ -8,15 +8,15 @@ namespace spice::compiler {
 
 void ErrorManager::addSoftError(const ASTNode *astNode, SemanticErrorType errorType, const std::string &message) {
   // Build error message
-  const SemanticError semanticError = SemanticError(astNode, errorType, message);
+  const SemanticError semanticError(astNode, errorType, message);
   // Add to soft errors list
   addSoftError(astNode->codeLoc, semanticError.what());
 }
 
 void ErrorManager::addSoftError(const CodeLoc &codeLoc, const std::string &message) {
   // Avoid duplicate errors
-  for (const SoftError &error : softErrors)
-    if (error.codeLoc == codeLoc)
+  for (const auto &[errorLoc, message] : softErrors)
+    if (errorLoc == codeLoc)
       return;
   softErrors.emplace_back(SoftError{codeLoc, message});
 }

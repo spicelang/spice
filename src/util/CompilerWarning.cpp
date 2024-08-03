@@ -13,7 +13,7 @@ namespace spice::compiler {
  * @param type Type of the warning
  * @param message Warning message suffix
  */
-CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message) {
+CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, const CompilerWarningType type, const std::string &message) {
   warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
@@ -35,11 +35,11 @@ void CompilerWarning::print() const { std::cout << "\033[33m" << warningMessage 
 /**
  * Get the prefix of the warning message for a particular error
  *
- * @param type Type of the warning
+ * @param warningType Type of the warning
  * @return Prefix string for the warning type
  */
-std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
-  switch (type) {
+std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
+  switch (warningType) {
   case UNUSED_FUNCTION:
     return "Unused function";
   case UNUSED_PROCEDURE:

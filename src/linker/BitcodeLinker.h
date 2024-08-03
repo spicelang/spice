@@ -4,8 +4,7 @@
 
 #include <llvm/Linker/Linker.h>
 
-#include "CompilerPass.h"
-#include "SourceFile.h"
+#include <CompilerPass.h>
 #include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {

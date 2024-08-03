@@ -15,7 +15,7 @@ enum LinkerErrorType : uint8_t {
 /**
  * Custom exception for errors, occurring when linking the output executable
  */
-class LinkerError : public std::exception {
+class LinkerError final : public std::exception {
 public:
   // Constructors
   LinkerError(const LinkerErrorType &type, const std::string &message);
