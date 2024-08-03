@@ -6,7 +6,7 @@ fi
 cd lib || exit
 
 # Download ANTLR4
-git clone --quiet --depth 1 --branch 4.13.1 https://github.com/antlr/antlr4.git
+git clone --quiet --depth 1 --branch 4.13.2 https://github.com/antlr/antlr4.git
 
 # Download Google Test
 git clone --quiet --depth 1 --branch v1.15.2 https://github.com/google/googletest.git
