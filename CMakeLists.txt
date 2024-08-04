@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 project(Spice)
 
 # Set constants
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(LLVM_DIR $ENV{LLVM_DIR})
 
 # Include cli options parsing
 include(Options.cmake)
 
 # Set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O2")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O3")
 
 # Find ANTLR
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
