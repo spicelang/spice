@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-
 #include <model/GenericType.h>
 #include <symboltablebuilder/Type.h>
 

@@ -60,11 +60,11 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
 
   // Check which source file to import
   std::filesystem::path importPath;
-  if (std::filesystem::exists(osArchPath)) // file_os_arch.spice is first choice
+  if (exists(osArchPath)) // file_os_arch.spice is first choice
     importPath = osArchPath;
-  else if (std::filesystem::exists(osPath)) // file_os.spice is second choice
+  else if (exists(osPath)) // file_os.spice is second choice
     importPath = osPath;
-  else if (std::filesystem::exists(defaultPath)) // file.spice is third choice
+  else if (exists(defaultPath)) // file.spice is third choice
     importPath = defaultPath;
   else
     throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, "The source file '" + node->importPath + ".spice' does not exist");

@@ -15,8 +15,6 @@ std::any ParallelizableASTVisitor::visitChildren(const ASTNode *node) {
   return nullptr;
 }
 
-// GCOV_EXCL_START
-
 std::any ParallelizableASTVisitor::visitEntry(const EntryNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitMainFctDef(const MainFctDefNode *node) { return visitChildren(node); }
@@ -178,7 +176,5 @@ std::any ParallelizableASTVisitor::visitBaseDataType(const BaseDataTypeNode *nod
 std::any ParallelizableASTVisitor::visitCustomDataType(const CustomDataTypeNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitFunctionDataType(const FunctionDataTypeNode *node) { return visitChildren(node); }
-
-// GCOV_EXCL_STOP
 
 } // namespace spice::compiler

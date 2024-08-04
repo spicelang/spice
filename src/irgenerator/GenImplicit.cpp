@@ -2,8 +2,6 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
@@ -11,6 +9,8 @@
 #include <global/GlobalResourceManager.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
@@ -366,7 +366,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  QualType structSymbolType = thisEntry->getQualType().getBase();
+  const QualType structSymbolType = thisEntry->getQualType().getBase();
   llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
 
   // Store VTable to first struct field if required
@@ -526,7 +526,7 @@ void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
 void IRGenerator::generateTestMain() {
   // Collect all test functions
   std::vector<const std::vector<const Function *> *> tests;
-  for (const auto &[name, sourceFile] : resourceManager.sourceFiles)
+  for (const auto &sourceFile : resourceManager.sourceFiles | std::views::values)
     if (!sourceFile->testFunctions.empty())
       tests.push_back(&sourceFile->testFunctions);
 

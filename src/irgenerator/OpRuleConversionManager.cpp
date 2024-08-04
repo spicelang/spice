@@ -2,8 +2,6 @@
 
 #include "OpRuleConversionManager.h"
 
-#include <stdexcept>
-
 #include <llvm/IR/Module.h>
 
 #include <SourceFile.h>

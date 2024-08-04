@@ -181,7 +181,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   std::vector<llvm::Type *> fieldTypes;
   std::vector<SymbolTableEntry *> fieldEntries;
   QualTypeList fieldSymbolTypes;
-  for (const auto &[name, capture] : captures) {
+  for (const auto &capture : captures | std::views::values) {
     QualType captureType = capture.capturedSymbol->getQualType();
 
     // Capture by reference

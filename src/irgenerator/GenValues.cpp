@@ -2,11 +2,11 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
@@ -543,7 +543,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const auto &[name, capture] : captures)
+    for (const auto &capture : captures | std::views::values)
       capture.capturedSymbol->popAddress();
 
   // Conclude debug info for function
@@ -684,7 +684,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const auto &[_, capture] : captures)
+    for (const auto &capture : captures | std::views::values)
       capture.capturedSymbol->popAddress();
 
   // Conclude debug info for function
@@ -826,8 +826,8 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const std::pair<const std::string, Capture> &capture : captures)
-      capture.second.capturedSymbol->popAddress();
+    for (const auto &val : captures | std::views::values)
+      val.capturedSymbol->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -880,7 +880,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
       size_t captureIdx = 0;
-      for (const auto &[_, capture] : bodyScope->symbolTable.captures) {
+      for (const auto &capture : bodyScope->symbolTable.captures | std::views::values) {
         const SymbolTableEntry *capturedEntry = capture.capturedSymbol;
         // Get address or value of captured variable, depending on the capturing mode
         llvm::Value *capturedValue = capturedEntry->getAddress();
@@ -921,7 +921,7 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
   // Create captures struct type
   std::vector<llvm::Type *> captureTypes;
-  for (const auto &[_, c] : captures) {
+  for (const auto &c : captures | std::views::values) {
     if (c.getMode() == BY_VALUE)
       captureTypes.push_back(c.capturedSymbol->getQualType().toLLVMType(sourceFile));
     else

@@ -5,8 +5,6 @@
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/ScopeHandle.h>
 
-#include <llvm/IR/Verifier.h>
-
 namespace spice::compiler {
 
 std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {

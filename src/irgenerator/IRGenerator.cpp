@@ -74,7 +74,7 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
     builder.CreateLifetimeStart(allocaInsertInst, builder.getInt64(sizeInBytes));
   }
 
-  return static_cast<llvm::Value *>(allocaInsertInst);
+  return allocaInsertInst;
 }
 
 llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile, const std::string &varName) const {
@@ -277,7 +277,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
-llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) {
+llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const {
   if (type.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(compileTimeValue.doubleValue));
 
