@@ -1471,10 +1471,10 @@ template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const N
       }
     }
     return cb(input, 10, !isUnsigned);
-  } catch (std::out_of_range &e) {
+  } catch (std::out_of_range &) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
-  } catch (std::invalid_argument &e) {
+  } catch (std::invalid_argument &) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "You tried to parse '" + input + "' as an integer, but it was no integer");
   }

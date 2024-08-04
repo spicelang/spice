@@ -2,9 +2,9 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <ast/ASTNodes.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
@@ -817,10 +817,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(!node->identifierFragments.empty());
 
   // Get symbol table entry
-  const AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
-  SymbolTableEntry *varEntry = data.entry;
+  const auto &[varEntry, accessScope, capture] = node->data.at(manIdx);
   assert(varEntry != nullptr);
-  const Scope *accessScope = data.accessScope;
   assert(accessScope != nullptr);
   const QualType varSymbolType = varEntry->getQualType();
   llvm::Type *varType = varSymbolType.toLLVMType(sourceFile);
@@ -849,7 +847,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   }
 
   // Load the address of the referenced variable
-  if (varSymbolType.isRef() || (data.capture && data.capture->getMode() == BY_REFERENCE))
+  if (varSymbolType.isRef() || (capture && capture->getMode() == BY_REFERENCE))
     return LLVMExprResult{.refPtr = address, .entry = varEntry};
 
   return LLVMExprResult{.ptr = address, .entry = varEntry};

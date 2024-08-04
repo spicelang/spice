@@ -56,7 +56,7 @@ static_assert(sizeof(CompileTimeValue) == 40);
 class ASTNode {
 public:
   // Constructors
-  explicit ASTNode(CodeLoc codeLoc) : codeLoc(std::move(codeLoc)) {}
+  explicit ASTNode(const CodeLoc &codeLoc) : codeLoc(codeLoc) {}
   virtual ~ASTNode() = default;
   ASTNode(const ASTNode &) = delete;
 
@@ -182,7 +182,7 @@ static_assert(sizeof(ASTNode) == 104);
 
 // ========================================================== EntryNode ==========================================================
 
-class EntryNode : public ASTNode {
+class EntryNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
