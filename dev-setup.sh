@@ -16,7 +16,7 @@ colored_echo "done."
 
 # Clone LLVM
 colored_echo "[Step 2] Cloning LLVM (Could take a while) ... "
-git clone --depth 1 --branch llvmorg-19.1.0-rc1 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-19.1.0-rc2 https://github.com/llvm/llvm-project llvm
 colored_echo "done."
 
 # Build LLVM
