@@ -22,7 +22,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
     // Normal assignment
     if (node->op == AssignExprNode::OP_ASSIGN)
-      return doAssignment(lhsNode, rhsNode);
+      return doAssignment(lhsNode, rhsNode, node);
 
     // Compound assignment
     // Get symbol types of left and right side

@@ -62,11 +62,14 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 /**
  * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
  *
+ * For generating a default ctor, the following conditions need to be met:
+ * - No user-defined constructors
+ *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
 void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
-  auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
+  const auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
   // Abort if the struct already has a user-defined constructor
@@ -81,7 +84,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   bool hasFieldsWithDefaultValue = false;
   bool hasFieldsToConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr);
     const QualType &thisType = fieldSymbol->getQualType();
 
@@ -89,7 +92,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     if (thisType.isRef())
       return;
 
-    if (auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
+    if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
       hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
     } else {
       assert(dynamic_cast<DataTypeNode *>(fieldSymbol->declNode) != nullptr);
@@ -98,7 +101,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      Struct *fieldStruct = fieldType.getStruct(node);
+      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
@@ -124,6 +127,10 @@ void TypeChecker::createDefaultCtorBody(const Function *ctorFunction) { createCt
 /**
  * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
  *
+ * For generating a default copy ctor, the following conditions need to be met:
+ * - No user-defined copy ctor
+ * - No user-defined move ctor
+ *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
@@ -131,12 +138,15 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
-  // Abort if the struct already has a user-defined constructor
-  const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const QualType &structType = structEntry->getQualType();
-  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
-  if (sourceFile->getNameRegistryEntry(fqFctName))
+  // Abort if the struct already has a user-defined copy constructor
+  const QualType structType = spiceStruct.entry->getQualType();
+  const ArgList lookupArgs = {{structType.toConstRef(node), true}};
+  const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, structType, lookupArgs, true);
+  if (copyCtor != nullptr)
     return;
+
+  // Abort if the struct has a user-defiend move constructor
+  // ToDo: Check for move ctor
 
   // Check if we have fields, that require us to do anything in the ctor
   const size_t fieldCount = structScope->getFieldCount();
@@ -158,7 +168,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      Struct *fieldStruct = fieldType.getStruct(node);
+      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
@@ -187,6 +197,9 @@ void TypeChecker::createDefaultCopyCtorBody(const Function *copyCtorFunction) {
 
 /**
  * Checks if the given struct scope already has an user-defined destructor and creates a default one if not.
+ *
+ * For generating a default dtor, the following conditions need to be met:
+ * - No user-defined dtor
  *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
@@ -318,7 +331,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;

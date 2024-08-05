@@ -8,6 +8,7 @@
 #include <global/TypeRegistry.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 #include <symboltablebuilder/Type.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
@@ -267,10 +268,49 @@ bool QualType::isErrorObj() const {
 bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
 
 /**
+ * Check if copying an instance of the current type would require calling other copy ctors.
+ * If this function return true, the type can be copied by calling memcpy.
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially copyable or not
+ */
+bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
+  // Heap-allocated values may not be copied via memcpy
+  if (specifiers.isHeap)
+    return false;
+
+  // References can't be copied at all
+  if (is(TY_REF))
+    return false;
+
+  // In case of an array, the item type is determining the copy triviality
+  if (is(TY_ARRAY))
+    return getBase().isTriviallyCopyable(node);
+
+  // In case of a struct, the member types determine the copy triviality
+  if (is(TY_STRUCT)) {
+    // If the struct has a copy ctor, it is a non-trivially copyable one
+    const Struct *spiceStruct = getStruct(node);
+
+    // If the struct itself has a copy ctor, it is not trivially copyable
+    const std::vector args = {Arg(toConstRef(node), false)};
+    const Function *copyCtor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, args, true);
+    if (copyCtor != nullptr)
+      return false;
+
+    // Check if all member types are trivially copyable
+    const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyCopyable(node); }; // NOLINT(*-no-recursion)
+    return std::ranges::all_of(spiceStruct->fieldTypes, pred);
+  }
+
+  return true;
+}
+
+/**
  * Check if the current type implements the given interface type
  *
  * @param symbolType Interface type
- * @param node ASTNode
+ * @param node Accessing ASTNode
  * @return Struct implements interface or not
  */
 bool QualType::doesImplement(const QualType &symbolType, const ASTNode *node) const {
@@ -433,8 +473,6 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
   const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBase().getSuperType());
   if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
-  if (specifiers.isInline && !defaultForSuperType.isInline)
-    name << "inline ";
   if (specifiers.isComposition && !defaultForSuperType.isComposition)
     name << "compose ";
   if (specifiers.isConst && !defaultForSuperType.isConst && type->typeChain.size() > 1)

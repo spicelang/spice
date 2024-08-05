@@ -89,7 +89,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (auto &manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
@@ -143,7 +143,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (auto &manifestation : node->structManifestations) {
+  for (Struct *manifestation : node->structManifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated()) {
       manIdx++; // Increase the manifestation index
@@ -167,7 +167,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
-      Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      const Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct

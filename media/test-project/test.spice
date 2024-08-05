@@ -1,57 +1,31 @@
-import "std/data/binary-tree";
+import "std/io/cli-parser";
 
-f<int> main() {
-    BinaryTree<int> tree;
-    tree.insert(5);
-    tree.insert(3);
-    tree.insert(7);
-    tree.insert(2);
-    assert tree.contains(5);
-    assert tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(3);
-    assert tree.contains(5);
-    assert !tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(5);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(7);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert !tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(2);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert !tree.contains(7);
-    assert !tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
+type CliOptions struct {
+    bool sayHi = false
+}
 
-    printf("All assertions passed!\n");
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2024");
+
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
 }
 
 /*p foo(heap int* ptr) {
