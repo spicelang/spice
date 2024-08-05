@@ -192,6 +192,7 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown.
  *
+ * @param typeChecker Type Checker
  * @param matchScope Scope to match against
  * @param reqName Function name requirement
  * @param reqThisType This type requirement

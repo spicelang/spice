@@ -56,6 +56,15 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     this.size = initAllocItems;
 }
 
+public p Vector.ctor(const Vector<T>& original) {
+    // Allocate space for the new vector
+    this.ctor(original.getCapacity());
+    // Set the correct size
+    this.size = original.size;
+    // Copy contents
+    sCopy(original.contents, this.contents, this.size);
+}
+
 /**
  * Checks if the vector contains any items at the moment
  *

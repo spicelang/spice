@@ -371,23 +371,23 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
     throw CompilerError(codeLoc, INVALID_MODULE, output);
 }
 
-LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
+LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode, const ASTNode *node) {
   // Get entry of left side
-  auto [value, constant, ptr, refPtr, entry, node] = std::any_cast<LLVMExprResult>(visit(lhsNode));
+  auto [value, constant, ptr, refPtr, entry, _] = std::any_cast<LLVMExprResult>(visit(lhsNode));
   llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? refPtr : ptr;
-  return doAssignment(lhsAddress, entry, rhsNode);
+  return doAssignment(lhsAddress, entry, rhsNode, node);
 }
 
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
-                                         bool isDecl) {
+                                         const ASTNode *node, bool isDecl) {
   // Get symbol type of right side
   const QualType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
-  return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, isDecl);
+  return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, node, isDecl);
 }
 
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
-                                         const QualType &rhsSType, bool isDecl) {
+                                         const QualType &rhsSType, const ASTNode *node, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
   const bool needsCopy = !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
@@ -429,6 +429,13 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
 
+    // Allocate new memory if the lhs address does not exist
+    if (!lhsAddress) {
+      assert(lhsEntry != nullptr);
+      lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(sourceFile));
+      lhsEntry->updateAddress(lhsAddress);
+    }
+
     // Check if we have a copy ctor
     const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
     Scope *structScope = rhsSTypeNonRef.getBodyScope();
@@ -437,17 +444,17 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     if (copyCtor != nullptr) {
       // Call copy ctor
       generateCtorOrDtorCall(lhsAddress, copyCtor, {rhsAddress});
-      return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
-    } else {
+    } else if (rhsSTypeNonRef.isTriviallyCopyable(node)) {
       // Create shallow copy
       llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
-      llvm::Value *newAddress = generateShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
-      // Set address of lhs to the copy
-      if (lhsEntry && lhsEntry->scope->type != ScopeType::STRUCT && lhsEntry->scope->type != ScopeType::INTERFACE)
-        lhsEntry->updateAddress(newAddress);
-      return LLVMExprResult{.ptr = newAddress, .entry = lhsEntry};
+      generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry && lhsEntry->isVolatile);
+    } else {
+      const std::string structName = rhsSTypeNonRef.getName();
+      const std::string msg = "Cannot copy struct '" + structName + "', as it is not trivially copyable and has no copy ctor";
+      throw SemanticError(node, COPY_CTOR_REQUIRED, msg);
     }
+    return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
@@ -486,8 +493,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
-llvm::Value *IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
-                                              const std::string &name /*=""*/, bool isVolatile /*=false*/) {
+void IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
+                                      bool isVolatile) const {
   // Retrieve size to copy
   const llvm::TypeSize typeSize = module->getDataLayout().getTypeAllocSize(varType);
 
@@ -495,15 +502,10 @@ llvm::Value *IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Typ
   llvm::Value *structSize = builder.getInt64(typeSize);
   llvm::Value *copyVolatile = builder.getInt1(isVolatile);
 
-  // If no target address was provided, allocate new space
-  if (!targetAddress)
-    targetAddress = insertAlloca(varType, name);
-
   // Call memcpy intrinsic to execute the shallow copy
   llvm::Function *memcpyFct = stdFunctionManager.getMemcpyIntrinsic();
+  assert(targetAddress != nullptr);
   builder.CreateCall(memcpyFct, {targetAddress, oldAddress, structSize, copyVolatile});
-
-  return targetAddress;
 }
 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const {

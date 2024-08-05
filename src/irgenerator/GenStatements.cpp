@@ -58,7 +58,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
-      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), node, true);
       assert(assignResult.entry == varEntry);
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
