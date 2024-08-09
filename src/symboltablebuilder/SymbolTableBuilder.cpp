@@ -33,11 +33,11 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
     visit(node->attrs());
 
   // Check if the function is already defined
-  if (rootScope->lookupStrict(node->getSignature()))
+  if (rootScope->lookupStrict(MAIN_FUNCTION_NAME))
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert symbol for main function
-  SymbolTableEntry *mainFctEntry = currentScope->insert(node->getSignature(), node);
+  SymbolTableEntry *mainFctEntry = currentScope->insert(MAIN_FUNCTION_NAME, node);
   mainFctEntry->used = true;
 
   // Create scope for main function body
@@ -354,7 +354,7 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
   // Check if global already exists in an imported source file
-  for (const auto &[name, dependency] : sourceFile->dependencies)
+  for (const auto &dependency : sourceFile->dependencies | std::views::values)
     if (dependency->exportedNameRegistry.contains(node->varName))
       throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
 

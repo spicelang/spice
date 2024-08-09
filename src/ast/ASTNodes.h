@@ -250,7 +250,6 @@ public:
 
   // Other methods
   [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
-  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 

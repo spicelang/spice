@@ -4,7 +4,6 @@
 
 #include "SourceFile.h"
 #include <ast/ASTNodes.h>
-#include <model/GenericType.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>
@@ -184,7 +183,7 @@ SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, /
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry *SymbolTable::lookupStrictByIndex(unsigned int orderIndex) {
-  for (auto &[key, val] : symbols) {
+  for (auto &val : symbols | std::views::values) {
     if (val.orderIndex == orderIndex)
       return &val;
   }
@@ -269,13 +268,13 @@ nlohmann::json SymbolTable::toJSON() const {
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());
-  for (const auto &[name, symbol] : symbols)
+  for (const auto &symbol : symbols | std::views::values)
     jsonSymbols.emplace_back(symbol.toJSON());
 
   // Collect all captures
   std::vector<nlohmann::json> jsonCaptures;
   jsonCaptures.reserve(captures.size());
-  for (const auto &[name, capture] : captures)
+  for (const auto &capture : captures | std::views::values)
     jsonCaptures.emplace_back(capture.toJSON());
 
   // Generate json

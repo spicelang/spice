@@ -69,14 +69,11 @@ void SourceFile::runLexer() {
   if (!fileInputStream)
     throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath.string() + "' does not exist.");
 
-  // Create error handlers for lexer and parser
-  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::LEXER, this);
-  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::PARSER, this);
-
   // Tokenize input
   antlrCtx.inputStream = std::make_unique<antlr4::ANTLRInputStream>(fileInputStream);
   antlrCtx.lexer = std::make_unique<SpiceLexer>(antlrCtx.inputStream.get());
   antlrCtx.lexer->removeErrorListeners();
+  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::LEXER, this);
   antlrCtx.lexer->addErrorListener(antlrCtx.lexerErrorHandler.get());
   antlrCtx.tokenStream = std::make_unique<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
@@ -105,6 +102,7 @@ void SourceFile::runParser() {
   // Parse input
   antlrCtx.parser = std::make_unique<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
   antlrCtx.parser->removeErrorListeners();
+  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::PARSER, this);
   antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
   antlrCtx.parser->removeParseListeners();
 

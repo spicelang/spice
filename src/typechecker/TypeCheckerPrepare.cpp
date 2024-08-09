@@ -39,7 +39,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   const QualType functionType = QualType(TY_FUNCTION).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
 
   // Update main function symbol type
-  SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
+  SymbolTableEntry *functionEntry = rootScope->lookupStrict(MAIN_FUNCTION_NAME);
   assert(functionEntry != nullptr);
   functionEntry->updateType(functionType, false);
   functionEntry->used = true;

@@ -170,8 +170,8 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
       TypeMapping &typeMapping = candidate.typeMapping;
 
       bool forceSubstantiation = false;
-      MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
-                                                   strictSpecifierMatching, forceSubstantiation, nullptr);
+      const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
+                                                         strictSpecifierMatching, forceSubstantiation, nullptr);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)

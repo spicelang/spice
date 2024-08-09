@@ -584,7 +584,7 @@
       "codeLoc": "L29C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
+      "name": "main",
       "orderIndex": 4,
       "state": "declared",
       "type": "f<int>()"

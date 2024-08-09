@@ -276,6 +276,15 @@
       "type": "TestStruct<long>"
     },
     {
+      "codeLoc": "L18C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main",
+      "orderIndex": 4,
+      "state": "declared",
+      "type": "f<int>()"
+    },
+    {
       "codeLoc": "L16C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -283,15 +292,6 @@
       "orderIndex": 3,
       "state": "declared",
       "type": "TestStruct<long>"
-    },
-    {
-      "codeLoc": "L18C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main()",
-      "orderIndex": 4,
-      "state": "declared",
-      "type": "f<int>()"
     },
     {
       "codeLoc": "L16C1",

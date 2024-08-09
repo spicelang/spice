@@ -1,65 +1,15 @@
-import "std/data/binary-tree";
-
-f<int> main() {
-    BinaryTree<int> tree;
-    tree.insert(5);
-    tree.insert(3);
-    tree.insert(7);
-    tree.insert(2);
-    assert tree.contains(5);
-    assert tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(3);
-    assert tree.contains(5);
-    assert !tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(5);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(7);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert !tree.contains(7);
-    assert tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-    tree.delete(2);
-    assert !tree.contains(5);
-    assert !tree.contains(3);
-    assert !tree.contains(7);
-    assert !tree.contains(2);
-    assert !tree.contains(1);
-    assert !tree.contains(4);
-    assert !tree.contains(6);
-    assert !tree.contains(8);
-
-    printf("All assertions passed!\n");
-}
-
-/*p foo(heap int* ptr) {
-    *ptr = 3;
+f<int> greatestCommonDivisor(int a, int b) {
+    while b != 0 {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
 }
 
 f<int> main() {
-    heap int* ptr = sNew<int>();
-    *ptr = 5;
-    foo(ptr);
-}*/
+    int a = 56;
+    int b = 98;
+    int gcd = greatestCommonDivisor(a, b);
+    printf("GCD of %d and %d is %d.", a, b, gcd);
+}

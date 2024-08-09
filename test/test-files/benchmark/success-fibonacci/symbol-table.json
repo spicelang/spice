@@ -55,7 +55,7 @@
       "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
+      "name": "main",
       "orderIndex": 1,
       "state": "declared",
       "type": "f<int>()"
