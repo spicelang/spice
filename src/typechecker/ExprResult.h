@@ -2,16 +2,15 @@
 
 #pragma once
 
-namespace spice::compiler {
+#include <symboltablebuilder/SymbolTableEntry.h>
 
-// Forward declarations
-class SymbolTableEntry;
+namespace spice::compiler {
 
 struct ExprResult {
   QualType type;
   SymbolTableEntry *entry = nullptr;
 
-  [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
+  [[nodiscard]] bool isTemporary() const { return entry == nullptr || entry->anonymous; }
 };
 
 } // namespace spice::compiler

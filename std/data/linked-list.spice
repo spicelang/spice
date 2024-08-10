@@ -35,8 +35,6 @@ public type LinkedList<T> struct : IIterable<T> {
     unsigned long size = 0l
 }
 
-public p LinkedList.ctor() {}
-
 /**
  * Pushes a new item to the back of the list
  *

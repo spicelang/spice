@@ -594,10 +594,10 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker);
 
   // Public methods
-  static QualType getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
-                                      const char *errMsgPrefix = "");
-  static QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                           bool isDecl = false);
+  QualType getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
+                               bool isReturn = false, const char *errMsgPrefix = "") const;
+  QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+                                    bool isDecl = false) const;
   ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
@@ -627,15 +627,15 @@ public:
   ExprResult getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   static ExprResult getRemResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs);
-  QualType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs);
-  QualType getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs);
+  QualType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) const;
+  QualType getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) const;
   static QualType getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs);
   ExprResult getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx);
   ExprResult getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx);
-  QualType getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs);
+  QualType getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs) const;
 
 private:
   // Members
@@ -643,7 +643,8 @@ private:
   GlobalResourceManager &resourceManager;
 
   // Private methods
-  static QualType getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl);
+  static QualType getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
+                                            bool isReturn);
   template <size_t N>
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
                                                size_t opIdx);
@@ -657,7 +658,7 @@ private:
                                           const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs) const;
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs, const QualType &rhs) const;
-  static void ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl = false);
+  static void ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl = false, bool isReturn = false);
 };
 
 } // namespace spice::compiler

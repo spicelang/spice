@@ -22,8 +22,8 @@ TEST(DriverTest, TestBuildSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_EQ(BuildMode::DEBUG, driver.cliOptions.buildMode);
+  ASSERT_EQ(O0, driver.cliOptions.optLevel);
+  ASSERT_EQ(DEBUG, driver.cliOptions.buildMode);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
@@ -43,8 +43,8 @@ TEST(DriverTest, TestBuildSubcommandComplex) {
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
-  ASSERT_EQ(OptLevel::Os, driver.cliOptions.optLevel);        // -Os
-  ASSERT_EQ(BuildMode::RELEASE, driver.cliOptions.buildMode); // -m release
+  ASSERT_EQ(Os, driver.cliOptions.optLevel);        // -Os
+  ASSERT_EQ(RELEASE, driver.cliOptions.buildMode); // -m release
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
@@ -68,7 +68,7 @@ TEST(DriverTest, TestRunSubcommandMinimal) {
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
+  ASSERT_EQ(O0, driver.cliOptions.optLevel);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
@@ -88,7 +88,7 @@ TEST(DriverTest, TestRunSubcommandComplex) {
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
-  ASSERT_EQ(OptLevel::O2, driver.cliOptions.optLevel); // -O2
+  ASSERT_EQ(O2, driver.cliOptions.optLevel); // -O2
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
@@ -172,7 +172,7 @@ TEST(DriverTest, TestUninstallSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
+  ASSERT_EQ(O0, driver.cliOptions.optLevel);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);

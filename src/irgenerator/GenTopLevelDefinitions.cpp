@@ -276,7 +276,6 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
-      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
       llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
       builder.CreateRet(result);
     }
@@ -440,10 +439,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     visit(node->body());
 
     // Create return statement if the block is not terminated yet
-    if (!blockAlreadyTerminated) {
-      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
+    if (!blockAlreadyTerminated)
       builder.CreateRetVoid();
-    }
 
     // Conclude debug info for procedure
     diGenerator.concludeFunctionDebugInfo();
@@ -579,7 +576,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   if (node->hasValue) { // Set the constant value as variable initializer
     const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
     var->setInitializer(constantValue);
-  } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
+  } else if (cliOptions.buildMode == DEBUG) { // Set the default value as variable initializer
     llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
     var->setInitializer(constantValue);
   }

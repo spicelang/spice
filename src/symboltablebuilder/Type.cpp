@@ -227,13 +227,13 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
 
       // If the struct has no interface types, but a vtable was requested, add another ptr field type
       assert(structSymbol->declNode->isStructDef());
-      auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
+      const auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
       if (!structDeclNode->hasInterfaces && structDeclNode->emitVTable)
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
 
       // Collect all field types
       for (size_t i = 0; i < totalFieldCount; i++) {
-        const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+        const SymbolTableEntry *fieldSymbol = spiceStruct->scope->lookupField(i);
         assert(fieldSymbol != nullptr);
         fieldTypes.push_back(sourceFile->getLLVMType(fieldSymbol->getQualType().getType()));
       }

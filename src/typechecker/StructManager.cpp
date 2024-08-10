@@ -143,7 +143,7 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       const size_t explicitFieldsStartIdx = substantiatedStruct->scope->getFieldCount() - fieldCount;
       for (size_t i = 0; i < fieldCount; i++) {
         // Replace field type with concrete template type
-        SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
+        SymbolTableEntry *fieldEntry = substantiatedStruct->scope->lookupField(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
         QualType &fieldType = substantiatedStruct->fieldTypes.at(i);
         QualType baseType = fieldType.getBase();
@@ -254,7 +254,7 @@ void StructManager::substantiateFieldTypes(Struct &candidate, const TypeMapping 
   // Loop over all implicit fields and substantiate the generic ones
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
+    SymbolTableEntry *fieldEntry = candidate.scope->lookupField(i);
     QualType fieldType = fieldEntry->getQualType();
     if (fieldType.hasAnyGenericParts()) {
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, node);

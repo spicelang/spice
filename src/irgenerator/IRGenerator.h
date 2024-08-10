@@ -131,17 +131,18 @@ private:
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
+  void terminateBlock(const StmtLstNode *stmtLstNode);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
                       Likeliness likeliness = UNSPECIFIED);
   void verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
-  LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
-  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
+  LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode, const ASTNode *node);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, const ASTNode *node,
+                              bool isDecl = false);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs, const QualType &rhsSType,
-                              bool isDecl);
-  llvm::Value *generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
-                                   const std::string &name = "", bool isVolatile = false);
+                              const ASTNode *node, bool isDecl);
+  void generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress, bool isVolatile) const;
   void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc) const;
@@ -165,7 +166,7 @@ private:
   llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);
   void generateCtorBodyPreamble(Scope *bodyScope);
   void generateDefaultCtor(const Function *ctorFunction);
-  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction) const;
+  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDtorBodyPreamble(const Function *dtorFunction) const;
   void generateDefaultDtor(const Function *dtorFunction);

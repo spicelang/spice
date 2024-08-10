@@ -21,6 +21,19 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
 }
 
 /**
+  * Allocates a new block of memory of the given size.
+  * This panics in case of an out of memory situation.
+  *
+  * @param size The size of the block to allocate.
+  * @return A pointer to the allocated block
+  */
+public f<heap byte*> sAllocUnsafe(unsigned long size) {
+    heap byte* ptr = malloc(size);
+    if ptr != nil<heap byte*> { return ptr; }
+    panic(Error("OOM occurred in sAllocUnsafe"));
+}
+
+/**
   * Reallocates a block of memory to the given size.
   *
   * @param ptr The pointer to the block to reallocate.

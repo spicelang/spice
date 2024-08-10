@@ -100,7 +100,7 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&] { return errorWhat; });
 }
 
 /**

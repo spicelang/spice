@@ -1,8 +1,0 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
-
-[Error|Semantic] ./source.spice:1:1:
-Missing mandatory copy ctor: The struct 'StructToCopy' requires a custom copy ctor, because it has heap-allocated fields.
-
-1  type StructToCopy struct {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^

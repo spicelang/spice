@@ -59,6 +59,11 @@ std::string ASTNode::getErrorMessage() const {
   return ss.str();
 }
 
+const StmtLstNode *ASTNode::getNextOuterStmtLst() const { // NOLINT(*-no-recursion)
+  assert(parent != nullptr && "Could not find next outer statement list");
+  return isStmtLstNode() ? spice_pointer_cast<const StmtLstNode *>(this) : parent->getNextOuterStmtLst();
+}
+
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }

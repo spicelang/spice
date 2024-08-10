@@ -34,24 +34,24 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Insert symbol for function into the symbol table
   const std::string entryName = Function::getSymbolTableEntryName(name, node->codeLoc);
-  SymbolTableEntry *fctEntry = structScope->insert(entryName, structEntry->declNode);
-  fctEntry->updateType(procedureType, true);
+  SymbolTableEntry *procEntry = structScope->insert(entryName, structEntry->declNode);
+  procEntry->updateType(procedureType, true);
 
   // Add to external name registry
-  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, fctEntry, structScope, true);
+  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, procEntry, structScope, true);
 
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
   const QualType returnType(TY_DYN);
-  Function defaultMethod(name, fctEntry, structType, returnType, params, templateTypes, structEntry->declNode);
+  Function defaultMethod(name, procEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
   // Create function scope
-  Scope *fctScope = structScope->createChildScope(defaultMethod.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
-  defaultMethod.bodyScope = fctScope;
+  Scope *procScope = structScope->createChildScope(defaultMethod.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  defaultMethod.bodyScope = procScope;
 
   // Create 'this' symbol in the function scope
-  SymbolTableEntry *thisEntry = fctScope->insert(THIS_VARIABLE_NAME, node);
+  SymbolTableEntry *thisEntry = procScope->insert(THIS_VARIABLE_NAME, node);
   thisEntry->updateType(structType.toPtr(node), true);
   thisEntry->used = true; // Always set to used to not print warnings for non-existing code
 
@@ -62,11 +62,14 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 /**
  * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
  *
+ * For generating a default ctor, the following conditions need to be met:
+ * - No user-defined constructors
+ *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
 void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
-  auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
+  const auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
   // Abort if the struct already has a user-defined constructor
@@ -81,7 +84,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   bool hasFieldsWithDefaultValue = false;
   bool hasFieldsToConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr);
     const QualType &thisType = fieldSymbol->getQualType();
 
@@ -89,7 +92,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     if (thisType.isRef())
       return;
 
-    if (auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
+    if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
       hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
     } else {
       assert(dynamic_cast<DataTypeNode *>(fieldSymbol->declNode) != nullptr);
@@ -98,7 +101,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      Struct *fieldStruct = fieldType.getStruct(node);
+      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
@@ -119,10 +122,12 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, {});
 }
 
-void TypeChecker::createDefaultCtorBody(const Function *ctorFunction) { createCtorBodyPreamble(ctorFunction->bodyScope); }
-
 /**
  * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
+ *
+ * For generating a default copy ctor, the following conditions need to be met:
+ * - No user-defined copy ctor
+ * - No user-defined move ctor
  *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
@@ -131,49 +136,48 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
-  // Abort if the struct already has a user-defined constructor
-  const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const QualType &structType = structEntry->getQualType();
-  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
-  if (sourceFile->getNameRegistryEntry(fqFctName))
+  // Abort if the struct already has a user-defined copy constructor
+  const QualType structType = spiceStruct.entry->getQualType();
+  const ArgList lookupArgs = {{structType.toConstRef(node), true}};
+  const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, structType, lookupArgs, true);
+  if (copyCtor != nullptr)
     return;
+
+  // Abort if the struct has a user-defiend move constructor
+  // ToDo: Check for move ctor
 
   // Check if we have fields, that require us to do anything in the ctor
   const size_t fieldCount = structScope->getFieldCount();
-  bool hasFieldsToCopyConstruct = false;
+  bool copyCtorRequired = false;
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-    const QualType &thisType = fieldSymbol->getQualType();
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+    const QualType &fieldType = fieldSymbol->getQualType();
 
-    // Abort if we have a field, that is a reference
-    if (thisType.isRef())
-      return;
-
-    // Produce error if we got a heap field. We can't copy construct heap fields, thus a custom copy ctor is required
-    if (thisType.isHeap()) {
-      const auto msg = "The struct '" + node->structName + "' requires a custom copy ctor, because it has heap-allocated fields.";
-      SOFT_ERROR_VOID(node, COPY_CTOR_REQUIRED, msg);
-    }
-
-    const QualType fieldType = fieldSymbol->getQualType();
+    // If the field is of type struct, check if this struct has a copy ctor that has to be called
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      Struct *fieldStruct = fieldType.getStruct(node);
+      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
       // Lookup copy ctor function
-      const ArgList args = {{thisType.toConstRef(node), false /* we always have the field as storage */}};
-      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+      const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
+      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
       if (!ctorFct && isCtorCallRequired)
         return;
-      hasFieldsToCopyConstruct |= ctorFct != nullptr;
+      copyCtorRequired |= ctorFct != nullptr;
+    }
+
+    // If we have a owning heap pointer, we need to do a memcpy of the heap storage and therefore need a default copy ctor
+    if (fieldType.isHeap()) {
+      assert(fieldType.isPtr());
+      copyCtorRequired = true;
     }
   }
 
   // If we don't have any fields, that require us to do anything in the copy ctor, we can skip it
-  if (!hasFieldsToCopyConstruct && !node->emitVTable)
+  if (!copyCtorRequired && !node->emitVTable)
     return;
 
   // Create the default copy ctor function
@@ -181,12 +185,11 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, paramTypes);
 }
 
-void TypeChecker::createDefaultCopyCtorBody(const Function *copyCtorFunction) {
-  createCopyCtorBodyPreamble(copyCtorFunction->bodyScope);
-}
-
 /**
  * Checks if the given struct scope already has an user-defined destructor and creates a default one if not.
+ *
+ * For generating a default dtor, the following conditions need to be met:
+ * - No user-defined dtor
  *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
@@ -207,7 +210,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   bool hasFieldsToDeAllocate = false;
   bool hasFieldsToDestruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     hasFieldsToDeAllocate |= fieldSymbol->getQualType().needsDeAllocation();
     if (fieldSymbol->getQualType().is(TY_STRUCT)) {
       Scope *fieldScope = fieldSymbol->getQualType().getBodyScope();
@@ -243,8 +246,6 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   }
 }
 
-void TypeChecker::createDefaultDtorBody(const Function *dtorFunction) { createDtorBodyPreamble(dtorFunction->bodyScope); }
-
 /**
  * Prepare the generation of the ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
  * fields.
@@ -256,7 +257,7 @@ void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -287,10 +288,11 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
+
     QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
@@ -300,10 +302,10 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(fieldNode), false /* we always have the field as storage */}};
-      const Function *spiceFunc =
+      const Function *copyCtorFct =
           FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
-      if (spiceFunc != nullptr)
-        fieldSymbol->updateType(fieldType.getWithBodyScope(spiceFunc->thisType.getBodyScope()), true);
+      if (copyCtorFct != nullptr)
+        fieldSymbol->updateType(fieldType.getWithBodyScope(copyCtorFct->thisType.getBodyScope()), true);
     }
   }
 }
@@ -318,7 +320,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -345,7 +347,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
  */
 Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName,
                                                   const ArgList &args, const ASTNode *node) {
-  QualType thisType = entry->getQualType();
+  QualType thisType = entry->getQualType().removeReferenceWrapper();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
@@ -364,7 +366,8 @@ Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry,
  */
 void TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
   assert(entry != nullptr);
-  const ArgList args = {{entry->getQualType().toConstRef(node), false /* we always have an entry here */}};
+  const QualType argType = entry->getQualType().removeReferenceWrapper().toConstRef(node);
+  const ArgList args = {{argType, false /* we always have an entry here */}};
   implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
 }
 

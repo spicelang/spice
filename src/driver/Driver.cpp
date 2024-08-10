@@ -257,7 +257,7 @@ void Driver::addTestSubcommand() {
   CLI::App *subCmd = app.add_subcommand("test", "Builds your Spice program and runs all enclosed tests");
   subCmd->alias("t");
   subCmd->ignore_case();
-  subCmd->callback([&]() {
+  subCmd->callback([&] {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
     cliOptions.testMode = true;           // Always enable assertions for tests, also in higher opt levels
     cliOptions.generateTestMain = true;   // An alternative entry function is generated
@@ -281,7 +281,7 @@ void Driver::addInstallSubcommand() {
       app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
   subCmd->alias("i");
   subCmd->ignore_case();
-  subCmd->callback([&]() {
+  subCmd->callback([&] {
     shouldCompile = true;
     shouldInstall = true;
     ensureNotDockerized();
@@ -298,7 +298,7 @@ void Driver::addUninstallSubcommand() {
   CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
   subCmd->alias("u");
   subCmd->ignore_case();
-  subCmd->callback([&]() {
+  subCmd->callback([&] {
     shouldUninstall = true;
     ensureNotDockerized();
   });
@@ -339,12 +339,12 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
                          "Generate lifetime markers to enhance optimizations");
 
   // Opt levels
-  subCmd->add_flag_callback("-O0", [&]() { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback("-O1", [&]() { cliOptions.optLevel = O1; }, "Only basic optimization is executed.");
-  subCmd->add_flag_callback("-O2", [&]() { cliOptions.optLevel = O2; }, "More advanced optimization is applied.");
-  subCmd->add_flag_callback("-O3", [&]() { cliOptions.optLevel = O3; }, "Aggressive optimization for best performance.");
-  subCmd->add_flag_callback("-Os", [&]() { cliOptions.optLevel = Os; }, "Size optimization for output executable.");
-  subCmd->add_flag_callback("-Oz", [&]() { cliOptions.optLevel = Oz; }, "Aggressive optimization for best size.");
+  subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback("-O1", [&] { cliOptions.optLevel = O1; }, "Only basic optimization is executed.");
+  subCmd->add_flag_callback("-O2", [&] { cliOptions.optLevel = O2; }, "More advanced optimization is applied.");
+  subCmd->add_flag_callback("-O3", [&] { cliOptions.optLevel = O3; }, "Aggressive optimization for best performance.");
+  subCmd->add_flag_callback("-Os", [&] { cliOptions.optLevel = Os; }, "Size optimization for output executable.");
+  subCmd->add_flag_callback("-Oz", [&] { cliOptions.optLevel = Oz; }, "Aggressive optimization for best size.");
   subCmd->add_flag<bool>("-lto", cliOptions.useLTO, "Enable link time optimization (LTO)");
 
   // --debug-output

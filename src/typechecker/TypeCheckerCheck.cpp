@@ -89,7 +89,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (auto &manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
@@ -143,7 +143,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (auto &manifestation : node->structManifestations) {
+  for (Struct *manifestation : node->structManifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated()) {
       manIdx++; // Increase the manifestation index
@@ -167,7 +167,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
-      Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      const Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct
@@ -213,18 +213,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Generate default ctor body if required
     const Function *ctorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
-      createDefaultCtorBody(ctorFunc);
+      createCtorBodyPreamble(ctorFunc->bodyScope);
 
     // Generate default copy ctor body if required
     const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
-      createDefaultCopyCtorBody(copyCtorFunc);
+      createCopyCtorBodyPreamble(copyCtorFunc->bodyScope);
 
     // Generate default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      createDefaultDtorBody(dtorFunc);
+      createDtorBodyPreamble(dtorFunc->bodyScope);
 
     // Return to the root scope
     currentScope = rootScope;

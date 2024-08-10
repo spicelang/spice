@@ -147,7 +147,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   // Visit own symbols
   CompilerWarningType warningType;
   std::string warningMessage;
-  for (const auto &[_, entry] : symbolTable.symbols) {
+  for (const auto &entry : symbolTable.symbols | std::views::values) {
     // Do not produce a warning if the symbol is used or has a special name
     const std::string &name = entry.name;
     if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
@@ -230,7 +230,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   }
 
   // Visit children
-  for (const auto &[name, childScope] : children)
+  for (const auto &childScope : children | std::views::values)
     if (!childScope->isGenericScope)
       childScope->collectWarnings(warnings);
 }
@@ -246,7 +246,7 @@ void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
       throw SemanticError(entry.declNode, UNEXPECTED_DYN_TYPE, "For the variable '" + name + "' no type could be inferred");
 
   // Check child scopes
-  for (auto &[_, scope] : children)
+  for (const auto &scope : children | std::views::values)
     scope->ensureSuccessfulTypeInference();
 }
 
@@ -258,7 +258,7 @@ void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
 size_t Scope::getFieldCount() const {
   assert(type == ScopeType::STRUCT);
   size_t fieldCount = 0;
-  for (const auto &[name, symbol] : symbolTable.symbols) {
+  for (const auto &symbol : symbolTable.symbols | std::views::values) {
     if (symbol.anonymous)
       continue;
     const QualType &symbolType = symbol.getQualType();
@@ -304,8 +304,8 @@ std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder(
   // Retrieve all struct manifestations in this scope
   std::vector<const Struct *> manifestations;
   manifestations.reserve(structs.size()); // Reserve at least the size of individual generic structs
-  for (const auto &[structId, structManifestations] : structs)
-    for (const auto &[_, manifestation] : structManifestations)
+  for (const auto &structManifestations : structs | std::views::values)
+    for (const auto &manifestation : structManifestations | std::views::values)
       manifestations.push_back(&manifestation);
 
   // Sort manifestations by declaration code location
@@ -321,12 +321,9 @@ std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder(
  */
 bool Scope::hasRefFields() {
   assert(type == ScopeType::STRUCT);
-  const size_t fieldCount = getFieldCount();
-  for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldEntry = symbolTable.lookupStrictByIndex(i);
-    if (fieldEntry->getQualType().isRef())
+  for (size_t i = 0; i < getFieldCount(); i++)
+    if (lookupField(i)->getQualType().isRef())
       return true;
-  }
   return false;
 }
 

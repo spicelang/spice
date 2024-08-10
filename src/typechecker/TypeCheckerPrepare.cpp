@@ -7,6 +7,7 @@
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
 
@@ -16,7 +17,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   node->returnsOnAllControlPaths(&returnsOnAllControlPaths);
 
   // Retrieve return type
-  QualType returnType(TY_INT);
+  const QualType returnType(TY_INT);
 
   // Change to function body scope
   currentScope = node->bodyScope;
@@ -456,7 +457,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   std::vector<Function *> methods;
   methods.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
-    auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
+    const auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
     if (!method)
       return nullptr;
 
@@ -482,7 +483,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
   if (!sourceFile->isRttiRT())
-    sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+    sourceFile->requestRuntimeModule(RTTI_RT);
 
   return nullptr;
 }
@@ -516,7 +517,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Loop through all items without values
   uint32_t nextValue = 0;
-  QualType intSymbolType(TY_INT);
+  const QualType intSymbolType(TY_INT);
   for (EnumItemNode *enumItem : node->itemLst()->items()) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
@@ -583,7 +584,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(globalVarType)
 
   if (node->constant()) { // Variable is initialized here
-    QualType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
+    const QualType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
     HANDLE_UNRESOLVED_TYPE_PTR(rhsType)
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
@@ -645,7 +646,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  Function spiceFunc = Function(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
+  const Function spiceFunc(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
   node->extFunction = FunctionManager::insert(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
 
@@ -662,7 +663,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   // Prepare ext function type
   const SuperType superType = isFunction ? TY_FUNCTION : TY_PROCEDURE;
-  QualType extFunctionType = QualType(superType).getWithFunctionParamAndReturnTypes(returnType, argTypes);
+  const QualType extFunctionType = QualType(superType).getWithFunctionParamAndReturnTypes(returnType, argTypes);
 
   // Set type of external function
   node->entry->updateType(extFunctionType, false);

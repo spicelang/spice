@@ -30,11 +30,10 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %struct.Middle, ptr %3, i64 0, i32 0
-  %5 = load ptr, ptr %this, align 8
-  %6 = getelementptr inbounds %struct.Middle, ptr %5, i64 0, i32 0
-  call void @_ZN5Inner4ctorERK5Inner(ptr %6, ptr %4)
+  %3 = getelementptr inbounds %struct.Middle, ptr %1, i64 0, i32 0
+  %4 = load ptr, ptr %this, align 8
+  %5 = getelementptr inbounds %struct.Middle, ptr %4, i64 0, i32 0
+  call void @_ZN5Inner4ctorERK5Inner(ptr %5, ptr %3)
   ret void
 }
 
@@ -42,11 +41,10 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceab
 define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %struct.Outer, ptr %3, i64 0, i32 0
-  %5 = load ptr, ptr %this, align 8
-  %6 = getelementptr inbounds %struct.Outer, ptr %5, i64 0, i32 0
-  call void @_ZN6Middle4ctorERK6Middle(ptr %6, ptr %4)
+  %3 = getelementptr inbounds %struct.Outer, ptr %1, i64 0, i32 0
+  %4 = load ptr, ptr %this, align 8
+  %5 = getelementptr inbounds %struct.Outer, ptr %4, i64 0, i32 0
+  call void @_ZN6Middle4ctorERK6Middle(ptr %5, ptr %3)
   ret void
 }
 

@@ -67,7 +67,7 @@ lenCall: LEN LPAREN assignExpr RPAREN;
 panicCall: PANIC LPAREN assignExpr RPAREN;
 
 // Expression loop
-assignExpr: ternaryExpr | prefixUnaryExpr assignOp assignExpr;
+assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;

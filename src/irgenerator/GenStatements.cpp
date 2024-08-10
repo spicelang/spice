@@ -22,6 +22,7 @@ std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
   }
 
   // Generate cleanup code of this scope, e.g. dtor calls for struct instances
+  diGenerator.setSourceLocation(node->getNextOuterStmtLst()->closingBraceCodeLoc);
   generateScopeCleanup(node);
 
   return nullptr;
@@ -58,7 +59,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
-      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), node, true);
       assert(assignResult.entry == varEntry);
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
@@ -102,7 +103,7 @@ std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNo
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitCaseConstant(const spice::compiler::CaseConstantNode *node) {
+std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
   if (node->constant())
     return visit(node->constant());
 
@@ -131,11 +132,8 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     }
   }
 
-  // Generate scope cleanup code
-  generateScopeCleanup(node->getParentScopeNode());
-
-  // Set block to terminated
-  blockAlreadyTerminated = true;
+  // Terminate the block (with scope cleanup)
+  terminateBlock(node->getParentScopeNode());
 
   // Create return instruction
   if (returnValue != nullptr) {
@@ -180,7 +178,7 @@ std::any IRGenerator::visitFallthroughStmt(const FallthroughStmtNode *node) {
 
 std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   // Only generate assertions in debug build mode or in test mode
-  if (cliOptions.buildMode != BuildMode::DEBUG && !cliOptions.testMode)
+  if (cliOptions.buildMode != DEBUG && !cliOptions.testMode)
     return nullptr;
 
   diGenerator.setSourceLocation(node);
