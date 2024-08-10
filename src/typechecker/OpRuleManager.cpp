@@ -15,7 +15,7 @@ OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
 QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
-                                            const char *errMsgPrefix) {
+                                            bool isReturn, const char *errMsgPrefix) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
@@ -25,7 +25,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     return rhsType;
 
   // Check if we try to assign a constant value
-  ensureNoConstAssign(node, lhsType, isDecl);
+  ensureNoConstAssign(node, lhsType, isDecl, isReturn);
 
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true)) {
@@ -38,16 +38,26 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
-    if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true))
+    if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true)) {
+      // In case of a return expression, we perform temp stealing
+      if (rhsModified.is(TY_STRUCT) && !rhs.isTemporary() && !isReturn)
+        typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
       return lhsType;
+    }
   }
   // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
-  if (lhsType.isOneOf({TY_ARRAY, TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) &&
-      lhsType.matches(rhsType, false, true, true))
+  if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
     return rhsType;
+  // Allow struct of the same type straight away
+  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
+    // In case of a return expression, we perform temp stealing
+    if (!rhs.isTemporary() && !isReturn)
+      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+    return rhsType;
+  }
 
   // Check common type combinations
-  const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, isReturn);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -56,7 +66,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
 }
 
 QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                                 bool isDecl) {
+                                                 bool isDecl) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
@@ -66,18 +76,25 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
   ensureNoConstAssign(node, lhsType, isDecl);
 
   // Allow pointers, arrays and structs of the same type straight away
-  if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType) {
+  if (lhsType.isOneOf({TY_PTR, TY_ARRAY}) && lhsType == rhsType) {
     // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
     if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
       rhs.entry->updateState(MOVED, node);
     return rhsType;
   }
   // Allow struct of the same type straight away
-  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
+  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
+    if (!rhs.isTemporary())
+      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
     return rhsType;
+  }
   // Allow ref type to type of the same contained type straight away
-  if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true))
+  if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
+    // In case of a return expression, we perform temp stealing
+    if (rhsType.getContained().is(TY_STRUCT) && !rhs.isTemporary())
+      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
     return lhsType;
+  }
   // Allow const ref type to type of the same contained type straight away
   if (rhsType.isConstRef() && lhsType.matches(rhsType.getContained().toNonConst(), false, false, true))
     return lhsType;
@@ -86,7 +103,7 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
     return rhsType;
 
   // Check common type combinations
-  const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, false);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -95,15 +112,16 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
                                  ERROR_FIELD_ASSIGN);
 }
 
-QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
-                                                  bool isDecl) {
+QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
+                                                  bool isReturn) {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
 
   // Allow type to ref type of the same contained type straight away
   if (lhsType.isRef() && lhsType.getContained().matches(rhsType, false, false, true)) {
-    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
+    const bool isDeclOrReturn = isDecl || isReturn;
+    if (isDeclOrReturn && !lhsType.canBind(rhsType, rhs.isTemporary()))
       throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference variables/fields");
     return lhsType;
   }
@@ -184,7 +202,7 @@ ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResul
 
 ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -200,7 +218,7 @@ ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult 
 
 ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -322,7 +340,7 @@ QualType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, const ExprR
 
 ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -348,7 +366,7 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
 
 ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -406,7 +424,7 @@ QualType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const Exp
 
 ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -419,7 +437,7 @@ ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult
 
 ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHR, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHR, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -432,7 +450,7 @@ ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResul
 
 ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult result = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
+  const ExprResult result = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
   if (!result.type.is(TY_INVALID))
     return result;
 
@@ -456,7 +474,7 @@ ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs
 
 ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -480,7 +498,7 @@ ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lh
 
 ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -493,7 +511,7 @@ ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs,
 
 ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -514,17 +532,17 @@ ExprResult OpRuleManager::getRemResultType(const ASTNode *node, const ExprResult
 
 QualType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_MINUS_OP_RULES, std::size(PREFIX_MINUS_OP_RULES), "-", lhsType);
 }
 
-QualType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) {
+QualType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -535,12 +553,12 @@ QualType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const E
   return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, std::size(PREFIX_PLUS_PLUS_OP_RULES), "++", lhsType);
 }
 
-QualType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) {
+QualType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -553,21 +571,21 @@ QualType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, const
 
 QualType OpRuleManager::getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, std::size(PREFIX_NOT_OP_RULES), "!", lhsType);
 }
 
 QualType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, std::size(PREFIX_BITWISE_NOT_OP_RULES), "~", lhsType);
 }
 
 QualType OpRuleManager::getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   if (!lhsType.isPtr())
     throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhsType.getName(true));
@@ -576,14 +594,14 @@ QualType OpRuleManager::getPrefixMulResultType(const ASTNode *node, const ExprRe
 
 QualType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   return lhsType.toPtr(node);
 }
 
 ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -591,7 +609,7 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -604,7 +622,7 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
 
 ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -612,7 +630,7 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  QualType lhsType = lhs.type.removeReferenceWrapper();
+  const QualType lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -623,7 +641,7 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
   return {validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, std::size(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhsType)};
 }
 
-QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs) {
+QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs) const {
   // Remove reference wrappers
   lhsType = lhsType.removeReferenceWrapper();
   QualType rhsType = rhs.type.removeReferenceWrapper();
@@ -656,7 +674,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
                                                             const std::array<ExprResult, N> &op, size_t opIdx) {
   Scope *calleeParentScope = nullptr;
   const Function *callee = nullptr;
-  for (const auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
+  for (const auto &sourceFile : typeChecker->resourceManager.sourceFiles | std::views::values) {
     // Check if there is a registered operator function
     if (!sourceFile->getNameRegistryEntry(fctName))
       continue;
@@ -771,9 +789,9 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl) {
+void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl, bool isReturn) {
   // Check if we try to assign a constant value
-  if (lhs.removeReferenceWrapper().isConst() && !isDecl) {
+  if (lhs.removeReferenceWrapper().isConst() && !isDecl && !isReturn) {
     const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, errorMessage);
   }

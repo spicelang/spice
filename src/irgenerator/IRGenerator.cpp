@@ -445,7 +445,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     // Check if we have a copy ctor
     const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
     Scope *structScope = rhsSTypeNonRef.getBodyScope();
-    const ArgList args = {{rhsSTypeNonRef.toConstRef(nullptr), rhs.isTemporary()}};
+    const ArgList args = {{rhsSTypeNonRef.toConstRef(node), rhs.isTemporary()}};
     const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, rhsSTypeNonRef, args, true);
     if (copyCtor != nullptr) {
       // Call copy ctor

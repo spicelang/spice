@@ -151,13 +151,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   bool copyCtorRequired = false;
   for (size_t i = 0; i < fieldCount; i++) {
     const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
-    const QualType &thisType = fieldSymbol->getQualType();
-
-    // Abort if we have a field, that is a reference
-    if (thisType.isRef())
-      return;
-
-    const QualType fieldType = fieldSymbol->getQualType();
+    const QualType &fieldType = fieldSymbol->getQualType();
 
     // If the field is of type struct, check if this struct has a copy ctor that has to be called
     if (fieldType.is(TY_STRUCT)) {
@@ -167,8 +161,8 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
       // Lookup copy ctor function
-      const ArgList args = {{thisType.toConstRef(node), false /* we always have the field as storage */}};
-      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+      const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
+      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
       if (!ctorFct && isCtorCallRequired)
         return;
@@ -298,6 +292,7 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
+
     QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
@@ -352,7 +347,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
  */
 Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName,
                                                   const ArgList &args, const ASTNode *node) {
-  QualType thisType = entry->getQualType();
+  QualType thisType = entry->getQualType().removeReferenceWrapper();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
@@ -371,7 +366,8 @@ Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry,
  */
 void TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
   assert(entry != nullptr);
-  const ArgList args = {{entry->getQualType().toConstRef(node), false /* we always have an entry here */}};
+  const QualType argType = entry->getQualType().removeReferenceWrapper().toConstRef(node);
+  const ArgList args = {{argType, false /* we always have an entry here */}};
   implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
 }
 

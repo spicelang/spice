@@ -457,7 +457,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   std::vector<Function *> methods;
   methods.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
-    auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
+    const auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
     if (!method)
       return nullptr;
 
@@ -483,7 +483,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
   if (!sourceFile->isRttiRT())
-    sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+    sourceFile->requestRuntimeModule(RTTI_RT);
 
   return nullptr;
 }

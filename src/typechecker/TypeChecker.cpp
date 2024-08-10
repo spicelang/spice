@@ -244,7 +244,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
     const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-    OpRuleManager::getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, ERROR_FOREACH_ITEM);
+    (void)opRuleManager.getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
@@ -261,7 +261,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -475,7 +475,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         return static_cast<std::vector<Function *> *>(nullptr);
       }
       // Convert generic symbol type to generic type
-      GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -516,7 +516,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  Function signature(node->methodName, nullptr, QualType(TY_DYN), returnType, paramList, usedGenericTypes, node);
+  const Function signature(node->methodName, nullptr, QualType(TY_DYN), returnType, paramList, usedGenericTypes, node);
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insert(currentScope, signature, &node->signatureManifestations);
@@ -563,7 +563,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Check if type has to be inferred or both types are fixed
     if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       const ExprResult lhsResult = {localVarType, localVarEntry};
-      localVarType = OpRuleManager::getAssignResultType(node, lhsResult, rhs, true);
+      localVarType = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
 
       // Call copy ctor if required
       if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
@@ -649,7 +649,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Retrieve return variable entry
   SymbolTableEntry *returnVar = currentScope->lookup(RETURN_VARIABLE_NAME);
   const bool isFunction = returnVar != nullptr;
-  QualType returnType = isFunction ? returnVar->getQualType() : QualType(TY_DYN);
+  const QualType returnType = isFunction ? returnVar->getQualType() : QualType(TY_DYN);
 
   // Check if procedure with return value
   if (!isFunction) {
@@ -670,7 +670,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
-  OpRuleManager::getAssignResultType(node->assignExpr(), returnResult, rhs, true, ERROR_MSG_RETURN);
+  (void)opRuleManager.getAssignResultType(node->assignExpr(), returnResult, rhs, false, true, ERROR_MSG_RETURN);
 
   // Manage dtor call
   if (rhs.entry != nullptr) {
@@ -880,7 +880,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
       const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
-      rhsType = OpRuleManager::getAssignResultType(node, lhs, rhs, isDecl);
+      rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (rhsEntry != nullptr && rhsEntry->anonymous) {
@@ -2072,7 +2072,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
 
       // Check if actual type matches expected type
-      OpRuleManager::getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
+      (void)opRuleManager.getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (fieldResult.entry != nullptr && fieldResult.entry->anonymous) {
@@ -2094,7 +2094,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
   if (node->fieldLst() != nullptr)
-    if (std::ranges::any_of(node->fieldLst()->args(), [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+    if (std::ranges::any_of(node->fieldLst()->args(), [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
@@ -2131,12 +2131,12 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   if (node->hasParams) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
-    for (const NamedParam &param : namedParamList) {
-      if (param.isOptional)
+    for (const auto &[name, qualType, isOptional] : namedParamList) {
+      if (isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramTypes.push_back(param.qualType);
-      paramList.push_back({param.qualType, param.isOptional});
+      paramTypes.push_back(qualType);
+      paramList.push_back({qualType, isOptional});
     }
   }
 
@@ -2158,7 +2158,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2205,7 +2205,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2471,14 +2471,12 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
       if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
-        Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node);
-        if (spiceStruct)
+        if (Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
       } else {
         assert(entryType.is(TY_INTERFACE));
         const std::string interfaceName = node->typeNameFragments.back();
-        const Interface *spiceInterface = InterfaceManager::match(localAccessScope, interfaceName, templateTypes, node);
-        if (spiceInterface)
+        if (const Interface *spiceInterface = InterfaceManager::match(localAccessScope, interfaceName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceInterface->scope);
       }
     }
@@ -2569,7 +2567,7 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of the target source file
-  for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
+  for (const auto &entry : targetSourceFile->exportedNameRegistry | std::views::values)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->scope == symbolType.getBase().getBodyScope())
@@ -2593,13 +2591,13 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
     return symbolType;
 
   // If the source scope is in the current source file, we can return the symbol type as is
-  SourceFile *sourceSourceFile = sourceScope->sourceFile;
+  const SourceFile *sourceSourceFile = sourceScope->sourceFile;
   if (sourceSourceFile == sourceFile)
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of this source file
   const QualType baseType = symbolType.getBase();
-  for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
+  for (const auto &entry : sourceFile->exportedNameRegistry | std::views::values)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->scope == baseType.getBodyScope())
