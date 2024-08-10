@@ -27,3 +27,18 @@ f<int> main(int argc, string[] argv) {
         printf("Hi!\n");
     }
 }
+
+/*f<int> greatestCommonDivisor(int a, int b) {
+    while b != 0 {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+f<int> main() {
+    int a = 56;
+    int gcd = greatestCommonDivisor(a, 98);
+    printf("GCD of %d and %d is %d.", a, 98, gcd);
+}*/
