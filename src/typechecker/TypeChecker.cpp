@@ -8,6 +8,7 @@
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/MacroDefs.h>
 #include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
@@ -167,7 +168,6 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = nameRegistryEntry->targetScope->parent;
       assert(matchScope->type == ScopeType::GLOBAL);
       QualType unsignedLongType(TY_LONG);
-      unsignedLongType.makeSigned(false);
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
@@ -2066,7 +2066,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
-      SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
+      SymbolTableEntry *expectedField = structScope->lookupField(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       const ExprResult expected = {expectedField->getQualType(), expectedField};
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();

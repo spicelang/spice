@@ -363,9 +363,9 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   // Get struct address
   const SymbolTableEntry *thisEntry = bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisAddress = thisEntry->getAddress();
-  assert(thisAddress != nullptr);
-  llvm::Value *thisAddressLoaded = nullptr;
+  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  assert(thisPtrPtr != nullptr);
+  llvm::Value *thisPtr = nullptr;
   const QualType structSymbolType = thisEntry->getQualType().getBase();
   llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
 
@@ -375,15 +375,15 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   if (spiceStruct->vTableData.vtable != nullptr) {
     assert(spiceStruct->vTableData.vtableType != nullptr);
     // Store VTable to field address at index 0
-    thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
+    thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
     llvm::Value *indices[3] = {builder.getInt64(0), builder.getInt32(0), builder.getInt32(2)};
     llvm::Value *gepResult = insertInBoundsGEP(spiceStruct->vTableData.vtableType, spiceStruct->vTableData.vtable, indices);
-    insertStore(gepResult, thisAddressLoaded);
+    insertStore(gepResult, thisPtr);
   }
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -401,12 +401,12 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     }
 
     // Store default field values
-    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
+    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == DEBUG) {
       // Retrieve field address
-      if (!thisAddressLoaded)
-        thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
+      if (!thisPtr)
+        thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
       llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
+      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue() != nullptr) {
@@ -416,7 +416,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
         value = resolveValue(fieldNode->defaultValue());
         manIdx = oldManIdx; // Restore manifestation index
       } else {
-        assert(cliOptions.buildMode == BuildMode::DEBUG);
+        assert(cliOptions.buildMode == DEBUG);
         value = getDefaultValueForSymbolType(fieldType);
       }
       // Store default value
@@ -427,7 +427,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
 
 void IRGenerator::generateDefaultCtor(const Function *ctorFunction) {
   assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
-  const std::function generateBody = [&] { generateCtorBodyPreamble(ctorFunction->bodyScope); };
+  const std::function<void()> generateBody = [&] { generateCtorBodyPreamble(ctorFunction->bodyScope); };
   generateImplicitProcedure(generateBody, ctorFunction);
 }
 
@@ -439,39 +439,73 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   // Get struct address
   const SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisAddress = thisEntry->getAddress();
-  assert(thisAddress != nullptr);
-  llvm::Value *thisAddressLoaded = nullptr;
+  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  assert(thisPtrPtr != nullptr);
+  llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
+
+  // Retrieve the value of the original struct, which is the only function paramenter
+  llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
 
-    // Call copy ctor for struct fields
+    // Retrieve the address of the original field (copy source)
+    llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
+    llvm::Value *originalFieldAddress = insertInBoundsGEP(structType, originalThisPtr, indices);
+
     const QualType &fieldType = fieldSymbol->getQualType();
+
+    // Call copy ctor for struct fields
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
-      if (const Function *ctorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false)) {
-        // Retrieve field address
-        if (!thisAddressLoaded)
-          thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
-        llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-        llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
-        generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
+      if (const Function *copyCtorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false)) {
+        generateCtorOrDtorCall(fieldSymbol, copyCtorFct, {originalFieldAddress});
       }
+      continue;
     }
+
+    // Retrieve the address of the new field (copy dest)
+    if (!thisPtr)
+      thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
+    llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
+
+    // For owning heap fields, copy the underlying heap storage
+    if (fieldType.isHeap()) {
+      assert(fieldType.isPtr());
+      llvm::Type *pointeeType = fieldType.getContained().toLLVMType(sourceFile);
+
+      // Retrieve original heap address
+      llvm::Value *originalHeapAddress = insertLoad(builder.getPtrTy(), originalFieldAddress);
+
+      // Allocate new space on the heap
+      llvm::Function *unsafeAllocFct = stdFunctionManager.getAllocUnsafeLongFct();
+      const size_t typeSizeInBytes = module->getDataLayout().getTypeSizeInBits(pointeeType) / 8;
+      llvm::ConstantInt *typeSize = builder.getInt64(typeSizeInBytes);
+      llvm::Value *newHeapAddress = builder.CreateCall(unsafeAllocFct, {typeSize});
+      insertStore(newHeapAddress, fieldAddress);
+
+      // Copy data from the old heap storage to the new one
+      generateShallowCopy(originalHeapAddress, pointeeType, newHeapAddress, false);
+
+      continue;
+    }
+
+    // Shallow copy
+    llvm::Type *type = fieldType.toLLVMType(sourceFile);
+    generateShallowCopy(originalFieldAddress, type, fieldAddress, false);
   }
 }
 
 void IRGenerator::generateDefaultCopyCtor(const Function *copyCtorFunction) {
   assert(copyCtorFunction->implicitDefault && copyCtorFunction->name == CTOR_FUNCTION_NAME);
-  const std::function<void(void)> generateBody = [&]() { generateCopyCtorBodyPreamble(copyCtorFunction); };
+  const std::function<void()> generateBody = [&] { generateCopyCtorBodyPreamble(copyCtorFunction); };
   generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
@@ -483,14 +517,14 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
   // Get struct address
   const SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisAddress = thisEntry->getAddress();
-  assert(thisAddress != nullptr);
-  llvm::Value *thisAddressLoaded = nullptr;
+  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  assert(thisPtrPtr != nullptr);
+  llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -507,10 +541,10 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
     // Deallocate fields, that are stored on the heap
     if (fieldType.isHeap()) {
       // Retrieve field address
-      if (!thisAddressLoaded)
-        thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
+      if (!thisPtr)
+        thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
       llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
+      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
       // Call dealloc function
       generateDeallocCall(fieldAddress);
     }
@@ -519,7 +553,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
 
 void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
   assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
-  const std::function generateBody = [&] { generateDtorBodyPreamble(dtorFunction); };
+  const std::function<void()> generateBody = [&] { generateDtorBodyPreamble(dtorFunction); };
   generateImplicitProcedure(generateBody, dtorFunction);
 }
 
@@ -559,7 +593,7 @@ void IRGenerator::generateTestMain() {
   rootScope->createChildScope(testMain.getSignature(false), ScopeType::FUNC_PROC_BODY, nullptr);
 
   // Generate
-  const std::function generateBody = [&] {
+  const std::function<void()> generateBody = [&] {
     // Prepare result variable
     llvm::Type *i32Ty = builder.getInt32Ty();
     llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);

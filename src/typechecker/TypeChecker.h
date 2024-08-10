@@ -6,11 +6,8 @@
 #include <ast/ASTVisitor.h>
 #include <model/Function.h>
 #include <symboltablebuilder/Scope.h>
-#include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/FunctionManager.h>
-#include <typechecker/MacroDefs.h>
 #include <typechecker/OpRuleManager.h>
-#include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
 
 namespace spice::compiler {
@@ -28,7 +25,7 @@ enum TypeCheckerMode : bool {
  * - Ensure that all actual types match the expected types
  * - Perform type inference
  */
-class TypeChecker : private CompilerPass, public ASTVisitor {
+class TypeChecker final : CompilerPass, public ASTVisitor {
 public:
   // Constructors
   TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode);
@@ -149,11 +146,8 @@ private:
   // Implicit code generation
   void createDefaultStructMethod(const Struct &spiceStruct, const std::string &name, const ParamList &params) const;
   void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createDefaultCtorBody(const Function *ctorFunction);
   void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createDefaultCopyCtorBody(const Function *copyCtorFunction);
   void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createDefaultDtorBody(const Function *dtorFunction);
   void createCtorBodyPreamble(const Scope *bodyScope);
   void createCopyCtorBodyPreamble(const Scope *bodyScope);
   void createDtorBodyPreamble(const Scope *bodyScope);

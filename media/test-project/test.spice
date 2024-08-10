@@ -1,4 +1,21 @@
-import "std/io/cli-parser";
+type A struct {
+    heap int* heapField
+}
+
+p A.ctor() {
+    this.heapField = sNew<int>();
+    *this.heapField = 123;
+}
+
+f<int> main() {
+    A a;
+    A a2 = a;
+}
+
+
+
+
+/*import "std/io/cli-parser";
 
 type CliOptions struct {
     bool sayHi = false
@@ -26,7 +43,7 @@ f<int> main(int argc, string[] argv) {
     if options.sayHi {
         printf("Hi!\n");
     }
-}
+}*/
 
 /*f<int> greatestCommonDivisor(int a, int b) {
     while b != 0 {

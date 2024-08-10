@@ -395,7 +395,7 @@ bool QualType::isSelfReferencingStructType(const QualType *typeToCompareWith) co
 
   Scope *baseTypeBodyScope = getBodyScope();
   for (size_t i = 0; i < baseTypeBodyScope->getFieldCount(); i++) {
-    const SymbolTableEntry *field = baseTypeBodyScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolTableEntry *field = baseTypeBodyScope->lookupField(i);
     // Check if the base type of the field matches with the current type, which is also a base type
     // If yes, this is a self-referencing struct type
     if (field->getQualType().getBase() == *typeToCompareWith)
@@ -761,6 +761,7 @@ void QualType::makeConst(bool isConst) { specifiers.isConst = isConst; }
 void QualType::makeSigned(bool isSigned) {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
   specifiers.isSigned = isSigned;
+  specifiers.isUnsigned = !isSigned;
 }
 
 /**
@@ -770,6 +771,7 @@ void QualType::makeSigned(bool isSigned) {
  */
 void QualType::makeUnsigned(bool isUnsigned) {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
+  specifiers.isSigned = !isUnsigned;
   specifiers.isUnsigned = isUnsigned;
 }
 

@@ -251,7 +251,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     // Add default value for each struct field
     for (size_t i = 0; i < fieldCount; i++) {
       // Get entry of the field
-      const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *fieldEntry = structScope->lookupField(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
 
       // Retrieve default field value
@@ -321,6 +321,12 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block, llvm::Function *parentF
   // Set insert point to the block
   builder.SetInsertPoint(block);
   blockAlreadyTerminated = false;
+}
+
+void IRGenerator::terminateBlock(const StmtLstNode *stmtLstNode) {
+  diGenerator.setSourceLocation(stmtLstNode->closingBraceCodeLoc);
+  generateScopeCleanup(stmtLstNode);
+  blockAlreadyTerminated = true;
 }
 
 void IRGenerator::insertJump(llvm::BasicBlock *targetBlock) {

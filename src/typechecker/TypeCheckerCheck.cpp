@@ -213,18 +213,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Generate default ctor body if required
     const Function *ctorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
-      createDefaultCtorBody(ctorFunc);
+      createCtorBodyPreamble(ctorFunc->bodyScope);
 
     // Generate default copy ctor body if required
     const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
-      createDefaultCopyCtorBody(copyCtorFunc);
+      createCopyCtorBodyPreamble(copyCtorFunc->bodyScope);
 
     // Generate default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      createDefaultDtorBody(dtorFunc);
+      createDtorBodyPreamble(dtorFunc->bodyScope);
 
     // Return to the root scope
     currentScope = rootScope;

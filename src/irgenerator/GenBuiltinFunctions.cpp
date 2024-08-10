@@ -115,7 +115,7 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
   // Create unreachable instruction
   builder.CreateUnreachable();
   // Unreachable counts as terminator
-  blockAlreadyTerminated = true;
+  terminateBlock(node->getNextOuterStmtLst());
 
   return nullptr;
 }

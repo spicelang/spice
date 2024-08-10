@@ -21,6 +21,8 @@ public:
 
   // Public methods
   [[nodiscard]] bool hasReferenceFields() const;
+  [[nodiscard]] bool hasUserDefinedCtor() const;
+  [[nodiscard]] bool hasUserDefinedCopyCtor() const;
 
   // Public members
   QualTypeList fieldTypes;

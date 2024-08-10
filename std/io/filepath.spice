@@ -23,10 +23,6 @@ public p FilePath.ctor(const String& pathStr) {
     this.path = pathStr;
 }
 
-public p FilePath.ctor(const FilePath& other) {
-    this.path = other.path;
-}
-
 public p FilePath.replaceSeparator(char separator) {
     if separator != PATH_SEPARATOR_UNIX {
         this.path.replaceAll(PATH_SEPARATOR_UNIX, separator);

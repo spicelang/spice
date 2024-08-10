@@ -7,6 +7,7 @@
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
 

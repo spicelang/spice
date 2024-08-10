@@ -361,7 +361,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     std::vector<llvm::Metadata *> fieldTypes;
     for (size_t i = 0; i < spiceStruct->scope->getFieldCount(); i++) {
       // Get field entry
-      const SymbolTableEntry *fieldEntry = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *fieldEntry = spiceStruct->scope->lookupField(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
       if (fieldEntry->isImplicitField)
         continue;

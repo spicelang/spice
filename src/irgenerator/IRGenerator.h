@@ -131,6 +131,7 @@ private:
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
+  void terminateBlock(const StmtLstNode *stmtLstNode);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
                       Likeliness likeliness = UNSPECIFIED);

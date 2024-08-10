@@ -95,6 +95,10 @@ public:
   }
   ALWAYS_INLINE SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
   ALWAYS_INLINE SymbolTableEntry *lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }
+  ALWAYS_INLINE SymbolTableEntry *lookupField(unsigned int n) {
+    assert(type == ScopeType::STRUCT);
+    return symbolTable.lookupStrictByIndex(n);
+  }
 
   // Public members
   Scope *parent;

@@ -233,7 +233,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
 
       // Collect all field types
       for (size_t i = 0; i < totalFieldCount; i++) {
-        const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+        const SymbolTableEntry *fieldSymbol = spiceStruct->scope->lookupField(i);
         assert(fieldSymbol != nullptr);
         fieldTypes.push_back(sourceFile->getLLVMType(fieldSymbol->getQualType().getType()));
       }

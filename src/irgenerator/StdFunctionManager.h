@@ -25,6 +25,7 @@ public:
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawLengthStringFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
+  [[nodiscard]] llvm::Function *getAllocUnsafeLongFct() const;
   [[nodiscard]] llvm::Function *getDeallocBytePtrRefFct() const;
   [[nodiscard]] llvm::Function *getIterateFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorFct(const Function *spiceFunc) const;

@@ -163,6 +163,8 @@ public:
     return nullptr;                                                              // LCOV_EXCL_LINE
   }                                                                              // LCOV_EXCL_LINE
 
+  [[nodiscard]] const StmtLstNode *getNextOuterStmtLst() const;
+
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
   [[nodiscard]] virtual bool isParamNode() const { return false; }
@@ -311,7 +313,6 @@ public:
   Scope *structScope = nullptr;
   Scope *scope = nullptr;
   std::vector<Function *> manifestations;
-  CodeLoc closingBraceCodeLoc = CodeLoc(1, 0);
 };
 
 // ========================================================== FctDefNode =========================================================
@@ -847,6 +848,7 @@ public:
   // Public members
   size_t complexity = 0;
   std::vector<ResourcesForManifestationToCleanup> resourcesToCleanup;
+  CodeLoc closingBraceCodeLoc = CodeLoc(1, 0);
 };
 
 // ========================================================= TypeLstNode =========================================================

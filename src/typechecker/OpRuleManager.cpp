@@ -6,6 +6,7 @@
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
 #include <global/RuntimeModuleManager.h>
+#include <typechecker/MacroDefs.h>
 #include <typechecker/TypeChecker.h>
 
 namespace spice::compiler {

@@ -79,6 +79,15 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction(mangledName.c_str(), builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
+llvm::Function *StdFunctionManager::getAllocUnsafeLongFct() const {
+  QualType unsignedLong(TY_LONG);
+  unsignedLong.makeUnsigned();
+  const ParamList paramLst = {{unsignedLong, false}};
+  const Function function("sAllocUnsafe", nullptr, QualType(TY_DYN), QualType(TY_BYTE).toPtr(nullptr), paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getFunction(mangledName.c_str(), builder.getPtrTy(), {builder.getInt64Ty()});
+}
+
 llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
   const ParamList paramLst = {{QualType(TY_BYTE).toPtr(nullptr).toRef(nullptr), false}};
   const Function function("sDealloc", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
