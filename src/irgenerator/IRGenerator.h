@@ -166,7 +166,7 @@ private:
   llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);
   void generateCtorBodyPreamble(Scope *bodyScope);
   void generateDefaultCtor(const Function *ctorFunction);
-  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction) const;
+  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDtorBodyPreamble(const Function *dtorFunction) const;
   void generateDefaultDtor(const Function *dtorFunction);

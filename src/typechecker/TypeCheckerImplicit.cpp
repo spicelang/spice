@@ -34,24 +34,24 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Insert symbol for function into the symbol table
   const std::string entryName = Function::getSymbolTableEntryName(name, node->codeLoc);
-  SymbolTableEntry *fctEntry = structScope->insert(entryName, structEntry->declNode);
-  fctEntry->updateType(procedureType, true);
+  SymbolTableEntry *procEntry = structScope->insert(entryName, structEntry->declNode);
+  procEntry->updateType(procedureType, true);
 
   // Add to external name registry
-  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, fctEntry, structScope, true);
+  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, procEntry, structScope, true);
 
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
   const QualType returnType(TY_DYN);
-  Function defaultMethod(name, fctEntry, structType, returnType, params, templateTypes, structEntry->declNode);
+  Function defaultMethod(name, procEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
   // Create function scope
-  Scope *fctScope = structScope->createChildScope(defaultMethod.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
-  defaultMethod.bodyScope = fctScope;
+  Scope *procScope = structScope->createChildScope(defaultMethod.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  defaultMethod.bodyScope = procScope;
 
   // Create 'this' symbol in the function scope
-  SymbolTableEntry *thisEntry = fctScope->insert(THIS_VARIABLE_NAME, node);
+  SymbolTableEntry *thisEntry = procScope->insert(THIS_VARIABLE_NAME, node);
   thisEntry->updateType(structType.toPtr(node), true);
   thisEntry->used = true; // Always set to used to not print warnings for non-existing code
 

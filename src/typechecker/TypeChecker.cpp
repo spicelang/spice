@@ -1830,6 +1830,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, msg)
   }
   const SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
+  data.calleeParentScope = functionRegistryEntry->targetScope;
 
   // Check if the target symbol is a struct -> this must be a constructor call
   if (functionEntry != nullptr && functionEntry->getQualType().is(TY_STRUCT))
@@ -1853,14 +1854,9 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     // Override function name
     functionName = CTOR_FUNCTION_NAME;
 
-    // Retrieve the name registry entry for the constructor
-    functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
-    // Check if the constructor was found
-    if (!functionRegistryEntry)
-      SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor")
-
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getQualType().getWithBodyScope(thisStruct->scope);
+    data.calleeParentScope = thisStruct->scope;
   }
 
   // Attach the concrete template types to the 'this' type
@@ -1868,7 +1864,6 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     data.thisType = data.thisType.getWithTemplateTypes(templateTypes);
 
   // Map local arg types to imported types
-  Scope *matchScope = data.calleeParentScope = functionRegistryEntry->targetScope;
   ArgList localArgs;
   localArgs.reserve(data.argResults.size());
   for (const ExprResult &argResult : data.argResults)
@@ -1879,6 +1874,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // Retrieve function object
+  Scope *matchScope = data.calleeParentScope;
   data.callee = FunctionManager::match(this, matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
 
   return true;

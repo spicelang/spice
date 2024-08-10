@@ -14,6 +14,11 @@ type HashEntry<K, V> struct {
     V value
 }
 
+public p HashEntry.ctor(const HashEntry<K, V>& original) {
+    this.key = original.key;
+    this.value = original.value;
+}
+
 public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
     Vector<LinkedList<HashEntry<K, V>>> buckets
 }

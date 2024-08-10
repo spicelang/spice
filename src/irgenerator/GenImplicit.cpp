@@ -431,7 +431,7 @@ void IRGenerator::generateDefaultCtor(const Function *ctorFunction) {
   generateImplicitProcedure(generateBody, ctorFunction);
 }
 
-void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction) const {
+void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction) {
   // Retrieve struct scope
   Scope *structScope = copyCtorFunction->bodyScope->parent;
   assert(structScope != nullptr);
@@ -465,9 +465,8 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
-      if (const Function *copyCtorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false)) {
+      if (const Function *copyCtorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false))
         generateCtorOrDtorCall(fieldSymbol, copyCtorFct, {originalFieldAddress});
-      }
       continue;
     }
 
@@ -484,6 +483,15 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       // Retrieve original heap address
       llvm::Value *originalHeapAddress = insertLoad(builder.getPtrTy(), originalFieldAddress);
 
+      // Insert check for nullptr
+      llvm::BasicBlock *bThen = createBlock("nullptrcheck.then");
+      llvm::BasicBlock *bExit = createBlock("nullptrcheck.exit");
+      llvm::Value *condValue = builder.CreateICmpNE(originalHeapAddress, llvm::Constant::getNullValue(builder.getPtrTy()));
+      insertCondJump(condValue, bThen, bExit);
+
+      // Fill then block
+      switchToBlock(bThen);
+
       // Allocate new space on the heap
       llvm::Function *unsafeAllocFct = stdFunctionManager.getAllocUnsafeLongFct();
       const size_t typeSizeInBytes = module->getDataLayout().getTypeSizeInBits(pointeeType) / 8;
@@ -493,6 +501,10 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
 
       // Copy data from the old heap storage to the new one
       generateShallowCopy(originalHeapAddress, pointeeType, newHeapAddress, false);
+      insertJump(bExit);
+
+      // Switch to exit block
+      switchToBlock(bExit);
 
       continue;
     }

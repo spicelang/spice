@@ -23,9 +23,16 @@ define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable
   %6 = getelementptr inbounds %struct.Inner, ptr %1, i64 0, i32 1
   %7 = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 1
   %8 = load ptr, ptr %6, align 8
-  %9 = call ptr @_Z12sAllocUnsafem(i64 1)
-  store ptr %9, ptr %7, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr %9, ptr %8, i64 1, i1 false)
+  %9 = icmp ne ptr %8, null
+  br i1 %9, label %nullptrcheck.then, label %nullptrcheck.exit
+
+nullptrcheck.then:                                ; preds = %2
+  %10 = call ptr @_Z12sAllocUnsafem(i64 1)
+  store ptr %10, ptr %7, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %10, ptr %8, i64 1, i1 false)
+  br label %nullptrcheck.exit
+
+nullptrcheck.exit:                                ; preds = %nullptrcheck.then, %2
   ret void
 }
 
