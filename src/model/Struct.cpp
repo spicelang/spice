@@ -16,23 +16,4 @@ bool Struct::hasReferenceFields() const {
   return std::ranges::any_of(fieldTypes, [](const QualType &fieldType) { return fieldType.isRef(); });
 }
 
-/**
- * Checks if there is at least one user-defined ctor procedure present, that is no copy ctor.
- *
- * @return Ctor present or not
- */
-bool Struct::hasUserDefinedCtor() const {
-  return false;
-}
-
-/**
- *  Checks if there is a user-defined copy ctor procedure present
- *
- * @return Copy ctor present or not
- */
-bool Struct::hasUserDefinedCopyCtor() const {
-  return false;
-}
-
-
 } // namespace spice::compiler
