@@ -164,7 +164,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
       firstManifestation->predefinedMangledName = stringValue;
     }
-    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_TEST); value->boolValue) {
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_TEST); value && value->boolValue) {
       // Make sure that the function has the correct signature
       if (node->hasParams)
         throw SemanticError(node->paramLst(), TEST_FUNCTION_WITH_PARAMS, "Test function may not have parameters");
