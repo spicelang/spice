@@ -1,6 +1,5 @@
-import "std/os/syscall";
-
-f<int> main() {
-    string str = "Hello World!\n";
-    syscallWrite(FileDescriptor::STDOUT, str);
+#[core.compiler.mangle = false]
+public f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
 }
