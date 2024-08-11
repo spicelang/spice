@@ -185,7 +185,7 @@ jobs:
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch release/18.x https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-19.1.0-rc2  https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
