@@ -63,7 +63,7 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/spicelang/spice
-    - icon: fontawesome/brands/x
+    - icon: fontawesome/brands/x-twitter
       link: https://x.com/chillibits
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/chillibits/spice
@@ -112,6 +112,7 @@ nav:
     - language/structs.md
     - language/methods.md
     - language/constructors-destructors.md
+    - language/interfaces.md
     - language/aliases.md
     - language/generics.md
     - language/threads.md
@@ -139,5 +140,5 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
