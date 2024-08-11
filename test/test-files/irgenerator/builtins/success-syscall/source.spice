@@ -1,0 +1,5 @@
+f<int> main() {
+    // Use write syscall to print "Hello syscall!"
+    const string str = "Hello syscall!";
+    syscall(/* syscall no = write */ 1s, /*fd = stdout*/ 1, /* buffer */ str, len(str));
+}

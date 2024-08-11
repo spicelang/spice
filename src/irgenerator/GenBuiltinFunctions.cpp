@@ -125,13 +125,13 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
   // Create assembly string
   static constexpr uint8_t NUM_REGS = 7;
   const char *asmString = getSysCallAsmString();
-  const char *constaints = getSysCallConstraintString();
+  const char *constraints = getSysCallConstraintString();
 
   // Create inline assembly
   llvm::Type *int64Ty = builder.getInt64Ty();
   llvm::Type *argTypes[NUM_REGS] = {int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty};
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
-  llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constaints, true);
+  llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
 
   // Fill arguments array (first argument is syscall number)
   const std::vector<AssignExprNode *> assignExprs = node->assignExprs();

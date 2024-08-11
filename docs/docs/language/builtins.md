@@ -47,11 +47,9 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 Sizeof returns the internal size of a variable, constant or type in bits. To get the size in bytes, simply divide the result by 8.
 
 ### Signature
-`int sizeof(<any variable>)`
-`int sizeof(type <any type>)`
+`int sizeof(<any variable>)` or `int sizeof(type <any type>)`
 
-`any variable`: Variable or constant of any type.
-`any type`: Any data type
+`any variable`: Variable or constant of any type, `any type`: Any data type
 
 ### Usage example
 ```spice
@@ -68,11 +66,9 @@ sizeof("Hello World!"); // 64 (Strings are Char pointers internally)
 Alignof returns the alignment of a variable, constant or type in bytes. To get the alignment in bits, simply multiply the result by 8.
 
 ### Signature
-`int alignof(<any variable>)`
-`int alignof(type <any type>)`
+`int alignof(<any variable>)` or `int alignof(type <any type>)`
 
-`any variable`: Variable or constant of any type.
-`any type`: Any data type
+`any variable`: Variable or constant of any type, `any type`: Any data type
 
 ### Usage example
 ```spice
@@ -121,6 +117,8 @@ Up to six arguments in addition to the syscall number are allowed.
 ### Signature
 `long syscall(unsigned short syscallNumber, ...args)`
 
+`syscallNumber`: Number of the syscall. See [here](https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/) for all Linux syscalls.
+
 ### Usage example
 ```spice
 // Use write syscall to print "Hello World!"
@@ -129,5 +127,5 @@ syscall(/* syscall no = write */ 1s, /*fd = stdout*/ 1, /* buffer */ str, len(st
 ```
 
 !!! warning
-    It is not recommended to use the syscall builtin directly. There is a std package for interacting via
-    system calls with the OS. Please use `import "std/os/syscall";` instead.
+    It is not recommended to use the syscall builtin directly. There is a std package for interacting with the OS via
+    system calls. Please use `import "std/os/syscall";` instead.

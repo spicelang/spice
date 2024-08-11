@@ -3,14 +3,4 @@ import "std/os/syscall";
 f<int> main() {
     string str = "Hello World!\n";
     syscallWrite(FileDescriptor::STDOUT, str);
-
-    /*heap string name = nil<heap string>;
-    unsafe {
-        name = (heap string) sAllocUnsafe(20l);
-        syscallRead(FileDescriptor::STDIN, name, 4l);
-    }
-
-    String nameStr = String("Hello ");
-    unsafe { nameStr += (string) name; }
-    syscallWrite(FileDescriptor::STDOUT, nameStr.getRaw());*/
 }

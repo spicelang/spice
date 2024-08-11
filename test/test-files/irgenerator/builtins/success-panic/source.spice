@@ -1,0 +1,7 @@
+p foo() {
+    panic(Error("This is an error"));
+}
+
+f<int> main() {
+    foo();
+}
