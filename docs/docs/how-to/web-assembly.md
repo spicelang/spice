@@ -1,5 +1,5 @@
 ---
-title: Compile to WebAssembly
+title: Compile for WebAssembly
 ---
 
 Due to the fact, that Spice uses LLVM as compiler backbone, it is capable of cross-compiling to many different target
@@ -17,13 +17,10 @@ package. On Windows you can download MinGW64 with Clang from e.g. [winlibs.com](
 For the sake of example, we write a recursive fibonacci algorithm in Spice, which we can make accessible to JavaScript.
 
 ```spice
+#[core.compiler.mangle = false]
 public f<int> fibo(int n) {
     if n <= 1 { return n; }
     return fibo(n - 1) + fibo(n - 2);
-}
-
-f<int> main() {
-    printf("%d", fibo(45));
 }
 ```
 
