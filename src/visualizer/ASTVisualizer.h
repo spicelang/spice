@@ -76,6 +76,7 @@ public:
   std::any visitAlignofCall(AlignofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitLenCall(LenCallNode *ctx) override { return buildNode(ctx); }
   std::any visitPanicCall(PanicCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitSysCall(SysCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAssignExpr(AssignExprNode *ctx) override { return buildNode(ctx); }
   std::any visitTernaryExpr(TernaryExprNode *ctx) override { return buildNode(ctx); }
   std::any visitLogicalOrExpr(LogicalOrExprNode *ctx) override { return buildNode(ctx); }

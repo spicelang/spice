@@ -79,6 +79,7 @@ public:
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override { return buildRule(ctx); }
   std::any visitPanicCall(SpiceParser::PanicCallContext *ctx) override { return buildRule(ctx); }
+  std::any visitSysCall(SpiceParser::SysCallContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override { return buildRule(ctx); }
   std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override { return buildRule(ctx); }
   std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override { return buildRule(ctx); }

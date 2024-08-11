@@ -113,3 +113,21 @@ Panic is used to terminate the program with an error message.
 ```spice
 panic(Error("This is an error message")));
 ```
+
+## The `syscall` builtin
+Syscall is used to send a specific syscall to the underlying operating system.
+Up to six arguments in addition to the syscall number are allowed.
+
+### Signature
+`long syscall(unsigned short syscallNumber, ...args)`
+
+### Usage example
+```spice
+// Use write syscall to print "Hello World!"
+const string str = "Hello World!";
+syscall(/* syscall no = write */ 1s, /*fd = stdout*/ 1, /* buffer */ str, len(str));
+```
+
+!!! warning
+    It is not recommended to use the syscall builtin directly. There is a std package for interacting via
+    system calls with the OS. Please use `import "std/os/syscall";` instead.

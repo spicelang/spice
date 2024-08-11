@@ -37,6 +37,7 @@ const std::unordered_map<const char *, RuntimeModule> TYPE_NAME_TO_RT_MODULE_MAP
 const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPPING = {
     // Memory RT
     {"sAlloc", MEMORY_RT},
+    {"sAllocUnsafe", MEMORY_RT},
     {"sRealloc", MEMORY_RT},
     {"sCopy", MEMORY_RT},
     {"sDealloc", MEMORY_RT},

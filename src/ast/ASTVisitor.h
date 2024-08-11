@@ -63,6 +63,7 @@ public:
   std::any visitAlignofCall(AlignofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;
+  std::any visitSysCall(SysCallNode *node) override;
   std::any visitAssignExpr(AssignExprNode *node) override;
   std::any visitTernaryExpr(TernaryExprNode *node) override;
   std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;

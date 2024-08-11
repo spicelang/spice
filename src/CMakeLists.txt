@@ -91,6 +91,7 @@ set(SOURCES
         irgenerator/GenExpressions.cpp
         irgenerator/GenValues.cpp
         irgenerator/GenImplicit.cpp
+        irgenerator/GenTargetDependent.cpp
         irgenerator/GenVTable.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
@@ -159,7 +160,8 @@ set(SOURCES
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS}
+        irgenerator/GenTargetDependent.cpp)
 
 # Enable pedantic warnings
 target_compile_options(spice PRIVATE -Wpedantic -Wall -Wno-unknown-pragmas)

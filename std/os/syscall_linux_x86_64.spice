@@ -1,0 +1,18 @@
+// Syscall numbers
+const unsigned short SYSCALL_READ = 0s;
+const unsigned short SYSCALL_WRITE = 1s;
+
+// Standard file descriptors
+public type FileDescriptor enum {
+    STDIN = 0,
+    STDOUT = 1,
+    STDERR = 2
+}
+
+public p syscallRead(FileDescriptor fd, string buffer, unsigned long length) {
+    syscall(SYSCALL_READ, fd, buffer, length);
+}
+
+public p syscallWrite(FileDescriptor fd, string buffer) {
+    syscall(SYSCALL_WRITE, fd, buffer, len(buffer));
+}

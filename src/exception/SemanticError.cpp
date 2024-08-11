@@ -168,6 +168,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Expected array type";
   case EXPECTED_ERROR_TYPE:
     return "Expected error type";
+  case INVALID_SYSCALL_NUMBER_TYPE:
+    return "Invalid syscall number type";
+  case SYSCALL_NUMBER_OUT_OF_RANGE:
+    return "Syscall number out of range";
+  case TOO_MANY_SYSCALL_ARGS:
+    return "Too many syscall args";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:
