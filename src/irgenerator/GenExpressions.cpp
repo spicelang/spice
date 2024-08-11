@@ -812,6 +812,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
     return visit(node->lenCall());
   if (node->panicCall())
     return visit(node->panicCall());
+  if (node->sysCall())
+    return visit(node->sysCall());
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());

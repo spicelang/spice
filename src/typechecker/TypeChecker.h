@@ -35,7 +35,8 @@ public:
   friend class FunctionManager;
   friend class StructManager;
 
-  // Public methods
+  // Visitor methods
+  // Top level definitions
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
   std::any visitMainFctDefPrepare(MainFctDefNode *node);
@@ -63,6 +64,7 @@ public:
   std::any visitExtDeclPrepare(ExtDeclNode *node);
   std::any visitImportDef(ImportDefNode *node) override;
   std::any visitImportDefPrepare(ImportDefNode *node);
+  // Control structures
   std::any visitUnsafeBlock(UnsafeBlockNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
@@ -73,7 +75,9 @@ public:
   std::any visitSwitchStmt(SwitchStmtNode *node) override;
   std::any visitCaseBranch(CaseBranchNode *node) override;
   std::any visitDefaultBranch(DefaultBranchNode *node) override;
+  std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
+  // Statements
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
   std::any visitField(FieldNode *node) override;
@@ -84,12 +88,14 @@ public:
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;
   std::any visitFallthroughStmt(FallthroughStmtNode *node) override;
-  std::any visitAssertStmt(AssertStmtNode *node) override;
+  // Builtin functions
   std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitAlignofCall(AlignofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;
+  std::any visitSysCall(SysCallNode *node) override;
+  // Expressions
   std::any visitAssignExpr(AssignExprNode *node) override;
   std::any visitTernaryExpr(TernaryExprNode *node) override;
   std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;
@@ -106,6 +112,7 @@ public:
   std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *node) override;
   std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) override;
   std::any visitAtomicExpr(AtomicExprNode *node) override;
+  // Values and types
   std::any visitValue(ValueNode *node) override;
   std::any visitConstant(ConstantNode *node) override;
   std::any visitFctCall(FctCallNode *node) override;

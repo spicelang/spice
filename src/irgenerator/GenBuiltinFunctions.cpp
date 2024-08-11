@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <llvm/IR/InlineAsm.h>
 
 #include <llvm/IR/Module.h>
 
@@ -118,6 +119,41 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
   terminateBlock(node->getNextOuterStmtLst());
 
   return nullptr;
+}
+
+std::any IRGenerator::visitSysCall(const SysCallNode *node) {
+  // Create assembly string
+  static constexpr uint8_t NUM_REGS = 7;
+  const char *asmString = getSysCallAsmString();
+  const char *constraints = getSysCallConstraintString();
+
+  // Create inline assembly
+  llvm::Type *int64Ty = builder.getInt64Ty();
+  llvm::Type *argTypes[NUM_REGS] = {int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty};
+  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
+  llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
+
+  // Fill arguments array (first argument is syscall number)
+  const std::vector<AssignExprNode *> assignExprs = node->assignExprs();
+  llvm::Value *argValues[NUM_REGS];
+  for (unsigned short i = 0; i < NUM_REGS; i++) {
+    if (i < assignExprs.size()) {
+      const AssignExprNode *argNode = assignExprs.at(i);
+      const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
+      assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
+      if (argType.isOneOf({TY_PTR, TY_STRING}))
+        argValues[i] = builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty());
+      else
+        argValues[i] = builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty());
+    } else {
+      argValues[i] = builder.getInt64(0);
+    }
+  }
+
+  // Generate call
+  llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
+
+  return LLVMExprResult{.value = result};
 }
 
 } // namespace spice::compiler

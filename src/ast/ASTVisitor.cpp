@@ -110,6 +110,8 @@ std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node
 
 std::any ASTVisitor::visitPanicCall(PanicCallNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitSysCall(SysCallNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitAssignExpr(AssignExprNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitTernaryExpr(TernaryExprNode *node) { return visitChildren(node); }

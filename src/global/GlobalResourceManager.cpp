@@ -21,10 +21,12 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   if (cliOptions.isNativeTarget) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
   } else { // GCOV_EXCL_START
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
   } // GCOV_EXCL_STOP
 
   // Create cpu name and features strings

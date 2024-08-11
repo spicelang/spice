@@ -724,7 +724,7 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
@@ -856,6 +856,33 @@ std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
+}
+
+std::any TypeChecker::visitSysCall(SysCallNode *node) {
+  // Check if the syscall number if of type short
+  const std::vector<AssignExprNode *> assignExprs = node->assignExprs();
+  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(assignExprs.front())).type;
+  if (!sysCallNumberType.is(TY_SHORT))
+    SOFT_ERROR_ER(assignExprs.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
+
+  // Check if the syscall number is out of range
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->hasCompileTimeValue()) {
+    const unsigned short sysCallNumber = node->getCompileTimeValue().shortValue;
+    if (sysCallNumber < 0 || sysCallNumber > 439)
+      SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
+  }
+
+  // Check if too many syscall args are given
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->assignExprs().size() > 6)
+    SOFT_ERROR_ER(node->assignExprs().front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
+
+  // Visit children
+  for (size_t i = 1; i < assignExprs.size(); i++)
+    visit(assignExprs.at(i));
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
@@ -1454,6 +1481,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->lenCall());
   if (node->panicCall())
     return visit(node->panicCall());
+  if (node->sysCall())
+    return visit(node->sysCall());
 
   // Check for assign expression within parentheses
   if (node->assignExpr())

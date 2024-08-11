@@ -93,6 +93,7 @@ public:
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override;
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override;
   std::any visitPanicCall(SpiceParser::PanicCallContext *ctx) override;
+  std::any visitSysCall(SpiceParser::SysCallContext *ctx) override;
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
   std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
   std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;

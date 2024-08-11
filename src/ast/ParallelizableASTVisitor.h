@@ -60,6 +60,7 @@ class SizeofCallNode;
 class AlignofCallNode;
 class LenCallNode;
 class PanicCallNode;
+class SysCallNode;
 class AssignExprNode;
 class TernaryExprNode;
 class LogicalOrExprNode;
@@ -151,6 +152,7 @@ public:
   virtual std::any visitAlignofCall(const AlignofCallNode *node);
   virtual std::any visitLenCall(const LenCallNode *node);
   virtual std::any visitPanicCall(const PanicCallNode *node);
+  virtual std::any visitSysCall(const SysCallNode *node);
   virtual std::any visitAssignExpr(const AssignExprNode *node);
   virtual std::any visitTernaryExpr(const TernaryExprNode *node);
   virtual std::any visitLogicalOrExpr(const LogicalOrExprNode *node);

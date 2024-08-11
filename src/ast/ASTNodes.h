@@ -1387,6 +1387,21 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
 };
 
+// ========================================================= SysCallNode =========================================================
+
+class SysCallNode final : public ExprNode {
+public:
+  // Constructors
+  using ExprNode::ExprNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSysCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSysCall(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<AssignExprNode *> assignExprs() const { return getChildren<AssignExprNode>(); }
+};
+
 // ======================================================= AssignExprNode ========================================================
 
 class AssignExprNode final : public ExprNode {
@@ -1838,6 +1853,7 @@ public:
   [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
   [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
+  [[nodiscard]] SysCallNode *sysCall() const { return getChild<SysCallNode>(); }
 
   // Other methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
