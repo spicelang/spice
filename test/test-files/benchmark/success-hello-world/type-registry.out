@@ -1,4 +1,3 @@
-bool
 f()
 f<int>()
 int

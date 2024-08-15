@@ -17,8 +17,7 @@ p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* source
     this.resourceManager = resourceManager;
     this.cliOptions = resourceManager.cliOptions;
     this.sourceFile = sourceFile;
-    this.rootScope = sourceFile != nil<ISourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
-    this.currentScope = sNonOwned(this.rootScope);
+    this.currentScope = this.rootScope = sourceFile != nil<ISourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
 }
 
 /**

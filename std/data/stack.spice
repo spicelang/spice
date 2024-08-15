@@ -19,7 +19,7 @@ type T dyn;
 public type Stack<T> struct {
     heap T* contents        // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
-    unsigned long size      // Current number of items
+    unsigned long size = 0l // Current number of items
 }
 
 public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
@@ -45,7 +45,6 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = (heap T*) allocResult.unwrap();
     }
-    this.size = 0l;
     this.capacity = initAllocItems;
 }
 
@@ -60,7 +59,7 @@ public p Stack.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[(int) this.size++] = item;
+        this.contents[this.size++] = item;
     }
 }
 
@@ -71,7 +70,7 @@ public f<T&> Stack.pop() {
     if this.isEmpty() { panic(Error("The stack is empty")); }
     // Pop the element from the stack
     unsafe {
-        return this.contents[(int) --this.size];
+        return this.contents[--this.size];
     }
 }
 
@@ -82,7 +81,7 @@ public f<T&> Stack.top() {
     if this.isEmpty() { panic(Error("The stack is empty")); }
     // Peek the element from the stack
     unsafe {
-        return this.contents[(int) this.size - 1l];
+        return this.contents[this.size - 1l];
     }
 }
 
@@ -136,12 +135,8 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    unsafe {
-        for unsigned long i = 0l; index < lhs.size; i++ {
-            if lhs.contents[i] != rhs.contents[i] { return false; }
-        }
-    }
-    return true;
+    const unsigned long itemSize = sizeof(type T) / 8l;
+    return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
 }
 
 public f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
