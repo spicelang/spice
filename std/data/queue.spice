@@ -17,18 +17,18 @@ type T dyn;
  * with every item pushed.
  */
 public type Queue<T> struct {
-    heap T* contents        // Pointer to the first data element
-    unsigned long capacity  // Allocated number of items
-    unsigned long size      // Current number of items
-    unsigned long idxFront  // Index for front access
-    unsigned long idxBack   // Index for back access
+    heap T* contents            // Pointer to the first data element
+    unsigned long capacity      // Allocated number of items
+    unsigned long size = 0l     // Current number of items
+    unsigned long idxFront = 0l // Index for front access
+    unsigned long idxBack = 0l  // Index for back access
 }
 
 public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
     // Fill in the default values
-    for int index = 0; index < initAllocItems; index++ {
+    for unsigned long index = 0l; index < initAllocItems; index++ {
         unsafe {
             this.contents[index] = defaultValue;
         }
@@ -48,10 +48,7 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = (heap T*) allocResult.unwrap();
     }
-    this.size = 0l;
     this.capacity = initAllocItems;
-    this.idxFront = 0l;
-    this.idxBack = 0l;
 }
 
 /**
@@ -65,7 +62,7 @@ public p Queue.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[(int) this.idxBack++] = item;
+        this.contents[this.idxBack++] = item;
     }
 
     // Increase size
@@ -80,7 +77,7 @@ public p Queue.push(const T& item) {
 public f<T&> Queue.pop() {
     this.size--;
     unsafe {
-        return this.contents[(int) this.idxFront++];
+        return this.contents[this.idxFront++];
     }
 }
 
@@ -92,7 +89,7 @@ public f<T&> Queue.pop() {
 public f<T&> Queue.front() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
-        return this.contents[(int) this.idxFront];
+        return this.contents[this.idxFront];
     }
 }
 
@@ -104,7 +101,7 @@ public f<T&> Queue.front() {
 public f<T&> Queue.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
-        return this.contents[(int) this.idxBack];
+        return this.contents[this.idxBack];
     }
 }
 
@@ -169,7 +166,11 @@ public f<bool> operator==<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
     // Compare the contents
     unsafe {
         for unsigned long index = 0l; index < lhs.size; index++ {
-            if lhs.contents[index] != rhs.contents[index] { return false; }
+            const unsigned long lhsIdx = (lhs.idxFront + index) % lhs.capacity;
+            const unsigned long rhsIdx = (rhs.idxFront + index) % rhs.capacity;
+            if lhs.contents[lhsIdx] != rhs.contents[rhsIdx] {
+                return false;
+            }
         }
     }
     return true;
@@ -184,11 +185,11 @@ public f<bool> operator!=<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
  */
 p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
-    const long itemSize = sizeof(type T) / 8l;
+    const unsigned long itemSize = sizeof(type T) / 8l;
     unsafe {
+        // Allocate a new chunk of memory with the requested size
         heap byte*& oldAddress = (heap byte*) this.contents;
-        unsigned long newSize = (unsigned long) (itemSize * itemCount);
-        Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
+        Result<heap byte*> allocResult = sRealloc(oldAddress, itemSize * itemCount);
         this.contents = (heap T*) allocResult.unwrap();
     }
     // Set new capacity

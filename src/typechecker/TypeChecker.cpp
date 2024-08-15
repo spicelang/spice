@@ -131,7 +131,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   visit(node->initDecl());
 
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -281,7 +281,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   visit(node->body());
 
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -296,7 +296,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 
   // Visit condition
   AssignExprNode *condition = node->condition();
-  QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -339,7 +339,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
   AssignExprNode *expr = node->assignExpr();
-  QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  const QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
     SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
@@ -349,7 +349,7 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   visitChildren(node);
 
   // Check if case constant types match switch expression type
-  for (CaseBranchNode *caseBranchNode : node->caseBranches())
+  for (const CaseBranchNode *caseBranchNode : node->caseBranches())
     for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
       const QualType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
@@ -807,7 +807,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   if (placeholderCount < node->args().size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
 }
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
@@ -962,7 +962,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
   // Visit condition
   LogicalOrExprNode *condition = node->operands()[0];
-  QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   QualType trueType;
@@ -1793,8 +1793,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     // Set return type to 'this' type
     returnType = data.thisType;
   } else if (data.callee->isProcedure()) {
-    // Procedures always have the return type 'bool'
-    returnType = QualType(TY_BOOL);
+    // Procedures always have the return type 'dyn'
+    returnType = QualType(TY_DYN);
   } else {
     returnType = data.callee->returnType;
   }

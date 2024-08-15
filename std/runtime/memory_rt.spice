@@ -5,6 +5,7 @@ ext f<heap byte*> malloc(unsigned long);
 ext f<heap byte*> realloc(heap byte*, unsigned long);
 ext p free(heap byte*);
 ext p memcpy(heap byte*, heap byte*, unsigned long);
+ext f<int> memcmp(const heap byte*, const heap byte*, unsigned long);
 
 // Generic type defs
 type T dyn;
@@ -35,6 +36,7 @@ public f<heap byte*> sAllocUnsafe(unsigned long size) {
 
 /**
   * Reallocates a block of memory to the given size.
+  * Subsequently moves the data from the old memory space to the new one.
   *
   * @param ptr The pointer to the block to reallocate.
   * @param size The new size of the block.
@@ -134,25 +136,14 @@ public p sDelete<T>(heap T*& ptr) {
 }
 
 /**
- * Creates a owned pointer to the given non-owned, heap-allocated instance.
+ * Compares the memory behind pointer A and pointer B for equality.
  *
- * @param ptr The pointer to the non-owned, heap-allocated instance
- * @return An owned pointer to the heap-allocated instance
+ * @param a Pointer A
+ * @param b Pointer B
+ * @return Is memory equal
  */
-public f<heap T*> sOwned<T>(T* ptr) {
+public f<bool> sCompare<T>(const heap T* a, const heap T* b, unsigned long size) {
     unsafe {
-        return (heap T*) ptr;
-    }
-}
-
-/**
- * Creates a non-owned pointer to the given owned, heap-allocated instance.
- *
- * @param ptr The pointer to the owned, heap-allocated instance
- * @return A non-owned pointer to the heap-allocated instance
- */
-public f<T*> sNonOwned<T>(heap T* ptr) {
-    unsafe {
-        return (T*) ptr;
+        return memcmp((const byte*) a, (const byte*) b, size) == 0;
     }
 }

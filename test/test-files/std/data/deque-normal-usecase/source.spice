@@ -1,0 +1,16 @@
+import "std/data/deque";
+
+f<int> main() {
+    Deque<char> q1 = Deque<char>();
+    q1.pushBack('l');
+    q1.pushBack('l');
+    q1.pushFront('e');
+    q1.pushBack('o');
+    q1.pushFront('H');
+    q1.pushBack('!');
+
+    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
+    while (!q1.isEmpty()) {
+        printf("%c", q1.popFront());
+    }
+}

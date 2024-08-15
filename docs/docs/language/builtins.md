@@ -8,7 +8,7 @@ Spice offers five builtin functions out of the box. Those can be used anywhere w
 Printf works the same as the `printf` function in C and is designed for printing a string to the standard text output (cout).
 
 ### Signature
-`void printf(string template, ...args)`
+`int printf(string template, ...args)`
 
 `template`: Template string, which can contain placeholders for values, passed as args to the `printf` builtin. <br>
 `args`: Arbitrary number of arguments of any type. The particular type and the order of the types have to match the placeholders of the template string.

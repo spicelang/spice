@@ -1,0 +1,258 @@
+// Constants
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Add generic type definition
+type T dyn;
+
+/**
+ * A deque in Spice is a commonly used data structure that allows insertion and removal
+ * of elements from both ends: front and back.
+ *
+ * Time complexity:
+ * Insert at front: O(1)
+ * Insert at back: O(1)
+ * Delete from front: O(1)
+ * Delete from back: O(1)
+ * Search: O(n)
+ *
+ * Deques pre-allocate space using an initial size and a resize factor to not have to re-allocate
+ * with every item pushed. This implementation uses a ring buffer, that wraps around when one of the
+ * indices reach the start or end of the allocated heap space.
+ */
+public type Deque<T> struct {
+    heap T* contents            // Pointer to the first data element
+    unsigned long capacity      // Allocated number of items
+    unsigned long size = 0l     // Current number of items
+    long idxFront = 0l          // Index for front access
+    long idxBack = 0l           // Index for back access
+}
+
+public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
+    // Allocate space for the initial number of elements
+    this.ctor(initAllocItems);
+    // Fill in the default values
+    for unsigned long index = 0l; index < initAllocItems; index++ {
+        unsafe {
+            this.contents[index] = defaultValue;
+        }
+    }
+    this.size = initAllocItems;
+}
+
+public p Deque.ctor(unsigned int initAllocItems) {
+    this.ctor((long) initAllocItems);
+}
+
+public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
+    // Allocate space for the initial number of elements
+    const long itemSize = sizeof(type T) / 8l;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
+        this.contents = (heap T*) allocResult.unwrap();
+    }
+    this.capacity = initAllocItems;
+}
+
+/**
+ * Add an item at the back of the deque
+ */
+public p Deque.pushBack(const T& item) {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Insert the element at the back
+    unsafe {
+        this.contents[this.idxBack] = item;
+    }
+    this.idxBack++;
+    this.idxBack %= this.capacity;
+
+    // Increase size
+    this.size++;
+}
+
+/**
+ * Add an item at the front of the deque
+ */
+public p Deque.pushFront(const T& item) {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Insert the element at the front
+    this.idxFront = this.idxFront + this.capacity - 1;
+    this.idxFront %= this.capacity;
+    unsafe {
+        this.contents[this.idxFront] = item;
+    }
+
+    // Increase size
+    this.size++;
+}
+
+/**
+ * Retrieve the first item and remove it
+ *
+ * @return First item
+ */
+public f<T&> Deque.popFront() {
+    if this.isEmpty() { panic(Error("Deque is empty")); }
+
+    // Get item value
+    unsafe {
+        result = this.contents[this.idxFront];
+    }
+
+    // Adjust indices and size
+    this.idxFront++;
+    this.idxFront %= this.capacity;
+    this.size--;
+}
+
+/**
+ * Retrieve the last item and remove it
+ *
+ * @return Last item
+ */
+public f<T&> Deque.popBack() {
+    if this.isEmpty() { panic(Error("Deque is empty")); }
+
+    // Get item value
+    unsafe {
+        result = this.contents[this.idxBack];
+    }
+
+    // Adjust indices and size
+    this.idxBack = this.idxBack - 1 + this.capacity;
+    this.idxBack %= this.capacity;
+    this.size--;
+}
+
+/**
+ * Retrieve the first item without removing it from the deque
+ *
+ * @return First item
+ */
+public f<T&> Deque.front() {
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    unsafe {
+        return this.contents[this.idxFront];
+    }
+}
+
+/**
+ * Retrieve the last item without removing it from the deque
+ *
+ * @return Last item
+ */
+public f<T&> Deque.back() {
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    unsafe {
+        return this.contents[this.idxBack - 1];
+    }
+}
+
+/**
+ * Retrieve the current size of the deque
+ *
+ * @return Current size of the deque
+ */
+public f<long> Deque.getSize() {
+    return this.size;
+}
+
+/**
+ * Retrieve the current capacity of the deque
+ *
+ * @return Current capacity of the deque
+ */
+public f<long> Deque.getCapacity() {
+    return this.capacity;
+}
+
+/**
+ * Checks if the deque contains any items at the moment
+ *
+ * @return Empty or not empty
+ */
+public f<bool> Deque.isEmpty() {
+    return this.size == 0;
+}
+
+/**
+ * Checks if the deque exhausts its capacity and needs to resize at the next call of push
+ *
+ * @return Full or not full
+ */
+public f<bool> Deque.isFull() {
+    return this.size == this.capacity;
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p Deque.reserve(unsigned long itemCount) {
+    if itemCount > this.capacity {
+        this.resize(itemCount);
+    }
+}
+
+/**
+ * Frees allocated memory that is not used by the deque
+ */
+public p Deque.pack() {
+    // Return if no packing is required
+    if this.isFull() { return; }
+    // Pack the array
+    this.resize(this.size);
+}
+
+public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
+    // Compare the sizes
+    if lhs.size != rhs.size { return false; }
+    // Compare the contents
+    unsafe {
+        for unsigned long index = 0l; index < lhs.size; index++ {
+            const unsigned long lhsIdx = (lhs.idxFront + index) % lhs.capacity;
+            const unsigned long rhsIdx = (rhs.idxFront + index) % rhs.capacity;
+            if lhs.contents[lhsIdx] != rhs.contents[rhsIdx] {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+public f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
+    return !(lhs == rhs);
+}
+
+/**
+ * Re-allocates heap space for the deque contents
+ */
+p Deque.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    const unsigned long itemSize = sizeof(type T) / 8l;
+    unsafe {
+        // Allocate a new chunk of memory with the requested size
+        unsigned long newSize = itemSize * itemCount;
+        Result<heap byte*> allocResult = sAlloc(newSize);
+        // Take ownership of the old pointer to free it at the end of the scope
+        heap T* oldAddress = this.contents;
+        this.contents = (heap T*) allocResult.unwrap();
+        // Copy data over to new memory chunk
+        for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
+            unsigned long oldIndex = this.idxFront + newIndex;
+            oldIndex %= this.capacity;
+            this.contents[newIndex] = oldAddress[oldIndex];
+        }
+    }
+    // Set new capacity
+    this.capacity = itemCount;
+    this.idxFront = 0l;
+    this.idxBack = this.size;
+}
