@@ -38,6 +38,7 @@ const char *IRGenerator::getSysCallAsmString() const {
            "syscall\n";
 
   assert_fail("Unsupported target for inline assembly");
+  return nullptr;
 }
 
 const char *IRGenerator::getSysCallConstraintString() const {
@@ -48,6 +49,7 @@ const char *IRGenerator::getSysCallConstraintString() const {
   if (cliOptions.targetArch == "aarch64" || cliOptions.targetArch == "arm64")
     return "r,r,r,r,r,r,r,~{x8},~{x0},~{x1},~{x2},~{x3},~{x4},~{x5},~{dirflag},~{fpsr},~{flags}";
   assert_fail("Unsupported target for inline assembly");
+  return nullptr;
 }
 
 } // namespace spice::compiler

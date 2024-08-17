@@ -143,7 +143,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   if (copyCtor != nullptr)
     return;
 
-  // Abort if the struct has a user-defiend move constructor
+  // Abort if the struct has a user-defined move constructor
   // ToDo: Check for move ctor
 
   // Check if we have fields, that require us to do anything in the ctor
