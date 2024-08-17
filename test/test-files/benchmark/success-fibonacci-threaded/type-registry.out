@@ -7,9 +7,9 @@ Pthread_attr_t&
 Pthread_attr_t*
 Pthread_t
 Thread
-Thread
 Thread&
 Thread*
+Thread[]
 bool
 byte
 byte*
@@ -17,7 +17,7 @@ byte**
 char
 char*
 dyn
-dyn
+dyn[]
 f()
 f<int>()
 f<int>(int)
