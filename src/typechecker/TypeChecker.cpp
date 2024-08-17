@@ -32,7 +32,8 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
 
   // Check which implicit structures we need for each struct, defined in this source file
   if (isPrepare) {
-    for (const Struct *manifestation : rootScope->getAllStructManifestationsInDeclarationOrder()) {
+    const std::vector<const Struct *> manifestations = rootScope->getAllStructManifestationsInDeclarationOrder();
+    for (const Struct *manifestation : manifestations) {
       // Check if we need to create a default ctor, copy ctor or dtor
       createDefaultCtorIfRequired(*manifestation, manifestation->scope);
       createDefaultCopyCtorIfRequired(*manifestation, manifestation->scope);
@@ -1241,20 +1242,20 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
     return visit(node->prefixUnaryExpr());
 
   // Visit source type
-  auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
+  const auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
-  auto dstType = std::any_cast<QualType>(visit(node->dataType()));
+  const auto dstType = std::any_cast<QualType>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
 
   // Check for identity cast
   if (src.type == dstType) {
-    CompilerWarning warning(node->codeLoc, IDENTITY_CAST, "You cast from a type to itself. Thus, this can be simplified.");
+    const CompilerWarning warning(node->codeLoc, IDENTITY_CAST, "You cast from a type to itself. Thus, this can be simplified.");
     sourceFile->compilerOutput.warnings.push_back(warning);
   }
 
   // Get result type
-  QualType resultType = opRuleManager.getCastResultType(node, dstType, src);
+  const QualType resultType = opRuleManager.getCastResultType(node, dstType, src);
 
   SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
@@ -2344,7 +2345,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
         type.getSpecifiers().isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         // Heap variables can only be pointers
-        if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_STRING}))
+        if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_ARRAY, TY_STRING}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
                         "The heap specifier can only be applied to symbols of pointer type, you provided " +
                             baseType.getName(false))

@@ -78,9 +78,9 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
                                          nullptr, "_fat_ptr");
 
   llvm::DIType *voidPtrDIType = diBuilder->createPointerType(voidTy, pointerWidth, ptrAlignInBits);
-  llvm::DIDerivedType *firstType = diBuilder->createMemberType(fatPtrTy, "first", diFile, 0, pointerWidth, ptrAlignInBits, 0,
+  llvm::DIDerivedType *firstType = diBuilder->createMemberType(fatPtrTy, "fct", diFile, 0, pointerWidth, ptrAlignInBits, 0,
                                                                llvm::DINode::FlagZero, voidPtrDIType);
-  llvm::DIDerivedType *secondType = diBuilder->createMemberType(fatPtrTy, "second", diFile, 0, pointerWidth, ptrAlignInBits,
+  llvm::DIDerivedType *secondType = diBuilder->createMemberType(fatPtrTy, "captures", diFile, 0, pointerWidth, ptrAlignInBits,
                                                                 pointerWidth, llvm::DINode::FlagZero, voidPtrDIType);
   fatPtrTy->replaceElements(llvm::MDTuple::get(context, {firstType, secondType}));
 }
@@ -151,7 +151,6 @@ void DebugInfoGenerator::concludeFunctionDebugInfo() {
 
   assert(!lexicalBlocks.empty());
   lexicalBlocks.pop();
-  assert(lexicalBlocks.empty());
 }
 
 void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
@@ -272,9 +271,7 @@ void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
   irGenerator->builder.SetCurrentDebugLocation(diCodeLoc);
 }
 
-void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
-  setSourceLocation(node->codeLoc);
-}
+void DebugInfoGenerator::setSourceLocation(const ASTNode *node) { setSourceLocation(node->codeLoc); }
 
 void DebugInfoGenerator::finalize() const {
   if (irGenerator->cliOptions.generateDebugInfo)

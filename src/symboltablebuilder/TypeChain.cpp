@@ -49,7 +49,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
     name << "&";
     break;
   case TY_ARRAY:
-    name << (withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "");
+    name << "[" << (withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? std::to_string(data.arraySize) : "") << "]";
     break;
   case TY_DOUBLE:
     name << "double";

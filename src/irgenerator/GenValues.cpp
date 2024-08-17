@@ -509,14 +509,16 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
+    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
       paramSymbol->updateAddress(paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    if (!isCapturesStruct)
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
@@ -652,14 +654,16 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
+    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
       paramSymbol->updateAddress(paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    if (!isCapturesStruct)
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
@@ -797,14 +801,16 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
+    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
       paramSymbol->updateAddress(paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    if (!isCapturesStruct)
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
