@@ -93,7 +93,7 @@ public p Driver.init() {
     this.cliParser.setFooter("(c) Marc Auberer 2021-2024");
 
     // Add version flag
-    this.cliParser.setVersion("Spice version 0.18.4\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2024");
+    this.cliParser.setVersion("Spice version 0.20.4\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2024");
 
     // Create sub-commands
     this.addBuildSubcommand();
@@ -251,12 +251,12 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
 
     // Opt levels
-    subCmd.addOption("-O0", p(string& v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-    subCmd.addOption("-O1", p(string& v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
-    subCmd.addOption("-O2", p(string& v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
-    subCmd.addOption("-O3", p(string& v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    subCmd.addOption("-Os", p(string& v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
-    subCmd.addOption("-Oz", p(string& v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
+    subCmd.addOption("-O0", p(string& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
+    subCmd.addOption("-O1", p(string& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
+    subCmd.addOption("-O2", p(string& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
+    subCmd.addOption("-O3", p(string& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    subCmd.addOption("-Os", p(string& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
+    subCmd.addOption("-Oz", p(string& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
     subCmd.addFlag("-lto", this.cliOptions.useLTO, "Enable link time optimization (LTO)");
 
     // --debug-output

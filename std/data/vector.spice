@@ -25,7 +25,7 @@ type Numeric int|long|short;
 public type Vector<T> struct : IIterable<T> {
     heap T* contents        // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
-    unsigned long size      // Current number of items
+    unsigned long size = 0l // Current number of items
 }
 
 public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
@@ -36,7 +36,6 @@ public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
         Result<heap byte*> allocResult = sAlloc(itemSize * initialCapacity);
         this.contents = (heap T*) allocResult.unwrap();
     }
-    this.size = 0l;
     this.capacity = initialCapacity;
 }
 
@@ -54,6 +53,12 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
         }
     }
     this.size = initAllocItems;
+}
+
+public p Vector.ctor(const Vector<T>& original) {
+    this.ctor(original.capacity);
+    sCopy(original.contents, this.contents, original.size);
+    this.size = original.size;
 }
 
 /**
@@ -85,7 +90,7 @@ public p Vector.pushBack<T>(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[(int) this.size++] = item;
+        this.contents[this.size++] = item;
     }
 }
 

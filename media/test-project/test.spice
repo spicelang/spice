@@ -1,27 +1,5 @@
-type ITest interface {
-    p test();
-}
-
-type InnerTest struct : ITest {
-    int a
-}
-
-p InnerTest.ctor() {
-    this.a = 0;
-}
-
-p InnerTest.test() {
-    printf("InnerTest.test()\n");
-}
-
-type Test struct {
-    ITest* test
-}
+import "std/data/vector";
 
 f<int> main() {
-    InnerTest innerTest;
-    Test test = Test{&innerTest};
-    ITest* test2 = &innerTest;
-    test2.test();
-    test.test.test();
+
 }

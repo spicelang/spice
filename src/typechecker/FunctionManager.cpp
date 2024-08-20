@@ -44,7 +44,7 @@ Function *FunctionManager::insert(Scope *insertScope, const Function &baseFuncti
 }
 
 /**
- * Create definite functions from ambiguous ones, in regards to optional arguments.
+ * Create definite functions from ambiguous ones, in regard to optional arguments.
  *
  * Example:
  * int testFunc(string, int?, double?)
@@ -72,10 +72,10 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
   Function manifestation = baseFunction;
 
   // Loop over all parameters
-  for (const Param &param : baseFunction.paramList) {
+  for (const auto &[qualType, isOptional] : baseFunction.paramList) {
     // Check if we have a mandatory parameter
-    if (!param.isOptional) {
-      currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
+    if (!isOptional) {
+      currentFunctionParamTypes.push_back({qualType, /*optional=*/false});
       continue;
     }
 
@@ -88,7 +88,7 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     }
 
     // Add substantiation with the optional parameter
-    currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
+    currentFunctionParamTypes.push_back({qualType, /*optional=*/false});
     manifestation.paramList = currentFunctionParamTypes;
     manifestations.push_back(manifestation);
   }
@@ -416,6 +416,7 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
  * @param reqArgs Requested argument types
  * @param typeMapping Concrete template type mapping
  * @param strictSpecifierMatching Match specifiers strictly
+ * @param needsSubstantiation Do we want to create a substantiation after successfully matching
  * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
@@ -437,9 +438,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
     QualType &candidateParamType = candidateParamList.at(i).qualType;
-    const Arg &requestedParamType = reqArgs.at(i);
-    const QualType &requestedType = requestedParamType.first;
-    const bool isArgTemporary = requestedParamType.second;
+    const auto &[requestedType, isArgTemporary] = reqArgs.at(i);
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedType, typeMapping, genericTypeResolver,

@@ -172,8 +172,6 @@ public p CliSubcommand.addAlias(string subCommand) {
 
 public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
     this.subcommands.pushBack(CliSubcommand(this, this.versionString, name, description));
-    // ToDo: Here and potentially for all addOption methods, we have the problem, that the move or copy ctor is not
-    // called. CliSubcommand is destroyed at the end of the scope, but the reference to the object is still in use.
     return this.subcommands.back();
 }
 
