@@ -649,6 +649,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   const Function spiceFunc(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
   node->extFunction = FunctionManager::insert(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
+  node->extFunction->alreadyTypeChecked = true;
 
   // Check procedure attributes
   if (node->attrs()) {

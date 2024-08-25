@@ -126,9 +126,6 @@ public:
   std::any visitCustomDataType(CustomDataTypeNode *node) override;
   std::any visitFunctionDataType(FunctionDataTypeNode *node) override;
 
-  // Public members
-  bool reVisitRequested = false;
-
 private:
   // Private members
   OpRuleManager opRuleManager = OpRuleManager(this);
@@ -147,7 +144,7 @@ private:
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   static void autoDeReference(QualType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
-  void requestRevisitIfRequired(const Function *fct);
+  void requestRevisitIfRequired(const Function *fct) const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation

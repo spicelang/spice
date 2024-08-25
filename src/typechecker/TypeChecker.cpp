@@ -20,7 +20,6 @@ TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sou
 std::any TypeChecker::visitEntry(EntryNode *node) {
   // Initialize
   currentScope = rootScope;
-  reVisitRequested = false;
 
   // Initialize AST nodes with size of 1
   const bool isPrepare = typeCheckerMode == TC_MODE_PRE;
@@ -2667,9 +2666,9 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
  *
  * @param fct Function to check
  */
-void TypeChecker::requestRevisitIfRequired(const Function *fct) {
+void TypeChecker::requestRevisitIfRequired(const Function *fct) const {
   if (fct && !fct->alreadyTypeChecked && !fct->entry->scope->isImportedBy(rootScope))
-    reVisitRequested = true;
+    fct->entry->scope->sourceFile->reVisitRequested = true;
 }
 
 /**
