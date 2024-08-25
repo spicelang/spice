@@ -48,6 +48,14 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     this.capacity = initAllocItems;
 }
 
+public p Stack.ctor(const Stack<T>& original) {
+    this.ctor(original.capacity);
+    unsafe {
+        sCopy((heap byte*) original.contents, (heap byte*) this.contents, original.size);
+    }
+    this.size = original.size;
+}
+
 /**
  * Add an item to the stack
  */

@@ -17,9 +17,9 @@ bool GenericType::checkConditionsOf(const QualType &qualType, bool ignoreArraySi
 }
 
 /**
- * Checks if the given symbol qualType matches all qualType conditions to get a manifestation of the current generic qualType
+ * Checks if the given qualType matches all qualType conditions to get a manifestation of the current generic qualType
  *
- * @param qualType Qualified qualType to be checked
+ * @param qualType Qualified type to be checked
  * @param ignoreArraySize Ignore the array size for qualType comparison
  * @param ignoreSpecifiers Ignore the qualType specifiers for qualType comparison
  * @return True or false
@@ -27,6 +27,9 @@ bool GenericType::checkConditionsOf(const QualType &qualType, bool ignoreArraySi
 bool GenericType::checkTypeConditionOf(const QualType &qualType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // Succeed if no qualType conditions are set
   if (typeConditions.empty())
+    return true;
+  // Succeed if the given qual type is generic and matches the current one
+  if (qualType.hasAnyGenericParts() && qualType == *this)
     return true;
   // Check type conditions
   return std::ranges::any_of(typeConditions, [&](const QualType &typeCondition) {

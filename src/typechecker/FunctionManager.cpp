@@ -149,6 +149,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   if (lookupCache.contains(cacheKey))
     return lookupCache.at(cacheKey);
 
+  const auto pred = [&](const Arg &arg) { return arg.first.hasAnyGenericParts(); };
+  const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
@@ -159,8 +162,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
-      // Only match against fully substantiated versions to prevent double matching of a function
-      if (!presetFunction.isFullySubstantiated())
+      // - search for concrete fct: Only match against fully substantiated versions to prevent double matching of a function
+      // - search for generic fct: Only match against generic preset functions
+      if (presetFunction.isFullySubstantiated() != requestedFullySubstantiated)
         continue;
 
       // Copy the function to be able to substantiate types

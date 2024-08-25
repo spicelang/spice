@@ -57,7 +57,9 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
 
 public p Vector.ctor(const Vector<T>& original) {
     this.ctor(original.capacity);
-    sCopy(original.contents, this.contents, original.size);
+    unsafe {
+        sCopy((heap byte*) original.contents, (heap byte*) this.contents, original.size);
+    }
     this.size = original.size;
 }
 
