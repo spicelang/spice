@@ -703,9 +703,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   opFctPointers.at(opIdx) = callee;
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet
-  const bool isCallToImportedSourceFile = callee->entry->scope->isImportedBy(typeChecker->rootScope);
-  if (!callee->alreadyTypeChecked && !isCallToImportedSourceFile)
-    typeChecker->reVisitRequested = true;
+  typeChecker->requestRevisitIfRequired(callee);
 
   // Check if the called function has sufficient visibility
   const bool isImported = calleeParentScope != nullptr && calleeParentScope->isImportedBy(typeChecker->rootScope);

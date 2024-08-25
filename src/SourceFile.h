@@ -165,12 +165,13 @@ public:
   bool isMainFile = true;
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
+  bool restoredFromCache = false;
+  bool reVisitRequested = false;
   CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;
   std::string cacheKey;
-  bool restoredFromCache = false;
   EntryNode *ast = nullptr;
   std::unique_ptr<Scope> globalScope;
   llvm::LLVMContext context;

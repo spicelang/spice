@@ -277,6 +277,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   do {
     typeCheckerRuns++;
     totalTypeCheckerRuns++;
+    reVisitRequested = false;
 
     // Type-check the current file first. Multiple times, if requested
     timer.resume();
@@ -286,7 +287,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
       sourceFile->runTypeCheckerPost();
-  } while (typeChecker.reVisitRequested);
+  } while (reVisitRequested);
 
   checkForSoftErrors();
 
