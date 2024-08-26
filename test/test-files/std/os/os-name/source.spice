@@ -6,4 +6,5 @@ f<int> main() {
     } else if isWindows() {
         assert os::OS_NAME == "windows";
     }
+    printf("All assertions passed!");
 }
