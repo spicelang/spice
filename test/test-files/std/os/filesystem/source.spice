@@ -1,0 +1,11 @@
+import "std/os/os";
+import "std/os/filesystem";
+
+f<int> main() {
+    // getTempDir()
+    string tempDir = getTempDir();
+    if isLinux() {
+        assert tempDir == "/tmp";
+    }
+    printf("All assertions passed!");
+}
