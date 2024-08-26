@@ -41,6 +41,15 @@ public inline p FilePath.makeNative() {
 }
 
 /**
+ * Checks if the filepath is empty
+ *
+ * @return Is the filepath empty
+ */
+public inline f<bool> FilePath.isEmpty() {
+    return this.path.isEmpty();
+}
+
+/**
  * Returns the content of the filepath without modifying.
  *
  * @return The content of the filepath
@@ -72,6 +81,10 @@ public inline f<string> FilePath.toNativeString() {
 /**
  * Returns the parent directory of the file or directory.
  *
+ * Example:
+ * In:  /home/user/file.txt
+ * Out: file.txt
+ *
  * @return The parent directory of the file or directory
  */
 public inline f<String> FilePath.getFileName() {
@@ -82,15 +95,23 @@ public inline f<String> FilePath.getFileName() {
 /**
  * Returns the parent directory of the file or directory.
  *
+ * Example:
+ * In:  /home/user/file.txt
+ * Out: /home/user
+ *
  * @return The parent directory of the file or directory
  */
-public inline f<String> FilePath.getParentDirectory() {
+public inline f<String> FilePath.getParentDir() {
     this.makeGeneric();
     return this.path.getSubstring(0, this.path.rfind(PATH_SEPARATOR_UNIX));
 }
 
 /**
  * Returns the base name of the file.
+ *
+ * Example:
+ * In:  /home/user/file.txt
+ * Out: file
  *
  * @return The base name of the file
  */
@@ -104,10 +125,28 @@ public inline f<String> FilePath.getBaseName() {
 /**
  * Returns the extension of the file.
  *
+ * Example:
+ * In:  /home/user/file.txt
+ * Out: txt
  * @return The extension of the file
  */
 public inline f<String> FilePath.getExtension() {
     return this.path.getSubstring(this.path.rfind('.') + 1);
+}
+
+/**
+ * Replaces the current file extension with the given new one
+ *
+ * Example:
+ * In:  /home/user/file.txt
+ * Out: /home/user/file.spice
+ *
+ * @param newExtension New file extension
+ */
+public inline p FilePath.replaceExtension(string newExtension) {
+    String oldExtension = this.getExtension();
+    const unsigned long startIdx = this.path.getLength() - oldExtension.getLength();
+    this.path.replace(oldExtension.getRaw(), newExtension, startIdx);
 }
 
 public inline f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {
