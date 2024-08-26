@@ -32,8 +32,8 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
 
 #ifndef NDEBUG
   // Make sure that the manifestation does not exist already
-  for (const auto &manifestations : insertScope->structs)
-    assert(!manifestations.second.contains(signature));
+  for (const auto &val : insertScope->structs | std::views::values)
+    assert(!val.contains(signature));
 #endif
 
   // Retrieve the matching manifestation list of the scope

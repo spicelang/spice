@@ -33,12 +33,12 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 
   if (useSubDirs) {
     // Collect subdirectories of the given suite
-    const std::vector<std::string> testGroupDirs = TestUtil::getSubdirs(suitePath);
+    const std::vector<std::string> testGroupDirs = getSubdirs(suitePath);
 
     // Convert them to test cases
     for (const std::string &groupDirName : testGroupDirs) {
       const std::filesystem::path groupPath = suitePath / groupDirName;
-      for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
+      for (const std::string &caseDirName : getSubdirs(groupPath)) {
         const std::filesystem::path testPath = groupPath / caseDirName;
         const TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), testPath};
         testCases.push_back(tc);
@@ -46,7 +46,7 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
     }
   } else {
     // Collect test cases
-    for (const std::string &caseDirName : TestUtil::getSubdirs(suitePath)) {
+    for (const std::string &caseDirName : getSubdirs(suitePath)) {
       const std::filesystem::path testPath = suitePath / caseDirName;
       const TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), testPath};
       testCases.push_back(tc);
@@ -96,7 +96,7 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
 
   // Fail if no ref file exists
   const std::filesystem::path refPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (!std::filesystem::exists(refPath))
+  if (!exists(refPath))
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
@@ -165,7 +165,7 @@ std::string TestUtil::toCamelCase(std::string input) {
 bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
   if (exists(testCase.testPath / CTL_SKIP_DISABLED))
     return true;
-  if (isGHActions && std::filesystem::exists(testCase.testPath / CTL_SKIP_GH))
+  if (isGHActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
   return false;
 }

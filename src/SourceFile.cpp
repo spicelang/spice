@@ -207,7 +207,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   timer.stop();
 
   // Run first part of pipeline for the imported source file
-  for (const auto &[name, sourceFile] : dependencies)
+  for (SourceFile *sourceFile : dependencies | std::views::values)
     sourceFile->runFrontEnd();
 
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
@@ -248,7 +248,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
     return;
 
   // Type-check all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies)
+  for (SourceFile *sourceFile : dependencies | std::views::values)
     sourceFile->runTypeCheckerPre();
 
   Timer timer(&compilerOutput.times.typeCheckerPre);
@@ -285,7 +285,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     timer.pause();
 
     // Then type-check all dependencies
-    for (const auto &[importName, sourceFile] : dependencies)
+    for (SourceFile *sourceFile : dependencies | std::views::values)
       sourceFile->runTypeCheckerPost();
   } while (reVisitRequested);
 
@@ -551,7 +551,7 @@ void SourceFile::runMiddleEnd() {
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Run backend for all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies)
+  for (SourceFile *sourceFile : dependencies | std::views::values)
     sourceFile->runBackEnd();
 
   runIRGenerator();
@@ -693,10 +693,9 @@ void SourceFile::checkForSoftErrors() const {
 
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
-  for (const auto &[name, sourceFile] : dependencies) {
+  for (SourceFile *sourceFile : dependencies | std::views::values)
     if (!sourceFile->isStdFile)
       sourceFile->collectAndPrintWarnings();
-  }
   // Collect warnings for this file
   if (!ignoreWarnings)
     globalScope->collectWarnings(compilerOutput.warnings);

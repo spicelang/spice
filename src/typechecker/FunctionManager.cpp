@@ -44,7 +44,7 @@ Function *FunctionManager::insert(Scope *insertScope, const Function &baseFuncti
 }
 
 /**
- * Create definite functions from ambiguous ones, in regards to optional arguments.
+ * Create definite functions from ambiguous ones, in regard to optional arguments.
  *
  * Example:
  * int testFunc(string, int?, double?)
@@ -72,10 +72,10 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
   Function manifestation = baseFunction;
 
   // Loop over all parameters
-  for (const Param &param : baseFunction.paramList) {
+  for (const auto &[qualType, isOptional] : baseFunction.paramList) {
     // Check if we have a mandatory parameter
-    if (!param.isOptional) {
-      currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
+    if (!isOptional) {
+      currentFunctionParamTypes.push_back({qualType, /*optional=*/false});
       continue;
     }
 
@@ -88,7 +88,7 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     }
 
     // Add substantiation with the optional parameter
-    currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
+    currentFunctionParamTypes.push_back({qualType, /*optional=*/false});
     manifestation.paramList = currentFunctionParamTypes;
     manifestations.push_back(manifestation);
   }
@@ -149,6 +149,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   if (lookupCache.contains(cacheKey))
     return lookupCache.at(cacheKey);
 
+  const auto pred = [&](const Arg &arg) { return arg.first.hasAnyGenericParts(); };
+  const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
@@ -159,8 +162,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
-      // Only match against fully substantiated versions to prevent double matching of a function
-      if (!presetFunction.isFullySubstantiated())
+      // - search for concrete fct: Only match against fully substantiated versions to prevent double matching of a function
+      // - search for generic fct: Only match against generic preset functions
+      if (presetFunction.isFullySubstantiated() != requestedFullySubstantiated)
         continue;
 
       // Copy the function to be able to substantiate types
@@ -416,6 +420,7 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
  * @param reqArgs Requested argument types
  * @param typeMapping Concrete template type mapping
  * @param strictSpecifierMatching Match specifiers strictly
+ * @param needsSubstantiation Do we want to create a substantiation after successfully matching
  * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
@@ -437,9 +442,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
     QualType &candidateParamType = candidateParamList.at(i).qualType;
-    const Arg &requestedParamType = reqArgs.at(i);
-    const QualType &requestedType = requestedParamType.first;
-    const bool isArgTemporary = requestedParamType.second;
+    const auto &[requestedType, isArgTemporary] = reqArgs.at(i);
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedType, typeMapping, genericTypeResolver,

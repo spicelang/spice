@@ -148,6 +148,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
       if (baseType.is(TY_STRUCT)) { // Struct
         const Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, node);
         if (!spiceStruct) {
+          assert(node != nullptr);
           const std::string signature = Struct::getSignature(baseType.getSubType(), templateTypes);
           throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find struct '" + signature + "'");
         }
@@ -155,6 +156,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
       } else { // Interface
         const Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, node);
         if (!spiceInterface) {
+          assert(node != nullptr);
           const std::string signature = Interface::getSignature(baseType.getSubType(), templateTypes);
           throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find interface '" + signature + "'");
         }
