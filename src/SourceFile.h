@@ -178,7 +178,7 @@ public:
   llvm::IRBuilder<> builder;
   std::unique_ptr<llvm::TargetMachine> targetMachine;
   std::unique_ptr<llvm::Module> llvmModule;
-  std::unordered_map<std::string, SourceFile *> dependencies;
+  std::map<std::string, SourceFile *> dependencies; // Has to be an ordered map to keep the compilation order deterministic
   std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
   std::vector<const Function *> testFunctions;
