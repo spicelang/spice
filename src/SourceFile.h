@@ -166,7 +166,6 @@ public:
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
   bool restoredFromCache = false;
-  bool reVisitRequested = false;
   CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
@@ -192,7 +191,6 @@ private:
   uint8_t totalTypeCheckerRuns = 0;
 
   // Private methods
-  bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;

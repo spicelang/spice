@@ -238,8 +238,15 @@ void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
   runTypeCheckerPre(); // Visit dependency tree from bottom to top
+
+  // Compute best order of the source files to perform type checking
+  resourceManager.enqueueSourceFilesForTypeChecking();
   // The second run to ensure, also generic scopes are type-checked properly
-  runTypeCheckerPost(); // Visit dependency tree from top to bottom
+  while (!resourceManager.sourceFileVisitQueue.empty()) {
+    SourceFile *sourceFile = resourceManager.sourceFileVisitQueue.front();
+    sourceFile->runTypeCheckerPost();
+    resourceManager.sourceFileVisitQueue.pop();
+  }
 }
 
 void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
@@ -265,7 +272,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
-  if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
+  if (restoredFromCache)
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
@@ -273,22 +280,10 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_POST);
-  unsigned short typeCheckerRuns = 0;
-  do {
-    typeCheckerRuns++;
-    totalTypeCheckerRuns++;
-    reVisitRequested = false;
+  typeChecker.visit(ast);
+  totalTypeCheckerRuns++;
 
-    // Type-check the current file first. Multiple times, if requested
-    timer.resume();
-    typeChecker.visit(ast);
-    timer.pause();
-
-    // Then type-check all dependencies
-    for (SourceFile *sourceFile : dependencies | std::views::values)
-      sourceFile->runTypeCheckerPost();
-  } while (reVisitRequested);
-
+  // Check if there are soft errors and print them
   checkForSoftErrors();
 
   // Check if all dyn variables were type-inferred successfully
@@ -296,7 +291,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, typeCheckerRuns);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, totalTypeCheckerRuns);
 
   // Save the JSON version in the compiler output
   if (cliOptions.dumpSettings.dumpSymbolTable || cliOptions.testMode)
@@ -545,8 +540,16 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 void SourceFile::runMiddleEnd() {
   runTypeCheckerPre();
   CHECK_ABORT_FLAG_V()
-  runTypeCheckerPost();
-  CHECK_ABORT_FLAG_V()
+
+  // Compute best order of the source files to perform type checking
+  resourceManager.enqueueSourceFilesForTypeChecking();
+  // Visit the source files in this order
+  while (!resourceManager.sourceFileVisitQueue.empty()) {
+    SourceFile *sourceFile = resourceManager.sourceFileVisitQueue.front();
+    sourceFile->runTypeCheckerPost();
+    CHECK_ABORT_FLAG_V()
+    resourceManager.sourceFileVisitQueue.pop();
+  }
 }
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
@@ -716,10 +719,6 @@ bool SourceFile::isRT(RuntimeModule runtimeModule) const {
   return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
 }
 
-bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });
-}
-
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
  * But only do that for the symbols that are actually defined in the imported source file. Do not allow transitive dependencies.
@@ -823,7 +822,7 @@ void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType 
     outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
     outputStr << " (" << std::to_string(stageRuntime) << " ms";
     if (stageRuns > 0)
-      outputStr << "; " << std::to_string(stageRuns) << " run(s)";
+      outputStr << "; Run " << std::to_string(stageRuns);
     outputStr << ")\n";
     // Print
     std::cout << outputStr.str();

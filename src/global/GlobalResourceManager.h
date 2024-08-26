@@ -7,7 +7,6 @@
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
 #include <util/BlockAllocator.h>
-#include <util/CodeLoc.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/LLVMContext.h>
@@ -36,6 +35,8 @@ public:
 
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
+  void enqueueSourceFilesForTypeChecking();
+  static void topologicalSortHelper(SourceFile* file, std::unordered_set<std::string>& visited, std::stack<SourceFile*>& stack);
   uint64_t getNextCustomTypeId();
   size_t getTotalLineCount() const;
 
@@ -55,6 +56,7 @@ public:
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
   ErrorManager errorManager;
+  std::queue<SourceFile *> sourceFileVisitQueue; // Used for queueing type checking in the correct order
   bool abortCompilation = false;
 
 private:

@@ -61,13 +61,43 @@ GlobalResourceManager::~GlobalResourceManager() {
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &depName,
                                                     const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)
-  const std::string filePathStr = std::filesystem::weakly_canonical(std::filesystem::absolute(path)).string();
+  const std::string filePathStr = weakly_canonical(absolute(path)).string();
 
   // Create the new source file if it does not exist yet
   if (!sourceFiles.contains(filePathStr))
     sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile)});
 
   return sourceFiles.at(filePathStr).get();
+}
+
+void GlobalResourceManager::enqueueSourceFilesForTypeChecking() {
+  assert(sourceFileVisitQueue.empty());
+  std::stack<SourceFile *> stack;
+  std::unordered_set<std::string> visited;
+
+  // Call the recursive helper function to store topological sort starting from all files
+  for (auto &[name, sourceFile] : sourceFiles)
+    if (!visited.contains(sourceFile->name))
+      topologicalSortHelper(sourceFile.get(), visited, stack);
+
+  while (!stack.empty()) {
+    sourceFileVisitQueue.push(stack.top());
+    stack.pop();
+  }
+}
+
+void GlobalResourceManager::topologicalSortHelper(SourceFile *file, std::unordered_set<std::string> &visited,
+                                                  std::stack<SourceFile *> &stack) {
+  // Mark the current node as visited
+  visited.insert(file->name);
+
+  // Recur for all the dependencies of this source file
+  for (auto &[name, sourceFile] : file->dependencies)
+    if (!visited.contains(name))
+      topologicalSortHelper(sourceFile, visited, stack);
+
+  // Push the current source file to the stack
+  stack.push(file);
 }
 
 uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }
