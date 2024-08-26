@@ -1,0 +1,6 @@
+import "std/os/env";
+
+public f<string> getTempDir() {
+    string dir = getEnv("TMPDIR");
+    return dir != nil<string> ? dir : "/tmp";
+}
