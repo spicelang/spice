@@ -52,7 +52,7 @@ void Driver::init() {
 
       // If the binary should be uninstalled, check if the executable exists and uninstall it
       if (shouldUninstall && !dryRun) {
-        if (exists(installPath) && std::filesystem::remove(installPath))
+        if (exists(installPath) && remove(installPath))
           std::cout << "Successfully uninstalled.\n";
         else
           CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
@@ -66,7 +66,7 @@ void Driver::init() {
     // Set output path and dir
     if (shouldExecute) {
       cliOptions.execute = true;
-      const auto millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      const long millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
       cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     } else if (!cliOptions.outputPath.empty()) {

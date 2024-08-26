@@ -1,10 +1,19 @@
 // Std imports
 import "std/text/print";
+import "std/os/os";
 import "std/os/cmd";
+import "std/os/filesystem";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
+import "std/io/file";
 import "std/io/filepath";
+import "std/time/time";
+import "std/type/long";
+
+// Own imports
+import "bootstrap/util/file-util";
+import "bootstrap/util/compiler-warning";
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
@@ -98,10 +107,73 @@ public p Driver.init() {
     // Create sub-commands
     this.addBuildSubcommand();
     this.addRunSubcommand();
+    this.addTestSubcommand();
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
 
-    // ToDo: extend
+    /*this.cliParser.setRootCallback(p() {
+        if this.shouldInstall || this.shouldUninstall {
+            // Prepare the installation path
+            FilePath installPath = getSpiceBinDir();
+            installPath /= this.cliOptions.mainSourceFile.getBaseName();
+            if !this.dryRun {
+                // ToDo
+            }
+
+            // If the binary should be installed, set the output path to the Spice bin directory
+            if this.shouldInstall {
+                this.cliOptions.outputPath = installPath;
+            }
+
+            // If the binary should be uninstalled, check if the executable exists and uninstall it
+            if this.shouldUninstall && !this.dryRun {
+                if installPath.exists() && deleteFile(installPath.toString()) {
+                    println("Successfully uninstalled");
+                } else {
+                    CompilerWarning warning = CompilerWarning(CompilerWarningType::UNINSTALL_FAILED, "The executable was not found at the expected location");
+                    warning.print();
+                }
+            }
+        }
+
+        // Abort here if we do not need to compile
+        if !this.shouldCompile {
+            return;
+        }
+
+        // Set output path and dir
+        if this.shouldExecute {
+            this.cliOptions.execute = true;
+            const long millis = getCurrentMillis();
+            this.cliOptions.outputDir = FilePath(getTempDir()) / "spice" / "output" / toString(millis);
+            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+        } else if this.cliOptions.outputPath.isEmpty() {
+            if this.cliOptions.outputPath.isEmpty() {
+                this.cliOptions.outputDir = this.cliOptions.outputPath;
+                this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+            } else {
+                this.cliOptions.outputDir = FilePath(this.cliOptions.outputPath.getParentDir());
+            }
+        } else {
+            this.cliOptions.outputDir = FilePath("./");
+            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+        }
+
+        // Set output file extension
+        if this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64 {
+            this.cliOptions.outputPath.replaceExtension("wasm");
+        } else if isWindows() {
+            this.cliOptions.outputPath.replaceExtension("exe");
+        } else {
+            this.cliOptions.outputPath.replaceExtension("");
+        }
+
+        // Set cache dir
+        this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
+
+        // Create directories in case they not exist yet
+        // ToDo
+    });*/
 }
 
 /**
@@ -194,6 +266,23 @@ p Driver.addRunSubcommand() {
     // --output
     CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
+    // --debug-info
+    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    debugInfoOption.addAlias("-g");
+    // --disable-verifier
+    subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+}
+
+/**
+ * Add test subcommand to cli interface
+ */
+p Driver.addTestSubcommand() {
+    // Create sub-command itself
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("test", "Builds your Spice program and runs all enclosed tests");
+    subCmd.addAlias("t");
+
+    this.addCompileSubcommandOptions(subCmd);
+
     // --debug-info
     CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");

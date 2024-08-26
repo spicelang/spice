@@ -73,7 +73,7 @@ struct CliOptions {
 };
 
 /**
- * Helper class to setup the driver and command line parser
+ * Helper class to set up the driver and command line parser
  */
 class Driver {
 public:
