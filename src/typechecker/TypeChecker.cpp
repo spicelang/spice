@@ -1918,7 +1918,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
   // Create resolver function, that always returns a nullptr
-  TypeMatcher::ResolverFct resolverFct = [](const std::string &genericTypeName) { return nullptr; };
+  TypeMatcher::ResolverFct resolverFct = [](const std::string &) { return nullptr; };
 
   for (size_t i = 0; i < argResults.size(); i++) {
     const QualType &actualType = argResults.at(i).type;
