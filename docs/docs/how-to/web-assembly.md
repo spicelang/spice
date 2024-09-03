@@ -70,7 +70,7 @@ WebAssembly.instantiateStreaming(fetch('main.wasm'))
   .then((results) => {
     // WebAssembly
     const startWasm = window.performance.now();
-    let result = results.instance.exports._Z4fiboi(fiboBase); // Use the mangled name here
+    let result = results.instance.exports.fibo(fiboBase);
     const stopWasm = window.performance.now();
     console.log("Fibonacci Spice wasm: " + result);
     console.log("Duration (millis): " + (stopWasm - startWasm));
