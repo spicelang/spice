@@ -646,10 +646,10 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  const Function spiceFunc(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
+  Function spiceFunc(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
+  spiceFunc.mangleFunctionName = false;
+  spiceFunc.alreadyTypeChecked = true;
   node->extFunction = FunctionManager::insert(currentScope, spiceFunc, &node->extFunctionManifestations);
-  node->extFunction->mangleFunctionName = false;
-  node->extFunction->alreadyTypeChecked = true;
 
   // Check procedure attributes
   if (node->attrs()) {

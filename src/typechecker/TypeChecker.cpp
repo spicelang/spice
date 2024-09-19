@@ -516,12 +516,13 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  const Function signature(node->methodName, nullptr, QualType(TY_DYN), returnType, paramList, usedGenericTypes, node);
+  Function signature(node->methodName, nullptr, QualType(TY_DYN), returnType, paramList, usedGenericTypes, node);
+  signature.alreadyTypeChecked = true;
+  signature.entry = node->entry;
+  signature.used = true;
 
   // Add signature to current scope
-  Function *manifestation = FunctionManager::insert(currentScope, signature, &node->signatureManifestations);
-  manifestation->entry = node->entry;
-  manifestation->used = true;
+  FunctionManager::insert(currentScope, signature, &node->signatureManifestations);
 
   // Prepare signature type
   const SuperType superType = isFunction ? TY_FUNCTION : TY_PROCEDURE;
@@ -2668,8 +2669,8 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
  */
 void TypeChecker::requestRevisitIfRequired(const Function *fct) const {
   // Push source file to the back of the processing queue
-  if (fct && !fct->alreadyTypeChecked && !fct->entry->scope->isImportedBy(rootScope))
-    resourceManager.sourceFileVisitQueue.push(fct->entry->scope->sourceFile);
+  if (fct && !fct->alreadyTypeChecked)
+    resourceManager.requestRevisitOf(fct->entry->scope->sourceFile);
 }
 
 /**

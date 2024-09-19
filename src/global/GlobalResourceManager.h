@@ -36,7 +36,7 @@ public:
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
   void enqueueSourceFilesForTypeChecking();
-  static void topologicalSortHelper(SourceFile* file, std::unordered_set<std::string>& visited, std::stack<SourceFile*>& stack);
+  void requestRevisitOf(SourceFile *sourceFile);
   uint64_t getNextCustomTypeId();
   size_t getTotalLineCount() const;
 
@@ -48,7 +48,7 @@ public:
   DefaultMemoryManager memoryManager;
   std::vector<std::string> compileTimeStringValues;
   BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes
-  std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
+  std::map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
   std::vector<ASTNode *> astNodes;
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
@@ -56,7 +56,7 @@ public:
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
   ErrorManager errorManager;
-  std::queue<SourceFile *> sourceFileVisitQueue; // Used for queueing type checking in the correct order
+  std::deque<SourceFile *> sourceFileVisitQueue; // Used for queueing type checking in the correct order
   bool abortCompilation = false;
 
 private:

@@ -273,7 +273,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
       // Insert the substantiated version if required
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericPreset = &matchScope->functions.at(fctId).at(signature);
-      substantiatedFunction->alreadyTypeChecked = false;
+      substantiatedFunction->alreadyTypeChecked = candidate.alreadyTypeChecked;
       substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
 
       // Copy function entry

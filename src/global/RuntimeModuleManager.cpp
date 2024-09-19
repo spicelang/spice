@@ -53,6 +53,10 @@ SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, Runti
   moduleSourceFile->runFrontEnd();
   moduleSourceFile->runTypeCheckerPre();
 
+  // Enqueue the dependency to type-check next if we are already in the type-checker-post phase
+  if (parentSourceFile->previousStage == TYPE_CHECKER_PRE)
+    resourceManager.sourceFileVisitQueue.push_front(moduleSourceFile);
+
   return moduleSourceFile;
 }
 
@@ -63,7 +67,7 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(RuntimeModule runtimeModule
   case RESULT_RT:
     return {RESULT_RT_IMPORT_NAME, "result_rt"};
   case ERROR_RT:
-    return {RESULT_RT_IMPORT_NAME, "error_rt"};
+    return {ERROR_RT_IMPORT_NAME, "error_rt"};
   case MEMORY_RT:
     return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
   case RTTI_RT:

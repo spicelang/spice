@@ -68,7 +68,7 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 bool TestUtil::checkRefMatch(const std::filesystem::path &refPath, GetOutputFct getActualOutput,
                              ModifyOutputFct modifyOutputFct) {
   // Cancel if the ref file does not exist
-  if (!std::filesystem::exists(refPath))
+  if (!exists(refPath))
     return false;
 
   // Get actual output
@@ -85,7 +85,7 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &refPath, GetOutputFct 
 }
 
 /**
- * Handle an test error
+ * Handle a test error
  *
  * @param testCase Testcase which has produced the error
  * @param error Exception with error message
@@ -100,7 +100,7 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&] { return errorWhat; });
+  checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&] { return errorWhat; });
 }
 
 /**

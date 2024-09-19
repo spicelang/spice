@@ -11,7 +11,7 @@ namespace spice::compiler {
 
 std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   // Skip if already type-checked
-  if (typeCheckedMainFct)
+  if (node->alreadyTypeChecked)
     return nullptr;
 
   node->resizeToNumberOfManifestations(1);
@@ -24,7 +24,7 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   currentScope = rootScope;
 
   // Set to type-checked
-  typeCheckedMainFct = true;
+  node->alreadyTypeChecked = true;
   return nullptr;
 }
 

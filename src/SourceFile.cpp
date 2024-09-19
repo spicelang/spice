@@ -244,8 +244,8 @@ void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   // The second run to ensure, also generic scopes are type-checked properly
   while (!resourceManager.sourceFileVisitQueue.empty()) {
     SourceFile *sourceFile = resourceManager.sourceFileVisitQueue.front();
+    resourceManager.sourceFileVisitQueue.pop_front();
     sourceFile->runTypeCheckerPost();
-    resourceManager.sourceFileVisitQueue.pop();
   }
 }
 
@@ -546,9 +546,9 @@ void SourceFile::runMiddleEnd() {
   // Visit the source files in this order
   while (!resourceManager.sourceFileVisitQueue.empty()) {
     SourceFile *sourceFile = resourceManager.sourceFileVisitQueue.front();
+    resourceManager.sourceFileVisitQueue.pop_front();
     sourceFile->runTypeCheckerPost();
     CHECK_ABORT_FLAG_V()
-    resourceManager.sourceFileVisitQueue.pop();
   }
 }
 
@@ -707,7 +707,7 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
     warning.print();
 }
 
-const SourceFile *SourceFile::getRootSourceFile() const { // NOLINT(misc-no-recursion)
+SourceFile *SourceFile::getRootSourceFile() { // NOLINT(misc-no-recursion)
   return isMainFile ? this : parent->getRootSourceFile();
 }
 

@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <global/TypeRegistry.h>
+#include <llvm/IR/InlineAsm.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/StructManager.h>
 #include <util/FileUtil.h>
@@ -65,39 +66,54 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
 
   // Create the new source file if it does not exist yet
   if (!sourceFiles.contains(filePathStr))
-    sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile)});
+    sourceFiles[filePathStr] = std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile);
 
   return sourceFiles.at(filePathStr).get();
 }
 
+/**
+ * Bring the source files into an order, so that a source file is only visited, as soon as all its dependencies are visited.
+ * We use Kahn's Algorithm for that, which is a graph algorithm that works on directed acyclic graphs (DAGs) and performs a
+ * BFS on the graph, while iteratively pushes source files onto a stack, that have no incoming edges and subsequently removing
+ * them from the graph.
+ */
 void GlobalResourceManager::enqueueSourceFilesForTypeChecking() {
-  assert(sourceFileVisitQueue.empty());
-  std::stack<SourceFile *> stack;
-  std::unordered_set<std::string> visited;
+  assert(!sourceFiles.empty());
+  sourceFileVisitQueue.clear();
 
-  // Call the recursive helper function to store topological sort starting from all files
-  for (auto &[name, sourceFile] : sourceFiles)
-    if (!visited.contains(sourceFile->name))
-      topologicalSortHelper(sourceFile.get(), visited, stack);
+  // Create map for in degree for each source file
+  std::unordered_map<SourceFile *, unsigned int> inDegreeMap;
+  inDegreeMap.reserve(sourceFiles.size());
+  for (const std::unique_ptr<SourceFile> &file : sourceFiles | std::views::values)
+    inDegreeMap[file.get()] = file->dependants.size();
 
-  while (!stack.empty()) {
-    sourceFileVisitQueue.push(stack.top());
-    stack.pop();
+  // Push the root source file to the queue, because we start iterating there
+  SourceFile *rootSourceFile = sourceFiles.begin()->second->getRootSourceFile();
+  assert(rootSourceFile != nullptr);
+  std::queue<SourceFile *> inDegreeZeroQueue;
+  inDegreeZeroQueue.push(rootSourceFile);
+
+  // Process the graph
+  while (!inDegreeZeroQueue.empty()) {
+    // Pick the next source file from the zero in degree queue
+    SourceFile *sourceFile = inDegreeZeroQueue.front();
+    inDegreeZeroQueue.pop();
+
+    // Push the current source file to the front of the queue
+    sourceFileVisitQueue.push_front(sourceFile);
+
+    // For all neighbors, decrease their in degree
+    for (SourceFile *dependency : sourceFile->dependencies | std::views::values)
+      if (--inDegreeMap.at(dependency) == 0)
+        inDegreeZeroQueue.push(dependency);
   }
+
+  assert(sourceFileVisitQueue.size() == sourceFiles.size());
 }
 
-void GlobalResourceManager::topologicalSortHelper(SourceFile *file, std::unordered_set<std::string> &visited,
-                                                  std::stack<SourceFile *> &stack) {
-  // Mark the current node as visited
-  visited.insert(file->name);
-
-  // Recur for all the dependencies of this source file
-  for (auto &[name, sourceFile] : file->dependencies)
-    if (!visited.contains(name))
-      topologicalSortHelper(sourceFile, visited, stack);
-
-  // Push the current source file to the stack
-  stack.push(file);
+void GlobalResourceManager::requestRevisitOf(SourceFile *sourceFile) {
+  if (!std::ranges::contains(sourceFileVisitQueue, sourceFile))
+    sourceFileVisitQueue.push_back(sourceFile);
 }
 
 uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }

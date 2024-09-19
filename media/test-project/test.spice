@@ -1,19 +1,21 @@
-import "std/data/optional";
-import "std/data/stack";
+p test(p(int&) l1, f<bool>(int&) l2) {
+    int x = 1;
+    l1(x);
+    assert x == 6;
+    assert l2(x);
+    assert x == 11;
+}
 
 f<int> main() {
-    Stack<double> doubleStack = Stack<double>();
-    doubleStack.push(4.566);
-
-    dyn oi = Optional<Stack<double>>();
-    printf("%d\n", oi.isPresent());
-    oi.set(doubleStack);
-    printf("%d\n", oi.isPresent());
-    dyn res = oi.get();
-    printf("%d\n", res.getSize());
-    oi.clear();
-    printf("%d\n", oi.isPresent());
-
-    dyn oi2 = Optional<String>(String("This is a test"));
-    assert oi2.isPresent();
+    int z = 2;
+    int w = 3;
+    p(int&) foo1 = p(int& x) {
+        x += z + w;
+    };
+    f<bool>(int&) foo2 = f<bool>(int& x) {
+        x += z + w;
+        return true;
+    };
+    test(foo1, foo2);
+    printf("All tests passed!\n");
 }

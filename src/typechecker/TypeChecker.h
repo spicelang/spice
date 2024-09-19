@@ -133,7 +133,6 @@ private:
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
   TypeMapping typeMapping;
-  bool typeCheckedMainFct = false;
 
   // Private methods
   bool visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName);

@@ -257,6 +257,7 @@ public:
 
   // Public members
   bool takesArgs = false;
+  bool alreadyTypeChecked = false;
   SymbolTableEntry *entry = nullptr;
   Scope *bodyScope = nullptr;
 };

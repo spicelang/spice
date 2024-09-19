@@ -150,7 +150,7 @@ public:
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors() const;
   void collectAndPrintWarnings();
-  const SourceFile *getRootSourceFile() const;
+  SourceFile *getRootSourceFile();
   bool isRT(RuntimeModule runtimeModule) const;
   ALWAYS_INLINE bool isStringRT() const { return isRT(STRING_RT); }
   ALWAYS_INLINE bool isMemoryRT() const { return isRT(MEMORY_RT); }
