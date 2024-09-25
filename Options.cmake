@@ -129,10 +129,29 @@ else ()
     message(STATUS "Spice: Thread sanitizer disabled.")
 endif ()
 
+# Overload of new and delete operators
 option(SPICE_OVERLOAD_NEW_DELETE "" OFF)
 if (SPICE_OVERLOAD_NEW_DELETE)
     message(STATUS "Spice: New and delete operators are overloaded")
     add_compile_definitions(SPICE_NEW_DELETE_OVERLOADED)
 else ()
     message(STATUS "Spice: New and delete operators are not overloaded")
+endif ()
+
+# RELRO (relocation read-only) security hardening
+option(SPICE_RELRO "Enable relocation read-only (RELRO) hardening" ON)
+if (SPICE_RELRO)
+    message(STATUS "Spice: RELRO hardening enabled (release build only)")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-z,relro,-z,now")
+else ()
+    message(STATUS "Spice: RELRO hardening disabled")
+endif ()
+
+# Stack canary security hardening
+option(SPICE_STACK_PROTECTION "Enable stack canary security hardening" ON)
+if (SPICE_STACK_PROTECTION)
+    message(STATUS "Spice: Stack canaries enabled (release build only)")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fstack-protector")
+else ()
+    message(STATUS "Spice: Stack canaries disabled")
 endif ()
