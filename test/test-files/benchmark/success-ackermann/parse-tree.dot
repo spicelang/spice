@@ -980,4 +980,6 @@ digraph {
  L10C4_stmt -> L10C82
  L11C0 [color="lightblue",label="RBRACE: }"];
  L7C14_stmtLst -> L11C0
+ L11C1 [color="lightblue",label="EOF: <EOF>"];
+ L1C0_entry -> L11C1
 }

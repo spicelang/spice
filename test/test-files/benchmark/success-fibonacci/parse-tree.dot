@@ -476,4 +476,6 @@ digraph {
  L7C4_stmt -> L7C34
  L8C0 [color="lightblue",label="RBRACE: }"];
  L6C14_stmtLst -> L8C0
+ L8C1 [color="lightblue",label="EOF: <EOF>"];
+ L1C0_entry -> L8C1
 }

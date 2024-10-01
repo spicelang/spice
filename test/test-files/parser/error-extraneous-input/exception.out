@@ -1,1 +1,1 @@
-[Error|Parser] ./source.spice
+[Error|Parser] ./source.spice:5:0: Parsing failed: extraneous input '1' expecting {<EOF>, 'double', 'int', 'short', 'long', 'byte', 'char', 'string', 'bool', 'dyn', 'const', 'signed', 'unsigned', 'inline', 'public', 'heap', 'compose', 'f', 'p', 'import', 'type', 'ext', '#', '#!', IDENTIFIER, TYPE_IDENTIFIER}
