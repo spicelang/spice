@@ -1,0 +1,5 @@
+f<int> main() {
+    printf("Hi.\n");
+}
+
+1
