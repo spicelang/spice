@@ -2358,4 +2358,6 @@ digraph {
  L19C39_stmtLst -> L41C4
  L42C0 [color="lightblue",label="RBRACE: }"];
  L4C14_stmtLst -> L42C0
+ L42C1 [color="lightblue",label="EOF: <EOF>"];
+ L4C0_entry -> L42C1
 }

@@ -1506,4 +1506,6 @@ digraph {
  L24C4_stmt -> L24C30
  L25C0 [color="lightblue",label="RBRACE: }"];
  L8C14_stmtLst -> L25C0
+ L25C1 [color="lightblue",label="EOF: <EOF>"];
+ L1C0_entry -> L25C1
 }
