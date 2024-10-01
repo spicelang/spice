@@ -3,7 +3,7 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
 mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst;
 functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
