@@ -517,7 +517,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Loop through all items without values
   uint32_t nextValue = 0;
-  const QualType intSymbolType(TY_INT);
+  const QualType intSymbolType(TY_ENUM, node->enumName);
   for (EnumItemNode *enumItem : node->itemLst()->items()) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);

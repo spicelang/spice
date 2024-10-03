@@ -341,9 +341,9 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   AssignExprNode *expr = node->assignExpr();
   const QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
-  if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
+  if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL, TY_ENUM}))
     SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
-                  "Switch expression must be of int, short, long, byte, char or bool type")
+                  "Switch expression must be of int, short, long, byte, char, bool or enum type")
 
   // Visit children
   visitChildren(node);
@@ -641,7 +641,7 @@ std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
     SOFT_ERROR_ER(node, CASE_CONSTANT_NOT_ENUM, "Case constants must be of type enum")
 
   const QualType varType = node->enumItemEntry->getQualType();
-  assert(varType.is(TY_INT));
+  assert(varType.isOneOf({TY_INT, TY_ENUM}));
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx)};
 }
 
@@ -764,7 +764,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'u':
     case 'x':
     case 'X': {
-      if (!argType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL}))
+      if (!argType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL, TY_ENUM}))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
                       "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName(false))
       placeholderCount++;
@@ -1529,9 +1529,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (varType.is(TY_INVALID))
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
-  // The base type should be a primitive, struct, interface, function or procedure
+  // The base type should be a primitive, struct, interface, enum, function or procedure
   const QualType baseType = varType.getBase();
-  if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
+  if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName(false) + " cannot be accessed here")
 
   // Check if is an imported variable
@@ -2394,12 +2394,12 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx);
   case BaseDataTypeNode::TYPE_CUSTOM: {
-    auto customType = std::any_cast<QualType>(visit(node->customDataType()));
+    const auto customType = std::any_cast<QualType>(visit(node->customDataType()));
     HANDLE_UNRESOLVED_TYPE_QT(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
   case BaseDataTypeNode::TYPE_FUNCTION: {
-    auto functionType = std::any_cast<QualType>(visit(node->functionDataType()));
+    const auto functionType = std::any_cast<QualType>(visit(node->functionDataType()));
     HANDLE_UNRESOLVED_TYPE_QT(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
   }
@@ -2451,7 +2451,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Enums can early-return
   if (entryType.is(TY_ENUM))
-    return QualType(TY_INT);
+    return QualType(TY_ENUM, node->fqTypeName);
 
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);

@@ -533,7 +533,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
-  case COMB(TY_INT, TY_INT):
+  case COMB(TY_INT, TY_INT): // fallthrough
+  case COMB(TY_ENUM, TY_ENUM):
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
@@ -667,7 +668,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
-  case COMB(TY_INT, TY_INT):
+  case COMB(TY_INT, TY_INT): // fallthrough
+  case COMB(TY_ENUM, TY_ENUM):
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());

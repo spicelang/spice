@@ -45,8 +45,9 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
       return lhsType;
     }
   }
-  // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
-  if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
+  // Allow arrays, structs, interfaces, enums, functions, procedures of the same type straight away
+  if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_ENUM, TY_FUNCTION, TY_PROCEDURE}) &&
+      lhsType.matches(rhsType, false, true, true))
     return rhsType;
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
@@ -360,6 +361,10 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
   if ((lhsType.is(TY_STRING) && rhsType.isPtrTo(TY_CHAR)) || (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING)))
     return ExprResult(QualType(TY_BOOL));
 
+  // Allow 'enum(x) == enum(x)'
+  if (lhsType.is(TY_ENUM) && lhsType.matches(rhsType, false, true, false))
+    return ExprResult(QualType(TY_BOOL));
+
   // Check primitive type combinations
   return ExprResult(validateBinaryOperation(node, EQUAL_OP_RULES, std::size(EQUAL_OP_RULES), "==", lhsType, rhsType));
 }
@@ -384,6 +389,10 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult 
 
   // Allow 'string != char*' and vice versa straight away
   if ((lhsType.is(TY_STRING) && rhsType.isPtrTo(TY_CHAR)) || (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING)))
+    return ExprResult(QualType(TY_BOOL));
+
+  // Allow 'enum(x) == enum(x)'
+  if (lhsType.is(TY_ENUM) && lhsType.matches(rhsType, false, true, false))
     return ExprResult(QualType(TY_BOOL));
 
   // Check primitive type combinations

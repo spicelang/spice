@@ -18,11 +18,9 @@ bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
   case TY_STRUCT:
     assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
     return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
-  case TY_INTERFACE:
-    return lhs.typeId == rhs.typeId;
+  case TY_INTERFACE: // fall-through
   case TY_ENUM:
-    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-    return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
+    return lhs.typeId == rhs.typeId;
   case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
     if (lhs.paramTypes.size() != rhs.paramTypes.size())
@@ -132,8 +130,8 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
   case TY_INVALID:     // GCOV_EXCL_LINE
     name << "invalid"; // GCOV_EXCL_LINE
     break;
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
+  default:                                                                                // LCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element"); // LCOV_EXCL_LINE
   }
 }
 
