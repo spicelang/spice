@@ -21,13 +21,6 @@ QualType::QualType(SuperType superType, const std::string &subType)
 QualType::QualType(const Type *type, TypeSpecifiers specifiers) : type(type), specifiers(specifiers) {}
 
 /**
- * Set the underlying type
- *
- * @return Type
- */
-void QualType::setType(const Type *newType) { type = newType; }
-
-/**
  * Get the super type of the underlying type
  *
  * @return Super type
@@ -35,9 +28,9 @@ void QualType::setType(const Type *newType) { type = newType; }
 SuperType QualType::getSuperType() const { return type->getSuperType(); }
 
 /**
- * Get the sub type of the underlying type
+ * Get the subtype of the underlying type
  *
- * @return Sub type
+ * @return Subtype
  */
 const std::string &QualType::getSubType() const { return type->getSubType(); }
 
@@ -252,7 +245,7 @@ bool QualType::isStringObj() const {
 }
 
 /**
- * Check if the current type is a error object
+ * Check if the current type is an error object
  *
  * @return Error object or not
  */
@@ -754,17 +747,6 @@ bool QualType::isComposition() const { return specifiers.isComposition; }
 void QualType::makeConst(bool isConst) { specifiers.isConst = isConst; }
 
 /**
- * Make the current type signed
- *
- * @param isSigned Is signed or not
- */
-void QualType::makeSigned(bool isSigned) {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  specifiers.isSigned = isSigned;
-  specifiers.isUnsigned = !isSigned;
-}
-
-/**
  * Make the current type unsigned
  *
  * @param isUnsigned Is unsigned or not
@@ -773,16 +755,6 @@ void QualType::makeUnsigned(bool isUnsigned) {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
   specifiers.isSigned = !isUnsigned;
   specifiers.isUnsigned = isUnsigned;
-}
-
-/**
- * Make the current type inline
- *
- * @param isInline Is inline or not
- */
-void QualType::makeInline(bool isInline) {
-  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  specifiers.isInline = isInline;
 }
 
 /**
@@ -801,13 +773,6 @@ void QualType::makePublic(bool isPublic) {
  * @param isHeap Is heap or not
  */
 void QualType::makeHeap(bool isHeap) { specifiers.isHeap = isHeap; }
-
-/**
- * Make the current type composition
- *
- * @param isComposition Is composition or not
- */
-void QualType::makeComposition(bool isComposition) { specifiers.isComposition = isComposition; }
 
 /**
  * Check if two types are equal

@@ -19,7 +19,7 @@ public:
   void prepare();
   void link() const;
   void addObjectFilePath(const std::string &objectFilePath);
-  void addLinkerFlag(const std::string &linkerFlag);
+  void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
 
   // Public members

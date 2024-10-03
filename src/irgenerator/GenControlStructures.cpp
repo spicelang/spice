@@ -373,7 +373,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   // Create blocks
   std::vector<llvm::BasicBlock *> bCases;
   bCases.reserve(caseBranches.size());
-  for (auto caseBranch : caseBranches)
+  for (const auto caseBranch : caseBranches)
     bCases.push_back(createBlock("switch.case." + caseBranch->codeLoc.toPrettyLine()));
   llvm::BasicBlock *bDefault = nullptr;
   if (node->hasDefaultBranch)
@@ -404,7 +404,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bCases.at(i));
 
     // Visit case body
-    visit(caseBranch->body());
+    visit(caseBranch);
 
     // Create jump from case to exit block
     insertJump(bExit);
@@ -413,8 +413,8 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     fallthroughBlocks.pop();
 
     // Add case to switch instruction
-    for (CaseConstantNode *caseConstantNode : caseBranch->caseConstants()) {
-      auto caseValue = std::any_cast<llvm::Constant *>(visit(caseConstantNode));
+    for (const CaseConstantNode *caseConstantNode : caseBranch->caseConstants()) {
+      const auto caseValue = std::any_cast<llvm::Constant *>(visit(caseConstantNode));
       switchInst->addCase(llvm::cast<llvm::ConstantInt>(caseValue), bCases.at(i));
     }
   }
@@ -425,7 +425,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bDefault);
 
     // Visit default body
-    visit(defaultBranch->body());
+    visit(defaultBranch);
 
     // Create jump from default to exit block
     insertJump(bExit);

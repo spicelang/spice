@@ -37,8 +37,8 @@ const char *IRGenerator::getSysCallAsmString() const {
            "movq $6, %r9\n"
            "syscall\n";
 
-  assert_fail("Unsupported target for inline assembly");
-  return nullptr;
+  assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
+  return nullptr;                                        // LCOV_EXCL_LINE
 }
 
 const char *IRGenerator::getSysCallConstraintString() const {
@@ -48,8 +48,8 @@ const char *IRGenerator::getSysCallConstraintString() const {
     return "r,r,r,r,r,r,r,~{eax},~{ebx},~{ecx},~{edx},~{esi},~{edi},~{ebp},~{dirflag},~{fpsr},~{flags}";
   if (cliOptions.targetArch == "aarch64" || cliOptions.targetArch == "arm64")
     return "r,r,r,r,r,r,r,~{x8},~{x0},~{x1},~{x2},~{x3},~{x4},~{x5},~{dirflag},~{fpsr},~{flags}";
-  assert_fail("Unsupported target for inline assembly");
-  return nullptr;
+  assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
+  return nullptr;                                        // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler
