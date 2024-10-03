@@ -62,7 +62,7 @@ void ExternalLinkerInterface::link() const {
   timer.stop();
 
   // Check for linker error
-  if (exitCode != 0)                                                   // GCOV_EXCL_LINE
+  if (exitCode != 0)                                                          // GCOV_EXCL_LINE
     throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code"); // GCOV_EXCL_LINE
 
   // Print linker result if appropriate
@@ -84,7 +84,7 @@ void ExternalLinkerInterface::addObjectFilePath(const std::string &objectFilePat
 /**
  * Add another linker flag for the call to the linker executable
  *
- * @param linkerFlag Linker flag
+ * @param flag Linker flag
  */
 void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
 
@@ -95,9 +95,10 @@ void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFla
  */
 void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path additionalSource) {
   // Check if the file exists
-  if (!std::filesystem::exists(additionalSource)) // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR,
-                        "The additional source file '" + additionalSource.string() + "' does not exist"); // GCOV_EXCL_LINE
+  if (!exists(additionalSource)) {                                                                           // GCOV_EXCL_LINE
+    const std::string msg = "The additional source file '" + additionalSource.string() + "' does not exist"; // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, msg);                                                                      // GCOV_EXCL_LINE
+  }                                                                                                          // GCOV_EXCL_LINE
 
   // Add the file to the linker
   additionalSource.make_preferred();

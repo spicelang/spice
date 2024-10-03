@@ -132,7 +132,8 @@ std::string FileUtil::findLinkerInvoker() {
     if (isCommandAvailable(linkerInvokerName + " -v"))
       return linkerInvokerName;
 #endif
-  throw LinkerError(LINKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
+  const auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
+  throw LinkerError(LINKER_NOT_FOUND, msg);                                                             // LCOV_EXCL_LINE
 }
 
 /**
@@ -152,7 +153,8 @@ std::string FileUtil::findLinker() {
     if (isCommandAvailable(linkerName + " -v"))
       return linkerName;
 #endif
-  throw LinkerError(LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
+  const auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
+  throw LinkerError(LINKER_NOT_FOUND, msg);                                                              // LCOV_EXCL_LINE
 }
 
 /**

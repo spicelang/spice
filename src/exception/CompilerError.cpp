@@ -47,24 +47,18 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType errorType) {
     return "Std lib not found";
   case BOOTSTRAP_NOT_FOUND:
     return "Bootstrap compiler not found";
-  case UNHANDLED_BRANCH:
-    return "Unhandled code branch";
+  case UNHANDLED_BRANCH:            // LCOV_EXCL_LINE
+    return "Unhandled code branch"; // LCOV_EXCL_LINE
   case TYPE_CHECKER_RUNS_EXCEEDED:
     return "Type-checker runs exceeded";
   case TARGET_NOT_AVAILABLE:
     return "Selected target not available";
-  case BRANCH_NOT_FOUND:
-    return "Branch not found";
-  case REFERENCED_UNDEFINED_FUNCTION_IR:
-    return "Referenced undefined function";
-  case PRINTF_NULL_TYPE:
-    return "Printf has null type";
   case OOM:
     return "An out of memory error occurred";
-  case INVALID_FUNCTION:
-    return "Invalid function";
-  case INVALID_MODULE:
-    return "Invalid module";
+  case INVALID_FUNCTION:       // LCOV_EXCL_LINE
+    return "Invalid function"; // LCOV_EXCL_LINE
+  case INVALID_MODULE:         // LCOV_EXCL_LINE
+    return "Invalid module";   // LCOV_EXCL_LINE
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }

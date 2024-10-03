@@ -361,8 +361,8 @@ void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeL
   // Verify function
   std::string output;
   llvm::raw_string_ostream oss(output);
-  if (llvm::verifyFunction(*fct, &oss))
-    throw CompilerError(codeLoc, INVALID_FUNCTION, output);
+  if (llvm::verifyFunction(*fct, &oss))                     // LCOV_EXCL_LINE
+    throw CompilerError(codeLoc, INVALID_FUNCTION, output); // LCOV_EXCL_LINE
 }
 
 void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
@@ -373,8 +373,8 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
   // Verify module
   std::string output;
   llvm::raw_string_ostream oss(output);
-  if (llvm::verifyModule(*module, &oss))
-    throw CompilerError(codeLoc, INVALID_MODULE, output);
+  if (llvm::verifyModule(*module, &oss))                  // LCOV_EXCL_LINE
+    throw CompilerError(codeLoc, INVALID_MODULE, output); // LCOV_EXCL_LINE
 }
 
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode, const ASTNode *node) {

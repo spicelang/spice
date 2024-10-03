@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <llvm/IR/Type.h>
@@ -47,7 +46,6 @@ public:
 
   // Getters and setters on type
   [[nodiscard]] const Type *getType() const { return type; }
-  void setType(const Type *newType);
 
   // Getters on type parts
   [[nodiscard]] SuperType getSuperType() const;
@@ -129,12 +127,9 @@ public:
   [[nodiscard]] bool isHeap() const;
   [[nodiscard]] bool isComposition() const;
   void makeConst(bool isConst = true);
-  void makeSigned(bool isSigned = true);
   void makeUnsigned(bool isUnsigned = true);
-  void makeInline(bool isInline = true);
   void makePublic(bool isPublic = true);
   void makeHeap(bool isHeap = true);
-  void makeComposition(bool isComposition = true);
 
   // Overloaded operators
   friend bool operator==(const QualType &lhs, const QualType &rhs);
