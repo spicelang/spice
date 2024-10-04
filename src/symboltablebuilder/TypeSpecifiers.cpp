@@ -27,6 +27,7 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   case TY_PTR:       // fall-through
   case TY_REF:       // fall-through
   case TY_ARRAY:     // fall-through
+  case TY_ENUM:      // fall-through
   case TY_STRUCT:    // fall-through
   case TY_INTERFACE: // fall-through
   case TY_FUNCTION:  // fall-through
@@ -35,7 +36,6 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   case TY_GENERIC:
     // Generics must be non-signed and non-unsigned at the same time to ensure a proper function matching
     return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
-  case TY_ENUM:  // fall-through
   case TY_ALIAS: // fall-through
   case TY_IMPORT:
     return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
