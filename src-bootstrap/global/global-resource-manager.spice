@@ -37,7 +37,6 @@ public type GlobalResourceManager struct : IGlobalResourceManager {
     public Vector<String> compileTimeStringValues
     public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
     public UnorderedMap<String, heap SourceFile*> sourceFiles // The GlobalResourceManager owns all source files
-    public Vector<ASTNode*> astNodes
     public CliOptions& cliOptions
     public ExternalLinkerInterface linker
     public CacheManager cacheManager
