@@ -35,10 +35,10 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
     // Retrieve native CPU name and the supported CPU features
     cpuName = llvm::sys::getHostCPUName();
-    for (const llvm::StringMapEntry<bool> &feature : llvm::sys::getHostCPUFeatures()) {
+    for (const auto &[name, enabled] : llvm::sys::getHostCPUFeatures()) {
       if (featureString.rdbuf()->in_avail() > 0)
         featureString << ',';
-      featureString << (feature.second ? '+' : '-') << feature.first().str();
+      featureString << (enabled ? '+' : '-') << name.str();
     }
   }
   cpuFeatures = featureString.str();

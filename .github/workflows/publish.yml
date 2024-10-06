@@ -28,7 +28,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1
 
       - name: Setup Dependencies
-        run: sudo apt-get install ninja-build pipx uuid-dev
+        run: sudo apt-get install ninja-build pipx uuid-dev checksec jq
 
       - name: Cache LLVM
         id: cache-llvm
@@ -65,6 +65,10 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
+
+      - name: Run Checksec
+        working-directory: bin
+        run: checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

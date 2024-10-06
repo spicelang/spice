@@ -45,7 +45,7 @@ p ASTNode.ctor(CodeLoc codeLoc) {
     assert false; // Please override at child level
 }*/
 
-public p ASTNode.addChild(ASTNode *child) {
+public p ASTNode.addChild(ASTNode* child) {
     this.children.pushBack(child);
     child.parent = this;
 }
