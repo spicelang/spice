@@ -145,7 +145,7 @@ public p String.append(const char c) {
 /**
  * Concatenates two strings and returns the result
  *
- * @parem a String a
+ * @param a String a
  * @param b String b
  * @return Concatenated string
  */
@@ -372,10 +372,10 @@ public f<long> String.find(string needle, unsigned int startIndex) {
 }
 
 /**
- * Searches for a subchar in a string. Returns -1 if the char was not found.
+ * Searches for a char in a string. Returns -1 if the char was not found.
  *
  * @param startIndex Index where to start the search
- * @return Index, where the subchar was found / -1
+ * @return Index, where the char was found / -1
  */
 public f<long> String.find(char needle, unsigned long startIndex = 0l) {
     const String needleStr = String(needle);
@@ -425,10 +425,10 @@ public f<long> String.rfind(string needle, unsigned int startIndex) {
 }
 
 /**
- * Searches for a subchar in a string from the back. Returns -1 if the char was not found.
+ * Searches for a char in a string from the back. Returns -1 if the char was not found.
  *
  * @param startIndex Index where to start the search
- * @return Index, where the subchar was found / -1
+ * @return Index, where the char was found / -1
  */
 public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
     const String needleStr = String(needle);
@@ -491,7 +491,7 @@ public f<bool> String.replace(
     string replacement,
     unsigned long startIdx = 0l
 ) {
-    // Abort, if needle or replacement are nullptrs
+    // Abort, if needle or replacement are both nullptr
     if (char*) needle == nil<char*> || (char*) replacement == nil<char*> {
         return false;
     }

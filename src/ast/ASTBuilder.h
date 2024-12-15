@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include <functional>
 
 // Ignore some warnings in ANTLR generated code
