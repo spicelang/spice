@@ -811,7 +811,8 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
   const auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::LogicalAndExprContext *logicalAndExpr : ctx->logicalAndExpr())
+    logicalOrExprNode->operands.push_back(std::any_cast<LogicalAndExprNode *>(visit(logicalAndExpr)));
 
   return concludeNode(logicalOrExprNode);
 }
@@ -820,7 +821,8 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   const auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseOrExprContext *bitwiseOrExpr : ctx->bitwiseOrExpr())
+    logicalAndExprNode->operands.push_back(std::any_cast<BitwiseOrExprNode *>(visit(bitwiseOrExpr)));
 
   return concludeNode(logicalAndExprNode);
 }
@@ -829,7 +831,8 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
   const auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseXorExprContext *bitwiseXorExpr : ctx->bitwiseXorExpr())
+    bitwiseOrExprNode->operands.push_back(std::any_cast<BitwiseXorExprNode *>(visit(bitwiseXorExpr)));
 
   return concludeNode(bitwiseOrExprNode);
 }
@@ -838,7 +841,8 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
   const auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseAndExprContext *bitwiseAndExpr : ctx->bitwiseAndExpr())
+    bitwiseXorExprNode->operands.push_back(std::any_cast<BitwiseAndExprNode *>(visit(bitwiseAndExpr)));
 
   return concludeNode(bitwiseXorExprNode);
 }
@@ -847,7 +851,8 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
   const auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::EqualityExprContext *equalityExpr : ctx->equalityExpr())
+    bitwiseAndExprNode->operands.push_back(std::any_cast<EqualityExprNode *>(visit(equalityExpr)));
 
   return concludeNode(bitwiseAndExprNode);
 }
@@ -855,20 +860,25 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   const auto equalityExprNode = createNode<EqualityExprNode>(ctx);
 
+  // Visit children
+  for (SpiceParser::RelationalExprContext *relationalExpr : ctx->relationalExpr())
+    equalityExprNode->operands.push_back(std::any_cast<RelationalExprNode *>(visit(relationalExpr)));
+
   // Extract operator
   if (ctx->EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_EQUAL;
   else if (ctx->NOT_EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
 
-  // Visit children
-  visitChildren(ctx);
-
   return concludeNode(equalityExprNode);
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   const auto relationalExprNode = createNode<RelationalExprNode>(ctx);
+
+  // Visit children
+  for (SpiceParser::ShiftExprContext *shiftExpr : ctx->shiftExpr())
+    relationalExprNode->operands.push_back(std::any_cast<ShiftExprNode *>(visit(shiftExpr)));
 
   // Extract operator
   if (ctx->LESS())
@@ -880,23 +890,21 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   else if (ctx->GREATER_EQUAL())
     relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
 
-  // Visit children
-  visitChildren(ctx);
-
   return concludeNode(relationalExprNode);
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   const auto shiftExprNode = createNode<ShiftExprNode>(ctx);
 
+  // Visit children
+  for (SpiceParser::AdditiveExprContext *additiveExpr : ctx->additiveExpr())
+    shiftExprNode->operands.push_back(std::any_cast<AdditiveExprNode *>(visit(additiveExpr)));
+
   // Extract operator
   if (!ctx->LESS().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_LEFT;
   else if (!ctx->GREATER().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
-
-  // Visit children
-  visitChildren(ctx);
 
   return concludeNode(shiftExprNode);
 }
@@ -905,14 +913,20 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   const auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::MultiplicativeExprContext *multiplicativeExpr : ctx->multiplicativeExpr())
+    additiveExprNode->operands.push_back(std::any_cast<MultiplicativeExprNode *>(visit(multiplicativeExpr)));
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
+    const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    if (terminal == nullptr)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::PLUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, TY_INVALID);
-    else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-             t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::MINUS)
+    else if (terminal->getSymbol()->getType() == SpiceParser::MINUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, TY_INVALID);
+    else
+      assert_fail("Invalid terminal symbol for additive expression");
   }
 
   return concludeNode(additiveExprNode);
@@ -922,17 +936,22 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
   const auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::CastExprContext *castExpr : ctx->castExpr())
+    multiplicativeExprNode->operands.push_back(std::any_cast<CastExprNode *>(visit(castExpr)));
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
+    const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    if (terminal == nullptr)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::MUL)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, TY_INVALID);
-    else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-             t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DIV)
+    else if (terminal->getSymbol()->getType() == SpiceParser::DIV)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, TY_INVALID);
-    else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
-             t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::REM)
+    else if (terminal->getSymbol()->getType() == SpiceParser::REM)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, TY_INVALID);
+    else
+      assert_fail("Invalid terminal symbol for multiplicative expression");
   }
 
   return concludeNode(multiplicativeExprNode);
@@ -941,11 +960,11 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   const auto castExprNode = createNode<CastExprNode>(ctx);
 
-  // Enrich
-  castExprNode->isCast = ctx->LPAREN();
-
-  // Visit children
-  visitChildren(ctx);
+  if (ctx->dataType()) {
+    castExprNode->isCast = true;
+    castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
+  castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
 
   return concludeNode(castExprNode);
 }
@@ -1255,7 +1274,8 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
 
   // Enrich
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
+        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = t1->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;

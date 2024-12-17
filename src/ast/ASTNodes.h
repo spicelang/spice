@@ -1477,10 +1477,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalOrExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLogicalOrExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<LogicalAndExprNode *> operands() const { return getChildren<LogicalAndExprNode>(); }
-
   // Other methods
+  std::vector<LogicalAndExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1496,10 +1494,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalAndExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLogicalAndExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<BitwiseOrExprNode *> operands() const { return getChildren<BitwiseOrExprNode>(); }
-
   // Other methods
+  std::vector<BitwiseOrExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1515,10 +1511,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseOrExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBitwiseOrExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<BitwiseXorExprNode *> operands() const { return getChildren<BitwiseXorExprNode>(); }
-
   // Other methods
+  std::vector<BitwiseXorExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1534,10 +1528,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseXorExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBitwiseXorExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<BitwiseAndExprNode *> operands() const { return getChildren<BitwiseAndExprNode>(); }
-
   // Other methods
+  std::vector<BitwiseAndExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1553,10 +1545,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseAndExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBitwiseAndExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<EqualityExprNode *> operands() const { return getChildren<EqualityExprNode>(); }
-
   // Other methods
+  std::vector<EqualityExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1579,9 +1569,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEqualityExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEqualityExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<RelationalExprNode *> operands() const { return getChildren<RelationalExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
@@ -1590,6 +1577,7 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
+  std::vector<RelationalExprNode *> operands;
   EqualityOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1614,14 +1602,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitRelationalExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitRelationalExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<ShiftExprNode *> operands() const { return getChildren<ShiftExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  std::vector<ShiftExprNode *> operands;
   RelationalOp op = OP_NONE;
 };
 
@@ -1643,9 +1629,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitShiftExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitShiftExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AdditiveExprNode *> operands() const { return getChildren<AdditiveExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
@@ -1654,6 +1637,7 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
+  std::vector<AdditiveExprNode *> operands;
   ShiftOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1678,9 +1662,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAdditiveExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAdditiveExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
@@ -1689,6 +1670,7 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
+  std::vector<MultiplicativeExprNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1714,9 +1696,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMultiplicativeExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMultiplicativeExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
@@ -1725,6 +1704,7 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
+  std::vector<CastExprNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1740,15 +1720,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCastExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCastExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] PrefixUnaryExprNode *prefixUnaryExpr() const { return getChild<PrefixUnaryExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  DataTypeNode *dataType = nullptr;
+  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
   bool isCast = false;
 };
 
