@@ -525,10 +525,10 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
-  const PrefixUnaryExprNode *lhsNode = node->prefixUnary();
+  const PrefixUnaryExprNode *lhsNode = node->prefixUnaryExpr;
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -651,10 +651,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Evaluate lhs
-  const PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  const PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -663,7 +663,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the index value
-    const AssignExprNode *indexExpr = node->assignExpr();
+    const AssignExprNode *indexExpr = node->subscriptIndexExpr;
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array

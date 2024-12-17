@@ -926,7 +926,7 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
     else if (terminal->getSymbol()->getType() == SpiceParser::MINUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, TY_INVALID);
     else
-      assert_fail("Invalid terminal symbol for additive expression");
+      assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(additiveExprNode);
@@ -951,7 +951,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
     else if (terminal->getSymbol()->getType() == SpiceParser::REM)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, TY_INVALID);
     else
-      assert_fail("Invalid terminal symbol for multiplicative expression");
+      assert_fail("Invalid terminal symbol for multiplicative expression"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(multiplicativeExprNode);
@@ -972,24 +972,30 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   const auto prefixUnaryExprNode = createNode<PrefixUnaryExprNode>(ctx);
 
-  // Extract operator
-  if (ctx->MINUS())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
-  else if (ctx->PLUS_PLUS())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
-  else if (ctx->MINUS_MINUS())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
-  else if (ctx->NOT())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
-  else if (ctx->BITWISE_NOT())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
-  else if (ctx->MUL())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_DEREFERENCE;
-  else if (ctx->BITWISE_AND())
-    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->postfixUnaryExpr()) {
+    prefixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
+  } else if (ctx->prefixUnaryExpr()) {
+    // Extract operator
+    if (ctx->MINUS())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
+    else if (ctx->PLUS_PLUS())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
+    else if (ctx->MINUS_MINUS())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
+    else if (ctx->NOT())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
+    else if (ctx->BITWISE_NOT())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
+    else if (ctx->MUL())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_DEREFERENCE;
+    else if (ctx->BITWISE_AND())
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
+
+    prefixUnaryExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+  } else {
+    assert_fail("Unknown prefix unary expression type"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(prefixUnaryExprNode);
 }
@@ -997,20 +1003,26 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   const auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
 
-  // Extract operator
-  if (ctx->LBRACKET()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
-  } else if (ctx->DOT()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
-    postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
-  } else if (ctx->PLUS_PLUS()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
-  } else if (ctx->MINUS_MINUS()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
-  }
+  if (ctx->atomicExpr()) {
+    postfixUnaryExprNode->atomicExpr = std::any_cast<AtomicExprNode *>(visit(ctx->atomicExpr()));
+  } else if (ctx->postfixUnaryExpr()) {
+    postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
 
-  // Visit children
-  visitChildren(ctx);
+    // Extract operator
+    if (ctx->assignExpr()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
+      postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    } else if (ctx->IDENTIFIER()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
+      postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
+    } else if (ctx->PLUS_PLUS()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
+    } else if (ctx->MINUS_MINUS()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
+    }
+  } else {
+    assert_fail("Unknown postfix unary expression type"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(postfixUnaryExprNode);
 }

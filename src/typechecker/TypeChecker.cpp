@@ -1257,10 +1257,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the postfix unary expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Visit the right side
-  PrefixUnaryExprNode *rhsNode = node->prefixUnary();
+  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(rhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
@@ -1317,10 +1317,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Visit left side
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
   auto [lhsType, lhsEntry] = lhs;
   HANDLE_UNRESOLVED_TYPE_ER(lhsType)
@@ -1335,7 +1335,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->assignExpr();
+    AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
     QualType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
