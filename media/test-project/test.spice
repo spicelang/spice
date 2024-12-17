@@ -1,4 +1,14 @@
-import "std/data/optional";
+f<int> main() {
+    int variable = 12;
+    if (true) {
+        variable++;
+        double variable = 14.1;
+        printf("Inner variable: %f\n", variable);
+    }
+    printf("Outer variable: %d", variable);
+}
+
+/*import "std/data/optional";
 import "std/data/stack";
 
 f<int> main() {
@@ -16,4 +26,4 @@ f<int> main() {
 
     dyn oi2 = Optional<String>(String("This is a test"));
     assert oi2.isPresent();
-}
+}*/

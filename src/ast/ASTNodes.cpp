@@ -72,6 +72,8 @@ bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
+
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
@@ -193,8 +195,8 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
     return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
-  const bool hasAtomicExpr = lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr();
-  if (hasAtomicExpr && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME) {
+  const bool hasAtomicExpr = lhs->postfixUnaryExpr() && lhs->postfixUnaryExpr()->atomicExpr();
+  if (hasAtomicExpr && lhs->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME) {
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
     *doSetPredecessorsUnreachable = false;
@@ -205,29 +207,25 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 }
 
 bool TernaryExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const LogicalOrExprNode *node) { return node->hasCompileTimeValue(); });
+  const bool trueExprHasCompileTimeValue = !trueExpr || trueExpr->hasCompileTimeValue();
+  const bool falseExprHasCompileTimeValue = !falseExpr || falseExpr->hasCompileTimeValue();
+  return condition->hasCompileTimeValue() && trueExprHasCompileTimeValue && falseExprHasCompileTimeValue;
 }
-
-CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
 
 CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<LogicalOrExprNode *> &ops = operands();
-
   // If the condition has no compile time value, we do not need to evaluate the true and false values
-  const LogicalOrExprNode *condition = ops[0];
   if (!condition->hasCompileTimeValue())
     return {};
 
   // Check if condition always evaluates to 'true'
   if (condition->getCompileTimeValue().boolValue) {
-    const LogicalOrExprNode *trueValue = isShortened ? condition : ops[1];
+    const LogicalOrExprNode *trueValue = isShortened ? condition : trueExpr;
     return trueValue->getCompileTimeValue();
   } else {
-    const LogicalOrExprNode *falseValue = isShortened ? operands()[1] : ops[2];
-    return falseValue->getCompileTimeValue();
+    return falseExpr->getCompileTimeValue();
   }
 }
 

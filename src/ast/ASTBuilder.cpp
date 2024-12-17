@@ -779,7 +779,15 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   const auto assignExprNode = createNode<AssignExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->ternaryExpr()) {
+    assignExprNode->ternaryExpr = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
+  } else if (ctx->prefixUnaryExpr()) {
+    assignExprNode->lhs = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+    visit(ctx->assignOp());
+    assignExprNode->rhs = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    assert_fail("Invalid assign expression"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(assignExprNode);
 }
@@ -787,11 +795,14 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   const auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
-  // Check if is shortened
-  ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
-
-  // Visit children
-  visitChildren(ctx);
+  ternaryExprNode->condition = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
+  if (ctx->logicalOrExpr().size() == 3) {
+    ternaryExprNode->trueExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(2)));
+  } else if (ctx->logicalOrExpr().size() == 2) {
+    ternaryExprNode->isShortened = true;
+    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+  }
 
   return concludeNode(ternaryExprNode);
 }

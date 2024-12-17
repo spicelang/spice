@@ -887,8 +887,8 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if ternary
-  if (node->ternaryExpr()) {
-    auto result = std::any_cast<ExprResult>(visit(node->ternaryExpr()));
+  if (node->ternaryExpr) {
+    auto result = std::any_cast<ExprResult>(visit(node->ternaryExpr));
     node->setEvaluatedSymbolType(result.type, manIdx);
     return result;
   }
@@ -896,11 +896,11 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if assignment
   if (node->op != AssignExprNode::OP_NONE) {
     // Visit the right side first
-    auto rhs = std::any_cast<ExprResult>(visit(node->rhs()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->rhs));
     auto [rhsType, rhsEntry] = rhs;
     HANDLE_UNRESOLVED_TYPE_ER(rhsType)
     // Then visit the left side
-    auto lhs = std::any_cast<ExprResult>(visit(node->lhs()));
+    auto lhs = std::any_cast<ExprResult>(visit(node->lhs));
     auto [lhsType, lhsVar] = lhs;
     HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
@@ -957,29 +957,20 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Check if there is a ternary operator applied
-  if (node->children.size() == 1)
-    return visit(node->operands().front());
+  if (!node->falseExpr)
+    return visit(node->condition);
 
   // Visit condition
-  LogicalOrExprNode *condition = node->operands()[0];
-  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
-
-  QualType trueType;
-  QualType falseType;
-  if (node->isShortened) {
-    trueType = conditionType;
-    falseType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
-  } else {
-    trueType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
-    HANDLE_UNRESOLVED_TYPE_ER(trueType)
-    falseType = std::any_cast<ExprResult>(visit(node->operands()[2])).type;
-  }
+  const QualType trueType = node->isShortened ? conditionType : std::any_cast<ExprResult>(visit(node->trueExpr)).type;
+  HANDLE_UNRESOLVED_TYPE_ER(trueType)
+  const QualType falseType = std::any_cast<ExprResult>(visit(node->falseExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
   // Check if the condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
+    SOFT_ERROR_ER(node->condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
   const QualType trueTypeModified = trueType.removeReferenceWrapper();

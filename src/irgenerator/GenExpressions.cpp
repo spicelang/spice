@@ -12,13 +12,13 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Visit ternary expression
-  if (node->ternaryExpr())
-    return visit(node->ternaryExpr());
+  if (node->ternaryExpr)
+    return visit(node->ternaryExpr);
 
   // Assign or compound assign operation
   if (node->op != AssignExprNode::OP_NONE) {
-    const PrefixUnaryExprNode *lhsNode = node->lhs();
-    const AssignExprNode *rhsNode = node->rhs();
+    const PrefixUnaryExprNode *lhsNode = node->lhs;
+    const AssignExprNode *rhsNode = node->rhs;
 
     // Normal assignment
     if (node->op == AssignExprNode::OP_ASSIGN)
@@ -89,22 +89,22 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (!node->falseExpr)
+    return visit(node->condition);
 
   // It is a ternary
   // Retrieve the condition value
-  llvm::Value *condValue = resolveValue(node->operands()[0]);
+  llvm::Value *condValue = resolveValue(node->condition);
 
   // Get the values of true and false
   llvm::Value *trueValue;
   llvm::Value *falseValue;
   if (node->isShortened) {
     trueValue = condValue;
-    falseValue = resolveValue(node->operands()[1]);
+    falseValue = resolveValue(node->falseExpr);
   } else {
-    trueValue = resolveValue(node->operands()[1]);
-    falseValue = resolveValue(node->operands()[2]);
+    trueValue = resolveValue(node->trueExpr);
+    falseValue = resolveValue(node->falseExpr);
   }
 
   llvm::Value *resultValue = builder.CreateSelect(condValue, trueValue, falseValue);
