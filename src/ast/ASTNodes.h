@@ -1285,6 +1285,26 @@ public:
   std::string expressionString;
 };
 
+// ======================================================== BuiltinCallNode ======================================================
+
+class BuiltinCallNode final : public ExprNode {
+public:
+  // Constructors
+  using ExprNode::ExprNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBuiltinCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
+
+  // Public members
+  PrintfCallNode *printfCall = nullptr;
+  SizeofCallNode *sizeofCall = nullptr;
+  AlignofCallNode *alignofCall = nullptr;
+  LenCallNode *lenCall = nullptr;
+  PanicCallNode *panicCall = nullptr;
+  SysCallNode *sysCall = nullptr;
+};
+
 // ======================================================== PrintfCallNode =======================================================
 
 class PrintfCallNode final : public ExprNode {
@@ -1817,21 +1837,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
-  [[nodiscard]] ValueNode *value() const { return getChild<ValueNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] PrintfCallNode *printfCall() const { return getChild<PrintfCallNode>(); }
-  [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
-  [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
-  [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
-  [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
-  [[nodiscard]] SysCallNode *sysCall() const { return getChild<SysCallNode>(); }
-
   // Other methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
+  ConstantNode *constant = nullptr;
+  ValueNode *value = nullptr;
+  AssignExprNode *assignExpr = nullptr;
+  BuiltinCallNode *builtinCall = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   std::vector<VarAccessData> data; // Only set if identifier is set as well

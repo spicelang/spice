@@ -92,8 +92,10 @@ digraph {
  L2C5_PrefixUnaryExprNode -> L2C5_PostfixUnaryExprNode;
  L2C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L2C5_PostfixUnaryExprNode -> L2C5_AtomicExprNode;
+ L2C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L2C5_AtomicExprNode -> L2C5_BuiltinCallNode;
  L2C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L2C5_AtomicExprNode -> L2C5_PrintfCallNode;
+ L2C5_BuiltinCallNode -> L2C5_PrintfCallNode;
  L2C31_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L2C5_PrintfCallNode -> L2C31_AssignExprNode;
  L2C31_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
@@ -158,8 +160,10 @@ digraph {
  L3C5_PrefixUnaryExprNode -> L3C5_PostfixUnaryExprNode;
  L3C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L3C5_PostfixUnaryExprNode -> L3C5_AtomicExprNode;
+ L3C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L3C5_AtomicExprNode -> L3C5_BuiltinCallNode;
  L3C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L3C5_AtomicExprNode -> L3C5_PrintfCallNode;
+ L3C5_BuiltinCallNode -> L3C5_PrintfCallNode;
  L3C30_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L3C5_PrintfCallNode -> L3C30_AssignExprNode;
  L3C30_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
@@ -278,8 +282,10 @@ digraph {
  L8C5_PrefixUnaryExprNode -> L8C5_PostfixUnaryExprNode;
  L8C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L8C5_PostfixUnaryExprNode -> L8C5_AtomicExprNode;
+ L8C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L8C5_AtomicExprNode -> L8C5_BuiltinCallNode;
  L8C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L8C5_AtomicExprNode -> L8C5_PrintfCallNode;
+ L8C5_BuiltinCallNode -> L8C5_PrintfCallNode;
  L8C26_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L8C5_PrintfCallNode -> L8C26_AssignExprNode;
  L8C26_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
@@ -496,8 +502,10 @@ digraph {
  L14C5_PrefixUnaryExprNode -> L14C5_PostfixUnaryExprNode;
  L14C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L14C5_PostfixUnaryExprNode -> L14C5_AtomicExprNode;
+ L14C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L14C5_AtomicExprNode -> L14C5_BuiltinCallNode;
  L14C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L14C5_AtomicExprNode -> L14C5_PrintfCallNode;
+ L14C5_BuiltinCallNode -> L14C5_PrintfCallNode;
  L14C28_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L14C5_PrintfCallNode -> L14C28_AssignExprNode;
  L14C28_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];

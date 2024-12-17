@@ -9,6 +9,23 @@
 
 namespace spice::compiler {
 
+std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
+  if (node->printfCall)
+    return visit(node->printfCall);
+  if (node->sizeofCall)
+    return visit(node->sizeofCall);
+  if (node->alignofCall)
+    return visit(node->alignofCall);
+  if (node->lenCall)
+    return visit(node->lenCall);
+  if (node->panicCall)
+    return visit(node->panicCall);
+  if (node->sysCall)
+    return visit(node->sysCall);
+  assert_fail("Unknown builtin call");
+  return nullptr;
+}
+
 std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Retrieve printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();

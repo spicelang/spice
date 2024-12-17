@@ -38,6 +38,8 @@ digraph {
  L2C5_PrefixUnaryExprNode -> L2C5_PostfixUnaryExprNode;
  L2C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L2C5_PostfixUnaryExprNode -> L2C5_AtomicExprNode;
+ L2C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L2C5_AtomicExprNode -> L2C5_BuiltinCallNode;
  L2C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L2C5_AtomicExprNode -> L2C5_PrintfCallNode;
+ L2C5_BuiltinCallNode -> L2C5_PrintfCallNode;
 }

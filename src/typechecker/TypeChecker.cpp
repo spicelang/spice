@@ -734,6 +734,23 @@ std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
+  if (node->printfCall)
+    return visitPrintfCall(node->printfCall);
+  if (node->sizeofCall)
+    return visitSizeofCall(node->sizeofCall);
+  if (node->alignofCall)
+    return visitAlignofCall(node->alignofCall);
+  if (node->lenCall)
+    return visitLenCall(node->lenCall);
+  if (node->panicCall)
+    return visitPanicCall(node->panicCall);
+  if (node->sysCall)
+    return visitSysCall(node->sysCall);
+  assert_fail("Unknown builtin call");
+  return nullptr;
+}
+
 std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   // Check if assignment types match placeholder types
   size_t placeholderCount = 0;
@@ -1454,30 +1471,20 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if constant
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if value
-  if (node->value())
-    return visit(node->value());
+  if (node->value)
+    return visit(node->value);
 
   // Check for builtin calls
-  if (node->printfCall())
-    return visit(node->printfCall());
-  if (node->sizeofCall())
-    return visit(node->sizeofCall());
-  if (node->alignofCall())
-    return visit(node->alignofCall());
-  if (node->lenCall())
-    return visit(node->lenCall());
-  if (node->panicCall())
-    return visit(node->panicCall());
-  if (node->sysCall())
-    return visit(node->sysCall());
+  if (node->builtinCall)
+    return visit(node->builtinCall);
 
   // Check for assign expression within parentheses
-  if (node->assignExpr())
-    return visit(node->assignExpr());
+  if (node->assignExpr)
+    return visit(node->assignExpr);
 
   // Identifier (local or global variable access)
   assert(!node->fqIdentifier.empty());

@@ -703,10 +703,25 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
-  // Visit children
-  visitChildren(ctx);
+  const auto builtinCallNode = createNode<BuiltinCallNode>(ctx);
 
-  return nullptr;
+  if (ctx->printfCall()) {
+    builtinCallNode->printfCall = std::any_cast<PrintfCallNode *>(visit(ctx->printfCall()));
+  } else if (ctx->sizeOfCall()) {
+    builtinCallNode->sizeofCall = std::any_cast<SizeofCallNode *>(visit(ctx->sizeOfCall()));
+  } else if (ctx->alignOfCall()) {
+    builtinCallNode->alignofCall = std::any_cast<AlignofCallNode *>(visit(ctx->alignOfCall()));
+  } else if (ctx->lenCall()) {
+    builtinCallNode->lenCall = std::any_cast<LenCallNode *>(visit(ctx->lenCall()));
+  } else if (ctx->panicCall()) {
+    builtinCallNode->panicCall = std::any_cast<PanicCallNode *>(visit(ctx->panicCall()));
+  } else if (ctx->sysCall()) {
+    builtinCallNode->sysCall = std::any_cast<SysCallNode *>(visit(ctx->sysCall()));
+  } else {
+    assert_fail("Unknown builtin call"); // GCOV_EXCL_LINE
+  }
+
+  return concludeNode(builtinCallNode);
 }
 
 std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
@@ -918,7 +933,7 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto terminal = dynamic_cast<TerminalNode *>(subTree);
-    if (terminal == nullptr)
+    if (!terminal)
       continue;
 
     if (terminal->getSymbol()->getType() == SpiceParser::PLUS)
@@ -941,7 +956,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto terminal = dynamic_cast<TerminalNode *>(subTree);
-    if (terminal == nullptr)
+    if (!terminal)
       continue;
 
     if (terminal->getSymbol()->getType() == SpiceParser::MUL)
@@ -1028,27 +1043,41 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-  const auto atomicExprNode = createNode<AtomicExprNode>(ctx);
+  auto atomicExprNode = createNode<AtomicExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->constant()) {
+    atomicExprNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  } else if (ctx->value()) {
+    atomicExprNode->value = std::any_cast<ValueNode *>(visit(ctx->value()));
+  } else if (!ctx->IDENTIFIER().empty() || !ctx->TYPE_IDENTIFIER().empty()) {
+    for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+      const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+      if (!terminal)
+        continue;
 
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
-        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      std::string fragment = getIdentifier(t1);
-      atomicExprNode->identifierFragments.push_back(fragment);
-      if (!atomicExprNode->fqIdentifier.empty())
-        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      atomicExprNode->fqIdentifier += fragment;
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      std::string fragment = getIdentifier(t2);
-      atomicExprNode->identifierFragments.push_back(fragment);
-      if (!atomicExprNode->fqIdentifier.empty())
-        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      atomicExprNode->fqIdentifier += fragment;
+      if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+        std::string fragment = getIdentifier(terminal);
+        atomicExprNode->identifierFragments.push_back(fragment);
+        if (!atomicExprNode->fqIdentifier.empty())
+          atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        atomicExprNode->fqIdentifier += fragment;
+      } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+        std::string fragment = getIdentifier(terminal);
+        atomicExprNode->identifierFragments.push_back(fragment);
+        if (!atomicExprNode->fqIdentifier.empty())
+          atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        atomicExprNode->fqIdentifier += fragment;
+      } else {
+        assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
+      }
     }
+  } else if (ctx->builtinCall()) {
+    atomicExprNode->builtinCall = std::any_cast<BuiltinCallNode *>(visit(ctx->builtinCall()));
+  } else if (ctx->assignExpr()) {
+    atomicExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(atomicExprNode);

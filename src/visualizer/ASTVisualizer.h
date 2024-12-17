@@ -71,6 +71,7 @@ public:
   std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitFallthroughStmt(FallthroughStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitBuiltinCall(BuiltinCallNode *ctx) override { return buildNode(ctx); }
   std::any visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
   std::any visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAlignofCall(AlignofCallNode *ctx) override { return buildNode(ctx); }
