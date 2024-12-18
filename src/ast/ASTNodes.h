@@ -170,9 +170,10 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
-  [[nodiscard]] virtual bool isParamNode() const { return false; }
-  [[nodiscard]] virtual bool isStmtLstNode() const { return false; }
+  [[nodiscard]] virtual bool isParam() const { return false; }
+  [[nodiscard]] virtual bool isStmtLst() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
+  [[nodiscard]] virtual bool isExprStmt() const { return false; }
 
   // Public members
   ASTNode *parent = nullptr;
@@ -776,13 +777,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAnonymousBlockStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "anon:" + codeLoc.toString(); }
 
   // Public members
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 
@@ -806,9 +805,10 @@ public:
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   void customItemsInitialization(size_t manifestationCount) override { resourcesToCleanup.resize(manifestationCount); }
-  [[nodiscard]] bool isStmtLstNode() const override { return true; }
+  [[nodiscard]] bool isStmtLst() const override { return true; }
 
   // Public members
+  std::vector<StmtNode *> statements;
   size_t complexity = 0;
   std::vector<ResourcesForManifestationToCleanup> resourcesToCleanup;
   CodeLoc closingBraceCodeLoc = CodeLoc(1, 0);
@@ -825,8 +825,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTypeLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+  // Public members
+  std::vector<DataTypeNode *> dataTypes;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================
@@ -840,8 +840,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeAltsLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTypeAltsLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+  // Public members
+  std::vector<DataTypeNode *> dataTypes;
 };
 
 // ======================================================== ParamLstNode =========================================================
@@ -855,8 +855,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitParamLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitParamLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<DeclStmtNode *> params() const { return getChildren<DeclStmtNode>(); }
+  // Public members
+  std::vector<DeclStmtNode *> params;
 };
 
 // ========================================================== ArgLstNode =========================================================
@@ -982,17 +982,35 @@ public:
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount); }
-  [[nodiscard]] bool isParamNode() const override { return isParam; }
+  [[nodiscard]] bool isParam() const override { return isFctParam; }
 
   // Public members
   bool hasAssignment = false;
-  bool isParam = false;
+  bool isFctParam = false;
   bool isForEachItem = false;
   bool isCtorCallRequired = false; // For struct, in case there are reference fields, we need to call a user-defined ctor
   std::string varName;
   std::vector<SymbolTableEntry *> entries;
   Function *calledInitCtor = nullptr;
   Function *calledCopyCtor = nullptr;
+};
+
+// ========================================================= ExprStmtNode ========================================================
+
+class ExprStmtNode final : public StmtNode {
+public:
+  // Constructors
+  using StmtNode::StmtNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitExprStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExprStmt(this); }
+
+  // Other methods
+  [[nodiscard]] bool isExprStmt() const override { return true; }
+
+  // Public members
+  AssignExprNode *expr = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================

@@ -61,7 +61,7 @@ std::string ASTNode::getErrorMessage() const {
 
 const StmtLstNode *ASTNode::getNextOuterStmtLst() const { // NOLINT(*-no-recursion)
   assert(parent != nullptr && "Could not find next outer statement list");
-  return isStmtLstNode() ? spice_pointer_cast<const StmtLstNode *>(this) : parent->getNextOuterStmtLst();
+  return isStmtLst() ? spice_pointer_cast<const StmtLstNode *>(this) : parent->getNextOuterStmtLst();
 }
 
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
@@ -508,7 +508,7 @@ bool FctCallNode::hasReturnValueReceiver() const {
     node = node->parent;
   }
   // Also check the condition of the assign expression
-  return node->children.size() > 1 || !node->parent->isStmtLstNode();
+  return node->children.size() > 1 || !node->parent->isExprStmt();
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
@@ -525,7 +525,7 @@ void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Do the same for all template nodes
   const CustomDataTypeNode *customType = baseDataType->customDataType;
   if (customType != nullptr && customType->templateTypeLst)
-    for (DataTypeNode *templateNode : customType->templateTypeLst->dataTypes())
+    for (DataTypeNode *templateNode : customType->templateTypeLst->dataTypes)
       templateNode->setFieldTypeRecursive();
 }
 

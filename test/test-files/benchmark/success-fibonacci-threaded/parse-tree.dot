@@ -630,8 +630,10 @@ digraph {
  L11C49_stmtLst -> L11C49
  L12C8_stmt [color="lightgreen",label="stmt"];
  L11C49_stmtLst -> L12C8_stmt;
+ L12C8_exprStmt [color="lightgreen",label="exprStmt"];
+ L12C8_stmt -> L12C8_exprStmt;
  L12C8_assignExpr [color="lightgreen",label="assignExpr"];
- L12C8_stmt -> L12C8_assignExpr;
+ L12C8_exprStmt -> L12C8_assignExpr;
  L12C8_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
  L12C8_assignExpr -> L12C8_prefixUnaryExpr;
  L12C8_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
@@ -870,8 +872,10 @@ digraph {
  L13C12_stmt -> L13C29
  L14C12_stmt [color="lightgreen",label="stmt"];
  L12C32_stmtLst -> L14C12_stmt;
+ L14C12_exprStmt [color="lightgreen",label="exprStmt"];
+ L14C12_stmt -> L14C12_exprStmt;
  L14C12_assignExpr [color="lightgreen",label="assignExpr"];
- L14C12_stmt -> L14C12_assignExpr;
+ L14C12_exprStmt -> L14C12_assignExpr;
  L14C12_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L14C12_assignExpr -> L14C12_ternaryExpr;
  L14C12_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -1054,8 +1058,10 @@ digraph {
  L16C8_stmt -> L16C35
  L17C8_stmt [color="lightgreen",label="stmt"];
  L11C49_stmtLst -> L17C8_stmt;
+ L17C8_exprStmt [color="lightgreen",label="exprStmt"];
+ L17C8_stmt -> L17C8_exprStmt;
  L17C8_assignExpr [color="lightgreen",label="assignExpr"];
- L17C8_stmt -> L17C8_assignExpr;
+ L17C8_exprStmt -> L17C8_assignExpr;
  L17C8_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L17C8_assignExpr -> L17C8_ternaryExpr;
  L17C8_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -1106,8 +1112,10 @@ digraph {
  L11C49_stmtLst -> L18C4
  L19C4_stmt [color="lightgreen",label="stmt"];
  L8C14_stmtLst -> L19C4_stmt;
+ L19C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L19C4_stmt -> L19C4_exprStmt;
  L19C4_assignExpr [color="lightgreen",label="assignExpr"];
- L19C4_stmt -> L19C4_assignExpr;
+ L19C4_exprStmt -> L19C4_assignExpr;
  L19C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L19C4_assignExpr -> L19C4_ternaryExpr;
  L19C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -1406,8 +1414,10 @@ digraph {
  L21C8_stmt -> L21C35
  L22C8_stmt [color="lightgreen",label="stmt"];
  L20C49_stmtLst -> L22C8_stmt;
+ L22C8_exprStmt [color="lightgreen",label="exprStmt"];
+ L22C8_stmt -> L22C8_exprStmt;
  L22C8_assignExpr [color="lightgreen",label="assignExpr"];
- L22C8_stmt -> L22C8_assignExpr;
+ L22C8_exprStmt -> L22C8_assignExpr;
  L22C8_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L22C8_assignExpr -> L22C8_ternaryExpr;
  L22C8_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -1458,8 +1468,10 @@ digraph {
  L20C49_stmtLst -> L23C4
  L24C4_stmt [color="lightgreen",label="stmt"];
  L8C14_stmtLst -> L24C4_stmt;
+ L24C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L24C4_stmt -> L24C4_exprStmt;
  L24C4_assignExpr [color="lightgreen",label="assignExpr"];
- L24C4_stmt -> L24C4_assignExpr;
+ L24C4_exprStmt -> L24C4_assignExpr;
  L24C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L24C4_assignExpr -> L24C4_ternaryExpr;
  L24C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];

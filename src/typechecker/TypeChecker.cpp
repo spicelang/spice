@@ -386,7 +386,7 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -415,7 +415,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParams;
   bool metOptional = false;
 
-  for (DeclStmtNode *param : node->params()) {
+  for (DeclStmtNode *param : node->params) {
     // Visit param
     const auto paramType = std::any_cast<QualType>(visit(param));
     if (paramType.is(TY_UNRESOLVED))
@@ -462,7 +462,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -495,8 +495,8 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
-    paramList.reserve(node->paramTypeLst()->dataTypes().size());
-    for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
+    paramList.reserve(node->paramTypeLst()->dataTypes.size());
+    for (DataTypeNode *param : node->paramTypeLst()->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
@@ -564,7 +564,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
 
       // Call copy ctor if required
-      if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
+      if (localVarType.is(TY_STRUCT) && !node->isFctParam && !rhs.isTemporary()) {
         Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
@@ -587,11 +587,11 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<QualType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
+    if (localVarType.isRef() && !node->isFctParam && !node->isForEachItem)
       softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
 
     // If this is a struct, check for the default ctor
-    if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
+    if (localVarType.is(TY_STRUCT) && !node->isFctParam && !node->isForEachItem) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
@@ -1701,7 +1701,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes()) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
@@ -2036,8 +2036,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   if (node->templateTypeLst) {
-    concreteTemplateTypes.reserve(node->templateTypeLst->dataTypes().size());
-    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes()) {
+    concreteTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       auto concreteType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
@@ -2458,8 +2458,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       assert(localAccessScope != nullptr);
       isImported = localAccessScope->isImportedBy(rootScope);
 
-      templateTypes.reserve(node->templateTypeLst->dataTypes().size());
-      for (DataTypeNode *dataType : node->templateTypeLst->dataTypes()) {
+      templateTypes.reserve(node->templateTypeLst->dataTypes.size());
+      for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
         auto templateType = std::any_cast<QualType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_QT(templateType)
         if (entryType.is(TY_GENERIC)) {
@@ -2529,7 +2529,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   // Visit param types
   QualTypeList paramTypes;
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst; paramTypeListNode != nullptr) {
-    for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
+    for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(paramTypeNode));
       HANDLE_UNRESOLVED_TYPE_QT(returnType)
       paramTypes.push_back(paramType);

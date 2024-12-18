@@ -42,6 +42,7 @@ class EnumItemNode;
 class FieldNode;
 class SignatureNode;
 class DeclStmtNode;
+class ExprStmtNode;
 class SpecifierLstNode;
 class SpecifierNode;
 class ModAttrNode;
@@ -135,6 +136,7 @@ public:
   virtual std::any visitField(FieldNode *node) = 0;
   virtual std::any visitSignature(SignatureNode *node) = 0;
   virtual std::any visitDeclStmt(DeclStmtNode *node) = 0;
+  virtual std::any visitExprStmt(ExprStmtNode *node) = 0;
   virtual std::any visitSpecifierLst(SpecifierLstNode *node) = 0;
   virtual std::any visitSpecifier(SpecifierNode *node) = 0;
   virtual std::any visitModAttr(ModAttrNode *node) = 0;

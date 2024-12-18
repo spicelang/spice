@@ -206,7 +206,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Insert implicit field for each interface type
   if (node->hasInterfaces) {
-    for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes()) {
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes) {
       const std::string &interfaceName = interfaceNode->baseDataType->customDataType->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
       interfaceFieldEntry->used = true;
@@ -545,10 +545,10 @@ std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -615,7 +615,7 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
   // Add variable entry to symbol table
   SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
-  varEntry->isParam = node->isParam;
+  varEntry->isParam = node->isFctParam;
 
   return nullptr;
 }

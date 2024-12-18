@@ -1,5 +1,9 @@
+f<string> unusedReturnValue() {
+    return "unused";
+}
+
 f<int> main() {
-    printf("%d", 1);
+    unusedReturnValue();
 }
 
 /*import "std/data/optional";

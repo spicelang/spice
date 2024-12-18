@@ -441,7 +441,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
-      const DeclStmtNode *param = node->paramLst->params().at(argIdx);
+      const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
@@ -523,7 +523,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Store the default values for optional function args
   if (node->paramLst) {
-    const std::vector<DeclStmtNode *> params = node->paramLst->params();
+    const std::vector<DeclStmtNode *> params = node->paramLst->params;
     for (; argIdx < params.size(); argIdx++)
       visit(params.at(argIdx));
   }
@@ -597,7 +597,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
-      const DeclStmtNode *param = node->paramLst->params().at(argIdx);
+      const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
@@ -668,7 +668,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Store the default values for optional function args
   if (node->paramLst) {
-    const std::vector<DeclStmtNode *> params = node->paramLst->params();
+    const std::vector<DeclStmtNode *> params = node->paramLst->params;
     for (; argIdx < params.size(); argIdx++)
       visit(params.at(argIdx));
   }
@@ -740,7 +740,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
-      const DeclStmtNode *param = node->paramLst->params().at(argIdx);
+      const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
@@ -815,7 +815,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Store the default values for optional function args
   if (node->paramLst) {
-    const std::vector<DeclStmtNode *> params = node->paramLst->params();
+    const std::vector<DeclStmtNode *> params = node->paramLst->params;
     for (; argIdx < params.size(); argIdx++)
       visit(params.at(argIdx));
   }

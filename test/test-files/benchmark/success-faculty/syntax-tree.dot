@@ -108,8 +108,10 @@ digraph {
  L3C16_PostfixUnaryExprNode -> L3C16_AtomicExprNode;
  L3C16_ConstantNode [color="lightgreen",label="ConstantNode"];
  L3C16_AtomicExprNode -> L3C16_ConstantNode;
+ L5C5_ExprStmtNode [color="lightgreen",label="ExprStmtNode"];
+ L1C27_StmtLstNode -> L5C5_ExprStmtNode;
  L5C5_AssignExprNode [color="lightgreen",label="AssignExprNode"];
- L1C27_StmtLstNode -> L5C5_AssignExprNode;
+ L5C5_ExprStmtNode -> L5C5_AssignExprNode;
  L5C5_PrefixUnaryExprNode [color="lightgreen",label="PrefixUnaryExprNode"];
  L5C5_AssignExprNode -> L5C5_PrefixUnaryExprNode;
  L5C5_PostfixUnaryExprNode [color="lightgreen",label="PostfixUnaryExprNode"];
@@ -326,8 +328,10 @@ digraph {
  L10C27_PrefixUnaryExprNode -> L10C27_PostfixUnaryExprNode;
  L10C27_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L10C27_PostfixUnaryExprNode -> L10C27_AtomicExprNode;
+ L11C5_ExprStmtNode [color="lightgreen",label="ExprStmtNode"];
+ L8C15_StmtLstNode -> L11C5_ExprStmtNode;
  L11C5_AssignExprNode [color="lightgreen",label="AssignExprNode"];
- L8C15_StmtLstNode -> L11C5_AssignExprNode;
+ L11C5_ExprStmtNode -> L11C5_AssignExprNode;
  L11C5_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
  L11C5_AssignExprNode -> L11C5_TernaryExprNode;
  L11C5_LogicalOrExprNode [color="lightgreen",label="LogicalOrExprNode"];

@@ -61,6 +61,7 @@ public:
   std::any visitEnumItem(SpiceParser::EnumItemContext *ctx) override { return buildRule(ctx); }
   std::any visitStmt(SpiceParser::StmtContext *ctx) override { return buildRule(ctx); }
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override { return buildRule(ctx); }
+  std::any visitExprStmt(SpiceParser::ExprStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override { return buildRule(ctx); }
   std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override { return buildRule(ctx); }
   std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override { return buildRule(ctx); }

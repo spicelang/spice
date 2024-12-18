@@ -472,7 +472,7 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, node);
 
   // Visit instructions in the block
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

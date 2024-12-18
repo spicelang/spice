@@ -201,7 +201,8 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 
     // Check if a custom type id was set
     if (interfaceDefNode->attrs && interfaceDefNode->attrs->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
-      interfaceDefNode->typeId = interfaceDefNode->attrs->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+      interfaceDefNode->typeId =
+          interfaceDefNode->attrs->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
   }
   if (ctx->specifierLst())
     interfaceDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
@@ -463,7 +464,7 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
   const auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  anonymousBlockStmtNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(anonymousBlockStmtNode);
 }
@@ -475,7 +476,30 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   stmtLstNode->closingBraceCodeLoc = CodeLoc(ctx->getStop(), sourceFile);
 
   // Visit children
-  visitChildren(ctx);
+  for (ParserRuleContext::ParseTree *stmt : ctx->children) {
+    if (auto *stmtCtx = dynamic_cast<SpiceParser::StmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<StmtNode *>(visit(stmtCtx)));
+    else if (auto *forLoopCtx = dynamic_cast<SpiceParser::ForLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<ForLoopNode *>(visit(forLoopCtx)));
+    else if (auto *foreachLoopCtx = dynamic_cast<SpiceParser::ForeachLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<ForeachLoopNode *>(visit(foreachLoopCtx)));
+    else if (auto *whileLoopCtx = dynamic_cast<SpiceParser::WhileLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<WhileLoopNode *>(visit(whileLoopCtx)));
+    else if (auto *doWhileLoopCtx = dynamic_cast<SpiceParser::DoWhileLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<DoWhileLoopNode *>(visit(doWhileLoopCtx)));
+    else if (auto *ifStmtCtx = dynamic_cast<SpiceParser::IfStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<IfStmtNode *>(visit(ifStmtCtx)));
+    else if (auto *switchStmtCtx = dynamic_cast<SpiceParser::SwitchStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<SwitchStmtNode *>(visit(switchStmtCtx)));
+    else if (auto *assetStmtCtx = dynamic_cast<SpiceParser::AssertStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<AssertStmtNode *>(visit(assetStmtCtx)));
+    else if (auto *unsafeBlockCtx = dynamic_cast<SpiceParser::UnsafeBlockContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<UnsafeBlockNode *>(visit(unsafeBlockCtx)));
+    else if (auto *anonymousScopeCtx = dynamic_cast<SpiceParser::AnonymousBlockStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<AnonymousBlockStmtNode *>(visit(anonymousScopeCtx)));
+    else
+      assert(dynamic_cast<TerminalNode *>(stmt) != nullptr); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(stmtLstNode);
 }
@@ -484,7 +508,8 @@ std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   const auto typeLstNode = createNode<TypeLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::DataTypeContext *dataType : ctx->dataType())
+    typeLstNode->dataTypes.push_back(std::any_cast<DataTypeNode *>(visit(dataType)));
 
   return concludeNode(typeLstNode);
 }
@@ -493,7 +518,8 @@ std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   const auto typeAltsLstNode = createNode<TypeAltsLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::DataTypeContext *dataType : ctx->dataType())
+    typeAltsLstNode->dataTypes.push_back(std::any_cast<DataTypeNode *>(visit(dataType)));
 
   return concludeNode(typeAltsLstNode);
 }
@@ -502,12 +528,11 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   const auto paramLstNode = createNode<ParamLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
-  // Tell all params and param types that they are such
-  for (DeclStmtNode *param : paramLstNode->params()) {
-    param->isParam = true;
+  for (SpiceParser::DeclStmtContext *declStmt : ctx->declStmt()) {
+    auto param = std::any_cast<DeclStmtNode *>(visit(declStmt));
+    param->isFctParam = true;
     param->dataType()->isParamType = true;
+    paramLstNode->params.push_back(param);
   }
 
   return concludeNode(paramLstNode);
@@ -577,7 +602,22 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   return concludeNode(signatureNode);
 }
 
-std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) { return visitChildren(ctx); }
+std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
+  if (ctx->declStmt())
+    return static_cast<StmtNode *>(std::any_cast<DeclStmtNode *>(visit(ctx->declStmt())));
+  if (ctx->exprStmt())
+    return static_cast<StmtNode *>(std::any_cast<ExprStmtNode *>(visit(ctx->exprStmt())));
+  if (ctx->returnStmt())
+    return static_cast<StmtNode *>(std::any_cast<ReturnStmtNode *>(visit(ctx->returnStmt())));
+  if (ctx->breakStmt())
+    return static_cast<StmtNode *>(std::any_cast<BreakStmtNode *>(visit(ctx->breakStmt())));
+  if (ctx->continueStmt())
+    return static_cast<StmtNode *>(std::any_cast<ContinueStmtNode *>(visit(ctx->continueStmt())));
+  if (ctx->fallthroughStmt())
+    return static_cast<StmtNode *>(std::any_cast<FallthroughStmtNode *>(visit(ctx->fallthroughStmt())));
+  assert_fail("Unknown statement type"); // GCOV_EXCL_LINE
+  return nullptr;                        // GCOV_EXCL_LINE
+}
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   const auto declStmtNode = createNode<DeclStmtNode>(ctx);
@@ -590,6 +630,15 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   visitChildren(ctx);
 
   return concludeNode(declStmtNode);
+}
+
+std::any ASTBuilder::visitExprStmt(SpiceParser::ExprStmtContext *ctx) {
+  const auto exprStmtNode = createNode<ExprStmtNode>(ctx);
+
+  // Enrich
+  exprStmtNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+
+  return concludeNode(exprStmtNode);
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {

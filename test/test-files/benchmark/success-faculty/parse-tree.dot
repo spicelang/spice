@@ -150,8 +150,10 @@ digraph {
  L2C17_stmtLst -> L4C4
  L5C4_stmt [color="lightgreen",label="stmt"];
  L1C26_stmtLst -> L5C4_stmt;
+ L5C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L5C4_stmt -> L5C4_exprStmt;
  L5C4_assignExpr [color="lightgreen",label="assignExpr"];
- L5C4_stmt -> L5C4_assignExpr;
+ L5C4_exprStmt -> L5C4_assignExpr;
  L5C4_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
  L5C4_assignExpr -> L5C4_prefixUnaryExpr;
  L5C4_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
@@ -442,8 +444,10 @@ digraph {
  L10C4_stmt -> L10C32
  L11C4_stmt [color="lightgreen",label="stmt"];
  L8C14_stmtLst -> L11C4_stmt;
+ L11C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L11C4_stmt -> L11C4_exprStmt;
  L11C4_assignExpr [color="lightgreen",label="assignExpr"];
- L11C4_stmt -> L11C4_assignExpr;
+ L11C4_exprStmt -> L11C4_assignExpr;
  L11C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L11C4_assignExpr -> L11C4_ternaryExpr;
  L11C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
