@@ -973,15 +973,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDeclStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount); }
   [[nodiscard]] bool isParam() const override { return isFctParam; }
 
   // Public members
+  DataTypeNode *dataType = nullptr;
+  AssignExprNode *assignExpr = nullptr;
   bool hasAssignment = false;
   bool isFctParam = false;
   bool isForEachItem = false;
@@ -1021,8 +1019,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifierLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSpecifierLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<SpecifierNode *> specifiers() const { return getChildren<SpecifierNode>(); }
+  // Public members
+  std::vector<SpecifierNode *> specifiers;
 };
 
 // ========================================================= SpecifierNode =======================================================
@@ -1063,8 +1061,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitModAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitModAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // =================================================== TopLevelDefinitionAttrNode ================================================
@@ -1078,8 +1076,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTopLevelDefinitionAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTopLevelDefinitionAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // ========================================================= LambdaAttrNode ======================================================
@@ -1093,13 +1091,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // ========================================================== AttrLstNode ========================================================
 
-class AttrLstNode : public ASTNode {
+class AttrLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1108,13 +1106,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttrLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttrLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AttrNode *> attributes() const { return getChildren<AttrNode>(); }
-
   // Other methods
   [[nodiscard]] std::vector<const CompileTimeValue *> getAttrValuesByName(const std::string &key) const;
   [[nodiscard]] const CompileTimeValue *getAttrValueByName(const std::string &key) const;
   [[nodiscard]] bool hasAttr(const std::string &key) const;
+
+  // Public members
+  std::vector<AttrNode *> attributes;
 };
 
 // ============================================================ AttrNode =========================================================
@@ -1146,13 +1144,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *value() const { return getChild<ConstantNode>(); }
-
   // Other methods
   [[nodiscard]] const CompileTimeValue *getValue() const;
 
   // Public members
+  ConstantNode *value = nullptr;
   AttrType type = ATTR_TYPE_INVALID;
   AttrTarget target = TARGET_INVALID;
   std::string key;
@@ -1169,10 +1165,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseConstant(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseConstant(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
-
   // Public members
+  ConstantNode *constant = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   const SymbolTableEntry *enumItemEntry = nullptr;
@@ -1189,14 +1183,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitReturnStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitReturnStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
   [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
+  AssignExprNode *assignExpr = nullptr;
   bool hasReturnValue = false;
 };
 
@@ -1253,13 +1245,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  AssignExprNode *assignExpr = nullptr;
   std::string expressionString;
 };
 

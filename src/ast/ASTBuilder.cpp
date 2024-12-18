@@ -76,7 +76,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   if (ctx->topLevelDefAttr()) {
     fctDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
     // Tell the attributes that they are function attributes
-    for (AttrNode *attr : fctDefNode->attrs->attrLst()->attributes())
+    for (AttrNode *attr : fctDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
   }
   if (ctx->specifierLst())
@@ -105,7 +105,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   if (ctx->topLevelDefAttr()) {
     procDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
     // Tell the attributes that they are function attributes
-    for (AttrNode *attr : procDefNode->attrs->attrLst()->attributes())
+    for (AttrNode *attr : procDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
   }
   if (ctx->specifierLst())
@@ -161,12 +161,12 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
     structDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are struct attributes
-    for (AttrNode *attr : structDefNode->attrs->attrLst()->attributes())
+    for (AttrNode *attr : structDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_STRUCT;
 
     // Check if a custom type id was set
-    if (structDefNode->attrs && structDefNode->attrs->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
-      structDefNode->typeId = structDefNode->attrs->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+    if (structDefNode->attrs && structDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+      structDefNode->typeId = structDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
   }
   if (ctx->specifierLst())
     structDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
@@ -196,13 +196,13 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     interfaceDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are struct attributes
-    for (AttrNode *attr : interfaceDefNode->attrs->attrLst()->attributes())
+    for (AttrNode *attr : interfaceDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_INTERFACE;
 
     // Check if a custom type id was set
-    if (interfaceDefNode->attrs && interfaceDefNode->attrs->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+    if (interfaceDefNode->attrs && interfaceDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
       interfaceDefNode->typeId =
-          interfaceDefNode->attrs->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+          interfaceDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
   }
   if (ctx->specifierLst())
     interfaceDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
@@ -291,7 +291,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     extDeclNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are ext decl attributes
-    for (AttrNode *attr : extDeclNode->attrs->attrLst()->attributes())
+    for (AttrNode *attr : extDeclNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_EXT_DECL;
   }
   if (ctx->F()) {
@@ -531,7 +531,7 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   for (SpiceParser::DeclStmtContext *declStmt : ctx->declStmt()) {
     auto param = std::any_cast<DeclStmtNode *>(visit(declStmt));
     param->isFctParam = true;
-    param->dataType()->isParamType = true;
+    param->dataType->isParamType = true;
     paramLstNode->params.push_back(param);
   }
 
@@ -639,10 +639,13 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   // Enrich
   declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
-  declStmtNode->hasAssignment = ctx->ASSIGN();
 
   // Visit children
-  visitChildren(ctx);
+  declStmtNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  if (ctx->assignExpr()) {
+    declStmtNode->hasAssignment = true;
+    declStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  }
 
   return concludeNode(declStmtNode);
 }
@@ -660,11 +663,12 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   const auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
-  // Check if we have both, signed and unsigned specifier
   bool seenSignedOrUnsigned = false;
-  for (const SpecifierNode *specifier : specifierLstNode->specifiers()) {
+  for (SpiceParser::SpecifierContext *specifierCtx : ctx->specifier()) {
+    auto specifier = std::any_cast<SpecifierNode *>(visit(specifierCtx));
+    specifierLstNode->specifiers.push_back(specifier);
+
+    // Check if we have both, signed and unsigned specifier
     if (specifier->type != SpecifierNode::TY_SIGNED && specifier->type != SpecifierNode::TY_UNSIGNED)
       continue;
     if (seenSignedOrUnsigned)
@@ -706,10 +710,10 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
   const auto modAttrNode = createNode<ModAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  modAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   // Tell the attributes that they are module attributes
-  for (AttrNode *attr : modAttrNode->attrLst()->attributes())
+  for (AttrNode *attr : modAttrNode->attrLst->attributes)
     attr->target = AttrNode::TARGET_MODULE;
 
   return concludeNode(modAttrNode);
@@ -719,7 +723,7 @@ std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *c
   const auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  fctAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   return concludeNode(fctAttrNode);
 }
@@ -728,10 +732,10 @@ std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
   const auto lambdaAttrNode = createNode<LambdaAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  lambdaAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   // Tell the attributes that they are module attributes
-  for (AttrNode *attr : lambdaAttrNode->attrLst()->attributes())
+  for (AttrNode *attr : lambdaAttrNode->attrLst->attributes)
     attr->target = AttrNode::TARGET_LAMBDA;
 
   return concludeNode(lambdaAttrNode);
@@ -741,7 +745,8 @@ std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
   const auto attrLstNode = createNode<AttrLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AttrContext *attr : ctx->attr())
+    attrLstNode->attributes.push_back(std::any_cast<AttrNode *>(visit(attr)));
 
   return concludeNode(attrLstNode);
 }
@@ -757,10 +762,9 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   }
 
   // Visit children
-  visitChildren(ctx);
-
-  // Come up with type
   if (ctx->constant()) {
+    attrNode->value = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+
     if (ctx->constant()->STRING_LIT())
       attrNode->type = AttrNode::TYPE_STRING;
     else if (ctx->constant()->INT_LIT())
@@ -768,7 +772,7 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
     else if (ctx->constant()->TRUE() || ctx->constant()->FALSE())
       attrNode->type = AttrNode::TYPE_BOOL;
     else
-      throw ParserError(attrNode->value()->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
+      throw ParserError(attrNode->value->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
   } else {
     // If no value is given, use the bool type
     attrNode->type = AttrNode::TYPE_BOOL;
@@ -781,24 +785,30 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
   const auto caseConstantNode = createNode<CaseConstantNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->constant()) {
+    caseConstantNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  } else if (!ctx->TYPE_IDENTIFIER().empty()) {
+    for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+      const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+      if (!terminal)
+        continue;
 
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
-        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      const std::string fragment = getIdentifier(t1);
-      caseConstantNode->identifierFragments.push_back(fragment);
-      if (!caseConstantNode->fqIdentifier.empty())
-        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      caseConstantNode->fqIdentifier += fragment;
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      const std::string fragment = getIdentifier(t2);
-      caseConstantNode->identifierFragments.push_back(fragment);
-      if (!caseConstantNode->fqIdentifier.empty())
-        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      caseConstantNode->fqIdentifier += fragment;
+      if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+        const std::string fragment = getIdentifier(terminal);
+        caseConstantNode->identifierFragments.push_back(fragment);
+        if (!caseConstantNode->fqIdentifier.empty())
+          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        caseConstantNode->fqIdentifier += fragment;
+      } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+        const std::string fragment = getIdentifier(terminal);
+        caseConstantNode->identifierFragments.push_back(fragment);
+        if (!caseConstantNode->fqIdentifier.empty())
+          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        caseConstantNode->fqIdentifier += fragment;
+      }
     }
+  } else {
+    assert_fail("Unknown case constant type"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(caseConstantNode);
@@ -807,11 +817,11 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   const auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
 
-  // Enrich
-  returnStmtNode->hasReturnValue = ctx->assignExpr();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    returnStmtNode->hasReturnValue = true;
+    returnStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  }
 
   return concludeNode(returnStmtNode);
 }
@@ -859,7 +869,7 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   assertStmtNode->expressionString = inputStream->getText(interval);
 
   // Visit children
-  visitChildren(ctx);
+  assertStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(assertStmtNode);
 }

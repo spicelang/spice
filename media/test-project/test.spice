@@ -1,9 +1,18 @@
-f<string> unusedReturnValue() {
-    return "unused";
+type Test struct {
+    int f1
+    int f2
 }
 
 f<int> main() {
-    unusedReturnValue();
+    int t = 123;
+    switch (t) {
+        case 1: {
+            printf("1");
+        }
+        case Test: {
+            printf("t");
+        }
+    }
 }
 
 /*import "std/data/optional";

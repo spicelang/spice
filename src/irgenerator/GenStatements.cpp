@@ -44,7 +44,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   llvm::Type *varTy = varSymbolType.toLLVMType(sourceFile);
 
   // Check if right side is dyn array. If this is the case we have an empty array initializer and need the default value
-  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
+  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
 
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
@@ -54,12 +54,12 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       varAddress = insertAlloca(varTy);
       varEntry->updateAddress(varAddress);
       // Call copy ctor
-      llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
+      llvm::Value *rhsAddress = resolveAddress(node->assignExpr);
       assert(rhsAddress != nullptr);
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
-      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), node, true);
+      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr, node, true);
       assert(assignResult.entry == varEntry);
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
@@ -104,8 +104,8 @@ std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNo
 }
 
 std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Get constant for enum item
   assert(node->enumItemEntry->scope->type == ScopeType::ENUM);
@@ -120,9 +120,9 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
     if (node->getEvaluatedSymbolType(manIdx).isRef())
-      returnValue = resolveAddress(node->assignExpr());
+      returnValue = resolveAddress(node->assignExpr);
     else
-      returnValue = resolveValue(node->assignExpr());
+      returnValue = resolveValue(node->assignExpr);
   } else { // Try to load return variable value
     const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
@@ -189,7 +189,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   llvm::BasicBlock *bExit = createBlock("assert.exit." + codeLine);
 
   // Visit the assignExpr
-  llvm::Value *condValue = resolveValue(node->assignExpr());
+  llvm::Value *condValue = resolveValue(node->assignExpr);
 
   // Create condition check
   insertCondJump(condValue, bExit, bThen, LIKELY);

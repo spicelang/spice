@@ -40,7 +40,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
+      auto paramType = any_cast<llvm::Type *>(visit(param->dataType));
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramSymbolTypes.push_back(paramSymbol->getQualType());
@@ -195,8 +195,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get function linkage
     bool externalLinkage = isPublic;
-    if (node->attrs && node->attrs->attrLst()->hasAttr(ATTR_TEST))
-      externalLinkage |= node->attrs->attrLst()->getAttrValueByName(ATTR_TEST)->boolValue;
+    if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
+      externalLinkage |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
     const llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
@@ -614,8 +614,8 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
     fct->addParamAttr(i, llvm::Attribute::NoUndef);
 
   // If the function should be imported as dll, add the dll attribute
-  if (node->attrs && node->attrs->attrLst()->hasAttr(ATTR_CORE_LINKER_DLL))
-    if (node->attrs->attrLst()->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)
+  if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_CORE_LINKER_DLL))
+    if (node->attrs->attrLst->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)
       fct->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
   return nullptr;

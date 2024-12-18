@@ -237,7 +237,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    node->itemVarDecl->dataType->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
   } else {
@@ -542,7 +542,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   QualType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
     auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -552,7 +552,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
 
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
@@ -576,7 +576,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
         const std::string structName = localVarType.getBase().getSubType();
-        softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+        softError(node->dataType, UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = QualType(TY_UNRESOLVED);
       }
     } else {
@@ -584,7 +584,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
   } else {
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isFctParam && !node->isForEachItem)
@@ -618,8 +618,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
 std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
   // If we have a normal constant, we can take the symbol type from there
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if a local or global variable can be found by searching for the name
   if (node->identifierFragments.size() == 1)
@@ -652,7 +652,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Check if procedure with return value
   if (!isFunction) {
     if (node->hasReturnValue)
-      SOFT_ERROR_ER(node->assignExpr(), RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
+      SOFT_ERROR_ER(node->assignExpr, RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
     return nullptr;
   }
 
@@ -663,12 +663,12 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
   HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
-  (void)opRuleManager.getAssignResultType(node->assignExpr(), returnResult, rhs, false, true, ERROR_MSG_RETURN);
+  (void)opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
 
   // Manage dtor call
   if (rhs.entry != nullptr) {
@@ -722,12 +722,12 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
+    SOFT_ERROR_ER(node->assignExpr, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
 
   return nullptr;
 }
@@ -2323,7 +2323,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Attach the specifiers to the type
   if (node->specifierLst) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
@@ -2554,7 +2554,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
  */
 bool TypeChecker::checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const {
   // If the async attribute is not set, we can return early
-  if (!attrs || !attrs->attrLst()->hasAttr(ATTR_ASYNC) || !attrs->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue)
+  if (!attrs || !attrs->attrLst->hasAttr(ATTR_ASYNC) || !attrs->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue)
     return true; // Not violated
 
   // If we don't have any captures, we can return early

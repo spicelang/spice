@@ -86,20 +86,17 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
 }
 
 std::any ImportCollector::visitModAttr(ModAttrNode *node) {
-  // Retrieve attributes
-  const AttrLstNode *attrs = node->attrLst();
-
   // !!! Only bool attributes allowed here, due to missing attribute value checks being executed in a later stage !!!
 
   // core.compiler.keep-on-name-collision
-  if (attrs->hasAttr(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
-    const bool keepOnCollision = attrs->getAttrValueByName(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)->boolValue;
+  if (node->attrLst->hasAttr(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
+    const bool keepOnCollision = node->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)->boolValue;
     sourceFile->alwaysKeepSymbolsOnNameCollision = keepOnCollision;
   }
 
   // core.compiler.warnings.ignore
-  if (attrs->hasAttr(ATTR_CORE_COMPILER_WARNINGS_IGNORE)) {
-    const bool ignoreWarnings = attrs->getAttrValueByName(ATTR_CORE_COMPILER_WARNINGS_IGNORE)->boolValue;
+  if (node->attrLst->hasAttr(ATTR_CORE_COMPILER_WARNINGS_IGNORE)) {
+    const bool ignoreWarnings = node->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_WARNINGS_IGNORE)->boolValue;
     sourceFile->ignoreWarnings = ignoreWarnings;
   }
 

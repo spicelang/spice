@@ -70,7 +70,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Build function specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -133,7 +133,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Build procedure specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -222,7 +222,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Build struct specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;
       else
@@ -260,7 +260,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
   // Build interface specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;
       else
@@ -293,7 +293,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
 
   // Build enum specifiers
   if (node->specifierLst) {
-    for (const SpecifierNode *specifier : node->specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->enumSpecifiers.isPublic = true;
       else
@@ -328,7 +328,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
 
   // Build alias specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
       else
@@ -586,7 +586,7 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->signatureSpecifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -611,7 +611,7 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
   // Visit the right side
   if (node->hasAssignment)
-    visit(node->assignExpr());
+    visit(node->assignExpr);
 
   // Add variable entry to symbol table
   SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
@@ -625,7 +625,7 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   visitChildren(node);
 
   // Retrieve attributes
-  const AttrLstNode *attrs = node->attrLst();
+  const AttrLstNode *attrs = node->attrLst;
 
   // Collect linker flags
   std::vector<const CompileTimeValue *> linkerFlagValues;
@@ -666,7 +666,7 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 
   // Check if a value is present
-  if (!node->value() && type != AttrNode::TYPE_BOOL)
+  if (!node->value && type != AttrNode::TYPE_BOOL)
     throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;
@@ -679,8 +679,8 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr && node->lambdaAttr->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
@@ -705,8 +705,8 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr && node->lambdaAttr->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbols for the parameters
   if (node->hasParams)
