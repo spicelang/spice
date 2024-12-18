@@ -207,7 +207,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Insert implicit field for each interface type
   if (node->hasInterfaces) {
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
-      const std::string &interfaceName = interfaceNode->baseDataType->customDataType()->typeNameFragments.back();
+      const std::string &interfaceName = interfaceNode->baseDataType->customDataType->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
       interfaceFieldEntry->used = true;
       interfaceFieldEntry->isImplicitField = true;

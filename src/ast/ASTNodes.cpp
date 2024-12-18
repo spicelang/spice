@@ -524,9 +524,9 @@ void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes
-  const CustomDataTypeNode *customType = baseDataType->customDataType();
-  if (customType != nullptr && customType->templateTypeLst())
-    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes())
+  const CustomDataTypeNode *customType = baseDataType->customDataType;
+  if (customType != nullptr && customType->templateTypeLst)
+    for (DataTypeNode *templateNode : customType->templateTypeLst->dataTypes())
       templateNode->setFieldTypeRecursive();
 }
 

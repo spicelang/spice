@@ -2132,11 +2132,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBaseDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBaseDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
-  [[nodiscard]] FunctionDataTypeNode *functionDataType() const { return getChild<FunctionDataTypeNode>(); }
-
   // Public members
+  CustomDataTypeNode *customDataType = nullptr;
+  FunctionDataTypeNode *functionDataType = nullptr;
   Type type = TYPE_NONE;
 };
 
@@ -2151,13 +2149,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCustomDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCustomDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
+  TypeLstNode *templateTypeLst = nullptr;
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
@@ -2174,14 +2170,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
+  DataTypeNode *returnType = nullptr;
+  TypeLstNode *paramTypeLst = nullptr;
   bool isFunction = false; // Function or procedure
   std::vector<SymbolTableEntry *> customTypes;
 };

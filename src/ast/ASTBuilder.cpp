@@ -1319,33 +1319,33 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   const auto baseDataTypeNode = createNode<BaseDataTypeNode>(ctx);
 
   // Enrich
-  if (ctx->TYPE_DOUBLE())
+  if (ctx->TYPE_DOUBLE()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
-  else if (ctx->TYPE_INT())
+  } else if (ctx->TYPE_INT()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_INT;
-  else if (ctx->TYPE_SHORT())
+  } else if (ctx->TYPE_SHORT()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_SHORT;
-  else if (ctx->TYPE_LONG())
+  } else if (ctx->TYPE_LONG()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_LONG;
-  else if (ctx->TYPE_BYTE())
+  } else if (ctx->TYPE_BYTE()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_BYTE;
-  else if (ctx->TYPE_CHAR())
+  } else if (ctx->TYPE_CHAR()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_CHAR;
-  else if (ctx->TYPE_STRING())
+  } else if (ctx->TYPE_STRING()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_STRING;
-  else if (ctx->TYPE_BOOL())
+  } else if (ctx->TYPE_BOOL()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
-  else if (ctx->TYPE_DYN())
+  } else if (ctx->TYPE_DYN()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
-  else if (ctx->customDataType())
+  } else if (ctx->customDataType()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_CUSTOM;
-  else if (ctx->functionDataType())
+    baseDataTypeNode->customDataType = std::any_cast<CustomDataTypeNode *>(visit(ctx->customDataType()));
+  } else if (ctx->functionDataType()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_FUNCTION;
-  else
+    baseDataTypeNode->functionDataType = std::any_cast<FunctionDataTypeNode *>(visit(ctx->functionDataType()));
+  } else {
     assert_fail("Unknown base data type");
-
-  // Visit children
-  visitChildren(ctx);
+  }
 
   return concludeNode(baseDataTypeNode);
 }
@@ -1355,21 +1355,24 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
 
   // Enrich
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
-        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      const std::string fragment = t1->toString();
+    const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    if (!terminal)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      const std::string fragment = t2->toString();
+    } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment;
     }
   }
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->typeLst())
+    customDataTypeNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
 
   return concludeNode(customDataTypeNode);
 }
@@ -1378,10 +1381,12 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
   const auto functionDataTypeNode = createNode<FunctionDataTypeNode>(ctx);
 
   // Enrich
-  functionDataTypeNode->isFunction = ctx->dataType();
-
-  // Visit children
-  visitChildren(ctx);
+  if (ctx->dataType()) {
+    functionDataTypeNode->isFunction = ctx->dataType();
+    functionDataTypeNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
+  if (ctx->typeLst())
+    functionDataTypeNode->paramTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
 
   return concludeNode(functionDataTypeNode);
 }
