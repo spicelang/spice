@@ -562,7 +562,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   const bool isConst = entryType.isConst();
 
   // Get correct type and linkage type
-  const auto varType = std::any_cast<llvm::Type *>(visit(node->dataType()));
+  const auto varType = std::any_cast<llvm::Type *>(visit(node->dataType));
   const auto linkage = isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
 
   // Create global var
@@ -574,7 +574,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 
   // Set initializer
   if (node->hasValue) { // Set the constant value as variable initializer
-    const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+    const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
     var->setInitializer(constantValue);
   } else if (cliOptions.buildMode == DEBUG) { // Set the default value as variable initializer
     llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
@@ -614,8 +614,8 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
     fct->addParamAttr(i, llvm::Attribute::NoUndef);
 
   // If the function should be imported as dll, add the dll attribute
-  if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_LINKER_DLL))
-    if (node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)
+  if (node->attrs && node->attrs->attrLst()->hasAttr(ATTR_CORE_LINKER_DLL))
+    if (node->attrs->attrLst()->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)
       fct->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
   return nullptr;

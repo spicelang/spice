@@ -131,6 +131,7 @@ private:
 
   // Private methods
   template <typename T> T *createNode(const ParserRuleContext *ctx);
+  template <typename T> T *resumeForExpansion();
   template <typename T> T *concludeNode(T *node);
   ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) {
     const size_t startIdx = ctx->start->getStartIndex();

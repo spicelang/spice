@@ -14,7 +14,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY, node);
 
   // Visit instructions in the block
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -37,28 +37,28 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Init statement
-  visit(node->initDecl());
+  visit(node->initDecl);
   // Create jump from original to head block
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
   // Condition evaluation
-  llvm::Value *condValue = resolveValue(node->condAssign());
+  llvm::Value *condValue = resolveValue(node->condAssign);
   // Create conditional jump from head to body or exit block
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 
   // Switch to tail block
   switchToBlock(bTail);
   // Inc statement
-  visit(node->incAssign());
+  visit(node->incAssign);
   // Create jump from tail to head
   insertJump(bHead);
 
@@ -92,7 +92,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Resolve iterator
-  AssignExprNode *iteratorAssignNode = node->iteratorAssign();
+  AssignExprNode *iteratorAssignNode = node->iteratorAssign;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
     llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
@@ -123,7 +123,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   }
 
   // Check we have an idx
-  const DeclStmtNode *idxDeclNode = node->idxVarDecl();
+  const DeclStmtNode *idxDeclNode = node->idxVarDecl;
   const bool hasIdx = idxDeclNode != nullptr;
   // Retrieve item ref type
   assert(hasIdx ? node->getIdxFct != nullptr : node->getFct != nullptr);
@@ -141,7 +141,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   }
 
   // Visit item variable declaration
-  const DeclStmtNode *itemDeclNode = node->itemVarDecl();
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
   visit(itemDeclNode);
   // Get address of item variable
   SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
@@ -191,7 +191,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, node, true);
   }
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 
@@ -238,14 +238,14 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump to head block
   insertJump(bHead);
 
@@ -283,14 +283,14 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump to foot block
   insertJump(bFoot);
 
   // Switch to head block
   switchToBlock(bFoot);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 

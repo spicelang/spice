@@ -118,7 +118,7 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -128,27 +128,27 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
 
   // Visit loop variable declaration
-  visit(node->initDecl());
+  visit(node->initDecl);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condAssign(), CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visit(node->incAssign());
+  visit(node->incAssign);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Visit iterator assignment
-  AssignExprNode *iteratorNode = node->iteratorAssign();
+  AssignExprNode *iteratorNode = node->iteratorAssign;
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
@@ -192,22 +192,22 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
         iteratorType.getName(false);
-    softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
+    softError(node->iteratorAssign, OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
   const QualTypeList &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
-    SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
+    SOFT_ERROR_ER(node->iteratorAssign, INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
 
-  const bool hasIdx = node->idxVarDecl();
+  const bool hasIdx = node->idxVarDecl;
   if (hasIdx) {
     // Visit index declaration or assignment
-    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl()));
+    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl));
     HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
-      SOFT_ERROR_ER(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
+      SOFT_ERROR_ER(node->idxVarDecl, FOREACH_IDX_NOT_LONG,
                     "Index in foreach loop must be of type long. You provided " + indexType.getName(false))
   }
 
@@ -229,29 +229,29 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
+  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
   assert(itemVarSymbol != nullptr);
 
   // Check type of the item
-  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl()));
+  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl));
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    node->itemVarDecl->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
   } else {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
     const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-    (void)opRuleManager.getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+    (void)opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
   itemVarSymbol->updateType(itemType, true);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -261,14 +261,14 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -278,14 +278,14 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
 
   return nullptr;
 }

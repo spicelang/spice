@@ -72,25 +72,25 @@ bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
-CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant->getCompileTimeValue(); }
 
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue = condAssign()->hasCompileTimeValue() && condAssign()->getCompileTimeValue().boolValue;
-  return loopConditionAlwaysTrue && body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool loopConditionAlwaysTrue = condAssign->hasCompileTimeValue() && condAssign->getCompileTimeValue().boolValue;
+  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue = condition()->hasCompileTimeValue() && condition()->getCompileTimeValue().boolValue;
-  return loopConditionAlwaysTrue && body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool loopConditionAlwaysTrue = condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue;
+  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // Do-while loops will always be executed at least once. So if the body returns on all control paths, the loop will as well
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
