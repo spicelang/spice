@@ -295,27 +295,26 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
-  AssignExprNode *condition = node->condition();
-  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (condition->op == AssignExprNode::OP_ASSIGN)
-    sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
+  if (node->condition->op == AssignExprNode::OP_ASSIGN)
+    sourceFile->compilerOutput.warnings.emplace_back(node->condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
   // Visit body
-  visit(node->thenBody());
+  visit(node->thenBody);
 
   // Leave then body scope
   scopeHandle.leaveScopeEarly();
 
   // Visit else statement if existing
-  if (node->elseStmt())
-    visit(node->elseStmt());
+  if (node->elseStmt)
+    visit(node->elseStmt);
 
   return nullptr;
 }
@@ -323,7 +322,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
-    visit(node->ifStmt());
+    visit(node->ifStmt);
     return nullptr;
   }
 
@@ -331,26 +330,25 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
 
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
-  AssignExprNode *expr = node->assignExpr();
-  const QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  const QualType exprType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
-    SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
+    SOFT_ERROR_ER(node->assignExpr, SWITCH_EXPR_MUST_BE_PRIMITIVE,
                   "Switch expression must be of int, short, long, byte, char or bool type")
 
   // Visit children
   visitChildren(node);
 
   // Check if case constant types match switch expression type
-  for (const CaseBranchNode *caseBranchNode : node->caseBranches())
-    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
+  for (const CaseBranchNode *caseBranchNode : node->caseBranches)
+    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants) {
       const QualType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
@@ -364,11 +362,11 @@ std::any TypeChecker::visitCaseBranch(CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // Visit constant list
-  for (CaseConstantNode *constant : node->caseConstants())
+  for (CaseConstantNode *constant : node->caseConstants)
     visit(constant);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -378,7 +376,7 @@ std::any TypeChecker::visitDefaultBranch(DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

@@ -95,38 +95,37 @@ bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachabl
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
   // If the condition always evaluates to 'true' the then block must return
-  const AssignExprNode *cond = condition();
-  if (cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue)
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  if (condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue)
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If the condition always evaluates to 'false' the else block must return
-  if (cond->hasCompileTimeValue() && !cond->getCompileTimeValue().boolValue)
-    return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  if (condition->hasCompileTimeValue() && !condition->getCompileTimeValue().boolValue)
+    return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If the condition does not always evaluate to 'true' or 'false' we need to check both branches
-  return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
-         elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt != nullptr &&
+         elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
   if (isElseIf)
-    return ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return ifStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   const auto pred = [=](const CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); };
-  const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches(), pred);
-  const bool defaultBranchReturns = !defaultBranch() || defaultBranch()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches, pred);
+  const bool defaultBranchReturns = !defaultBranch || defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   return allCaseBranchesReturn && defaultBranchReturns;
 }
 
 bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {

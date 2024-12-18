@@ -476,20 +476,20 @@ std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
 std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Create scope for the then body
   node->thenBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody->codeLoc);
 
   // Visit condition
-  visit(node->condition());
+  visit(node->condition);
 
   // Visit then body
-  visit(node->thenBody());
+  visit(node->thenBody);
 
   // Leave then body scope
   currentScope = node->thenBodyScope->parent;
 
   // Visit else stmt
-  if (node->elseStmt())
-    visit(node->elseStmt());
+  if (node->elseStmt)
+    visit(node->elseStmt);
 
   return nullptr;
 }
@@ -497,16 +497,16 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
 std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
   // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
-    visit(node->ifStmt());
+    visit(node->ifStmt);
     return nullptr;
   }
 
   // Create scope for the else body
   node->elseBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->body->codeLoc);
 
   // Visit else body
-  visit(node->body());
+  visit(node->body);
 
   // Leave else body scope
   currentScope = node->elseBodyScope->parent;
@@ -517,10 +517,10 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
   // Create scope for the case branch
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body->codeLoc);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   // Leave case body scope
   currentScope = node->bodyScope->parent;
@@ -531,10 +531,10 @@ std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
 std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
   // Create scope for the default branch
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::DEFAULT_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::DEFAULT_BODY, &node->body->codeLoc);
 
   // Visit default body
-  visit(node->body());
+  visit(node->body);
 
   // Leave default body scope
   currentScope = node->bodyScope->parent;
