@@ -1316,13 +1316,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrintfCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
+  std::vector<AssignExprNode *> args;
   std::string templatedString;
 };
 
@@ -1337,14 +1335,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSizeofCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSizeofCall(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
+  AssignExprNode *assignExpr = nullptr;
+  DataTypeNode *dataType = nullptr;
   bool isType = false;
 };
 
@@ -1359,14 +1355,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAlignofCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAlignofCall(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
+  AssignExprNode *assignExpr = nullptr;
+  DataTypeNode *dataType = nullptr;
   bool isType = false;
 };
 
@@ -1381,11 +1375,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLenCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLenCall(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+
+  // Public members
+  AssignExprNode *assignExpr = nullptr;
 };
 
 // ======================================================== PanicCallNode ========================================================
@@ -1399,12 +1393,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPanicCall(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
+
+  // Public members
+  AssignExprNode *assignExpr = nullptr;
 };
 
 // ========================================================= SysCallNode =========================================================
@@ -1418,8 +1412,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSysCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSysCall(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> assignExprs() const { return getChildren<AssignExprNode>(); }
+  // Public members
+  std::vector<AssignExprNode *> args;
 };
 
 // ======================================================= AssignExprNode ========================================================

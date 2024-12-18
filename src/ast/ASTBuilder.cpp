@@ -734,7 +734,8 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   printfCallNode->templatedString = templatedString;
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AssignExprContext *assignExprContext : ctx->assignExpr())
+    printfCallNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExprContext)));
 
   return concludeNode(printfCallNode);
 }
@@ -742,11 +743,13 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   const auto sizeofCallNode = createNode<SizeofCallNode>(ctx);
 
-  // Check if type or value
-  sizeofCallNode->isType = ctx->TYPE();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    sizeofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    sizeofCallNode->isType = true;
+    sizeofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
 
   return concludeNode(sizeofCallNode);
 }
@@ -754,11 +757,13 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
 std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
   const auto alignofCallNode = createNode<AlignofCallNode>(ctx);
 
-  // Check if type or value
-  alignofCallNode->isType = ctx->TYPE();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    alignofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    alignofCallNode->isType = true;
+    alignofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
 
   return concludeNode(alignofCallNode);
 }
@@ -767,7 +772,7 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   const auto lenCallNode = createNode<LenCallNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  lenCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(lenCallNode);
 }
@@ -776,7 +781,7 @@ std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
   const auto panicCallNode = createNode<PanicCallNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  panicCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(panicCallNode);
 }
@@ -785,7 +790,8 @@ std::any ASTBuilder::visitSysCall(SpiceParser::SysCallContext *ctx) {
   const auto sysCallNode = createNode<SysCallNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AssignExprContext *assignExprContext : ctx->assignExpr())
+    sysCallNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExprContext)));
 
   return concludeNode(sysCallNode);
 }

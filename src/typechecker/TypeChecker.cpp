@@ -757,11 +757,11 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   size_t index = node->templatedString.find_first_of('%');
   while (index != std::string::npos && index != node->templatedString.size() - 1) {
     // Check if there is another assignExpr
-    if (node->args().size() <= placeholderCount)
+    if (node->args.size() <= placeholderCount)
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
     // Get next assignment
-    AssignExprNode *assignment = node->args().at(placeholderCount);
+    AssignExprNode *assignment = node->args.at(placeholderCount);
     // Visit assignment
     QualType argType = std::any_cast<ExprResult>(visit(assignment)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -821,7 +821,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   }
 
   // Check if the number of placeholders matches the number of args
-  if (placeholderCount < node->args().size())
+  if (placeholderCount < node->args.size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
@@ -829,9 +829,9 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   if (node->isType) { // Size of type
-    visit(node->dataType());
+    visit(node->dataType);
   } else { // Size of value
-    visit(node->assignExpr());
+    visit(node->assignExpr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
@@ -839,22 +839,22 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
   if (node->isType) { // Align of type
-    visit(node->dataType());
+    visit(node->dataType);
   } else { // Align of value
-    visit(node->assignExpr());
+    visit(node->assignExpr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray() && !argType.is(TY_STRING))
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   // If we want to use the len builtin on a string, we need to import the string runtime module
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
@@ -864,23 +864,22 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isErrorObj())
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitSysCall(SysCallNode *node) {
   // Check if the syscall number if of type short
-  const std::vector<AssignExprNode *> assignExprs = node->assignExprs();
-  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(assignExprs.front())).type;
+  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(node->args.front())).type;
   if (!sysCallNumberType.is(TY_SHORT))
-    SOFT_ERROR_ER(assignExprs.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
+    SOFT_ERROR_ER(node->args.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
 
   // Check if the syscall number is out of range
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
@@ -892,12 +891,12 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
 
   // Check if too many syscall args are given
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->assignExprs().size() > 6)
-    SOFT_ERROR_ER(node->assignExprs().front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
+  if (node->args.size() > 6)
+    SOFT_ERROR_ER(node->args.front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
 
   // Visit children
-  for (size_t i = 1; i < assignExprs.size(); i++)
-    visit(assignExprs.at(i));
+  for (size_t i = 1; i < node->args.size(); i++)
+    visit(node->args.at(i));
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
