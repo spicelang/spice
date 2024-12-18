@@ -394,7 +394,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
     // Check if the template type list contains this type
     if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
-      throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
+      throw SemanticError(field->dataType, GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
   // Change to the root scope
@@ -502,7 +502,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items with values
   std::vector<std::string> names;
   std::vector<uint32_t> values;
-  for (const EnumItemNode *enumItem : node->itemLst->items()) {
+  for (const EnumItemNode *enumItem : node->itemLst->items) {
     // Save name
     names.push_back(enumItem->itemName);
     // Check for duplicate value
@@ -518,7 +518,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items without values
   uint32_t nextValue = 0;
   const QualType intSymbolType(TY_INT);
-  for (EnumItemNode *enumItem : node->itemLst->items()) {
+  for (EnumItemNode *enumItem : node->itemLst->items) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
     assert(itemEntry != nullptr);

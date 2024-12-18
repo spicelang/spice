@@ -229,7 +229,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   enumDefNode->itemLst = std::any_cast<EnumItemLstNode *>(visit(ctx->enumItemLst()));
 
   // Tell all items about the enum def
-  for (EnumItemNode *enumItem : enumDefNode->itemLst->items())
+  for (EnumItemNode *enumItem : enumDefNode->itemLst->items)
     enumItem->enumDef = enumDefNode;
 
   return concludeNode(enumDefNode);
@@ -542,7 +542,8 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   const auto argLstNode = createNode<ArgLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AssignExprContext *assignExpr : ctx->assignExpr())
+    argLstNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExpr)));
 
   return concludeNode(argLstNode);
 }
@@ -551,7 +552,8 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   const auto enumItemLstNode = createNode<EnumItemLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::EnumItemContext *enumItem : ctx->enumItem())
+    enumItemLstNode->items.push_back(std::any_cast<EnumItemNode *>(visit(enumItem)));
 
   return concludeNode(enumItemLstNode);
 }
@@ -576,10 +578,10 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER());
 
   // Visit children
-  visitChildren(ctx);
-
-  // Tell the data type that it is a field type
-  fieldNode->dataType()->setFieldTypeRecursive();
+  fieldNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  fieldNode->dataType->setFieldTypeRecursive();
+  if (ctx->ternaryExpr())
+    fieldNode->defaultValue = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
 
   return concludeNode(fieldNode);
 }
@@ -589,15 +591,28 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
 
   // Extract method name
   signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
-  // Extract signature type
-  signatureNode->signatureType = ctx->F() ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
-  signatureNode->signatureSpecifiers = ctx->F() ? TypeSpecifiers::of(TY_FUNCTION) : TypeSpecifiers::of(TY_PROCEDURE);
-  // Extract other metadata
-  signatureNode->hasTemplateTypes = ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1;
-  signatureNode->hasParams = ctx->typeLst().size() == 2 || (ctx->typeLst().size() == 1 && !signatureNode->hasTemplateTypes);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->specifierLst()) {
+    signatureNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  }
+  if (ctx->F()) {
+    signatureNode->hasReturnType = true;
+    signatureNode->signatureType = SignatureNode::TYPE_FUNCTION;
+    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
+    signatureNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  } else {
+    signatureNode->signatureType = SignatureNode::TYPE_PROCEDURE;
+    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
+  }
+  if (ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1) {
+    signatureNode->hasTemplateTypes = true;
+    signatureNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(0)));
+  }
+  if (ctx->typeLst().size() == 2 || (ctx->typeLst().size() == 1 && !signatureNode->hasTemplateTypes)) {
+    signatureNode->hasParams = true;
+    signatureNode->paramTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(signatureNode->hasTemplateTypes ? 1 : 0)));
+  }
 
   return concludeNode(signatureNode);
 }

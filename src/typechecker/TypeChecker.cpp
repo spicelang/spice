@@ -443,10 +443,10 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 }
 
 std::any TypeChecker::visitField(FieldNode *node) {
-  auto fieldType = std::any_cast<QualType>(visit(node->dataType()));
+  auto fieldType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_QT(fieldType)
 
-  if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
+  if (TernaryExprNode *defaultValueNode = node->defaultValue) {
     const QualType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
     HANDLE_UNRESOLVED_TYPE_QT(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
@@ -462,7 +462,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -482,12 +482,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   QualType returnType(TY_DYN);
   if (isFunction) {
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
     if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-      softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+      softError(node->returnType, GENERIC_TYPE_NOT_IN_TEMPLATE,
                 "Generic return type not included in the template type list of the function");
   }
 
@@ -495,15 +495,15 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
-    paramList.reserve(node->paramTypeLst()->dataTypes.size());
-    for (DataTypeNode *param : node->paramTypeLst()->dataTypes) {
+    paramList.reserve(node->paramTypeLst->dataTypes.size());
+    for (DataTypeNode *param : node->paramTypeLst->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
       if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
-        softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+        softError(node->paramTypeLst, GENERIC_TYPE_NOT_IN_TEMPLATE,
                   "Generic param type not included in the template type list of the function");
         continue;
       }
@@ -1644,9 +1644,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Retrieve arg types
   data.argResults.clear();
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> &args = node->argLst->args();
-    data.argResults.reserve(args.size());
-    for (AssignExprNode *arg : args) {
+    data.argResults.reserve(node->argLst->args.size());
+    for (AssignExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
@@ -1919,7 +1918,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
     const QualType &actualType = argResults.at(i).type;
     const QualType &expectedType = expectedArgTypes.at(i);
     if (TypeMapping tm; !TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
-      SOFT_ERROR_BOOL(node->argLst->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
@@ -1979,8 +1978,8 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
   if (node->itemLst) {
-    node->actualSize = static_cast<long>(node->itemLst->args().size());
-    for (AssignExprNode *arg : node->itemLst->args()) {
+    node->actualSize = static_cast<long>(node->itemLst->args.size());
+    for (AssignExprNode *arg : node->itemLst->args) {
       const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -2073,16 +2072,16 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Check if the number of fields matches
   if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->fieldTypes.size() != node->fieldLst->args().size())
+    if (spiceStruct->fieldTypes.size() != node->fieldLst->args.size())
       SOFT_ERROR_ER(node->fieldLst, NUMBER_OF_FIELDS_NOT_MATCHING,
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
-    for (size_t i = 0; i < node->fieldLst->args().size(); i++) {
+    for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst->args().at(i);
+      AssignExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
@@ -2114,7 +2113,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
   if (node->fieldLst != nullptr)
-    if (std::ranges::any_of(node->fieldLst->args(), [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+    if (std::ranges::any_of(node->fieldLst->args, [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables

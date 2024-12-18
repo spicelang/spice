@@ -870,8 +870,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArgLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitArgLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
+  // Public members
+  std::vector<AssignExprNode *> args;
 };
 
 // ======================================================== EnumItemLstNode ======================================================
@@ -885,8 +885,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumItemLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEnumItemLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
+  // Public members
+  std::vector<EnumItemNode *> items;
 };
 
 // ========================================================= EnumItemNode ========================================================
@@ -919,11 +919,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitField(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitField(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TernaryExprNode *defaultValue() const { return getChild<TernaryExprNode>(); }
-
   // Public members
+  DataTypeNode *dataType = nullptr;
+  TernaryExprNode *defaultValue = nullptr;
   std::string fieldName;
   SymbolTableEntry *entry = nullptr;
 };
@@ -946,18 +944,17 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSignature(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSignature(this); }
 
-  // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
-  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
-
   // Other methods
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  bool hasParams = false;
+  SpecifierLstNode *specifierLst = nullptr;
+  DataTypeNode *returnType = nullptr;
+  TypeLstNode *templateTypeLst = nullptr;
+  TypeLstNode *paramTypeLst = nullptr;
+  bool hasReturnType = false;
   bool hasTemplateTypes = false;
+  bool hasParams = false;
   SignatureType signatureType = TYPE_NONE;
   TypeSpecifiers signatureSpecifiers;
   std::string methodName;

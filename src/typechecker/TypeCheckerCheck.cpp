@@ -155,8 +155,8 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     // Re-visit all default values. This is required, since the type of the default value might vary for different manifestations
     for (const FieldNode *field : node->fields)
-      if (field->defaultValue() != nullptr)
-        visit(field->defaultValue());
+      if (field->defaultValue != nullptr)
+        visit(field->defaultValue);
 
     // Build struct type
     const QualType structType = manifestation->entry->getQualType();
