@@ -1049,7 +1049,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-  auto atomicExprNode = createNode<AtomicExprNode>(ctx);
+  const auto atomicExprNode = createNode<AtomicExprNode>(ctx);
 
   // Visit children
   if (ctx->constant()) {
@@ -1074,8 +1074,6 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
         if (!atomicExprNode->fqIdentifier.empty())
           atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
         atomicExprNode->fqIdentifier += fragment;
-      } else {
-        assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
       }
     }
   } else if (ctx->builtinCall()) {

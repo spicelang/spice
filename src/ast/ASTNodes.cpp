@@ -281,7 +281,7 @@ CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
+    assert(operands.at(i)->hasCompileTimeValue());
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue |= opCompileTimeValue.longValue;
   }
@@ -299,7 +299,7 @@ CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
+    assert(operands.at(i)->hasCompileTimeValue());
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue ^= opCompileTimeValue.longValue;
   }
@@ -317,7 +317,7 @@ CompileTimeValue BitwiseAndExprNode::getCompileTimeValue() const {
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
+    assert(operands.at(i)->hasCompileTimeValue());
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue &= opCompileTimeValue.longValue;
   }
@@ -394,7 +394,7 @@ CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
+    assert(operands.at(i)->hasCompileTimeValue());
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const AdditiveOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
@@ -419,7 +419,7 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
+    assert(operands.at(i)->hasCompileTimeValue());
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const MultiplicativeOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
