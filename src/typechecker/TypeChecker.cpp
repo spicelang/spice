@@ -1567,35 +1567,35 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
 std::any TypeChecker::visitValue(ValueNode *node) {
   // Function call
-  if (node->fctCall())
-    return visit(node->fctCall());
+  if (node->fctCall)
+    return visit(node->fctCall);
 
   // Array initialization
-  if (node->arrayInitialization())
-    return visit(node->arrayInitialization());
+  if (node->arrayInitialization)
+    return visit(node->arrayInitialization);
 
   // Struct instantiation
-  if (node->structInstantiation())
-    return visit(node->structInstantiation());
+  if (node->structInstantiation)
+    return visit(node->structInstantiation);
 
   // Lambda function
-  if (node->lambdaFunc())
-    return visit(node->lambdaFunc());
+  if (node->lambdaFunc)
+    return visit(node->lambdaFunc);
 
   // Lambda procedure
-  if (node->lambdaProc())
-    return visit(node->lambdaProc());
+  if (node->lambdaProc)
+    return visit(node->lambdaProc);
 
   // Lambda expression
-  if (node->lambdaExpr())
-    return visit(node->lambdaExpr());
+  if (node->lambdaExpr)
+    return visit(node->lambdaExpr);
 
   // Typed nil
   if (node->isNil) {
-    auto nilType = std::any_cast<QualType>(visit(node->nilType()));
+    const auto nilType = std::any_cast<QualType>(visit(node->nilType));
     HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
-      SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
+      SOFT_ERROR_ER(node->nilType, UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
@@ -1646,7 +1646,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Retrieve arg types
   data.argResults.clear();
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> &args = node->argLst()->args();
+    const std::vector<AssignExprNode *> &args = node->argLst->args();
     data.argResults.reserve(args.size());
     for (AssignExprNode *arg : args) {
       // Visit argument
@@ -1698,12 +1698,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes()) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
@@ -1921,7 +1921,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
     const QualType &actualType = argResults.at(i).type;
     const QualType &expectedType = expectedArgTypes.at(i);
     if (TypeMapping tm; !TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
-      SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
@@ -1980,9 +1980,9 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
-  if (node->itemLst()) {
-    node->actualSize = static_cast<long>(node->itemLst()->args().size());
-    for (AssignExprNode *arg : node->itemLst()->args()) {
+  if (node->itemLst) {
+    node->actualSize = static_cast<long>(node->itemLst->args().size());
+    for (AssignExprNode *arg : node->itemLst->args()) {
       const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -2033,13 +2033,13 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->templateTypeLst())
-      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+    if (!concreteTemplateTypes.empty() && node->templateTypeLst)
+      SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
-  if (node->templateTypeLst()) {
-    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+  if (node->templateTypeLst) {
+    concreteTemplateTypes.reserve(node->templateTypeLst->dataTypes().size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes()) {
       auto concreteType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
@@ -2074,17 +2074,17 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType = structType.getWithTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
-  if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
-      SOFT_ERROR_ER(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
+  if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
+    if (spiceStruct->fieldTypes.size() != node->fieldLst->args().size())
+      SOFT_ERROR_ER(node->fieldLst, NUMBER_OF_FIELDS_NOT_MATCHING,
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
-    for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
+    for (size_t i = 0; i < node->fieldLst->args().size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
+      AssignExprNode *assignExpr = node->fieldLst->args().at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
@@ -2115,8 +2115,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
-  if (node->fieldLst() != nullptr)
-    if (std::ranges::any_of(node->fieldLst()->args(), [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+  if (node->fieldLst != nullptr)
+    if (std::ranges::any_of(node->fieldLst->args(), [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
@@ -2136,7 +2136,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<QualType>(visit(node->returnType()));
+  auto returnType = std::any_cast<QualType>(visit(node->returnType));
   HANDLE_UNRESOLVED_TYPE_QT(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2152,7 +2152,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       if (isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2163,15 +2163,15 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  QualType functionType = QualType(TY_FUNCTION)
-                              .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
-                              .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
+  const QualType functionType = QualType(TY_FUNCTION)
+                                    .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
+                                    .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -2180,7 +2180,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2199,7 +2199,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[_, qualType, isOptional] : namedParamList) {
       if (isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2210,7 +2210,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
@@ -2227,7 +2227,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2242,7 +2242,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const NamedParam &param : namedParamList) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2253,7 +2253,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2278,19 +2278,19 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
-  auto type = std::any_cast<QualType>(visit(node->baseDataType()));
+  auto type = std::any_cast<QualType>(visit(node->baseDataType));
   HANDLE_UNRESOLVED_TYPE_QT(type)
 
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
-    DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+    auto [modifierType, hasSize, hardcodedSize, sizeVarName] = tmQueue.front();
 
     // Only the outermost array can have an unknown size
     if (type.isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
       SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID,
                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
-    switch (typeModifier.modifierType) {
+    switch (modifierType) {
     case DataTypeNode::TYPE_PTR: {
       type = type.toPtr(node);
       break;
@@ -2300,21 +2300,21 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {
-      const std::string &varName = typeModifier.sizeVarName;
+      const std::string &varName = sizeVarName;
       if (!varName.empty()) {
-        SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
+        const SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
         if (!globalVar)
           SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
         if (!globalVar->getQualType().isConst())
           SOFT_ERROR_QT(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getQualType().is(TY_INT))
           SOFT_ERROR_QT(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
-        typeModifier.hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
+        hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
       }
 
-      if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
+      if (hasSize && hardcodedSize <= 1)
         SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
-      type = type.toArray(node, typeModifier.hardcodedSize);
+      type = type.toArray(node, hardcodedSize);
       break;
     }
     default:                                                               // GCOV_EXCL_LINE
@@ -2324,9 +2324,9 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   }
 
   // Attach the specifiers to the type
-  if (node->specifierLst()) {
+  if (node->specifierLst) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {

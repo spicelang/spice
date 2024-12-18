@@ -1090,11 +1090,25 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   const auto valueNode = createNode<ValueNode>(ctx);
 
-  // Enrich
-  valueNode->isNil = ctx->NIL();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->fctCall()) {
+    valueNode->fctCall = std::any_cast<FctCallNode *>(visit(ctx->fctCall()));
+  } else if (ctx->arrayInitialization()) {
+    valueNode->arrayInitialization = std::any_cast<ArrayInitializationNode *>(visit(ctx->arrayInitialization()));
+  } else if (ctx->structInstantiation()) {
+    valueNode->structInstantiation = std::any_cast<StructInstantiationNode *>(visit(ctx->structInstantiation()));
+  } else if (ctx->lambdaFunc()) {
+    valueNode->lambdaFunc = std::any_cast<LambdaFuncNode *>(visit(ctx->lambdaFunc()));
+  } else if (ctx->lambdaProc()) {
+    valueNode->lambdaProc = std::any_cast<LambdaProcNode *>(visit(ctx->lambdaProc()));
+  } else if (ctx->lambdaExpr()) {
+    valueNode->lambdaExpr = std::any_cast<LambdaExprNode *>(visit(ctx->lambdaExpr()));
+  } else if (ctx->dataType()) {
+    valueNode->isNil = true;
+    valueNode->nilType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  } else {
+    assert_fail("Unknown value type"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(valueNode);
 }
@@ -1141,31 +1155,34 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
   const auto fctCallNode = createNode<FctCallNode>(ctx);
 
-  // Visit children
-  visitChildren(ctx);
-
-  // Enrich)
-  fctCallNode->hasArgs = fctCallNode->argLst();
-  fctCallNode->hasTemplateTypes = fctCallNode->templateTypeLst();
-
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
-        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      const std::string fragment = t1->toString();
+    const auto terminal = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+    if (!terminal)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
       fctCallNode->fqFunctionName += fragment;
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      const std::string fragment = t2->toString();
+    } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
       fctCallNode->fqFunctionName += fragment;
-    } else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
-               t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS) {
+    } else if (terminal->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS) {
       fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
-    } else if (const auto t4 = dynamic_cast<TerminalNode *>(subTree);
-               t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::DOT) {
+    } else if (terminal->getSymbol()->getType() == SpiceParser::DOT) {
       fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
     }
+  }
+
+  // Visit children
+  if (ctx->typeLst()) {
+    fctCallNode->hasTemplateTypes = true;
+    fctCallNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  if (ctx->argLst()) {
+    fctCallNode->hasArgs = true;
+    fctCallNode->argLst = std::any_cast<ArgLstNode *>(visit(ctx->argLst()));
   }
 
   return concludeNode(fctCallNode);
@@ -1175,7 +1192,8 @@ std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
   const auto arrayInitializationNode = createNode<ArrayInitializationNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->argLst())
+    arrayInitializationNode->itemLst = std::any_cast<ArgLstNode *>(visit(ctx->argLst()));
 
   return concludeNode(arrayInitializationNode);
 }
@@ -1185,21 +1203,28 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 
   // Enrich
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree);
-        t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      const std::string fragment = t1->toString();
+    const auto terminal = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+    if (!terminal)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
       structInstantiationNode->fqStructName += fragment + SCOPE_ACCESS_TOKEN;
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      const std::string fragment = t2->toString();
+    } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = terminal->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
       structInstantiationNode->fqStructName += fragment;
     }
   }
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->typeLst()) {
+    structInstantiationNode->hasTemplateTypes = true;
+    structInstantiationNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  if (ctx->argLst())
+    structInstantiationNode->fieldLst = std::any_cast<ArgLstNode *>(visit(ctx->argLst()));
 
   return concludeNode(structInstantiationNode);
 }
@@ -1207,11 +1232,15 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
   const auto lambdaFuncNode = createNode<LambdaFuncNode>(ctx);
 
-  // Enrich
-  lambdaFuncNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  lambdaFuncNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  if (ctx->paramLst()) {
+    lambdaFuncNode->hasParams = true;
+    lambdaFuncNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  if (ctx->lambdaAttr())
+    lambdaFuncNode->lambdaAttr = std::any_cast<LambdaAttrNode *>(visit(ctx->lambdaAttr()));
+  lambdaFuncNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(lambdaFuncNode);
 }
@@ -1219,11 +1248,14 @@ std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
 std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
   const auto lambdaProcNode = createNode<LambdaProcNode>(ctx);
 
-  // Enrich
-  lambdaProcNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->paramLst()) {
+    lambdaProcNode->hasParams = true;
+    lambdaProcNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  if (ctx->lambdaAttr())
+    lambdaProcNode->lambdaAttr = std::any_cast<LambdaAttrNode *>(visit(ctx->lambdaAttr()));
+  lambdaProcNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(lambdaProcNode);
 }
@@ -1231,11 +1263,12 @@ std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
 std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
   const auto lambdaExprNode = createNode<LambdaExprNode>(ctx);
 
-  // Enrich
-  lambdaExprNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->paramLst()) {
+    lambdaExprNode->hasParams = true;
+    lambdaExprNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  lambdaExprNode->lambdaExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(lambdaExprNode);
 }
@@ -1243,38 +1276,41 @@ std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   const auto dataTypeNode = createNode<DataTypeNode>(ctx);
 
+  // Visit children
+  if (ctx->specifierLst())
+    dataTypeNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  dataTypeNode->baseDataType = std::any_cast<BaseDataTypeNode *>(visit(ctx->baseDataType()));
+
   // Enrich
   for (size_t i = 0; i < ctx->children.size(); i++) {
-    antlr4::tree::ParseTree *subTree = ctx->children[i];
-    if (const auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL) {
+    antlr4::tree::ParseTree *subTree = ctx->children.at(i);
+    auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    if (!terminal)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::MUL) {
       dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);
-    } else if (const auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::BITWISE_AND) {
+    } else if (terminal->getSymbol()->getType() == SpiceParser::BITWISE_AND) {
       dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_REF, false, 0);
-    } else if (const auto t3 = dynamic_cast<TerminalNode *>(subTree);
-               t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::LBRACKET) {
+    } else if (terminal->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
-      subTree = ctx->children[i];
+      subTree = ctx->children.at(i);
+      terminal = dynamic_cast<TerminalNode *>(subTree);
       bool hasSize = false;
       unsigned int hardCodedSize = 0;
       std::string sizeVarName;
-      if (const auto t4 = dynamic_cast<TerminalNode *>(subTree);
-          t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
+      if (terminal->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
-        hardCodedSize = std::stoi(t4->getSymbol()->getText());
+        hardCodedSize = std::stoi(terminal->getSymbol()->getText());
         i++; // Consume INT_LIT
-      } else if (const auto t5 = dynamic_cast<TerminalNode *>(subTree);
-                 t5 != nullptr && t5->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
         hasSize = true;
-        sizeVarName = getIdentifier(t5);
+        sizeVarName = getIdentifier(terminal);
         i++; // Consume TYPE_IDENTIFIER
       }
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
     }
   }
-
-  // Visit children
-  visitChildren(ctx);
 
   return concludeNode(dataTypeNode);
 }

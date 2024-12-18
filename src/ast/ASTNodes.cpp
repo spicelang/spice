@@ -513,19 +513,18 @@ bool FctCallNode::hasReturnValueReceiver() const {
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes
-  const BaseDataTypeNode *baseType = baseDataType();
-  const CustomDataTypeNode *customType = baseType->customDataType();
+  const CustomDataTypeNode *customType = baseDataType->customDataType();
   if (customType != nullptr && customType->templateTypeLst())
     for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes())
       templateNode->setFieldTypeRecursive();
