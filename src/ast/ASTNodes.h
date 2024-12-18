@@ -68,32 +68,9 @@ public:
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
   // Public methods
-  void addChild(ASTNode *node) {
+  ALWAYS_INLINE void addChild(ASTNode *node) {
     children.push_back(node);
     node->parent = this;
-  }
-
-  template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
-    size_t j = 0;
-    for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
-        if (j++ == i)
-          return typedChild;
-      }
-    }
-    return nullptr;
-  }
-
-  template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
-    std::vector<T *> nodes;
-    for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
-        nodes.push_back(typedChild);
-      }
-    }
-    return nodes;
   }
 
   void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)

@@ -1,21 +1,4 @@
-type Test struct {
-    int f1
-    int f2
-}
-
-f<int> main() {
-    int t = 123;
-    switch (t) {
-        case 1: {
-            printf("1");
-        }
-        case Test: {
-            printf("t");
-        }
-    }
-}
-
-/*import "std/data/optional";
+import "std/data/optional";
 import "std/data/stack";
 
 f<int> main() {
@@ -33,4 +16,4 @@ f<int> main() {
 
     dyn oi2 = Optional<String>(String("This is a test"));
     assert oi2.isPresent();
-}*/
+}
