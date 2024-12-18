@@ -197,7 +197,7 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEntry(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
 
-  // Public get methods
+  // Public members
   std::vector<TopLevelDefNode *> topLevelDefs;
   std::vector<ModAttrNode *> modAttrs;
   std::vector<ImportDefNode *> importDefs;
