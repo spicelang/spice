@@ -31,7 +31,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Retrieve param types
   QualTypeList paramTypes;
   if (node->takesArgs) {
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList)
       paramTypes.push_back(qualType);
   }
@@ -68,7 +68,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -115,25 +115,25 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   if (node->hasParams) {
     std::vector<const char *> paramNames;
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       paramNames.push_back(name);
       paramTypes.push_back(qualType);
       paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
       if (!qualType.isCoveredByGenericTypeList(usedGenericTypes))
-        throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+        throw SemanticError(node->paramLst, GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
   }
 
   // Retrieve return type
-  auto returnType = std::any_cast<QualType>(visit(node->returnType()));
+  auto returnType = std::any_cast<QualType>(visit(node->returnType));
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-    SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+    SOFT_ERROR_BOOL(node->returnType, GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
 
   // Leave function body scope
@@ -155,8 +155,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   FunctionManager::insert(currentScope, spiceFunc, &node->manifestations);
 
   // Check function attributes
-  if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst();
+  if (node->attrs) {
+    const AttrLstNode *attrLst = node->attrs->attrLst();
     Function *firstManifestation = node->manifestations.front();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       firstManifestation->mangleFunctionName = value->boolValue;
@@ -167,9 +167,9 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_TEST); value && value->boolValue) {
       // Make sure that the function has the correct signature
       if (node->hasParams)
-        throw SemanticError(node->paramLst(), TEST_FUNCTION_WITH_PARAMS, "Test function may not have parameters");
+        throw SemanticError(node->paramLst, TEST_FUNCTION_WITH_PARAMS, "Test function may not have parameters");
       if (!returnType.is(TY_BOOL))
-        throw SemanticError(node->returnType(), TEST_FUNCTION_WRONG_RETURN_TYPE, "Test function must return a bool");
+        throw SemanticError(node->returnType, TEST_FUNCTION_WRONG_RETURN_TYPE, "Test function must return a bool");
       // Add to test function list
       firstManifestation->entry->used = true; // Avoid printing unused warnings
       firstManifestation->used = true;        // Always keep test functions, because they are called implicitly by the test main
@@ -207,7 +207,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Retrieve procedure template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -254,14 +254,14 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   if (node->hasParams) {
     std::vector<const char *> paramNames;
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       paramNames.push_back(name);
       paramTypes.push_back(qualType);
       paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
       if (!qualType.isCoveredByGenericTypeList(usedGenericTypes))
-        throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+        throw SemanticError(node->paramLst, GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }
   }
@@ -285,8 +285,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   FunctionManager::insert(currentScope, spiceProc, &node->manifestations);
 
   // Check procedure attributes
-  if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst();
+  if (node->attrs) {
+    const AttrLstNode *attrLst = node->attrs->attrLst();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->manifestations.front()->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {

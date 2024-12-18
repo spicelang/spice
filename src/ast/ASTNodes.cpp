@@ -65,11 +65,11 @@ const StmtLstNode *ASTNode::getNextOuterStmtLst() const { // NOLINT(*-no-recursi
 }
 
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }

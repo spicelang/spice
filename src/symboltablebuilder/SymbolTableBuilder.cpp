@@ -29,8 +29,8 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
 
 std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if the function is already defined
   if (rootScope->lookupStrict(MAIN_FUNCTION_NAME))
@@ -51,10 +51,10 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
   // Visit arguments in new scope
   if (node->takesArgs)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit function body in new scope
-  visit(node->body());
+  visit(node->body);
 
   // Return to root scope
   currentScope = rootScope;
@@ -65,11 +65,11 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Build function specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
@@ -102,10 +102,10 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit the function body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   currentScope = node->scope->parent;
@@ -128,11 +128,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Build procedure specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
@@ -163,10 +163,10 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit the procedure body
-  visit(node->body());
+  visit(node->body);
 
   // Leave procedure body scope
   currentScope = node->scope->parent;

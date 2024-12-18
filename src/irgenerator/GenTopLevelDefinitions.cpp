@@ -31,11 +31,11 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   QualTypeList paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
-    const size_t numOfParams = node->paramLst()->params().size();
+    const size_t numOfParams = node->paramLst->params().size();
     paramInfoList.reserve(numOfParams);
     paramSymbolTypes.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
-    for (DeclStmtNode *param : node->paramLst()->params()) {
+    for (DeclStmtNode *param : node->paramLst->params()) {
       // Get symbol table entry of param
       SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
@@ -108,7 +108,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   }
 
   // Visit function body
-  visit(node->body());
+  visit(node->body);
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
@@ -172,7 +172,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       paramInfoList.reserve(numOfParams);
       paramTypes.reserve(numOfParams);
       for (; argIdx < numOfParams; argIdx++) {
-        const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+        const DeclStmtNode *param = node->paramLst->params().at(argIdx);
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
@@ -195,8 +195,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get function linkage
     bool externalLinkage = isPublic;
-    if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_TEST))
-      externalLinkage |= node->attrs()->attrLst()->getAttrValueByName(ATTR_TEST)->boolValue;
+    if (node->attrs && node->attrs->attrLst()->hasAttr(ATTR_TEST))
+      externalLinkage |= node->attrs->attrLst()->getAttrValueByName(ATTR_TEST)->boolValue;
     const llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
@@ -265,14 +265,14 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Store the default values for optional function args
-    if (node->paramLst()) {
-      const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    if (node->paramLst) {
+      const std::vector<DeclStmtNode *> params = node->paramLst->params();
       for (; argIdx < params.size(); argIdx++)
         visit(params.at(argIdx));
     }
 
     // Visit function body
-    visit(node->body());
+    visit(node->body);
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
@@ -343,7 +343,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       paramInfoList.reserve(numOfParams);
       paramTypes.reserve(numOfParams);
       for (; argIdx < numOfParams; argIdx++) {
-        const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+        const DeclStmtNode *param = node->paramLst->params().at(argIdx);
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
@@ -425,8 +425,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Store the default values for optional procedure args
-    if (node->paramLst()) {
-      const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    if (node->paramLst) {
+      const std::vector<DeclStmtNode *> params = node->paramLst->params();
       for (; argIdx < params.size(); argIdx++)
         visit(params.at(argIdx));
     }
@@ -436,7 +436,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       generateCtorBodyPreamble(currentScope);
 
     // Visit procedure body
-    visit(node->body());
+    visit(node->body);
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated)

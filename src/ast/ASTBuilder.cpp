@@ -21,7 +21,35 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   const auto entryNode = createNode<EntryNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (ParserRuleContext::ParseTree *child : ctx->children) {
+    if (auto *mainFctDefCtx = dynamic_cast<SpiceParser::MainFunctionDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<MainFctDefNode *>(visit(mainFctDefCtx)));
+    else if (auto *fctDefCtx = dynamic_cast<SpiceParser::FunctionDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<FctDefNode *>(visit(fctDefCtx)));
+    else if (auto *procDefCtx = dynamic_cast<SpiceParser::ProcedureDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<ProcDefNode *>(visit(procDefCtx)));
+    else if (auto *structDefCtx = dynamic_cast<SpiceParser::StructDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<StructDefNode *>(visit(structDefCtx)));
+    else if (auto *interfaceDefCtx = dynamic_cast<SpiceParser::InterfaceDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<InterfaceDefNode *>(visit(interfaceDefCtx)));
+    else if (auto *enumDefCtx = dynamic_cast<SpiceParser::EnumDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<EnumDefNode *>(visit(enumDefCtx)));
+    else if (auto *genericTypeDefCtx = dynamic_cast<SpiceParser::GenericTypeDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<GenericTypeDefNode *>(visit(genericTypeDefCtx)));
+    else if (auto *aliasDefCtx = dynamic_cast<SpiceParser::AliasDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<AliasDefNode *>(visit(aliasDefCtx)));
+    else if (auto *globalVarDefCtx = dynamic_cast<SpiceParser::GlobalVarDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<GlobalVarDefNode *>(visit(globalVarDefCtx)));
+    else if (auto *importDefCtx = dynamic_cast<SpiceParser::ImportDefContext *>(child))
+      entryNode->importDefs.push_back(std::any_cast<ImportDefNode *>(visit(importDefCtx)));
+    else if (auto *extDeclCtx = dynamic_cast<SpiceParser::ExtDeclContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<ExtDeclNode *>(visit(extDeclCtx)));
+    else if (auto *modAttrCtx = dynamic_cast<SpiceParser::ModAttrContext *>(child))
+      entryNode->modAttrs.push_back(std::any_cast<ModAttrNode *>(visit(modAttrCtx)));
+    else if (const auto *eofCtx = dynamic_cast<TerminalNode *>(child);
+             !eofCtx || eofCtx->getSymbol()->getType() != SpiceParser::EOF)
+      assert_fail("Unknown top level definition type"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(entryNode);
 }
@@ -29,11 +57,14 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
 std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   const auto mainFctDefNode = createNode<MainFctDefNode>(ctx);
 
-  // Enrich
-  mainFctDefNode->takesArgs = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->topLevelDefAttr())
+    mainFctDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+  if (ctx->paramLst()) {
+    mainFctDefNode->takesArgs = true;
+    mainFctDefNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  mainFctDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(mainFctDefNode);
 }
@@ -41,24 +72,28 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
 std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   const auto fctDefNode = createNode<FctDefNode>(ctx);
 
-  // Enrich
-  fctDefNode->hasParams = ctx->paramLst();
-  fctDefNode->hasTemplateTypes = ctx->typeLst();
-
   // Visit children
-  visitChildren(ctx);
-
-  // Retrieve information from the function name
-  fctDefNode->name = fctDefNode->getChild<FctNameNode>();
-  fctDefNode->isMethod = fctDefNode->name->nameFragments.size() > 1;
-
-  // Tell the return type that it is one
-  fctDefNode->returnType()->isReturnType = true;
-
-  // Tell the attributes that they are function attributes
-  if (fctDefNode->attrs())
-    for (AttrNode *attr : fctDefNode->attrs()->attrLst()->attributes())
+  if (ctx->topLevelDefAttr()) {
+    fctDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    // Tell the attributes that they are function attributes
+    for (AttrNode *attr : fctDefNode->attrs->attrLst()->attributes())
       attr->target = AttrNode::TARGET_FCT_PROC;
+  }
+  if (ctx->specifierLst())
+    fctDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  fctDefNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  fctDefNode->returnType->isReturnType = true;
+  fctDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
+  fctDefNode->isMethod = fctDefNode->name->nameFragments.size() > 1;
+  if (ctx->typeLst()) {
+    fctDefNode->hasTemplateTypes = true;
+    fctDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  if (ctx->paramLst()) {
+    fctDefNode->hasParams = true;
+    fctDefNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  fctDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(fctDefNode);
 }
@@ -66,21 +101,26 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
 std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   const auto procDefNode = createNode<ProcDefNode>(ctx);
 
-  // Enrich
-  procDefNode->hasParams = ctx->paramLst();
-  procDefNode->hasTemplateTypes = ctx->typeLst();
-
   // Visit children
-  visitChildren(ctx);
-
-  // Retrieve information from the procedure name
-  procDefNode->name = procDefNode->getChild<FctNameNode>();
-  procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
-
-  // Tell the attributes that they are procedure attributes
-  if (procDefNode->attrs())
-    for (AttrNode *attr : procDefNode->attrs()->attrLst()->attributes())
+  if (ctx->topLevelDefAttr()) {
+    procDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    // Tell the attributes that they are function attributes
+    for (AttrNode *attr : procDefNode->attrs->attrLst()->attributes())
       attr->target = AttrNode::TARGET_FCT_PROC;
+  }
+  if (ctx->specifierLst())
+    procDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  procDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
+  procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
+  if (ctx->typeLst()) {
+    procDefNode->hasTemplateTypes = true;
+    procDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  if (ctx->paramLst()) {
+    procDefNode->hasParams = true;
+    procDefNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  procDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(procDefNode);
 }
@@ -103,7 +143,8 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
   }
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->overloadableOp())
+    visit(ctx->overloadableOp());
 
   return concludeNode(fctNameNode);
 }

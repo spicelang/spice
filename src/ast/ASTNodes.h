@@ -18,6 +18,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class TopLevelDefNode;
+
 // Operator overload function names
 constexpr const char *const OP_FCT_PREFIX = "op.";
 constexpr const char *const OP_FCT_PLUS = "op.plus";
@@ -194,8 +197,9 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
 
   // Public get methods
-  [[nodiscard]] std::vector<ModAttrNode *> modAttrs() const { return getChildren<ModAttrNode>(); }
-  [[nodiscard]] std::vector<ImportDefNode *> importDefs() const { return getChildren<ImportDefNode>(); }
+  std::vector<TopLevelDefNode *> topLevelDefs;
+  std::vector<ModAttrNode *> modAttrs;
+  std::vector<ImportDefNode *> importDefs;
 };
 
 // ======================================================= TopLevelDefNode =======================================================
@@ -245,17 +249,15 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMainFctDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
-  // Public get methods
-  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
-  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
+  TopLevelDefinitionAttrNode *attrs = nullptr;
+  ParamLstNode *paramLst = nullptr;
+  StmtLstNode *body = nullptr;
   bool takesArgs = false;
   SymbolTableEntry *entry = nullptr;
   Scope *bodyScope = nullptr;
@@ -290,13 +292,6 @@ public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
 
-  // Public get methods
-  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &manifestations; }
@@ -304,6 +299,11 @@ public:
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  TopLevelDefinitionAttrNode *attrs = nullptr;
+  SpecifierLstNode *specifierLst = nullptr;
+  TypeLstNode *templateTypeLst = nullptr;
+  ParamLstNode *paramLst = nullptr;
+  StmtLstNode *body = nullptr;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
@@ -326,11 +326,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
+
+  // Public members
+  DataTypeNode *returnType = nullptr;
 };
 
 // ========================================================== ProcDefNode ========================================================
