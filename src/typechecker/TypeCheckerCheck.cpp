@@ -19,7 +19,7 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   // Change to function body scope
   currentScope = node->bodyScope;
   // Visit statements in new scope
-  visit(node->body());
+  visit(node->body);
   // Leave main function body scope
   currentScope = rootScope;
 
@@ -62,10 +62,10 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     // Visit parameters
     // This happens once in the type checker prepare stage. This second time is only required if we have a generic function
     if (node->hasParams)
-      visit(node->paramLst());
+      visit(node->paramLst);
 
     // Visit statements in new scope
-    visit(node->body());
+    visit(node->body);
 
     // Clear type mapping
     typeMapping.clear();
@@ -112,14 +112,14 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     // Visit parameters
     // This happens once in the type checker prepare stage. This second time is only required if we have a generic procedure
     if (node->hasParams)
-      visit(node->paramLst());
+      visit(node->paramLst);
 
     // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required
     if (node->isCtor)
       createCtorBodyPreamble(node->scope);
 
     // Visit statements in new scope
-    visit(node->body());
+    visit(node->body);
 
     // Clear type mapping
     typeMapping.clear();
@@ -154,9 +154,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     changeToScope(manifestation->scope, ScopeType::STRUCT);
 
     // Re-visit all default values. This is required, since the type of the default value might vary for different manifestations
-    for (const FieldNode *field : node->fields())
-      if (field->defaultValue() != nullptr)
-        visit(field->defaultValue());
+    for (const FieldNode *field : node->fields)
+      if (field->defaultValue != nullptr)
+        visit(field->defaultValue);
 
     // Build struct type
     const QualType structType = manifestation->entry->getQualType();

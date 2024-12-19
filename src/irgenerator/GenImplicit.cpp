@@ -401,7 +401,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     }
 
     // Store default field values
-    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == DEBUG) {
+    if (fieldNode->defaultValue != nullptr || cliOptions.buildMode == DEBUG) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
@@ -409,11 +409,11 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
       // Retrieve default value
       llvm::Value *value;
-      if (fieldNode->defaultValue() != nullptr) {
+      if (fieldNode->defaultValue != nullptr) {
         // To resolve the default value, we need to temporarily change to the manifestation of the current struct instantiation
         const size_t oldManIdx = manIdx; // Save manifestation index
         manIdx = spiceStruct->manifestationIndex;
-        value = resolveValue(fieldNode->defaultValue());
+        value = resolveValue(fieldNode->defaultValue);
         manIdx = oldManIdx; // Restore manifestation index
       } else {
         assert(cliOptions.buildMode == DEBUG);
@@ -630,8 +630,8 @@ void IRGenerator::generateTestMain() {
         // Retrieve attribute list for the test function
         assert(testFunction->declNode->isFctOrProcDef());
         const auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
-        assert(fctDefNode->attrs() != nullptr);
-        const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
+        assert(fctDefNode->attrs != nullptr);
+        const AttrLstNode *attrs = fctDefNode->attrs->attrLst;
         assert(attrs->getAttrValueByName(ATTR_TEST)->boolValue); // The test attribute must be present
         const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
         const bool skipTest = testSkipAttr && testSkipAttr->boolValue;

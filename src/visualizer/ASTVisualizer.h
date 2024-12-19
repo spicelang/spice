@@ -59,6 +59,7 @@ public:
   std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
   std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitExprStmt(ExprStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
   std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }
@@ -71,6 +72,7 @@ public:
   std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitFallthroughStmt(FallthroughStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitBuiltinCall(BuiltinCallNode *ctx) override { return buildNode(ctx); }
   std::any visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
   std::any visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAlignofCall(AlignofCallNode *ctx) override { return buildNode(ctx); }

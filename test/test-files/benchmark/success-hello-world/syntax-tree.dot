@@ -6,8 +6,10 @@ digraph {
  L1C1_EntryNode -> L1C1_MainFctDefNode;
  L1C15_StmtLstNode [color="lightgreen",label="StmtLstNode"];
  L1C1_MainFctDefNode -> L1C15_StmtLstNode;
+ L2C5_ExprStmtNode [color="lightgreen",label="ExprStmtNode"];
+ L1C15_StmtLstNode -> L2C5_ExprStmtNode;
  L2C5_AssignExprNode [color="lightgreen",label="AssignExprNode"];
- L1C15_StmtLstNode -> L2C5_AssignExprNode;
+ L2C5_ExprStmtNode -> L2C5_AssignExprNode;
  L2C5_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
  L2C5_AssignExprNode -> L2C5_TernaryExprNode;
  L2C5_LogicalOrExprNode [color="lightgreen",label="LogicalOrExprNode"];
@@ -38,6 +40,8 @@ digraph {
  L2C5_PrefixUnaryExprNode -> L2C5_PostfixUnaryExprNode;
  L2C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L2C5_PostfixUnaryExprNode -> L2C5_AtomicExprNode;
+ L2C5_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L2C5_AtomicExprNode -> L2C5_BuiltinCallNode;
  L2C5_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L2C5_AtomicExprNode -> L2C5_PrintfCallNode;
+ L2C5_BuiltinCallNode -> L2C5_PrintfCallNode;
 }

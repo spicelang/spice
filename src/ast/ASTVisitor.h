@@ -45,6 +45,7 @@ public:
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitExprStmt(ExprStmtNode *node) override;
   std::any visitSpecifierLst(SpecifierLstNode *node) override;
   std::any visitSpecifier(SpecifierNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
@@ -58,6 +59,7 @@ public:
   std::any visitContinueStmt(ContinueStmtNode *node) override;
   std::any visitFallthroughStmt(FallthroughStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
+  std::any visitBuiltinCall(BuiltinCallNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitAlignofCall(AlignofCallNode *node) override;

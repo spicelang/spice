@@ -83,6 +83,8 @@ std::any ParallelizableASTVisitor::visitSignature(const SignatureNode *node) { r
 
 std::any ParallelizableASTVisitor::visitDeclStmt(const DeclStmtNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitExprStmt(const ExprStmtNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitSpecifierLst(const SpecifierLstNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitSpecifier(const SpecifierNode *node) { return visitChildren(node); }
@@ -110,6 +112,8 @@ std::any ParallelizableASTVisitor::visitContinueStmt(const ContinueStmtNode *nod
 std::any ParallelizableASTVisitor::visitFallthroughStmt(const FallthroughStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitAssertStmt(const AssertStmtNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitPrintfCall(const PrintfCallNode *node) { return visitChildren(node); }
 

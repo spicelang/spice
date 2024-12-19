@@ -118,7 +118,7 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -128,27 +128,27 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
 
   // Visit loop variable declaration
-  visit(node->initDecl());
+  visit(node->initDecl);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condAssign(), CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visit(node->incAssign());
+  visit(node->incAssign);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Visit iterator assignment
-  AssignExprNode *iteratorNode = node->iteratorAssign();
+  AssignExprNode *iteratorNode = node->iteratorAssign;
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
@@ -192,22 +192,22 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
         iteratorType.getName(false);
-    softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
+    softError(node->iteratorAssign, OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
   const QualTypeList &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
-    SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
+    SOFT_ERROR_ER(node->iteratorAssign, INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
 
-  const bool hasIdx = node->idxVarDecl();
+  const bool hasIdx = node->idxVarDecl;
   if (hasIdx) {
     // Visit index declaration or assignment
-    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl()));
+    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl));
     HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
-      SOFT_ERROR_ER(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
+      SOFT_ERROR_ER(node->idxVarDecl, FOREACH_IDX_NOT_LONG,
                     "Index in foreach loop must be of type long. You provided " + indexType.getName(false))
   }
 
@@ -229,29 +229,29 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
+  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
   assert(itemVarSymbol != nullptr);
 
   // Check type of the item
-  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl()));
+  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl));
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    node->itemVarDecl->dataType->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
   } else {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
     const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-    (void)opRuleManager.getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+    (void)opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
   itemVarSymbol->updateType(itemType, true);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -261,14 +261,14 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -278,14 +278,14 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
 
   return nullptr;
 }
@@ -295,27 +295,26 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
-  AssignExprNode *condition = node->condition();
-  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (condition->op == AssignExprNode::OP_ASSIGN)
-    sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
+  if (node->condition->op == AssignExprNode::OP_ASSIGN)
+    sourceFile->compilerOutput.warnings.emplace_back(node->condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
   // Visit body
-  visit(node->thenBody());
+  visit(node->thenBody);
 
   // Leave then body scope
   scopeHandle.leaveScopeEarly();
 
   // Visit else statement if existing
-  if (node->elseStmt())
-    visit(node->elseStmt());
+  if (node->elseStmt)
+    visit(node->elseStmt);
 
   return nullptr;
 }
@@ -323,7 +322,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
-    visit(node->ifStmt());
+    visit(node->ifStmt);
     return nullptr;
   }
 
@@ -331,26 +330,25 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
 
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
-  AssignExprNode *expr = node->assignExpr();
-  const QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  const QualType exprType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
-    SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
+    SOFT_ERROR_ER(node->assignExpr, SWITCH_EXPR_MUST_BE_PRIMITIVE,
                   "Switch expression must be of int, short, long, byte, char or bool type")
 
   // Visit children
   visitChildren(node);
 
   // Check if case constant types match switch expression type
-  for (const CaseBranchNode *caseBranchNode : node->caseBranches())
-    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
+  for (const CaseBranchNode *caseBranchNode : node->caseBranches)
+    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants) {
       const QualType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
@@ -364,11 +362,11 @@ std::any TypeChecker::visitCaseBranch(CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // Visit constant list
-  for (CaseConstantNode *constant : node->caseConstants())
+  for (CaseConstantNode *constant : node->caseConstants)
     visit(constant);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -378,7 +376,7 @@ std::any TypeChecker::visitDefaultBranch(DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -388,7 +386,7 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -417,7 +415,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParams;
   bool metOptional = false;
 
-  for (DeclStmtNode *param : node->params()) {
+  for (DeclStmtNode *param : node->params) {
     // Visit param
     const auto paramType = std::any_cast<QualType>(visit(param));
     if (paramType.is(TY_UNRESOLVED))
@@ -445,10 +443,10 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 }
 
 std::any TypeChecker::visitField(FieldNode *node) {
-  auto fieldType = std::any_cast<QualType>(visit(node->dataType()));
+  auto fieldType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_QT(fieldType)
 
-  if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
+  if (TernaryExprNode *defaultValueNode = node->defaultValue) {
     const QualType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
     HANDLE_UNRESOLVED_TYPE_QT(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
@@ -464,7 +462,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -484,12 +482,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   QualType returnType(TY_DYN);
   if (isFunction) {
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
     if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-      softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+      softError(node->returnType, GENERIC_TYPE_NOT_IN_TEMPLATE,
                 "Generic return type not included in the template type list of the function");
   }
 
@@ -497,15 +495,15 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
-    paramList.reserve(node->paramTypeLst()->dataTypes().size());
-    for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
+    paramList.reserve(node->paramTypeLst->dataTypes.size());
+    for (DataTypeNode *param : node->paramTypeLst->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
       if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
-        softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+        softError(node->paramTypeLst, GENERIC_TYPE_NOT_IN_TEMPLATE,
                   "Generic param type not included in the template type list of the function");
         continue;
       }
@@ -544,7 +542,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   QualType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
     auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -554,7 +552,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
 
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
@@ -566,7 +564,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
 
       // Call copy ctor if required
-      if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
+      if (localVarType.is(TY_STRUCT) && !node->isFctParam && !rhs.isTemporary()) {
         Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
@@ -578,7 +576,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
         const std::string structName = localVarType.getBase().getSubType();
-        softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+        softError(node->dataType, UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = QualType(TY_UNRESOLVED);
       }
     } else {
@@ -586,14 +584,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
   } else {
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
+    if (localVarType.isRef() && !node->isFctParam && !node->isForEachItem)
       softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
 
     // If this is a struct, check for the default ctor
-    if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
+    if (localVarType.is(TY_STRUCT) && !node->isFctParam && !node->isForEachItem) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
@@ -620,8 +618,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
 std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
   // If we have a normal constant, we can take the symbol type from there
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if a local or global variable can be found by searching for the name
   if (node->identifierFragments.size() == 1)
@@ -654,7 +652,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Check if procedure with return value
   if (!isFunction) {
     if (node->hasReturnValue)
-      SOFT_ERROR_ER(node->assignExpr(), RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
+      SOFT_ERROR_ER(node->assignExpr, RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
     return nullptr;
   }
 
@@ -665,12 +663,12 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
   HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
-  (void)opRuleManager.getAssignResultType(node->assignExpr(), returnResult, rhs, false, true, ERROR_MSG_RETURN);
+  (void)opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
 
   // Manage dtor call
   if (rhs.entry != nullptr) {
@@ -724,13 +722,30 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
+    SOFT_ERROR_ER(node->assignExpr, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
 
+  return nullptr;
+}
+
+std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
+  if (node->printfCall)
+    return visitPrintfCall(node->printfCall);
+  if (node->sizeofCall)
+    return visitSizeofCall(node->sizeofCall);
+  if (node->alignofCall)
+    return visitAlignofCall(node->alignofCall);
+  if (node->lenCall)
+    return visitLenCall(node->lenCall);
+  if (node->panicCall)
+    return visitPanicCall(node->panicCall);
+  if (node->sysCall)
+    return visitSysCall(node->sysCall);
+  assert_fail("Unknown builtin call");
   return nullptr;
 }
 
@@ -740,11 +755,11 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   size_t index = node->templatedString.find_first_of('%');
   while (index != std::string::npos && index != node->templatedString.size() - 1) {
     // Check if there is another assignExpr
-    if (node->args().size() <= placeholderCount)
+    if (node->args.size() <= placeholderCount)
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
     // Get next assignment
-    AssignExprNode *assignment = node->args().at(placeholderCount);
+    AssignExprNode *assignment = node->args.at(placeholderCount);
     // Visit assignment
     QualType argType = std::any_cast<ExprResult>(visit(assignment)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -804,7 +819,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   }
 
   // Check if the number of placeholders matches the number of args
-  if (placeholderCount < node->args().size())
+  if (placeholderCount < node->args.size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
@@ -812,9 +827,9 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   if (node->isType) { // Size of type
-    visit(node->dataType());
+    visit(node->dataType);
   } else { // Size of value
-    visit(node->assignExpr());
+    visit(node->assignExpr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
@@ -822,22 +837,22 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
   if (node->isType) { // Align of type
-    visit(node->dataType());
+    visit(node->dataType);
   } else { // Align of value
-    visit(node->assignExpr());
+    visit(node->assignExpr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray() && !argType.is(TY_STRING))
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   // If we want to use the len builtin on a string, we need to import the string runtime module
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
@@ -847,23 +862,22 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isErrorObj())
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitSysCall(SysCallNode *node) {
   // Check if the syscall number if of type short
-  const std::vector<AssignExprNode *> assignExprs = node->assignExprs();
-  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(assignExprs.front())).type;
+  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(node->args.front())).type;
   if (!sysCallNumberType.is(TY_SHORT))
-    SOFT_ERROR_ER(assignExprs.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
+    SOFT_ERROR_ER(node->args.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
 
   // Check if the syscall number is out of range
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
@@ -875,20 +889,20 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
 
   // Check if too many syscall args are given
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->assignExprs().size() > 6)
-    SOFT_ERROR_ER(node->assignExprs().front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
+  if (node->args.size() > 6)
+    SOFT_ERROR_ER(node->args.front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
 
   // Visit children
-  for (size_t i = 1; i < assignExprs.size(); i++)
-    visit(assignExprs.at(i));
+  for (size_t i = 1; i < node->args.size(); i++)
+    visit(node->args.at(i));
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if ternary
-  if (node->ternaryExpr()) {
-    auto result = std::any_cast<ExprResult>(visit(node->ternaryExpr()));
+  if (node->ternaryExpr) {
+    auto result = std::any_cast<ExprResult>(visit(node->ternaryExpr));
     node->setEvaluatedSymbolType(result.type, manIdx);
     return result;
   }
@@ -896,11 +910,11 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if assignment
   if (node->op != AssignExprNode::OP_NONE) {
     // Visit the right side first
-    auto rhs = std::any_cast<ExprResult>(visit(node->rhs()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->rhs));
     auto [rhsType, rhsEntry] = rhs;
     HANDLE_UNRESOLVED_TYPE_ER(rhsType)
     // Then visit the left side
-    auto lhs = std::any_cast<ExprResult>(visit(node->lhs()));
+    auto lhs = std::any_cast<ExprResult>(visit(node->lhs));
     auto [lhsType, lhsVar] = lhs;
     HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
@@ -957,29 +971,20 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Check if there is a ternary operator applied
-  if (node->children.size() == 1)
-    return visit(node->operands().front());
+  if (!node->falseExpr)
+    return visit(node->condition);
 
   // Visit condition
-  LogicalOrExprNode *condition = node->operands()[0];
-  const QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
-
-  QualType trueType;
-  QualType falseType;
-  if (node->isShortened) {
-    trueType = conditionType;
-    falseType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
-  } else {
-    trueType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
-    HANDLE_UNRESOLVED_TYPE_ER(trueType)
-    falseType = std::any_cast<ExprResult>(visit(node->operands()[2])).type;
-  }
+  const QualType trueType = node->isShortened ? conditionType : std::any_cast<ExprResult>(visit(node->trueExpr)).type;
+  HANDLE_UNRESOLVED_TYPE_ER(trueType)
+  const QualType falseType = std::any_cast<ExprResult>(visit(node->falseExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
   // Check if the condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
+    SOFT_ERROR_ER(node->condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
   const QualType trueTypeModified = trueType.removeReferenceWrapper();
@@ -995,14 +1000,14 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Check if a logical or operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
   // Loop through all remaining operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands()[i]));
+  for (size_t i = 1; i < node->operands.size(); i++) {
+    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getLogicalOrResultType(node, currentOperand, rhsOperand)};
   }
@@ -1014,14 +1019,14 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
 std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Check if a logical and operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
   // Loop through all remaining operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands()[i]));
+  for (size_t i = 1; i < node->operands.size(); i++) {
+    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getLogicalAndResultType(node, currentOperand, rhsOperand)};
   }
@@ -1033,14 +1038,14 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
 std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Check if a bitwise or operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
   // Loop through all remaining operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands()[i]));
+  for (size_t i = 1; i < node->operands.size(); i++) {
+    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getBitwiseOrResultType(node, currentOperand, rhsOperand)};
   }
@@ -1052,14 +1057,14 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
 std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Check if a bitwise xor operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
   // Loop through all remaining operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands()[i]));
+  for (size_t i = 1; i < node->operands.size(); i++) {
+    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getBitwiseXorResultType(node, currentOperand, rhsOperand)};
   }
@@ -1071,14 +1076,14 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
 std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Check if a bitwise and operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
   // Loop through all remaining operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands()[i]));
+  for (size_t i = 1; i < node->operands.size(); i++) {
+    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getBitwiseAndResultType(node, currentOperand, rhsOperand)};
   }
@@ -1090,12 +1095,12 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
 std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check if at least one equality operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands()[1]));
+  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check if we need the string runtime to perform a string comparison
@@ -1118,12 +1123,12 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
 std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   // Check if a relational operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands()[1]));
+  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
@@ -1145,12 +1150,12 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
 std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   // Check if at least one shift operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit right side first, then left
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands()[1]));
+  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
@@ -1169,16 +1174,16 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
 std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentResult = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
 
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    MultiplicativeExprNode *operand = node->operands()[i + 1];
+    MultiplicativeExprNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1203,15 +1208,15 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Check if at least one multiplicative operator is applied
   if (node->children.size() == 1)
-    return visit(node->operands().front());
+    return visit(node->operands.front());
 
   // Visit leftmost operand
-  auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  auto currentResult = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    CastExprNode *operand = node->operands()[i + 1];
+    CastExprNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1238,13 +1243,13 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Check if cast is applied
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr());
+    return visit(node->prefixUnaryExpr);
 
   // Visit source type
-  const auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
+  const auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
-  const auto dstType = std::any_cast<QualType>(visit(node->dataType()));
+  const auto dstType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
 
   // Check for identity cast
@@ -1266,10 +1271,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the postfix unary expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Visit the right side
-  PrefixUnaryExprNode *rhsNode = node->prefixUnary();
+  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(rhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
@@ -1326,10 +1331,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Visit left side
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
   auto [lhsType, lhsEntry] = lhs;
   HANDLE_UNRESOLVED_TYPE_ER(lhsType)
@@ -1344,7 +1349,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->assignExpr();
+    AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
     QualType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
@@ -1463,30 +1468,20 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if constant
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if value
-  if (node->value())
-    return visit(node->value());
+  if (node->value)
+    return visit(node->value);
 
   // Check for builtin calls
-  if (node->printfCall())
-    return visit(node->printfCall());
-  if (node->sizeofCall())
-    return visit(node->sizeofCall());
-  if (node->alignofCall())
-    return visit(node->alignofCall());
-  if (node->lenCall())
-    return visit(node->lenCall());
-  if (node->panicCall())
-    return visit(node->panicCall());
-  if (node->sysCall())
-    return visit(node->sysCall());
+  if (node->builtinCall)
+    return visit(node->builtinCall);
 
   // Check for assign expression within parentheses
-  if (node->assignExpr())
-    return visit(node->assignExpr());
+  if (node->assignExpr)
+    return visit(node->assignExpr);
 
   // Identifier (local or global variable access)
   assert(!node->fqIdentifier.empty());
@@ -1570,35 +1565,35 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
 std::any TypeChecker::visitValue(ValueNode *node) {
   // Function call
-  if (node->fctCall())
-    return visit(node->fctCall());
+  if (node->fctCall)
+    return visit(node->fctCall);
 
   // Array initialization
-  if (node->arrayInitialization())
-    return visit(node->arrayInitialization());
+  if (node->arrayInitialization)
+    return visit(node->arrayInitialization);
 
   // Struct instantiation
-  if (node->structInstantiation())
-    return visit(node->structInstantiation());
+  if (node->structInstantiation)
+    return visit(node->structInstantiation);
 
   // Lambda function
-  if (node->lambdaFunc())
-    return visit(node->lambdaFunc());
+  if (node->lambdaFunc)
+    return visit(node->lambdaFunc);
 
   // Lambda procedure
-  if (node->lambdaProc())
-    return visit(node->lambdaProc());
+  if (node->lambdaProc)
+    return visit(node->lambdaProc);
 
   // Lambda expression
-  if (node->lambdaExpr())
-    return visit(node->lambdaExpr());
+  if (node->lambdaExpr)
+    return visit(node->lambdaExpr);
 
   // Typed nil
   if (node->isNil) {
-    auto nilType = std::any_cast<QualType>(visit(node->nilType()));
+    const auto nilType = std::any_cast<QualType>(visit(node->nilType));
     HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
-      SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
+      SOFT_ERROR_ER(node->nilType, UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
@@ -1649,9 +1644,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Retrieve arg types
   data.argResults.clear();
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> &args = node->argLst()->args();
-    data.argResults.reserve(args.size());
-    for (AssignExprNode *arg : args) {
+    data.argResults.reserve(node->argLst->args.size());
+    for (AssignExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
@@ -1701,12 +1695,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
@@ -1924,7 +1918,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
     const QualType &actualType = argResults.at(i).type;
     const QualType &expectedType = expectedArgTypes.at(i);
     if (TypeMapping tm; !TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
-      SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
@@ -1983,9 +1977,9 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
-  if (node->itemLst()) {
-    node->actualSize = static_cast<long>(node->itemLst()->args().size());
-    for (AssignExprNode *arg : node->itemLst()->args()) {
+  if (node->itemLst) {
+    node->actualSize = static_cast<long>(node->itemLst->args.size());
+    for (AssignExprNode *arg : node->itemLst->args) {
       const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -2036,13 +2030,13 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->templateTypeLst())
-      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+    if (!concreteTemplateTypes.empty() && node->templateTypeLst)
+      SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
-  if (node->templateTypeLst()) {
-    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+  if (node->templateTypeLst) {
+    concreteTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       auto concreteType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
@@ -2077,17 +2071,17 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType = structType.getWithTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
-  if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
-      SOFT_ERROR_ER(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
+  if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
+    if (spiceStruct->fieldTypes.size() != node->fieldLst->args.size())
+      SOFT_ERROR_ER(node->fieldLst, NUMBER_OF_FIELDS_NOT_MATCHING,
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
-    for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
+    for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
+      AssignExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
@@ -2118,8 +2112,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
-  if (node->fieldLst() != nullptr)
-    if (std::ranges::any_of(node->fieldLst()->args(), [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+  if (node->fieldLst != nullptr)
+    if (std::ranges::any_of(node->fieldLst->args, [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
@@ -2139,7 +2133,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<QualType>(visit(node->returnType()));
+  auto returnType = std::any_cast<QualType>(visit(node->returnType));
   HANDLE_UNRESOLVED_TYPE_QT(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2155,7 +2149,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       if (isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2166,15 +2160,15 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  QualType functionType = QualType(TY_FUNCTION)
-                              .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
-                              .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
+  const QualType functionType = QualType(TY_FUNCTION)
+                                    .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
+                                    .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -2183,7 +2177,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2202,7 +2196,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[_, qualType, isOptional] : namedParamList) {
       if (isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2213,7 +2207,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
@@ -2230,7 +2224,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  (void)checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2245,7 +2239,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const NamedParam &param : namedParamList) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2256,7 +2250,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2281,19 +2275,19 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
-  auto type = std::any_cast<QualType>(visit(node->baseDataType()));
+  auto type = std::any_cast<QualType>(visit(node->baseDataType));
   HANDLE_UNRESOLVED_TYPE_QT(type)
 
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
-    DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+    auto [modifierType, hasSize, hardcodedSize, sizeVarName] = tmQueue.front();
 
     // Only the outermost array can have an unknown size
     if (type.isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
       SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID,
                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
-    switch (typeModifier.modifierType) {
+    switch (modifierType) {
     case DataTypeNode::TYPE_PTR: {
       type = type.toPtr(node);
       break;
@@ -2303,21 +2297,21 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {
-      const std::string &varName = typeModifier.sizeVarName;
+      const std::string &varName = sizeVarName;
       if (!varName.empty()) {
-        SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
+        const SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
         if (!globalVar)
           SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
         if (!globalVar->getQualType().isConst())
           SOFT_ERROR_QT(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getQualType().is(TY_INT))
           SOFT_ERROR_QT(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
-        typeModifier.hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
+        hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
       }
 
-      if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
+      if (hasSize && hardcodedSize <= 1)
         SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
-      type = type.toArray(node, typeModifier.hardcodedSize);
+      type = type.toArray(node, hardcodedSize);
       break;
     }
     default:                                                               // GCOV_EXCL_LINE
@@ -2327,9 +2321,9 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   }
 
   // Attach the specifiers to the type
-  if (node->specifierLst()) {
+  if (node->specifierLst) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
@@ -2394,12 +2388,12 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx);
   case BaseDataTypeNode::TYPE_CUSTOM: {
-    auto customType = std::any_cast<QualType>(visit(node->customDataType()));
+    const auto customType = std::any_cast<QualType>(visit(node->customDataType));
     HANDLE_UNRESOLVED_TYPE_QT(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
   case BaseDataTypeNode::TYPE_FUNCTION: {
-    auto functionType = std::any_cast<QualType>(visit(node->functionDataType()));
+    const auto functionType = std::any_cast<QualType>(visit(node->functionDataType));
     HANDLE_UNRESOLVED_TYPE_QT(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
   }
@@ -2459,12 +2453,12 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
-    if (node->templateTypeLst()) {
+    if (node->templateTypeLst) {
       assert(localAccessScope != nullptr);
       isImported = localAccessScope->isImportedBy(rootScope);
 
-      templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-      for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+      templateTypes.reserve(node->templateTypeLst->dataTypes.size());
+      for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
         auto templateType = std::any_cast<QualType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_QT(templateType)
         if (entryType.is(TY_GENERIC)) {
@@ -2525,16 +2519,16 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   // Visit return type
   QualType returnType(TY_DYN);
   if (node->isFunction) {
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     HANDLE_UNRESOLVED_TYPE_QT(returnType)
     if (returnType.is(TY_DYN))
-      SOFT_ERROR_ER(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
+      SOFT_ERROR_ER(node->returnType, UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
   }
 
   // Visit param types
   QualTypeList paramTypes;
-  if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
-    for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
+  if (const TypeLstNode *paramTypeListNode = node->paramTypeLst; paramTypeListNode != nullptr) {
+    for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(paramTypeNode));
       HANDLE_UNRESOLVED_TYPE_QT(returnType)
       paramTypes.push_back(paramType);
@@ -2560,7 +2554,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
  */
 bool TypeChecker::checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const {
   // If the async attribute is not set, we can return early
-  if (!attrs || !attrs->attrLst()->hasAttr(ATTR_ASYNC) || !attrs->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue)
+  if (!attrs || !attrs->attrLst->hasAttr(ATTR_ASYNC) || !attrs->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue)
     return true; // Not violated
 
   // If we don't have any captures, we can return early

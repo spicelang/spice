@@ -74,6 +74,8 @@ std::any ASTVisitor::visitSignature(SignatureNode *node) { return visitChildren(
 
 std::any ASTVisitor::visitDeclStmt(DeclStmtNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitExprStmt(ExprStmtNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitSpecifierLst(SpecifierLstNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSpecifier(SpecifierNode *node) { return visitChildren(node); }
@@ -99,6 +101,8 @@ std::any ASTVisitor::visitContinueStmt(ContinueStmtNode *node) { return visitChi
 std::any ASTVisitor::visitFallthroughStmt(FallthroughStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitBuiltinCall(BuiltinCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildren(node); }
 
