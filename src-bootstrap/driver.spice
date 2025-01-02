@@ -90,10 +90,10 @@ public type Driver struct {
 
 public p Driver.init() {
     this.cliParser = CliParser("Spice", "Spice programming language");
-    this.cliParser.setFooter("(c) Marc Auberer 2021-2024");
+    this.cliParser.setFooter("(c) Marc Auberer 2021-2025");
 
     // Add version flag
-    this.cliParser.setVersion("Spice version 0.20.4\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2024");
+    this.cliParser.setVersion("Spice version 0.20.4\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2025");
 
     // Create sub-commands
     this.addBuildSubcommand();
