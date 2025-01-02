@@ -17,7 +17,7 @@ void Driver::init() {
   // Allow positional args
   app.positionals_at_end();
   app.allow_extras(false);
-  app.footer("(c) Marc Auberer 2021-2024");
+  app.footer("(c) Marc Auberer 2021-2025");
 
   // Add version flag
   app.set_version_flag("--version,-v", CommonUtil::getVersionInfo());
