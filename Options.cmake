@@ -53,7 +53,14 @@ add_definitions(-DSPICE_GIT_HASH="${SPICE_GIT_HASH}")
 message(STATUS "Spice: Git hash is set to '${SPICE_GIT_HASH}'")
 
 # Spice built by
-set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person")
+if(DEFINED ENV{USERNAME})
+    set(SPICE_BUILT_BY "$ENV{USERNAME}")
+elseif(DEFINED ENV{USER})
+    set(SPICE_BUILT_BY "$ENV{USER}")
+else()
+    set(SPICE_BUILT_BY "unknown")
+endif()
+set(SPICE_BUILT_BY "${SPICE_BUILT_BY}" CACHE STRING "Spice built by person")
 add_definitions(-DSPICE_BUILT_BY="${SPICE_BUILT_BY}")
 message(STATUS "Spice: Built by is set to '${SPICE_BUILT_BY}'")
 
