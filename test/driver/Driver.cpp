@@ -2,6 +2,8 @@
 
 #include "Driver.h"
 
+#include "util/CommonUtil.h"
+
 // GCOV_EXCL_START
 
 void Driver::createInterface() {
@@ -14,8 +16,7 @@ void Driver::createInterface() {
   // Add version flag
   const std::string versionName(SPICE_VERSION);
   const std::string builtBy(SPICE_BUILT_BY);
-  const std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2025";
-  app.set_version_flag("--version,-v", versionString);
+  app.set_version_flag("--version,-v", spice::compiler::CommonUtil::getVersionInfo());
 }
 
 void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {

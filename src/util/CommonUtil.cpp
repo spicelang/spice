@@ -166,8 +166,10 @@ std::string CommonUtil::getCircularImportMessage(std::stack<const SourceFile *> 
  */
 std::string CommonUtil::getVersionInfo() {
   std::stringstream versionString;
-  versionString << "spice version " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << "\n";
-  versionString << "built by: " << SPICE_BUILT_BY << "\n\n";
+  versionString << "Spice version: " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << "\n";
+  versionString << "Git hash:      " << SPICE_GIT_HASH << "\n";
+  versionString << "LLVM version:  " << LLVM_VERSION_STRING << "\n";
+  versionString << "built by:      " << SPICE_BUILT_BY << "\n\n";
   versionString << "(c) Marc Auberer 2021-2025";
   return versionString.str();
 }

@@ -39,8 +39,28 @@ set(SPICE_VERSION "dev" CACHE STRING "Spice build version")
 add_definitions(-DSPICE_VERSION="${SPICE_VERSION}")
 message(STATUS "Spice: Build version is set to '${SPICE_VERSION}'")
 
+# Spice Git hash (defaults to current Git hash)
+execute_process(
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE SPICE_GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(NOT SPICE_GIT_HASH)
+    set(SPICE_GIT_HASH "dev" CACHE STRING "Spice Git hash")
+endif()
+add_definitions(-DSPICE_GIT_HASH="${SPICE_GIT_HASH}")
+message(STATUS "Spice: Git hash is set to '${SPICE_GIT_HASH}'")
+
 # Spice built by
-set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person")
+if(DEFINED ENV{USERNAME})
+    set(SPICE_BUILT_BY "$ENV{USERNAME}")
+elseif(DEFINED ENV{USER})
+    set(SPICE_BUILT_BY "$ENV{USER}")
+else()
+    set(SPICE_BUILT_BY "unknown")
+endif()
+set(SPICE_BUILT_BY "${SPICE_BUILT_BY}" CACHE STRING "Spice built by person")
 add_definitions(-DSPICE_BUILT_BY="${SPICE_BUILT_BY}")
 message(STATUS "Spice: Built by is set to '${SPICE_BUILT_BY}'")
 
