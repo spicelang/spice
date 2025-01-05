@@ -21,6 +21,17 @@ namespace spice::compiler {
 // Forward declarations
 class TopLevelDefNode;
 
+// Macros
+#define GET_CHILDREN(...)                                                                                                        \
+  std::vector<ASTNode *> getChildrenNew() const override { return collectChildren(__VA_ARGS__); }
+
+template <typename T> struct is_vector_of_derived_from_ast_node {
+  using ElTy = std::remove_pointer_t<typename T::value_type>;
+  static constexpr bool value = std::is_base_of_v<ASTNode, ElTy> && std::is_same_v<T, std::vector<typename T::value_type>>;
+};
+
+template <typename T> constexpr bool is_vector_of_derived_from_ast_node_v = is_vector_of_derived_from_ast_node<T>::value;
+
 // Operator overload function names
 constexpr const char *const OP_FCT_PREFIX = "op.";
 constexpr const char *const OP_FCT_PLUS = "op.plus";
@@ -73,7 +84,30 @@ public:
     node->parent = this;
   }
 
+  template <typename... Args>
+  ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
+    std::vector<ASTNode *> children;
+
+    // Lambda to handle each argument
+    [[maybe_unused]] const auto addChild = [&children]<typename T>(T &&arg) ALWAYS_INLINE {
+      using TDecayed = std::decay_t<T>;
+      if constexpr (std::is_pointer_v<TDecayed>) {
+        assert(arg != nullptr);
+        children.push_back(arg);
+      } else if constexpr (is_vector_of_derived_from_ast_node_v<TDecayed>) {
+        children.insert(children.end(), arg.begin(), arg.end());
+      } else {
+        static_assert(false, "Unsupported type");
+      }
+    };
+
+    (addChild(std::forward<Args>(args)), ...);
+    return children;
+  }
+
   ALWAYS_INLINE const std::vector<ASTNode *> &getChildren() const { return children; }
+  virtual std::vector<ASTNode *> getChildrenNew() const { return {}; }
+  //virtual std::vector<ASTNode *> getChildrenNew() const = 0;
 
   void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
@@ -87,14 +121,14 @@ public:
     customItemsInitialization(manifestationCount);
   }
 
-  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {                           // LCOV_EXCL_LINE
-    assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
-    return nullptr;                                                                                  // LCOV_EXCL_LINE
-  }                                                                                                  // LCOV_EXCL_LINE
+  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {         // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function"); // LCOV_EXCL_LINE
+    return nullptr;                                                                // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
   [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
     return nullptr;                                                                                  // LCOV_EXCL_LINE
-  }                                                                                                  // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
@@ -137,17 +171,17 @@ public:
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
     return nullptr;                                                                                          // LCOV_EXCL_LINE
-  }                                                                                                          // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
     return nullptr;                                                        // LCOV_EXCL_LINE
-  }                                                                        // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
     return nullptr;                                                              // LCOV_EXCL_LINE
-  }                                                                              // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] const StmtLstNode *getNextOuterStmtLst() const;
 
@@ -179,6 +213,9 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEntry(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
+
+  // Other methods
+  GET_CHILDREN(topLevelDefs, modAttrs, importDefs);
 
   // Public members
   std::vector<TopLevelDefNode *> topLevelDefs;
@@ -234,6 +271,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
   // Other methods
+  GET_CHILDREN(attrs, paramLst, body);
   [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
@@ -259,6 +297,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctName(this); }
 
   // Other methods
+  GET_CHILDREN();
   [[nodiscard]] constexpr bool isOperatorOverload() const { return name.starts_with(OP_FCT_PREFIX); }
   [[nodiscard]] bool supportsInverseOperator() const { return name == OP_FCT_EQUAL || name == OP_FCT_NOT_EQUAL; }
 
@@ -311,6 +350,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Other methods
+  GET_CHILDREN(attrs, specifierLst, templateTypeLst, paramLst, body, returnType);
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
 
   // Public members
@@ -329,6 +369,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
   // Other methods
+  GET_CHILDREN(attrs, specifierLst, templateTypeLst, paramLst, body);
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
 
   // Public members
@@ -347,6 +388,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
   // Other methods
+  GET_CHILDREN(attrs, specifierLst, fields, templateTypeLst, interfaceTypeLst);
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
   std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
     if (!defaultFctManifestations.contains(fctName))
@@ -1402,9 +1444,9 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  PrefixUnaryExprNode* lhs = nullptr;
-  AssignExprNode* rhs = nullptr;
-  TernaryExprNode* ternaryExpr = nullptr;
+  PrefixUnaryExprNode *lhs = nullptr;
+  AssignExprNode *rhs = nullptr;
+  TernaryExprNode *ternaryExpr = nullptr;
   AssignOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
