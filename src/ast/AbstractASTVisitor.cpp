@@ -9,7 +9,7 @@ namespace spice::compiler {
 std::any AbstractASTVisitor::visit(ASTNode *node) { return node->accept(this); }
 
 std::any AbstractASTVisitor::visitChildren(ASTNode *node) {
-  for (ASTNode *child : node->children) {
+  for (ASTNode *child : node->getChildren()) {
     assert(child != nullptr);
     child->accept(this);
   }

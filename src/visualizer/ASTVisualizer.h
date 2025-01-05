@@ -136,7 +136,7 @@ private:
     parentNodeIds.push(nodeId); // Set parentNodeId for children
 
     // Visit all the children
-    for (ASTNode *child : node->children)
+    for (ASTNode *child : node->getChildren())
       if (child != nullptr)
         result << " " << std::any_cast<std::string>(visit(child));
 

@@ -130,11 +130,11 @@ bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreacha
 
 bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // An empty statement list does not return at all
-  if (children.empty())
+  if (statements.empty())
     return false;
   // A statement list returns on all control paths, if the one direct child statement returns on all control paths
   bool returnsOnAllControlPaths = false;
-  for (ASTNode *child : children) {
+  for (StmtNode *child : statements) {
     assert(child != nullptr);
 
     // Prevent marking instructions as unreachable if doSetPredecessorsUnreachable is set to false
@@ -189,7 +189,7 @@ bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If it's a ternary, do the default thing
   if (op == OP_NONE)
-    return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
   const bool hasAtomicExpr = lhs->postfixUnaryExpr && lhs->postfixUnaryExpr->atomicExpr;
@@ -210,8 +210,8 @@ bool TernaryExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (!trueExpr && !falseExpr)
+    return condition->getCompileTimeValue();
 
   // If the condition has no compile time value, we do not need to evaluate the true and false values
   if (!condition->hasCompileTimeValue())
@@ -231,15 +231,14 @@ bool LogicalOrExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   // Check if one expression evaluates to 'true'
   for (const LogicalAndExprNode *op : operands) {
     assert(op->hasCompileTimeValue());
     // If one operand evaluates to 'true' the whole expression is 'true'
-    const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
-    if (opCompileTimeValue.boolValue)
+    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(); opCompileTimeValue.boolValue)
       return CompileTimeValue{.boolValue = true};
   }
 
@@ -252,15 +251,14 @@ bool LogicalAndExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   // Check if all expressions evaluate to 'true'
   for (const BitwiseOrExprNode *op : operands) {
     assert(op->hasCompileTimeValue());
     // If one operand evaluates to 'false' the whole expression is 'false'
-    const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
-    if (!opCompileTimeValue.boolValue)
+    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(); !opCompileTimeValue.boolValue)
       return CompileTimeValue{.boolValue = false};
   }
 
@@ -273,8 +271,8 @@ bool BitwiseOrExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
@@ -291,8 +289,8 @@ bool BitwiseXorExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
@@ -309,8 +307,8 @@ bool BitwiseAndExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue BitwiseAndExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   for (size_t i = 1; i < operands.size(); i++) {
@@ -327,8 +325,8 @@ bool EqualityExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
   const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
@@ -345,8 +343,8 @@ bool RelationalExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
   const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
@@ -367,8 +365,8 @@ bool ShiftExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
   const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
@@ -385,8 +383,8 @@ bool AdditiveExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
@@ -410,8 +408,8 @@ bool MultiplicativeExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
+  if (operands.size() == 1)
+    return operands.front()->getCompileTimeValue();
 
   CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
@@ -438,8 +436,6 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
 bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr->hasCompileTimeValue(); }
 
 CompileTimeValue CastExprNode::getCompileTimeValue() const {
-  if (children.size() == 1)
-    return children.front()->getCompileTimeValue();
   return prefixUnaryExpr->getCompileTimeValue();
 }
 
@@ -501,12 +497,12 @@ bool FctCallNode::hasReturnValueReceiver() const {
   const ASTNode *node = parent;
   while (!node->isAssignExpr()) {
     // As soon as we have a node with more than one child, we know that the return value is used
-    if (node->children.size() > 1)
+    if (node->getChildren().size() > 1)
       return true;
     node = node->parent;
   }
   // Also check the condition of the assign expression
-  return node->children.size() > 1 || !node->parent->isExprStmt();
+  return node->getChildren().size() > 1 || !node->parent->isExprStmt();
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
@@ -521,8 +517,7 @@ void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes
-  const CustomDataTypeNode *customType = baseDataType->customDataType;
-  if (customType != nullptr && customType->templateTypeLst)
+  if (const CustomDataTypeNode *customType = baseDataType->customDataType; customType != nullptr && customType->templateTypeLst)
     for (DataTypeNode *templateNode : customType->templateTypeLst->dataTypes)
       templateNode->setFieldTypeRecursive();
 }

@@ -73,9 +73,11 @@ public:
     node->parent = this;
   }
 
-  void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
+  ALWAYS_INLINE const std::vector<ASTNode *> &getChildren() const { return children; }
+
+  void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
-    for (ASTNode *child : children) {
+    for (ASTNode *child : getChildren()) {
       assert(child != nullptr);
       child->resizeToNumberOfManifestations(manifestationCount);
     }
@@ -105,18 +107,21 @@ public:
   [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
+    const std::vector<ASTNode *> &children = getChildren();
     if (children.size() != 1)
       throw CompilerError(INTERNAL_ERROR, "Cannot deduce evaluated symbol type");
     return children.front()->getEvaluatedSymbolType(idx);
   }
 
   [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
+    const std::vector<ASTNode *> &children = getChildren();
     if (children.size() != 1)
       return false;
     return children.front()->hasCompileTimeValue();
   }
 
   [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
+    const std::vector<ASTNode *> &children = getChildren();
     if (children.size() != 1)
       return {};
     return children.front()->getCompileTimeValue();
@@ -125,6 +130,7 @@ public:
   [[nodiscard]] std::string getErrorMessage() const;
 
   [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+    const std::vector<ASTNode *> &children = getChildren();
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
