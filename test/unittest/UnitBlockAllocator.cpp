@@ -24,6 +24,9 @@ class DummyNode final : public ASTNode {
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return {}; }             // LCOV_EXCL_LINE
   std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; } // LCOV_EXCL_LINE
+
+  // Other methods
+  GET_CHILDREN();
 };
 static constexpr size_t DUMMY_NODE_SIZE = sizeof(DummyNode);
 static_assert(DUMMY_NODE_SIZE == 104, "DummyNode size has changed. Update test accordingly.");
