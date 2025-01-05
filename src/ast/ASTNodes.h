@@ -72,12 +72,6 @@ public:
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
-  // Public methods
-  ALWAYS_INLINE void addChild(ASTNode *node) {
-    children.push_back(node);
-    node->parent = this;
-  }
-
   template <typename... Args> ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
     std::vector<ASTNode *> children;
 
@@ -185,7 +179,6 @@ public:
 
   // Public members
   ASTNode *parent = nullptr;
-  std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   QualTypeList symbolTypes;
   bool unreachable = false;
