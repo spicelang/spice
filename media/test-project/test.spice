@@ -1,5 +1,11 @@
+type T dyn;
+
+f<int> print<T>(T g) {
+    printf("%d", g);
+    return 0;
+}
+
 f<int> main() {
-    f<int>(int, int) add = f<int>(int x, int y) {
-        return "String";
-    };
+    print(1);
+    print("string");
 }
