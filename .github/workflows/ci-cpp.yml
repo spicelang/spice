@@ -31,6 +31,13 @@ jobs:
           distribution: zulu
           java-version: 11
 
+      - name: Configure GCC 14 as default
+        run: |
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          gcc --version
+          g++ --version
+
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
