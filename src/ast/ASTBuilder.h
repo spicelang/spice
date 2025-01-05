@@ -19,6 +19,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class ASTNode;
+class EntryNode;
 class ConstantNode;
 
 static constexpr const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
@@ -135,6 +136,8 @@ private:
   template <typename T> ALWAYS_INLINE T *createNode(const ParserRuleContext *ctx) {
     // Create the new node
     T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
+    if constexpr (!std::is_same_v<T, EntryNode>)
+      node->parent = parentStack.top();
     // This node is the parent for its children
     parentStack.push(node);
     return node;

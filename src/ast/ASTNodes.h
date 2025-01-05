@@ -372,7 +372,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, fields, templateTypeLst, interfaceTypeLst);
+  GET_CHILDREN(attrs, specifierLst, templateTypeLst, interfaceTypeLst, fields);
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
   std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
     if (!defaultFctManifestations.contains(fctName))
@@ -384,9 +384,9 @@ public:
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
   SpecifierLstNode *specifierLst = nullptr;
-  std::vector<FieldNode *> fields;
   TypeLstNode *templateTypeLst = nullptr;
   TypeLstNode *interfaceTypeLst = nullptr;
+  std::vector<FieldNode *> fields;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   bool emitVTable = false;
@@ -411,14 +411,14 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitInterfaceDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, signatures, templateTypeLst);
+  GET_CHILDREN(attrs, specifierLst, templateTypeLst, signatures);
   std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
 
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
   SpecifierLstNode *specifierLst = nullptr;
-  std::vector<SignatureNode *> signatures;
   TypeLstNode *templateTypeLst = nullptr;
+  std::vector<SignatureNode *> signatures;
   bool hasTemplateTypes = false;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   std::string interfaceName;
@@ -681,13 +681,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDoWhileLoop(this); }
 
   // Other methods
-  GET_CHILDREN(condition, body);
+  GET_CHILDREN(body, condition);
   [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
-  AssignExprNode *condition = nullptr;
   StmtLstNode *body = nullptr;
+  AssignExprNode *condition = nullptr;
   Scope *bodyScope = nullptr;
 };
 
@@ -1405,8 +1405,10 @@ public:
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
-  AssignExprNode *assignExpr = nullptr;
-  DataTypeNode *dataType = nullptr;
+  union {
+    AssignExprNode *assignExpr = nullptr;
+    DataTypeNode *dataType;
+  };
   bool isType = false;
 };
 
@@ -1426,8 +1428,10 @@ public:
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
-  AssignExprNode *assignExpr = nullptr;
-  DataTypeNode *dataType = nullptr;
+  union {
+    AssignExprNode *assignExpr = nullptr;
+    DataTypeNode *dataType;
+  };
   bool isType = false;
 };
 

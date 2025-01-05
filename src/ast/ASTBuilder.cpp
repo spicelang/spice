@@ -1563,7 +1563,7 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
-  const auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
+  const auto assignExprNode = resumeForExpansion<AssignExprNode>();
 
   // Extract assign operator
   if (ctx->ASSIGN())
@@ -1595,7 +1595,7 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
 }
 
 std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) {
-  const auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
+  const auto fctNameNode = resumeForExpansion<FctNameNode>();
 
   // Enrich
   if (ctx->PLUS())
