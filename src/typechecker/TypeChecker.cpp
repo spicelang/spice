@@ -393,7 +393,7 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
 
 std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
   // Visit nodes in this scope
-  for (ASTNode *stmt : node->children) {
+  for (StmtNode *stmt : node->statements) {
     if (!stmt)
       continue;
     // Print warning if statement is unreachable
@@ -999,7 +999,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
 std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Check if a logical or operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1018,7 +1018,7 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
 
 std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Check if a logical and operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1037,7 +1037,7 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
 
 std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Check if a bitwise or operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1056,7 +1056,7 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
 
 std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Check if a bitwise xor operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1075,7 +1075,7 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
 
 std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Check if a bitwise and operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1094,7 +1094,7 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
 
 std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check if at least one equality operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit right side first, then left side
@@ -1122,7 +1122,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
 
 std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   // Check if a relational operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit right side first, then left side
@@ -1149,7 +1149,7 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
 
 std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   // Check if at least one shift operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit right side first, then left
@@ -1173,7 +1173,7 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
 
 std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand
@@ -1207,7 +1207,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 
 std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Check if at least one multiplicative operator is applied
-  if (node->children.size() == 1)
+  if (node->operands.size() == 1)
     return visit(node->operands.front());
 
   // Visit leftmost operand

@@ -11,7 +11,7 @@ namespace spice::compiler {
 
 std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
   // Generate instructions in the scope
-  for (const ASTNode *stmt : node->children) {
+  for (const StmtNode *stmt : node->statements) {
     if (!stmt)
       continue;
     // Check if we can cancel generating instructions for this code branch
