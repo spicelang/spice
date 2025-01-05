@@ -9,7 +9,7 @@ namespace spice::compiler {
 std::any ParallelizableASTVisitor::visit(const ASTNode *node) { return node->accept(this); }
 
 std::any ParallelizableASTVisitor::visitChildren(const ASTNode *node) {
-  for (const ASTNode *child : node->children)
+  for (const ASTNode *child : node->getChildren())
     if (child != nullptr)
       child->accept(this);
   return nullptr;

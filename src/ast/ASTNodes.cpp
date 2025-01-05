@@ -497,12 +497,12 @@ bool FctCallNode::hasReturnValueReceiver() const {
   const ASTNode *node = parent;
   while (!node->isAssignExpr()) {
     // As soon as we have a node with more than one child, we know that the return value is used
-    if (node->children.size() > 1)
+    if (node->getChildren().size() > 1)
       return true;
     node = node->parent;
   }
   // Also check the condition of the assign expression
-  return node->children.size() > 1 || !node->parent->isExprStmt();
+  return node->getChildren().size() > 1 || !node->parent->isExprStmt();
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
