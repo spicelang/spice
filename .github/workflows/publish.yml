@@ -184,7 +184,7 @@ jobs:
           choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry
           echo "Uninstalling done."
-          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_13_2_0.7z -OutFile mingw64.7z
+          Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/14.2.0posix-19.1.1-12.0.0-ucrt-r2/winlibs-x86_64-posix-seh-gcc-14.2.0-mingw-w64ucrt-12.0.0-r2.7z -OutFile mingw64.7z
           echo "Downloading done."
           7z x mingw64.7z -oC:\mingw64
           echo "Unpacking done."
