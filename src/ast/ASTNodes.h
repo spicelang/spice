@@ -15,6 +15,7 @@
 #include <symboltablebuilder/TypeSpecifiers.h>
 #include <typechecker/ExprResult.h>
 #include <util/CodeLoc.h>
+#include <util/CommonUtil.h>
 
 namespace spice::compiler {
 
@@ -24,13 +25,6 @@ class TopLevelDefNode;
 // Macros
 #define GET_CHILDREN(...)                                                                                                        \
   std::vector<ASTNode *> getChildren() const override { return collectChildren(__VA_ARGS__); }
-
-template <typename T> struct is_vector_of_derived_from_ast_node {
-  using ElTy = std::remove_pointer_t<typename T::value_type>;
-  static constexpr bool value = std::is_base_of_v<ASTNode, ElTy> && std::is_same_v<T, std::vector<typename T::value_type>>;
-};
-
-template <typename T> constexpr bool is_vector_of_derived_from_ast_node_v = is_vector_of_derived_from_ast_node<T>::value;
 
 // Operator overload function names
 constexpr const char *const OP_FCT_PREFIX = "op.";
@@ -93,7 +87,7 @@ public:
       if constexpr (std::is_pointer_v<TDecayed>) {
         if (arg != nullptr)
           children.push_back(arg);
-      } else if constexpr (is_vector_of_derived_from_ast_node_v<TDecayed>) {
+      } else if constexpr (is_vector_of_derived_from_v<TDecayed, ASTNode>) {
         children.insert(children.end(), arg.begin(), arg.end());
       } else {
         static_assert(false, "Unsupported type");
@@ -138,21 +132,21 @@ public:
   [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
-    const std::vector<ASTNode *> &children = getChildren();
+    const std::vector<ASTNode *> children = getChildren();
     if (children.size() != 1)
       throw CompilerError(INTERNAL_ERROR, "Cannot deduce evaluated symbol type");
     return children.front()->getEvaluatedSymbolType(idx);
   }
 
   [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    const std::vector<ASTNode *> &children = getChildren();
+    const std::vector<ASTNode *> children = getChildren();
     if (children.size() != 1)
       return false;
     return children.front()->hasCompileTimeValue();
   }
 
   [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    const std::vector<ASTNode *> &children = getChildren();
+    const std::vector<ASTNode *> children = getChildren();
     if (children.size() != 1)
       return {};
     return children.front()->getCompileTimeValue();
@@ -161,7 +155,7 @@ public:
   [[nodiscard]] std::string getErrorMessage() const;
 
   [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
-    const std::vector<ASTNode *> &children = getChildren();
+    const std::vector<ASTNode *> children = getChildren();
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
