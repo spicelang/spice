@@ -315,6 +315,7 @@ public:
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
   SpecifierLstNode *specifierLst = nullptr;
+  FctNameNode *name;
   TypeLstNode *templateTypeLst = nullptr;
   ParamLstNode *paramLst = nullptr;
   StmtLstNode *body = nullptr;
@@ -322,7 +323,6 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   TypeSpecifiers specifiers = TypeSpecifiers::of(TY_FUNCTION);
-  FctNameNode *name;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *scope = nullptr;
@@ -341,7 +341,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, templateTypeLst, paramLst, body, returnType);
+  GET_CHILDREN(attrs, specifierLst, returnType, name, templateTypeLst, paramLst, body);
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
 
   // Public members
@@ -360,7 +360,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, templateTypeLst, paramLst, body);
+  GET_CHILDREN(attrs, specifierLst, name, templateTypeLst, paramLst, body);
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
 
   // Public members
@@ -2115,7 +2115,6 @@ public:
   using ExprNode::ExprNode;
 
   // Other methods
-  GET_CHILDREN(paramLst);
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   void customItemsInitialization(const size_t manifestationCount) override { manifestations.resize(manifestationCount); }
@@ -2139,7 +2138,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaFunc(this); }
 
   // Other methods
-  GET_CHILDREN(returnType, body, lambdaAttr);
+  GET_CHILDREN(returnType, paramLst, body, lambdaAttr);
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
@@ -2160,7 +2159,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaProc(this); }
 
   // Other methods
-  GET_CHILDREN(body, lambdaAttr);
+  GET_CHILDREN(paramLst, body, lambdaAttr);
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
@@ -2180,7 +2179,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaExpr(this); }
 
   // Other methods
-  GET_CHILDREN(lambdaExpr);
+  GET_CHILDREN(paramLst, lambdaExpr);
 
   // Public members
   AssignExprNode *lambdaExpr = nullptr;
