@@ -8,7 +8,6 @@
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <exception/ParserError.h>
-#include <global/GlobalResourceManager.h>
 #include <typechecker/OpRuleManager.h>
 #include <util/GlobalDefinitions.h>
 
@@ -339,7 +338,7 @@ std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
-  auto forLoopNode = resumeForExpansion<ForLoopNode>();
+  const auto forLoopNode = resumeForExpansion<ForLoopNode>();
 
   // Visit children
   forLoopNode->initDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt()));
@@ -363,7 +362,7 @@ std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
-  auto foreachLoopNode = resumeForExpansion<ForeachLoopNode>();
+  const auto foreachLoopNode = resumeForExpansion<ForeachLoopNode>();
 
   // Visit children
   if (ctx->declStmt().size() == 1) {
@@ -1564,7 +1563,7 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
-  const auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
+  const auto assignExprNode = resumeForExpansion<AssignExprNode>();
 
   // Extract assign operator
   if (ctx->ASSIGN())
@@ -1596,7 +1595,7 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
 }
 
 std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) {
-  const auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
+  const auto fctNameNode = resumeForExpansion<FctNameNode>();
 
   // Enrich
   if (ctx->PLUS())
@@ -1634,33 +1633,6 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   fctNameNode->nameFragments.push_back(fctNameNode->name);
 
   return nullptr;
-}
-
-template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
-  ASTNode *parent = nullptr;
-  if constexpr (!std::is_same_v<T, EntryNode>)
-    parent = parentStack.top();
-
-  // Create the new node
-  T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
-
-  // If this is not the entry node, we need to add the new node to its parent
-  if constexpr (!std::is_same_v<T, EntryNode>)
-    parent->addChild(node);
-
-  // This node is the parent for its children
-  parentStack.push(node);
-
-  return node;
-}
-
-template <typename T> T *ASTBuilder::resumeForExpansion() { return spice_pointer_cast<T *>(parentStack.top()); }
-
-template <typename T> T *ASTBuilder::concludeNode(T *node) {
-  // This node is no longer the parent for its children
-  assert(parentStack.top() == node);
-  parentStack.pop();
-  return node;
 }
 
 int32_t ASTBuilder::parseInt(TerminalNode *terminal) {

@@ -1,19 +1,11 @@
-import "std/data/optional";
-import "std/data/stack";
+type T dyn;
+
+f<int> print<T>(T g) {
+    printf("%d", g);
+    return 0;
+}
 
 f<int> main() {
-    Stack<double> doubleStack = Stack<double>();
-    doubleStack.push(4.566);
-
-    dyn oi = Optional<Stack<double>>();
-    printf("%d\n", oi.isPresent());
-    oi.set(doubleStack);
-    printf("%d\n", oi.isPresent());
-    dyn res = oi.get();
-    printf("%d\n", res.getSize());
-    oi.clear();
-    printf("%d\n", oi.isPresent());
-
-    dyn oi2 = Optional<String>(String("This is a test"));
-    assert oi2.isPresent();
+    print(1);
+    print("string");
 }

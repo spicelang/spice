@@ -11,6 +11,7 @@
 #pragma GCC diagnostic pop
 
 #include <CompilerPass.h>
+#include <global/GlobalResourceManager.h>
 #include <util/CodeLoc.h>
 #include <util/GlobalDefinitions.h>
 
@@ -18,6 +19,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class ASTNode;
+class EntryNode;
 class ConstantNode;
 
 static constexpr const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
@@ -131,14 +133,31 @@ private:
   std::stack<ASTNode *> parentStack;
 
   // Private methods
-  template <typename T> T *createNode(const ParserRuleContext *ctx);
-  template <typename T> T *resumeForExpansion();
-  template <typename T> T *concludeNode(T *node);
-  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) {
+  template <typename T> ALWAYS_INLINE T *createNode(const ParserRuleContext *ctx) {
+    // Create the new node
+    T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
+    if constexpr (!std::is_same_v<T, EntryNode>)
+      node->parent = parentStack.top();
+    // This node is the parent for its children
+    parentStack.push(node);
+    return node;
+  }
+
+  template <typename T> ALWAYS_INLINE T *resumeForExpansion() const { return spice_pointer_cast<T *>(parentStack.top()); }
+
+  template <typename T> ALWAYS_INLINE T *concludeNode(T *node) {
+    // This node is no longer the parent for its children
+    assert(parentStack.top() == node);
+    parentStack.pop();
+    return node;
+  }
+
+  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) const {
     const size_t startIdx = ctx->start->getStartIndex();
     const size_t stopIdx = ctx->stop ? ctx->stop->getStopIndex() : startIdx;
     return {ctx->start, startIdx, stopIdx, sourceFile};
   }
+
   int32_t parseInt(TerminalNode *terminal);
   int16_t parseShort(TerminalNode *terminal);
   int64_t parseLong(TerminalNode *terminal);
