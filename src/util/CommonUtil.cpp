@@ -51,10 +51,11 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
  */
 std::string CommonUtil::trim(const std::string &input) {
   const size_t first = input.find_first_not_of(' ');
-  if (std::string::npos == first)
+  if (first == std::string::npos)
     return input;
   const size_t last = input.find_last_not_of(' ');
-  return input.substr(first, (last - first + 1));
+  const size_t newLength = last - first + 1;
+  return input.substr(first, newLength);
 }
 
 /**

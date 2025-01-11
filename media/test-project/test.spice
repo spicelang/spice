@@ -1,11 +1,6 @@
-type T dyn;
-
-f<int> print<T>(T g) {
-    printf("%d", g);
-    return 0;
-}
-
 f<int> main() {
-    print(1);
-    print("string");
+    String test = String("String to be trimmed ");
+    printf("'%s'\n", test);
+    String trimmed = test.trim();
+    printf("'%s'\n", trimmed);
 }

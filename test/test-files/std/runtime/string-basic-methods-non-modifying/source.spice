@@ -4,6 +4,7 @@ f<int> main() {
     dyn s2 = String("Hello");
     dyn s3 = String("Hello!");
     dyn s4 = String("Hello World!");
+    dyn s5 = String(" \n\tString to be trimmed \r ");
 
     assert s1.isEmpty();
     assert !s2.isEmpty();
@@ -40,6 +41,8 @@ f<int> main() {
     assert !s4.startsWith("World");
     assert s4.endsWith("!");
     assert !s2.endsWith("!");
+    assert s5.trim() == "String to be trimmed";
+    assert s1.trim() == "";
 
     printf("All assertions passed!");
 }
