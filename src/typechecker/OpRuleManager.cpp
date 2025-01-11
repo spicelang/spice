@@ -232,7 +232,7 @@ ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult 
   return {validateBinaryOperation(node, DIV_EQUAL_OP_RULES, std::size(DIV_EQUAL_OP_RULES), "/=", lhsType, rhsType)};
 }
 
-QualType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -243,7 +243,7 @@ QualType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprRes
   return validateBinaryOperation(node, REM_EQUAL_OP_RULES, std::size(REM_EQUAL_OP_RULES), "%=", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -254,7 +254,7 @@ QualType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprRes
   return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, std::size(SHL_EQUAL_OP_RULES), "<<=", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -265,7 +265,7 @@ QualType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprRes
   return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, std::size(SHR_EQUAL_OP_RULES), ">>=", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -276,7 +276,7 @@ QualType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprRes
   return validateBinaryOperation(node, AND_EQUAL_OP_RULES, std::size(AND_EQUAL_OP_RULES), "&=", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -287,7 +287,7 @@ QualType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResu
   return validateBinaryOperation(node, OR_EQUAL_OP_RULES, std::size(OR_EQUAL_OP_RULES), "|=", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+QualType OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
@@ -787,11 +787,11 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl, bool isReturn) {
+void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl, bool isReturn) const {
   // Check if we try to assign a constant value
   if (lhs.removeReferenceWrapper().isConst() && !isDecl && !isReturn) {
     const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);
-    throw SemanticError(node, REASSIGN_CONST_VARIABLE, errorMessage);
+    SOFT_ERROR_VOID(node, REASSIGN_CONST_VARIABLE, errorMessage);
   }
 }
 

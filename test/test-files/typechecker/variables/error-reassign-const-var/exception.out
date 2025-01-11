@@ -1,5 +1,80 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./source.spice:3:5:
 Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
 
 3  i = 1234;
    ^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+4  i++;
+   ^^^
+
+[Error|Semantic] ./source.spice:5:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+5  i--;
+   ^^^
+
+[Error|Semantic] ./source.spice:6:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+6  ++i;
+   ^^^
+
+[Error|Semantic] ./source.spice:7:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+7  --i;
+   ^^^
+
+[Error|Semantic] ./source.spice:8:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+8  i += 2;
+   ^^^^^^
+
+[Error|Semantic] ./source.spice:9:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+9  i -= 2;
+   ^^^^^^
+
+[Error|Semantic] ./source.spice:10:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+10  i *= 2;
+    ^^^^^^
+
+[Error|Semantic] ./source.spice:11:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+11  i /= 2;
+    ^^^^^^
+
+[Error|Semantic] ./source.spice:12:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+12  i %= 2;
+    ^^^^^^
+
+[Error|Semantic] ./source.spice:13:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+13  i ^= 3;
+    ^^^^^^
+
+[Error|Semantic] ./source.spice:14:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+14  i <<= 2;
+    ^^^^^^^
+
+[Error|Semantic] ./source.spice:15:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+15  i >>= 2;
+    ^^^^^^^

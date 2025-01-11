@@ -937,17 +937,17 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
       rhsType = opRuleManager.getDivEqualResultType(node, lhs, rhs, 0).type;
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
-      rhsType = OpRuleManager::getRemEqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getRemEqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {
-      rhsType = OpRuleManager::getSHLEqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getSHLEqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::OP_SHR_EQUAL) {
-      rhsType = OpRuleManager::getSHREqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getSHREqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::OP_AND_EQUAL) {
-      rhsType = OpRuleManager::getAndEqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getAndEqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::OP_OR_EQUAL) {
-      rhsType = OpRuleManager::getOrEqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getOrEqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::OP_XOR_EQUAL) {
-      rhsType = OpRuleManager::getXorEqualResultType(node, lhs, rhs);
+      rhsType = opRuleManager.getXorEqualResultType(node, lhs, rhs);
     }
 
     if (lhsVar) { // Variable is involved on the left side
@@ -1335,18 +1335,18 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
   // Visit left side
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
-  auto [lhsType, lhsEntry] = lhs;
-  HANDLE_UNRESOLVED_TYPE_ER(lhsType)
+  auto operand = std::any_cast<ExprResult>(visit(lhsNode));
+  auto [operandType, operandEntry] = operand;
+  HANDLE_UNRESOLVED_TYPE_ER(operandType)
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-    lhsType = lhsType.removeReferenceWrapper();
+    operandType = operandType.removeReferenceWrapper();
 
     // Check if we can apply the subscript operator on the lhs type
-    if (!lhsType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
+    if (!operandType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
       SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
-                    "Can only apply subscript operator on array type, got " + lhsType.getName(true))
+                    "Can only apply subscript operator on array type, got " + operandType.getName(true))
 
     // Visit index assignment
     AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
@@ -1357,15 +1357,15 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       SOFT_ERROR_ER(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
 
     // Check if we have an unsafe operation
-    if (lhsType.isPtr() && !currentScope->doesAllowUnsafeOperations())
+    if (operandType.isPtr() && !currentScope->doesAllowUnsafeOperations())
       SOFT_ERROR_ER(
           node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
+    if (operandType.isArray() && operandType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
       const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
-      const unsigned int constSize = lhsType.getArraySize();
+      const unsigned int constSize = operandType.getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {
         const std::string idxStr = std::to_string(constIndex);
@@ -1376,10 +1376,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
 
     // Get item type
-    lhsType = lhsType.getContained();
+    operandType = operandType.getContained();
 
     // Remove heap specifier
-    lhsType.getSpecifiers().isHeap = false;
+    operandType.getSpecifiers().isHeap = false;
 
     break;
   }
@@ -1387,10 +1387,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const std::string &fieldName = node->identifier;
 
     // Check if lhs is enum or strobj
-    QualType lhsBaseTy = lhsType;
+    QualType lhsBaseTy = operandType;
     autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
-      SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName(false))
+      SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + operandType.getName(false))
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
@@ -1420,50 +1420,48 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     memberEntry->used = true;
 
     // Overwrite type and entry of left side with member type and entry
-    lhsType = memberType;
-    lhsEntry = memberEntry;
+    operandType = memberType;
+    operandEntry = memberEntry;
     break;
   }
   case PostfixUnaryExprNode::OP_PLUS_PLUS: {
-    if (lhsEntry) {
+    operandType = opRuleManager.getPostfixPlusPlusResultType(node, operand, 0).type;
+
+    if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      lhsEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node, false);
     }
 
-    auto [type, entry] = opRuleManager.getPostfixPlusPlusResultType(node, lhs, 0);
-    lhsType = type;
-    lhsEntry = entry;
     break;
   }
   case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-    if (lhsEntry) {
+    operandType = opRuleManager.getPostfixMinusMinusResultType(node, operand, 0).type;
+
+    if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      lhsEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node, false);
     }
 
-    ExprResult result = opRuleManager.getPostfixMinusMinusResultType(node, lhs, 0);
-    lhsType = result.type;
-    lhsEntry = result.entry;
     break;
   }
   default:
     throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
-  if (lhsType.is(TY_INVALID)) {
-    const std::string varName = lhsEntry ? lhsEntry->name : "";
+  if (operandType.is(TY_INVALID)) {
+    const std::string varName = operandEntry ? operandEntry->name : "";
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared")
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(lhsType, manIdx), lhsEntry};
+  return ExprResult{node->setEvaluatedSymbolType(operandType, manIdx), operandEntry};
 }
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
