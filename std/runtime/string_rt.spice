@@ -591,6 +591,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
     // Get substring
     String substring = String("");
     substring.reserve(length);
+    substring.length = length;
     const unsigned long endIdx = startIdx + length;
     for unsigned long charIndex = (unsigned long) startIdx; charIndex < endIdx; charIndex++ {
         unsafe {
