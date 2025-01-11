@@ -72,7 +72,7 @@ public:
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
-  template <typename... Args> ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
+  template <typename... Args> [[nodiscard]] ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
     std::vector<ASTNode *> children;
 
     // Lambda to handle each argument
@@ -92,7 +92,7 @@ public:
     return children;
   }
 
-  virtual std::vector<ASTNode *> getChildren() const = 0;
+  [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
   void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
@@ -1554,9 +1554,9 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
-  LogicalOrExprNode *condition = nullptr;
-  LogicalOrExprNode *trueExpr = nullptr;
-  LogicalOrExprNode *falseExpr = nullptr;
+  ASTNode *condition = nullptr;
+  ASTNode *trueExpr = nullptr;
+  ASTNode *falseExpr = nullptr;
   bool isShortened = false;
 };
 
@@ -1575,7 +1575,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<LogicalAndExprNode *> operands;
+  std::vector<ASTNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1595,7 +1595,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseOrExprNode *> operands;
+  std::vector<ASTNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1615,7 +1615,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseXorExprNode *> operands;
+  std::vector<ASTNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1635,7 +1635,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseAndExprNode *> operands;
+  std::vector<ASTNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1655,7 +1655,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<EqualityExprNode *> operands;
+  std::vector<ASTNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
@@ -1687,7 +1687,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<RelationalExprNode *> operands;
+  std::vector<ASTNode *> operands;
   EqualityOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1718,7 +1718,7 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
-  std::vector<ShiftExprNode *> operands;
+  std::vector<ASTNode *> operands;
   RelationalOp op = OP_NONE;
 };
 
@@ -1749,7 +1749,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<AdditiveExprNode *> operands;
+  std::vector<ASTNode *> operands;
   ShiftOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1783,7 +1783,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<MultiplicativeExprNode *> operands;
+  std::vector<ASTNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1818,7 +1818,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<CastExprNode *> operands;
+  std::vector<ASTNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1835,13 +1835,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCastExpr(this); }
 
   // Other methods
-  GET_CHILDREN(dataType, prefixUnaryExpr);
+  GET_CHILDREN(dataType, operand);
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   DataTypeNode *dataType = nullptr;
-  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
+  ASTNode *operand = nullptr;
   bool isCast = false;
 };
 
@@ -1874,8 +1874,8 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
-  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
-  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
+  ASTNode *prefixUnaryExpr = nullptr;
+  ASTNode *postfixUnaryExpr = nullptr;
   PrefixUnaryOp op = OP_NONE;
 };
 
@@ -1908,9 +1908,9 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  AtomicExprNode *atomicExpr = nullptr;
-  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
-  AssignExprNode *subscriptIndexExpr = nullptr;
+  ASTNode *atomicExpr = nullptr;
+  ASTNode *postfixUnaryExpr = nullptr;
+  ASTNode *subscriptIndexExpr = nullptr;
   PostfixUnaryOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   std::string identifier;                           // Only set when operator is member access
@@ -1940,9 +1940,9 @@ public:
 
   // Public members
   ConstantNode *constant = nullptr;
-  ValueNode *value = nullptr;
-  AssignExprNode *assignExpr = nullptr;
-  BuiltinCallNode *builtinCall = nullptr;
+  ASTNode *value = nullptr;
+  ASTNode *assignExpr = nullptr;
+  ASTNode *builtinCall = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   std::vector<VarAccessData> data; // Only set if identifier is set as well

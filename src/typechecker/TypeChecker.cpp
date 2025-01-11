@@ -1098,9 +1098,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
     return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
+  const auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check if we need the string runtime to perform a string comparison
@@ -1126,9 +1126,9 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
     return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
+  const auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
@@ -1153,9 +1153,9 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
     return visit(node->operands.front());
 
   // Visit right side first, then left
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
+  const auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
@@ -1183,7 +1183,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    MultiplicativeExprNode *operand = node->operands[i + 1];
+    ASTNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1216,7 +1216,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    CastExprNode *operand = node->operands[i + 1];
+    ASTNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1243,10 +1243,10 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Check if cast is applied
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr);
+    return visit(node->operand);
 
   // Visit source type
-  const auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr));
+  const auto src = std::any_cast<ExprResult>(visit(node->operand));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
   const auto dstType = std::any_cast<QualType>(visit(node->dataType));
@@ -1274,7 +1274,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     return visit(node->postfixUnaryExpr);
 
   // Visit the right side
-  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
+  ASTNode *rhsNode = node->prefixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(rhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
@@ -1334,7 +1334,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     return visit(node->atomicExpr);
 
   // Visit left side
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
+  ASTNode *lhsNode = node->postfixUnaryExpr;
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
   auto [lhsType, lhsEntry] = lhs;
   HANDLE_UNRESOLVED_TYPE_ER(lhsType)
@@ -1349,7 +1349,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
+    ASTNode *indexAssignExpr = node->subscriptIndexExpr;
     QualType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
@@ -1449,9 +1449,9 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       lhsEntry->updateState(INITIALIZED, node, false);
     }
 
-    ExprResult result = opRuleManager.getPostfixMinusMinusResultType(node, lhs, 0);
-    lhsType = result.type;
-    lhsEntry = result.entry;
+    const auto [type, entry] = opRuleManager.getPostfixMinusMinusResultType(node, lhs, 0);
+    lhsType = type;
+    lhsEntry = entry;
     break;
   }
   default:

@@ -1156,7 +1156,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
     castExprNode->isCast = true;
     castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   }
-  castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+  castExprNode->operand = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
 
   return concludeNode(castExprNode);
 }

@@ -228,14 +228,14 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
 
   // It is a bitwise or expression
   // Evaluate first operand
-  const BitwiseXorExprNode *lhsNode = node->operands.front();
+  const ASTNode *lhsNode = node->operands.front();
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    const BitwiseXorExprNode *rhsNode = node->operands[i];
+    const ASTNode *rhsNode = node->operands[i];
     const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, i - 1);
@@ -254,14 +254,14 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
 
   // It is a bitwise xor expression
   // Evaluate first operand
-  const BitwiseAndExprNode *lhsNode = node->operands.front();
+  const ASTNode *lhsNode = node->operands.front();
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    const BitwiseAndExprNode *rhsNode = node->operands[i];
+    const ASTNode *rhsNode = node->operands[i];
     const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy);
@@ -280,14 +280,14 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
 
   // It is a bitwise and expression
   // Evaluate first operand
-  const EqualityExprNode *lhsNode = node->operands.front();
+  const ASTNode *lhsNode = node->operands.front();
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    const EqualityExprNode *rhsNode = node->operands[i];
+    const ASTNode *rhsNode = node->operands[i];
     const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, i - 1);
@@ -306,12 +306,12 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
 
   // It is an equality expression
   // Evaluate lhs
-  const RelationalExprNode *lhsNode = node->operands[0];
+  const ASTNode *lhsNode = node->operands[0];
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  const RelationalExprNode *rhsNode = node->operands[1];
+  const ASTNode *rhsNode = node->operands[1];
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -340,12 +340,12 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
 
   // It is a relational expression
   // Evaluate lhs
-  const ShiftExprNode *lhsNode = node->operands[0];
+  const ASTNode *lhsNode = node->operands[0];
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  const ShiftExprNode *rhsNode = node->operands[1];
+  const ASTNode *rhsNode = node->operands[1];
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -380,12 +380,12 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
 
   // It is a shift expression
   // Evaluate lhs
-  const AdditiveExprNode *lhsNode = node->operands[0];
+  const ASTNode *lhsNode = node->operands[0];
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  const AdditiveExprNode *rhsNode = node->operands[1];
+  const ASTNode *rhsNode = node->operands[1];
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -414,7 +414,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
 
   // It is an additive expression
   // Evaluate first operand
-  const MultiplicativeExprNode *lhsNode = node->operands[0];
+  const ASTNode *lhsNode = node->operands[0];
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -423,7 +423,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    const MultiplicativeExprNode *rhsNode = node->operands[operandIndex++];
+    const ASTNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -459,7 +459,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
 
   // It is an additive expression
   // Evaluate first operand
-  const CastExprNode *lhsNode = node->operands[0];
+  const ASTNode *lhsNode = node->operands[0];
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -468,7 +468,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    const CastExprNode *rhsNode = node->operands[operandIndex++];
+    const ASTNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -502,14 +502,14 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
 
   // Check if only one operand is present -> loop through
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr);
+    return visit(node->operand);
 
   // It is a cast expression
   // Retrieve target symbol type
   const QualType targetSTy = node->getEvaluatedSymbolType(manIdx);
 
   // Evaluate rhs
-  const PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
+  const ASTNode *rhsNode = node->operand;
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -528,7 +528,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
-  const PrefixUnaryExprNode *lhsNode = node->prefixUnaryExpr;
+  const ASTNode *lhsNode = node->prefixUnaryExpr;
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -654,7 +654,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     return visit(node->atomicExpr);
 
   // Evaluate lhs
-  const PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
+  const ASTNode *lhsNode = node->postfixUnaryExpr;
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -663,7 +663,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the index value
-    const AssignExprNode *indexExpr = node->subscriptIndexExpr;
+    const ASTNode *indexExpr = node->subscriptIndexExpr;
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
