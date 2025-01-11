@@ -602,12 +602,12 @@ public:
   ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  static QualType getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
+  QualType getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  QualType getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  QualType getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  QualType getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  QualType getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  QualType getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   static QualType getLogicalOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getLogicalAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
@@ -658,7 +658,7 @@ private:
                                           const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs) const;
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs, const QualType &rhs) const;
-  static void ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl = false, bool isReturn = false);
+  void ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl = false, bool isReturn = false) const;
 };
 
 } // namespace spice::compiler

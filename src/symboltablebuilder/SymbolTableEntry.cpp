@@ -38,9 +38,6 @@ void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool
  */
 void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode *node, bool force) {
   const LifecycleState oldState = lifecycle.getCurrentState();
-  // Check if this is a constant variable and is already initialized
-  if (newState != DEAD && oldState != DECLARED && qualType.isConst() && !force)                      // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Not re-assignable variable '" + name + "'");                // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DECLARED)                                                      // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Cannot destroy uninitialized variable '" + name + "'");     // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DEAD)                                                          // GCOV_EXCL_LINE
