@@ -43,6 +43,7 @@ f<int> main() {
     assert !s2.endsWith("!");
     assert s5.trim() == "String to be trimmed";
     assert s1.trim() == "";
+    assert s3.trim() == s3;
 
     printf("All assertions passed!");
 }
