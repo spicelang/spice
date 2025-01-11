@@ -199,11 +199,11 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
 
   // Other methods
-  GET_CHILDREN(importDefs, modAttrs, topLevelDefs);
+  GET_CHILDREN(modAttrs, importDefs, topLevelDefs);
 
   // Public members
-  std::vector<ImportDefNode *> importDefs;
   std::vector<ModAttrNode *> modAttrs;
+  std::vector<ImportDefNode *> importDefs;
   std::vector<TopLevelDefNode *> topLevelDefs;
 };
 

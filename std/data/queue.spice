@@ -1,5 +1,5 @@
 // Constants
-const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned long INITIAL_CAPACITY = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Add generic type definition
@@ -41,7 +41,7 @@ public p Queue.ctor(unsigned int initAllocItems) {
     this.ctor((long) initAllocItems);
 }
 
-public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
+public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof(type T) / 8l;
     unsafe {

@@ -165,7 +165,7 @@ std::string CommonUtil::getCircularImportMessage(std::stack<const SourceFile *> 
  *
  * @return Version info string
  */
-std::string CommonUtil::getVersionInfo() {
+std::string CommonUtil::buildVersionInfo() {
   std::stringstream versionString;
   versionString << "Spice version: " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << "\n";
   versionString << "Git hash:      " << SPICE_GIT_HASH << "\n";
