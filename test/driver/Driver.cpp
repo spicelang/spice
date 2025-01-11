@@ -16,7 +16,7 @@ void Driver::createInterface() {
   // Add version flag
   const std::string versionName(SPICE_VERSION);
   const std::string builtBy(SPICE_BUILT_BY);
-  app.set_version_flag("--version,-v", spice::compiler::CommonUtil::getVersionInfo());
+  app.set_version_flag("--version,-v", spice::compiler::CommonUtil::buildVersionInfo());
 }
 
 void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {

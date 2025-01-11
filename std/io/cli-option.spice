@@ -9,41 +9,45 @@ type T bool|string|String|int|long|short|FilePath;
 type CliOptionMode enum { SET_VALUE, CALL_CALLBACK }
 
 public type CliOption<T> struct {
-    string name
-    string description
-    Vector<string> aliases
+    String name
+    String description
+    Vector<String> aliases
     CliOptionMode mode
     T& targetVariable
     p(T&) callback
 }
 
-public p CliOption.ctor(string name, T& targetVariable, string description) {
+public p CliOption.ctor(const String& name, T& targetVariable, const String& description) {
     this.name = name;
     this.description = description;
     this.mode = CliOptionMode::SET_VALUE;
     this.targetVariable = targetVariable;
 }
 
-public p CliOption.ctor(string name, p(T&) callback, string description) {
+public p CliOption.ctor(const String& name, p(T&) callback, const String& description) {
     this.name = name;
     this.description = description;
     this.mode = CliOptionMode::CALL_CALLBACK;
     this.callback = callback;
 }
 
-public f<string> CliOption.getName() {
+public const f<const String&> CliOption.getName() {
     return this.name;
 }
 
-public f<string> CliOption.getDescription() {
+public const f<const String&> CliOption.getDescription() {
     return this.description;
 }
 
 public p CliOption.addAlias(string optionName) {
+    this.aliases.pushBack(String(optionName));
+}
+
+public p CliOption.addAlias(const String& optionName) {
     this.aliases.pushBack(optionName);
 }
 
-public f<const Vector<string>&> CliOption.getAliases() {
+public const f<const Vector<String>&> CliOption.getAliases() {
     return this.aliases;
 }
 

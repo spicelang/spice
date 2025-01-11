@@ -4,6 +4,13 @@ import "std/data/vector";
 // Own imports
 import "bootstrap/source-file-intf";
 
+const string SPICE_VERSION = "0.20.7";
+const string SPICE_TARGET_OS = "linux";
+const string SPICE_TARGET_ARCH = "amd64";
+const string SPICE_GIT_HASH = "1da7aaeeb4ea2f1132b1a1a94ce6dd3cd753c47c";
+const string SPICE_BUILT_BY = "GitHub Actions";
+const string LLVM_VERSION_STRING = "19.1.6";
+
 /**
  * Split the given haystack by the needle and return the last fragment
  *
@@ -33,7 +40,7 @@ public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sour
         const ISourceFile* sourceFile = sourceFiles.get(i);
         if i != 0 { message += "|     |\n"; }
         message += "|  ";
-        message += sourceFile.fileName;
+        message += sourceFile.getFileName();
         message += "\n";
     }
     message += "|     |\n";
@@ -46,10 +53,12 @@ public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sour
  *
  * @return Version info string
  */
-public f<String> getVersionInfo() {
+public f<String> buildVersionInfo() {
     String versionString;
-    versionString += "spice version" + SPICE_VERSION + " " + SPICE_TARGET_OS + "/" + SPICE_TARGET_ARCH + "\n";
-    versionString += "built by: " + SPICE_BUILT_BY + "\n\n";
+    versionString += "Spice version: " + SPICE_VERSION + " " + SPICE_TARGET_OS + "/" + SPICE_TARGET_ARCH + "\n";
+    versionString += "Git hash:      " + SPICE_GIT_HASH + "\n";
+    versionString += "LLVM version:  " + LLVM_VERSION_STRING + "\n";
+    versionString += "built by:      " + SPICE_BUILT_BY + "\n\n";
     versionString += "(c) Marc Auberer 2021-2025";
     return versionString;
 }

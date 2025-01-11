@@ -6,6 +6,9 @@ import "std/io/cli-subcommand";
 import "std/io/cli-option";
 import "std/io/filepath";
 
+// Own imports
+import "util/common-util";
+
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
 public const string TARGET_WASM32 = "wasm32";
@@ -93,7 +96,7 @@ public p Driver.init() {
     this.cliParser.setFooter("(c) Marc Auberer 2021-2025");
 
     // Add version flag
-    this.cliParser.setVersion("Spice version 0.20.4\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2025");
+    this.cliParser.setVersion(buildVersionInfo());
 
     // Create sub-commands
     this.addBuildSubcommand();

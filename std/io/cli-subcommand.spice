@@ -9,13 +9,13 @@ import "std/io/filepath";
 type T bool|string|int;
 
 public type CliSubcommand struct {
-    string name
-    string description
+    String name
+    String description
     CliSubcommand* parent
-    string versionString
-    string footer = ""
+    String versionString
+    String footerString
     p() callback
-    Vector<string> aliases
+    Vector<String> aliases
     Vector<CliSubcommand> subcommands
     Vector<CliOption<bool>> boolOptions
     Vector<CliOption<string>> stringOptions
@@ -25,18 +25,18 @@ public type CliSubcommand struct {
     bool allowUnknownOptions = false
 }
 
-public p CliSubcommand.ctor(CliSubcommand* parent, string versionString, string name, string description = "") {
+public p CliSubcommand.ctor(CliSubcommand* parent, const String& versionString, const String& name, const String& description = String("")) {
     this.name = name;
     this.description = description;
     this.versionString = versionString;
     this.parent = parent;
 }
 
-f<bool> CliSubcommand.nameOrAliasMatches(string name, const Vector<string>& aliases, string input) {
+f<bool> CliSubcommand.nameOrAliasMatches(const String& name, const Vector<String>& aliases, string input) {
     if name == input {
         return true;
     }
-    foreach const string a : aliases {
+    foreach const String& a : aliases {
         if a == input {
             return true;
         }
@@ -139,20 +139,20 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
 }
 
-public f<string> CliSubcommand.getName() {
+public const f<const String&> CliSubcommand.getName() {
     return this.name;
 }
 
-public f<string> CliSubcommand.getDescription() {
+public const f<const String&> CliSubcommand.getDescription() {
     return this.description;
 }
 
-public p CliSubcommand.setVersion(string versionString) {
+public p CliSubcommand.setVersion(const String& versionString) {
     this.versionString = versionString;
 }
 
-public p CliSubcommand.setFooter(string footer) {
-    this.footer = footer;
+public p CliSubcommand.setFooter(const String& footerString) {
+    this.footerString = footerString;
 }
 
 public p CliSubcommand.setCallback(p() callback) {
@@ -167,60 +167,119 @@ public p CliSubcommand.allowUnknownOptions() {
 }
 
 public p CliSubcommand.addAlias(string subCommand) {
+    this.aliases.pushBack(String(subCommand));
+}
+
+public p CliSubcommand.addAlias(const String& subCommand) {
     this.aliases.pushBack(subCommand);
 }
 
 public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
+    this.subcommands.pushBack(CliSubcommand(this, this.versionString, String(name), String(description)));
+    return this.subcommands.back();
+}
+
+public f<CliSubcommand&> CliSubcommand.addSubcommand(const String& name, const String& description) {
     this.subcommands.pushBack(CliSubcommand(this, this.versionString, name, description));
     return this.subcommands.back();
 }
 
 public f<CliOption<string>&> CliSubcommand.addOption(string name, string& targetVariable, string description) {
+    this.stringOptions.pushBack(CliOption<string>(String(name), targetVariable, String(description)));
+    return this.stringOptions.back();
+}
+
+public f<CliOption<string>&> CliSubcommand.addOption(const String& name, string& targetVariable, const String& description) {
     this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
     return this.stringOptions.back();
 }
 
 public f<CliOption<string>&> CliSubcommand.addOption(string name, p(string&) callback, string description) {
+    this.stringOptions.pushBack(CliOption<string>(String(name), callback, String(description)));
+    return this.stringOptions.back();
+}
+
+public f<CliOption<string>&> CliSubcommand.addOption(const String& name, p(string&) callback, const String& description) {
     this.stringOptions.pushBack(CliOption<string>(name, callback, description));
     return this.stringOptions.back();
 }
 
 public f<CliOption<String>&> CliSubcommand.addOption(string name, String& targetVariable, string description) {
+    this.stringObjOptions.pushBack(CliOption<String>(String(name), targetVariable, String(description)));
+    return this.stringObjOptions.back();
+}
+
+public f<CliOption<String>&> CliSubcommand.addOption(const String& name, String& targetVariable, const String& description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, targetVariable, description));
     return this.stringObjOptions.back();
 }
 
 public f<CliOption<String>&> CliSubcommand.addOption(string name, p(String&) callback, string description) {
+    this.stringObjOptions.pushBack(CliOption<String>(String(name), callback, String(description)));
+    return this.stringObjOptions.back();
+}
+
+public f<CliOption<String>&> CliSubcommand.addOption(const String& name, p(String&) callback, const String& description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, callback, description));
     return this.stringObjOptions.back();
 }
 
 public f<CliOption<int>&> CliSubcommand.addOption(string name, int& targetVariable, string description) {
+    this.intOptions.pushBack(CliOption<int>(String(name), targetVariable, String(description)));
+    return this.intOptions.back();
+}
+
+public f<CliOption<int>&> CliSubcommand.addOption(const String& name, int& targetVariable, const String& description) {
     this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
     return this.intOptions.back();
 }
 
 public f<CliOption<int>&> CliSubcommand.addOption(string name, p(int&) callback, string description) {
+    this.intOptions.pushBack(CliOption<int>(String(name), callback, String(description)));
+    return this.intOptions.back();
+}
+
+public f<CliOption<int>&> CliSubcommand.addOption(const String& name, p(int&) callback, const String& description) {
     this.intOptions.pushBack(CliOption<int>(name, callback, description));
     return this.intOptions.back();
 }
 
 public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, FilePath& targetVariable, string description) {
+    this.filePathOptions.pushBack(CliOption<FilePath>(String(name), targetVariable, String(description)));
+    return this.filePathOptions.back();
+}
+
+public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, FilePath& targetVariable, const String& description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, targetVariable, description));
     return this.filePathOptions.back();
 }
 
 public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, p(FilePath&) callback, string description) {
+    this.filePathOptions.pushBack(CliOption<FilePath>(String(name), callback, String(description)));
+    return this.filePathOptions.back();
+}
+
+public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, p(FilePath&) callback, const String& description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, callback, description));
     return this.filePathOptions.back();
 }
 
 public f<CliOption<bool>&> CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
+    this.boolOptions.pushBack(CliOption<bool>(String(name), targetVariable, String(description)));
+    return this.boolOptions.back();
+}
+
+public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, bool& targetVariable, const String& description) {
     this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
     return this.boolOptions.back();
 }
 
-public f<CliOption<bool>&> CliSubcommand.addFlag(string name, p(bool&) callback, string description) {
+public f<CliOption<bool>&> CliSubcommand.addFlag(const string name, p(bool&) callback, string description) {
+    this.boolOptions.pushBack(CliOption<bool>(String(name), callback, String(description)));
+    return this.boolOptions.back();
+}
+
+public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, p(bool&) callback, const String& description) {
     this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
     return this.boolOptions.back();
 }
@@ -249,29 +308,37 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     if !this.subcommands.isEmpty() {
         printf("\nSubcommands:\n");
         foreach const CliSubcommand& subCommand : this.subcommands {
-            printHelpItem(subCommand.getName(), subCommand.getDescription());
+            const String& name = subCommand.getName();
+            const String& description = subCommand.getDescription();
+            printHelpItemWithValue(name.getRaw(), description.getRaw());
         }
     }
 
     // Print options
     printf("\nOptions:\n");
     foreach const CliOption<string>& option : this.stringOptions {
-        printHelpItemWithValue(option.getName(), option.getDescription());
+        const String& name = option.getName();
+        const String& description = option.getDescription();
+        printHelpItemWithValue(name.getRaw(), description.getRaw());
     }
     foreach const CliOption<int>& option : this.intOptions {
-        printHelpItemWithValue(option.getName(), option.getDescription());
+        const String& name = option.getName();
+        const String& description = option.getDescription();
+        printHelpItemWithValue(name.getRaw(), description.getRaw());
     }
 
     // Print flags
     printf("\nFlags:\n");
     foreach const CliOption<bool>& flag : this.boolOptions {
-        printHelpItem(flag.getName(), flag.getDescription());
+        const String& name = flag.getName();
+        const String& description = flag.getDescription();
+        printHelpItem(name.getRaw(), description.getRaw());
     }
     printHelpItem("--help,-h", "Print this help message");
     printHelpItem("--version,-v", "Print the version of the application");
 
     // Print footer
-    if this.footer != "" {
-        printf("\n%s\n", this.footer);
+    if !this.footerString.isEmpty() {
+        printf("\n%s\n", this.footerString);
     }
 }

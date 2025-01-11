@@ -9,14 +9,26 @@ public type CliParser struct {
 }
 
 public p CliParser.ctor(string appName, string appDescription = "") {
-    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, "v0.1.0", appName, appDescription);
+    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, String("v0.1.0"), String(appName), String(appDescription));
+}
+
+public p CliParser.ctor(const String& appName, const String& appDescription = String("")) {
+    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, String("v0.1.0"), appName, appDescription);
 }
 
 public p CliParser.setVersion(string versionString) {
+    this.rootSubcommand.setVersion(String(versionString));
+}
+
+public p CliParser.setVersion(const String& versionString) {
     this.rootSubcommand.setVersion(versionString);
 }
 
 public p CliParser.setFooter(string footer) {
+    this.rootSubcommand.setFooter(String(footer));
+}
+
+public p CliParser.setFooter(const String& footer) {
     this.rootSubcommand.setFooter(footer);
 }
 
@@ -29,22 +41,42 @@ public p CliParser.allowUnknownOptions() {
 }
 
 public f<CliSubcommand&> CliParser.addSubcommand(string name, string description) {
+    return this.rootSubcommand.addSubcommand(String(name), String(description));
+}
+
+public f<CliSubcommand&> CliParser.addSubcommand(const String& name, const String& description) {
     return this.rootSubcommand.addSubcommand(name, description);
 }
 
 public f<CliOption<T>&> CliParser.addOption<T>(string name, T& targetVariable, string description) {
+    return this.rootSubcommand.addOption(targetVariable, String(description));
+}
+
+public f<CliOption<T>&> CliParser.addOption<T>(const String& name, T& targetVariable, const String& description) {
     return this.rootSubcommand.addOption(targetVariable, description);
 }
 
 public f<CliOption<T>&> CliParser.addOption<T>(string name, p(T&) callback, string description) {
+    return this.rootSubcommand.addOption(callback, String(description));
+}
+
+public f<CliOption<T>&> CliParser.addOption<T>(const String& name, p(T&) callback, const String& description) {
     return this.rootSubcommand.addOption(callback, description);
 }
 
 public f<CliOption<bool>&> CliParser.addFlag(string name, bool& targetVariable, string description) {
+   return  this.rootSubcommand.addFlag(String(name), targetVariable, String(description));
+}
+
+public f<CliOption<bool>&> CliParser.addFlag(const String& name, bool& targetVariable, const String& description) {
    return  this.rootSubcommand.addFlag(name, targetVariable, description);
 }
 
 public f<CliOption<bool>&> CliParser.addFlag(string name, p(bool&) callback, string description) {
+    return this.rootSubcommand.addFlag(String(name), callback, String(description));
+}
+
+public f<CliOption<bool>&> CliParser.addFlag(const String& name, p(bool&) callback, const String& description) {
     return this.rootSubcommand.addFlag(name, callback, description);
 }
 

@@ -32,7 +32,7 @@ public:
   static std::string demangleTypeName(const char *mangledName);
   static bool isValidMangledName(const std::string &mangledName);
   static std::string getCircularImportMessage(std::stack<const SourceFile *> &sourceFiles);
-  static std::string getVersionInfo();
+  static std::string buildVersionInfo();
 };
 
 } // namespace spice::compiler

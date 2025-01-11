@@ -20,7 +20,7 @@ void Driver::init() {
   app.footer("(c) Marc Auberer 2021-2025");
 
   // Add version flag
-  app.set_version_flag("--version,-v", CommonUtil::getVersionInfo());
+  app.set_version_flag("--version,-v", CommonUtil::buildVersionInfo());
 
   // Create sub-commands
   addBuildSubcommand();
