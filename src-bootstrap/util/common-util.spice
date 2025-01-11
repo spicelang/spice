@@ -13,10 +13,7 @@ import "bootstrap/source-file-intf";
  */
 public f<String> getLastFragment(const String &haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
-    if index == -1l {
-        return haystack;
-    }
-    return haystack.getSubstring(index + getRawLength(needle));
+    return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
 }
 
 /**
