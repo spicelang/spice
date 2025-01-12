@@ -106,8 +106,7 @@ public f<T&> Vector.get(unsigned long index) {
         panic(Error("Access index out of bounds"));
     }
     unsafe {
-        T& t = this.contents[index];
-        return t;
+        return this.contents[index];
     }
 }
 
@@ -118,6 +117,24 @@ public f<T&> Vector.get(unsigned long index) {
  */
 public f<T&> Vector.get(unsigned int index) {
     return this.get((unsigned long) index);
+}
+
+/**
+ * Get an item at a certain index
+ *
+ * @return item at index
+ */
+public f<T&> operator[]<T>(Vector<T>& v, unsigned long index) {
+    return v.get(index);
+}
+
+/**
+ * Get an item at a certain index
+ *
+ * @return item at index
+ */
+public f<T&> operator[]<T>(Vector<T>& v, unsigned int index) {
+    return v.get((unsigned long) index);
 }
 
 /**
