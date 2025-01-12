@@ -286,7 +286,9 @@ public f<bool> operator!=(const string& a, const String& b) {
  * @return Character at the given index
  */
 public f<char&> operator[](String& str, unsigned long idx) {
-    assert idx < str.length;
+    if idx >= str.length {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
         return str.contents[idx];
     }

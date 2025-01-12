@@ -667,7 +667,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       ResolverFct lhsV = [&] { return resolveValue(lhsSTy, lhs); };
       ResolverFct lhsP = [&] { return resolveAddress(lhs); };
       ResolverFct idxV = [&] { return resolveValue(indexExpr); };
-      ResolverFct idxP = [&] { return nullptr; };
+      ResolverFct idxP = [&] { return resolveAddress(indexExpr); };
       lhs = conversionManager.callOperatorOverloadFct<2>(node, {lhsV, lhsP, idxV, idxP}, 0);
       break;
     }

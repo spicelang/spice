@@ -38,11 +38,11 @@ f<int> main() {
     v1.removeAt(0);
     assert v1.getSize() == 5;
     assert v1.getCapacity() == 12;
-    assert v1.get(0) == 7.4964598;
-    assert v1.get(1) == 5.3;
-    assert v1.get(2) == -238974.23;
-    assert v1.get(3) == -1234.9;
-    assert v1.get(4) == 0.0;
+    assert v1[0] == 7.4964598;
+    assert v1[1] == 5.3;
+    assert v1[2] == -238974.23;
+    assert v1[3] == -1234.9;
+    assert v1[4] == 0.0;
 
     printf("All assertions passed!\n");
 }

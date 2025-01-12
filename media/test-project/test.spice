@@ -1,88 +1,50 @@
-type Size alias long;
-
-type Counter struct {
-    Size value
-}
-
-p Counter.ctor(long initialValue = 0l) {
-    this.value = initialValue;
-}
-
-f<Size> Counter.getValue() {
-    return this.value;
-}
-
-f<Counter> operator+(const Counter c1, const Counter c2) {
-    return Counter(c1.value + c2.value);
-}
-
-f<Counter> operator-(const Counter c1, const Counter c2) {
-    return Counter(c1.value - c2.value);
-}
-
-f<Counter> operator*(const Counter c1, const Counter c2) {
-    return Counter(c1.value * c2.value);
-}
-
-f<Counter> operator/(const Counter c1, const Counter c2) {
-    return Counter(c1.value / c2.value);
-}
-
-f<Counter> operator<<(const Counter c1, const Counter c2) {
-    return Counter(c1.value << c2.value);
-}
-
-f<Counter> operator>>(const Counter c1, const Counter c2) {
-    return Counter(c1.value >> c2.value);
-}
-
-p operator+=(Counter& c1, const Counter c2) {
-    c1.value += c2.value;
-}
-
-p operator-=(Counter& c1, const Counter c2) {
-    c1.value -= c2.value;
-}
-
-p operator*=(Counter& c1, const Counter c2) {
-    c1.value *= c2.value;
-}
-
-p operator/=(Counter& c1, const Counter c2) {
-    c1.value /= c2.value;
-}
-
-f<Size&> operator[](Counter& c, unsigned int summand) {
-    c.value += summand;
-    return c.value;
-}
+import "std/data/map";
 
 f<int> main() {
-    Counter counter1 = Counter(2l);
-    Counter counter2 = Counter(3l);
-    printf("Counter1 value: %d\n", counter1.getValue());
-    printf("Counter2 value: %d\n", counter2.getValue());
-    Counter counter3 = counter1 + counter2; // Here we call the overloaded operator
-    printf("Counter3 value: %d\n", counter3.getValue());
-    Counter counter4 = counter3 - counter2; // Here we call the overloaded operator
-    printf("Counter4 value: %d\n", counter4.getValue());
-    Counter counter5 = counter4 * counter2; // Here we call the overloaded operator
-    printf("Counter5 value: %d\n", counter5.getValue());
-    Counter counter6 = counter5 / counter2; // Here we call the overloaded operator
-    printf("Counter6 value: %d\n", counter6.getValue());
-    Counter counter7 = counter6 << counter2; // Here we call the overloaded operator
-    printf("Counter7 value: %d\n", counter7.getValue());
-    Counter counter8 = counter7 >> counter2; // Here we call the overloaded operator
-    printf("Counter8 value: %d\n", counter8.getValue());
-    counter8 += counter2; // Here we call the overloaded operator
-    printf("Counter8 value: %d\n", counter8.getValue());
-    counter8 -= counter2; // Here we call the overloaded operator
-    printf("Counter8 value: %d\n", counter8.getValue());
-    counter8 *= counter2; // Here we call the overloaded operator
-    printf("Counter8 value: %d\n", counter8.getValue());
-    counter8 /= counter2; // Here we call the overloaded operator
-    printf("Counter8 value: %d\n", counter8.getValue());
-    Size res = counter8[12];
-    assert res == 14;
-    printf("Counter8 value: %d\n", counter8.getValue());
+    Map<int, string> map;
+    assert map.getSize() == 0l;
+    assert map.isEmpty();
+    map.insert(1, "Hello");
+    assert map.getSize() == 1l;
+    assert !map.isEmpty();
+    map.insert(2, "World");
+    assert map.getSize() == 2l;
+    map.insert(3, "Foo");
+    assert map.getSize() == 3l;
+    map.insert(4, "Bar");
+    assert map.getSize() == 4l;
+    assert map.contains(1);
+    assert map.contains(2);
+    assert map.contains(3);
+    assert map.contains(4);
+    assert map.get(1) == "Hello";
+    assert map[2] == "World";
+    assert map.get(3) == "Foo";
+    assert map.get(4) == "Bar";
+    map.remove(2);
+    assert map.getSize() == 3l;
+    assert !map.contains(2);
+    assert !map.isEmpty();
+    map.remove(1);
+    assert map.getSize() == 2l;
+    assert !map.contains(1);
+    assert !map.isEmpty();
+    string& foo = map.get(3);
+    assert foo == "Foo";
+    foo = "Baz";
+    assert map[3] == "Baz";
+    Result<string> bar = map.getSafe(4);
+    assert bar.isOk();
+    assert bar.unwrap() == "Bar";
+    Result<string> baz = map.getSafe(5);
+    assert baz.isErr();
+    map.remove(3);
+    assert map.getSize() == 1l;
+    assert !map.contains(3);
+    assert !map.isEmpty();
+    map.remove(4);
+    assert map.getSize() == 0l;
+    assert !map.contains(4);
+    assert map.isEmpty();
+    printf("All assertions passed!\n");
 }

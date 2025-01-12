@@ -39,7 +39,7 @@ public p Map.remove(const K& key) {
 }
 
 /**
- * Gets a value from the map.
+ * Retrieve the value associated with the given key.
  * Note: If the key is not found in the map, this function will panic. To avoid this, use getSafe instead.
  *
  * @param key The key to get.
@@ -50,10 +50,22 @@ public f<V&> Map.get(const K& key) {
 }
 
 /**
- * Gets a value from the map, returning a result.
+ * Retrieve the value associated with the given key.
+ * Note: If the key is not found in the map, this function will panic. To avoid this, use getSafe instead.
  *
  * @param key The key to get.
- * @return The value associated with the key, or an error if the key does not exist.
+ * @return The value associated with the key.
+ */
+public f<V&> operator[]<K, V>(Map<K, V>& map, const K& key) {
+    return map.get(key);
+}
+
+/**
+ * Retrieve the value associated with the given key as Result<V>.
+ * If the key is not found, the result contains an error.
+ *
+ * @param key The key to look up
+ * @return Result<V>, containing the value associated with the key or an error if the key is not found
  */
 public f<Result<V>> Map.getSafe(const K& key) {
     return this.tree.findSafe(key);

@@ -16,7 +16,7 @@ f<int> main() {
     assert map.contains(4);
     assert !map.contains(5);
     assert map.get(1) == "one";
-    assert map.get(2) == "two";
+    assert map[2] == "two";
     assert map.get(3) == "three";
     assert map.get(4) == "four";
     const Result<string> item5 = map.getSafe(5);
@@ -30,7 +30,7 @@ f<int> main() {
     map.upsert(1, "one");
     map.upsert(1, "one new");
     assert map.getSize() == 1;
-    assert map.get(1) == "one new";
+    assert map[1] == "one new";
     map.remove(1);
     assert map.isEmpty();
 
