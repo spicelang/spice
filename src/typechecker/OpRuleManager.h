@@ -637,6 +637,11 @@ public:
   ExprResult getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx);
   QualType getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs) const;
 
+  // Operator overloading
+  template <size_t N>
+  ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
+                                               size_t opIdx);
+
 private:
   // Members
   TypeChecker *typeChecker;
@@ -645,9 +650,7 @@ private:
   // Private methods
   static QualType getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
                                             bool isReturn);
-  template <size_t N>
-  ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
-                                               size_t opIdx);
+
   static QualType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                          const QualType &lhs);
   static QualType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,

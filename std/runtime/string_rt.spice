@@ -280,6 +280,23 @@ public f<bool> operator!=(const string& a, const String& b) {
 }
 
 /**
+ * Extract the char at the given index and return it
+ *
+ * @param a Input string
+ * @return Character at the given index
+ */
+public f<char&> operator[](String& str, unsigned long idx) {
+    assert idx < str.length;
+    unsafe {
+        return str.contents[idx];
+    }
+}
+
+public f<char&> operator[](String& str, unsigned int idx) {
+    return str[(unsigned long) idx];
+}
+
+/**
  * Get the raw and immutable string from this container instance
  *
  * @return Raw immutable string
@@ -589,7 +606,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
     }
 
     // Get substring
-    String substring = String("");
+    String substring;
     substring.reserve(length);
     substring.length = length;
     const unsigned long endIdx = startIdx + length;

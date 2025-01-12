@@ -7,11 +7,20 @@ f<TestStruct&> operator++(TestStruct& ts) {
     return ts;
 }
 
+f<TestStruct&> operator--(TestStruct& ts) {
+    ts.test--;
+    return ts;
+}
+
 f<int> main() {
     TestStruct ts = TestStruct{ 123l };
     TestStruct& output = ts++;
     ts.test++;
     assert output.test == 125l;
     assert ts.test == 125l;
+    ts.test--;
+    ts--;
+    assert ts.test == 123l;
+    assert output.test == 123l;
     printf("All assertions passed!");
 }

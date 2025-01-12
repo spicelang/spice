@@ -42,6 +42,7 @@ constexpr const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
 constexpr const char *const OP_FCT_DIV_EQUAL = "op.divequal";
 constexpr const char *const OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
 constexpr const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
+constexpr const char *const OP_FCT_SUBSCRIPT = "op.subscript";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
@@ -72,7 +73,7 @@ public:
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
-  template <typename... Args> ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
+  template <typename... Args> [[nodiscard]] ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
     std::vector<ASTNode *> children;
 
     // Lambda to handle each argument
@@ -92,7 +93,7 @@ public:
     return children;
   }
 
-  virtual std::vector<ASTNode *> getChildren() const = 0;
+  [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
   void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children

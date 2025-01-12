@@ -1421,7 +1421,7 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
 }
 
 LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
-                                                   QualType rhsSTy) {
+                                                   QualType rhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1464,7 +1464,7 @@ LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExpr
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
+LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1481,7 +1481,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
+LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1502,7 +1502,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *nod
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
+LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1523,7 +1523,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *n
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
+LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1536,7 +1536,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LL
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
+LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1605,7 +1605,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) {
+LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) const {
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
@@ -1679,6 +1679,7 @@ bool OpRuleConversionManager::callsOverloadedOpFct(const ASTNode *node, size_t o
 template <size_t N>
 LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV,
                                                                 size_t opIdx) {
+  static_assert(N == 1 || N == 2, "Only unary and binary operators are overloadable");
   const size_t manIdx = irGenerator->manIdx;
   const std::vector<std::vector<const Function *>> *opFctPointers = node->getOpFctPointers();
   assert(!opFctPointers->empty() && opFctPointers->size() > manIdx);
