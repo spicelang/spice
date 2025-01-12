@@ -672,6 +672,7 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
 template <size_t N>
 ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
                                                             const std::array<ExprResult, N> &op, size_t opIdx) {
+  static_assert(N == 1 || N == 2, "Only unary and binary operators are overloadable");
   Scope *calleeParentScope = nullptr;
   const Function *callee = nullptr;
   for (const auto &sourceFile : typeChecker->resourceManager.sourceFiles | std::views::values) {

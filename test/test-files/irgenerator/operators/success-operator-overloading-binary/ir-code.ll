@@ -15,6 +15,8 @@ source_filename = "source.spice"
 @printf.str.9 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 @printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 @printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\00", align 1
+@printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 
 define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 %1) {
   %this = alloca ptr, align 8
@@ -203,6 +205,24 @@ define private void @_Z11op.divequalR7Counter7Counter(ptr %0, %struct.Counter %1
   ret void
 }
 
+define private ptr @_Z12op.subscriptR7Counterj(ptr %0, i32 %1) {
+  %result = alloca ptr, align 8
+  %c = alloca ptr, align 8
+  %summand = alloca i32, align 4
+  store ptr %0, ptr %c, align 8
+  store i32 %1, ptr %summand, align 4
+  %3 = load ptr, ptr %c, align 8
+  %value_addr = getelementptr inbounds %struct.Counter, ptr %3, i64 0, i32 0
+  %4 = load i32, ptr %summand, align 4
+  %5 = sext i32 %4 to i64
+  %6 = load i64, ptr %value_addr, align 8
+  %7 = add i64 %6, %5
+  store i64 %7, ptr %value_addr, align 8
+  %8 = load ptr, ptr %c, align 8
+  %value_addr1 = getelementptr inbounds %struct.Counter, ptr %8, i64 0, i32 0
+  ret ptr %value_addr1
+}
+
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
@@ -214,6 +234,7 @@ define dso_local i32 @main() #0 {
   %counter6 = alloca %struct.Counter, align 8
   %counter7 = alloca %struct.Counter, align 8
   %counter8 = alloca %struct.Counter, align 8
+  %res = alloca i64, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter1, i64 2)
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter2, i64 3)
@@ -273,12 +294,33 @@ define dso_local i32 @main() #0 {
   call void @_Z11op.divequalR7Counter7Counter(ptr %counter8, %struct.Counter %44)
   %45 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
   %46 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i64 %45)
-  %47 = load i32, ptr %result, align 4
-  ret i32 %47
+  %47 = call ptr @_Z12op.subscriptR7Counterj(ptr %counter8, i32 12)
+  %48 = load i64, ptr %47, align 8
+  store i64 %48, ptr %res, align 8
+  %49 = load i64, ptr %res, align 8
+  %50 = icmp eq i64 %49, 14
+  br i1 %50, label %assert.exit.L86, label %assert.then.L86, !prof !0
+
+assert.then.L86:                                  ; preds = %0
+  %51 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L86:                                  ; preds = %0
+  %52 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
+  %53 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 %52)
+  %54 = load i32, ptr %result, align 4
+  ret i32 %54
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #2
+
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}

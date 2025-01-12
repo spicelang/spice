@@ -52,6 +52,11 @@ p operator/=(Counter& c1, const Counter c2) {
     c1.value /= c2.value;
 }
 
+f<Size&> operator[](Counter& c, unsigned int summand) {
+    c.value += summand;
+    return c.value;
+}
+
 f<int> main() {
     Counter counter1 = Counter(2l);
     Counter counter2 = Counter(3l);
@@ -76,5 +81,8 @@ f<int> main() {
     counter8 *= counter2; // Here we call the overloaded operator
     printf("Counter8 value: %d\n", counter8.getValue());
     counter8 /= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    Size res = counter8[12];
+    assert res == 14;
     printf("Counter8 value: %d\n", counter8.getValue());
 }

@@ -78,7 +78,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       lhs.value = result.value;
       insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
     }
-    return LLVMExprResult{.value = lhs.value, .ptr = lhs.ptr, .refPtr = lhs.refPtr, .entry = lhs.entry};
+    return lhs;
   }
 
   // This is a fallthrough case -> throw an error
@@ -668,9 +668,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       ResolverFct lhsP = [&] { return resolveAddress(lhs); };
       ResolverFct idxV = [&] { return resolveValue(indexExpr); };
       ResolverFct idxP = [&] { return nullptr; };
-      LLVMExprResult result = conversionManager.callOperatorOverloadFct<2>(node, {lhsV, lhsP, idxV, idxP}, 0);
-      lhs.value = result.value;
-      lhs.entry = result.entry;
+      lhs = conversionManager.callOperatorOverloadFct<2>(node, {lhsV, lhsP, idxV, idxP}, 0);
       break;
     }
 

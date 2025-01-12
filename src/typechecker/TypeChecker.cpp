@@ -2548,7 +2548,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
 }
 
 /**
- * Check if the the capture rules for async lambdas are enforced if the async attribute is set
+ * Check if the capture rules for async lambdas are enforced if the async attribute is set
  *
  * Only one capture with pointer type, pass-by-val is allowed, since only then we can store it in the second field of the
  * fat pointer and can ensure, that no stack variable is referenced inside the lambda.

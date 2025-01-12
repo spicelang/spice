@@ -1,5 +1,88 @@
+type Size alias long;
+
+type Counter struct {
+    Size value
+}
+
+p Counter.ctor(long initialValue = 0l) {
+    this.value = initialValue;
+}
+
+f<Size> Counter.getValue() {
+    return this.value;
+}
+
+f<Counter> operator+(const Counter c1, const Counter c2) {
+    return Counter(c1.value + c2.value);
+}
+
+f<Counter> operator-(const Counter c1, const Counter c2) {
+    return Counter(c1.value - c2.value);
+}
+
+f<Counter> operator*(const Counter c1, const Counter c2) {
+    return Counter(c1.value * c2.value);
+}
+
+f<Counter> operator/(const Counter c1, const Counter c2) {
+    return Counter(c1.value / c2.value);
+}
+
+f<Counter> operator<<(const Counter c1, const Counter c2) {
+    return Counter(c1.value << c2.value);
+}
+
+f<Counter> operator>>(const Counter c1, const Counter c2) {
+    return Counter(c1.value >> c2.value);
+}
+
+p operator+=(Counter& c1, const Counter c2) {
+    c1.value += c2.value;
+}
+
+p operator-=(Counter& c1, const Counter c2) {
+    c1.value -= c2.value;
+}
+
+p operator*=(Counter& c1, const Counter c2) {
+    c1.value *= c2.value;
+}
+
+p operator/=(Counter& c1, const Counter c2) {
+    c1.value /= c2.value;
+}
+
+f<Size&> operator[](Counter& c, unsigned int summand) {
+    c.value += summand;
+    return c.value;
+}
+
 f<int> main() {
-    String test = String("Dies ist ein Test");
-    char c = test[13l];
-    printf("%s, %c", test, c);
+    Counter counter1 = Counter(2l);
+    Counter counter2 = Counter(3l);
+    printf("Counter1 value: %d\n", counter1.getValue());
+    printf("Counter2 value: %d\n", counter2.getValue());
+    Counter counter3 = counter1 + counter2; // Here we call the overloaded operator
+    printf("Counter3 value: %d\n", counter3.getValue());
+    Counter counter4 = counter3 - counter2; // Here we call the overloaded operator
+    printf("Counter4 value: %d\n", counter4.getValue());
+    Counter counter5 = counter4 * counter2; // Here we call the overloaded operator
+    printf("Counter5 value: %d\n", counter5.getValue());
+    Counter counter6 = counter5 / counter2; // Here we call the overloaded operator
+    printf("Counter6 value: %d\n", counter6.getValue());
+    Counter counter7 = counter6 << counter2; // Here we call the overloaded operator
+    printf("Counter7 value: %d\n", counter7.getValue());
+    Counter counter8 = counter7 >> counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 += counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 -= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 *= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 /= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    Size res = counter8[12];
+    assert res == 14;
+    printf("Counter8 value: %d\n", counter8.getValue());
 }

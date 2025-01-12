@@ -73,7 +73,7 @@ public:
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
-  template <typename... Args> ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
+  template <typename... Args> [[nodiscard]] ALWAYS_INLINE std::vector<ASTNode *> collectChildren(Args &&...args) const {
     std::vector<ASTNode *> children;
 
     // Lambda to handle each argument
@@ -93,7 +93,7 @@ public:
     return children;
   }
 
-  virtual std::vector<ASTNode *> getChildren() const = 0;
+  [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
   void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children

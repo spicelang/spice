@@ -285,16 +285,15 @@ public f<bool> operator!=(const string& a, const String& b) {
  * @param a Input string
  * @return Character at the given index
  */
-public f<char> operator[](const String& str, unsigned long idx) {
+public f<char&> operator[](String& str, unsigned long idx) {
+    assert idx < str.length;
     unsafe {
-        return idx < str.length ? str.contents[idx] : '\0';
+        return str.contents[idx];
     }
 }
 
-public f<char> operator[](const String& str, unsigned int idx) {
-    unsafe {
-        return idx < str.length ? str.contents[idx] : '\0';
-    }
+public f<char&> operator[](String& str, unsigned int idx) {
+    return str[(unsigned long) idx];
 }
 
 /**
@@ -607,7 +606,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
     }
 
     // Get substring
-    String substring = String("");
+    String substring;
     substring.reserve(length);
     substring.length = length;
     const unsigned long endIdx = startIdx + length;
