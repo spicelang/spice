@@ -280,6 +280,24 @@ public f<bool> operator!=(const string& a, const String& b) {
 }
 
 /**
+ * Extract the char at the given index and return it
+ *
+ * @param a Input string
+ * @return Character at the given index
+ */
+public f<char> operator[](const String& str, unsigned long idx) {
+    unsafe {
+        return idx < str.length ? str.contents[idx] : '\0';
+    }
+}
+
+public f<char> operator[](const String& str, unsigned int idx) {
+    unsafe {
+        return idx < str.length ? str.contents[idx] : '\0';
+    }
+}
+
+/**
  * Get the raw and immutable string from this container instance
  *
  * @return Raw immutable string

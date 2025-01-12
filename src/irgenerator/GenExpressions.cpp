@@ -660,10 +660,23 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+    const AssignExprNode *indexExpr = node->subscriptIndexExpr;
+
+    // Check if we need to generate a call to an overloaded operator function
+    if (conversionManager.callsOverloadedOpFct(node, 0)) {
+      ResolverFct lhsV = [&] { return resolveValue(lhsSTy, lhs); };
+      ResolverFct lhsP = [&] { return resolveAddress(lhs); };
+      ResolverFct idxV = [&] { return resolveValue(indexExpr); };
+      ResolverFct idxP = [&] { return nullptr; };
+      LLVMExprResult result = conversionManager.callOperatorOverloadFct<2>(node, {lhsV, lhsP, idxV, idxP}, 0);
+      lhs.value = result.value;
+      lhs.entry = result.entry;
+      break;
+    }
+
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the index value
-    const AssignExprNode *indexExpr = node->subscriptIndexExpr;
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array

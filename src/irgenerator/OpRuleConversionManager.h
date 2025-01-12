@@ -83,8 +83,10 @@ public:
   LLVMExprResult getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, size_t opIdx);
   LLVMExprResult getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
 
-  // Util methods
+  // Operator overloading
   bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
+  template <size_t N>
+  LLVMExprResult callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV, size_t opIdx);
 
 private:
   // Members
@@ -94,8 +96,6 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
-  template <size_t N>
-  LLVMExprResult callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV, size_t opIdx);
   [[nodiscard]] llvm::Value *generateIToFp(const QualType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
   [[nodiscard]] llvm::Value *generateSHR(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                          llvm::Value *rhsV) const;

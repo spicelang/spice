@@ -1,6 +1,5 @@
 f<int> main() {
-    String test = String("String to be trimmed ");
-    printf("'%s'\n", test);
-    String trimmed = test.trim();
-    printf("'%s'\n", trimmed);
+    String test = String("Dies ist ein Test");
+    char c = test[13l];
+    printf("%s, %c", test, c);
 }
