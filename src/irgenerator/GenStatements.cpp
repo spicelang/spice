@@ -119,11 +119,9 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
-    if (node->getEvaluatedSymbolType(manIdx).isRef())
-      returnValue = resolveAddress(node->assignExpr);
-    else
-      returnValue = resolveValue(node->assignExpr);
-  } else { // Try to load return variable value
+    const AssignExprNode* returnExpr = node->assignExpr;
+    returnValue = node->getEvaluatedSymbolType(manIdx).isRef() ? resolveAddress(returnExpr) : resolveValue(returnExpr);
+  } else { // Try to load result variable value
     const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
       llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);

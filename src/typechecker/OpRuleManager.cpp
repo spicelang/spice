@@ -39,8 +39,9 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
     if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true)) {
-      // In case of a return expression, we perform temp stealing
-      if (rhsModified.is(TY_STRUCT) && !rhs.isTemporary() && !isReturn)
+      // Check if we support nrvo. If yes, skip the implicit copy ctor call
+      const bool supportsNRVO = isReturn && !rhs.isTemporary();
+      if (rhsModified.is(TY_STRUCT) && rhs.entry != nullptr && !supportsNRVO)
         typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
       return lhsType;
     }
@@ -50,8 +51,9 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     return rhsType;
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
-    // In case of a return expression, we perform temp stealing
-    if (!rhs.isTemporary() && !isReturn)
+    // Check if we support nrvo. If yes, skip the implicit copy ctor call
+    const bool supportsNRVO = isReturn && !rhs.isTemporary();
+    if (rhs.entry != nullptr && !supportsNRVO)
       typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
     return rhsType;
   }

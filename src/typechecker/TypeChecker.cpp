@@ -670,7 +670,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   const ExprResult returnResult = {returnType, returnVar};
   (void)opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
 
-  // Manage dtor call
+  // Check if the dtor call on the return value can be skipped
   if (rhs.entry != nullptr) {
     if (rhs.entry->anonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -1529,9 +1529,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (varType.is(TY_INVALID))
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
-  // The base type should be a primitive, struct, interface, function or procedure
+  // The base type should be an extended primitive
   const QualType baseType = varType.getBase();
-  if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
+  if (!baseType.isExtendedPrimitive() && !baseType.is(TY_DYN))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName(false) + " cannot be accessed here")
 
   // Check if is an imported variable
