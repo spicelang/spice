@@ -1,0 +1,11 @@
+f<bool> condition1() {
+    return false;
+}
+
+f<bool> condition2() {
+    return true;
+}
+
+f<int> main() {
+    printf("Result: %d", condition1() && condition2() ? 2: 3);
+}

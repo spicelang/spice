@@ -16,13 +16,22 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i1 true, ptr %condition, align 1
   %1 = load i1, ptr %condition, align 1
+  br i1 %1, label %cond.true.L7C13, label %cond.false.L7C13
+
+cond.true.L7C13:                                  ; preds = %0
   %2 = call i32 @_Z3getv()
-  %3 = select i1 %1, i32 %2, i32 24
-  store i32 %3, ptr %r, align 4
-  %4 = load i32, ptr %r, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  br label %cond.exit.L7C13
+
+cond.false.L7C13:                                 ; preds = %0
+  br label %cond.exit.L7C13
+
+cond.exit.L7C13:                                  ; preds = %cond.false.L7C13, %cond.true.L7C13
+  %cond.result = phi i32 [ %2, %cond.true.L7C13 ], [ 24, %cond.false.L7C13 ]
+  store i32 %cond.result, ptr %r, align 4
+  %3 = load i32, ptr %r, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: nofree nounwind

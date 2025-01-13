@@ -25,9 +25,19 @@ define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i1 @_Z2f1v()
-  %2 = call i1 @_Z2f2v()
-  %3 = select i1 %1, i1 %1, i1 %2
-  %4 = zext i1 %3 to i32
+  br i1 %1, label %cond.true.L12C26, label %cond.false.L12C26
+
+cond.true.L12C26:                                 ; preds = %0
+  %2 = call i1 @_Z2f1v()
+  br label %cond.exit.L12C26
+
+cond.false.L12C26:                                ; preds = %0
+  %3 = call i1 @_Z2f2v()
+  br label %cond.exit.L12C26
+
+cond.exit.L12C26:                                 ; preds = %cond.false.L12C26, %cond.true.L12C26
+  %cond.result = phi i1 [ %2, %cond.true.L12C26 ], [ %3, %cond.false.L12C26 ]
+  %4 = zext i1 %cond.result to i32
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %4)
   %6 = load i32, ptr %result, align 4
   ret i32 %6
