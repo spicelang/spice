@@ -137,10 +137,24 @@ bool QualType::isBase(SuperType superType) const { return type->isBase(superType
 
 /**
  * Check if the underlying type is a primitive type
+ * Note: enum types are mapped to int, so they are also count as primitive types.
  *
  * @return Primitive or not
  */
 bool QualType::isPrimitive() const { return type->isPrimitive(); }
+
+/**
+ * Check if the underlying type is an extended primitive type
+ * The definition of extended primitive types contains all primitive types plus the following:
+ * - structs
+ * - interfaces
+ * - functions/procedures
+ *
+ * @return Extended primitive or not
+ */
+bool QualType::isExtendedPrimitive() const {
+  return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE});
+}
 
 /**
  * Check if the underlying type is a pointer
@@ -192,7 +206,7 @@ bool QualType::isArrayOf(SuperType superType) const { return isArray() && getCon
  *
  * @return Const reference or not
  */
-bool QualType::isConstRef() const { return isConst() && isRef(); }
+bool QualType::isConstRef() const { return specifiers.isConst && isRef(); }
 
 /**
  * Check if the current type is an iterator
@@ -679,11 +693,21 @@ QualType QualType::getWithFunctionParamAndReturnTypes(const QualType &returnType
 }
 
 /**
- * Check if the current type is marked const
+ * Check if the current type is const
+ *
+ * Examples for const types:
+ * - const int
+ * - const TestStruct
+ * - const string
+ *
+ * Examples for non-const types:
+ * - double (reason: not marked const)
+ * - const int* (reason: pointer to const int is not const itself)
+ * - const TestStruct& (reason: reference to const TestStruct is not const itself)
  *
  * @return Is const or not
  */
-bool QualType::isConst() const { return specifiers.isConst; }
+bool QualType::isConst() const { return isExtendedPrimitive() && specifiers.isConst; }
 
 /**
  * Check if the current type is marked signed
