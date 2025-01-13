@@ -6,6 +6,9 @@ import "std/data/vector";
 // Own imports
 import "bootstrap/bindings/llvm/linker-flags";
 
+// External functions
+ext f<unsigned int> snprintf(char*, unsigned long, string, int, int, int);
+
 // ===== External type definitions =====
 type VoidPtr alias byte*;
 type LLVMBool alias bool;
@@ -1240,6 +1243,16 @@ public f<string> getOptLevelNameFromOptLevel(OptimizationLevel optLevel) {
 
 public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patch) {
     LLVMGetVersion(major, minor, patch);
+}
+
+public f<String> getVersionString() {
+    unsigned int major = 0;
+    unsigned int minor = 0;
+    unsigned int patch = 0;
+    LLVMGetVersion(&major, &minor, &patch);
+    const unsigned int length = snprintf(nil<char*>, 0l, "%d.%d.%d", major, minor, patch);
+    result = String(length);
+    snprintf((char*) result.getRaw(), length + 1l, "%d.%d.%d", major, minor, patch);
 }
 
 public p llvm_shutdown() {
