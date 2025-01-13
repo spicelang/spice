@@ -1,39 +1,64 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
+@anon.string.0 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 'false' evaluated to false.\00", align 1
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 1
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 1
 
-define private i1 @_Z10condition1v() {
+define private i1 @_Z7condFctv() {
   %result = alloca i1, align 1
   ret i1 false
 }
 
-define private i1 @_Z10condition2v() {
-  %result = alloca i1, align 1
-  ret i1 true
+define private ptr @_Z7trueFctv() {
+  %result = alloca ptr, align 8
+  br i1 false, label %assert.exit.L6, label %assert.then.L6, !prof !0
+
+assert.then.L6:                                   ; preds = %0
+  %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L6:                                   ; preds = %0
+  %2 = load ptr, ptr %result, align 8
+  ret ptr %2
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #1
+
+define private ptr @_Z8falseFctv() {
+  %result = alloca ptr, align 8
+  ret ptr @anon.string.1
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_Z10condition1v()
-  br i1 %1, label %land.1.L10C26, label %land.exit.L10C26
+  %1 = call i1 @_Z7condFctv()
+  br i1 %1, label %cond.true.L15C26, label %cond.false.L15C26
 
-land.1.L10C26:                                    ; preds = %0
-  %2 = call i1 @_Z10condition2v()
-  br label %land.exit.L10C26
+cond.true.L15C26:                                 ; preds = %0
+  %2 = call ptr @_Z7trueFctv()
+  br label %cond.exit.L15C26
 
-land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0
-  %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L10C26 ]
-  %3 = select i1 %land_phi, i32 2, i32 3
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+cond.false.L15C26:                                ; preds = %0
+  %3 = call ptr @_Z8falseFctv()
+  br label %cond.exit.L15C26
+
+cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, %cond.true.L15C26
+  %cond.result = phi ptr [ %2, %cond.true.L15C26 ], [ %3, %cond.false.L15C26 ]
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %cond.result)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+attributes #0 = { nofree nounwind }
+attributes #1 = { cold noreturn nounwind }
+attributes #2 = { noinline nounwind optnone uwtable }
 
-attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+!0 = !{!"branch_weights", i32 2000, i32 1}

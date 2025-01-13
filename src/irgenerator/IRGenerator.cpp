@@ -91,8 +91,8 @@ llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *baseP
                                             std::string varName) const {
   assert(basePtr->getType()->isPointerTy());
   assert(!indices.empty());
-  assert(std::ranges::all_of(indices, [](llvm::Value *index) {
-    llvm::Type *indexType = index->getType();
+  assert(std::ranges::all_of(indices, [](const llvm::Value *index) {
+    const llvm::Type *indexType = index->getType();
     return indexType->isIntegerTy(32) || indexType->isIntegerTy(64);
   }));
 
@@ -465,7 +465,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
     assert(lhsEntry != nullptr);
-    // Directly set the address to the lhs entry
+    // Directly set the address to the lhs entry (temp stealing)
     llvm::Value *rhsAddress = resolveAddress(rhs);
     lhsEntry->updateAddress(rhsAddress);
     rhs.entry = lhsEntry;

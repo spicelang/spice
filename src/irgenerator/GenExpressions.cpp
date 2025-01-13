@@ -95,19 +95,43 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   // It is a ternary
   // Retrieve the condition value
   llvm::Value *condValue = resolveValue(node->condition);
+  const LogicalOrExprNode *trueNode = node->isShortened ? node->condition : node->trueExpr;
+  const LogicalOrExprNode *falseNode = node->falseExpr;
 
-  // Get the values of true and false
-  llvm::Value *trueValue;
-  llvm::Value *falseValue;
-  if (node->isShortened) {
-    trueValue = condValue;
-    falseValue = resolveValue(node->falseExpr);
+  llvm::Value* resultValue;
+  if (trueNode->hasCompileTimeValue() && falseNode->hasCompileTimeValue()) {
+    // If both are constants, we can simply emit a selection instruction
+    llvm::Value *trueValue = resolveValue(trueNode);
+    llvm::Value *falseValue = resolveValue(falseNode);
+    resultValue = builder.CreateSelect(condValue, trueValue, falseValue);
   } else {
-    trueValue = resolveValue(node->trueExpr);
-    falseValue = resolveValue(node->falseExpr);
+    // We have at least one non-constant value, use branching to not perform both sides
+    const std::string codeLoc = node->codeLoc.toPrettyLineAndColumn();
+    llvm::BasicBlock *condTrue = createBlock("cond.true." + codeLoc);
+    llvm::BasicBlock *condFalse = createBlock("cond.false." + codeLoc);
+    llvm::BasicBlock *condExit = createBlock("cond.exit." + codeLoc);
+
+    // Jump from original block to true or false block, depending on condition
+    insertCondJump(condValue, condTrue, condFalse);
+
+    // Fill true block
+    switchToBlock(condTrue);
+    llvm::Value *trueValue = resolveValue(trueNode);
+    insertJump(condExit);
+
+    // Fill false block
+    switchToBlock(condFalse);
+    llvm::Value *falseValue = resolveValue(falseNode);
+    insertJump(condExit);
+
+    // Fill the exit block
+    switchToBlock(condExit);
+    llvm::PHINode* phiInst = builder.CreatePHI(trueValue->getType(), 2, "cond.result");
+    phiInst->addIncoming(trueValue, condTrue);
+    phiInst->addIncoming(falseValue, condFalse);
+    resultValue = phiInst;
   }
 
-  llvm::Value *resultValue = builder.CreateSelect(condValue, trueValue, falseValue);
   return LLVMExprResult{.value = resultValue};
 }
 
