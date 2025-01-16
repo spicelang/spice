@@ -132,7 +132,16 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     resultValue = phiInst;
   }
 
-  return LLVMExprResult{.value = resultValue};
+  // If we have an anonymous symbol for this ternary expr, make sure that it has an address to reference.
+  SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+  llvm::Value *resultPtr = nullptr;
+  if (anonymousSymbol != nullptr) {
+    resultPtr = insertAlloca(anonymousSymbol->getQualType().toLLVMType(sourceFile));
+    insertStore(resultValue, resultPtr);
+    anonymousSymbol->updateAddress(resultPtr);
+  }
+
+  return LLVMExprResult{.value = resultValue, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
 std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
