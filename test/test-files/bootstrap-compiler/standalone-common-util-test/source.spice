@@ -44,7 +44,9 @@ f<int> main() {
     }
     const String cim = getCircularImportMessage(sourceFiles);
     printf("Circular error message:\n%s\n", cim);
+    // buildVersionInfo
     const String versionInfo = buildVersionInfo();
     printf("Version info:\n%s\n", versionInfo);
+
     printf("All assertions passed!");
 }

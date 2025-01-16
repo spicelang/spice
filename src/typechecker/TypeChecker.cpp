@@ -975,15 +975,15 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     return visit(node->condition);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
-  HANDLE_UNRESOLVED_TYPE_ER(conditionType)
-  const QualType trueType = node->isShortened ? conditionType : std::any_cast<ExprResult>(visit(node->trueExpr)).type;
+  const auto condition = std::any_cast<ExprResult>(visit(node->condition));
+  HANDLE_UNRESOLVED_TYPE_ER(condition.type)
+  const auto [trueType, trueEntry] = node->isShortened ? condition : std::any_cast<ExprResult>(visit(node->trueExpr));
   HANDLE_UNRESOLVED_TYPE_ER(trueType)
-  const QualType falseType = std::any_cast<ExprResult>(visit(node->falseExpr)).type;
+  const auto [falseType, falseEntry] = std::any_cast<ExprResult>(visit(node->falseExpr));
   HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
   // Check if the condition evaluates to bool
-  if (!conditionType.is(TY_BOOL))
+  if (!condition.type.is(TY_BOOL))
     SOFT_ERROR_ER(node->condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
@@ -994,7 +994,22 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
                       falseType.getName(true))
 
-  return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx)};
+  // If there is an anonymous symbol attached to left or right, remove it,
+  // since the result takes over the ownership of any destructible object.
+  const bool removeAnonymousSymbolTrueSide = trueEntry && trueEntry->anonymous;
+  if (removeAnonymousSymbolTrueSide)
+    currentScope->symbolTable.deleteAnonymous(trueEntry->name);
+  const bool removeAnonymousSymbolFalseSide = falseEntry && falseEntry->anonymous;
+  if (removeAnonymousSymbolFalseSide)
+    currentScope->symbolTable.deleteAnonymous(falseEntry->name);
+
+  // Create a new anonymous symbol for the result if required
+  const QualType& returnType = trueType;
+  SymbolTableEntry *anonymousSymbol = nullptr;
+  if (removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide)
+    anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
+
+  return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx), anonymousSymbol};
 }
 
 std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
@@ -1745,10 +1760,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
 
-    // Only ordinary function calls can be constructors
-    if (data.isCtorCall()) {
-      assert(data.thisType.is(TY_STRUCT));
-    }
+    // If the call is no ordinary call, it must be a constructor, which takes a struct as this type.
+    assert(data.isOrdinaryCall() || data.thisType.is(TY_STRUCT));
   }
 
   if (!data.isFctPtrCall()) {
@@ -1812,7 +1825,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
                     "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
     returnType = returnType.getWithBodyScope(spiceStruct->scope).replaceBaseType(returnBaseType);
-
     returnType = mapImportedScopeTypeToLocalType(returnType.getBase().getBodyScope(), returnType);
 
     // Add anonymous symbol to keep track of de-allocation

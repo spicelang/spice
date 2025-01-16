@@ -205,7 +205,7 @@ SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc, size_t nu
 }
 
 /**
- * Check if a capture exists in the current or any parent scope scope and return it if possible
+ * Check if a capture exists in the current or any parent scope and return it if possible
  *
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
@@ -237,7 +237,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
 }
 
 /**
- * Set capturing for this scope to required.
+ * Set capturing for this scope required.
  */
 void SymbolTable::setCapturingRequired() { capturingRequired = true; }
 
