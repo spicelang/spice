@@ -564,14 +564,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
 
       // Call copy ctor if required
-      if (localVarType.is(TY_STRUCT) && !node->isFctParam && !rhs.isTemporary()) {
-        Scope *matchScope = localVarType.getBodyScope();
-        assert(matchScope != nullptr);
-        // Check if we have a no-args ctor to call
-        const QualType &thisType = localVarType;
-        const ArgList args = {{thisType.toConstRef(node), false}};
-        node->calledCopyCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
-      }
+      if (localVarType.is(TY_STRUCT) && !node->isFctParam && !rhs.isTemporary())
+        node->calledCopyCtor = matchCopyCtor(localVarType, node);
 
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
@@ -977,9 +971,11 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Visit condition
   const auto condition = std::any_cast<ExprResult>(visit(node->condition));
   HANDLE_UNRESOLVED_TYPE_ER(condition.type)
-  const auto [trueType, trueEntry] = node->isShortened ? condition : std::any_cast<ExprResult>(visit(node->trueExpr));
+  const auto trueExpr = node->isShortened ? condition : std::any_cast<ExprResult>(visit(node->trueExpr));
+  const auto [trueType, trueEntry] = trueExpr;
   HANDLE_UNRESOLVED_TYPE_ER(trueType)
-  const auto [falseType, falseEntry] = std::any_cast<ExprResult>(visit(node->falseExpr));
+  const auto falseExpr = std::any_cast<ExprResult>(visit(node->falseExpr));
+  const auto [falseType, falseEntry] = falseExpr;
   HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
   // Check if the condition evaluates to bool
@@ -997,17 +993,27 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // If there is an anonymous symbol attached to left or right, remove it,
   // since the result takes over the ownership of any destructible object.
   const bool removeAnonymousSymbolTrueSide = trueEntry && trueEntry->anonymous;
-  if (removeAnonymousSymbolTrueSide)
+  if (removeAnonymousSymbolTrueSide) {
     currentScope->symbolTable.deleteAnonymous(trueEntry->name);
+  } else if (trueEntry && !trueEntry->anonymous && !trueTypeModified.isTriviallyCopyable(node)) {
+    node->trueSideCallsCopyCtor = true;
+  }
   const bool removeAnonymousSymbolFalseSide = falseEntry && falseEntry->anonymous;
-  if (removeAnonymousSymbolFalseSide)
+  if (removeAnonymousSymbolFalseSide) {
     currentScope->symbolTable.deleteAnonymous(falseEntry->name);
+  } else if (falseEntry && !falseEntry->anonymous && !falseTypeModified.isTriviallyCopyable(node)) {
+    node->falseSideCallsCopyCtor = true;
+  }
 
   // Create a new anonymous symbol for the result if required
-  const QualType& returnType = trueType;
+  const QualType &returnType = trueType;
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide)
     anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
+
+  // Lookup copy ctor if at least one side needs it
+  if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor)
+    node->calledCopyCtor = matchCopyCtor(trueTypeModified, node);
 
   return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx), anonymousSymbol};
 }
@@ -1951,9 +1957,11 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry) {
-      const std::string name = thisType.getBase().getName(false, true);
-      SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
-                      "The type '" + name + "' does not have a member with the name '" + identifier + "'")
+      std::stringstream errorMsg;
+      errorMsg << "The type '";
+      errorMsg << thisType.getBase().getName(false, true);
+      errorMsg << "' does not have a member with the name '" << identifier << "'";
+      SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER, errorMsg.str())
     }
     if (!fieldEntry->getQualType().getBase().isOneOf({TY_STRUCT, TY_INTERFACE}))
       SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
@@ -2590,6 +2598,13 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const
   }
 
   return false; // Violated
+}
+
+Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode* node) {
+  Scope *matchScope = thisType.getBodyScope();
+  assert(matchScope != nullptr);
+  const ArgList args = {{thisType.toConstRef(node), false}};
+  return FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
 }
 
 QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const {
