@@ -137,6 +137,9 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
     structAddr = insertInBoundsGEP(thisType, thisPtr, indices);
   } else {
     structAddr = entry->getAddress();
+    // For optional parameter initializers we need this exception
+    if (!structAddr)
+      return;
   }
   assert(structAddr != nullptr);
   generateCtorOrDtorCall(structAddr, ctorOrDtor, args);

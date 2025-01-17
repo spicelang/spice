@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:12:
+Return of temporary value: Cannot return reference to temporary value
+
+2  return 1.2;
+          ^^^

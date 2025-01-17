@@ -545,14 +545,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
     auto [rhsTy, rhsEntry] = rhs;
 
-    // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-    if (rhsEntry != nullptr && rhsEntry->anonymous) {
+    // Visit data type
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
+
+    // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it
+    if (!localVarType.isRef() && rhsEntry != nullptr && rhsEntry->anonymous) {
       currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
       rhs.entry = rhsEntry = nullptr;
     }
-
-    // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
