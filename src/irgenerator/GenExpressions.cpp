@@ -120,12 +120,12 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     switchToBlock(condTrue);
     llvm::Value *trueValue = nullptr;
     llvm::Value* truePtr = nullptr;
-    if (node->falseCalledCopyCtor) { // both sides or only the false side needs copy ctor call
+    if (node->falseSideCallsCopyCtor) { // both sides or only the false side needs copy ctor call
       truePtr = resolveAddress(trueNode);
-    } else if (node->trueCalledCopyCtor) { // only true side needs copy ctor call
+    } else if (node->trueSideCallsCopyCtor) { // only true side needs copy ctor call
       llvm::Value* originalPtr = resolveAddress(trueNode);
       truePtr = insertAlloca(trueNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
-      generateCtorOrDtorCall(truePtr, node->trueCalledCopyCtor, {originalPtr});
+      generateCtorOrDtorCall(truePtr, node->calledCopyCtor, {originalPtr});
     } else { // neither true nor false side need copy ctor call
       trueValue = resolveValue(trueNode);
     }
@@ -135,12 +135,12 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     switchToBlock(condFalse);
     llvm::Value *falseValue = nullptr;
     llvm::Value *falsePtr = nullptr;
-    if (node->trueCalledCopyCtor) { // both sides or only the true side needs copy ctor call
+    if (node->trueSideCallsCopyCtor) { // both sides or only the true side needs copy ctor call
       falsePtr = resolveAddress(falseNode);
-    } else if (node->falseCalledCopyCtor) { // only false side needs copy ctor call
+    } else if (node->falseSideCallsCopyCtor) { // only false side needs copy ctor call
       llvm::Value* originalPtr = resolveAddress(falseNode);
       falsePtr = insertAlloca(falseNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
-      generateCtorOrDtorCall(falsePtr, node->falseCalledCopyCtor, {originalPtr});
+      generateCtorOrDtorCall(falsePtr, node->calledCopyCtor, {originalPtr});
     } else { // neither true nor false side need copy ctor call
       falseValue = resolveValue(falseNode);
     }
@@ -149,13 +149,13 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     // Fill the exit block
     switchToBlock(condExit);
     llvm::Type *resultType = node->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-    if (node->trueCalledCopyCtor || node->falseCalledCopyCtor) { // at least one side needs copy ctor call
+    if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor) { // at least one side needs copy ctor call
       llvm::PHINode* phiInst = builder.CreatePHI(builder.getPtrTy(), 2, "cond.result");
       phiInst->addIncoming(truePtr, condTrue);
       phiInst->addIncoming(falsePtr, condFalse);
-      if (node->trueCalledCopyCtor && node->falseCalledCopyCtor) { // both sides need copy ctor call
+      if (node->trueSideCallsCopyCtor && node->falseSideCallsCopyCtor) { // both sides need copy ctor call
         resultPtr = insertAlloca(resultType);
-        generateCtorOrDtorCall(resultPtr, node->trueCalledCopyCtor, {phiInst});
+        generateCtorOrDtorCall(resultPtr, node->calledCopyCtor, {phiInst});
       } else {
         resultPtr = phiInst;
       }

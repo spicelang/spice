@@ -996,13 +996,13 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   if (removeAnonymousSymbolTrueSide) {
     currentScope->symbolTable.deleteAnonymous(trueEntry->name);
   } else if (trueEntry && !trueEntry->anonymous && !trueTypeModified.isTriviallyCopyable(node)) {
-    node->trueCalledCopyCtor = matchCopyCtor(trueTypeModified, node);
+    node->trueSideCallsCopyCtor = true;
   }
   const bool removeAnonymousSymbolFalseSide = falseEntry && falseEntry->anonymous;
   if (removeAnonymousSymbolFalseSide) {
     currentScope->symbolTable.deleteAnonymous(falseEntry->name);
   } else if (falseEntry && !falseEntry->anonymous && !falseTypeModified.isTriviallyCopyable(node)) {
-    node->falseCalledCopyCtor = matchCopyCtor(falseTypeModified, node);
+    node->falseSideCallsCopyCtor = true;
   }
 
   // Create a new anonymous symbol for the result if required
@@ -1010,6 +1010,10 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide)
     anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
+
+  // Lookup copy ctor if at least one side needs it
+  if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor)
+    node->calledCopyCtor = matchCopyCtor(trueTypeModified, node);
 
   return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx), anonymousSymbol};
 }
