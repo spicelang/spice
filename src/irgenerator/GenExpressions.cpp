@@ -98,7 +98,9 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   const LogicalOrExprNode *trueNode = node->isShortened ? node->condition : node->trueExpr;
   const LogicalOrExprNode *falseNode = node->falseExpr;
 
-  llvm::Value* resultValue;
+  llvm::Value* resultValue = nullptr;
+  llvm::Value* resultPtr = nullptr;
+  SymbolTableEntry *anonymousSymbol = nullptr;
   if (trueNode->hasCompileTimeValue() && falseNode->hasCompileTimeValue()) {
     // If both are constants, we can simply emit a selection instruction
     llvm::Value *trueValue = resolveValue(trueNode);
@@ -116,29 +118,62 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
 
     // Fill true block
     switchToBlock(condTrue);
-    llvm::Value *trueValue = resolveValue(trueNode);
+    llvm::Value *trueValue = nullptr;
+    llvm::Value* truePtr = nullptr;
+    if (node->falseCalledCopyCtor) { // both sides or only the false side needs copy ctor call
+      truePtr = resolveAddress(trueNode);
+    } else if (node->trueCalledCopyCtor) { // only true side needs copy ctor call
+      llvm::Value* originalPtr = resolveAddress(trueNode);
+      truePtr = insertAlloca(trueNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
+      generateCtorOrDtorCall(truePtr, node->trueCalledCopyCtor, {originalPtr});
+    } else { // neither true nor false side need copy ctor call
+      trueValue = resolveValue(trueNode);
+    }
     insertJump(condExit);
 
     // Fill false block
     switchToBlock(condFalse);
-    llvm::Value *falseValue = resolveValue(falseNode);
+    llvm::Value *falseValue = nullptr;
+    llvm::Value *falsePtr = nullptr;
+    if (node->trueCalledCopyCtor) { // both sides or only the true side needs copy ctor call
+      falsePtr = resolveAddress(falseNode);
+    } else if (node->falseCalledCopyCtor) { // only false side needs copy ctor call
+      llvm::Value* originalPtr = resolveAddress(falseNode);
+      falsePtr = insertAlloca(falseNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
+      generateCtorOrDtorCall(falsePtr, node->falseCalledCopyCtor, {originalPtr});
+    } else { // neither true nor false side need copy ctor call
+      falseValue = resolveValue(falseNode);
+    }
     insertJump(condExit);
 
     // Fill the exit block
     switchToBlock(condExit);
-    llvm::PHINode* phiInst = builder.CreatePHI(trueValue->getType(), 2, "cond.result");
-    phiInst->addIncoming(trueValue, condTrue);
-    phiInst->addIncoming(falseValue, condFalse);
-    resultValue = phiInst;
-  }
+    llvm::Type *resultType = node->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+    if (node->trueCalledCopyCtor || node->falseCalledCopyCtor) { // at least one side needs copy ctor call
+      llvm::PHINode* phiInst = builder.CreatePHI(builder.getPtrTy(), 2, "cond.result");
+      phiInst->addIncoming(truePtr, condTrue);
+      phiInst->addIncoming(falsePtr, condFalse);
+      if (node->trueCalledCopyCtor && node->falseCalledCopyCtor) { // both sides need copy ctor call
+        resultPtr = insertAlloca(resultType);
+        generateCtorOrDtorCall(resultPtr, node->trueCalledCopyCtor, {phiInst});
+      } else {
+        resultPtr = phiInst;
+      }
+    } else { // neither true nor false side need copy ctor call
+      assert(trueValue != nullptr);
+      llvm::PHINode* phiInst = builder.CreatePHI(resultType, 2, "cond.result");
+      phiInst->addIncoming(trueValue, condTrue);
+      phiInst->addIncoming(falseValue, condFalse);
+      resultValue = phiInst;
+    }
 
-  // If we have an anonymous symbol for this ternary expr, make sure that it has an address to reference.
-  SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
-  llvm::Value *resultPtr = nullptr;
-  if (anonymousSymbol != nullptr) {
-    resultPtr = insertAlloca(anonymousSymbol->getQualType().toLLVMType(sourceFile));
-    insertStore(resultValue, resultPtr);
-    anonymousSymbol->updateAddress(resultPtr);
+    // If we have an anonymous symbol for this ternary expr, make sure that it has an address to reference.
+    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    if (anonymousSymbol != nullptr) {
+      resultPtr = insertAlloca(anonymousSymbol->getQualType().toLLVMType(sourceFile));
+      insertStore(resultValue, resultPtr);
+      anonymousSymbol->updateAddress(resultPtr);
+    }
   }
 
   return LLVMExprResult{.value = resultValue, .ptr = resultPtr, .entry = anonymousSymbol};

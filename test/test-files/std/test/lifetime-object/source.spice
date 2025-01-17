@@ -75,4 +75,36 @@ f<int> main() {
         // Return value receiver - const ref
         const LifetimeObject& loConstRef = spawnLO(); // Assigned to loConstRef
     }
+
+    printf("Ternary (true temporary, false temporary)\n");
+    {
+        bool cond = true;
+        LifetimeObject loCopy1 = cond ? LifetimeObject() : LifetimeObject(); // ctor calls in both branches
+        LifetimeObject loCopy2 = !cond ? LifetimeObject() : LifetimeObject(); // ctor calls in both branches
+    }
+
+    printf("Ternary (true temporary, false not temporary)\n");
+    {
+        bool cond = true;
+        LifetimeObject lo = LifetimeObject();
+        LifetimeObject loCopy1 = cond ? LifetimeObject() : lo; // ctor in true branch, copy ctor in false branch
+        LifetimeObject loCopy2 = !cond ? LifetimeObject() : lo; // ctor in true branch, copy ctor in false branch
+    }
+
+    printf("Ternary (true not temporary, false temporary)\n");
+    {
+        bool cond = true;
+        LifetimeObject lo = LifetimeObject();
+        LifetimeObject loCopy1 = cond ? lo : LifetimeObject(); // copy ctor in true branch, ctor in false branch
+        LifetimeObject loCopy2 = !cond ? lo : LifetimeObject(); // copy ctor in true branch, ctor in false branch
+    }
+
+    printf("Ternary (true not temporary, false not temporary)\n");
+    {
+        bool cond = true;
+        LifetimeObject lo1 = LifetimeObject();
+        LifetimeObject lo2 = LifetimeObject();
+        LifetimeObject loCopy1 = cond ? lo1 : lo2; // copy ctor call in both branches
+        LifetimeObject loCopy2 = !cond ? lo1 : lo2; // copy ctor call in both branches
+    }
 }

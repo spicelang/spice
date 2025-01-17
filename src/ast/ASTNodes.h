@@ -1558,6 +1558,8 @@ public:
   LogicalOrExprNode *condition = nullptr;
   LogicalOrExprNode *trueExpr = nullptr;
   LogicalOrExprNode *falseExpr = nullptr;
+  Function *trueCalledCopyCtor = nullptr;
+  Function *falseCalledCopyCtor = nullptr;
   bool isShortened = false;
 };
 

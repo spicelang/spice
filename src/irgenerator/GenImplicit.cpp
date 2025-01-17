@@ -148,7 +148,7 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
 void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor,
                                          const std::vector<llvm::Value *> &args) const {
   // Build parameter list
-  std::vector<llvm::Value *> argValues = {structAddr};
+  std::vector argValues = {structAddr};
   argValues.insert(argValues.end(), args.begin(), args.end());
 
   // Generate function call
