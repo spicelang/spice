@@ -1,0 +1,11 @@
+// This function generates two substantiations: One with the default value and one with the given value from
+// the caller. If the default value is used, it has to be destroyed at the end of the scope. Therefore, the
+// first substantiation calls the dtor and the second one not.
+p test(const String& t = String("default")) {
+    printf("%s", t);
+}
+
+f<int> main() {
+    test();
+    test(String("test"));
+}

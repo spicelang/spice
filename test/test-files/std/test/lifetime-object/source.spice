@@ -6,7 +6,7 @@ f<LifetimeObject> spawnLO() {
 
 f<int> main() {
     // Ignored return value of ctor
-    printf("Ignored return value of ctor");
+    printf("Ignored return value of ctor:\n");
     {
         LifetimeObject();
     }
@@ -74,14 +74,5 @@ f<int> main() {
         LifetimeObject lo = spawnLO(); // Assigned to lo
         // Return value receiver - const ref
         const LifetimeObject& loConstRef = spawnLO(); // Assigned to loConstRef
-    }
-
-    printf("Ternary\n");
-    {
-        bool cond = false;
-        LifetimeObject lo1 = LifetimeObject();
-        LifetimeObject lo2 = LifetimeObject();
-        LifetimeObject lo3 = cond ? lo1 : lo2;
-        // ToDo: The dtor of lo2 is called twice
     }
 }

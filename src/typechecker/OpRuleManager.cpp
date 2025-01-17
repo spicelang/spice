@@ -27,7 +27,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhsType, isDecl, isReturn);
 
-  // Allow pointers and arrays of the same type straight away
+  // Allow pointers and references of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true)) {
     // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
     if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
@@ -125,6 +125,8 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     const bool isDeclOrReturn = isDecl || isReturn;
     if (isDeclOrReturn && !lhsType.canBind(rhsType, rhs.isTemporary()))
       throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference variables/fields");
+    if (isReturn && rhs.isTemporary())
+      throw SemanticError(node, RETURN_OF_TEMPORARY_VALUE, "Cannot return reference to temporary value");
     return lhsType;
   }
   // Allow dyn[] (empty array literal) to any array

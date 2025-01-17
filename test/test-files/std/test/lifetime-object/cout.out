@@ -1,0 +1,28 @@
+Ignored return value of ctor:
+-- LifetimeObject 1 was created (ctor)
+-- LifetimeObject 1 (dtor)
+Normal lifecycle:
+-- LifetimeObject 2 was created (ctor)
+-- LifetimeObject 2 was copied to LifetimeObject 3 (copy ctor)
+-- LifetimeObject 3 (dtor)
+-- LifetimeObject 2 (dtor)
+Return from lambda as value:
+-- LifetimeObject 4 was created (ctor)
+-- LifetimeObject 5 was created (ctor)
+-- LifetimeObject 6 was created (ctor)
+-- LifetimeObject 6 (dtor)
+-- LifetimeObject 5 (dtor)
+-- LifetimeObject 4 (dtor)
+Return from lambda as reference:
+-- LifetimeObject 7 was created (ctor)
+-- LifetimeObject 7 (dtor)
+Return from lambda as const reference:
+-- LifetimeObject 8 was created (ctor)
+-- LifetimeObject 8 (dtor)
+Return from function as value:
+-- LifetimeObject 9 was created (ctor)
+-- LifetimeObject 10 was created (ctor)
+-- LifetimeObject 11 was created (ctor)
+-- LifetimeObject 11 (dtor)
+-- LifetimeObject 10 (dtor)
+-- LifetimeObject 9 (dtor)

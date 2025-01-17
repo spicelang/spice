@@ -1,0 +1,38 @@
+unsigned int OBJECT_COUNTER = 0;
+
+/**
+ * Object that prints to cout when one of its lifetime methods is called.
+ * This is useful for language verification and debugging purposes.
+ */
+public type LifetimeObject struct {
+    int objectNumber
+    bool ctorCalled = false
+    bool copyCtorCalled = false
+    bool dtorCalled = false
+}
+
+public p LifetimeObject.ctor(int objectNumber = ++OBJECT_COUNTER) {
+    if this.ctorCalled {
+        printf("-- LifetimeObject %d ctor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);
+    }
+    this.objectNumber = objectNumber;
+    this.ctorCalled = true;
+    printf("-- LifetimeObject %d was created (ctor)\n", this.objectNumber);
+}
+
+public p LifetimeObject.ctor(const LifetimeObject& other) {
+    if this.copyCtorCalled {
+        printf("-- LifetimeObject %d copy ctor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);
+    }
+    this.objectNumber = ++OBJECT_COUNTER;
+    this.copyCtorCalled = true;
+    printf("-- LifetimeObject %d was copied to LifetimeObject %d (copy ctor)\n", other.objectNumber, this.objectNumber);
+}
+
+public p LifetimeObject.dtor() {
+    if this.dtorCalled {
+        printf("-- LifetimeObject %d dtor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);
+    }
+    this.dtorCalled = true;
+    printf("-- LifetimeObject %d (dtor)\n", this.objectNumber);
+}

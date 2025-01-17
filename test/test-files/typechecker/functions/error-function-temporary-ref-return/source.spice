@@ -1,0 +1,7 @@
+f<const double&> test() {
+    return 1.2;
+}
+
+f<int> main() {
+    double res = test();
+}
