@@ -660,12 +660,6 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     // Execute operation
     lhs = conversionManager.getPrefixNotInst(node, lhs, lhsSTy);
 
-    // This operator can not work in-place, so we need additional memory
-    lhs.ptr = insertAlloca(lhs.value->getType());
-
-    // Store the new value
-    insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
-
     break;
   }
   case PrefixUnaryExprNode::OP_BITWISE_NOT: {
@@ -674,12 +668,6 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     // Execute operation
     lhs = conversionManager.getPrefixBitwiseNotInst(node, lhs, lhsSTy);
-
-    // This operator can not work in-place, so we need additional memory
-    lhs.ptr = insertAlloca(lhs.value->getType());
-
-    // Store the new value
-    insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
     break;
   }
