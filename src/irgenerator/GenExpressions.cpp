@@ -98,8 +98,8 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   const LogicalOrExprNode *trueNode = node->isShortened ? node->condition : node->trueExpr;
   const LogicalOrExprNode *falseNode = node->falseExpr;
 
-  llvm::Value* resultValue = nullptr;
-  llvm::Value* resultPtr = nullptr;
+  llvm::Value *resultValue = nullptr;
+  llvm::Value *resultPtr = nullptr;
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (trueNode->hasCompileTimeValue() && falseNode->hasCompileTimeValue()) {
     // If both are constants, we can simply emit a selection instruction
@@ -118,50 +118,54 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
 
     // Fill true block
     switchToBlock(condTrue);
+    const QualType &resultType = node->getEvaluatedSymbolType(manIdx);
     llvm::Value *trueValue = nullptr;
-    llvm::Value* truePtr = nullptr;
-    if (node->falseSideCallsCopyCtor) { // both sides or only the false side needs copy ctor call
+    llvm::Value *truePtr = nullptr;
+    if (node->falseSideCallsCopyCtor || resultType.isRef()) { // both sides or only the false side needs copy ctor call
       truePtr = resolveAddress(trueNode);
     } else if (node->trueSideCallsCopyCtor) { // only true side needs copy ctor call
-      llvm::Value* originalPtr = resolveAddress(trueNode);
+      llvm::Value *originalPtr = resolveAddress(trueNode);
       truePtr = insertAlloca(trueNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
       generateCtorOrDtorCall(truePtr, node->calledCopyCtor, {originalPtr});
     } else { // neither true nor false side need copy ctor call
       trueValue = resolveValue(trueNode);
     }
+    // Set the true block to the current insert point, since it could have changed in the meantime
+    condTrue = builder.GetInsertBlock();
     insertJump(condExit);
 
     // Fill false block
     switchToBlock(condFalse);
     llvm::Value *falseValue = nullptr;
     llvm::Value *falsePtr = nullptr;
-    if (node->trueSideCallsCopyCtor) { // both sides or only the true side needs copy ctor call
+    if (node->trueSideCallsCopyCtor || resultType.isRef()) { // both sides or only the true side needs copy ctor call
       falsePtr = resolveAddress(falseNode);
     } else if (node->falseSideCallsCopyCtor) { // only false side needs copy ctor call
-      llvm::Value* originalPtr = resolveAddress(falseNode);
+      llvm::Value *originalPtr = resolveAddress(falseNode);
       falsePtr = insertAlloca(falseNode->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile));
       generateCtorOrDtorCall(falsePtr, node->calledCopyCtor, {originalPtr});
     } else { // neither true nor false side need copy ctor call
       falseValue = resolveValue(falseNode);
     }
+    // Set the true block to the current insert point, since it could have changed in the meantime
+    condFalse = builder.GetInsertBlock();
     insertJump(condExit);
 
     // Fill the exit block
     switchToBlock(condExit);
-    llvm::Type *resultType = node->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-    if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor) { // at least one side needs copy ctor call
-      llvm::PHINode* phiInst = builder.CreatePHI(builder.getPtrTy(), 2, "cond.result");
+    if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor || resultType.isRef()) { // one side calls copy ctor
+      llvm::PHINode *phiInst = builder.CreatePHI(builder.getPtrTy(), 2, "cond.result");
       phiInst->addIncoming(truePtr, condTrue);
       phiInst->addIncoming(falsePtr, condFalse);
       if (node->trueSideCallsCopyCtor && node->falseSideCallsCopyCtor) { // both sides need copy ctor call
-        resultPtr = insertAlloca(resultType);
+        resultPtr = insertAlloca(resultType.toLLVMType(sourceFile));
         generateCtorOrDtorCall(resultPtr, node->calledCopyCtor, {phiInst});
       } else {
         resultPtr = phiInst;
       }
-    } else { // neither true nor false side need copy ctor call
+    } else { // neither true nor false side calls copy ctor
       assert(trueValue != nullptr);
-      llvm::PHINode* phiInst = builder.CreatePHI(resultType, 2, "cond.result");
+      llvm::PHINode *phiInst = builder.CreatePHI(resultType.toLLVMType(sourceFile), 2, "cond.result");
       phiInst->addIncoming(trueValue, condTrue);
       phiInst->addIncoming(falseValue, condFalse);
       resultValue = phiInst;
@@ -170,8 +174,10 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     // If we have an anonymous symbol for this ternary expr, make sure that it has an address to reference.
     anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
     if (anonymousSymbol != nullptr) {
-      resultPtr = insertAlloca(anonymousSymbol->getQualType().toLLVMType(sourceFile));
-      insertStore(resultValue, resultPtr);
+      if (!resultPtr) {
+        resultPtr = insertAlloca(anonymousSymbol->getQualType().toLLVMType(sourceFile));
+        insertStore(resultValue, resultPtr);
+      }
       anonymousSymbol->updateAddress(resultPtr);
     }
   }

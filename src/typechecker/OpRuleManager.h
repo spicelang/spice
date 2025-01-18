@@ -14,6 +14,7 @@ namespace spice::compiler {
 class ASTNode;
 class TypeChecker;
 class GlobalResourceManager;
+class Function;
 
 // Custom error message prefixes
 const char *const ERROR_MSG_RETURN = "Passed wrong data type to return statement";
@@ -594,7 +595,7 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker);
 
   // Public methods
-  QualType getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
+  std::pair<QualType, Function*> getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
                                bool isReturn = false, const char *errMsgPrefix = "") const;
   QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                     bool isDecl = false) const;

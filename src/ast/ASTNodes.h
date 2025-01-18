@@ -1273,6 +1273,7 @@ public:
 
   // Public members
   AssignExprNode *assignExpr = nullptr;
+  Function *calledCopyCtor = nullptr;
   bool hasReturnValue = false;
 };
 

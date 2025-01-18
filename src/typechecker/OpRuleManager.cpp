@@ -14,15 +14,16 @@ namespace spice::compiler {
 OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
-QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
-                                            bool isReturn, const char *errMsgPrefix) const {
+std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs,
+                                                                   const ExprResult &rhs, bool isDecl, bool isReturn,
+                                                                   const char *errMsgPrefix) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
 
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhsType.is(TY_DYN))
-    return rhsType;
+    return {rhsType, nullptr};
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhsType, isDecl, isReturn);
@@ -32,7 +33,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
     if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
       rhs.entry->updateState(MOVED, node);
-    return rhsType;
+    return {rhsType, nullptr};
   }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
@@ -41,30 +42,34 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true)) {
       // Check if we support nrvo. If yes, skip the implicit copy ctor call
       const bool supportsNRVO = isReturn && !rhs.isTemporary();
+      Function *copyCtor = nullptr;
       if (rhsModified.is(TY_STRUCT) && rhs.entry != nullptr && !supportsNRVO)
-        typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
-      return lhsType;
+        copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+      return {lhsType, copyCtor};
     }
   }
   // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
   if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
-    return rhsType;
+    return {rhsType, nullptr};
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
     // Check if we support nrvo. If yes, skip the implicit copy ctor call
     const bool supportsNRVO = isReturn && !rhs.isTemporary();
-    if (rhs.entry != nullptr && !supportsNRVO)
-      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
-    return rhsType;
+    Function *copyCtor = nullptr;
+    if (rhs.entry != nullptr && !supportsNRVO && !isReturn && !rhs.isTemporary())
+      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+    return {rhsType, copyCtor};
   }
 
   // Check common type combinations
   const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, isReturn);
   if (!resultType.is(TY_INVALID))
-    return resultType;
+    return {resultType, nullptr};
 
   // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, std::size(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, errMsgPrefix);
+  const QualType binOpType =
+      validateBinaryOperation(node, ASSIGN_OP_RULES, std::size(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, errMsgPrefix);
+  return {binOpType, nullptr};
 }
 
 QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,

@@ -159,7 +159,7 @@ private:
   void createDtorBodyPreamble(const Scope *bodyScope);
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node);
-  void implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node);
+  Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   void implicitlyCallDeallocate(const ASTNode *node);
   void doScopeCleanup(StmtLstNode *node);

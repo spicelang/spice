@@ -82,7 +82,7 @@ bool TypeSpecifiers::match(TypeSpecifiers other, bool allowConstify) const {
   const TypeSpecifiers thisSpecifiers = *this;
 
   // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
-  if (allowConstify && thisSpecifiers.isConst && !other.isConst)
+  if (allowConstify && thisSpecifiers.isConst)
     other.isConst = true;
 
   // Check if specifiers are equal
