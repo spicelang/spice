@@ -543,6 +543,7 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   // Visit children
   for (SpiceParser::AssignExprContext *assignExpr : ctx->assignExpr())
     argLstNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExpr)));
+  argLstNode->argInfos.reserve(argLstNode->args.size());
 
   return concludeNode(argLstNode);
 }

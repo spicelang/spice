@@ -24,6 +24,7 @@ define dso_local i32 @main() #0 {
   %fat.ptr3 = alloca { ptr, ptr }, align 8
   %callbackWithArgs2 = alloca { ptr, ptr }, align 8
   %2 = alloca %struct.String, align 8
+  %arg.copy = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
@@ -49,7 +50,8 @@ define dso_local i32 @main() #0 {
   %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.3)
-  %14 = load %struct.String, ptr %2, align 8
+  call void @_ZN6String4ctorERK6String(ptr %arg.copy, ptr %2)
+  %14 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
   %15 = call i16 %fct4(%struct.String %14, i16 321)
   %16 = xor i16 %15, 956
@@ -58,6 +60,7 @@ define dso_local i32 @main() #0 {
   %19 = select i1 %18, i32 9, i32 12
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %19)
   call void @_ZN6String4dtorEv(ptr %2)
+  call void @_ZN6String4dtorEv(ptr %arg.copy)
   call void @_ZN6String4dtorEv(ptr %1)
   %21 = load i32, ptr %result, align 4
   ret i32 %21
@@ -116,6 +119,8 @@ define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   %8 = xor i16 %7, -1
   ret i16 %8
 }
+
+declare void @_ZN6String4ctorERK6String(ptr, ptr)
 
 declare void @_ZN6String4dtorEv(ptr)
 

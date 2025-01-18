@@ -152,7 +152,6 @@ f<int> main() {
         bool cond = true;
         LifetimeObject lo1 = LifetimeObject();
         LifetimeObject lo2 = LifetimeObject();
-        // ToDo: Copy function args if passed by val like here
         LifetimeObject lo3 = decideOnLOVal(cond, lo1, lo2);
         LifetimeObject lo4 = decideOnLOVal(!cond, lo1, lo2);
     }

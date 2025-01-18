@@ -1802,6 +1802,33 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
   }
 
+  // Generate arg infos
+  if (node->hasArgs) {
+    QualTypeList paramTypes;
+    if (data.isFctPtrCall()) {
+      const QualType &functionType = firstFragEntry->getQualType().getBase();
+      paramTypes = functionType.getFunctionParamTypes();
+    } else {
+      assert(data.callee != nullptr);
+      paramTypes = data.callee->getParamTypes();
+    }
+
+    node->argLst->argInfos.clear();
+    for (size_t argIdx = 0; argIdx < data.argResults.size(); argIdx++) {
+      const QualType &expectedType = paramTypes.at(argIdx);
+      const auto &[actualType, entry] = data.argResults.at(argIdx);
+
+      Function *copyCtor = nullptr;
+      if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
+        copyCtor = matchCopyCtor(actualType, node);
+        currentScope->symbolTable.insertAnonymous(actualType, node, argIdx + 1); // +1 because 0 is reserved for return value
+      }
+
+      node->argLst->argInfos.push_back(ArgLstNode::ArgInfo{copyCtor});
+    }
+    assert(node->argLst->argInfos.size() == node->argLst->args.size());
+  }
+
   // Retrieve return type
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().is(TY_FUNCTION) : data.callee->isFunction();
   QualType returnType;
@@ -1935,7 +1962,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
   // Create resolver function, that always returns a nullptr
-  TypeMatcher::ResolverFct resolverFct = [](const std::string &genericTypeName) { return nullptr; };
+  TypeMatcher::ResolverFct resolverFct = [](const std::string &) { return nullptr; };
 
   for (size_t i = 0; i < argResults.size(); i++) {
     const QualType &actualType = argResults.at(i).type;
