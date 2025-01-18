@@ -1,6 +1,6 @@
 import "std/test/lifetime-object";
 
-f<LifetimeObject> spawnLO() {
+/*f<LifetimeObject> spawnLO() {
     return LifetimeObject();
 }
 
@@ -16,7 +16,7 @@ f<LifetimeObject> decideOnLORef(bool cond, LifetimeObject& lo1, LifetimeObject& 
     LifetimeObject loCopy = cond ? lo1 : lo2; // Shoud do a copy
     const LifetimeObject& loRef = cond ? lo1 : lo2; // Should not do a copy
     return cond ? lo1 : lo2; // Return statement should do a copy
-}
+}*/
 
 f<LifetimeObject> decideOnLOVal(bool cond, LifetimeObject lo1, LifetimeObject lo2) {
     cond ? lo1 : lo2; // Shoud do a copy, although the result is ignored
@@ -27,7 +27,7 @@ f<LifetimeObject> decideOnLOVal(bool cond, LifetimeObject lo1, LifetimeObject lo
 
 f<int> main() {
     // Ignored return value of ctor
-    printf("Ignored return value of ctor:\n");
+    /*printf("Ignored return value of ctor:\n");
     {
         LifetimeObject();
     }
@@ -145,22 +145,21 @@ f<int> main() {
         LifetimeObject lo2 = LifetimeObject();
         LifetimeObject lo3 = decideOnLORef(cond, lo1, lo2);
         LifetimeObject lo4 = decideOnLORef(!cond, lo1, lo2);
-    }
+    }*/
 
     printf("Ternary function (val) return:\n");
     {
         bool cond = true;
         LifetimeObject lo1 = LifetimeObject();
         LifetimeObject lo2 = LifetimeObject();
-        // ToDo: Copy function args if passed by val like here
         LifetimeObject lo3 = decideOnLOVal(cond, lo1, lo2);
         LifetimeObject lo4 = decideOnLOVal(!cond, lo1, lo2);
     }
 
-    printf("Ternary receiving function result:\n");
+    /*printf("Ternary receiving function result:\n");
     {
         bool cond = false;
         LifetimeObject lo1 = cond ? spawnLO() : spawnLO();
         LifetimeObject lo2 = !cond ? (cond ? spawnLO() : spawnLO()) : spawnLO();
-    }
+    }*/
 }

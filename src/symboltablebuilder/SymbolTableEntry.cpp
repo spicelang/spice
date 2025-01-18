@@ -66,6 +66,7 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
  */
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
   assert(address != nullptr);
+  assert(address->getType()->isPointerTy());
   // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
   assert((scope->type != ScopeType::STRUCT && scope->type != ScopeType::INTERFACE) ||
          qualType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));

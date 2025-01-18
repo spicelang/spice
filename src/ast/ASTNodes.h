@@ -911,6 +911,11 @@ public:
 
 class ArgLstNode final : public ASTNode {
 public:
+  // Structs
+  struct ArgInfo {
+    Function* copyCtor = nullptr;
+  };
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -923,6 +928,7 @@ public:
 
   // Public members
   std::vector<AssignExprNode *> args;
+  std::vector<ArgInfo> argInfos;
 };
 
 // ======================================================== EnumItemLstNode ======================================================

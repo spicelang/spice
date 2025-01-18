@@ -143,6 +143,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
+      const auto &[copyCtor] = node->argLst->argInfos.at(i);
+
       const QualType &expectedSTy = paramSTypes.at(i);
       const QualType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
@@ -150,11 +152,30 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
       };
 
-      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
       if (matchFct(expectedSTy, actualSTy)) {
         // Resolve address if actual type is reference, otherwise value
-        llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
-        argValues.push_back(argValue);
+        if (actualSTy.isRef()) {
+          argValues.push_back(resolveAddress(argNode));
+        } else {
+          if (copyCtor) {
+            assert(!actualSTy.isTriviallyCopyable(node));
+            llvm::Value* originalPtr = resolveAddress(argNode);
+
+            // Generate copy ctor call
+            llvm::Type* valueType = actualSTy.toLLVMType(sourceFile);
+            llvm::Value* valueCopyPtr = insertAlloca(valueType, "arg.copy");
+            generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
+            llvm::Value* newValue = insertLoad(valueType, valueCopyPtr);
+
+            // Attach address of copy to anonymous symbol (+1 because return value is 0)
+            SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc, i + 1);
+            anonymousSymbol->updateAddress(valueCopyPtr);
+
+            argValues.push_back(newValue);
+          } else {
+            argValues.push_back(resolveValue(argNode));
+          }
+        }
       } else if (expectedSTy.isRef() && matchFct(expectedSTy.getContained(), actualSTy)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(argAddress);
