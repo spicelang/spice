@@ -106,17 +106,15 @@ define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   %result = alloca i16, align 2
   %str = alloca %struct.String, align 8
   %b = alloca i16, align 2
-  %3 = alloca i16, align 2
   store %struct.String %0, ptr %str, align 8
   store i16 %1, ptr %b, align 2
-  %4 = load ptr, ptr %str, align 8
-  %5 = load i16, ptr %b, align 2
-  %6 = sext i16 %5 to i32
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %4, i32 %6)
-  %8 = load i16, ptr %b, align 2
-  %9 = xor i16 %8, -1
-  store i16 %9, ptr %3, align 2
-  ret i16 %9
+  %3 = load ptr, ptr %str, align 8
+  %4 = load i16, ptr %b, align 2
+  %5 = sext i16 %4 to i32
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %3, i32 %5)
+  %7 = load i16, ptr %b, align 2
+  %8 = xor i16 %7, -1
+  ret i16 %8
 }
 
 declare void @_ZN6String4dtorEv(ptr)
