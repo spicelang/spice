@@ -120,7 +120,17 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
     const AssignExprNode* returnExpr = node->assignExpr;
-    returnValue = node->getEvaluatedSymbolType(manIdx).isRef() ? resolveAddress(returnExpr) : resolveValue(returnExpr);
+    const QualType &returnType = node->getEvaluatedSymbolType(manIdx);
+    if (node->calledCopyCtor) {
+      // Perform a copy
+      llvm::Value* originalAddress = resolveAddress(returnExpr);
+      llvm::Type* returnTy = returnType.toLLVMType(sourceFile);
+      llvm::Value* newAddress = insertAlloca(returnTy);
+      generateCtorOrDtorCall(newAddress, node->calledCopyCtor, {originalAddress});
+      returnValue = insertLoad(returnTy, newAddress);
+    } else {
+      returnValue = returnType.isRef() ? resolveAddress(returnExpr) : resolveValue(returnExpr);
+    }
   } else { // Try to load result variable value
     const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {

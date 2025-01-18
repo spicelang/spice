@@ -4,6 +4,27 @@ f<LifetimeObject> spawnLO() {
     return LifetimeObject();
 }
 
+f<LifetimeObject> decideOnLOConstRef(bool cond, const LifetimeObject& lo1, const LifetimeObject& lo2) {
+    cond ? lo1 : lo2; // Should not do a copy
+    LifetimeObject loCopy = cond ? lo1 : lo2; // Shoud do a copy
+    const LifetimeObject& loRef = cond ? lo1 : lo2; // Should not do a copy
+    return cond ? lo1 : lo2; // Return statement should do a copy
+}
+
+f<LifetimeObject> decideOnLORef(bool cond, LifetimeObject& lo1, LifetimeObject& lo2) {
+    cond ? lo1 : lo2; // Should not do a copy
+    LifetimeObject loCopy = cond ? lo1 : lo2; // Shoud do a copy
+    const LifetimeObject& loRef = cond ? lo1 : lo2; // Should not do a copy
+    return cond ? lo1 : lo2; // Return statement should do a copy
+}
+
+f<LifetimeObject> decideOnLOVal(bool cond, LifetimeObject lo1, LifetimeObject lo2) {
+    cond ? lo1 : lo2; // Shoud do a copy, although the result is ignored
+    LifetimeObject loCopy = cond ? lo1 : lo2; // Shoud do a copy
+    const LifetimeObject& loRef = cond ? lo1 : lo2; // Should not do a copy
+    return cond ? lo1 : lo2; // Return statement should do a copy
+}
+
 f<int> main() {
     // Ignored return value of ctor
     printf("Ignored return value of ctor:\n");
@@ -16,7 +37,7 @@ f<int> main() {
     {
         LifetimeObject lo = LifetimeObject(); // ctor call
         LifetimeObject loCopy = lo; // copy ctor call
-    } // dtor calls for both lo and loCopy at end of scope
+    }
 
     // Return from lambda as value
     printf("Return from lambda as value:\n");
@@ -106,5 +127,40 @@ f<int> main() {
         LifetimeObject lo2 = LifetimeObject();
         LifetimeObject loCopy1 = cond ? lo1 : lo2; // copy ctor call in both branches
         LifetimeObject loCopy2 = !cond ? lo1 : lo2; // copy ctor call in both branches
+    }
+
+    printf("Ternary function (const ref) return:\n");
+    {
+        bool cond = true;
+        LifetimeObject lo1 = LifetimeObject();
+        LifetimeObject lo2 = LifetimeObject();
+        LifetimeObject lo3 = decideOnLOConstRef(cond, lo1, lo2);
+        LifetimeObject lo4 = decideOnLOConstRef(!cond, lo1, lo2);
+    }
+
+    printf("Ternary function (ref) return:\n");
+    {
+        bool cond = true;
+        LifetimeObject lo1 = LifetimeObject();
+        LifetimeObject lo2 = LifetimeObject();
+        LifetimeObject lo3 = decideOnLORef(cond, lo1, lo2);
+        LifetimeObject lo4 = decideOnLORef(!cond, lo1, lo2);
+    }
+
+    printf("Ternary function (val) return:\n");
+    {
+        bool cond = true;
+        LifetimeObject lo1 = LifetimeObject();
+        LifetimeObject lo2 = LifetimeObject();
+        // ToDo: Copy function args if passed by val like here
+        LifetimeObject lo3 = decideOnLOVal(cond, lo1, lo2);
+        LifetimeObject lo4 = decideOnLOVal(!cond, lo1, lo2);
+    }
+
+    printf("Ternary receiving function result:\n");
+    {
+        bool cond = false;
+        LifetimeObject lo1 = cond ? spawnLO() : spawnLO();
+        LifetimeObject lo2 = !cond ? (cond ? spawnLO() : spawnLO()) : spawnLO();
     }
 }

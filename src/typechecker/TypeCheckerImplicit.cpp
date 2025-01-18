@@ -347,7 +347,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
  */
 Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName,
                                                   const ArgList &args, const ASTNode *node) {
-  QualType thisType = entry->getQualType().removeReferenceWrapper();
+  QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
@@ -364,11 +364,11 @@ Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry,
  * @param entry Symbol entry to use as 'this' pointer for the copy ctor call
  * @param node Current AST node
  */
-void TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
+Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
   assert(entry != nullptr);
   const QualType argType = entry->getQualType().removeReferenceWrapper().toConstRef(node);
   const ArgList args = {{argType, false /* we always have an entry here */}};
-  implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
+  return implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
 }
 
 /**
@@ -379,9 +379,8 @@ void TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, co
  */
 void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
   // Add the dtor to the stmt list node to call it later in codegen
-  Function *spiceFunc = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node);
-  if (spiceFunc != nullptr)
-    node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, spiceFunc);
+  if (Function *dtor = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node))
+    node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, dtor);
 }
 
 /**

@@ -548,12 +548,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Visit data type
     localVarType = std::any_cast<QualType>(visit(node->dataType));
 
-    // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it
-    if (!localVarType.isRef() && rhsEntry != nullptr && rhsEntry->anonymous) {
-      currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
-      rhs.entry = rhsEntry = nullptr;
-    }
-
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
       rhsTy = QualType(localVarType);
@@ -561,11 +555,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Check if type has to be inferred or both types are fixed
     if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       const ExprResult lhsResult = {localVarType, localVarEntry};
-      localVarType = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
-
-      // Call copy ctor if required
-      if (localVarType.is(TY_STRUCT) && !node->isFctParam && !rhs.isTemporary())
-        node->calledCopyCtor = matchCopyCtor(localVarType, node);
+      const auto [type, copyCtor] = opRuleManager.getAssignResultType(node, lhsResult, rhs, true);
+      localVarType = type;
+      node->calledCopyCtor = copyCtor;
 
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
@@ -575,6 +567,12 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       }
     } else {
       localVarType = QualType(TY_UNRESOLVED);
+    }
+
+    // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it
+    if (!localVarType.isRef() && rhsEntry != nullptr && rhsEntry->anonymous) {
+      currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+      rhs.entry = rhsEntry = nullptr;
     }
   } else {
     // Visit data type
@@ -657,19 +655,19 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
   HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
-  (void)opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
+  auto [_, copyCtor] = opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
+  node->calledCopyCtor = copyCtor;
 
   // Check if the dtor call on the return value can be skipped
   if (rhs.entry != nullptr) {
     if (rhs.entry->anonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
-      rhs.entry = nullptr;
     } else {
       // Otherwise omit the destructor call, because the caller destructs the value
       rhs.entry->omitDtorCall = true;
@@ -915,7 +913,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
       const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
-      rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl);
+      rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (rhsEntry != nullptr && rhsEntry->anonymous) {
@@ -995,27 +993,29 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   const bool removeAnonymousSymbolTrueSide = trueEntry && trueEntry->anonymous;
   if (removeAnonymousSymbolTrueSide) {
     currentScope->symbolTable.deleteAnonymous(trueEntry->name);
-  } else if (trueEntry && !trueEntry->anonymous && !trueTypeModified.isTriviallyCopyable(node)) {
+  } else if (trueEntry && !trueEntry->anonymous && !trueType.isRef() && !trueType.isTriviallyCopyable(node)) {
     node->trueSideCallsCopyCtor = true;
   }
   const bool removeAnonymousSymbolFalseSide = falseEntry && falseEntry->anonymous;
   if (removeAnonymousSymbolFalseSide) {
     currentScope->symbolTable.deleteAnonymous(falseEntry->name);
-  } else if (falseEntry && !falseEntry->anonymous && !falseTypeModified.isTriviallyCopyable(node)) {
+  } else if (falseEntry && !falseEntry->anonymous && !falseType.isRef() && !falseType.isTriviallyCopyable(node)) {
     node->falseSideCallsCopyCtor = true;
   }
 
   // Create a new anonymous symbol for the result if required
-  const QualType &returnType = trueType;
+  const QualType &resultType = trueType;
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide)
-    anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
+  const bool removedAnonymousSymbols = removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide;
+  const bool calledCopyCtor = node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor;
+  if (removedAnonymousSymbols || calledCopyCtor || resultType.isRef())
+    anonymousSymbol = currentScope->symbolTable.insertAnonymous(resultType, node);
 
-  // Lookup copy ctor if at least one side needs it
+  // Lookup copy ctor, if at least one side needs it
   if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor)
     node->calledCopyCtor = matchCopyCtor(trueTypeModified, node);
 
-  return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx), anonymousSymbol};
+  return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), anonymousSymbol};
 }
 
 std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
@@ -2158,8 +2158,8 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<QualType>(visit(node->returnType));
-  HANDLE_UNRESOLVED_TYPE_QT(returnType)
+  const auto returnType = std::any_cast<QualType>(visit(node->returnType));
+  HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
 
@@ -2275,7 +2275,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr)).type;
+  const QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2600,7 +2600,7 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const
   return false; // Violated
 }
 
-Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode* node) {
+Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *node) {
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toConstRef(node), false}};

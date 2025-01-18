@@ -1,0 +1,8 @@
+f<int> main() {
+    bool condA = true;
+    bool condB = false;
+    bool condC = true;
+    bool condD = false;
+    result = condA ? (condB ? 2 : (condC ? (condD ? 4 : 0) : 3)) : 1;
+    printf("Result: %d\n", result);
+}

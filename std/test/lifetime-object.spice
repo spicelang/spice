@@ -7,13 +7,12 @@ unsigned int OBJECT_COUNTER = 0;
 public type LifetimeObject struct {
     int objectNumber
     bool ctorCalled = false
-    bool copyCtorCalled = false
     bool dtorCalled = false
 }
 
 public p LifetimeObject.ctor(int objectNumber = ++OBJECT_COUNTER) {
     if this.ctorCalled {
-        printf("-- LifetimeObject %d ctor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);
+        printf("-- LifetimeObject %d ctor was called, although the object was already constructed. This indicates a compiler bug. Please report it!\n", this.objectNumber);
     }
     this.objectNumber = objectNumber;
     this.ctorCalled = true;
@@ -21,11 +20,11 @@ public p LifetimeObject.ctor(int objectNumber = ++OBJECT_COUNTER) {
 }
 
 public p LifetimeObject.ctor(const LifetimeObject& other) {
-    if this.copyCtorCalled {
-        printf("-- LifetimeObject %d copy ctor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);
+    if this.ctorCalled {
+        printf("-- LifetimeObject %d copy ctor was called, although the object was already constructed. This indicates a compiler bug. Please report it!\n", this.objectNumber);
     }
     this.objectNumber = ++OBJECT_COUNTER;
-    this.copyCtorCalled = true;
+    this.ctorCalled = true;
     printf("-- LifetimeObject %d was copied to LifetimeObject %d (copy ctor)\n", other.objectNumber, this.objectNumber);
 }
 
