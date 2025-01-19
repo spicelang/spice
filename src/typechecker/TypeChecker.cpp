@@ -1886,8 +1886,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     bool ignoreUnusedReturnValue = false;
     if (!data.isFctPtrCall()) {
       assert(data.callee != nullptr);
-      const FctDefNode *fctDef = spice_pointer_cast<FctDefNode *>(data.callee->declNode);
-      ignoreUnusedReturnValue = fctDef->attrs && fctDef->attrs->attrLst->hasAttr(ATTR_IGNORE_UNUSED_RETURN_VALUE);
+      auto fctDef = dynamic_cast<const FctDefNode *>(data.callee->declNode);
+      ignoreUnusedReturnValue = fctDef && fctDef->attrs && fctDef->attrs->attrLst->hasAttr(ATTR_IGNORE_UNUSED_RETURN_VALUE);
     }
 
     if (!ignoreUnusedReturnValue)
