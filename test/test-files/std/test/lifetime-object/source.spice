@@ -21,7 +21,7 @@ f<LifetimeObject> decideOnLORef(bool cond, LifetimeObject& lo1, LifetimeObject& 
 f<LifetimeObject> decideOnLOVal(bool cond, LifetimeObject lo1, LifetimeObject lo2) {
     cond ? lo1 : lo2; // Shoud do a copy, although the result is ignored
     LifetimeObject loCopy = cond ? lo1 : lo2; // Shoud do a copy
-    const LifetimeObject& loRef = cond ? lo1 : lo2; // Should not do a copy
+    const LifetimeObject& loRef = cond ? lo1 : lo2; // Should do a copy
     return cond ? lo1 : lo2; // Return statement should do a copy
 }
 

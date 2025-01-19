@@ -368,14 +368,21 @@ CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
   if (operands.size() == 1)
     return operands.front()->getCompileTimeValue();
 
-  const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
-  const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
-  if (op == OP_SHIFT_LEFT)
-    return CompileTimeValue{.longValue = op0Value.longValue << op1Value.longValue};
-  if (op == OP_SHIFT_RIGHT)
-    return CompileTimeValue{.longValue = op0Value.longValue >> op1Value.longValue};
-
-  throw CompilerError(UNHANDLED_BRANCH, "ShiftExprNode::getCompileTimeValue()");
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  OpQueue opQueueCopy = opQueue;
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    const ShiftOp op = opQueueCopy.front().first;
+    opQueueCopy.pop();
+    if (op == ShiftOp::OP_SHIFT_LEFT)
+      result.longValue <<= opCompileTimeValue.longValue;
+    else if (op == ShiftOp::OP_SHIFT_RIGHT)
+      result.longValue >>= opCompileTimeValue.longValue;
+    else
+      throw CompilerError(UNHANDLED_BRANCH, "ShiftExprNode::getCompileTimeValue()");
+  }
+  return result;
 }
 
 bool AdditiveExprNode::hasCompileTimeValue() const {

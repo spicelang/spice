@@ -1738,11 +1738,14 @@ public:
 class ShiftExprNode final : public ExprNode {
 public:
   // Enums
-  enum ShiftOp : uint8_t {
+  enum class ShiftOp : uint8_t {
     OP_NONE,
     OP_SHIFT_LEFT,
     OP_SHIFT_RIGHT,
   };
+
+  // Typedefs
+  using OpQueue = std::queue<std::pair<ShiftOp, QualType>>;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1761,7 +1764,7 @@ public:
 
   // Public members
   std::vector<AdditiveExprNode *> operands;
-  ShiftOp op = OP_NONE;
+  OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 

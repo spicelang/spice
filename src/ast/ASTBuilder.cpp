@@ -1076,11 +1076,30 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   // Visit children
   fetchChildrenIntoVector(shiftExprNode->operands, ctx->additiveExpr());
 
-  // Extract operator
-  if (!ctx->LESS().empty())
-    shiftExprNode->op = ShiftExprNode::OP_SHIFT_LEFT;
-  else if (!ctx->GREATER().empty())
-    shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
+  bool seenFirstLess = false;
+  bool seenFirstGreater = false;
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    if (!terminal)
+      continue;
+
+    if (terminal->getSymbol()->getType() == SpiceParser::LESS) {
+      if (seenFirstLess)
+        shiftExprNode->opQueue.emplace(ShiftExprNode::ShiftOp::OP_SHIFT_LEFT, TY_INVALID);
+      seenFirstLess = !seenFirstLess;
+      continue;
+    }
+
+    if (terminal->getSymbol()->getType() == SpiceParser::GREATER) {
+      if (seenFirstGreater)
+        shiftExprNode->opQueue.emplace(ShiftExprNode::ShiftOp::OP_SHIFT_RIGHT, TY_INVALID);
+      seenFirstGreater = !seenFirstGreater;
+      continue;
+    }
+
+    assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
+  }
+  assert(!seenFirstLess && !seenFirstGreater);
 
   return concludeNode(shiftExprNode);
 }
