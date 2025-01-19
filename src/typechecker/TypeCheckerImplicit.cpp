@@ -169,7 +169,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
       copyCtorRequired |= ctorFct != nullptr;
     }
 
-    // If we have a owning heap pointer, we need to do a memcpy of the heap storage and therefore need a default copy ctor
+    // If we have an owning heap pointer, we need to do a memcpy of the heap storage and therefore need a default copy ctor
     if (fieldType.isHeap()) {
       assert(fieldType.isPtr());
       copyCtorRequired = true;

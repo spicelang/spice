@@ -447,7 +447,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
 
-  // Retrieve the value of the original struct, which is the only function paramenter
+  // Retrieve the value of the original struct, which is the only function parameter
   llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
 
   const size_t fieldCount = structScope->getFieldCount();
@@ -464,12 +464,13 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     const QualType &fieldType = fieldSymbol->getQualType();
 
     // Call copy ctor for struct fields
-    if (fieldType.is(TY_STRUCT)) {
+    if (fieldType.is(TY_STRUCT) && !fieldType.isTriviallyCopyable(nullptr)) {
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
-      if (const Function *copyCtorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false))
-        generateCtorOrDtorCall(fieldSymbol, copyCtorFct, {originalFieldAddress});
+      const Function *copyCtor = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
+      assert(copyCtor != nullptr);
+      generateCtorOrDtorCall(fieldSymbol, copyCtor, {originalFieldAddress});
       continue;
     }
 
