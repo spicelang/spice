@@ -1026,6 +1026,7 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Visit leftmost operand
   auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
@@ -1045,6 +1046,7 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Visit leftmost operand
   auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
@@ -1064,6 +1066,7 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Visit leftmost operand
   auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
@@ -1083,6 +1086,7 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Visit leftmost operand
   auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
@@ -1102,6 +1106,7 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Visit leftmost operand
   auto currentOperand = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(currentOperand.type)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
@@ -1119,9 +1124,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
     return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
+  const auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check if we need the string runtime to perform a string comparison
@@ -1147,9 +1152,9 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
     return visit(node->operands.front());
 
   // Visit right side first, then left side
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
+  const auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
   HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
+  const auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
@@ -1173,20 +1178,28 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   if (node->operands.size() == 1)
     return visit(node->operands.front());
 
-  // Visit right side first, then left
-  auto rhs = std::any_cast<ExprResult>(visit(node->operands[1]));
-  HANDLE_UNRESOLVED_TYPE_ER(rhs.type)
-  auto lhs = std::any_cast<ExprResult>(visit(node->operands[0]));
-  HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
+  // Visit leftmost operand
+  auto currentResult = std::any_cast<ExprResult>(visit(node->operands[0]));
+  HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
 
-  // Check operator
-  ExprResult currentResult;
-  if (node->op == ShiftExprNode::OP_SHIFT_LEFT) // Operator was shl
-    currentResult = opRuleManager.getShiftLeftResultType(node, lhs, rhs, 0);
-  else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
-    currentResult = opRuleManager.getShiftRightResultType(node, lhs, rhs, 0);
-  else
-    throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
+  // Loop through remaining operands
+  for (size_t i = 0; i < node->opQueue.size(); i++) {
+    auto operandResult = std::any_cast<ExprResult>(visit(node->operands[i + 1]));
+    HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
+
+    // Check operator
+    const ShiftExprNode::ShiftOp &op = node->opQueue.front().first;
+    if (op == ShiftExprNode::ShiftOp::OP_SHIFT_LEFT)
+      currentResult = opRuleManager.getShiftLeftResultType(node, currentResult, operandResult, i);
+    else if (op == ShiftExprNode::ShiftOp::OP_SHIFT_RIGHT)
+      currentResult = opRuleManager.getShiftRightResultType(node, currentResult, operandResult, i);
+    else
+      throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
+
+    // Push the new item and pop the old one on the other side of the queue
+    node->opQueue.emplace(op, currentResult.type);
+    node->opQueue.pop();
+  }
 
   node->setEvaluatedSymbolType(currentResult.type, manIdx);
   return currentResult;
@@ -1203,9 +1216,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
-    // Visit next operand
-    MultiplicativeExprNode *operand = node->operands[i + 1];
-    auto operandResult = std::any_cast<ExprResult>(visit(operand));
+    auto operandResult = std::any_cast<ExprResult>(visit(node->operands[i + 1]));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
     // Check operator
@@ -1236,9 +1247,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
-    // Visit next operand
-    CastExprNode *operand = node->operands[i + 1];
-    auto operandResult = std::any_cast<ExprResult>(visit(operand));
+    auto operandResult = std::any_cast<ExprResult>(visit(node->operands[i + 1]));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
     // Check operator

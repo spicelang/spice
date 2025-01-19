@@ -78,7 +78,7 @@ bitwiseXorExpr: bitwiseAndExpr (BITWISE_XOR bitwiseAndExpr)*;
 bitwiseAndExpr: equalityExpr (BITWISE_AND equalityExpr)*;
 equalityExpr: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
 relationalExpr: shiftExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) shiftExpr)?;
-shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)?;
+shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)*;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: (LPAREN dataType RPAREN)? prefixUnaryExpr;

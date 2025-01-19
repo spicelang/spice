@@ -453,30 +453,41 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
     return visit(node->operands.front());
 
   // It is a shift expression
-  // Evaluate lhs
-  const AdditiveExprNode *lhsNode = node->operands[0];
-  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
+  // Evaluate first operand
+  const AdditiveExprNode *lhsNode = node->operands.front();
+  QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
-  // Evaluate rhs
-  const AdditiveExprNode *rhsNode = node->operands[1];
-  const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
-  auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
+  auto opQueue = node->opQueue;
+  size_t operandIndex = 1;
+  while (!opQueue.empty()) {
+    const size_t operatorIndex = operandIndex - 1;
+    // Evaluate next operand
+    const AdditiveExprNode *rhsNode = node->operands[operandIndex++];
+    assert(rhsNode != nullptr);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+    auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
-  // Retrieve the result value, based on the exact operator
-  switch (node->op) {
-  case ShiftExprNode::OP_SHIFT_LEFT:
-    result = conversionManager.getShiftLeftInst(node, result, lhsSTy, rhs, rhsSTy, 0);
-    break;
-  case ShiftExprNode::OP_SHIFT_RIGHT:
-    result = conversionManager.getShiftRightInst(node, result, lhsSTy, rhs, rhsSTy, 0);
-    break;
-  default:                                                           // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
+    // Retrieve the result, based on the exact operator
+    switch (opQueue.front().first) {
+    case ShiftExprNode::ShiftOp::OP_SHIFT_LEFT:
+      lhs = conversionManager.getShiftLeftInst(node, lhs, lhsSTy, rhs, rhsSTy, operatorIndex);
+      break;
+    case ShiftExprNode::ShiftOp::OP_SHIFT_RIGHT:
+      lhs = conversionManager.getShiftRightInst(node, lhs, lhsSTy, rhs, rhsSTy, operatorIndex);
+      break;
+    default:                                                              // GCOV_EXCL_LINE
+      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
+    }
+
+    // Retrieve the new lhs symbol type
+    lhsSTy = opQueue.front().second;
+
+    opQueue.pop();
   }
 
   // Return the result
-  return result;
+  return lhs;
 }
 
 std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
