@@ -74,6 +74,7 @@ public p Stack.push(const T& item) {
 /**
  * Retrieve item and remove it from the stack
  */
+#[ignoreUnusedReturnValue]
 public f<T&> Stack.pop() {
     if this.isEmpty() { panic(Error("The stack is empty")); }
     // Pop the element from the stack

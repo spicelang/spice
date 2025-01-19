@@ -1880,9 +1880,19 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Remove public specifier to not have public local variables
   returnType.getSpecifiers().isPublic = false;
 
-  // Check if the return value gets used
-  if (isFct && !node->hasReturnValueReceiver())
-    warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
+  // Check if the return value gets discarded
+  if (isFct && !node->hasReturnValueReceiver()) {
+    // Check if we want to ignore the discarded return value
+    bool ignoreUnusedReturnValue = false;
+    if (!data.isFctPtrCall()) {
+      assert(data.callee != nullptr);
+      const FctDefNode *fctDef = spice_pointer_cast<FctDefNode *>(data.callee->declNode);
+      ignoreUnusedReturnValue = fctDef->attrs && fctDef->attrs->attrLst->hasAttr(ATTR_IGNORE_UNUSED_RETURN_VALUE);
+    }
+
+    if (!ignoreUnusedReturnValue)
+      warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
+  }
 
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }

@@ -108,10 +108,10 @@ f<bool> BinaryTree.containsNode<T>(Node<T>* currentNode, const T& value) {
 }
 
 /**
- * Recursion helper to find the smallest node in the binary tree
+ * Recursion helper to delete a node with a certain value
  *
  * @param currentNode The current node to check
- * @return The smallest node
+ * @return The new root node
  */
 f<heap Node<T>*> BinaryTree.deleteNode<T>(heap Node<T>* currentNode, const T& value) {
     // We reached the end of the tree

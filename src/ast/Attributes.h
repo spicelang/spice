@@ -13,7 +13,7 @@ namespace spice::compiler {
 static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
 static constexpr const char *const ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
 static constexpr const char *const ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
-static constexpr const char *const ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additional_source";
+static constexpr const char *const ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
 static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
@@ -26,6 +26,7 @@ static constexpr const char *const ATTR_TEST = "test";
 static constexpr const char *const ATTR_TEST_NAME = "test.name";
 static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
 static constexpr const char *const ATTR_ASYNC = "async";
+static constexpr const char *const ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
 static constexpr CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
 
@@ -151,6 +152,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     },
     {
         ATTR_ASYNC,
+        {
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC | AttrNode::AttrTarget::TARGET_LAMBDA,
+            .type = AttrNode::AttrType::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_IGNORE_UNUSED_RETURN_VALUE,
         {
             .target = AttrNode::AttrTarget::TARGET_FCT_PROC | AttrNode::AttrTarget::TARGET_LAMBDA,
             .type = AttrNode::AttrType::TYPE_BOOL,

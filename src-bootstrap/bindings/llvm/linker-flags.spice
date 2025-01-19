@@ -214,5 +214,5 @@
     core.linker.flag = "-luuid",
     core.linker.flag = "-pthread",
     // Wrapper around target macro definitions
-    core.linker.additional_source = "target-wrapper.c"
+    core.linker.additionalSource = "target-wrapper.c"
 ]

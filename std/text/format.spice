@@ -80,22 +80,3 @@ public f<char> toLower(char c) {
     }
     return text;
 }*/
-
-/**
- * Returns the trimmed string of the given text
- *
- * @return Trimmed string
- */
-/*public f<String> trim(const String& input) {
-    unsigned long start = 0l;
-    unsigned long end = input.getLength() - 1l;
-
-    while isWhitespace(input[start]) {
-        start++;
-    }
-    while isWhitespace(input[end]) {
-        end--;
-    }
-
-    return input.substring(start, end);
-}*/

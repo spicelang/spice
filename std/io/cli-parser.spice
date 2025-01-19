@@ -48,34 +48,42 @@ public f<CliSubcommand&> CliParser.addSubcommand(const String& name, const Strin
     return this.rootSubcommand.addSubcommand(name, description);
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<T>&> CliParser.addOption<T>(string name, T& targetVariable, string description) {
     return this.rootSubcommand.addOption(targetVariable, String(description));
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<T>&> CliParser.addOption<T>(const String& name, T& targetVariable, const String& description) {
     return this.rootSubcommand.addOption(targetVariable, description);
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<T>&> CliParser.addOption<T>(string name, p(T&) callback, string description) {
     return this.rootSubcommand.addOption(callback, String(description));
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<T>&> CliParser.addOption<T>(const String& name, p(T&) callback, const String& description) {
     return this.rootSubcommand.addOption(callback, description);
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliParser.addFlag(string name, bool& targetVariable, string description) {
    return  this.rootSubcommand.addFlag(String(name), targetVariable, String(description));
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliParser.addFlag(const String& name, bool& targetVariable, const String& description) {
    return  this.rootSubcommand.addFlag(name, targetVariable, description);
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliParser.addFlag(string name, p(bool&) callback, string description) {
     return this.rootSubcommand.addFlag(String(name), callback, String(description));
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliParser.addFlag(const String& name, p(bool&) callback, const String& description) {
     return this.rootSubcommand.addFlag(name, callback, description);
 }

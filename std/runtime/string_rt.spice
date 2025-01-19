@@ -508,6 +508,7 @@ public p String.reverse() {
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
+#[ignoreUnusedReturnValue]
 public f<bool> String.replace(
     string needle,
     string replacement,
@@ -560,6 +561,7 @@ public f<bool> String.replace(
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
+#[ignoreUnusedReturnValue]
 public f<unsigned long> String.replaceAll(string needle, string replacement) {
     unsigned long startIdx = 0l;
     unsigned long foundOccurrences = 0l;
@@ -577,6 +579,7 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
     return foundOccurrences;
 }
 
+#[ignoreUnusedReturnValue]
 public f<unsigned long> String.replaceAll(char needle, char replacement) {
     const String needleStr = String(needle);
     const String replacementStr = String(replacement);
