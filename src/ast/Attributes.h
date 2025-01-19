@@ -40,120 +40,120 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     {
         ATTR_CORE_LINKER_FLAG,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_CORE_LINUX_LINKER_FLAG,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_CORE_WINDOWS_LINKER_FLAG,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_CORE_LINKER_ADDITIONAL_SOURCE,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_FIXED_TYPE_ID,
         {
-            .target = AttrNode::TARGET_STRUCT | AttrNode::TARGET_INTERFACE,
-            .type = AttrNode::TYPE_INT,
+            .target = AttrNode::AttrTarget::TARGET_STRUCT | AttrNode::AttrTarget::TARGET_INTERFACE,
+            .type = AttrNode::AttrType::TYPE_INT,
         },
     },
     {
         ATTR_CORE_LINKER_DLL,
         {
-            .target = AttrNode::TARGET_EXT_DECL,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_EXT_DECL,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_MANGLE,
         {
-            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_EXT_DECL,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC | AttrNode::AttrTarget::TARGET_EXT_DECL,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_MANGLED_NAME,
         {
-            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_EXT_DECL,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC | AttrNode::AttrTarget::TARGET_EXT_DECL,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_EMIT_VTABLE,
         {
-            .target = AttrNode::TARGET_STRUCT,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_STRUCT,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_PACKED,
         {
-            .target = AttrNode::TARGET_STRUCT,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_STRUCT,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_WARNINGS_IGNORE,
         {
-            .target = AttrNode::TARGET_MODULE,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_TEST,
         {
-            .target = AttrNode::TARGET_FCT_PROC,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_TEST_NAME,
         {
-            .target = AttrNode::TARGET_FCT_PROC,
-            .type = AttrNode::TYPE_STRING,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC,
+            .type = AttrNode::AttrType::TYPE_STRING,
         },
     },
     {
         ATTR_TEST_SKIP,
         {
-            .target = AttrNode::TARGET_FCT_PROC,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {
         ATTR_ASYNC,
         {
-            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_LAMBDA,
-            .type = AttrNode::TYPE_BOOL,
+            .target = AttrNode::AttrTarget::TARGET_FCT_PROC | AttrNode::AttrTarget::TARGET_LAMBDA,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
 };

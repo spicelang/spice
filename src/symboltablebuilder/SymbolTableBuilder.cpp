@@ -71,11 +71,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Build function specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_INLINE)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
         node->specifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->specifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::TY_CONST)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
         node->specifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
@@ -134,11 +134,11 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Build procedure specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_INLINE)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
         node->specifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->specifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::TY_CONST)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
         node->specifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
@@ -223,7 +223,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Build struct specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_PUBLIC)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
@@ -261,7 +261,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Build interface specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_PUBLIC)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
@@ -294,7 +294,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Build enum specifiers
   if (node->specifierLst) {
     for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_PUBLIC)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->enumSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
@@ -329,7 +329,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   // Build alias specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_PUBLIC)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an alias definition");
@@ -587,11 +587,11 @@ std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
   if (const SpecifierLstNode *specifierLst = node->specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_INLINE)
+      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
         node->signatureSpecifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
         node->signatureSpecifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::TY_CONST)
+      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
         node->signatureSpecifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a signature definition");
@@ -666,7 +666,7 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 
   // Check if a value is present
-  if (!node->value && type != AttrNode::TYPE_BOOL)
+  if (!node->value && type != AttrNode::AttrType::TYPE_BOOL)
     throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;

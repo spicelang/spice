@@ -16,12 +16,12 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
     return visit(node->ternaryExpr);
 
   // Assign or compound assign operation
-  if (node->op != AssignExprNode::OP_NONE) {
+  if (node->op != AssignExprNode::AssignOp::OP_NONE) {
     const PrefixUnaryExprNode *lhsNode = node->lhs;
     const AssignExprNode *rhsNode = node->rhs;
 
     // Normal assignment
-    if (node->op == AssignExprNode::OP_ASSIGN)
+    if (node->op == AssignExprNode::AssignOp::OP_ASSIGN)
       return doAssignment(lhsNode, rhsNode, node);
 
     // Compound assignment
@@ -36,34 +36,34 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
     LLVMExprResult result;
     switch (node->op) {
-    case AssignExprNode::OP_PLUS_EQUAL:
+    case AssignExprNode::AssignOp::OP_PLUS_EQUAL:
       result = conversionManager.getPlusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
       break;
-    case AssignExprNode::OP_MINUS_EQUAL:
+    case AssignExprNode::AssignOp::OP_MINUS_EQUAL:
       result = conversionManager.getMinusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
       break;
-    case AssignExprNode::OP_MUL_EQUAL:
+    case AssignExprNode::AssignOp::OP_MUL_EQUAL:
       result = conversionManager.getMulEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
       break;
-    case AssignExprNode::OP_DIV_EQUAL:
+    case AssignExprNode::AssignOp::OP_DIV_EQUAL:
       result = conversionManager.getDivEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
       break;
-    case AssignExprNode::OP_REM_EQUAL:
+    case AssignExprNode::AssignOp::OP_REM_EQUAL:
       result = conversionManager.getRemEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
-    case AssignExprNode::OP_SHL_EQUAL:
+    case AssignExprNode::AssignOp::OP_SHL_EQUAL:
       result = conversionManager.getSHLEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
-    case AssignExprNode::OP_SHR_EQUAL:
+    case AssignExprNode::AssignOp::OP_SHR_EQUAL:
       result = conversionManager.getSHREqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
-    case AssignExprNode::OP_AND_EQUAL:
+    case AssignExprNode::AssignOp::OP_AND_EQUAL:
       result = conversionManager.getAndEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
-    case AssignExprNode::OP_OR_EQUAL:
+    case AssignExprNode::AssignOp::OP_OR_EQUAL:
       result = conversionManager.getOrEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
-    case AssignExprNode::OP_XOR_EQUAL:
+    case AssignExprNode::AssignOp::OP_XOR_EQUAL:
       result = conversionManager.getXorEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
     default:                                                           // GCOV_EXCL_LINE
@@ -391,10 +391,10 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
 
   // Retrieve the result value, based on the exact operator
   switch (node->op) {
-  case EqualityExprNode::OP_EQUAL:
+  case EqualityExprNode::EqualityOp::OP_EQUAL:
     result = conversionManager.getEqualInst(node, result, lhsSTy, rhs, rhsSTy, 0);
     break;
-  case EqualityExprNode::OP_NOT_EQUAL:
+  case EqualityExprNode::EqualityOp::OP_NOT_EQUAL:
     result = conversionManager.getNotEqualInst(node, result, lhsSTy, rhs, rhsSTy, 0);
     break;
   default:                                                              // GCOV_EXCL_LINE
@@ -425,16 +425,16 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
 
   // Retrieve the result value, based on the exact operator
   switch (node->op) {
-  case RelationalExprNode::OP_LESS:
+  case RelationalExprNode::RelationalOp::OP_LESS:
     result = conversionManager.getLessInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
-  case RelationalExprNode::OP_GREATER:
+  case RelationalExprNode::RelationalOp::OP_GREATER:
     result = conversionManager.getGreaterInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
-  case RelationalExprNode::OP_LESS_EQUAL:
+  case RelationalExprNode::RelationalOp::OP_LESS_EQUAL:
     result = conversionManager.getLessEqualInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
-  case RelationalExprNode::OP_GREATER_EQUAL:
+  case RelationalExprNode::RelationalOp::OP_GREATER_EQUAL:
     result = conversionManager.getGreaterEqualInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
   default:                                                              // GCOV_EXCL_LINE
@@ -515,10 +515,10 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
 
     // Retrieve the result, based on the exact operator
     switch (opQueue.front().first) {
-    case AdditiveExprNode::OP_PLUS:
+    case AdditiveExprNode::AdditiveOp::OP_PLUS:
       lhs = conversionManager.getPlusInst(node, lhs, lhsSTy, rhs, rhsSTy, operatorIndex);
       break;
-    case AdditiveExprNode::OP_MINUS:
+    case AdditiveExprNode::AdditiveOp::OP_MINUS:
       lhs = conversionManager.getMinusInst(node, lhs, lhsSTy, rhs, rhsSTy, operatorIndex);
       break;
     default:                                                              // GCOV_EXCL_LINE
@@ -560,13 +560,13 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
 
     // Retrieve the result, based on the exact operator
     switch (opQueue.front().first) {
-    case MultiplicativeExprNode::OP_MUL:
+    case MultiplicativeExprNode::MultiplicativeOp::OP_MUL:
       result = conversionManager.getMulInst(node, result, lhsSTy, rhs, rhsSTy, operatorIndex);
       break;
-    case MultiplicativeExprNode::OP_DIV:
+    case MultiplicativeExprNode::MultiplicativeOp::OP_DIV:
       result = conversionManager.getDivInst(node, result, lhsSTy, rhs, rhsSTy, operatorIndex);
       break;
-    case MultiplicativeExprNode::OP_REM:
+    case MultiplicativeExprNode::MultiplicativeOp::OP_REM:
       result = conversionManager.getRemInst(node, result, lhsSTy, rhs, rhsSTy);
       break;
     default:                                                                    // GCOV_EXCL_LINE
@@ -609,7 +609,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // If no operator is applied, simply visit the atomic expression
-  if (node->op == PrefixUnaryExprNode::OP_NONE)
+  if (node->op == PrefixUnaryExprNode::PrefixUnaryOp::OP_NONE)
     return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
@@ -618,7 +618,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   switch (node->op) {
-  case PrefixUnaryExprNode::OP_MINUS: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS: {
     // Execute operation
     lhs = conversionManager.getPrefixMinusInst(node, lhs, lhsSTy);
 
@@ -630,7 +630,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_PLUS_PLUS: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_PLUS_PLUS: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 
@@ -650,7 +650,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_MINUS_MINUS: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS_MINUS: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 
@@ -670,7 +670,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_NOT: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_NOT: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 
@@ -679,7 +679,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_BITWISE_NOT: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 
@@ -688,7 +688,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_DEREFERENCE: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 
@@ -700,7 +700,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_ADDRESS_OF: {
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF: {
     // Make sure the address is present
     resolveAddress(lhs);
 
@@ -723,7 +723,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // If no operator is applied, simply visit the atomic expression
-  if (node->op == PostfixUnaryExprNode::OP_NONE)
+  if (node->op == PostfixUnaryExprNode::PostfixUnaryOp::OP_NONE)
     return visit(node->atomicExpr);
 
   // Evaluate lhs
@@ -732,7 +732,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   switch (node->op) {
-  case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT: {
     const AssignExprNode *indexExpr = node->subscriptIndexExpr;
 
     // Check if we need to generate a call to an overloaded operator function
@@ -776,7 +776,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhs.entry = nullptr;
     break;
   }
-  case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS: {
     // Get the address of the struct instance
     resolveAddress(lhs);
     lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -815,7 +815,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhs.value = nullptr;
     break;
   }
-  case PostfixUnaryExprNode::OP_PLUS_PLUS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS: {
     // Make sure a value is present
     resolveValue(lhsNode, lhs);
 
@@ -838,7 +838,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
     break;
   }
-  case PostfixUnaryExprNode::OP_MINUS_MINUS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS: {
     // Make sure a value is present
     resolveValue(lhsNode, lhs);
 
