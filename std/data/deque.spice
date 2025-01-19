@@ -109,6 +109,7 @@ public p Deque.pushFront(const T& item) {
  *
  * @return First item
  */
+#[ignoreUnusedReturnValue]
 public f<T&> Deque.popFront() {
     if this.isEmpty() { panic(Error("Deque is empty")); }
 
@@ -128,6 +129,7 @@ public f<T&> Deque.popFront() {
  *
  * @return Last item
  */
+#[ignoreUnusedReturnValue]
 public f<T&> Deque.popBack() {
     if this.isEmpty() { panic(Error("Deque is empty")); }
 

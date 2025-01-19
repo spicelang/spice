@@ -184,101 +184,121 @@ public f<CliSubcommand&> CliSubcommand.addSubcommand(const String& name, const S
     return this.subcommands.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(string name, string& targetVariable, string description) {
     this.stringOptions.pushBack(CliOption<string>(String(name), targetVariable, String(description)));
     return this.stringOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(const String& name, string& targetVariable, const String& description) {
     this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
     return this.stringOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(string name, p(string&) callback, string description) {
     this.stringOptions.pushBack(CliOption<string>(String(name), callback, String(description)));
     return this.stringOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(const String& name, p(string&) callback, const String& description) {
     this.stringOptions.pushBack(CliOption<string>(name, callback, description));
     return this.stringOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(string name, String& targetVariable, string description) {
     this.stringObjOptions.pushBack(CliOption<String>(String(name), targetVariable, String(description)));
     return this.stringObjOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(const String& name, String& targetVariable, const String& description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, targetVariable, description));
     return this.stringObjOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(string name, p(String&) callback, string description) {
     this.stringObjOptions.pushBack(CliOption<String>(String(name), callback, String(description)));
     return this.stringObjOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(const String& name, p(String&) callback, const String& description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, callback, description));
     return this.stringObjOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(string name, int& targetVariable, string description) {
     this.intOptions.pushBack(CliOption<int>(String(name), targetVariable, String(description)));
     return this.intOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(const String& name, int& targetVariable, const String& description) {
     this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
     return this.intOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(string name, p(int&) callback, string description) {
     this.intOptions.pushBack(CliOption<int>(String(name), callback, String(description)));
     return this.intOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(const String& name, p(int&) callback, const String& description) {
     this.intOptions.pushBack(CliOption<int>(name, callback, description));
     return this.intOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, FilePath& targetVariable, string description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(String(name), targetVariable, String(description)));
     return this.filePathOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, FilePath& targetVariable, const String& description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, targetVariable, description));
     return this.filePathOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, p(FilePath&) callback, string description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(String(name), callback, String(description)));
     return this.filePathOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, p(FilePath&) callback, const String& description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, callback, description));
     return this.filePathOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
     this.boolOptions.pushBack(CliOption<bool>(String(name), targetVariable, String(description)));
     return this.boolOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, bool& targetVariable, const String& description) {
     this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
     return this.boolOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(const string name, p(bool&) callback, string description) {
     this.boolOptions.pushBack(CliOption<bool>(String(name), callback, String(description)));
     return this.boolOptions.back();
 }
 
+#[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, p(bool&) callback, const String& description) {
     this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
     return this.boolOptions.back();

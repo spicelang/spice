@@ -84,6 +84,7 @@ public p Queue.push(const T& item) {
  *
  * @return First item
  */
+#[ignoreUnusedReturnValue]
 public f<T&> Queue.pop() {
     this.size--;
     unsafe {

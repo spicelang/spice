@@ -645,11 +645,11 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   for (const CompileTimeValue *value : linkerFlagValues)
     resourceManager.linker.addLinkerFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
 
-  // core.linker.additional_source
+  // core.linker.additionalSource
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
     const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
     const std::filesystem::path path = sourceFile->filePath.parent_path() / stringValue;
-    resourceManager.linker.addAdditionalSourcePath(std::filesystem::canonical(path));
+    resourceManager.linker.addAdditionalSourcePath(canonical(path));
   }
 
   return nullptr;

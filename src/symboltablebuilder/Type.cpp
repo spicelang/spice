@@ -118,6 +118,7 @@ const Type *Type::toRef(const ASTNode *node) const {
  *
  * @param node AST node for error messages
  * @param size Size of the array
+ * @param skipDynCheck Skip check if array base type is dyn
  * @return Array type of the current type
  */
 const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
@@ -468,6 +469,7 @@ bool Type::isOneOf(const std::initializer_list<SuperType> &superTypes) const {
 /**
  * Get the name of the symbol type as a string
  *
+ * @param name Get name of type
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
@@ -481,7 +483,6 @@ void Type::getName(std::stringstream &name, bool withSize) const { // NOLINT(mis
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
- * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
 std::string Type::getName(bool withSize) const {
@@ -491,7 +492,7 @@ std::string Type::getName(bool withSize) const {
 }
 
 /**
- * Get the return type of a function type
+ * Get the return type of function type
  *
  * @return Function return type
  */

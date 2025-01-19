@@ -8,7 +8,7 @@ import "bootstrap/ast/ast-nodes";
 public const string ATTR_CORE_LINKER_FLAG = "core.linker.flag";
 public const string ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
 public const string ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
-public const string ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additional_source";
+public const string ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
 public const string ATTR_CORE_LINKER_DLL = "core.linker.dll";
 public const string ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 public const string ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
@@ -21,6 +21,7 @@ public const string ATTR_TEST = "test";
 public const string ATTR_TEST_NAME = "test.name";
 public const string ATTR_TEST_SKIP = "test.skip";
 public const string ATTR_ASYNC = "async";
+public const string ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
 // Structs
 type AttrConfigValue struct {
