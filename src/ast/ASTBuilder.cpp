@@ -592,11 +592,11 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   }
   if (ctx->F()) {
     signatureNode->hasReturnType = true;
-    signatureNode->signatureType = SignatureNode::TYPE_FUNCTION;
+    signatureNode->signatureType = SignatureNode::SignatureType::TYPE_FUNCTION;
     signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
     signatureNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   } else {
-    signatureNode->signatureType = SignatureNode::TYPE_PROCEDURE;
+    signatureNode->signatureType = SignatureNode::SignatureType::TYPE_PROCEDURE;
     signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
   }
   if (ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1) {
@@ -663,7 +663,7 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   bool seenSignedOrUnsigned = false;
   for (const SpecifierNode *specifier : specifierLstNode->specifiers) {
     // Check if we have both, signed and unsigned specifier
-    if (specifier->type != SpecifierNode::TY_SIGNED && specifier->type != SpecifierNode::TY_UNSIGNED)
+    if (specifier->type != SpecifierNode::SpecifierType::TY_SIGNED && specifier->type != SpecifierNode::SpecifierType::TY_UNSIGNED)
       continue;
     if (seenSignedOrUnsigned)
       throw ParserError(specifier->codeLoc, INVALID_SPECIFIER_COMBINATION, "A variable can not be signed and unsigned");
@@ -680,19 +680,19 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
     const auto token = spice_pointer_cast<TerminalNode *>(subTree);
     const size_t symbolType = token->getSymbol()->getType();
     if (symbolType == SpiceParser::CONST)
-      specifierNode->type = SpecifierNode::TY_CONST;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_CONST;
     else if (symbolType == SpiceParser::SIGNED)
-      specifierNode->type = SpecifierNode::TY_SIGNED;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_SIGNED;
     else if (symbolType == SpiceParser::UNSIGNED)
-      specifierNode->type = SpecifierNode::TY_UNSIGNED;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_UNSIGNED;
     else if (symbolType == SpiceParser::INLINE)
-      specifierNode->type = SpecifierNode::TY_INLINE;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_INLINE;
     else if (symbolType == SpiceParser::PUBLIC)
-      specifierNode->type = SpecifierNode::TY_PUBLIC;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_PUBLIC;
     else if (symbolType == SpiceParser::HEAP)
-      specifierNode->type = SpecifierNode::TY_HEAP;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_HEAP;
     else if (symbolType == SpiceParser::COMPOSE)
-      specifierNode->type = SpecifierNode::TY_COMPOSITION;
+      specifierNode->type = SpecifierNode::SpecifierType::TY_COMPOSITION;
     else
       assert_fail("Unknown specifier type"); // GCOV_EXCL_LINE
   }
@@ -759,16 +759,16 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
     attrNode->value = std::any_cast<ConstantNode *>(visit(ctx->constant()));
 
     if (ctx->constant()->STRING_LIT())
-      attrNode->type = AttrNode::TYPE_STRING;
+      attrNode->type = AttrNode::AttrType::TYPE_STRING;
     else if (ctx->constant()->INT_LIT())
-      attrNode->type = AttrNode::TYPE_INT;
+      attrNode->type = AttrNode::AttrType::TYPE_INT;
     else if (ctx->constant()->TRUE() || ctx->constant()->FALSE())
-      attrNode->type = AttrNode::TYPE_BOOL;
+      attrNode->type = AttrNode::AttrType::TYPE_BOOL;
     else
       throw ParserError(attrNode->value->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
   } else {
     // If no value is given, use the bool type
-    attrNode->type = AttrNode::TYPE_BOOL;
+    attrNode->type = AttrNode::AttrType::TYPE_BOOL;
   }
 
   return concludeNode(attrNode);
@@ -1044,9 +1044,9 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
 
   // Extract operator
   if (ctx->EQUAL())
-    equalityExprNode->op = EqualityExprNode::OP_EQUAL;
+    equalityExprNode->op = EqualityExprNode::EqualityOp::OP_EQUAL;
   else if (ctx->NOT_EQUAL())
-    equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
+    equalityExprNode->op = EqualityExprNode::EqualityOp::OP_NOT_EQUAL;
 
   return concludeNode(equalityExprNode);
 }
@@ -1059,13 +1059,13 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
 
   // Extract operator
   if (ctx->LESS())
-    relationalExprNode->op = RelationalExprNode::OP_LESS;
+    relationalExprNode->op = RelationalExprNode::RelationalOp::OP_LESS;
   else if (ctx->GREATER())
-    relationalExprNode->op = RelationalExprNode::OP_GREATER;
+    relationalExprNode->op = RelationalExprNode::RelationalOp::OP_GREATER;
   else if (ctx->LESS_EQUAL())
-    relationalExprNode->op = RelationalExprNode::OP_LESS_EQUAL;
+    relationalExprNode->op = RelationalExprNode::RelationalOp::OP_LESS_EQUAL;
   else if (ctx->GREATER_EQUAL())
-    relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
+    relationalExprNode->op = RelationalExprNode::RelationalOp::OP_GREATER_EQUAL;
 
   return concludeNode(relationalExprNode);
 }
@@ -1116,9 +1116,9 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
       continue;
 
     if (terminal->getSymbol()->getType() == SpiceParser::PLUS)
-      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, TY_INVALID);
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::AdditiveOp::OP_PLUS, TY_INVALID);
     else if (terminal->getSymbol()->getType() == SpiceParser::MINUS)
-      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, TY_INVALID);
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::AdditiveOp::OP_MINUS, TY_INVALID);
     else
       assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
   }
@@ -1138,11 +1138,11 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
       continue;
 
     if (terminal->getSymbol()->getType() == SpiceParser::MUL)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, TY_INVALID);
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::MultiplicativeOp::OP_MUL, TY_INVALID);
     else if (terminal->getSymbol()->getType() == SpiceParser::DIV)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, TY_INVALID);
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::MultiplicativeOp::OP_DIV, TY_INVALID);
     else if (terminal->getSymbol()->getType() == SpiceParser::REM)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, TY_INVALID);
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::MultiplicativeOp::OP_REM, TY_INVALID);
     else
       assert_fail("Invalid terminal symbol for multiplicative expression"); // GCOV_EXCL_LINE
   }
@@ -1171,19 +1171,19 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
   } else if (ctx->prefixUnaryExpr()) {
     // Extract operator
     if (ctx->MINUS())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS;
     else if (ctx->PLUS_PLUS())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_PLUS_PLUS;
     else if (ctx->MINUS_MINUS())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS_MINUS;
     else if (ctx->NOT())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_NOT;
     else if (ctx->BITWISE_NOT())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT;
     else if (ctx->MUL())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_DEREFERENCE;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE;
     else if (ctx->BITWISE_AND())
-      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF;
 
     prefixUnaryExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
   } else {
@@ -1203,15 +1203,15 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
 
     // Extract operator
     if (ctx->assignExpr()) {
-      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT;
       postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
     } else if (ctx->IDENTIFIER()) {
-      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS;
       postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
     } else if (ctx->PLUS_PLUS()) {
-      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS;
     } else if (ctx->MINUS_MINUS()) {
-      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS;
     }
   } else {
     assert_fail("Unknown postfix unary expression type"); // GCOV_EXCL_LINE
@@ -1291,31 +1291,31 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   // Enrich
   auto &[doubleValue, intValue, shortValue, longValue, charValue, boolValue, stringValueOffset] = constantNode->compileTimeValue;
   if (ctx->DOUBLE_LIT()) {
-    constantNode->type = ConstantNode::TYPE_DOUBLE;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_DOUBLE;
     doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
-    constantNode->type = ConstantNode::TYPE_INT;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_INT;
     intValue = parseInt(ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
-    constantNode->type = ConstantNode::TYPE_SHORT;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_SHORT;
     shortValue = parseShort(ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
-    constantNode->type = ConstantNode::TYPE_LONG;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_LONG;
     longValue = parseLong(ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
-    constantNode->type = ConstantNode::TYPE_CHAR;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_CHAR;
     charValue = parseChar(ctx->CHAR_LIT());
   } else if (ctx->STRING_LIT()) {
     // Save a pointer to the string in the compile time value
-    constantNode->type = ConstantNode::TYPE_STRING;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_STRING;
     stringValueOffset = resourceManager.compileTimeStringValues.size();
     // Add the string to the global compile time string list
     resourceManager.compileTimeStringValues.push_back(parseString(ctx->STRING_LIT()->toString()));
   } else if (ctx->TRUE()) {
-    constantNode->type = ConstantNode::TYPE_BOOL;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
     boolValue = true;
   } else if (ctx->FALSE()) {
-    constantNode->type = ConstantNode::TYPE_BOOL;
+    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
     boolValue = false;
   } else {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
@@ -1461,9 +1461,9 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
       continue;
 
     if (terminal->getSymbol()->getType() == SpiceParser::MUL) {
-      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TypeModifierType::TYPE_PTR, false, 0);
     } else if (terminal->getSymbol()->getType() == SpiceParser::BITWISE_AND) {
-      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_REF, false, 0);
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TypeModifierType::TYPE_REF, false, 0);
     } else if (terminal->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
       subTree = ctx->children.at(i);
@@ -1480,7 +1480,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
         sizeVarName = getIdentifier(terminal);
         i++; // Consume TYPE_IDENTIFIER
       }
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
+      dataTypeNode->tmQueue.push({DataTypeNode::TypeModifierType::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
     }
   }
 
@@ -1492,28 +1492,28 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
 
   // Enrich
   if (ctx->TYPE_DOUBLE()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_DOUBLE;
   } else if (ctx->TYPE_INT()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_INT;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_INT;
   } else if (ctx->TYPE_SHORT()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_SHORT;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_SHORT;
   } else if (ctx->TYPE_LONG()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_LONG;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_LONG;
   } else if (ctx->TYPE_BYTE()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_BYTE;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_BYTE;
   } else if (ctx->TYPE_CHAR()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_CHAR;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_CHAR;
   } else if (ctx->TYPE_STRING()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_STRING;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_STRING;
   } else if (ctx->TYPE_BOOL()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_BOOL;
   } else if (ctx->TYPE_DYN()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_DYN;
   } else if (ctx->customDataType()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_CUSTOM;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_CUSTOM;
     baseDataTypeNode->customDataType = std::any_cast<CustomDataTypeNode *>(visit(ctx->customDataType()));
   } else if (ctx->functionDataType()) {
-    baseDataTypeNode->type = BaseDataTypeNode::TYPE_FUNCTION;
+    baseDataTypeNode->type = BaseDataTypeNode::Type::TYPE_FUNCTION;
     baseDataTypeNode->functionDataType = std::any_cast<FunctionDataTypeNode *>(visit(ctx->functionDataType()));
   } else {
     assert_fail("Unknown base data type");
@@ -1568,27 +1568,27 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
 
   // Extract assign operator
   if (ctx->ASSIGN())
-    assignExprNode->op = AssignExprNode::OP_ASSIGN;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_ASSIGN;
   else if (ctx->PLUS_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_PLUS_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_PLUS_EQUAL;
   else if (ctx->MINUS_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_MINUS_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_MINUS_EQUAL;
   else if (ctx->MUL_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_MUL_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_MUL_EQUAL;
   else if (ctx->DIV_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_DIV_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_DIV_EQUAL;
   else if (ctx->REM_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_REM_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_REM_EQUAL;
   else if (ctx->SHL_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_SHL_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_SHL_EQUAL;
   else if (ctx->SHR_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_SHR_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_SHR_EQUAL;
   else if (ctx->AND_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_AND_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_AND_EQUAL;
   else if (ctx->OR_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_OR_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_OR_EQUAL;
   else if (ctx->XOR_EQUAL())
-    assignExprNode->op = AssignExprNode::OP_XOR_EQUAL;
+    assignExprNode->op = AssignExprNode::AssignOp::OP_XOR_EQUAL;
   else
     assert_fail("Unknown assign operator");
 
@@ -1668,7 +1668,7 @@ int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
 
 int64_t ASTBuilder::parseLong(TerminalNode *terminal) {
   const NumericParserCallback<int64_t> cb = [](const std::string &substr, short base, bool isSigned) -> int64_t {
-    return isSigned ? std::stoll(substr, nullptr, base) : std::stoull(substr, nullptr, base);
+    return isSigned ? std::stoll(substr, nullptr, base) : static_cast<int64_t>(std::stoull(substr, nullptr, base));
   };
   return parseNumeric(terminal, cb);
 }

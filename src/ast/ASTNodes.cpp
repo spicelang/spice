@@ -188,12 +188,12 @@ bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 
 bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If it's a ternary, do the default thing
-  if (op == OP_NONE)
+  if (op == AssignOp::OP_NONE)
     return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
-  const bool hasAtomicExpr = lhs->postfixUnaryExpr && lhs->postfixUnaryExpr->atomicExpr;
-  if (hasAtomicExpr && lhs->postfixUnaryExpr->atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME) {
+  const AtomicExprNode* atomicExpr = lhs->postfixUnaryExpr ? lhs->postfixUnaryExpr->atomicExpr : nullptr;
+  if (atomicExpr && atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME) {
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
     *doSetPredecessorsUnreachable = false;
@@ -221,9 +221,8 @@ CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (condition->getCompileTimeValue().boolValue) {
     const LogicalOrExprNode *trueValue = isShortened ? condition : trueExpr;
     return trueValue->getCompileTimeValue();
-  } else {
-    return falseExpr->getCompileTimeValue();
   }
+  return falseExpr->getCompileTimeValue();
 }
 
 bool LogicalOrExprNode::hasCompileTimeValue() const {
@@ -330,9 +329,9 @@ CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
 
   const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
   const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
-  if (op == OP_EQUAL)
+  if (op == EqualityOp::OP_EQUAL)
     return CompileTimeValue{.boolValue = op0Value.longValue == op1Value.longValue};
-  if (op == OP_NOT_EQUAL)
+  if (op == EqualityOp::OP_NOT_EQUAL)
     return CompileTimeValue{.boolValue = op0Value.longValue != op1Value.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "EqualityExprNode::getCompileTimeValue()");
@@ -348,13 +347,13 @@ CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
 
   const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
   const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
-  if (op == OP_LESS)
+  if (op == RelationalOp::OP_LESS)
     return CompileTimeValue{.boolValue = op0Value.longValue < op1Value.longValue};
-  if (op == OP_GREATER)
+  if (op == RelationalOp::OP_GREATER)
     return CompileTimeValue{.boolValue = op0Value.longValue > op1Value.longValue};
-  if (op == OP_LESS_EQUAL)
+  if (op == RelationalOp::OP_LESS_EQUAL)
     return CompileTimeValue{.boolValue = op0Value.longValue <= op1Value.longValue};
-  if (op == OP_GREATER_EQUAL)
+  if (op == RelationalOp::OP_GREATER_EQUAL)
     return CompileTimeValue{.boolValue = op0Value.longValue >= op1Value.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "RelationalExprNode::getCompileTimeValue()");
@@ -400,9 +399,9 @@ CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const AdditiveOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
-    if (op == OP_PLUS)
+    if (op == AdditiveOp::OP_PLUS)
       result.longValue += opCompileTimeValue.longValue;
-    else if (op == OP_MINUS)
+    else if (op == AdditiveOp::OP_MINUS)
       result.longValue -= opCompileTimeValue.longValue;
     else
       throw CompilerError(UNHANDLED_BRANCH, "AdditiveExprNode::getCompileTimeValue()");
@@ -425,13 +424,13 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
     const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const MultiplicativeOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
-    if (op == OP_MUL) {
+    if (op == MultiplicativeOp::OP_MUL) {
       result.longValue *= opCompileTimeValue.longValue;
-    } else if (op == OP_DIV) {
+    } else if (op == MultiplicativeOp::OP_DIV) {
       if (opCompileTimeValue.longValue == 0)
         throw SemanticError(operands.at(i), DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
       result.longValue /= opCompileTimeValue.longValue;
-    } else if (op == OP_REM) {
+    } else if (op == MultiplicativeOp::OP_REM) {
       result.longValue %= opCompileTimeValue.longValue;
     } else {
       throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExprNode::getCompileTimeValue()");
@@ -442,17 +441,16 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
 
 bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr->hasCompileTimeValue(); }
 
-CompileTimeValue CastExprNode::getCompileTimeValue() const {
-  return prefixUnaryExpr->getCompileTimeValue();
-}
+CompileTimeValue CastExprNode::getCompileTimeValue() const { return prefixUnaryExpr->getCompileTimeValue(); }
 
 bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr)
     return postfixUnaryExpr->hasCompileTimeValue();
 
-  const bool isOperatorSupported =
-      op == OP_NONE || op == OP_MINUS || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS || op == OP_NOT || op == OP_BITWISE_NOT;
-  return isOperatorSupported && prefixUnaryExpr->hasCompileTimeValue();
+  const bool isSupported = op == PrefixUnaryOp::OP_NONE || op == PrefixUnaryOp::OP_MINUS || op == PrefixUnaryOp::OP_PLUS_PLUS ||
+                           op == PrefixUnaryOp::OP_MINUS_MINUS || op == PrefixUnaryOp::OP_NOT ||
+                           op == PrefixUnaryOp::OP_BITWISE_NOT;
+  return isSupported && prefixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
@@ -460,15 +458,15 @@ CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-
     return postfixUnaryExpr->getCompileTimeValue();
 
   CompileTimeValue opValue = prefixUnaryExpr->getCompileTimeValue();
-  if (op == OP_MINUS)
+  if (op == PrefixUnaryOp::OP_MINUS)
     return CompileTimeValue{.longValue = -opValue.longValue};
-  if (op == OP_PLUS_PLUS)
+  if (op == PrefixUnaryOp::OP_PLUS_PLUS)
     return CompileTimeValue{.longValue = ++opValue.longValue};
-  if (op == OP_MINUS_MINUS)
+  if (op == PrefixUnaryOp::OP_MINUS_MINUS)
     return CompileTimeValue{.longValue = --opValue.longValue};
-  if (op == OP_NOT)
+  if (op == PrefixUnaryOp::OP_NOT)
     return CompileTimeValue{.boolValue = !opValue.boolValue};
-  if (op == OP_BITWISE_NOT)
+  if (op == PrefixUnaryOp::OP_BITWISE_NOT)
     return CompileTimeValue{.longValue = ~opValue.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExprNode::getCompileTimeValue()");
@@ -478,8 +476,9 @@ bool PostfixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursio
   if (atomicExpr)
     return atomicExpr->hasCompileTimeValue();
 
-  const bool isOperatorSupported = op == OP_NONE || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS;
-  return isOperatorSupported && postfixUnaryExpr->hasCompileTimeValue();
+  const bool isSupported =
+      op == PostfixUnaryOp::OP_NONE || op == PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryOp::OP_MINUS_MINUS;
+  return isSupported && postfixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
@@ -487,9 +486,9 @@ CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*
     return atomicExpr->getCompileTimeValue();
 
   CompileTimeValue opValue = postfixUnaryExpr->getCompileTimeValue();
-  if (op == OP_PLUS_PLUS)
+  if (op == PostfixUnaryOp::OP_PLUS_PLUS)
     return CompileTimeValue{.longValue = opValue.longValue++};
-  if (op == OP_MINUS_MINUS)
+  if (op == PostfixUnaryOp::OP_MINUS_MINUS)
     return CompileTimeValue{.longValue = opValue.longValue--};
 
   throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExprNode::getCompileTimeValue()");

@@ -997,7 +997,7 @@ public:
 class SignatureNode final : public ASTNode {
 public:
   // Enums
-  enum SignatureType : uint8_t {
+  enum class SignatureType : uint8_t {
     TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
@@ -1022,7 +1022,7 @@ public:
   bool hasReturnType = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  SignatureType signatureType = TYPE_NONE;
+  SignatureType signatureType = SignatureType::TYPE_NONE;
   TypeSpecifiers signatureSpecifiers;
   std::string methodName;
   SymbolTableEntry *entry = nullptr;
@@ -1100,7 +1100,7 @@ public:
 class SpecifierNode final : public ASTNode {
 public:
   // Enums
-  enum SpecifierType : uint8_t {
+  enum class SpecifierType : uint8_t {
     TY_NONE,
     TY_CONST,
     TY_SIGNED,
@@ -1122,7 +1122,7 @@ public:
   GET_CHILDREN();
 
   // Public members
-  SpecifierType type = TY_NONE;
+  SpecifierType type = SpecifierType::TY_NONE;
 };
 
 // ========================================================== ModAttrNode ========================================================
@@ -1215,7 +1215,7 @@ public:
     TARGET_LAMBDA = 1 << 5,
   };
 
-  enum AttrType : uint8_t {
+  enum class AttrType : uint8_t {
     ATTR_TYPE_INVALID,
     TYPE_STRING,
     TYPE_BOOL,
@@ -1235,7 +1235,7 @@ public:
 
   // Public members
   ConstantNode *value = nullptr;
-  AttrType type = ATTR_TYPE_INVALID;
+  AttrType type = AttrType::ATTR_TYPE_INVALID;
   AttrTarget target = TARGET_INVALID;
   std::string key;
 };
@@ -1507,7 +1507,7 @@ public:
 class AssignExprNode final : public ExprNode {
 public:
   // Enums
-  enum AssignOp : uint8_t {
+  enum class AssignOp : uint8_t {
     OP_NONE,
     OP_ASSIGN,
     OP_PLUS_EQUAL,
@@ -1541,7 +1541,7 @@ public:
   PrefixUnaryExprNode *lhs = nullptr;
   AssignExprNode *rhs = nullptr;
   TernaryExprNode *ternaryExpr = nullptr;
-  AssignOp op = OP_NONE;
+  AssignOp op = AssignOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
@@ -1676,7 +1676,7 @@ public:
 class EqualityExprNode final : public ExprNode {
 public:
   // Enums
-  enum EqualityOp : uint8_t {
+  enum class EqualityOp : uint8_t {
     OP_NONE,
     OP_EQUAL,
     OP_NOT_EQUAL,
@@ -1699,7 +1699,7 @@ public:
 
   // Public members
   std::vector<RelationalExprNode *> operands;
-  EqualityOp op = OP_NONE;
+  EqualityOp op = EqualityOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
@@ -1708,7 +1708,7 @@ public:
 class RelationalExprNode final : public ExprNode {
 public:
   // Enums
-  enum RelationalOp : uint8_t {
+  enum class RelationalOp : uint8_t {
     OP_NONE,
     OP_LESS,
     OP_GREATER,
@@ -1730,7 +1730,7 @@ public:
 
   // Public members
   std::vector<ShiftExprNode *> operands;
-  RelationalOp op = OP_NONE;
+  RelationalOp op = RelationalOp::OP_NONE;
 };
 
 // ====================================================== ShiftExprNode ==========================================================
@@ -1773,7 +1773,7 @@ public:
 class AdditiveExprNode final : public ExprNode {
 public:
   // Enums
-  enum AdditiveOp : uint8_t {
+  enum class AdditiveOp : uint8_t {
     OP_PLUS,
     OP_MINUS,
   };
@@ -1807,7 +1807,7 @@ public:
 class MultiplicativeExprNode final : public ExprNode {
 public:
   // Enums
-  enum MultiplicativeOp : uint8_t {
+  enum class MultiplicativeOp : uint8_t {
     OP_MUL,
     OP_DIV,
     OP_REM,
@@ -1864,7 +1864,7 @@ public:
 class PrefixUnaryExprNode final : public ExprNode {
 public:
   // Enums
-  enum PrefixUnaryOp : uint8_t {
+  enum class PrefixUnaryOp : uint8_t {
     OP_NONE,
     OP_MINUS,
     OP_PLUS_PLUS,
@@ -1890,7 +1890,7 @@ public:
   // Public members
   PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
   PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
-  PrefixUnaryOp op = OP_NONE;
+  PrefixUnaryOp op = PrefixUnaryOp::OP_NONE;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -1898,7 +1898,7 @@ public:
 class PostfixUnaryExprNode final : public ExprNode {
 public:
   // Enums
-  enum PostfixUnaryOp : uint8_t {
+  enum class PostfixUnaryOp : uint8_t {
     OP_NONE,
     OP_SUBSCRIPT,
     OP_MEMBER_ACCESS,
@@ -1925,7 +1925,7 @@ public:
   AtomicExprNode *atomicExpr = nullptr;
   PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
   AssignExprNode *subscriptIndexExpr = nullptr;
-  PostfixUnaryOp op = OP_NONE;
+  PostfixUnaryOp op = PostfixUnaryOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   std::string identifier;                           // Only set when operator is member access
 };
@@ -1993,7 +1993,7 @@ public:
 class ConstantNode final : public ExprNode {
 public:
   // Enum
-  enum PrimitiveValueType : uint8_t {
+  enum class PrimitiveValueType : uint8_t {
     TYPE_NONE,
     TYPE_DOUBLE,
     TYPE_INT,
@@ -2018,7 +2018,7 @@ public:
   [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
 
   // Public members
-  PrimitiveValueType type = TYPE_NONE;
+  PrimitiveValueType type = PrimitiveValueType::TYPE_NONE;
   CompileTimeValue compileTimeValue;
 };
 
@@ -2027,7 +2027,7 @@ public:
 class FctCallNode final : public ExprNode {
 public:
   // Enums
-  enum FctCallType : uint8_t {
+  enum class FctCallType : uint8_t {
     TYPE_ORDINARY,
     TYPE_METHOD,
     TYPE_CTOR,
@@ -2037,7 +2037,7 @@ public:
   // Structs
   struct FctCallData {
     // Members
-    FctCallType callType = TYPE_ORDINARY;
+    FctCallType callType = FctCallType::TYPE_ORDINARY;
     bool isImported = false;
     QualType thisType = QualType(TY_DYN); // Is filled if method or ctor call
     std::vector<ExprResult> argResults;
@@ -2045,11 +2045,11 @@ public:
     Scope *calleeParentScope = nullptr;
 
     // Methods
-    [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
-    [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
+    [[nodiscard]] bool isOrdinaryCall() const { return callType == FctCallType::TYPE_ORDINARY; }
+    [[nodiscard]] bool isMethodCall() const { return callType == FctCallType::TYPE_METHOD; }
     [[nodiscard]] bool isVirtualMethodCall() const { return isMethodCall() && thisType.isBase(TY_INTERFACE); }
-    [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
-    [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
+    [[nodiscard]] bool isCtorCall() const { return callType == FctCallType::TYPE_CTOR; }
+    [[nodiscard]] bool isFctPtrCall() const { return callType == FctCallType::TYPE_FCT_PTR; }
   };
 
   // Constructors
@@ -2201,7 +2201,7 @@ public:
 class DataTypeNode final : public ASTNode {
 public:
   // Enums
-  enum TypeModifierType : uint8_t {
+  enum class TypeModifierType : uint8_t {
     TYPE_PTR,
     TYPE_REF,
     TYPE_ARRAY,
@@ -2209,7 +2209,7 @@ public:
 
   // Structs
   struct TypeModifier {
-    TypeModifierType modifierType = TYPE_PTR;
+    TypeModifierType modifierType = TypeModifierType::TYPE_PTR;
     bool hasSize = false;
     unsigned int hardcodedSize = 0;
     std::string sizeVarName;
@@ -2241,7 +2241,7 @@ public:
 class BaseDataTypeNode final : public ASTNode {
 public:
   // Enums
-  enum Type : uint8_t {
+  enum class Type : uint8_t {
     TYPE_NONE,
     TYPE_DOUBLE,
     TYPE_INT,
@@ -2269,7 +2269,7 @@ public:
   // Public members
   CustomDataTypeNode *customDataType = nullptr;
   FunctionDataTypeNode *functionDataType = nullptr;
-  Type type = TYPE_NONE;
+  Type type = Type::TYPE_NONE;
 };
 
 // ==================================================== CustomDataTypeNode =======================================================

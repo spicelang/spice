@@ -302,7 +302,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
     SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (node->condition->op == AssignExprNode::OP_ASSIGN)
+  if (node->condition->op == AssignExprNode::AssignOp::OP_ASSIGN)
     sourceFile->compilerOutput.warnings.emplace_back(node->condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
@@ -457,7 +457,7 @@ std::any TypeChecker::visitField(FieldNode *node) {
 }
 
 std::any TypeChecker::visitSignature(SignatureNode *node) {
-  const bool isFunction = node->signatureType == SignatureNode::TYPE_FUNCTION;
+  const bool isFunction = node->signatureType == SignatureNode::SignatureType::TYPE_FUNCTION;
 
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
@@ -900,7 +900,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   }
 
   // Check if assignment
-  if (node->op != AssignExprNode::OP_NONE) {
+  if (node->op != AssignExprNode::AssignOp::OP_NONE) {
     // Visit the right side first
     auto rhs = std::any_cast<ExprResult>(visit(node->rhs));
     auto [rhsType, rhsEntry] = rhs;
@@ -911,7 +911,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
     // Take a look at the operator
-    if (node->op == AssignExprNode::OP_ASSIGN) {
+    if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
       const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
 
@@ -920,25 +920,25 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
         currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
         rhsEntry = nullptr;
       }
-    } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhs, rhs, 0).type;
-    } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_MINUS_EQUAL) {
       rhsType = opRuleManager.getMinusEqualResultType(node, lhs, rhs, 0).type;
-    } else if (node->op == AssignExprNode::OP_MUL_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_MUL_EQUAL) {
       rhsType = opRuleManager.getMulEqualResultType(node, lhs, rhs, 0).type;
-    } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_DIV_EQUAL) {
       rhsType = opRuleManager.getDivEqualResultType(node, lhs, rhs, 0).type;
-    } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_REM_EQUAL) {
       rhsType = opRuleManager.getRemEqualResultType(node, lhs, rhs);
-    } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_SHL_EQUAL) {
       rhsType = opRuleManager.getSHLEqualResultType(node, lhs, rhs);
-    } else if (node->op == AssignExprNode::OP_SHR_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_SHR_EQUAL) {
       rhsType = opRuleManager.getSHREqualResultType(node, lhs, rhs);
-    } else if (node->op == AssignExprNode::OP_AND_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_AND_EQUAL) {
       rhsType = opRuleManager.getAndEqualResultType(node, lhs, rhs);
-    } else if (node->op == AssignExprNode::OP_OR_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_OR_EQUAL) {
       rhsType = opRuleManager.getOrEqualResultType(node, lhs, rhs);
-    } else if (node->op == AssignExprNode::OP_XOR_EQUAL) {
+    } else if (node->op == AssignExprNode::AssignOp::OP_XOR_EQUAL) {
       rhsType = opRuleManager.getXorEqualResultType(node, lhs, rhs);
     }
 
@@ -1135,9 +1135,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
 
   // Check operator
   ExprResult result;
-  if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
+  if (node->op == EqualityExprNode::EqualityOp::OP_EQUAL) // Operator was equal
     result = opRuleManager.getEqualResultType(node, lhs, rhs, 0);
-  else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
+  else if (node->op == EqualityExprNode::EqualityOp::OP_NOT_EQUAL) // Operator was not equal
     result = opRuleManager.getNotEqualResultType(node, lhs, rhs, 0);
   else
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
@@ -1159,13 +1159,13 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
 
   // Check operator
   QualType resultType;
-  if (node->op == RelationalExprNode::OP_LESS) // Operator was less
+  if (node->op == RelationalExprNode::RelationalOp::OP_LESS) // Operator was less
     resultType = OpRuleManager::getLessResultType(node, lhs, rhs);
-  else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
+  else if (node->op == RelationalExprNode::RelationalOp::OP_GREATER) // Operator was greater
     resultType = OpRuleManager::getGreaterResultType(node, lhs, rhs);
-  else if (node->op == RelationalExprNode::OP_LESS_EQUAL) // Operator was less equal
+  else if (node->op == RelationalExprNode::RelationalOp::OP_LESS_EQUAL) // Operator was less equal
     resultType = OpRuleManager::getLessEqualResultType(node, lhs, rhs);
-  else if (node->op == RelationalExprNode::OP_GREATER_EQUAL) // Operator was greater equal
+  else if (node->op == RelationalExprNode::RelationalOp::OP_GREATER_EQUAL) // Operator was greater equal
     resultType = OpRuleManager::getGreaterEqualResultType(node, lhs, rhs);
   else
     throw CompilerError(UNHANDLED_BRANCH, "RelationalExpr fall-through"); // GCOV_EXCL_LINE
@@ -1221,9 +1221,9 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 
     // Check operator
     const AdditiveExprNode::AdditiveOp &op = node->opQueue.front().first;
-    if (op == AdditiveExprNode::OP_PLUS)
+    if (op == AdditiveExprNode::AdditiveOp::OP_PLUS)
       currentResult = opRuleManager.getPlusResultType(node, currentResult, operandResult, i);
-    else if (op == AdditiveExprNode::OP_MINUS)
+    else if (op == AdditiveExprNode::AdditiveOp::OP_MINUS)
       currentResult = opRuleManager.getMinusResultType(node, currentResult, operandResult, i);
     else
       throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
@@ -1252,11 +1252,11 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 
     // Check operator
     const MultiplicativeExprNode::MultiplicativeOp &op = node->opQueue.front().first;
-    if (op == MultiplicativeExprNode::OP_MUL)
+    if (op == MultiplicativeExprNode::MultiplicativeOp::OP_MUL)
       currentResult = opRuleManager.getMulResultType(node, currentResult, operandResult, i);
-    else if (op == MultiplicativeExprNode::OP_DIV)
+    else if (op == MultiplicativeExprNode::MultiplicativeOp::OP_DIV)
       currentResult = opRuleManager.getDivResultType(node, currentResult, operandResult, i);
-    else if (op == MultiplicativeExprNode::OP_REM)
+    else if (op == MultiplicativeExprNode::MultiplicativeOp::OP_REM)
       currentResult = OpRuleManager::getRemResultType(node, currentResult, operandResult);
     else
       throw CompilerError(UNHANDLED_BRANCH, "Multiplicative fall-through"); // GCOV_EXCL_LINE
@@ -1300,7 +1300,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   accessScope = nullptr;
 
   // If no operator is applied, simply visit the postfix unary expression
-  if (node->op == PrefixUnaryExprNode::OP_NONE)
+  if (node->op == PrefixUnaryExprNode::PrefixUnaryOp::OP_NONE)
     return visit(node->postfixUnaryExpr);
 
   // Visit the right side
@@ -1310,10 +1310,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
   // Determine action, based on the given operator
   switch (node->op) {
-  case PrefixUnaryExprNode::OP_MINUS:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS:
     operandType = OpRuleManager::getPrefixMinusResultType(node, operand);
     break;
-  case PrefixUnaryExprNode::OP_PLUS_PLUS:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_PLUS_PLUS:
     operandType = opRuleManager.getPrefixPlusPlusResultType(node, operand);
 
     if (operandEntry) {
@@ -1326,7 +1326,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     }
 
     break;
-  case PrefixUnaryExprNode::OP_MINUS_MINUS:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS_MINUS:
     operandType = opRuleManager.getPrefixMinusMinusResultType(node, operand);
 
     if (operandEntry) {
@@ -1339,16 +1339,16 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     }
 
     break;
-  case PrefixUnaryExprNode::OP_NOT:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_NOT:
     operandType = OpRuleManager::getPrefixNotResultType(node, operand);
     break;
-  case PrefixUnaryExprNode::OP_BITWISE_NOT:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT:
     operandType = OpRuleManager::getPrefixBitwiseNotResultType(node, operand);
     break;
-  case PrefixUnaryExprNode::OP_DEREFERENCE:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE:
     operandType = OpRuleManager::getPrefixMulResultType(node, operand);
     break;
-  case PrefixUnaryExprNode::OP_ADDRESS_OF:
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF:
     operandType = OpRuleManager::getPrefixBitwiseAndResultType(node, operand);
     break;
   default:
@@ -1360,7 +1360,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   // If no operator is applied, simply visit the atomic expression
-  if (node->op == PostfixUnaryExprNode::OP_NONE)
+  if (node->op == PostfixUnaryExprNode::PostfixUnaryOp::OP_NONE)
     return visit(node->atomicExpr);
 
   // Visit left side
@@ -1370,7 +1370,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
 
   switch (node->op) {
-  case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT: {
     // Visit index assignment
     AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
     const auto index = std::any_cast<ExprResult>(visit(indexAssignExpr));
@@ -1420,7 +1420,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     break;
   }
-  case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS: {
     const std::string &fieldName = node->identifier;
 
     // Check if lhs is enum or strobj
@@ -1461,7 +1461,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     operandEntry = memberEntry;
     break;
   }
-  case PostfixUnaryExprNode::OP_PLUS_PLUS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS: {
     operandType = opRuleManager.getPostfixPlusPlusResultType(node, operand, 0).type;
 
     if (operandEntry) {
@@ -1475,7 +1475,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     break;
   }
-  case PostfixUnaryExprNode::OP_MINUS_MINUS: {
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS: {
     operandType = opRuleManager.getPostfixMinusMinusResultType(node, operand, 0).type;
 
     if (operandEntry) {
@@ -1638,28 +1638,28 @@ std::any TypeChecker::visitValue(ValueNode *node) {
 std::any TypeChecker::visitConstant(ConstantNode *node) {
   SuperType superType;
   switch (node->type) {
-  case ConstantNode::TYPE_DOUBLE:
+  case ConstantNode::PrimitiveValueType::TYPE_DOUBLE:
     superType = TY_DOUBLE;
     break;
-  case ConstantNode::TYPE_INT:
+  case ConstantNode::PrimitiveValueType::TYPE_INT:
     superType = TY_INT;
     break;
-  case ConstantNode::TYPE_SHORT:
+  case ConstantNode::PrimitiveValueType::TYPE_SHORT:
     superType = TY_SHORT;
     break;
-  case ConstantNode::TYPE_LONG:
+  case ConstantNode::PrimitiveValueType::TYPE_LONG:
     superType = TY_LONG;
     break;
-  case ConstantNode::TYPE_BYTE:
+  case ConstantNode::PrimitiveValueType::TYPE_BYTE:
     superType = TY_BYTE;
     break;
-  case ConstantNode::TYPE_CHAR:
+  case ConstantNode::PrimitiveValueType::TYPE_CHAR:
     superType = TY_CHAR;
     break;
-  case ConstantNode::TYPE_STRING:
+  case ConstantNode::PrimitiveValueType::TYPE_STRING:
     superType = TY_STRING;
     break;
-  case ConstantNode::TYPE_BOOL:
+  case ConstantNode::PrimitiveValueType::TYPE_BOOL:
     superType = TY_BOOL;
     break;
   default:                                                          // GCOV_EXCL_LINE
@@ -1704,9 +1704,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     const QualType &baseType = firstFragEntry->getQualType().getBase();
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
     if (baseType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
-      data.callType = firstFragEntry->scope->type == ScopeType::GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
+      if (firstFragEntry->scope->type == ScopeType::GLOBAL)
+        data.callType = FctCallNode::FctCallType::TYPE_CTOR;
+      else
+        data.callType = FctCallNode::FctCallType::TYPE_METHOD;
     } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != ScopeType::GLOBAL) {
-      data.callType = FctCallNode::TYPE_FCT_PTR;
+      data.callType = FctCallNode::FctCallType::TYPE_FCT_PTR;
     }
   }
 
@@ -1916,7 +1919,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
 
   // Check if the target symbol is a struct -> this must be a constructor call
   if (functionEntry != nullptr && functionEntry->getQualType().is(TY_STRUCT))
-    data.callType = FctCallNode::TYPE_CTOR;
+    data.callType = FctCallNode::FctCallType::TYPE_CTOR;
 
   // For constructor calls, do some preparation
   std::string functionName = node->functionNameFragments.back();
@@ -2349,15 +2352,15 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
     switch (modifierType) {
-    case DataTypeNode::TYPE_PTR: {
+    case DataTypeNode::TypeModifierType::TYPE_PTR: {
       type = type.toPtr(node);
       break;
     }
-    case DataTypeNode::TYPE_REF: {
+    case DataTypeNode::TypeModifierType::TYPE_REF: {
       type = type.toRef(node);
       break;
     }
-    case DataTypeNode::TYPE_ARRAY: {
+    case DataTypeNode::TypeModifierType::TYPE_ARRAY: {
       const std::string &varName = sizeVarName;
       if (!varName.empty()) {
         const SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
@@ -2385,19 +2388,19 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   if (node->specifierLst) {
     const QualType baseType = type.getBase();
     for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::TY_CONST) {
+      if (specifier->type == SpecifierNode::SpecifierType::TY_CONST) {
         type.getSpecifiers().isConst = true;
-      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
+      } else if (specifier->type == SpecifierNode::SpecifierType::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
         type.getSpecifiers().isSigned = true;
         type.getSpecifiers().isUnsigned = false;
-      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
+      } else if (specifier->type == SpecifierNode::SpecifierType::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
         type.getSpecifiers().isSigned = false;
         type.getSpecifiers().isUnsigned = true;
-      } else if (specifier->type == SpecifierNode::TY_HEAP) {
+      } else if (specifier->type == SpecifierNode::SpecifierType::TY_HEAP) {
         // Heap variables can only be pointers
         if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_ARRAY, TY_STRING}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
@@ -2405,11 +2408,11 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
                             baseType.getName(false))
 
         type.getSpecifiers().isHeap = true;
-      } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
+      } else if (specifier->type == SpecifierNode::SpecifierType::TY_COMPOSITION && node->isFieldType) {
         if (!type.is(TY_STRUCT))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
         type.getSpecifiers().isComposition = true;
-      } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
+      } else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
         type.getSpecifiers().isPublic = true;
       } else {
         const char *entryName = "local variable";
@@ -2432,28 +2435,28 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
 std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
-  case BaseDataTypeNode::TYPE_DOUBLE:
+  case BaseDataTypeNode::Type::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(QualType(TY_DOUBLE), manIdx);
-  case BaseDataTypeNode::TYPE_INT:
+  case BaseDataTypeNode::Type::TYPE_INT:
     return node->setEvaluatedSymbolType(QualType(TY_INT), manIdx);
-  case BaseDataTypeNode::TYPE_SHORT:
+  case BaseDataTypeNode::Type::TYPE_SHORT:
     return node->setEvaluatedSymbolType(QualType(TY_SHORT), manIdx);
-  case BaseDataTypeNode::TYPE_LONG:
+  case BaseDataTypeNode::Type::TYPE_LONG:
     return node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx);
-  case BaseDataTypeNode::TYPE_BYTE:
+  case BaseDataTypeNode::Type::TYPE_BYTE:
     return node->setEvaluatedSymbolType(QualType(TY_BYTE), manIdx);
-  case BaseDataTypeNode::TYPE_CHAR:
+  case BaseDataTypeNode::Type::TYPE_CHAR:
     return node->setEvaluatedSymbolType(QualType(TY_CHAR), manIdx);
-  case BaseDataTypeNode::TYPE_STRING:
+  case BaseDataTypeNode::Type::TYPE_STRING:
     return node->setEvaluatedSymbolType(QualType(TY_STRING), manIdx);
-  case BaseDataTypeNode::TYPE_BOOL:
+  case BaseDataTypeNode::Type::TYPE_BOOL:
     return node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx);
-  case BaseDataTypeNode::TYPE_CUSTOM: {
+  case BaseDataTypeNode::Type::TYPE_CUSTOM: {
     const auto customType = std::any_cast<QualType>(visit(node->customDataType));
     HANDLE_UNRESOLVED_TYPE_QT(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
-  case BaseDataTypeNode::TYPE_FUNCTION: {
+  case BaseDataTypeNode::Type::TYPE_FUNCTION: {
     const auto functionType = std::any_cast<QualType>(visit(node->functionDataType));
     HANDLE_UNRESOLVED_TYPE_QT(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
