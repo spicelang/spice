@@ -1,0 +1,74 @@
+/**
+ * Helper data structure to construct strings.
+ * It is useful to avoid copying large strings around.
+ */
+public type StringStream struct {
+    String buffer
+}
+
+public p StringStream.ctor() {
+    // Initialize buffer empty
+    this.buffer = String();
+}
+
+public p StringStream.ctor(string input) {
+    // Initialize buffer with an initial string
+    this.buffer = String(input);
+}
+
+public p StringStream.ctor(const String& input) {
+    // Initialize buffer with an initial string
+    this.buffer = input;
+}
+
+/**
+ * Clear the buffer
+ */
+public p StringStream.clear() {
+    this.buffer.clear();
+}
+
+/**
+ * Get the value of the buffer
+ *
+ * @return Resulting String object
+ */
+public f<const String&> StringStream.str() {
+    return this.buffer;
+}
+
+/**
+ * Append a raw string to the buffer
+ */
+#[ignoreUnusedReturnValue]
+public f<StringStream&> operator<<(StringStream& ss, string input) {
+    ss.buffer += input;
+    return ss;
+}
+
+/**
+ * Append a String to the buffer
+ */
+#[ignoreUnusedReturnValue]
+public f<StringStream&> operator<<(StringStream& ss, const String& input) {
+    ss.buffer += input;
+    return ss;
+}
+
+/**
+ * Append a single char to the buffer
+ */
+#[ignoreUnusedReturnValue]
+public f<StringStream&> operator<<(StringStream& ss, char input) {
+    ss.buffer += input;
+    return ss;
+}
+
+/**
+ * Return end line character
+ *
+ * @return End line character
+ */
+public f<char> endl() {
+    return '\n';
+}
