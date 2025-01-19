@@ -133,7 +133,19 @@ private:
   std::stack<ASTNode *> parentStack;
 
   // Private methods
-  template <typename T> ALWAYS_INLINE T *createNode(const ParserRuleContext *ctx) {
+  template <typename SrcTy, typename TgtTy>
+  void fetchChildrenIntoVector(std::vector<TgtTy> &tgt, const std::vector<SrcTy> &src)
+    requires(std::is_pointer_v<SrcTy> && std::is_pointer_v<TgtTy>)
+  {
+    tgt.reserve(src.size());
+    for (SrcTy shiftExpr : src)
+      tgt.push_back(std::any_cast<TgtTy>(visit(shiftExpr)));
+  }
+
+  template <typename T>
+  T *createNode(const ParserRuleContext *ctx)
+    requires std::is_base_of_v<ASTNode, T>
+  {
     // Create the new node
     T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
     if constexpr (!std::is_same_v<T, EntryNode>)
@@ -143,9 +155,17 @@ private:
     return node;
   }
 
-  template <typename T> ALWAYS_INLINE T *resumeForExpansion() const { return spice_pointer_cast<T *>(parentStack.top()); }
+  template <typename T>
+  ALWAYS_INLINE T *resumeForExpansion() const
+    requires std::is_base_of_v<ASTNode, T>
+  {
+    return spice_pointer_cast<T *>(parentStack.top());
+  }
 
-  template <typename T> ALWAYS_INLINE T *concludeNode(T *node) {
+  template <typename T>
+  ALWAYS_INLINE T *concludeNode(T *node)
+    requires std::is_base_of_v<ASTNode, T>
+  {
     // This node is no longer the parent for its children
     assert(parentStack.top() == node);
     parentStack.pop();
