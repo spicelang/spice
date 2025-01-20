@@ -65,7 +65,7 @@ f<int> main() {
         // No return value receiver
         spawnLO(); // Anonymous symbol
         // Return value receiver - value
-        LifetimeObject lo = spawnLO(); // Assigned to lo
+        LifetimeObject lo = spawnLO(); // Copy
         // Return value receiver - const ref
         const LifetimeObject& loConstRef = spawnLO(); // Assigned to loConstRef
     }
@@ -81,7 +81,7 @@ f<int> main() {
         // No return value receiver
         spawnLO(); // Anonymous symbol
         // Return value receiver - value
-        LifetimeObject lo = spawnLO(); // Assigned to lo
+        LifetimeObject lo = spawnLO(); // Copy
         // Return value receiver - const ref
         const LifetimeObject& loConstRef = spawnLO(); // Assigned to loConstRef
     }

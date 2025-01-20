@@ -347,7 +347,20 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
  */
 Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName,
                                                   const ArgList &args, const ASTNode *node) {
-  QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
+  const QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
+  return implicitlyCallStructMethod(thisType, methodName, args, node);
+}
+
+/**
+ * Prepare the generation of a call to a method of a given struct
+ *
+ * @param thisType Struct type to call the method on
+ * @param methodName Name of the method to call
+ * @param args Provided arguments by the caller
+ * @param node AST node
+ */
+Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
+                                                  const ASTNode *node) {
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
@@ -366,9 +379,19 @@ Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry,
  */
 Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
   assert(entry != nullptr);
-  const QualType argType = entry->getQualType().removeReferenceWrapper().toConstRef(node);
+  return implicitlyCallStructCopyCtor(entry->getQualType(), node);
+}
+
+/**
+ * Prepare the generation of a call to the copy ctor of a given struct
+ *
+ * @param thisType Struct type to call the copy ctor on
+ * @param node Current AST node
+ */
+Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType& thisType, const ASTNode *node) {
+  const QualType argType = thisType.removeReferenceWrapper().toConstRef(node);
   const ArgList args = {{argType, false /* we always have an entry here */}};
-  return implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
+  return implicitlyCallStructMethod(thisType, CTOR_FUNCTION_NAME, args, node);
 }
 
 /**

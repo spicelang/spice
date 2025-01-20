@@ -603,7 +603,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   node->entries.at(manIdx) = localVarEntry;
 
   // Update the state of the variable
-  localVarEntry->updateState(INITIALIZED, node, true);
+  localVarEntry->updateState(INITIALIZED, node);
 
   return node->setEvaluatedSymbolType(localVarType, manIdx);
 }
@@ -952,7 +952,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      lhsVar->updateState(INITIALIZED, node, false);
+      lhsVar->updateState(INITIALIZED, node);
     }
 
     return ExprResult{node->setEvaluatedSymbolType(rhsType, manIdx)};
@@ -1322,7 +1322,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      operandEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node);
     }
 
     break;
@@ -1335,7 +1335,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      operandEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node);
     }
 
     break;
@@ -1470,7 +1470,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      operandEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node);
     }
 
     break;
@@ -1484,7 +1484,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         lhsCapture->setAccessType(READ_WRITE);
 
       // Update the state of the variable
-      operandEntry->updateState(INITIALIZED, node, false);
+      operandEntry->updateState(INITIALIZED, node);
     }
 
     break;
