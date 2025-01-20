@@ -1,3 +1,6 @@
+// Std imports
+import "std/text/stringstream";
+
 // Own imports
 import "bootstrap/reader/code-loc";
 
@@ -38,8 +41,9 @@ public type CompilerWarning struct {
  * @param message Warning message suffix
  */
 public p CompilerWarning.ctor(const CodeLoc& codeLoc, const CompilerWarningType warningType, const string message) {
-    this.warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " +
-            this.getMessagePrefix(warningType) + ": " + message;
+    StringStream msg;
+    msg << "[Warning] " << codeLoc.toPrettyString() << ": " << this.getMessagePrefix(warningType) << ": " << message;
+    this.warningMessage = msg.str();
 }
 
 /**
@@ -49,7 +53,9 @@ public p CompilerWarning.ctor(const CodeLoc& codeLoc, const CompilerWarningType 
  * @param message Warning message suffix
  */
 public p CompilerWarning.ctor(const CompilerWarningType warningType, const string message) {
-    this.warningMessage = "[Warning] " + this.getMessagePrefix(warningType) + ": " + message;
+    StringStream msg;
+    msg << "[Warning] " << this.getMessagePrefix(warningType) << ": " << message;
+    this.warningMessage = msg.str();
 }
 
 /**
