@@ -106,8 +106,10 @@ public type SemanticError struct {
 }
 
 public p SemanticError.ctor(const AstNode* node, const SemanticErrorType errorType, const string message) {
-    this.errorMessage = "[Error|Semantic] " + node.codeLoc.toPrettyString() + ":\n" + this.getMessagePrefix(errorType) +
-            ": " + message + "\n\n" + node.errorMessage;
+    StringStream msg;
+    msg << "[Error|Semantic] " << node.codeLoc.toPrettyString() << ":" << endl();
+    msg << this.getMessagePrefix(errorType) << ": " << message << endl() << endl() << node.errorMessage;
+    this.errorMessage = msg.str();
 }
 
 /**

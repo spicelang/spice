@@ -1,37 +1,6 @@
-import "std/text/stringstream";
-
-f<int> main() {
-    // Basic usage with raw string literals
-    StringStream ss1;
-    ss1 << "Hello" << " World!";
-    assert ss1.str() == "Hello World!";
-
-    // Basic usage with String values
-    StringStream ss2 = StringStream(String("This "));
-    ss2 << String("is") << String(" a ") << String("test!") << endl();
-    assert ss2.str() == "This is a test!\n";
-
-    // Mixed usage
-    StringStream ss3 = StringStream("Hello");
-    ss3 << String(" fellow") << " Programmers" << endl();
-    assert ss3.str() == "Hello fellow Programmers\n";
-
-    // Usage spread over multiple lines
-    StringStream ss4 = StringStream();
-    ss4 << "This ";
-    ss4 << "is ";
-    ss4 << "a ";
-    ss4 << "multiline ";
-    ss4 << "test";
-    ss4 << endl();
-    assert ss4.str() == "This is a multiline test\n";
-
-    printf("All assertions passed!");
-}
-
-/*import "std/data/map";
+import "std/data/map";
 
 f<int> main() {
     Map<string, int> map;
     map["test"] = 1;
-}*/
+}

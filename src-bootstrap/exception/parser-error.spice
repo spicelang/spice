@@ -1,4 +1,7 @@
-// Imports
+// Std imports
+import "std/text/stringstream";
+
+// Ówn imports
 import "bootstrap/util/code-loc";
 
 public type ParserErrorType enum {
@@ -25,7 +28,9 @@ public type ParserError struct {
  * @param message Error message suffix
  */
 public p ParserError.ctor(const CodeLoc* codeLoc, const ParserErrorType errorType, const string message) {
-    this.errorMessage = "[Error|Parser] " + codeLoc.toPrettyString() + ": " + this.getMessagePrefix(errorType) + ": " + message;
+    StringStream msg;
+    msg << "[Error|Parser] " << codeLoc.toPrettyString() << ": " << this.getMessagePrefix(errorType) << ": " << message;
+    this.errorMessage = msg.str();
 }
 
 /**

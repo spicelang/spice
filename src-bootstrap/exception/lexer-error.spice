@@ -1,3 +1,6 @@
+// Std imports
+import "std/text/stringstream";
+
 // Own imports
 import "bootstrap/util/code-loc";
 
@@ -20,7 +23,9 @@ public type ParserError struct {
  * @param message Error message suffix
  */
 public p ParserError.ctor(const CodeLoc* codeLoc, const LexerErrorType errorType, const string message) {
-    this.errorMessage = "[Error|Lexer] " + codeLoc.toPrettyString() + ": " + this.getMessagePrefix(errorType) + ": " + message;
+    StringStream msg;
+    msg << "[Error|Lexer] " << codeLoc.toPrettyString() << ": " << this.getMessagePrefix(errorType) << ": " << message;
+    this.errorMessage = msg.str();
 }
 
 /**

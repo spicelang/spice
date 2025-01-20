@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/source-file-intf";
@@ -30,19 +31,19 @@ public f<String> getLastFragment(const String &haystack, const string needle) {
  * @return Error message
  */
 public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sourceFiles) {
-    String message;
-    message += "*-----*\n";
-    message += "|     |\n";
+    StringStream message;
+    message << "*-----*" << endl();
+    message << "|     |" << endl();
     for unsigned long i = 0l; i < sourceFiles.getSize(); i++ {
         const ISourceFile* sourceFile = sourceFiles.get(i);
-        if i != 0 { message += "|     |\n"; }
-        message += "|  ";
-        message += sourceFile.getFileName();
-        message += "\n";
+        if i != 0 { message << "|     |" << endl(); }
+        message << "|  ";
+        message << sourceFile.getFileName();
+        message << endl();
     }
-    message += "|     |\n";
-    message += "*-----*\n";
-    return message;
+    message << "|     |" << endl();
+    message << "*-----*" << endl();
+    return message.str();
 }
 
 /**
@@ -51,11 +52,12 @@ public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sour
  * @return Version info string
  */
 public f<String> buildVersionInfo() {
-    String versionString;
-    versionString += "Spice version: " + SPICE_VERSION + " " + SPICE_TARGET_OS + "/" + SPICE_TARGET_ARCH + "\n";
-    versionString += "Git hash:      " + SPICE_GIT_HASH + "\n";
-    versionString += "LLVM version:  " + llvm::getVersionString() + "\n";
-    versionString += "built by:      " + SPICE_BUILT_BY + "\n\n";
-    versionString += "(c) Marc Auberer 2021-2025";
-    return versionString;
+    StringStream versionString;
+    versionString << "Spice version: " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << endl();
+    versionString << "Git hash:      " << SPICE_GIT_HASH << endl();
+    versionString << "LLVM version:  " << llvm::getVersionString() << endl();
+    versionString << "built by:      " << SPICE_BUILT_BY << endl() << endl();
+    versionString << "(c) Marc Auberer 2021-2025";
+    String str = versionString.str();
+    return str;
 }
