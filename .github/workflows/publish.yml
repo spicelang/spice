@@ -165,7 +165,7 @@ jobs:
 
   build-compiler-windows-x86:
     name: Build compiler binaries - Windows/x86_64
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@v4
