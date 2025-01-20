@@ -34,9 +34,8 @@ void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool
  *
  * @param newState New state of the current symbol
  * @param node AST node where the update takes place
- * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode *node, bool force) {
+void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode *node) {
   const LifecycleState oldState = lifecycle.getCurrentState();
   if (newState == DEAD && oldState == DECLARED)                                                      // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Cannot destroy uninitialized variable '" + name + "'");     // GCOV_EXCL_LINE

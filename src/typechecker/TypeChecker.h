@@ -141,7 +141,7 @@ private:
   bool visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes);
   bool checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
-  [[nodiscard]] Function *matchCopyCtor(const QualType& thisType, const ASTNode* node);
+  [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node);
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   static void autoDeReference(QualType &symbolType);
@@ -159,7 +159,10 @@ private:
   void createDtorBodyPreamble(const Scope *bodyScope);
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node);
+  Function *implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
+                                       const ASTNode *node);
   Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node);
+  Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   void implicitlyCallDeallocate(const ASTNode *node);
   void doScopeCleanup(StmtLstNode *node);

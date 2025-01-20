@@ -39,12 +39,12 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
-    if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true)) {
+    if (lhsType.matches(rhsModified, false, true, true)) {
       // Check if we support nrvo. If yes, skip the implicit copy ctor call
       const bool supportsNRVO = isReturn && !rhs.isTemporary();
       Function *copyCtor = nullptr;
-      if (rhsModified.is(TY_STRUCT) && rhs.entry != nullptr && !supportsNRVO)
-        copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+      if (rhsModified.is(TY_STRUCT) && !supportsNRVO)
+        copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsModified, node);
       return {lhsType, copyCtor};
     }
   }
