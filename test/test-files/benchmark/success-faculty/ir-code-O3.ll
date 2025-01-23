@@ -37,7 +37,7 @@ vector.body:                                      ; preds = %vector.body, %vecto
   %index.next = add nuw i32 %index, 8
   %vec.ind.next = add <4 x i32> %vec.ind, <i32 -8, i32 -8, i32 -8, i32 -8>
   %6 = icmp eq i32 %index.next, %n.vec
-  br i1 %6, label %middle.block, label %vector.body, !llvm.loop !0
+  br i1 %6, label %middle.block, label %vector.body, !llvm.loop !5
 
 middle.block:                                     ; preds = %vector.body
   %bin.rdx = mul <4 x i32> %5, %4
@@ -55,7 +55,7 @@ if.exit.L2:                                       ; preds = %if.exit.L2.preheade
   %8 = add nsw i32 %.tr4, -1
   %9 = mul nsw i32 %.tr4, %accumulator.tr3
   %10 = icmp ult i32 %.tr4, 3
-  br i1 %10, label %common.ret, label %if.exit.L2, !llvm.loop !3
+  br i1 %10, label %common.ret, label %if.exit.L2, !llvm.loop !8
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -77,7 +77,15 @@ attributes #2 = { nofree nounwind }
 attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #4 = { nounwind }
 
-!0 = distinct !{!0, !1, !2}
-!1 = !{!"llvm.loop.isvectorized", i32 1}
-!2 = !{!"llvm.loop.unroll.runtime.disable"}
-!3 = distinct !{!3, !2, !1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = distinct !{!5, !6, !7}
+!6 = !{!"llvm.loop.isvectorized", i32 1}
+!7 = !{!"llvm.loop.unroll.runtime.disable"}
+!8 = distinct !{!8, !7, !6}

@@ -35,14 +35,6 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
-  module->addModuleFlag(llvm::Module::Error, "wchar_size", 4);
-  module->addModuleFlag(llvm::Module::Min, "PIC Level", llvm::PICLevel::BigPIC);
-  module->addModuleFlag(llvm::Module::Max, "PIE Level", llvm::PIELevel::Large);
-  module->addModuleFlag(llvm::Module::Max, "uwtable", 2);
-  module->addModuleFlag(llvm::Module::Max, "frame-pointer", 2);
-
-  llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
-  identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, producerString)));
 
   // Create another DIFile as scope for subprograms
   diFile = diBuilder->createFile(sourceFileName, sourceFileDir.string());

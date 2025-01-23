@@ -40,8 +40,6 @@
 	.p2align	4, 0x90
 	.type	main,@function
 main:                                   # @main
-.Lmain$local:
-	.type	.Lmain$local,@function
 	.cfi_startproc
 # %bb.0:
 	pushq	%rax
@@ -58,7 +56,6 @@ main:                                   # @main
 	retq
 .Lfunc_end1:
 	.size	main, .Lfunc_end1-main
-	.size	.Lmain$local, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
 	.type	.Lprintf.str.0,@object          # @printf.str.0
@@ -67,4 +64,5 @@ main:                                   # @main
 	.asciz	"Result: %d"
 	.size	.Lprintf.str.0, 11
 
+	.ident	"spice version dev (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits

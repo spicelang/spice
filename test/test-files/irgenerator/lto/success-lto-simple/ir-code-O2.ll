@@ -14,7 +14,7 @@ define dso_local i32 @_Z17functionInModuleBii(i32 %0, i32 %1) local_unnamed_addr
 define dso_local i32 @main() local_unnamed_addr #1 {
   %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #4
   %2 = icmp eq i32 %1, 3
-  br i1 %2, label %assert.exit.L4, label %assert.then.L4, !prof !0
+  br i1 %2, label %assert.exit.L4, label %assert.then.L4, !prof !5
 
 assert.then.L4:                                   ; preds = %0
   %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
@@ -38,4 +38,12 @@ attributes #2 = { nofree nounwind }
 attributes #3 = { cold noreturn nounwind }
 attributes #4 = { nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.ident = !{!0, !0}
+!llvm.module.flags = !{!1, !2, !3, !4}
+
+!0 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!1 = !{i32 8, !"PIC Level", i32 2}
+!2 = !{i32 7, !"PIE Level", i32 2}
+!3 = !{i32 7, !"uwtable", i32 2}
+!4 = !{i32 7, !"frame-pointer", i32 2}
+!5 = !{!"branch_weights", i32 2000, i32 1}

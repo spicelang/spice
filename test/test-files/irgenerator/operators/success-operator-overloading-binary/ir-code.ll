@@ -299,7 +299,7 @@ define dso_local i32 @main() #0 {
   store i64 %48, ptr %res, align 8
   %49 = load i64, ptr %res, align 8
   %50 = icmp eq i64 %49, 14
-  br i1 %50, label %assert.exit.L86, label %assert.then.L86, !prof !0
+  br i1 %50, label %assert.exit.L86, label %assert.then.L86, !prof !5
 
 assert.then.L86:                                  ; preds = %0
   %51 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -323,4 +323,12 @@ attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

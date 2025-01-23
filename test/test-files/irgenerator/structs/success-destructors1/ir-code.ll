@@ -20,7 +20,7 @@ define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceab
   store i1 true, ptr %2, align 1
   %5 = call i32 @memcmp(ptr %field1_addr, ptr %2, i64 0)
   %6 = icmp eq i32 %5, 0
-  br i1 %6, label %assert.exit.L8, label %assert.then.L8, !prof !0
+  br i1 %6, label %assert.exit.L8, label %assert.then.L8, !prof !5
 
 assert.then.L8:                                   ; preds = %1
   %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -32,7 +32,7 @@ assert.exit.L8:                                   ; preds = %1
   %field2_addr = getelementptr inbounds %struct.Vector, ptr %8, i64 0, i32 1
   %9 = load ptr, ptr %field2_addr, align 8
   %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.1)
-  br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !0
+  br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %assert.exit.L8
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -76,4 +76,12 @@ attributes #1 = { nounwind }
 attributes #2 = { cold noreturn nounwind }
 attributes #3 = { noinline nounwind optnone uwtable }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

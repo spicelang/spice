@@ -48,7 +48,7 @@ define dso_local i32 @main() #0 {
   call void %fct(ptr %captures3, ptr %x)
   %12 = load i32, ptr %x, align 4
   %13 = icmp eq i32 %12, 6
-  br i1 %13, label %assert.exit.L13, label %assert.then.L13, !prof !0
+  br i1 %13, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
 assert.then.L13:                                  ; preds = %0
   %14 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -60,7 +60,7 @@ assert.exit.L13:                                  ; preds = %0
   %captures4 = load ptr, ptr %15, align 8
   %fct5 = load ptr, ptr %foo2, align 8
   %16 = call i1 %fct5(ptr %captures4, ptr %x)
-  br i1 %16, label %assert.exit.L14, label %assert.then.L14, !prof !0
+  br i1 %16, label %assert.exit.L14, label %assert.then.L14, !prof !5
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
   %17 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -70,7 +70,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L13
 assert.exit.L14:                                  ; preds = %assert.exit.L13
   %18 = load i32, ptr %x, align 4
   %19 = icmp eq i32 %18, 11
-  br i1 %19, label %assert.exit.L15, label %assert.then.L15, !prof !0
+  br i1 %19, label %assert.exit.L15, label %assert.then.L15, !prof !5
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
   %20 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -128,4 +128,12 @@ attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

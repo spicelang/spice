@@ -21,7 +21,7 @@ define dso_local i32 @main() #0 {
   %2 = load ptr, ptr %aPtr, align 8
   %3 = load i32, ptr %2, align 4
   %4 = icmp eq i32 %3, 1
-  br i1 %4, label %assert.exit.L4, label %assert.then.L4, !prof !0
+  br i1 %4, label %assert.exit.L4, label %assert.then.L4, !prof !5
 
 assert.then.L4:                                   ; preds = %0
   %5 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -35,7 +35,7 @@ assert.exit.L4:                                   ; preds = %0
   %8 = load ptr, ptr %aPtr, align 8
   %9 = load i32, ptr %8, align 4
   %10 = icmp eq i32 %9, 2
-  br i1 %10, label %assert.exit.L6, label %assert.then.L6, !prof !0
+  br i1 %10, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
 assert.then.L6:                                   ; preds = %assert.exit.L4
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -49,7 +49,7 @@ assert.exit.L6:                                   ; preds = %assert.exit.L4
   %14 = load ptr, ptr %aPtr, align 8
   %15 = load i32, ptr %14, align 4
   %16 = icmp eq i32 %15, 1
-  br i1 %16, label %assert.exit.L8, label %assert.then.L8, !prof !0
+  br i1 %16, label %assert.exit.L8, label %assert.then.L8, !prof !5
 
 assert.then.L8:                                   ; preds = %assert.exit.L6
   %17 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -63,7 +63,7 @@ assert.exit.L8:                                   ; preds = %assert.exit.L6
   %20 = load ptr, ptr %aPtr, align 8
   %21 = load i32, ptr %20, align 4
   %22 = icmp eq i32 %21, 3
-  br i1 %22, label %assert.exit.L10, label %assert.then.L10, !prof !0
+  br i1 %22, label %assert.exit.L10, label %assert.then.L10, !prof !5
 
 assert.then.L10:                                  ; preds = %assert.exit.L8
   %23 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
@@ -77,7 +77,7 @@ assert.exit.L10:                                  ; preds = %assert.exit.L8
   %26 = load ptr, ptr %aPtr, align 8
   %27 = load i32, ptr %26, align 4
   %28 = icmp eq i32 %27, 1
-  br i1 %28, label %assert.exit.L12, label %assert.then.L12, !prof !0
+  br i1 %28, label %assert.exit.L12, label %assert.then.L12, !prof !5
 
 assert.then.L12:                                  ; preds = %assert.exit.L10
   %29 = call i32 (ptr, ...) @printf(ptr @anon.string.4)
@@ -100,4 +100,12 @@ attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}
