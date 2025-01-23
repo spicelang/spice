@@ -13,7 +13,7 @@ public type LinkerErrorType enum {
  * Custom exception for errors, occurring when linking the output executable
  */
 public type LinkerError struct {
-    string errorMessage
+    String errorMessage
 }
 
 /**

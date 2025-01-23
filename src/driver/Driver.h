@@ -44,7 +44,7 @@ struct CliOptions {
   std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
   std::filesystem::path outputPath;       // Where the output binary goes.
-  BuildMode buildMode = DEBUG; // Default build mode is debug
+  BuildMode buildMode = DEBUG;            // Default build mode is debug
   unsigned short compileJobCount = 0;     // 0 for auto
   bool ignoreCache = false;
   std::string llvmArgs;

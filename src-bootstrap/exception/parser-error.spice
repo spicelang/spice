@@ -17,7 +17,7 @@ public type ParserErrorType enum {
  * Custom exception for errors, occurring while parsing
  */
 public type ParserError struct {
-    string errorMessage
+    String errorMessage
 }
 
 /**

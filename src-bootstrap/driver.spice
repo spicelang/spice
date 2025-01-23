@@ -1,13 +1,20 @@
 // Std imports
 import "std/text/print";
 import "std/os/cmd";
+import "std/os/os";
+import "std/os/filesystem";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
 import "std/io/filepath";
+import "std/io/file";
+import "std/time/time";
+import "std/type/long";
 
 // Own imports
 import "util/common-util";
+import "util/file-util";
+import "util/compiler-warning";
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
@@ -101,6 +108,7 @@ public p Driver.init() {
     // Create sub-commands
     this.addBuildSubcommand();
     this.addRunSubcommand();
+    this.addTestSubcommand();
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
 
@@ -197,6 +205,23 @@ p Driver.addRunSubcommand() {
     // --output
     CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
+    // --debug-info
+    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    debugInfoOption.addAlias("-g");
+    // --disable-verifier
+    subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+}
+
+/**
+ * Add test subcommand to cli interface
+ */
+p Driver.addTestSubcommand() {
+    // Create sub-command itself
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("test", "Builds your Spice program and runs all enclosed tests");
+    subCmd.addAlias("t");
+
+    this.addCompileSubcommandOptions(subCmd);
+
     // --debug-info
     CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");

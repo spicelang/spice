@@ -12,8 +12,8 @@ haystackCircular error message:
 *-----*
 
 Version info:
-Spice version: 0.20.7 linux/amd64
-Git hash:      1da7aaeeb4ea2f1132b1a1a94ce6dd3cd753c47c
+Spice version: 0.21.0 linux/amd64
+Git hash:      550d422264c1127128115ba962b804b0ae8dee28
 LLVM version:  19.1.7
 built by:      GitHub Actions
 
