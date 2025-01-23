@@ -15,6 +15,7 @@ namespace spice::compiler {
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const CAPTURES_PARAM_NAME = "captures";
+static const std::string PRODUCER_STRING = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
 
 enum Likeliness : uint8_t {
   UNSPECIFIED,

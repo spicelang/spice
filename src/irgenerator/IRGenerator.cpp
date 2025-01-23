@@ -25,9 +25,8 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   module->setFramePointer(llvm::FramePointerKind::All);
 
   // Add module identifier metadata
-  const std::string producerString = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
   llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
-  identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, producerString)));
+  identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, PRODUCER_STRING)));
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo)
