@@ -19,6 +19,14 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   // Attach information to the module
   module->setTargetTriple(cliOptions.targetTriple);
   module->setDataLayout(sourceFile->targetMachine->createDataLayout());
+  module->setPICLevel(llvm::PICLevel::BigPIC);
+  module->setPIELevel(llvm::PIELevel::Large);
+  module->setUwtable(llvm::UWTableKind::Default);
+  module->setFramePointer(llvm::FramePointerKind::All);
+
+  // Add module identifier metadata
+  llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
+  identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, PRODUCER_STRING)));
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo)

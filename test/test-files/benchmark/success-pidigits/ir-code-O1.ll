@@ -85,3 +85,12 @@ declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}

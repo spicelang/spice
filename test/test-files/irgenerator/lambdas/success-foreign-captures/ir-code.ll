@@ -19,7 +19,7 @@ define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %0, { ptr, ptr } %1) {
   call void %fct(ptr %captures, ptr %x)
   %4 = load i32, ptr %x, align 4
   %5 = icmp eq i32 %4, 6
-  br i1 %5, label %assert.exit.L4, label %assert.then.L4, !prof !0
+  br i1 %5, label %assert.exit.L4, label %assert.then.L4, !prof !5
 
 assert.then.L4:                                   ; preds = %2
   %6 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -31,7 +31,7 @@ assert.exit.L4:                                   ; preds = %2
   %captures1 = load ptr, ptr %7, align 8
   %fct2 = load ptr, ptr %l2, align 8
   %8 = call i1 %fct2(ptr %captures1, ptr %x)
-  br i1 %8, label %assert.exit.L5, label %assert.then.L5, !prof !0
+  br i1 %8, label %assert.exit.L5, label %assert.then.L5, !prof !5
 
 assert.then.L5:                                   ; preds = %assert.exit.L4
   %9 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -41,7 +41,7 @@ assert.then.L5:                                   ; preds = %assert.exit.L4
 assert.exit.L5:                                   ; preds = %assert.exit.L4
   %10 = load i32, ptr %x, align 4
   %11 = icmp eq i32 %10, 11
-  br i1 %11, label %assert.exit.L6, label %assert.then.L6, !prof !0
+  br i1 %11, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
 assert.then.L6:                                   ; preds = %assert.exit.L5
   %12 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -139,4 +139,12 @@ attributes #0 = { nofree nounwind }
 attributes #1 = { cold noreturn nounwind }
 attributes #2 = { noinline nounwind optnone uwtable }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

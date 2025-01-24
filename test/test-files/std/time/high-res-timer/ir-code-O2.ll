@@ -34,7 +34,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
   call void @_ZN5Timer4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %2 = call i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %3 = icmp eq i64 %2, 0
-  br i1 %3, label %assert.exit.L12, label %assert.then.L12, !prof !0
+  br i1 %3, label %assert.exit.L12, label %assert.then.L12, !prof !5
 
 assert.then.L12:                                  ; preds = %0
   %4 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
@@ -47,7 +47,7 @@ assert.exit.L12:                                  ; preds = %0
   call void @_ZN5Timer4stopEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %5 = call i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %6 = call fastcc i1 @_Z9isInRangemmj(i64 %5, i64 10, i32 3) #3
-  br i1 %6, label %assert.exit.L16, label %assert.then.L16, !prof !0
+  br i1 %6, label %assert.exit.L16, label %assert.then.L16, !prof !5
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
   %7 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
@@ -73,7 +73,7 @@ assert.exit.L16:                                  ; preds = %assert.exit.L12
   store ptr %.fca.3.load, ptr %.fca.3.insert.fca.3.gep, align 8
   %8 = call i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %9 = icmp eq i64 %8, 0
-  br i1 %9, label %assert.exit.L21, label %assert.then.L21, !prof !0
+  br i1 %9, label %assert.exit.L21, label %assert.then.L21, !prof !5
 
 assert.then.L21:                                  ; preds = %assert.exit.L16
   %10 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
@@ -83,7 +83,7 @@ assert.then.L21:                                  ; preds = %assert.exit.L16
 assert.exit.L21:                                  ; preds = %assert.exit.L16
   %11 = load i64, ptr %duration, align 8
   %12 = icmp eq i64 %11, 0
-  br i1 %12, label %assert.exit.L22, label %assert.then.L22, !prof !0
+  br i1 %12, label %assert.exit.L22, label %assert.then.L22, !prof !5
 
 assert.then.L22:                                  ; preds = %assert.exit.L21
   %13 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
@@ -100,7 +100,7 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
   call void @_ZN5Timer4stopEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %14 = load i64, ptr %duration, align 8
   %15 = call fastcc i1 @_Z9isInRangemmj(i64 %14, i64 20000, i32 5000) #3
-  br i1 %15, label %assert.exit.L30, label %assert.then.L30, !prof !0
+  br i1 %15, label %assert.exit.L30, label %assert.then.L30, !prof !5
 
 assert.then.L30:                                  ; preds = %assert.exit.L22
   %16 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
@@ -136,4 +136,12 @@ attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { cold noreturn nounwind }
 attributes #3 = { nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

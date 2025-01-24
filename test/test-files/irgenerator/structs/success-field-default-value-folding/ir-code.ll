@@ -110,7 +110,7 @@ define dso_local i32 @main() #1 {
   %f1_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %1 = load i32, ptr %f1_addr, align 4
   %2 = icmp eq i32 %1, 2
-  br i1 %2, label %assert.exit.L37, label %assert.then.L37, !prof !0
+  br i1 %2, label %assert.exit.L37, label %assert.then.L37, !prof !5
 
 assert.then.L37:                                  ; preds = %0
   %3 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -120,7 +120,7 @@ assert.then.L37:                                  ; preds = %0
 assert.exit.L37:                                  ; preds = %0
   %f2_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 1
   %4 = load i1, ptr %f2_addr, align 1
-  br i1 %4, label %assert.exit.L38, label %assert.then.L38, !prof !0
+  br i1 %4, label %assert.exit.L38, label %assert.then.L38, !prof !5
 
 assert.then.L38:                                  ; preds = %assert.exit.L37
   %5 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -131,7 +131,7 @@ assert.exit.L38:                                  ; preds = %assert.exit.L37
   %f3_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 2
   %6 = load i1, ptr %f3_addr, align 1
   %7 = xor i1 %6, true
-  br i1 %7, label %assert.exit.L39, label %assert.then.L39, !prof !0
+  br i1 %7, label %assert.exit.L39, label %assert.then.L39, !prof !5
 
 assert.then.L39:                                  ; preds = %assert.exit.L38
   %8 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -142,7 +142,7 @@ assert.exit.L39:                                  ; preds = %assert.exit.L38
   %f4_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 3
   %9 = load i32, ptr %f4_addr, align 4
   %10 = icmp eq i32 %9, 11
-  br i1 %10, label %assert.exit.L40, label %assert.then.L40, !prof !0
+  br i1 %10, label %assert.exit.L40, label %assert.then.L40, !prof !5
 
 assert.then.L40:                                  ; preds = %assert.exit.L39
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
@@ -153,7 +153,7 @@ assert.exit.L40:                                  ; preds = %assert.exit.L39
   %f5_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 4
   %12 = load i16, ptr %f5_addr, align 2
   %13 = icmp eq i16 %12, 10
-  br i1 %13, label %assert.exit.L41, label %assert.then.L41, !prof !0
+  br i1 %13, label %assert.exit.L41, label %assert.then.L41, !prof !5
 
 assert.then.L41:                                  ; preds = %assert.exit.L40
   %14 = call i32 (ptr, ...) @printf(ptr @anon.string.4)
@@ -164,7 +164,7 @@ assert.exit.L41:                                  ; preds = %assert.exit.L40
   %f6_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 5
   %15 = load i64, ptr %f6_addr, align 8
   %16 = icmp eq i64 %15, 2
-  br i1 %16, label %assert.exit.L42, label %assert.then.L42, !prof !0
+  br i1 %16, label %assert.exit.L42, label %assert.then.L42, !prof !5
 
 assert.then.L42:                                  ; preds = %assert.exit.L41
   %17 = call i32 (ptr, ...) @printf(ptr @anon.string.5)
@@ -174,7 +174,7 @@ assert.then.L42:                                  ; preds = %assert.exit.L41
 assert.exit.L42:                                  ; preds = %assert.exit.L41
   %f7_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 6
   %18 = load i1, ptr %f7_addr, align 1
-  br i1 %18, label %assert.exit.L43, label %assert.then.L43, !prof !0
+  br i1 %18, label %assert.exit.L43, label %assert.then.L43, !prof !5
 
 assert.then.L43:                                  ; preds = %assert.exit.L42
   %19 = call i32 (ptr, ...) @printf(ptr @anon.string.6)
@@ -184,7 +184,7 @@ assert.then.L43:                                  ; preds = %assert.exit.L42
 assert.exit.L43:                                  ; preds = %assert.exit.L42
   %f8_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 7
   %20 = load i1, ptr %f8_addr, align 1
-  br i1 %20, label %assert.exit.L44, label %assert.then.L44, !prof !0
+  br i1 %20, label %assert.exit.L44, label %assert.then.L44, !prof !5
 
 assert.then.L44:                                  ; preds = %assert.exit.L43
   %21 = call i32 (ptr, ...) @printf(ptr @anon.string.7)
@@ -194,7 +194,7 @@ assert.then.L44:                                  ; preds = %assert.exit.L43
 assert.exit.L44:                                  ; preds = %assert.exit.L43
   %f9_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 8
   %22 = load i1, ptr %f9_addr, align 1
-  br i1 %22, label %assert.exit.L45, label %assert.then.L45, !prof !0
+  br i1 %22, label %assert.exit.L45, label %assert.then.L45, !prof !5
 
 assert.then.L45:                                  ; preds = %assert.exit.L44
   %23 = call i32 (ptr, ...) @printf(ptr @anon.string.8)
@@ -205,7 +205,7 @@ assert.exit.L45:                                  ; preds = %assert.exit.L44
   %f10_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 9
   %24 = load i1, ptr %f10_addr, align 1
   %25 = xor i1 %24, true
-  br i1 %25, label %assert.exit.L46, label %assert.then.L46, !prof !0
+  br i1 %25, label %assert.exit.L46, label %assert.then.L46, !prof !5
 
 assert.then.L46:                                  ; preds = %assert.exit.L45
   %26 = call i32 (ptr, ...) @printf(ptr @anon.string.9)
@@ -215,7 +215,7 @@ assert.then.L46:                                  ; preds = %assert.exit.L45
 assert.exit.L46:                                  ; preds = %assert.exit.L45
   %f11_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 10
   %27 = load i1, ptr %f11_addr, align 1
-  br i1 %27, label %assert.exit.L47, label %assert.then.L47, !prof !0
+  br i1 %27, label %assert.exit.L47, label %assert.then.L47, !prof !5
 
 assert.then.L47:                                  ; preds = %assert.exit.L46
   %28 = call i32 (ptr, ...) @printf(ptr @anon.string.10)
@@ -226,7 +226,7 @@ assert.exit.L47:                                  ; preds = %assert.exit.L46
   %f12_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 11
   %29 = load i1, ptr %f12_addr, align 1
   %30 = xor i1 %29, true
-  br i1 %30, label %assert.exit.L48, label %assert.then.L48, !prof !0
+  br i1 %30, label %assert.exit.L48, label %assert.then.L48, !prof !5
 
 assert.then.L48:                                  ; preds = %assert.exit.L47
   %31 = call i32 (ptr, ...) @printf(ptr @anon.string.11)
@@ -237,7 +237,7 @@ assert.exit.L48:                                  ; preds = %assert.exit.L47
   %f13_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 12
   %32 = load i32, ptr %f13_addr, align 4
   %33 = icmp eq i32 %32, 333
-  br i1 %33, label %assert.exit.L49, label %assert.then.L49, !prof !0
+  br i1 %33, label %assert.exit.L49, label %assert.then.L49, !prof !5
 
 assert.then.L49:                                  ; preds = %assert.exit.L48
   %34 = call i32 (ptr, ...) @printf(ptr @anon.string.12)
@@ -248,7 +248,7 @@ assert.exit.L49:                                  ; preds = %assert.exit.L48
   %f14_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 13
   %35 = load i64, ptr %f14_addr, align 8
   %36 = icmp eq i64 %35, 11
-  br i1 %36, label %assert.exit.L50, label %assert.then.L50, !prof !0
+  br i1 %36, label %assert.exit.L50, label %assert.then.L50, !prof !5
 
 assert.then.L50:                                  ; preds = %assert.exit.L49
   %37 = call i32 (ptr, ...) @printf(ptr @anon.string.13)
@@ -259,7 +259,7 @@ assert.exit.L50:                                  ; preds = %assert.exit.L49
   %f15_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 14
   %38 = load i8, ptr %f15_addr, align 1
   %39 = icmp eq i8 %38, 63
-  br i1 %39, label %assert.exit.L51, label %assert.then.L51, !prof !0
+  br i1 %39, label %assert.exit.L51, label %assert.then.L51, !prof !5
 
 assert.then.L51:                                  ; preds = %assert.exit.L50
   %40 = call i32 (ptr, ...) @printf(ptr @anon.string.14)
@@ -270,7 +270,7 @@ assert.exit.L51:                                  ; preds = %assert.exit.L50
   %f16_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 15
   %41 = load i32, ptr %f16_addr, align 4
   %42 = icmp eq i32 %41, 13
-  br i1 %42, label %assert.exit.L52, label %assert.then.L52, !prof !0
+  br i1 %42, label %assert.exit.L52, label %assert.then.L52, !prof !5
 
 assert.then.L52:                                  ; preds = %assert.exit.L51
   %43 = call i32 (ptr, ...) @printf(ptr @anon.string.15)
@@ -281,7 +281,7 @@ assert.exit.L52:                                  ; preds = %assert.exit.L51
   %f17_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 16
   %44 = load i32, ptr %f17_addr, align 4
   %45 = icmp eq i32 %44, 13
-  br i1 %45, label %assert.exit.L53, label %assert.then.L53, !prof !0
+  br i1 %45, label %assert.exit.L53, label %assert.then.L53, !prof !5
 
 assert.then.L53:                                  ; preds = %assert.exit.L52
   %46 = call i32 (ptr, ...) @printf(ptr @anon.string.16)
@@ -292,7 +292,7 @@ assert.exit.L53:                                  ; preds = %assert.exit.L52
   %f18_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 17
   %47 = load i32, ptr %f18_addr, align 4
   %48 = icmp eq i32 %47, 14
-  br i1 %48, label %assert.exit.L54, label %assert.then.L54, !prof !0
+  br i1 %48, label %assert.exit.L54, label %assert.then.L54, !prof !5
 
 assert.then.L54:                                  ; preds = %assert.exit.L53
   %49 = call i32 (ptr, ...) @printf(ptr @anon.string.17)
@@ -303,7 +303,7 @@ assert.exit.L54:                                  ; preds = %assert.exit.L53
   %f19_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 18
   %50 = load i32, ptr %f19_addr, align 4
   %51 = icmp eq i32 %50, 12
-  br i1 %51, label %assert.exit.L55, label %assert.then.L55, !prof !0
+  br i1 %51, label %assert.exit.L55, label %assert.then.L55, !prof !5
 
 assert.then.L55:                                  ; preds = %assert.exit.L54
   %52 = call i32 (ptr, ...) @printf(ptr @anon.string.18)
@@ -314,7 +314,7 @@ assert.exit.L55:                                  ; preds = %assert.exit.L54
   %f20_addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 19
   %53 = load i32, ptr %f20_addr, align 4
   %54 = icmp eq i32 %53, 7
-  br i1 %54, label %assert.exit.L56, label %assert.then.L56, !prof !0
+  br i1 %54, label %assert.exit.L56, label %assert.then.L56, !prof !5
 
 assert.then.L56:                                  ; preds = %assert.exit.L55
   %55 = call i32 (ptr, ...) @printf(ptr @anon.string.19)
@@ -338,4 +338,12 @@ attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

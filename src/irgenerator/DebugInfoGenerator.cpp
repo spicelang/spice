@@ -19,7 +19,6 @@ namespace spice::compiler {
 void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
-  const std::string producerString = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
 
   // Create DIBuilder
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
@@ -29,20 +28,12 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, producerString,
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING,
                                              irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
-  module->addModuleFlag(llvm::Module::Error, "wchar_size", 4);
-  module->addModuleFlag(llvm::Module::Min, "PIC Level", llvm::PICLevel::BigPIC);
-  module->addModuleFlag(llvm::Module::Max, "PIE Level", llvm::PIELevel::Large);
-  module->addModuleFlag(llvm::Module::Max, "uwtable", 2);
-  module->addModuleFlag(llvm::Module::Max, "frame-pointer", 2);
-
-  llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
-  identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, producerString)));
 
   // Create another DIFile as scope for subprograms
   diFile = diBuilder->createFile(sourceFileName, sourceFileDir.string());

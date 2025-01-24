@@ -62,7 +62,7 @@ define dso_local i32 @main() #1 {
   call void @_Z4procRiRK6Struct(ptr %i, ptr %1)
   %4 = load i32, ptr %i, align 4
   %5 = icmp eq i32 %4, -4309
-  br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !0
+  br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !5
 
 assert.then.L20:                                  ; preds = %0
   %6 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -78,7 +78,7 @@ assert.exit.L20:                                  ; preds = %0
   store i32 %8, ptr %result, align 4
   %9 = load double, ptr %d, align 8
   %10 = fcmp oeq double %9, -1.076400e+02
-  br i1 %10, label %assert.exit.L24, label %assert.then.L24, !prof !0
+  br i1 %10, label %assert.exit.L24, label %assert.then.L24, !prof !5
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -98,4 +98,12 @@ attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}

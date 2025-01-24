@@ -53,7 +53,7 @@ define dso_local i32 @main() #0 {
   %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i64 0, i32 0
   %6 = load i64, ptr %test_addr1, align 8
   %7 = icmp eq i64 %6, 125
-  br i1 %7, label %assert.exit.L19, label %assert.then.L19, !prof !0
+  br i1 %7, label %assert.exit.L19, label %assert.then.L19, !prof !5
 
 assert.then.L19:                                  ; preds = %0
   %8 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -64,7 +64,7 @@ assert.exit.L19:                                  ; preds = %0
   %test_addr2 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
   %9 = load i64, ptr %test_addr2, align 8
   %10 = icmp eq i64 %9, 125
-  br i1 %10, label %assert.exit.L20, label %assert.then.L20, !prof !0
+  br i1 %10, label %assert.exit.L20, label %assert.then.L20, !prof !5
 
 assert.then.L20:                                  ; preds = %assert.exit.L19
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -81,7 +81,7 @@ assert.exit.L20:                                  ; preds = %assert.exit.L19
   %test_addr4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
   %16 = load i64, ptr %test_addr4, align 8
   %17 = icmp eq i64 %16, 123
-  br i1 %17, label %assert.exit.L23, label %assert.then.L23, !prof !0
+  br i1 %17, label %assert.exit.L23, label %assert.then.L23, !prof !5
 
 assert.then.L23:                                  ; preds = %assert.exit.L20
   %18 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -93,7 +93,7 @@ assert.exit.L23:                                  ; preds = %assert.exit.L20
   %test_addr5 = getelementptr inbounds %struct.TestStruct, ptr %19, i64 0, i32 0
   %20 = load i64, ptr %test_addr5, align 8
   %21 = icmp eq i64 %20, 123
-  br i1 %21, label %assert.exit.L24, label %assert.then.L24, !prof !0
+  br i1 %21, label %assert.exit.L24, label %assert.then.L24, !prof !5
 
 assert.then.L24:                                  ; preds = %assert.exit.L23
   %22 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
@@ -116,4 +116,12 @@ attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 
-!0 = !{!"branch_weights", i32 2000, i32 1}
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 2000, i32 1}
