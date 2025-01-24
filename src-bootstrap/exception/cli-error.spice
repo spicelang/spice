@@ -17,7 +17,7 @@ public type CliErrorType enum {
  * Custom exception for errors, occurring when linking the output executable
  */
 public type CliError struct {
-    string errorMessage
+    String errorMessage
 }
 
 /**

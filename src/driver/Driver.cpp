@@ -66,7 +66,7 @@ void Driver::init() {
     // Set output path and dir
     if (shouldExecute) {
       cliOptions.execute = true;
-      const auto millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      const long millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
       cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     } else if (!cliOptions.outputPath.empty()) {
@@ -310,7 +310,7 @@ void Driver::addUninstallSubcommand() {
 }
 
 void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
-  const std::function buildModeCallback = [&](const CLI::results_t &results) {
+  const auto buildModeCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);
 

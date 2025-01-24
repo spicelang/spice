@@ -126,7 +126,7 @@ public p SourceFile.ctor(IGlobalResourceManager &resourceManager, SourceFile* pa
     // Deduce fileName and fileDir
     const FilePath path = FilePath(filePath);
     this.fileName = path.getFileName();
-    this.fileDir = path.getParentDirectory();
+    this.fileDir = path.getParentDir();
 
     // Search after selected target
     String error;

@@ -1,6 +1,3 @@
-import "std/data/map";
-
 f<int> main() {
-    Map<string, int> map;
-    map["test"] = 1;
+
 }

@@ -102,7 +102,7 @@ public type SemanticErrorType enum {
 }
 
 public type SemanticError struct {
-    string message
+    String message
 }
 
 public p SemanticError.ctor(const AstNode* node, const SemanticErrorType errorType, const string message) {

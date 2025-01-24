@@ -6,10 +6,10 @@ import "std/text/stringstream";
 import "bootstrap/source-file-intf";
 import "bootstrap/bindings/llvm/llvm" as llvm;
 
-const string SPICE_VERSION = "0.20.7";
+const string SPICE_VERSION = "0.21.0";
 const string SPICE_TARGET_OS = "linux";
 const string SPICE_TARGET_ARCH = "amd64";
-const string SPICE_GIT_HASH = "1da7aaeeb4ea2f1132b1a1a94ce6dd3cd753c47c";
+const string SPICE_GIT_HASH = "550d422264c1127128115ba962b804b0ae8dee28";
 const string SPICE_BUILT_BY = "GitHub Actions";
 
 /**
