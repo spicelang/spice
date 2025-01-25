@@ -1,0 +1,13 @@
+type Test struct {
+    int field
+}
+
+f<int&> Test.getField() {
+    result = this.field;
+}
+
+f<int> main() {
+    Test t = Test{12};
+    int res = t.getField();
+    printf("Field value: %d", res);
+}
