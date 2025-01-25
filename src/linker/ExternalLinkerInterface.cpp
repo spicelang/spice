@@ -39,8 +39,10 @@ void ExternalLinkerInterface::link() const {
 
   // Build the linker command
   std::stringstream linkerCommandBuilder;
-  linkerCommandBuilder << FileUtil::findLinkerInvoker();
-  linkerCommandBuilder << " -fuse-ld=" << FileUtil::findLinker(); // Select linker
+  const auto [linkerInvokerName, linkerInvokerPath] = FileUtil::findLinkerInvoker();
+  linkerCommandBuilder << linkerInvokerPath;
+  const auto [linkerName, linkerPath] = FileUtil::findLinker(cliOptions);
+  linkerCommandBuilder << " -fuse-ld=" << linkerPath;
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
     linkerCommandBuilder << " " << linkerFlag;
@@ -51,8 +53,10 @@ void ExternalLinkerInterface::link() const {
     linkerCommandBuilder << " " << objectFilePath;
 
   // Print status message
-  if (cliOptions.printDebugOutput)                                                 // GCOV_EXCL_LINE
-    std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput) {
+    std::cout << "\nLinking with: " << linkerInvokerName << " (invoker) / " << linkerName << " (linker)"; // GCOV_EXCL_LINE
+    std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n";                        // GCOV_EXCL_LINE
+  }
 
   // Call the linker
   Timer timer;
@@ -98,7 +102,7 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
   if (!exists(additionalSource)) {                                                                           // GCOV_EXCL_LINE
     const std::string msg = "The additional source file '" + additionalSource.string() + "' does not exist"; // GCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, msg);                                                                      // GCOV_EXCL_LINE
-  }                                                                                                          // GCOV_EXCL_LINE
+  } // GCOV_EXCL_LINE
 
   // Add the file to the linker
   additionalSource.make_preferred();

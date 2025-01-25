@@ -11,6 +11,11 @@ public type ExecResult struct {
     int exitCode
 }
 
+public type ExternalBinaryFinderResult struct {
+    public string name
+    public String path
+}
+
 /**
  * Execute external command. Used to execute compiled binaries
  *
@@ -55,19 +60,19 @@ public f<bool> isGraphvizInstalled() {
  *
  * @return Name of path to the linker invoker executable
  */
-public f<String> findLinkerInvoker() {
+public f<ExternalBinaryFinderResult> findLinkerInvoker() {
     foreach const string linkerInvoker : ["clang", "gcc"] {
         if isLinux() {
             foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
                 const String linkerInvokerPath = path + linkerInvoker;
                 if fileExists(linkerInvokerPath.getRaw()) {
-                    return linkerInvokerPath;
+                    return ExternalBinaryFinderResult{linkerInvoker, linkerInvokerPath};
                 }
             }
         } else if isWindows() {
             String linkerInvokerLookupCommand = linkerInvoker + " -v";
             if isCommandAvailable(linkerInvokerLookupCommand.getRaw()) {
-                return String(linkerInvoker);
+                return ExternalBinaryFinderResult{linkerInvoker, String(linkerInvoker)};
             }
         }
     }
@@ -80,13 +85,13 @@ public f<String> findLinkerInvoker() {
  *
  * @return Name of path to the linker executable
  */
-public f<String> findLinker() {
+public f<ExternalBinaryFinderResult> findLinker() {
     if isLinux() {
         foreach const string linkerName : ["mold", "lld", "gold", "ld"] {
             foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
-                String linker = path + linkerName;
-                if fileExists(linker.getRaw()) {
-                    return linker;
+                String linkerPath = path + linkerName;
+                if fileExists(linkerPath.getRaw()) {
+                    return ExternalBinaryFinderResult{linkerName, linkerPath};
                 }
             }
         }
@@ -94,7 +99,7 @@ public f<String> findLinker() {
         foreach const string linkerName : ["lld", "ld"] {
             String checkCmd = linkerName + " -v";
             if isCommandAvailable(checkCmd.getRaw()) {
-                return String(linkerName);
+                return ExternalBinaryFinderResult{linkerName, String(linkerName)};
             }
         }
     }

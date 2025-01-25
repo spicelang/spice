@@ -4,8 +4,9 @@
 
 #include <array>
 #include <filesystem>
-#include <iostream>
+#include <iostream> // IWYU pragma: keep (usage in Windows-only code)
 
+#include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
 #include <util/CommonUtil.h>
@@ -121,16 +122,16 @@ bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
  *
  * @return Name of path to the linker invoker executable
  */
-std::string FileUtil::findLinkerInvoker() {
+ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
 #ifdef OS_UNIX
-  for (const std::string linkerInvokerName : {"clang", "gcc"})
+  for (const char *linkerInvokerName : {"clang", "gcc"})
     for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerInvokerName))
-        return path + linkerInvokerName;
+        return ExternalBinaryFinderResult{linkerInvokerName, path + linkerInvokerName};
 #elif OS_WINDOWS
-  for (const std::string linkerInvokerName : {"clang", "gcc"})
-    if (isCommandAvailable(linkerInvokerName + " -v"))
-      return linkerInvokerName;
+  for (const char *linkerInvokerName : {"clang", "gcc"})
+    if (isCommandAvailable(std::string(linkerInvokerName) + " -v"))
+      return ExternalBinaryFinderResult{linkerInvokerName, linkerInvokerName};
 #endif
   const auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
   throw LinkerError(LINKER_NOT_FOUND, msg);                                                             // LCOV_EXCL_LINE
@@ -142,16 +143,26 @@ std::string FileUtil::findLinkerInvoker() {
  *
  * @return Name of path to the linker executable
  */
-std::string FileUtil::findLinker() {
+ExternalBinaryFinderResult FileUtil::findLinker(const CliOptions &cliOptions) {
 #ifdef OS_UNIX
-  for (const std::string linkerName : {"mold", "ld.lld", "lld-link", "ld64.ddl", "gold", "ld"})
+  std::vector<const char *> linkerList;
+  linkerList.reserve(5);
+  // mold does only support linking for unix and darwin
+  if (cliOptions.targetOs != "windows")
+    linkerList.push_back("mold");
+  linkerList.push_back("ld.lld");
+  linkerList.push_back("ld64.ddl");
+  linkerList.push_back("gold");
+  linkerList.push_back("ld");
+
+  for (const char *linkerName : linkerList)
     for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerName))
-        return path + linkerName;
+        return ExternalBinaryFinderResult{linkerName, path + linkerName};
 #elif OS_WINDOWS
-  for (const std::string linkerName : {"lld", "ld"})
-    if (isCommandAvailable(linkerName + " -v"))
-      return linkerName;
+  for (const char *linkerName : {"lld", "ld"})
+    if (isCommandAvailable(std::string(linkerName) + " -v"))
+      return ExternalBinaryFinderResult{linkerName, linkerName};
 #endif
   const auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
   throw LinkerError(LINKER_NOT_FOUND, msg);                                                              // LCOV_EXCL_LINE
