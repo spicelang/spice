@@ -34,7 +34,9 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1
 
       - name: Setup Dependencies
-        run: sudo apt-get install ninja-build pipx uuid-dev checksec jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build pipx uuid-dev checksec jq
 
       - name: Cache LLVM
         id: cache-llvm
@@ -104,8 +106,8 @@ jobs:
 
       - name: Setup latest GCC and build dependencies
         run: |
-          sudo apt update
-          sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Setup Dependencies
         run: sudo apt-get install ninja-build uuid-dev checksec jq
