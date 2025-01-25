@@ -60,9 +60,9 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
 
   // Check which source file to import
   std::filesystem::path importPath;
-  if (exists(osArchPath)) // file_os_arch.spice is first choice
+  if (exists(osArchPath) && !equivalent(sourceFile->filePath, osArchPath)) // file_os_arch.spice is first choice
     importPath = osArchPath;
-  else if (exists(osPath)) // file_os.spice is second choice
+  else if (exists(osPath) && !equivalent(sourceFile->filePath, osPath)) // file_os.spice is second choice
     importPath = osPath;
   else if (exists(defaultPath)) // file.spice is third choice
     importPath = defaultPath;

@@ -1,15 +1,12 @@
-// linker: -lws2_32
+// Link WinSock library
+#![core.linux.linker.flag = "-lws2_32"]
 
-const int AF_INET = 2;
-const int SOCK_STREAM = 1;
-const int SOCK_DGRAM = 2;
-const int IPPROTO_IP = 0;
-const int IPPROTO_UDP = 17;
-const int INADDR_ANY = 0;
+// Import common logic
+import "std/net/socket";
 
 const unsigned short REQUESTED_WSA_VERSION = 514s;
 
-public type WSAData struct {
+type WSAData struct {
     unsigned short wVersion
     unsigned short wHighVersion
     unsigned short iMaxSockets
@@ -19,36 +16,20 @@ public type WSAData struct {
     char[129] szSystemStatus
 }
 
-type InAddr struct {
-    unsigned int addr
-}
-
-type SockAddrIn struct {
-    unsigned short sinFamily
-    unsigned short sinPort
-    InAddr sinAddr
-}
-
-public type Socket struct {
-    unsigned long sockFd // Actual socket
-    unsigned long connFd // Current connection
-    public short errorCode
-}
-
-public const short ERROR_SOCKET = -1s;
-public const short ERROR_BIND = -2s;
-public const short ERROR_LISTEN = -3s;
-public const short ERROR_ACCEPT = -4s;
-public const short ERROR_CONNECT = -5s;
-
 ext f<int> WSAStartup(short, WSAData*);
-ext f<long> socket(int, int, int);
-ext f<int> bind(long, SockAddrIn*, int);
-ext f<int> listen(long, int);
-ext f<long> accept(long, SockAddrIn*, int);
-ext f<int> close(long);
+ext f<int> WSACleanup();
+ext f<int> socket(int, int, int);
+ext f<int> bind(int, SockAddrIn*, unsigned int);
+ext f<int> listen(int, int);
+ext f<int> accept(int, SockAddrIn*, unsigned int);
+ext f<int> close(int);
 ext f<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext f<short> htons(short); // Fairly simple to re-implement in Spice
+
+public type Socket struct {
+    int sockFd // Actual socket
+    int connFd // Current connection
+}
 
 public p Socket.dtor() {
     this.close();
@@ -60,64 +41,62 @@ public p Socket.dtor() {
  *
  * @return Connection file descriptor
  */
-public f<long> Socket.acceptConnection() {
-    SockAddrIn cliAddr = SockAddrIn{};
-    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
-    if this.connFd == -1l {
-        //result.errorCode = ERROR_ACCEPT;
-        return -1l;
+public f<Result<int>> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn {};
+    this.connFd = accept(this.sockFd, &cliAddr, (unsigned int) sizeof(cliAddr));
+    if this.connFd == -1 {
+        return err<int>(Error("Error while accepting connection"));
     }
-    return this.connFd;
+    return ok(this.connFd);
 }
 
 /**
  * Closes the socket. This method should always be called by the user before exiting the program.
  *
- * @return Error code for closing the socket
+ * @return Closing the connection was successful or not
  */
-public f<int> Socket.close() {
-    return close(this.sockFd);
+public f<bool> Socket.close() {
+    return close(this.sockFd) == 0 && WSACleanup() == 0;
 }
 
 /**
  * Opens a TCP server socket and exposes it to the given port.
- * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.
- * The default value there is 5.
+ * The maxWaitingConnections defines the maximum length to which the queue of pending connections may grow. If a
+ * connection request arrives when the queue is full, the client may receive an error with an indication of
+ * ECONNREFUSED or, if the underlying protocol support retransmission, the request may be ignored so that a later
+ * reattempt at connection succeeds.
  *
+ * @param port Port to open the socket on
+ * @param maxWaitingConnections Maximum size of the queue of pending client connections
  * @return Socket file descriptor
  */
-public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
-    Socket s = Socket{};
+public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     WSAData wsaData = WSAData{};
     if WSAStartup(REQUESTED_WSA_VERSION, &wsaData) != 0 {
-        s.errorCode = ERROR_SOCKET;
-        return s;
+        return err<Socket>(Error("Error initializing WSA"));
     }
 
-    s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
+    const Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0 };
 
     // Cancel on failure
     if s.sockFd == -1l {
-        s.errorCode = ERROR_SOCKET;
-        return s;
+        return err<Socket>(Error("Error creating socket"));
     }
 
     InAddr inAddr = InAddr { htonl(INADDR_ANY) };
     SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
-    int bindResult = bind(s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
+    int bindResult = bind(s.sockFd, &servAddr, (unsigned int) sizeof(servAddr));
     if bindResult != 0 {
-        s.errorCode = ERROR_BIND;
-        return s;
+        return err<Socket>(Error("Error binding to address"));
     }
 
     int listenResult = listen(s.sockFd, maxWaitingConnections);
     if listenResult != 0 {
-        s.errorCode = ERROR_LISTEN;
-        return s;
+        return err<Socket>(Error("Error listening on address"));
     }
 
     s.acceptConnection();
 
-    return s;
+    return ok(s);
 }

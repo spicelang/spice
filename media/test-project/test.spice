@@ -1,3 +1,6 @@
+import "std/net/socket";
+
 f<int> main() {
+    Result<Socket> socket = openServerSocket(4321s);
 
 }

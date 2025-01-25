@@ -1,43 +1,22 @@
-const int AF_INET = 2;
-const int SOCK_STREAM = 1;
-const int SOCK_DGRAM = 2;
-const int IPPROTO_IP = 0;
-const int IPPROTO_UDP = 17;
-const int INADDR_ANY = 0;
-
-type InAddr struct {
-    unsigned int addr
-}
-
-type SockAddrIn struct {
-    unsigned short sinFamily
-    unsigned short sinPort
-    InAddr sinAddr
-}
-
-public type Socket struct {
-    unsigned int sockFd // Actual socket
-    unsigned int connFd // Current connection
-    public short errorCode
-}
-
-public const short ERROR_OPEN = -1s;
-public const short ERROR_BIND = -2s;
-public const short ERROR_LISTEN = -3s;
-public const short ERROR_ACCEPT = -4s;
-public const short ERROR_CONNECT = -5s;
+// Import common logic
+import "std/net/socket";
 
 ext f<int> socket(int, int, int);
-ext f<int> bind(int, SockAddrIn*, int);
+ext f<int> bind(int, SockAddrIn*, unsigned int);
 ext f<int> listen(int, int);
-ext f<int> accept(int, SockAddrIn*, int);
+ext f<int> accept(int, SockAddrIn*, unsigned int);
 ext f<long> read(int, byte*, long);
 ext f<long> write(int, byte*, long);
 ext f<int> close(int);
 ext f<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext f<short> htons(short); // Fairly simple to re-implement in Spice
 ext f<int> inet_addr(string);
-ext f<int> connect(int, SockAddrIn*, int);
+ext f<int> connect(int, SockAddrIn*, unsigned int);
+
+public type Socket struct {
+    int sockFd // Actual socket
+    int connFd // Current connection
+}
 
 public p Socket.dtor() {
     this.close();
@@ -49,101 +28,124 @@ public p Socket.dtor() {
  *
  * @return Connection file descriptor
  */
-public f<int> Socket.acceptConnection() {
+public f<Result<int>> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
-    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    this.connFd = accept(this.sockFd, &cliAddr, (unsigned int) sizeof(cliAddr));
     if this.connFd == -1 {
-        //result.errorCode = ERROR_ACCEPT;
-        return -1;
+        return err<int>(Error("Error while accepting connection"));
     }
-    return this.connFd;
+    return ok(this.connFd);
 }
 
+/**
+ * Write a raw string to the socket.
+ *
+ * @param message Content of the message
+ * @return Number of bytes written
+ */
 public f<long> Socket.write(string message) {
-    if message.isEmpty() { return 0; }
-    return write(this.connFd, content, message.getLength() * 8);
+    const unsigned long messageLength = len(message);
+    if messageLength == 0l { return 0l; }
+    byte* messageBytes = nil<byte*>;
+    unsafe {
+        messageBytes = (byte*) message;
+    }
+    return write(this.connFd, messageBytes, messageLength * 8l);
 }
 
-public f<long> Socket.write(byte[] content) {
-    if sizeof(content) == 0 { return 0l; }
-    long size = (long) (sizeof(content) * sizeof(content[0]));
-    printf("Write size: %d\n", size);
+/**
+ * Write an array of bytes to the socket.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(byte* content, unsigned long size) {
+    if size == 0l { return 0l; }
     return write(this.connFd, content, size);
 }
 
-public f<long> Socket.read(byte* ptr, long size) {
-    return read(this.connFd, ptr, size);
+/**
+ * Read n bytes from the socket to the given buffer.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param buffer Buffer to write the result into
+ * @param size Number of bytes to read
+ * @return Number of bytes written
+ */
+public f<long> Socket.read(byte* buffer, long size) {
+    return read(this.connFd, buffer, size);
 }
 
 /**
  * Closes the socket. This method should always be called by the user before exiting the program.
  *
- * @return Error code for closing the socket
+ * @return Closing the connection was successful or not
  */
-public f<int> Socket.close() {
-    return close((int) this.sockFd);
+public f<bool> Socket.close() {
+    return close(this.sockFd) == 0;
 }
 
 /**
  * Opens a TCP server socket and exposes it to the given port.
- * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.
- * The default value there is 5.
+ * The maxWaitingConnections defines the maximum length to which the queue of pending connections may grow. If a
+ * connection request arrives when the queue is full, the client may receive an error with an indication of
+ * ECONNREFUSED or, if the underlying protocol support retransmission, the request may be ignored so that a later
+ * reattempt at connection succeeds.
  *
+ * @param port Port to open the socket on
+ * @param maxWaitingConnections Maximum size of the queue of pending client connections
  * @return Socket file descriptor
  */
-public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    const Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0 };
 
     // Cancel on failure
     if s.sockFd == -1 {
-        s.errorCode = ERROR_OPEN;
-        return s;
+        return err<Socket>(Error("Error creating socket"));
     }
 
-    InAddr inAddr = InAddr { htonl(INADDR_ANY) };
-    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+    const InAddr inAddr = InAddr { htonl(INADDR_ANY) };
+    const SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
-    int bindResult = bind((int) s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
+    const int bindResult = bind(s.sockFd, &servAddr, (unsigned int) sizeof(servAddr));
     if bindResult != 0 {
-        s.errorCode = ERROR_BIND;
-        return s;
+        return err<Socket>(Error("Error binding to address"));
     }
 
-    int listenResult = listen((int) s.sockFd, maxWaitingConnections);
+    const int listenResult = listen(s.sockFd, maxWaitingConnections);
     if listenResult != 0 {
-        s.errorCode = ERROR_LISTEN;
-        return s;
+        return err<Socket>(Error("Error listening on address"));
     }
 
     s.acceptConnection();
 
-    return s;
+    return ok(s);
 }
 
 /**
  * Opens a TCP client socket and tries to connect it to a server socket.
- * The target host can be specified via the host argument and the target port can be
- * specified with the port argument.
  *
+ * @param host Host to connect to
+ * @param port Post to connect to
  * @return Socket file descriptor
  */
-public f<int> openClientSocket(string host, unsigned short port) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+public f<Result<int>> openClientSocket(string host, unsigned short port) {
+    const Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0 };
 
     // Cancel on failure
     if s.sockFd == -1 {
-        s.errorCode = ERROR_OPEN;
-        return -1;
+        return err<int>(Error("Error opening socket client connection"));
     }
 
-    InAddr inAddr = InAddr { inet_addr(host) };
-    SockAddrIn cliAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+    const InAddr inAddr = InAddr { inet_addr(host) };
+    const SockAddrIn cliAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
-    int connectResult = connect((int) s.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    const int connectResult = connect(s.sockFd, &cliAddr, (unsigned int) sizeof(cliAddr));
     if connectResult != 0 {
-        s.errorCode = ERROR_CONNECT;
-        return -1;
+        return err<int>(Error("Error connecting to socket"));
     }
 
-    return s.sockFd;
+    return ok(s.sockFd);
 }

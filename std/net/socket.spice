@@ -1,0 +1,16 @@
+public const int AF_INET = 2;
+public const int SOCK_STREAM = 1;
+public const int SOCK_DGRAM = 2;
+public const int IPPROTO_IP = 0;
+public const int IPPROTO_UDP = 17;
+public const int INADDR_ANY = 0;
+
+public type InAddr struct {
+    unsigned int addr
+}
+
+public type SockAddrIn struct {
+    unsigned short sinFamily
+    unsigned short sinPort
+    InAddr sinAddr
+}
