@@ -3,7 +3,7 @@ import "bootstrap/util/file-util";
 f<int> main() {
     printf("GCC installed: %s\n", isCommandAvailable("gcc") ? "yes" : "no");
     printf("Graphviz installed: %s\n", isGraphvizInstalled() ? "yes" : "no");
-    String linkerInvoker = findLinkerInvoker();
-    assert linkerInvoker.endsWith("clang") || linkerInvoker.endsWith("gcc");
+    ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
+    assert linkerInvoker.path.contains("clang") || linkerInvoker.path.contains("gcc");
     printf("All assertions passed!");
 }
