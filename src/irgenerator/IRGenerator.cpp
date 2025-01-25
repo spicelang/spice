@@ -66,7 +66,7 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
   } else { // This is the first alloca inst in the current function -> insert at the entry block
     // Save current basic block and move insert cursor to entry block of the current function
     llvm::BasicBlock *currentBlock = builder.GetInsertBlock();
-    builder.SetInsertPoint(allocaInsertBlock);
+    builder.SetInsertPoint(allocaInsertBlock, allocaInsertBlock->begin());
 
     // Allocate the size of the given LLVM type
     allocaInsertInst = builder.CreateAlloca(llvmType, nullptr, varName);
