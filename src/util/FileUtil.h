@@ -7,9 +7,17 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+struct CliOptions;
+
 struct ExecResult {
   std::string output;
   int exitCode;
+};
+
+struct ExternalBinaryFinderResult {
+  const char* name;
+  std::string path;
 };
 
 /**
@@ -23,8 +31,8 @@ public:
   static ExecResult exec(const std::string &command);
   static bool isCommandAvailable(const std::string &cmd);
   static bool isGraphvizInstalled();
-  static std::string findLinkerInvoker();
-  static std::string findLinker();
+  static ExternalBinaryFinderResult findLinkerInvoker();
+  static ExternalBinaryFinderResult findLinker(const CliOptions& cliOptions);
   static std::filesystem::path getStdDir();
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
