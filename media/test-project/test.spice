@@ -1,24 +1,22 @@
-import "std/os/thread-pool";
-import "std/time/delay";
-import "std/net/socket";
+type Visitor struct {}
+
+type SymbolTable struct {}
+
+type Visitable interface {
+    f<bool> accept(Visitor*);
+}
+
+type AstNode struct : Visitable {}
+
+p AstNode.accept(Visitor* v) {}
+
+type AstEntryNode struct : Visitable {
+    AstNode astNode
+    SymbolTable* extFunctionScope
+    bool takesArgs
+}
 
 f<int> main() {
-    ThreadPool tp = ThreadPool(3s);
-    // Server thread
-    tp.enqueue(p() [[async]] {
-        printf("Opening server socket ...\n");
-        Result<Socket> socketRes = openServerSocket(8080s);
-        Socket socket = socketRes.unwrap();
-        printf("Server socket open.\n");
-    });
-    // Client thread
-    tp.enqueue(p() [[async]] {
-        delay(50); // Wait for server to become available
-        printf("Opening client socket ...\n");
-        Result<Socket> socketRes = openClientSocket("127.0.0.1", 8080s);
-        Socket socket = socketRes.unwrap();
-        printf("Client socket open.\n");
-    });
-    tp.start();
-    tp.join();
+    AstEntryNode entryNode;
+    printf("%d", entryNode.takesArgs);
 }

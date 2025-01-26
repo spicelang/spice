@@ -146,7 +146,7 @@ private:
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   static void autoDeReference(QualType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
-  void requestRevisitIfRequired(const Function *fct) const;
+  static void requestRevisitIfRequired(const Function *fct);
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation
