@@ -1,0 +1,12 @@
+digraph {
+ rankdir="TB";
+ label="./test-files/typechecker/imports/success-valid-import1/source.spice";
+ "." [color="lightgreen",label="source.spice"];
+ "../source1.spice" [color="lightgreen",label="source1.spice"];
+ "../source3.spice" [color="lightgreen",label="source3.spice"];
+ "../source1.spice" -> "../source3.spice";
+ "." -> "../source1.spice";
+ "../source2.spice" [color="lightgreen",label="source2.spice"];
+ "../source2.spice" -> "../source3.spice";
+ "." -> "../source2.spice";
+}

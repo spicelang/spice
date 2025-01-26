@@ -2,6 +2,8 @@
 
 #include "SourceFile.h"
 
+#include "visualizer/DependencyGraphVisualizer.h"
+
 #include <llvm/IR/Module.h>
 #include <llvm/MC/TargetRegistry.h>
 
@@ -126,7 +128,7 @@ void SourceFile::runCSTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
+  dotCode << " " << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
   antlrCtx.parser->reset();
 
   // Dump the serialized CST string and the SVG file
@@ -177,7 +179,7 @@ void SourceFile::runASTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   ASTVisualizer astVisualizer(resourceManager, this);
-  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
+  dotCode << " " << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
   // Dump the serialized AST string and the SVG file
   if (cliOptions.dumpSettings.dumpAST || cliOptions.testMode)
@@ -297,6 +299,36 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Dump symbol table
   if (cliOptions.dumpSettings.dumpSymbolTable)
     dumpOutput(compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
+}
+
+void SourceFile::runDependencyGraphVisualizer() {
+  // Only execute if enabled
+  if (restoredFromCache || (!cliOptions.dumpSettings.dumpDependencyGraph && !cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= DEP_GRAPH_VISUALIZER)
+    return;
+
+  Timer timer(&compilerOutput.times.depGraphVisualizer);
+  timer.start();
+
+  // Generate dot code for this source file
+  std::stringstream dotCode;
+  visualizerPreamble(dotCode);
+  DependencyGraphVisualizer depGraphVisualizer(resourceManager, this);
+  depGraphVisualizer.getDependencyGraph(dotCode);
+  dotCode << "}";
+
+  // Dump the serialized AST string and the SVG file
+  if (cliOptions.dumpSettings.dumpDependencyGraph || cliOptions.testMode)
+    compilerOutput.depGraphString = dotCode.str();
+
+  if (cliOptions.dumpSettings.dumpDependencyGraph)
+    visualizerOutput("Dependency Graph", compilerOutput.depGraphString);
+
+  previousStage = DEP_GRAPH_VISUALIZER;
+  timer.stop();
+  printStatusMessage("AST Visualizer", IO_AST, IO_AST, compilerOutput.times.depGraphVisualizer);
 }
 
 void SourceFile::runIRGenerator() {
@@ -542,6 +574,9 @@ void SourceFile::runMiddleEnd() {
   // The second run to ensure, also generic scopes are type-checked properly
   runTypeCheckerPost(); // Visit dependency tree from top to bottom in topological order
   CHECK_ABORT_FLAG_V()
+  // Visualize dependency graph
+  runDependencyGraphVisualizer();
+  CHECK_ABORT_FLAG_V()
 }
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
@@ -773,7 +808,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
     output << "digraph {\n rankdir=\"TB\";\n";
   else
     output << "subgraph {\n";
-  output << " label=\"" << filePath.generic_string() << "\";\n ";
+  output << " label=\"" << filePath.generic_string() << "\";\n";
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {

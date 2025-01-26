@@ -58,6 +58,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpAST= */ false,
           /* dumpSymbolTables= */ false,
           /* dumpTypes= */ false,
+          /* dumpDependencyGraph= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,
           /* dumpObjectFile= */ false,
@@ -75,7 +76,7 @@ void execTestCase(const TestCase &testCase) {
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
-  static_assert(sizeof(CliOptions::DumpSettings) == 9, "CliOptions::DumpSettings struct size changed");
+  static_assert(sizeof(CliOptions::DumpSettings) == 10, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
@@ -116,6 +117,12 @@ void execTestCase(const TestCase &testCase) {
     // Fail if an error was expected
     if (exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
+
+    // Check dependency graph
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_DEP_GRAPH, [&] {
+      mainSourceFile->runDependencyGraphVisualizer();
+      return mainSourceFile->compilerOutput.depGraphString;
+    });
 
     // Run backend for all dependencies
     for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)

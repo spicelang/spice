@@ -54,6 +54,7 @@ struct CliOptions {
     bool dumpAST = false;
     bool dumpSymbolTable = false;
     bool dumpTypes = false;
+    bool dumpDependencyGraph = false;
     bool dumpIR = false;
     bool dumpAssembly = false;
     bool dumpObjectFile = false;

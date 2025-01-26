@@ -363,6 +363,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
   // --dump-object-file
   subCmd->add_flag<bool>("--dump-object-file,-obj", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+  // --dump-dependency-graph
+  subCmd->add_flag<bool>("--dump-dependency-graph,-dep", cliOptions.dumpSettings.dumpDependencyGraph, "Dump compile unit dependency graph");
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
