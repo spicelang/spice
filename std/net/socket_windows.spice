@@ -4,6 +4,10 @@
 // Import common logic
 import "std/net/socket";
 
+// Type defs
+type SAFamilyT alias unsigned short;
+
+// Constants
 const unsigned short REQUESTED_WSA_VERSION = 514s;
 
 type WSAData struct {
@@ -16,15 +20,53 @@ type WSAData struct {
     char[129] szSystemStatus
 }
 
+// External functions
 ext f<int> WSAStartup(short, WSAData*);
 ext f<int> WSACleanup();
-ext f<int> socket(int, int, int);
-ext f<int> bind(int, SockAddrIn*, unsigned int);
-ext f<int> listen(int, int);
-ext f<int> accept(int, SockAddrIn*, unsigned int);
-ext f<int> close(int);
-ext f<int> htonl(int);     // Fairly simple to re-implement in Spice
-ext f<short> htons(short); // Fairly simple to re-implement in Spice
+ext f<int> socket(int /*sockfd*/, int /*type*/, int /*protocol*/);
+ext f<int> bind(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, SockAddrIn*, SockLenT /*address_len*/);
+ext f<int> close(int /*sockfd*/);
+ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to re-implement in Spice
+ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
+
+type SockAddr struct {
+    SAFamilyT saFamily // Address family
+    char[] saData      // Socket address
+}
+
+type SockAddrStorage struct {
+    SAFamilyT ssFamily // Address family
+}
+
+// Represents an IPv4 address
+public type InAddr struct {
+    InAddrT addr
+}
+
+// Represents an IPv6 address
+public type In6Addr struct {
+    unsigned byte[16] addr
+}
+
+public type SockAddrIn struct {
+    unsigned short sinFamily // AF_INET
+    InPortT sinPort          // Port number
+    InAddr sinAddr           // IPv4 address
+}
+
+public type SockAddrIn6 struct {
+    unsigned short sin6Family // AF_INET6
+    InPortT sin6Port          // Port number
+    unsigned int sin6FlowInfo // IPv6 flow info
+    In6Addr sin6Addr          // IPv6 address
+    unsigned int sin6ScopeId  // Set of interfaces for a scope
+}
+
+public type SockAddrUn struct {
+
+}
 
 public type Socket struct {
     int sockFd // Actual socket
@@ -43,10 +85,8 @@ public p Socket.dtor() {
  */
 public f<Result<int>> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
-    this.connFd = accept(this.sockFd, &cliAddr, (unsigned int) sizeof(cliAddr));
-    if this.connFd == -1 {
-        return err<int>(Error("Error while accepting connection"));
-    }
+    this.connFd = accept(this.sockFd, &cliAddr, 16u /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1 { return err<int>(Error("Error while accepting connection")); }
     return ok(this.connFd);
 }
 
@@ -71,32 +111,27 @@ public f<bool> Socket.close() {
  * @return Socket file descriptor
  */
 public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    // Initialize WSA
     WSAData wsaData = WSAData{};
-    if WSAStartup(REQUESTED_WSA_VERSION, &wsaData) != 0 {
-        return err<Socket>(Error("Error initializing WSA"));
-    }
+    if WSAStartup(REQUESTED_WSA_VERSION, &wsaData) != 0 { return err<Socket>(Error("Error initializing WSA")); }
 
-    const Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0 };
+    // Create socket file descriptor
+    const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if sockFd == 0 { return err<Socket>(Error("Error creating socket")); }
 
-    // Cancel on failure
-    if s.sockFd == -1l {
-        return err<Socket>(Error("Error creating socket"));
-    }
+    // Construct socket object
+    const Socket s = Socket { sockFd, /*connFd*/ 0 };
+    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), InAddr { INADDR_ANY }};
 
-    InAddr inAddr = InAddr { htonl(INADDR_ANY) };
-    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+    // Bind to target address
+    int bindResult = bind(sockFd, &servAddr, 16u /* hardcoded sizeof(servaddr) */);
+    if bindResult != 0 { return err<Socket>(Error("Error binding to address")); }
 
-    int bindResult = bind(s.sockFd, &servAddr, (unsigned int) sizeof(servAddr));
-    if bindResult != 0 {
-        return err<Socket>(Error("Error binding to address"));
-    }
-
+    // Start listening for incoming connections
     int listenResult = listen(s.sockFd, maxWaitingConnections);
-    if listenResult != 0 {
-        return err<Socket>(Error("Error listening on address"));
-    }
+    if listenResult != 0 { return err<Socket>(Error("Error listening on address")); }
 
-    s.acceptConnection();
+    //s.acceptConnection();
 
     return ok(s);
 }

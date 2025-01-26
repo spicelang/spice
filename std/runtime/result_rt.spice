@@ -6,7 +6,7 @@ type T dyn;
 /**
  * Result in Spice are wrappers around values, that allow to either provide a value or an error object.
  * This is useful for functions that return a value, but also can fail. The error can then be dealt with
- * on the caller side.
+ * on the caller side e.g. using the panic builtin.
  */
 public type Result<T> struct {
     T data
