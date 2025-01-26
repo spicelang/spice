@@ -80,6 +80,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
     return "Uninstall failed";
   case VERIFIER_DISABLED:
     return "Verifier disabled";
+  case TYPE_CHECKER_POST_RUNS_EXCEEDED:
+    return "Many type checker runs";
   }
   assert_fail("Unknown warning"); // GCOV_EXCL_LINE
   return "Unknown warning";       // GCOV_EXCL_LINE
