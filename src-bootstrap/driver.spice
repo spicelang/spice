@@ -112,7 +112,71 @@ public p Driver.init() {
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
 
-    // ToDo: extend
+    // ToDo: Here we have a problem with passing the cautres. Curently the capture struct is stack-allocated. This stack
+    // allocation goes out of scope at the end of the function, but used afterwards.
+    /*this.cliParser.setRootCallback(p() {
+        if this.shouldInstall || this.shouldUninstall {
+            // Prepare the installation path
+            FilePath installPath = getSpiceBinDir();
+            installPath /= this.cliOptions.mainSourceFile.getBaseName();
+            if !this.dryRun {
+                // ToDo
+            }
+
+            // If the binary should be installed, set the output path to the Spice bin directory
+            if this.shouldInstall {
+                this.cliOptions.outputPath = installPath;
+            }
+
+            // If the binary should be uninstalled, check if the executable exists and uninstall it
+            if this.shouldUninstall && !this.dryRun {
+                if installPath.exists() && deleteFile(installPath.toString()) {
+                    println("Successfully uninstalled");
+                } else {
+                    CompilerWarning warning = CompilerWarning(CompilerWarningType::UNINSTALL_FAILED, "The executable was not found at the expected location");
+                    warning.print();
+                }
+            }
+        }
+
+        // Abort here if we do not need to compile
+        if !this.shouldCompile {
+            return;
+        }
+
+        // Set output path and dir
+        if this.shouldExecute {
+            this.cliOptions.execute = true;
+            const long millis = getCurrentMillis();
+            this.cliOptions.outputDir = FilePath(getTempDir()) / "spice" / "output" / toString(millis);
+            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+        } else if this.cliOptions.outputPath.isEmpty() {
+            if this.cliOptions.outputPath.isEmpty() {
+                this.cliOptions.outputDir = this.cliOptions.outputPath;
+                this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+            } else {
+                this.cliOptions.outputDir = FilePath(this.cliOptions.outputPath.getParentDir());
+            }
+        } else {
+            this.cliOptions.outputDir = FilePath("./");
+            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+        }
+
+        // Set output file extension
+        if this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64 {
+            this.cliOptions.outputPath.replaceExtension("wasm");
+        } else if isWindows() {
+            this.cliOptions.outputPath.replaceExtension("exe");
+        } else {
+            this.cliOptions.outputPath.replaceExtension("");
+        }
+
+        // Set cache dir
+        this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
+
+        // Create directories in case they not exist yet
+        // ToDo
+    });*/
 }
 
 /**

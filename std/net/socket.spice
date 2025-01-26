@@ -1,0 +1,14 @@
+// Info taken from https://github.com/openbsd/src/blob/master/sys/sys/socket.h
+
+// Type defs
+public type InAddrT alias unsigned int;
+public type InPortT alias unsigned short;
+
+// Constants
+public const int AF_INET = 2;     // IPv4
+public const int AF_INET6 = 24;   // IPv6
+public const int SOCK_STREAM = 1; // Stream socket
+public const int SOCK_DGRAM = 2;  // Datagram socket
+public const int IPPROTO_IP = 0;
+public const int IPPROTO_UDP = 17;
+public const int INADDR_ANY = 0;

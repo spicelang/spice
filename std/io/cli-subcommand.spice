@@ -5,9 +5,6 @@ import "std/data/vector";
 import "std/os/os";
 import "std/io/filepath";
 
-// Generic types
-type T bool|string|int;
-
 public type CliSubcommand struct {
     String name
     String description
