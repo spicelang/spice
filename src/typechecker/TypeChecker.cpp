@@ -2045,7 +2045,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
-  if (node->itemLst != nullptr || node->itemLst->args.empty())
+  if (!node->itemLst || node->itemLst->args.empty())
     SOFT_ERROR_ER(node, ARRAY_SIZE_INVALID, "Array initializers must at least contain one value");
   node->actualSize = node->itemLst->args.size();
 
