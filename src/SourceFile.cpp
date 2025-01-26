@@ -307,6 +307,11 @@ void SourceFile::runTypeCheckerPost() const {
         zeroInDegreeQueue.push(dependency);
     }
   }
+
+#ifndef NDEBUG
+  for (const size_t inDegree : inDegreeMap | std::views::values)
+    assert(inDegree == 0);
+#endif
 }
 
 void SourceFile::runTypeCheckerPostInner() {
@@ -674,7 +679,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   sourceFile->dependants.push_back(this);
 
   // Add the dependency to the global list of new dependencies
-  resourceManager.newDependencies.push_back(sourceFile);
+  resourceManager.newDependencies.insert(sourceFile);
 }
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {
@@ -686,7 +691,7 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch, // NOLINT(
   circle.push(this);
 
   // Check if the current source file corresponds to the path to search
-  if (std::filesystem::equivalent(filePath, filePathSearch))
+  if (equivalent(filePath, filePathSearch))
     return true;
 
   // Check dependants recursively
