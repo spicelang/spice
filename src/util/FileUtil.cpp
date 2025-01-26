@@ -70,10 +70,11 @@ size_t FileUtil::getLineCount(const std::filesystem::path &filePath) {
  */
 ExecResult FileUtil::exec(const std::string &command) {
 #ifdef _WIN32
-  const std::string quotedCommand = "\"" + command + "\"";
+  const std::string quotedCommand = "\"" + command + " 2>&1\""; // Redirect stderr to stdout
   FILE *pipe = _popen(quotedCommand.c_str(), "r");
 #else
-  FILE *pipe = popen(command.c_str(), "r");
+  const std::string redirectedCommand = command + " 2>&1"; // Redirect stderr to stdout
+  FILE *pipe = popen(redirectedCommand.c_str(), "r");
 #endif
 
   if (!pipe)                                                                // GCOV_EXCL_LINE
