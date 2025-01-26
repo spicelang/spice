@@ -15,6 +15,7 @@ graph TD;
     ImportCollector-->
     SymbolTableBuilder-->
     TypeChecker-->
+    DepGraphVisualizer-->
     IRGenerator-->
     DefaultIROptimizer-->
     ObjectEmitter-->
@@ -39,7 +40,7 @@ graph TD;
 
 3.  **CST Visualizer** <br>
     Input/Output: CST -> CST <br>
-    Note: Prints the CST as JSON or Dot code.
+    Note: Prints the CST as Dot code.
 
 4.  **AST Builder** <br>
     Input/Output: CST -> AST <br>
@@ -47,7 +48,7 @@ graph TD;
 
 5.  **AST Visualizer** <br>
     Input/Output: AST -> AST <br>
-    Note: Prints the AST as JSON or Dot code.
+    Note: Prints the AST as Dot code.
 
 6.  **Import Collector** <br>
     Input/Output: AST -> AST <br>
@@ -62,16 +63,20 @@ graph TD;
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, fill types in symbol table
 
-9.  **IR Generator** <br>
+9.  **Dependency Graph Visualizer** <br>
+    Input/Output: AST -> AST <br>
+    Note: Prints the compile unit dependency graph (DAG) as Dot code
+
+10. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-10. **IR Optimizer** <br>
+11. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not invoked.
 
-11. **Object Emitter** <br>
+12. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 

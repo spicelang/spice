@@ -2,6 +2,8 @@
 
 #include "SourceFile.h"
 
+#include "visualizer/DependencyGraphVisualizer.h"
+
 #include <llvm/IR/Module.h>
 #include <llvm/MC/TargetRegistry.h>
 
@@ -299,6 +301,36 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     dumpOutput(compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
 }
 
+void SourceFile::runDependencyGraphVisualizer() {
+  // Only execute if enabled
+  if (restoredFromCache || (!cliOptions.dumpSettings.dumpDependencyGraph && !cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= DEP_GRAPH_VISUALIZER)
+    return;
+
+  Timer timer(&compilerOutput.times.depGraphVisualizer);
+  timer.start();
+
+  // Generate dot code for this source file
+  std::stringstream dotCode;
+  visualizerPreamble(dotCode);
+  DependencyGraphVisualizer depGraphVisualizer(resourceManager, this);
+  depGraphVisualizer.getDependencyGraph(dotCode);
+  dotCode << "}";
+
+  // Dump the serialized AST string and the SVG file
+  if (cliOptions.dumpSettings.dumpDependencyGraph || cliOptions.testMode)
+    compilerOutput.depGraphString = dotCode.str();
+
+  if (cliOptions.dumpSettings.dumpDependencyGraph)
+    visualizerOutput("Dependency Graph", compilerOutput.depGraphString);
+
+  previousStage = DEP_GRAPH_VISUALIZER;
+  timer.stop();
+  printStatusMessage("AST Visualizer", IO_AST, IO_AST, compilerOutput.times.depGraphVisualizer);
+}
+
 void SourceFile::runIRGenerator() {
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_GENERATOR)
@@ -541,6 +573,9 @@ void SourceFile::runMiddleEnd() {
   CHECK_ABORT_FLAG_V()
   // The second run to ensure, also generic scopes are type-checked properly
   runTypeCheckerPost(); // Visit dependency tree from top to bottom in topological order
+  CHECK_ABORT_FLAG_V()
+  // Visualize dependency graph
+  runDependencyGraphVisualizer();
   CHECK_ABORT_FLAG_V()
 }
 

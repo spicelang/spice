@@ -45,6 +45,7 @@ public type DumpSettings struct {
     public bool dumpAST = false
     public bool dumpSymbolTable = false
     public bool dumpTypes = false
+    public bool dumpDependencyGraph = false
     public bool dumpIR = false
     public bool dumpAssembly = false
     public bool dumpObjectFile = false
@@ -376,6 +377,9 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --dump-object-file
     CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
     dumpObjFlag.addAlias("-obj");
+    // --dump-dependency-graph
+    CliOption<bool>& dumpDepGraphFlag = subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dumpSettings.dumpDependencyGraph, "Dump compile unit dependency graph");
+    dumpObjFlag.addAlias("-dep");
 
     CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
     //fileOption.setRequired();

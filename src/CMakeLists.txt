@@ -81,6 +81,9 @@ set(SOURCES
         typechecker/TypeMatcher.h
         typechecker/ExprResult.h
         typechecker/MacroDefs.h
+        # Dependency graph visualizer
+        visualizer/DependencyGraphVisualizer.cpp
+        visualizer/DependencyGraphVisualizer.h
         # IR generator
         irgenerator/IRGenerator.cpp
         irgenerator/IRGenerator.h
@@ -160,8 +163,7 @@ set(SOURCES
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS}
-        irgenerator/GenTargetDependent.cpp)
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Enable pedantic warnings
 target_compile_options(spice PRIVATE -Wpedantic -Wall -Wno-unknown-pragmas)

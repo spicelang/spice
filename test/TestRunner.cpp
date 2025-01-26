@@ -58,6 +58,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpAST= */ false,
           /* dumpSymbolTables= */ false,
           /* dumpTypes= */ false,
+          /* dumpDependencyGraph= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,
           /* dumpObjectFile= */ false,
@@ -75,7 +76,7 @@ void execTestCase(const TestCase &testCase) {
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
-  static_assert(sizeof(CliOptions::DumpSettings) == 9, "CliOptions::DumpSettings struct size changed");
+  static_assert(sizeof(CliOptions::DumpSettings) == 10, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager

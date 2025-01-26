@@ -40,6 +40,7 @@ enum CompileStageType : uint8_t {
   SYMBOL_TABLE_BUILDER,
   TYPE_CHECKER_PRE,
   TYPE_CHECKER_POST,
+  DEP_GRAPH_VISUALIZER,
   IR_GENERATOR,
   IR_OPTIMIZER,
   OBJECT_EMITTER,
@@ -75,6 +76,7 @@ struct TimerOutput {
   uint64_t symbolTableBuilder = 0;
   uint64_t typeCheckerPre = 0;
   uint64_t typeCheckerPost = 0;
+  uint64_t depGraphVisualizer = 0;
   uint64_t irGenerator = 0;
   uint64_t irOptimizer = 0;
   uint64_t objectEmitter = 0;
@@ -84,6 +86,7 @@ struct CompilerOutput {
   std::string cstString;
   std::string astString;
   std::string symbolTableString;
+  std::string depGraphString;
   std::string irString;
   std::string irOptString;
   std::string asmString;
@@ -124,6 +127,7 @@ private:
   void runTypeCheckerPost();
 
 public:
+  void runDependencyGraphVisualizer();
   void runIRGenerator();
   void runDefaultIROptimizer();
   void runPreLinkIROptimizer();

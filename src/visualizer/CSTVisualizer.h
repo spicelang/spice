@@ -20,7 +20,7 @@ public:
   // Constructors
   CSTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const SpiceLexer *lexer,
                 const SpiceParser *parser)
-      : CompilerPass(resourceManager, sourceFile), vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
+      : CompilerPass(resourceManager, sourceFile), vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()) {}
 
   // Visitor methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override { return buildRule(ctx); }
