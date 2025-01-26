@@ -20,14 +20,14 @@ void DependencyGraphVisualizer::getDependencyGraphNode(std::stringstream& output
     return;
 
   // Append code for this source file
-  const char *filePath = currentSourceFile->filePath.c_str();
-  output << " \"" << filePath << "\" [color=\"lightgreen\",label=\"" << currentSourceFile->fileName << "\"];\n";
+  const std::filesystem::path filePath = relative(currentSourceFile->filePath, sourceFile->filePath).generic_string();
+  output << " \"" << filePath.string() << "\" [color=\"lightgreen\",label=\"" << currentSourceFile->fileName << "\"];\n";
   printedFiles.insert(currentSourceFile);
 
   // Append code for dependencies
   for (const SourceFile *dependency : currentSourceFile->dependencies | std::views::values) {
     getDependencyGraphNode(output, dependency);
-    output << " \"" << filePath << "\" -> \"" << dependency->filePath.c_str() << "\";\n";
+    output << " \"" << filePath.string() << "\" -> \"" << dependency->filePath.c_str() << "\";\n";
   }
 }
 

@@ -17,14 +17,14 @@ public:
   using CompilerPass::CompilerPass;
 
   // Public methods
-  void getDependencyGraph(std::stringstream& output);
+  void getDependencyGraph(std::stringstream &output);
 
 private:
   // Private members
-  std::unordered_set<const SourceFile*> printedFiles;
+  std::unordered_set<const SourceFile *> printedFiles;
 
   // Private methods
-  void getDependencyGraphNode(std::stringstream& output, const SourceFile *currentSourceFile);
+  void getDependencyGraphNode(std::stringstream &output, const SourceFile *currentSourceFile);
 };
 
 } // namespace spice::compiler

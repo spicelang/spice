@@ -118,6 +118,12 @@ void execTestCase(const TestCase &testCase) {
     if (exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
+    // Check dependency graph
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_DEP_GRAPH, [&] {
+      mainSourceFile->runDependencyGraphVisualizer();
+      return mainSourceFile->compilerOutput.depGraphString;
+    });
+
     // Run backend for all dependencies
     for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
       sourceFile->runBackEnd();

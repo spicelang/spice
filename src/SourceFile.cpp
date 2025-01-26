@@ -128,7 +128,7 @@ void SourceFile::runCSTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
+  dotCode << " " << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
   antlrCtx.parser->reset();
 
   // Dump the serialized CST string and the SVG file
@@ -179,7 +179,7 @@ void SourceFile::runASTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   ASTVisualizer astVisualizer(resourceManager, this);
-  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
+  dotCode << " " << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
   // Dump the serialized AST string and the SVG file
   if (cliOptions.dumpSettings.dumpAST || cliOptions.testMode)
@@ -808,7 +808,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
     output << "digraph {\n rankdir=\"TB\";\n";
   else
     output << "subgraph {\n";
-  output << " label=\"" << filePath.generic_string() << "\";\n ";
+  output << " label=\"" << filePath.generic_string() << "\";\n";
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
