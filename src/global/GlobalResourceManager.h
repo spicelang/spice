@@ -48,6 +48,7 @@ public:
   std::vector<std::string> compileTimeStringValues;
   BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
+  std::vector<SourceFile *> newDependencies; // Dependencies, added between type checker post runs
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
   CacheManager cacheManager;

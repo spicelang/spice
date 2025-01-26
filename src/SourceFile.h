@@ -199,9 +199,6 @@ private:
   uint8_t totalTypeCheckerRuns = 0;
 
   // Private methods
-
-  std::vector<SourceFile *> computeTypeCheckPostOrder() const;
-  bool isFullyTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;
