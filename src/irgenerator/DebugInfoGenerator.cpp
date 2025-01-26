@@ -32,7 +32,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
                                              irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
-  module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
+  module->addModuleFlag(llvm::Module::Max, "Dwarf Version", 5);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
 
   // Create another DIFile as scope for subprograms
