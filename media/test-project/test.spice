@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 type T dyn;
 type TRes dyn;
 
@@ -18,9 +19,43 @@ p bitwiseNotTest() {
     bitwiseNotTestInner<long>(186008394l, -186008395l);
     // Lhs is byte
     bitwiseNotTestInner<byte>(cast<byte>(18), cast<byte>(-19));
+=======
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
+
+type T dyn;
+
+type Container<T> struct : IIterable<T> {}
+
+type ContainerIterator<T> struct : IIterator<T> {
+    Container<T>& container
+    int idx = 0
 }
 
+p ContainerIterator.ctor(Container<T>& container) {
+    this.container = container;
+>>>>>>> 0aeaa786 (Extend)
+}
+
+f<ContainerIterator<T>> Container.getIterator() {
+    return ContainerIterator<T>(*this);
+}
+
+f<int&> ContainerIterator.get() { return this.idx; }
+f<Pair<unsigned long, T&>> ContainerIterator.getIdx() { return Pair<unsigned long, T&>(0l, this.idx); }
+f<bool> ContainerIterator.isValid() { return false; }
+p ContainerIterator.next() {}
+
 f<int> main() {
+<<<<<<< HEAD
     bitwiseNotTest();
     printf("All assertions passed!");
 }
+=======
+    Container<int> c;
+    foreach dyn item : c {
+        printf("%d\n", item);
+    }
+}
+>>>>>>> 0aeaa786 (Extend)
