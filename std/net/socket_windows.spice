@@ -133,5 +133,7 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
 
     //s.acceptConnection();
 
+    // ToDo: In the Result.ctor() the Socket object is copied and the dtor of the original
+    // object is called. This closes the socket. Continue implementing when move ctors work.
     return ok(s);
 }
