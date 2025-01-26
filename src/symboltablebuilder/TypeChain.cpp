@@ -89,7 +89,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
     }
     break;
   case TY_ENUM:
-    name << "enum";
+    name << "enum(" << subType << ")";
     break;
   case TY_GENERIC: // fall-through
   case TY_ALIAS:

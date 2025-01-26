@@ -90,11 +90,12 @@ public type SourceFile struct : ISourceFile {
     public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
+    public bool restoredFromCache = false
+    public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
     public CompilerOutput compilerOutput
     public SourceFile* parent
     public String cacheKey
-    public bool restoredFromCache = false
     public ASTEntryNode* ast = nil<ASTEntryNode*>
     public heap Scope* globalScope
     public llvm::LLVMContext context
@@ -105,11 +106,11 @@ public type SourceFile struct : ISourceFile {
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
     public Vector<const Function*> testFunctions
-    public unsigned int importedRuntimeModules = 0
     // Private fields
     IGlobalResourceManager& resourceManager
     CliOptions& cliOptions
     UnorderedMap<const Type*, llvm::Type*> llvmTypeMapping
+    unsigned int importedRuntimeModules = 0
     unsigned short totalTypeCheckerRuns = 0s
 }
 
@@ -254,14 +255,6 @@ public p SourceFile.runSymbolTableBuilder() {
     this.printStatusMessage("Symbol Table Builder", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.symbolTableBuilder);
 }
 
-public p SourceFile.runTypeChecker() {
-    // We need two runs here due to generics.
-    // The first run to determine all concrete substantiations of potentially generic elements
-    this.runTypeCheckerPre(); // Visit dependency tree from bottom to top
-    // The second run to ensure, also generic scopes are type-checked properly
-    this.runTypeCheckerPost(); // Visit dependency tree from top to bottom
-}
-
 p SourceFile.runTypeCheckerPre() {
     // Skip if restored from cache or this stage has already been done
     if this.restoredFromCache || this.previousStage >= CompileStageType::TYPE_CHECKER_PRE {
@@ -288,8 +281,9 @@ p SourceFile.runTypeCheckerPre() {
 }
 
 p SourceFile.runTypeCheckerPost() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::TYPE_CHECKER_POST {
+    // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
+    // Also skip if there are source files, that include this source file, which have not been type checked yet.
+    if this.restoredFromCache || !this.haveAllDependantsBeenTypeChecked() {
         return;
     }
 
@@ -299,7 +293,7 @@ p SourceFile.runTypeCheckerPost() {
     // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
     TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_POST);
     unsigned short typeCheckerRuns = 0s;
-    do {
+    while typeChecker.reVisitRequested {
         typeCheckerRuns++;
         this.totalTypeCheckerRuns++;
 
@@ -313,7 +307,7 @@ p SourceFile.runTypeCheckerPost() {
             SourceFile* sourceFile = dependency.getSecond();
             sourceFile.runTypeCheckerPost();
         }
-    } while (typeChecker.reVisitRequested);
+    }
 
     this.checkForSoftErrors();
 
@@ -635,3 +629,12 @@ public f<const SourceFile*> SourceFile.getRootSourceFile() {
     dyn entry = this.exportedNameRegistry.get(topLevelName);
     return entry.targetEntry.scope == this.globalScope;
 }*/
+
+f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
+    foreach SourceFile* dependant : dependants {
+        if dependant.totalTypeCheckerRuns == 0s {
+            return false;
+        }
+    }
+    return true;
+}
