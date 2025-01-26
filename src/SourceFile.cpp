@@ -274,7 +274,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_POST);
   unsigned short typeCheckerRuns = 0;
-  do {
+  while (reVisitRequested) {
     typeCheckerRuns++;
     totalTypeCheckerRuns++;
     reVisitRequested = false;
@@ -287,7 +287,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // Then type-check all dependencies
     for (SourceFile *sourceFile : dependencies | std::views::values)
       sourceFile->runTypeCheckerPost();
-  } while (reVisitRequested);
+  }
 
   checkForSoftErrors();
 

@@ -2739,8 +2739,8 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
  *
  * @param fct Function to check
  */
-void TypeChecker::requestRevisitIfRequired(const Function *fct) const {
-  if (fct && !fct->alreadyTypeChecked && !fct->entry->scope->isImportedBy(rootScope))
+void TypeChecker::requestRevisitIfRequired(const Function *fct) {
+  if (fct && !fct->alreadyTypeChecked)
     fct->entry->scope->sourceFile->reVisitRequested = true;
 }
 

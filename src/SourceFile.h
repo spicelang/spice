@@ -166,7 +166,7 @@ public:
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
   bool restoredFromCache = false;
-  bool reVisitRequested = false;
+  bool reVisitRequested = true;
   CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
