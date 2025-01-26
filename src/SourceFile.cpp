@@ -234,14 +234,6 @@ void SourceFile::runSymbolTableBuilder() {
   printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, compilerOutput.times.symbolTableBuilder);
 }
 
-void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
-  // We need two runs here due to generics.
-  // The first run to determine all concrete substantiations of potentially generic elements
-  runTypeCheckerPre(); // Visit dependency tree from bottom to top
-  // The second run to ensure, also generic scopes are type-checked properly
-  runTypeCheckerPost(); // Visit dependency tree from top to bottom
-}
-
 void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
@@ -543,9 +535,12 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runMiddleEnd() {
-  runTypeCheckerPre();
+  // We need two runs here due to generics.
+  // The first run to determine all concrete function/struct/interface substantiations
+  runTypeCheckerPre(); // Visit dependency tree from bottom to top
   CHECK_ABORT_FLAG_V()
-  runTypeCheckerPost();
+  // The second run to ensure, also generic scopes are type-checked properly
+  runTypeCheckerPost(); // Visit dependency tree from top to bottom in topological order
   CHECK_ABORT_FLAG_V()
 }
 

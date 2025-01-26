@@ -118,7 +118,6 @@ public:
   void runASTVisualizer();
   void runImportCollector();
   void runSymbolTableBuilder();
-  void runTypeChecker();
 
 private:
   void runTypeCheckerPre();

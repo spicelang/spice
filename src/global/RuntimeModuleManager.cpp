@@ -63,7 +63,7 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(RuntimeModule runtimeModule
   case RESULT_RT:
     return {RESULT_RT_IMPORT_NAME, "result_rt"};
   case ERROR_RT:
-    return {RESULT_RT_IMPORT_NAME, "error_rt"};
+    return {ERROR_RT_IMPORT_NAME, "error_rt"};
   case MEMORY_RT:
     return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
   case RTTI_RT:

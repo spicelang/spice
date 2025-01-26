@@ -107,7 +107,7 @@ void execTestCase(const TestCase &testCase) {
     // Execute import collector and semantic analysis stages
     mainSourceFile->runImportCollector();
     mainSourceFile->runSymbolTableBuilder();
-    mainSourceFile->runTypeChecker();
+    mainSourceFile->runMiddleEnd(); // TypeChecker pre + post
 
     // Check symbol table output (check happens here to include updates from type checker)
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE,
