@@ -196,6 +196,7 @@ private:
   uint8_t totalTypeCheckerRuns = 0;
 
   // Private methods
+
   bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void dumpCacheStats();

@@ -260,7 +260,8 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache, this stage has already been done, or not all dependants finished type checking
+  // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
+  // Also skip if there are source files, that include this source file, which have not been type checked yet.
   if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
     return;
 
