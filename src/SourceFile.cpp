@@ -263,13 +263,50 @@ void SourceFile::runTypeCheckerPost() const {
   // This method may only be called on the root source file
   assert(isMainFile);
 
-  // Sort source files in topological order so that the following condition is always met:
-  // A source file may only be checked if all dependants have been checked already
-  const std::vector<SourceFile *> topologicalOrder = computeTypeCheckPostOrder();
+  // Prepare the initial in-degree map and zero in-degree queue
+  const std::unordered_map<std::string, std::unique_ptr<SourceFile>> &allSourceFiles = resourceManager.sourceFiles;
+  std::unordered_map<SourceFile *, size_t> inDegreeMap;
+  std::queue<SourceFile *> zeroInDegreeQueue;
 
-  // Run type checker post in the given order
-  for (SourceFile *sourceFile : topologicalOrder)
-    sourceFile->runTypeCheckerPostInner();
+  // Initialize the in-degree map and enqueue the root source file
+  for (const std::unique_ptr<SourceFile> &sourceFile : allSourceFiles | std::views::values) {
+    const size_t inDegree = sourceFile->dependants.size();
+    inDegreeMap[sourceFile.get()] = inDegree;
+    if (inDegree == 0)
+      zeroInDegreeQueue.push(sourceFile.get());
+  }
+  assert(!zeroInDegreeQueue.empty());
+  resourceManager.newDependencies.clear();
+
+  // Process the queue
+  while (!zeroInDegreeQueue.empty()) {
+    SourceFile *current = zeroInDegreeQueue.front();
+    zeroInDegreeQueue.pop();
+
+    // Perform the action on the current node
+    current->runTypeCheckerPostInner();
+
+    // If there were dependencies added, add them to the in-degree map
+    for (SourceFile *dependency : resourceManager.newDependencies) {
+      // Initialize with in-degree 0 if not in the map yet
+      if (!inDegreeMap.contains(dependency))
+        inDegreeMap[dependency] = 0;
+      // Increment in-degree
+      inDegreeMap[dependency]++;
+    }
+    resourceManager.newDependencies.clear();
+
+    // Re-fill the zero in-degree queue
+    for (SourceFile *dependency : current->dependencies | std::views::values) {
+      if (inDegreeMap[dependency] == 0)
+        continue;
+      // Decrease the in-degree of all dependencies of the just processed source file
+      inDegreeMap[dependency]--;
+      // If the dependency has in-degree 0, push it to the queue
+      if (inDegreeMap[dependency] == 0)
+        zeroInDegreeQueue.push(dependency);
+    }
+  }
 }
 
 void SourceFile::runTypeCheckerPostInner() {
@@ -635,6 +672,9 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
 
   // Add the dependant
   sourceFile->dependants.push_back(this);
+
+  // Add the dependency to the global list of new dependencies
+  resourceManager.newDependencies.push_back(sourceFile);
 }
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {
@@ -738,46 +778,6 @@ bool SourceFile::isRT(RuntimeModule runtimeModule) const {
     return false;
   return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
 }
-
-std::vector<SourceFile *> SourceFile::computeTypeCheckPostOrder() const {
-  // This method may only be called on the root source file
-  assert(isMainFile);
-
-  // Sort the DAG of source files in topological order using Kahn's algorithm:
-  // https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
-  const std::unordered_map<std::string, std::unique_ptr<SourceFile>> &allSourceFiles = resourceManager.sourceFiles;
-  std::unordered_map<SourceFile *, size_t> inDegreeMap; // Keeps track of in-degrees
-  std::vector<SourceFile *> topologicalOrder;           // Resulting topological order
-  std::queue<SourceFile *> zeroInDegreeQueue;           // Queue for nodes with in-degree 0
-  topologicalOrder.reserve(allSourceFiles.size());
-
-  // Initialize in-degree map
-  for (const std::unique_ptr<SourceFile> &sourceFile : allSourceFiles | std::views::values) {
-    const size_t inDegree = inDegreeMap[sourceFile.get()] = sourceFile->dependants.size();
-    inDegreeMap[sourceFile.get()] = inDegree;
-    if (inDegree == 0) {
-      assert(sourceFile->isMainFile); // This should be the root source file
-      zeroInDegreeQueue.push(sourceFile.get());
-    }
-  }
-
-  // Process the queue
-  while (!zeroInDegreeQueue.empty()) {
-    SourceFile *current = zeroInDegreeQueue.front();
-    zeroInDegreeQueue.pop();
-    topologicalOrder.push_back(current);
-
-    // Decrease the in-degree of all dependencies
-    for (SourceFile *dependant : current->dependencies | std::views::values)
-      if (--inDegreeMap[dependant] == 0)
-        zeroInDegreeQueue.push(dependant);
-  }
-
-  assert(topologicalOrder.size() == allSourceFiles.size() && "Cycle(s) in DAG detected!");
-  return topologicalOrder;
-}
-
-bool SourceFile::isFullyTypeChecked() const { return totalTypeCheckerRuns >= 1; }
 
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
