@@ -134,9 +134,6 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
       throw SemanticError(node, RETURN_OF_TEMPORARY_VALUE, "Cannot return reference to temporary value");
     return lhsType;
   }
-  // Allow dyn[] (empty array literal) to any array
-  if (lhsType.isArray() && rhsType.isArrayOf(TY_DYN))
-    return lhsType;
   // Allow char* = string
   if (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.getSpecifiers() == rhsType.getSpecifiers())
     return lhsType;

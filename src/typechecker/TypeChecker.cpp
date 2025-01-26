@@ -548,10 +548,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Visit data type
     localVarType = std::any_cast<QualType>(visit(node->dataType));
 
-    // Infer the type left to right if the right side is an empty array initialization
-    if (rhsTy.isArrayOf(TY_DYN))
-      rhsTy = QualType(localVarType);
-
     // Check if type has to be inferred or both types are fixed
     if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       const ExprResult lhsResult = {localVarType, localVarEntry};
@@ -2049,21 +2045,23 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
+  if (!node->itemLst || node->itemLst->args.empty())
+    SOFT_ERROR_ER(node, ARRAY_SIZE_INVALID, "Array initializers must at least contain one value");
+  node->actualSize = node->itemLst->args.size();
+
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
-  if (node->itemLst) {
-    node->actualSize = static_cast<long>(node->itemLst->args.size());
-    for (AssignExprNode *arg : node->itemLst->args) {
-      const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
-      HANDLE_UNRESOLVED_TYPE_ER(itemType)
-      if (actualItemType.is(TY_DYN)) // Perform type inference
-        actualItemType = itemType;
-      else if (itemType != actualItemType) // Check if types are matching
-        SOFT_ERROR_ER(arg, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                      "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
-                          " and " + itemType.getName(false))
-    }
+  for (AssignExprNode *arg : node->itemLst->args) {
+    const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
+    HANDLE_UNRESOLVED_TYPE_ER(itemType)
+    if (actualItemType.is(TY_DYN)) // Perform type inference
+      actualItemType = itemType;
+    else if (itemType != actualItemType) // Check if types are matching
+      SOFT_ERROR_ER(arg, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                    "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
+                        " and " + itemType.getName(false))
   }
+  assert(!actualItemType.is(TY_DYN));
 
   const QualType arrayType = actualItemType.toArray(node, node->actualSize, true);
   return ExprResult{node->setEvaluatedSymbolType(arrayType, manIdx)};

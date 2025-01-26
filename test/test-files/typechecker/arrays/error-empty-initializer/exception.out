@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:20:
+Array size invalid: Array initializers must at least contain one value
+
+2  short**[8] _ = [];
+                  ^^

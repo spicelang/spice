@@ -2091,7 +2091,7 @@ public:
 
   // Public members
   ArgLstNode *itemLst = nullptr;
-  long actualSize = 0;
+  size_t actualSize = 0z;
 };
 
 // ================================================= StructInstantiationNode =====================================================

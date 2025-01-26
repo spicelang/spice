@@ -426,50 +426,8 @@ digraph {
  L10C4_dataType -> L10C12
  L10C14 [color="lightblue",label="IDENTIFIER: threads"];
  L10C4_declStmt -> L10C14
- L10C22 [color="lightblue",label="ASSIGN: ="];
- L10C4_declStmt -> L10C22
- L10C24_assignExpr [color="lightgreen",label="assignExpr"];
- L10C4_declStmt -> L10C24_assignExpr;
- L10C24_ternaryExpr [color="lightgreen",label="ternaryExpr"];
- L10C24_assignExpr -> L10C24_ternaryExpr;
- L10C24_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
- L10C24_ternaryExpr -> L10C24_logicalOrExpr;
- L10C24_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
- L10C24_logicalOrExpr -> L10C24_logicalAndExpr;
- L10C24_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
- L10C24_logicalAndExpr -> L10C24_bitwiseOrExpr;
- L10C24_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
- L10C24_bitwiseOrExpr -> L10C24_bitwiseXorExpr;
- L10C24_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
- L10C24_bitwiseXorExpr -> L10C24_bitwiseAndExpr;
- L10C24_equalityExpr [color="lightgreen",label="equalityExpr"];
- L10C24_bitwiseAndExpr -> L10C24_equalityExpr;
- L10C24_relationalExpr [color="lightgreen",label="relationalExpr"];
- L10C24_equalityExpr -> L10C24_relationalExpr;
- L10C24_shiftExpr [color="lightgreen",label="shiftExpr"];
- L10C24_relationalExpr -> L10C24_shiftExpr;
- L10C24_additiveExpr [color="lightgreen",label="additiveExpr"];
- L10C24_shiftExpr -> L10C24_additiveExpr;
- L10C24_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L10C24_additiveExpr -> L10C24_multiplicativeExpr;
- L10C24_castExpr [color="lightgreen",label="castExpr"];
- L10C24_multiplicativeExpr -> L10C24_castExpr;
- L10C24_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L10C24_castExpr -> L10C24_prefixUnaryExpr;
- L10C24_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L10C24_prefixUnaryExpr -> L10C24_postfixUnaryExpr;
- L10C24_atomicExpr [color="lightgreen",label="atomicExpr"];
- L10C24_postfixUnaryExpr -> L10C24_atomicExpr;
- L10C24_value [color="lightgreen",label="value"];
- L10C24_atomicExpr -> L10C24_value;
- L10C24_arrayInitialization [color="lightgreen",label="arrayInitialization"];
- L10C24_value -> L10C24_arrayInitialization;
- L10C24 [color="lightblue",label="LBRACKET: ["];
- L10C24_arrayInitialization -> L10C24
- L10C25 [color="lightblue",label="RBRACKET: ]"];
- L10C24_arrayInitialization -> L10C25
- L10C26 [color="lightblue",label="SEMICOLON: ;"];
- L10C4_stmt -> L10C26
+ L10C21 [color="lightblue",label="SEMICOLON: ;"];
+ L10C4_stmt -> L10C21
  L11C4_forLoop [color="lightgreen",label="forLoop"];
  L8C14_stmtLst -> L11C4_forLoop;
  L11C4 [color="lightblue",label="FOR: for"];
