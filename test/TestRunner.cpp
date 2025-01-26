@@ -118,7 +118,7 @@ void execTestCase(const TestCase &testCase) {
       FAIL() << "Expected error, but got no error";
 
     // Run backend for all dependencies
-    for (const auto &[name, sourceFile] : mainSourceFile->dependencies)
+    for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
       sourceFile->runBackEnd();
 
     // Execute IR generator in normal or debug mode

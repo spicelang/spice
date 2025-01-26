@@ -32,7 +32,8 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   %5 = load ptr, ptr %this, align 8
   %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
-  store ptr %6, ptr %data_addr, align 8
+  %7 = load ptr, ptr %6, align 8
+  store ptr %7, ptr %data_addr, align 8
   ret void
 }
 

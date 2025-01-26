@@ -1,16 +1,27 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [114 x i8] c"Program panicked at ./source.spice:2:5:\0A2  panic(Error(\22This is an error\22));\0A   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 1
+%struct.Error = type { i32, ptr }
+
+@stderr = external local_unnamed_addr global ptr, align 8
+@anon.string.0 = private unnamed_addr constant [117 x i8] c"Program panicked at ./source.spice:2:5: %s\0A2  panic(Error(\22This is an error\22));\0A   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 1
+@anon.string.1 = private unnamed_addr constant [17 x i8] c"This is an error\00", align 1
 
 define private void @_Z3foov() {
-  %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %1 = alloca %struct.Error, align 8
+  %2 = load ptr, ptr @stderr, align 8
+  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.1)
+  %3 = getelementptr inbounds %struct.Error, ptr %1, i32 0, i32 1
+  %4 = load ptr, ptr %3, align 8
+  %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0, ptr %4)
   call void @exit(i32 1)
   unreachable
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare void @_ZN5Error4ctorEPKc(ptr, ptr)
+
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr nocapture noundef, ptr nocapture noundef readonly, ...) #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
@@ -24,7 +35,7 @@ define dso_local i32 @main() #2 {
   ret i32 %1
 }
 
-attributes #0 = { nofree nounwind }
+attributes #0 = { nofree }
 attributes #1 = { cold noreturn nounwind }
 attributes #2 = { noinline nounwind optnone uwtable }
 

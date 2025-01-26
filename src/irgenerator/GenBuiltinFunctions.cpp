@@ -120,13 +120,31 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
 }
 
 std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
+  // Get value for stderr
+  llvm::PointerType *ptrTy = builder.getPtrTy();
+  constexpr auto globalName = "stderr";
+  module->getOrInsertGlobal(globalName, ptrTy);
+  llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
+  stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
+  stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
+  stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+  llvm::Value *stdErr = insertLoad(ptrTy, stdErrPtr);
+
   // Create constant for error message
   const std::string codeLoc = node->codeLoc.toPrettyString();
-  const std::string errorMsg = "Program panicked at " + codeLoc + ":\n" + node->getErrorMessage() + "\n";
-  llvm::Constant *globalString = builder.CreateGlobalStringPtr(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
-  // Print the error message
-  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
-  builder.CreateCall(printfFct, globalString);
+  const std::string templateStr = "Program panicked at " + codeLoc + ": %s\n" + node->getErrorMessage() + "\n";
+  llvm::Constant *globalString = builder.CreateGlobalStringPtr(templateStr, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+
+  // Get actual error message
+  llvm::Value *errorObjPtr = resolveAddress(node->assignExpr);
+  llvm::Type *errorObjTy = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  llvm::Value *errorMessagePtr = insertStructGEP(errorObjTy, errorObjPtr, 1);
+  llvm::Value *errorMessage = insertLoad(ptrTy, errorMessagePtr);
+
+  // Print the error message to stderr
+  llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
+  builder.CreateCall(fprintfFct, {stdErr, globalString, errorMessage});
+
   // Generate call to exit()
   llvm::Function *exitFct = stdFunctionManager.getExitFct();
   builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));

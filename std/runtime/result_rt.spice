@@ -25,7 +25,7 @@ public p Result.ctor(const Error& error) {
  * Returns the stored data object.
  * If an error is present, this function will panic.
  */
-public inline f<T> Result.unwrap() {
+public inline f<T&> Result.unwrap() {
     if this.error.code != 0 { panic(this.error); }
     return this.data;
 }
@@ -33,7 +33,7 @@ public inline f<T> Result.unwrap() {
 /**
  * Return the enclosed error object.
  */
-public inline f<Error> Result.getErr() {
+public inline f<Error&> Result.getErr() {
     return this.error;
 }
 

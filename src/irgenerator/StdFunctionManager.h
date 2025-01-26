@@ -19,6 +19,7 @@ public:
 
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
+  [[nodiscard]] llvm::Function *getFPrintfFct() const;
   [[nodiscard]] llvm::Function *getExitFct() const;
   [[nodiscard]] llvm::Function *getFreeFct() const;
   [[nodiscard]] llvm::Function *getMemcmpFct() const;
