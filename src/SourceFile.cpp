@@ -257,37 +257,48 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
-void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
+void SourceFile::runTypeCheckerPost() const {
+  // This method may only be called on the root source file
+  assert(isMainFile);
+
+  // Sort source files in topological order so that the following condition is always met:
+  // A source file may only be checked if all dependants have been checked already
+  const std::vector<SourceFile *> topologicalOrder = computeTypeCheckPostOrder();
+
+  // Run type checker post in the given order
+  for (SourceFile *sourceFile : topologicalOrder)
+    sourceFile->runTypeCheckerPostInner();
+}
+
+void SourceFile::runTypeCheckerPostInner() {
   // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
   // Also skip if there are source files, that include this source file, which have not been type checked yet.
-  if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
+  if (restoredFromCache)
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
   timer.start();
 
-  // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
+  // Start type-checking loop. The type-checker can request a re-execution.
   TypeChecker typeChecker(resourceManager, this, TC_MODE_POST);
   unsigned short typeCheckerRuns = 0;
   while (reVisitRequested) {
-    typeCheckerRuns++;
-    totalTypeCheckerRuns++;
     reVisitRequested = false;
-
-    // Type-check the current file first. Multiple times, if requested
-    timer.resume();
     typeChecker.visit(ast);
-    timer.pause();
-
-    // Then type-check all dependencies
-    for (SourceFile *sourceFile : dependencies | std::views::values)
-      sourceFile->runTypeCheckerPost();
+    typeCheckerRuns++;
   }
 
   checkForSoftErrors();
 
   // Check if all dyn variables were type-inferred successfully
   globalScope->ensureSuccessfulTypeInference();
+
+  // Warn the user if the number of subsequent type checker runs for the same source file grows too large
+  if (typeCheckerRuns > TYPECHECKER_RUN_WARNING_THRESHOLD) {
+    constexpr auto warningMsg = "This file needs a high number of type checker runs. This may indicate bad function ordering.";
+    compilerOutput.warnings.emplace_back(ast->codeLoc, TYPE_CHECKER_POST_RUNS_EXCEEDED, warningMsg);
+  }
+  totalTypeCheckerRuns += typeCheckerRuns;
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
@@ -747,9 +758,45 @@ bool SourceFile::isRT(RuntimeModule runtimeModule) const {
   return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
 }
 
-bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });
+std::vector<SourceFile *> SourceFile::computeTypeCheckPostOrder() const {
+  // This method may only be called on the root source file
+  assert(isMainFile);
+
+  // Sort the DAG of source files in topological order using Kahn's algorithm:
+  // https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
+  const std::unordered_map<std::string, std::unique_ptr<SourceFile>> &allSourceFiles = resourceManager.sourceFiles;
+  std::unordered_map<SourceFile *, size_t> inDegreeMap; // Keeps track of in-degrees
+  std::vector<SourceFile *> topologicalOrder;           // Resulting topological order
+  std::queue<SourceFile *> zeroInDegreeQueue;           // Queue for nodes with in-degree 0
+  topologicalOrder.reserve(allSourceFiles.size());
+
+  // Initialize in-degree map
+  for (const std::unique_ptr<SourceFile> &sourceFile : allSourceFiles | std::views::values) {
+    const size_t inDegree = inDegreeMap[sourceFile.get()] = sourceFile->dependants.size();
+    inDegreeMap[sourceFile.get()] = inDegree;
+    if (inDegree == 0) {
+      assert(sourceFile->isMainFile); // This should be the root source file
+      zeroInDegreeQueue.push(sourceFile.get());
+    }
+  }
+
+  // Process the queue
+  while (!zeroInDegreeQueue.empty()) {
+    SourceFile *current = zeroInDegreeQueue.front();
+    zeroInDegreeQueue.pop();
+    topologicalOrder.push_back(current);
+
+    // Decrease the in-degree of all dependencies
+    for (SourceFile *dependant : current->dependencies | std::views::values)
+      if (--inDegreeMap[dependant] == 0)
+        zeroInDegreeQueue.push(dependant);
+  }
+
+  assert(topologicalOrder.size() == allSourceFiles.size() && "Cycle(s) in DAG detected!");
+  return topologicalOrder;
 }
+
+bool SourceFile::isFullyTypeChecked() const { return totalTypeCheckerRuns >= 1; }
 
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.

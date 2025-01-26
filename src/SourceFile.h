@@ -29,6 +29,9 @@ class ASTNode;
 class Timer;
 struct CliOptions;
 
+// Constants
+static constexpr unsigned short TYPECHECKER_RUN_WARNING_THRESHOLD = 3;
+
 enum CompileStageType : uint8_t {
   NONE,
   LEXER,
@@ -124,7 +127,8 @@ public:
 
 private:
   void runTypeCheckerPre();
-  void runTypeCheckerPost();
+  void runTypeCheckerPost() const;
+  void runTypeCheckerPostInner();
 
 public:
   void runDependencyGraphVisualizer();
@@ -196,7 +200,8 @@ private:
 
   // Private methods
 
-  bool haveAllDependantsBeenTypeChecked() const;
+  std::vector<SourceFile *> computeTypeCheckPostOrder() const;
+  bool isFullyTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;

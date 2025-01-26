@@ -1,22 +1,32 @@
-type Visitor struct {}
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
-type SymbolTable struct {}
+type T dyn;
 
-type Visitable interface {
-    f<bool> accept(Visitor*);
+type Container<T> struct : IIterable<T> {}
+
+type ContainerIterator<T> struct : IIterator<T> {
+    Container<T>& container
+    int idx = 0
 }
 
-type AstNode struct : Visitable {}
-
-p AstNode.accept(Visitor* v) {}
-
-type AstEntryNode struct : Visitable {
-    AstNode astNode
-    SymbolTable* extFunctionScope
-    bool takesArgs
+p ContainerIterator.ctor(Container<T>& container) {
+    this.container = container;
 }
+
+f<ContainerIterator<T>> Container.getIterator() {
+    return ContainerIterator<T>(*this);
+}
+
+f<int&> ContainerIterator.get() { return this.idx; }
+f<Pair<unsigned long, T&>> ContainerIterator.getIdx() { return Pair<unsigned long, T&>(0l, this.idx); }
+f<bool> ContainerIterator.isValid() { return false; }
+p ContainerIterator.next() {}
 
 f<int> main() {
-    AstEntryNode entryNode;
-    printf("%d", entryNode.takesArgs);
+    Container<int> c;
+    foreach dyn item : c {
+        printf("%d\n", item);
+    }
 }
