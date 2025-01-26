@@ -257,36 +257,90 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
-void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
+void SourceFile::runTypeCheckerPost() const {
+  // This method may only be called on the root source file
+  assert(isMainFile);
+
+  // Prepare the initial in-degree map and zero in-degree queue
+  const std::unordered_map<std::string, std::unique_ptr<SourceFile>> &allSourceFiles = resourceManager.sourceFiles;
+  std::unordered_map<SourceFile *, size_t> inDegreeMap;
+  std::queue<SourceFile *> zeroInDegreeQueue;
+
+  // Initialize the in-degree map and enqueue the root source file
+  for (const std::unique_ptr<SourceFile> &sourceFile : allSourceFiles | std::views::values) {
+    const size_t inDegree = sourceFile->dependants.size();
+    inDegreeMap[sourceFile.get()] = inDegree;
+    if (inDegree == 0)
+      zeroInDegreeQueue.push(sourceFile.get());
+  }
+  assert(!zeroInDegreeQueue.empty());
+  resourceManager.newDependencies.clear();
+
+  // Process the queue
+  while (!zeroInDegreeQueue.empty()) {
+    SourceFile *current = zeroInDegreeQueue.front();
+    zeroInDegreeQueue.pop();
+
+    // Perform the action on the current node
+    current->runTypeCheckerPostInner();
+
+    // If there were dependencies added, add them to the in-degree map
+    for (SourceFile *dependency : resourceManager.newDependencies) {
+      // Initialize with in-degree 0 if not in the map yet
+      if (!inDegreeMap.contains(dependency))
+        inDegreeMap[dependency] = 0;
+      // Increment in-degree
+      inDegreeMap[dependency]++;
+    }
+    resourceManager.newDependencies.clear();
+
+    // Re-fill the zero in-degree queue
+    for (SourceFile *dependency : current->dependencies | std::views::values) {
+      if (inDegreeMap[dependency] == 0)
+        continue;
+      // Decrease the in-degree of all dependencies of the just processed source file
+      inDegreeMap[dependency]--;
+      // If the dependency has in-degree 0, push it to the queue
+      if (inDegreeMap[dependency] == 0)
+        zeroInDegreeQueue.push(dependency);
+    }
+  }
+
+#ifndef NDEBUG
+  for (const size_t inDegree : inDegreeMap | std::views::values)
+    assert(inDegree == 0);
+#endif
+}
+
+void SourceFile::runTypeCheckerPostInner() {
   // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
-  if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
+  // Also skip if there are source files, that include this source file, which have not been type checked yet.
+  if (restoredFromCache)
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
   timer.start();
 
-  // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
+  // Start type-checking loop. The type-checker can request a re-execution.
   TypeChecker typeChecker(resourceManager, this, TC_MODE_POST);
   unsigned short typeCheckerRuns = 0;
   while (reVisitRequested) {
-    typeCheckerRuns++;
-    totalTypeCheckerRuns++;
     reVisitRequested = false;
-
-    // Type-check the current file first. Multiple times, if requested
-    timer.resume();
     typeChecker.visit(ast);
-    timer.pause();
-
-    // Then type-check all dependencies
-    for (SourceFile *sourceFile : dependencies | std::views::values)
-      sourceFile->runTypeCheckerPost();
+    typeCheckerRuns++;
   }
 
   checkForSoftErrors();
 
   // Check if all dyn variables were type-inferred successfully
   globalScope->ensureSuccessfulTypeInference();
+
+  // Warn the user if the number of subsequent type checker runs for the same source file grows too large
+  if (typeCheckerRuns > TYPECHECKER_RUN_WARNING_THRESHOLD) {
+    constexpr auto warningMsg = "This file needs a high number of type checker runs. This may indicate bad function ordering.";
+    compilerOutput.warnings.emplace_back(ast->codeLoc, TYPE_CHECKER_POST_RUNS_EXCEEDED, warningMsg);
+  }
+  totalTypeCheckerRuns += typeCheckerRuns;
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
@@ -642,6 +696,9 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
 
   // Add the dependant
   sourceFile->dependants.push_back(this);
+
+  // Add the dependency to the global list of new dependencies
+  resourceManager.newDependencies.insert(sourceFile);
 }
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {
@@ -653,7 +710,7 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch, // NOLINT(
   circle.push(this);
 
   // Check if the current source file corresponds to the path to search
-  if (std::filesystem::equivalent(filePath, filePathSearch))
+  if (equivalent(filePath, filePathSearch))
     return true;
 
   // Check dependants recursively
@@ -744,10 +801,6 @@ bool SourceFile::isRT(RuntimeModule runtimeModule) const {
   if (!exportedNameRegistry.contains(topLevelName))
     return false;
   return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
-}
-
-bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });
 }
 
 /**
