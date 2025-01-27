@@ -655,7 +655,7 @@ private:
   static QualType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                          const QualType &lhs);
   static QualType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,
-                                          const QualType &lhs, const QualType &rhs, bool preserveSpecifiersFromLhs = false,
+                                          const QualType &lhs, const QualType &rhs, bool preserveQualifiersFromLhs = false,
                                           const char *customMessagePrefix = "");
   static SemanticError getExceptionUnary(const ASTNode *node, const char *name, const QualType &lhs);
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const QualType &lhs, const QualType &rhs,

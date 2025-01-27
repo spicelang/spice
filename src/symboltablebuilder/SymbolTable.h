@@ -32,7 +32,7 @@ using SymbolMap = std::unordered_map<std::string /*name*/, SymbolTableEntry /*en
 class SymbolTable {
 public:
   // Constructors
-  SymbolTable(SymbolTable *parent, Scope *scope) : parent(parent), scope(scope){};
+  SymbolTable(SymbolTable *parent, Scope *scope) : parent(parent), scope(scope) {}
 
   // Friend classes
   friend class Scope;

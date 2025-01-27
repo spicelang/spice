@@ -11,7 +11,7 @@
 - [x] Support thread joining
 - [x] Add tests for the feature
 - [x] Add arbitrary benchmark test (`generator/arbitrary/success-fibonacci-threaded` test case)
-- [ ] Add mutexes and `sync` specifier
+- [ ] Add mutexes and `sync` qualifier
 - [ ] Add tests for the feature
 - [ ] Implement variable volatility
 - [ ] Add support for pipes (paused due to the work on generics)
@@ -70,7 +70,7 @@ generate the corresponding volatile allocation at the point of declaration.
 ### Thread synchronization
 To really become thread-safe, Spice needs support for Mutexes and synchronized functions/procedures/methods.
 
-Synchronizing functions/procedures/methods could be achieved by providing the specifier `sync`, which can be attached to them and
+Synchronizing functions/procedures/methods could be achieved by providing the qualifier `sync`, which can be attached to them and
 mark them as synchronized. There could be an instance of `Mutex` for each occurrence of the `sync` keyword, that will track the
 accessing threads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
 

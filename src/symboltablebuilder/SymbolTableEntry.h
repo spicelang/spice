@@ -28,7 +28,7 @@ class SymbolTableEntry final {
 public:
   // Constructors
   SymbolTableEntry(std::string name, const QualType &qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, bool global)
-      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), qualType(qualType){};
+      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), qualType(qualType) {}
 
   // Public methods
   [[nodiscard]] const QualType &getQualType() const;

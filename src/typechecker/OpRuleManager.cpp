@@ -135,7 +135,7 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     return lhsType;
   }
   // Allow char* = string
-  if (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.getSpecifiers() == rhsType.getSpecifiers())
+  if (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.getQualifiers() == rhsType.getQualifiers())
     return lhsType;
   // Allow array to pointer
   if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContained().matches(rhsType.getContained(), false, false, true))
@@ -152,9 +152,9 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
   }
   // Allow type* = heap type* straight away. This is used for initializing non-owning pointers to heap allocations
   if (lhsType.isPtr() && rhsType.isHeap() && lhsType.matches(rhsType, false, true, true)) {
-    TypeSpecifiers rhsSpecifiers = rhsType.getSpecifiers();
-    rhsSpecifiers.isHeap = false;
-    if (lhsType.getSpecifiers() == rhsSpecifiers)
+    TypeQualifiers rhsQualifiers = rhsType.getQualifiers();
+    rhsQualifiers.isHeap = false;
+    if (lhsType.getQualifiers() == rhsQualifiers)
       return lhsType;
   }
 
@@ -652,8 +652,8 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
   lhsType = lhsType.removeReferenceWrapper();
   QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  // Only allow to cast the 'heap' specifier away, if we are in unsafe mode
-  if (lhsType.getSpecifiers().isHeap != rhsType.getSpecifiers().isHeap)
+  // Only allow to cast the 'heap' qualifier away, if we are in unsafe mode
+  if (lhsType.getQualifiers().isHeap != rhsType.getQualifiers().isHeap)
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
 
   // Allow identity casts
@@ -743,13 +743,13 @@ QualType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryO
 
 QualType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
                                                 const char *name, const QualType &lhs, const QualType &rhs,
-                                                bool preserveSpecifiersFromLhs, const char *customMessagePrefix) {
+                                                bool preserveQualifiersFromLhs, const char *customMessagePrefix) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
       QualType resultType((std::get<2>(rule)));
-      if (preserveSpecifiersFromLhs)
-        resultType.setSpecifiers(lhs.getSpecifiers());
+      if (preserveQualifiersFromLhs)
+        resultType.setQualifiers(lhs.getQualifiers());
       return resultType;
     }
   }

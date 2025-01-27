@@ -524,7 +524,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Prepare signature type
   const SuperType superType = isFunction ? TY_FUNCTION : TY_PROCEDURE;
   QualType signatureType = QualType(superType).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
-  signatureType.setSpecifiers(node->signatureSpecifiers);
+  signatureType.setQualifiers(node->signatureQualifiers);
 
   // Set entry to signature type
   assert(node->entry != nullptr);
@@ -1411,8 +1411,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Get item type
     operandType = operandType.getContained();
 
-    // Remove heap specifier
-    operandType.getSpecifiers().isHeap = false;
+    // Remove heap qualifier
+    operandType.getQualifiers().isHeap = false;
 
     break;
   }
@@ -1664,7 +1664,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 
   // Create symbol type
   QualType symbolType(superType);
-  symbolType.setSpecifiers(TypeSpecifiers::of(superType));
+  symbolType.setQualifiers(TypeQualifiers::of(superType));
 
   return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
@@ -1873,8 +1873,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
   }
 
-  // Remove public specifier to not have public local variables
-  returnType.getSpecifiers().isPublic = false;
+  // Remove public qualifier to not have public local variables
+  returnType.getQualifiers().isPublic = false;
 
   // Check if the return value gets discarded
   if (isFct && !node->hasReturnValueReceiver()) {
@@ -2188,8 +2188,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     if (std::ranges::any_of(node->fieldLst->args, [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
-  // Remove public specifier to not have public local variables
-  structType.getSpecifiers().isPublic = false;
+  // Remove public qualifier to not have public local variables
+  structType.getQualifiers().isPublic = false;
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
 }
@@ -2392,38 +2392,38 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     tmQueue.pop();
   }
 
-  // Attach the specifiers to the type
-  if (node->specifierLst) {
+  // Attach the qualifiers to the type
+  if (node->qualifierLst) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_CONST) {
-        type.getSpecifiers().isConst = true;
-      } else if (specifier->type == SpecifierNode::SpecifierType::TY_SIGNED) {
+    for (const QualifierNode *qualifier : node->qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_CONST) {
+        type.getQualifiers().isConst = true;
+      } else if (qualifier->type == QualifierNode::QualifierType::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
-        type.getSpecifiers().isSigned = true;
-        type.getSpecifiers().isUnsigned = false;
-      } else if (specifier->type == SpecifierNode::SpecifierType::TY_UNSIGNED) {
+          SOFT_ERROR_QT(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on type " + baseType.getName(false))
+        type.getQualifiers().isSigned = true;
+        type.getQualifiers().isUnsigned = false;
+      } else if (qualifier->type == QualifierNode::QualifierType::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
-        type.getSpecifiers().isSigned = false;
-        type.getSpecifiers().isUnsigned = true;
-      } else if (specifier->type == SpecifierNode::SpecifierType::TY_HEAP) {
+          SOFT_ERROR_QT(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on type " + baseType.getName(false))
+        type.getQualifiers().isSigned = false;
+        type.getQualifiers().isUnsigned = true;
+      } else if (qualifier->type == QualifierNode::QualifierType::TY_HEAP) {
         // Heap variables can only be pointers
         if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_ARRAY, TY_STRING}))
-          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                        "The heap specifier can only be applied to symbols of pointer type, you provided " +
+          SOFT_ERROR_QT(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT,
+                        "The heap qualifier can only be applied to symbols of pointer type, you provided " +
                             baseType.getName(false))
 
-        type.getSpecifiers().isHeap = true;
-      } else if (specifier->type == SpecifierNode::SpecifierType::TY_COMPOSITION && node->isFieldType) {
+        type.getQualifiers().isHeap = true;
+      } else if (qualifier->type == QualifierNode::QualifierType::TY_COMPOSITION && node->isFieldType) {
         if (!type.is(TY_STRUCT))
-          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
-        type.getSpecifiers().isComposition = true;
-      } else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
-        type.getSpecifiers().isPublic = true;
+          SOFT_ERROR_QT(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "The compose qualifier can only be used on plain struct fields")
+        type.getQualifiers().isComposition = true;
+      } else if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
+        type.getQualifiers().isPublic = true;
       } else {
-        const char *entryName = "local variable";
+        auto entryName = "local variable";
         if (node->isGlobalType)
           entryName = "global variable";
         else if (node->isFieldType)
@@ -2432,8 +2432,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
           entryName = "param";
         else if (node->isReturnType)
           entryName = "return variable";
-        SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                      "Cannot use this specifier on a " + std::string(entryName) + " definition")
+        SOFT_ERROR_QT(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT,
+                      "Cannot use this qualifier on a " + std::string(entryName) + " definition")
       }
     }
   }

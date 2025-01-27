@@ -438,12 +438,12 @@ digraph {
  L11C8_forHead -> L11C8_declStmt;
  L11C8_dataType [color="lightgreen",label="dataType"];
  L11C8_declStmt -> L11C8_dataType;
- L11C8_specifierLst [color="lightgreen",label="specifierLst"];
- L11C8_dataType -> L11C8_specifierLst;
- L11C8_specifier [color="lightgreen",label="specifier"];
- L11C8_specifierLst -> L11C8_specifier;
+ L11C8_qualifierLst [color="lightgreen",label="qualifierLst"];
+ L11C8_dataType -> L11C8_qualifierLst;
+ L11C8_qualifier [color="lightgreen",label="qualifier"];
+ L11C8_qualifierLst -> L11C8_qualifier;
  L11C8 [color="lightblue",label="UNSIGNED: unsigned"];
- L11C8_specifier -> L11C8
+ L11C8_qualifier -> L11C8
  L11C17_baseDataType [color="lightgreen",label="baseDataType"];
  L11C8_dataType -> L11C17_baseDataType;
  L11C17 [color="lightblue",label="TYPE_INT: int"];
@@ -1128,12 +1128,12 @@ digraph {
  L20C8_forHead -> L20C8_declStmt;
  L20C8_dataType [color="lightgreen",label="dataType"];
  L20C8_declStmt -> L20C8_dataType;
- L20C8_specifierLst [color="lightgreen",label="specifierLst"];
- L20C8_dataType -> L20C8_specifierLst;
- L20C8_specifier [color="lightgreen",label="specifier"];
- L20C8_specifierLst -> L20C8_specifier;
+ L20C8_qualifierLst [color="lightgreen",label="qualifierLst"];
+ L20C8_dataType -> L20C8_qualifierLst;
+ L20C8_qualifier [color="lightgreen",label="qualifier"];
+ L20C8_qualifierLst -> L20C8_qualifier;
  L20C8 [color="lightblue",label="UNSIGNED: unsigned"];
- L20C8_specifier -> L20C8
+ L20C8_qualifier -> L20C8
  L20C17_baseDataType [color="lightgreen",label="baseDataType"];
  L20C8_dataType -> L20C17_baseDataType;
  L20C17 [color="lightblue",label="TYPE_INT: int"];

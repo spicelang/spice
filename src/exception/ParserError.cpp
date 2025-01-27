@@ -36,8 +36,8 @@ std::string ParserError::getMessagePrefix(ParserErrorType errorType) {
     return "Parsing failed";
   case NUMBER_OUT_OF_RANGE:
     return "Number is out of range";
-  case INVALID_SPECIFIER_COMBINATION:
-    return "Invalid specifier combination";
+  case INVALID_QUALIFIER_COMBINATION:
+    return "Invalid qualifier combination";
   case INVALID_CHAR_LITERAL:
     return "Invalid char literal";
   case INVALID_ATTR_VALUE_TYPE:

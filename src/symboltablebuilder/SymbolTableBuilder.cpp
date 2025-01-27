@@ -68,17 +68,17 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   if (node->attrs)
     visit(node->attrs);
 
-  // Build function specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
-        node->specifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->specifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
-        node->specifiers.isConst = true;
+  // Build function qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst; qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_INLINE)
+        node->qualifiers.isInline = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_CONST)
+        node->qualifiers.isConst = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on a function definition");
     }
   }
 
@@ -131,17 +131,17 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   if (node->attrs)
     visit(node->attrs);
 
-  // Build procedure specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
-        node->specifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->specifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
-        node->specifiers.isConst = true;
+  // Build procedure qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_INLINE)
+        node->qualifiers.isInline = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_CONST)
+        node->qualifiers.isConst = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on a procedure definition");
     }
   }
 
@@ -220,13 +220,13 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Leave the struct scope
   currentScope = node->structScope->parent;
 
-  // Build struct specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->structSpecifiers.isPublic = true;
+  // Build struct qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on a struct definition");
     }
   }
 
@@ -258,13 +258,13 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Leave the interface scope
   currentScope = node->interfaceScope->parent;
 
-  // Build interface specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->interfaceSpecifiers.isPublic = true;
+  // Build interface qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on an interface definition");
     }
   }
 
@@ -291,13 +291,13 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Leave the enum scope
   currentScope = node->enumScope->parent;
 
-  // Build enum specifiers
-  if (node->specifierLst) {
-    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->enumSpecifiers.isPublic = true;
+  // Build enum qualifiers
+  if (node->qualifierLst) {
+    for (const QualifierNode *qualifier : node->qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on an enum definition");
     }
   }
 
@@ -326,13 +326,13 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   if (rootScope->lookupStrict(node->aliasName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
-  // Build alias specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->aliasSpecifiers.isPublic = true;
+  // Build alias qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an alias definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on an alias definition");
     }
   }
 
@@ -584,17 +584,17 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 }
 
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
-  // Build signature specifiers
-  if (const SpecifierLstNode *specifierLst = node->specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers) {
-      if (specifier->type == SpecifierNode::SpecifierType::TY_INLINE)
-        node->signatureSpecifiers.isInline = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_PUBLIC)
-        node->signatureSpecifiers.isPublic = true;
-      else if (specifier->type == SpecifierNode::SpecifierType::TY_CONST)
-        node->signatureSpecifiers.isConst = true;
+  // Build signature qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_INLINE)
+        node->signatureQualifiers.isInline = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->signatureQualifiers.isPublic = true;
+      else if (qualifier->type == QualifierNode::QualifierType::TY_CONST)
+        node->signatureQualifiers.isConst = true;
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a signature definition");
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on a signature definition");
     }
   }
 

@@ -149,7 +149,7 @@ contexts [] {
          styles []       = .keyword_namespace;
       }
       
-      : pattern { // Declaration keywords and symbol specifiers
+      : pattern { // Declaration keywords and symbol qualifiers
          regex          \= (\b(f|p|type|struct|const|signed|unsigned|inline|public)\b)
          styles []       = .keyword_declaration;
       }

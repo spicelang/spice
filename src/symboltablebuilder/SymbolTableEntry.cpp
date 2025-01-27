@@ -111,7 +111,7 @@ bool SymbolTableEntry::isField() const {
  *   "type": "int[]*",
  *   "orderIndex": 4,
  *   "state": "initialized",
- *   "specifiers: [
+ *   "qualifiers: [
  *     "const": true,
  *     "signed": false
  *   ],

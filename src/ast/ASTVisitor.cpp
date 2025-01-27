@@ -76,9 +76,9 @@ std::any ASTVisitor::visitDeclStmt(DeclStmtNode *node) { return visitChildren(no
 
 std::any ASTVisitor::visitExprStmt(ExprStmtNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitSpecifierLst(SpecifierLstNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitQualifierLst(QualifierLstNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitSpecifier(SpecifierNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitQualifier(QualifierNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitModAttr(ModAttrNode *node) { return visitChildren(node); }
 

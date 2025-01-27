@@ -80,7 +80,7 @@ ExecResult FileUtil::exec(const std::string &command) {
   if (!pipe)                                                                // GCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // GCOV_EXCL_LINE
 
-  std::array<char, 128> buffer{};
+  std::array<char, 128> buffer;
   std::stringstream result;
   while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
     result << buffer.data();

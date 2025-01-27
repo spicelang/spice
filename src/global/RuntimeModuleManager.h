@@ -67,7 +67,7 @@ struct ModuleNamePair {
 class RuntimeModuleManager {
 public:
   // Constructors
-  explicit RuntimeModuleManager(GlobalResourceManager &resourceManager) : resourceManager(resourceManager){};
+  explicit RuntimeModuleManager(GlobalResourceManager &resourceManager) : resourceManager(resourceManager) {}
   RuntimeModuleManager(const RuntimeModuleManager &) = delete;
 
   // Public methods

@@ -2,7 +2,7 @@
 
 ## Roadmap
 
-- [x] Produce error when using `heap` specifier on non-pointer types
+- [x] Produce error when using `heap` qualifier on non-pointer types
 - [x] Add mechanism to generate functions and methods, that are not part of the AST
 - [x] Generate default dtor
 - [x] Generate default ctor
@@ -69,13 +69,13 @@ ToDo
 
 ### Implicit dtor actions
 
-All destructors of a struct must free all fields of the struct, that are marked with the `heap` specifier and call the destructor
+All destructors of a struct must free all fields of the struct, that are marked with the `heap` qualifier and call the destructor
 on all fields. <br>
 For that, the compiler automatically generates code in the following order:
 
 - Execute the destructor body
 - Call the dtor of all fields, that are of type struct and have a dtor
-- Free all fields, that are marked with the `heap` specifier
+- Free all fields, that are marked with the `heap` qualifier
 
 If a field is getting freed in the dtor body, the compiler will not free it again.
 
@@ -87,6 +87,6 @@ with the following signature:
 ```spice
 p TestStruct.dtor() {
     // Call the dtor of all fields, that are of type struct and have a dtor
-    // Free all fields, that are marked with the `heap` specifier
+    // Free all fields, that are marked with the `heap` qualifier
 }
 ```

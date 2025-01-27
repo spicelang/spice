@@ -142,7 +142,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Prepare type of function
   QualType functionType = QualType(TY_FUNCTION).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
-  functionType.setSpecifiers(node->specifiers);
+  functionType.setQualifiers(node->qualifiers);
 
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -272,7 +272,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Prepare type of procedure
   QualType procedureType = QualType(TY_PROCEDURE).getWithFunctionParamAndReturnTypes(QualType(TY_DYN), paramTypes);
-  procedureType.setSpecifiers(node->specifiers);
+  procedureType.setQualifiers(node->qualifiers);
 
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -364,7 +364,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(node->entry != nullptr);
   const TypeChainElementData data = {.bodyScope = node->structScope};
   const Type *type = TypeRegistry::getOrInsert(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
-  node->entry->updateType(QualType(type, node->structSpecifiers), false);
+  node->entry->updateType(QualType(type, node->qualifiers), false);
 
   // Change to struct scope
   currentScope = node->structScope;
@@ -444,7 +444,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Update type of interface entry
   const TypeChainElementData data = {.bodyScope = node->interfaceScope};
   const Type *type = TypeRegistry::getOrInsert(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
-  const QualType interfaceType(type, node->interfaceSpecifiers);
+  const QualType interfaceType(type, node->qualifiers);
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
 
@@ -493,7 +493,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   const TypeChainElementData data = {.bodyScope = node->enumScope};
   const Type *type = TypeRegistry::getOrInsert(TY_ENUM, node->enumName, node->typeId, data, {});
   assert(node->entry != nullptr);
-  node->entry->updateType(QualType(type, node->enumSpecifiers), false);
+  node->entry->updateType(QualType(type, node->qualifiers), false);
 
   // Change to enum scope
   currentScope = node->enumScope;
@@ -567,7 +567,7 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
 
   // Update type of alias entry
   const Type *type = TypeRegistry::getOrInsert(TY_ALIAS, node->aliasName, node->typeId, {}, {});
-  node->entry->updateType(QualType(type, node->aliasSpecifiers), false);
+  node->entry->updateType(QualType(type, node->qualifiers), false);
 
   // Update type of the aliased type container entry
   const auto aliasedType = std::any_cast<QualType>(visit(node->dataType));

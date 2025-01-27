@@ -1,9 +1,9 @@
-# Technical Specification for the heap specifier
+# Technical Specification for the heap qualifier
 
 ## Implementation steps:
 
 - [x] Add basic support
-- [x] Move all std data structures to use the heap specifier
+- [x] Move all std data structures to use the heap qualifier
 - [x] Add tests for this feature
 - [x] Generate default dtor for structs with heap fields where free is called on those fields
 - [x] Make copy ctor mandatory for structs with heap fields
@@ -31,21 +31,21 @@ f<int> foo() {
 
 ### General introduction
 
-The `heap` specifier can only be applied to pointer variables/fields and is used to indicate that the memory for the
+The `heap` qualifier can only be applied to pointer variables/fields and is used to indicate that the memory for the
 variable/field was or is going to be allocated on the heap. It acts similar to a `unique_ptr` would in C++, but builtin
 into the language.
 
-The heap specifier can be used in the following ways:
+The heap qualifier can be used in the following ways:
 
-- As a field type specifier in a struct
-- As a local variable type specifier
-- As a function return type specifier
-- As a parameter type specifier
+- As a field type qualifier in a struct
+- As a local variable type qualifier
+- As a function return type qualifier
+- As a parameter type qualifier
 
-When the `heap` specifier is used for a struct field, the compiler will automatically generate a destructor for that
-struct, that will free the memory allocated for the field. The `heap` specifier can also be used in local variables
+When the `heap` qualifier is used for a struct field, the compiler will automatically generate a destructor for that
+struct, that will free the memory allocated for the field. The `heap` qualifier can also be used in local variables
 and function return types. When a function returns a `heap` pointer, the caller is responsible for freeing the memory
-allocated for the pointer. The `heap` specifier can also be used in function parameters. When a function parameter is
+allocated for the pointer. The `heap` qualifier can also be used in function parameters. When a function parameter is
 declared as `heap`, the callee is responsible for freeing the memory allocated for the parameter.
 
 ### Assignment semantics
@@ -65,6 +65,6 @@ it points to.
 
 ### Struct implications
 
-When a struct has a field with the `heap` specifier, the compiler will automatically generate a destructor for the
+When a struct has a field with the `heap` qualifier, the compiler will automatically generate a destructor for the
 struct. The destructor will free the memory allocated for the `heap` field. The compiler will also make the copy
 constructor mandatory for the struct. This is done to prevent double freeing of the memory.

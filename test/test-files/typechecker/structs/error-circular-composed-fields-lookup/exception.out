@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:3:5:
-Specifier at illegal context: The compose specifier can only be used on plain struct fields
+Qualifier at illegal context: The compose qualifier can only be used on plain struct fields
 
 3  compose A* f2
    ^^^^^^^

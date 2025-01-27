@@ -8,7 +8,7 @@
 
 #include <llvm/IR/Type.h>
 
-#include <symboltablebuilder/TypeSpecifiers.h>
+#include <symboltablebuilder/TypeQualifiers.h>
 
 namespace spice::compiler {
 
@@ -42,7 +42,7 @@ public:
   QualType() = default;
   explicit QualType(SuperType superType);
   QualType(SuperType superType, const std::string &subType);
-  QualType(const Type *type, TypeSpecifiers specifiers);
+  QualType(const Type *type, TypeQualifiers qualifiers);
 
   // Getters and setters on type
   [[nodiscard]] const Type *getType() const { return type; }
@@ -83,7 +83,7 @@ public:
   [[nodiscard]] bool isTriviallyCopyable(const ASTNode *node) const;
   [[nodiscard]] bool doesImplement(const QualType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool canBind(const QualType &inputType, bool isTemporary) const;
-  [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &structType) const;
   [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
   [[nodiscard]] bool isSelfReferencingStructType(const QualType *typeToCompareWith = nullptr) const;
@@ -114,12 +114,12 @@ public:
   [[nodiscard]] QualType getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const;
   [[nodiscard]] QualType getWithFunctionParamAndReturnTypes(const QualType &returnType, const QualTypeList &paramTypes) const;
 
-  // Getters and setters on specifiers
-  [[nodiscard]] TypeSpecifiers &getSpecifiers() { return specifiers; }
-  [[nodiscard]] const TypeSpecifiers &getSpecifiers() const { return specifiers; }
-  void setSpecifiers(TypeSpecifiers newSpecifiers) { specifiers = newSpecifiers; }
+  // Getters and setters on qualifiers
+  [[nodiscard]] TypeQualifiers &getQualifiers() { return qualifiers; }
+  [[nodiscard]] const TypeQualifiers &getQualifiers() const { return qualifiers; }
+  void setQualifiers(TypeQualifiers newQualifiers) { qualifiers = newQualifiers; }
 
-  // Getters and setters on specifier parts
+  // Getters and setters on qualifier parts
   [[nodiscard]] bool isConst() const;
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] bool isUnsigned() const;
@@ -142,7 +142,7 @@ public:
 private:
   // Private members
   const Type *type = nullptr;
-  TypeSpecifiers specifiers;
+  TypeQualifiers qualifiers;
 };
 
 // Make sure we have no unexpected increases in memory consumption

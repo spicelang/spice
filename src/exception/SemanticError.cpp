@@ -198,8 +198,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Temporary bound to non-const reference";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:
     return "Generic type not contained in template";
-  case SPECIFIER_AT_ILLEGAL_CONTEXT:
-    return "Specifier at illegal context";
+  case QUALIFIER_AT_ILLEGAL_CONTEXT:
+    return "Qualifier at illegal context";
   case INSUFFICIENT_VISIBILITY:
     return "Insufficient symbol visibility";
   case JOIN_ARG_MUST_BE_TID:

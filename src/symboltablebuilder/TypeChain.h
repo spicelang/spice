@@ -51,13 +51,13 @@ struct TypeChainElement {
 public:
   // Constructors
   TypeChainElement() = default;
-  explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType){};
+  explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType) {}
   TypeChainElement(SuperType superType, std::string subType)
-      : superType(superType), subType(std::move(subType)), typeId(superType){};
-  TypeChainElement(SuperType superType, TypeChainElementData data) : superType(superType), typeId(superType), data(data){};
+      : superType(superType), subType(std::move(subType)), typeId(superType) {}
+  TypeChainElement(SuperType superType, TypeChainElementData data) : superType(superType), typeId(superType), data(data) {}
   TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
                    QualTypeList templateTypes)
-      : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(std::move(templateTypes)){};
+      : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(std::move(templateTypes)) {}
 
   // Overloaded operators
   friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
@@ -81,4 +81,3 @@ static_assert(sizeof(TypeChainElement) == 104);
 using TypeChain = std::vector<TypeChainElement>;
 
 } // namespace spice::compiler
-
