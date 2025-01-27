@@ -81,7 +81,7 @@ public:
 
   // Complex queries on the type
   [[nodiscard]] bool isTriviallyCopyable(const ASTNode *node) const;
-  [[nodiscard]] bool doesImplement(const QualType &symbolType, const ASTNode *node) const;
+  [[nodiscard]] bool doesImplement(const QualType &implementedInterfaceType, const ASTNode *node) const;
   [[nodiscard]] bool canBind(const QualType &inputType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &structType) const;

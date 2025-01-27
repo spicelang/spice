@@ -1,0 +1,3 @@
+public type IInterface interface {
+
+}

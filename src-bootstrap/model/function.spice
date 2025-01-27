@@ -4,7 +4,7 @@ import "std/data/map";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/type-chain";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/model/generic-type";

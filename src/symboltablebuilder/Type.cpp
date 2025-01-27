@@ -56,7 +56,7 @@ const std::string &Type::getSubType() const {
  * @return Array size
  */
 unsigned int Type::getArraySize() const {
-  assert(getSuperType() == TY_ARRAY);
+  assert(isArray());
   return typeChain.back().data.arraySize;
 }
 
@@ -291,6 +291,19 @@ bool Type::isBase(SuperType superType) const {
  * @return Primitive type or not
  */
 bool Type::isPrimitive() const { return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL}); }
+
+/**
+ * Check if the type is an extended primitive type
+ * The definition of extended primitive types contains all primitive types plus the following:
+ * - structs
+ * - interfaces
+ * - functions/procedures
+ *
+ * @return Extended primitive or not
+ */
+bool Type::isExtendedPrimitive() const {
+  return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE});
+}
 
 /**
  * Check if the current type is a pointer type

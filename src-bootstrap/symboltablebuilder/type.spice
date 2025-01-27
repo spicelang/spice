@@ -5,7 +5,7 @@ import "std/data/vector";
 import "bootstrap/util/common-util";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/type-chain";
-import "bootstrap/symboltablebuilder/qual-type-intf";
+import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/scope-intf";
 
@@ -47,7 +47,8 @@ public f<SuperType> Type.getSuperType() {
  */
 public f<const String&> Type.getSubType() {
     assert !this.typeChain.isEmpty();
-    assert(isOneOf([SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC]));
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC];
+    assert this.isOneOf(options, len(options));
     return this.typeChain.back().subType;
 }
 
@@ -57,8 +58,7 @@ public f<const String&> Type.getSubType() {
  * @return Array size
  */
 public f<unsigned int> Type.getArraySize() {
-    assert !this.typeChain.isEmpty();
-    assert(isOneOf([SuperType::TY_ARRAY]));
+    assert this.isArray();
     return this.typeChain.back().data.arraySize;
 }
 
@@ -68,8 +68,8 @@ public f<unsigned int> Type.getArraySize() {
  * @return Body scope
  */
 public f<IScope*> Type.getBodyScope() {
-    assert !this.typeChain.isEmpty();
-    assert(isOneOf([SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC]));
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC];
+    assert this.isOneOf(options, len(options));
     return this.typeChain.back().data.bodyScope;
 }
 
@@ -80,6 +80,120 @@ public f<IScope*> Type.getBodyScope() {
  * @return Pointer type of the current type
  */
 public f<const Type*> Type.toPtr(const ASTNode* node) {
+    if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '*' instead")); }
+    if this.isRef() { panic(Error("Pointers to references are not allowd. Use pointer instead")); }
+
+    // Create new type chain
+    TypeChain newTypeChain = this.typeChain;
+    newTypeChain.pushBack(TypeChainElement(SuperType::TY_PTR));
+
+    // Register new type or return if already registered
     // ToDo
     return nil<const Type*>;
+}
+
+/**
+ * Get the reference type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Reference type of the current type
+ */
+public f<const Type*> Type.toRef(const ASTNode* node) {
+    if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '&' instead")); }
+    if this.isRef() { panic(Error("References to references are not allowd")); }
+
+    // Create new type chain
+    TypeChain newTypeChain = this.typeChain;
+    newTypeChain.pushBack(TypeChainElement(SuperType::TY_REF));
+
+    // Register new type or return if already registered
+    // ToDo
+    return nil<const Type*>;
+}
+
+/**
+ * Get the array type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @param size Size of the array
+ * @param skipDynCheck Skip check if array base type is dyn
+ * @return Array type of the current type
+ */
+public f<const Type*> Type.toArr(const ASTNode* node, unsigned int size, bool skipDynCheck = false) {
+    // Do not allow arrays of dyn
+    if !skipDynCheck && this.typeChain.back().superType == SuperType::TY_DYN {
+        panic(Error("Just use the dyn type without '[]' instead"));
+    }
+
+    // Create new type chain
+    TypeChain newTypeChain = this.typeChain;
+    TypeChainElementData data = TypeChainElementData{/*arraySize=*/ size, /*bodyScope=*/ nil<IScope*>, /*hasCaptures*/ false};
+    newTypeChain.pushBack(TypeChainElement(SuperType::TY_ARRAY, data));
+
+    // Register new type or return if already registered
+    // ToDo
+    return nil<const Type*>;
+}
+
+/**
+ * Retrieve the base type of an array or a pointer
+ *
+ * @return Base type
+ */
+public f<const Type*> Type.getContained() {
+    if this.is(SuperType::TY_STRING) {
+        // ToDo
+    }
+
+    // Create new type chain
+    TypeChain newTypeChain = this.typeChain;
+    assert newTypeChain.getSize() > 1;
+    newTypeChain.popBack();
+
+    // Register new type or return if already registered
+    // ToDo
+    return nil<const Type*>;
+}
+
+/**
+ * Replace the base type with another one
+ *
+ * @param newBaseType New base type
+ * @return The new type
+ */
+public f<const Type*> Type.replaceBase(const Type* newBaseType) {
+    assert !this.typeChain.isEmpty();
+
+    // Create new type
+    TypeChain newTypeChain = newBaseType.typeChain;
+    const bool doubleRef = newTypeChain.back().superType == SuperType::TY_REF && this.typeChain.back().superType == SuperType::TY_REF;
+    foreach unsigned long i = 1ul, const TypeChainElement& element : this.typeChain {
+        if !doubleRef || i > 1ul {
+            newTypeChain.pushBack(element);
+        }
+    }
+
+    // Register new type or return if already registered
+    // ToDo
+    return nil<const Type*>;
+}
+
+/**
+ * Remove reference wrapper from the current type
+ *
+ * @return Type without reference wrapper
+ */
+public f<const Type*> Type.removeReferenceWrapper() {
+    return this.isRef() ? this.getContained() : this;
+}
+
+/**
+ * Return the LLVM type for this symbol type
+ *
+ * @param sourceFile Referenced source file
+ * @return Corresponding LLVM type
+ */
+public f<llvm::Type> Type.toLLVMType(SourceFile* sourceFile) {
+    assert !this.typeChain.isEmpty() && !this.is(SuperType::TY_INVALID);
+    llvm::LLVMContext& context = sourceFile.llvmModule.getContext();
 }

@@ -1,76 +1,185 @@
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
+import "std/type/int";
 
 // Own imports
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/scope-intf";
 
-public type SuperType enum {
-    TY_INVALID,
-    TY_UNRESOLVED,
-    TY_DOUBLE,
-    TY_INT,
-    TY_SHORT,
-    TY_LONG,
-    TY_BYTE,
-    TY_CHAR,
-    TY_STRING, // Alias for 'const char*'
-    TY_BOOL,
-    TY_STRUCT,
-    TY_INTERFACE,
-    TY_ENUM,
-    TY_GENERIC,
-    TY_ALIAS,
-    TY_DYN,
-    TY_PTR,
-    TY_REF,
-    TY_ARRAY,
-    TY_FUNCTION,
-    TY_PROCEDURE,
-    TY_IMPORT
-}
+// Constants
+public const long ARRAY_SIZE_UNKNOWN = 0l;
 
-type TypeChainElementData struct {
+public type TypeChainElementData struct {
     unsigned int arraySize = 0       // TY_ARRAY
     IScope* bodyScope = nil<IScope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
     bool hasCaptures = false         // TY_FUNCTION, TY_PROCEDURE (lambdas)
 }
 
-type TypeChainElement struct {
+public type TypeChainElement struct {
     SuperType superType = SuperType::TY_DYN
     String subType
     unsigned long typeId = (unsigned long) SuperType::TY_INVALID
     TypeChainElementData data
-    Vector<IType> templateTypes
-    Vector<IType> paramTypes // First type is the return type
+    QualTypeList templateTypes
+    QualTypeList paramTypes // First type is the return type
 }
 
-f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
+public p TypeChainElement.ctor() {}
+
+public p TypeChainElement.ctor(SuperType superType) {
+    this.superType = superType;
+    this.typeId = (unsigned long) superType;
+}
+
+public p TypeChainElement.ctor(SuperType superType, const String& subType) {
+    this.ctor(superType);
+    this.subType = subType;
+}
+
+public p TypeChainElement.ctor(SuperType superType, const TypeChainElementData& data) {
+    this.ctor(superType);
+    this.data = data;
+}
+
+public p TypeChainElement.ctor(SuperType superType, const String& subType, unsigned long typeId, const TypeChainElementData& data, const QualTypeList& templateTypes) {
+    this.superType = superType;
+    this.subType = subType;
+    this.typeId = typeId;
+    this.data = data;
+    this.templateTypes = templateTypes;
+}
+
+public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
     // Check super type
     if lhs.superType != rhs.superType { return false; }
 
     // Check data
-    if lhs.superType == SuperType::TY_ARRAY {
-        return lhs.data.arraySize == rhs.data.arraySize;
-    } else if lhs.superType == SuperType::TY_STRUCT || lhs.superType == SuperType::TY_INTERFACE || lhs.superType == SuperType::TY_ENUM {
-        const String& lhsSubTypeSuffix = getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-        const String& rhsSubTypeSuffix = getLastFragment(rhs.subType, SCOPE_ACCESS_TOKE);
-        if lhs.superType == SuperType::TY_STRUCT {
-            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<IScope*>;
-            return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
-        } else if lhs.superType == SuperType::TY_INTERFACE {
-            return lhsSubTypeSuffix == rhsSubTypeSuffix;
-        } else {
-            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<IScope*>;
-            return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+    // ToDo
+    return true;
+}
+
+public f<bool> operator!=(const TypeChainElement& lhs, const TypeChainElement& rhs) {
+    return !(lhs == rhs);
+}
+
+public p TypeChainElement.getName(StringStream& name, bool withSize) {
+    switch this.superType {
+        case SuperType::TY_PTR: {
+            name << "*";
         }
-    } else {
-        return true;
+        case SuperType::TY_REF: {
+            name << "&";
+        }
+        case SuperType::TY_ARRAY: {
+            if withSize && this.data.arraySize != ARRAY_SIZE_UNKNOWN {
+                name << "[" << toString(this.data.arraySize) << "]";
+            } else {
+                name << "[]";
+            }
+        }
+        case SuperType::TY_DOUBLE: {
+            name << "double";
+        }
+        case SuperType::TY_INT: {
+            name << "int";
+        }
+        case SuperType::TY_SHORT: {
+            name << "short";
+        }
+        case SuperType::TY_LONG: {
+            name << "long";
+        }
+        case SuperType::TY_BYTE: {
+            name << "byte";
+        }
+        case SuperType::TY_CHAR: {
+            name << "char";
+        }
+        case SuperType::TY_STRING: {
+            name << "string";
+        }
+        case SuperType::TY_BOOL: {
+            name << "bool";
+        }
+        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE: {
+            name << this.subType;
+            if !this.templateTypes.isEmpty() {
+                name << "<";
+                foreach unsigned long i, const QualType& templateType : this.templateTypes {
+                    if i > 0 {
+                        name << ",";
+                    }
+                    templateType.getName(name, withSize);
+                }
+                name << ">";
+            }
+        }
+        case SuperType::TY_ENUM: {
+            name << "enum(" << this.subType << ")";
+        }
+        case SuperType::TY_GENERIC, SuperType::TY_ALIAS: {
+            name << this.subType;
+        }
+        case SuperType::TY_DYN: {
+            name << "dyn";
+        }
+        case SuperType::TY_FUNCTION: {
+            name << "f";
+            if this.data.hasCaptures {
+                name << "[]";
+            }
+            if !this.paramTypes.isEmpty() {
+                const QualType& returnType = this.paramTypes.getFront();
+                name << "<" << returnType.getName(true) << ">";
+            }
+            name << "(";
+            foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
+                if i > 1 {
+                    name << ",";
+                }
+                templateType.getName(name, true);
+            }
+            name << ")";
+        }
+        case SuperType::TY_PROCEDURE: {
+            name << "p";
+            if this.data.hasCaptures {
+                name << "[]";
+            }
+            name << "(";
+            foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
+                if i > 1 {
+                    name << ",";
+                }
+                templateType.getName(name, true);
+            }
+            name << ")";
+        }
+        case SuperType::TY_IMPORT: {
+            name << "import";
+        }
+        case SuperType::TY_INVALID: {
+            name << "invalid";
+        }
+        default: {
+            panic(Error("Could not get name of this type chain element"));
+        }
     }
 }
 
-f<bool> operator!=(const TypeChainElement& lhs, const TypeChainElement& rhs) {
-    return !(lhs == rhs);
+/**
+ * Return the type name as string
+ *
+ * @param withSize Also encode array sizes
+ * @return Name as string
+ */
+public f<String> TypeChainElement.getName(bool withSize) {
+    StringStream name;
+    this.getName(name);
+    return name.str();
 }
 
 public type TypeChain alias Vector<TypeChainElement>;

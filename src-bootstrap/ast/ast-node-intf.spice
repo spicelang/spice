@@ -1,0 +1,25 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/model/function-intf";
+import "bootstrap/model/struct-intf";
+import "bootstrap/model/interface-intf";
+
+public type IASTNode interface {
+    public f<Vector<IASTNode*>> getChildren();
+    public f<Vector<Vector<const IFunction*>>> getOpFctPointers();
+    public p customItemsInitialization(unsigned long /*manifestationCount*/);
+    public f<bool> hasCompileTimeValue();
+    public f<CompileTimeValue> getCompileTimeValue();
+    public f<bool> returnsOnAllControlPaths(bool* /*doSetPredecessorsUnreachable*/);
+    public f<Vector<IFunction*>*> getFctManifestations(const String&);
+    public f<Vector<IStruct*>*> getStructManifestations();
+    public f<Vector<IInterface*>*> getInterfaceManifestations();
+    public f<bool> isFctOrProcDef();
+    public f<bool> isStructDef();
+    public f<bool> isParam();
+    public f<bool> isStmtLst();
+    public f<bool> isAssignExpr();
+    public f<bool> isExprStmt();
+}
