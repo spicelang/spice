@@ -18,14 +18,15 @@ using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=
 class GenericType : public QualType {
 public:
   // Constructors
-  explicit GenericType(const QualType &type) : QualType(type){};
+  explicit GenericType(const QualType &type) : QualType(type) {}
   explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
   GenericType(const std::string &name, QualTypeList typeConditions)
       : QualType(TY_GENERIC, name), typeConditions(std::move(typeConditions)) {}
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] bool checkConditionsOf(const QualType &qualType, bool ignoreArraySize = false, bool ignoreSpecifiers = false) const;
+  [[nodiscard]] bool checkConditionsOf(const QualType &qualType, bool ignoreArraySize = false,
+                                       bool igoreQualifiers = false) const;
 
   // Public members
   bool used = false;
@@ -35,7 +36,7 @@ private:
   QualTypeList typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const QualType &qualType, bool ignoreArraySize, bool ignoreSpecifiers) const;
+  [[nodiscard]] bool checkTypeConditionOf(const QualType &qualType, bool ignoreArraySize, bool ignoreQualifiers) const;
 };
 
 } // namespace spice::compiler

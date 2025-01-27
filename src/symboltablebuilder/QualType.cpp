@@ -15,10 +15,10 @@
 
 namespace spice::compiler {
 
-QualType::QualType(SuperType superType) : type(TypeRegistry::getOrInsert(superType)), specifiers(TypeSpecifiers::of(superType)) {}
+QualType::QualType(SuperType superType) : type(TypeRegistry::getOrInsert(superType)), qualifiers(TypeQualifiers::of(superType)) {}
 QualType::QualType(SuperType superType, const std::string &subType)
-    : type(TypeRegistry::getOrInsert(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
-QualType::QualType(const Type *type, TypeSpecifiers specifiers) : type(type), specifiers(specifiers) {}
+    : type(TypeRegistry::getOrInsert(superType, subType)), qualifiers(TypeQualifiers::of(superType)) {}
+QualType::QualType(const Type *type, TypeQualifiers qualifiers) : type(type), qualifiers(qualifiers) {}
 
 /**
  * Get the super type of the underlying type
@@ -206,7 +206,7 @@ bool QualType::isArrayOf(SuperType superType) const { return isArray() && getCon
  *
  * @return Const reference or not
  */
-bool QualType::isConstRef() const { return specifiers.isConst && isRef(); }
+bool QualType::isConstRef() const { return qualifiers.isConst && isRef(); }
 
 /**
  * Check if the current type is an iterator
@@ -222,7 +222,7 @@ bool QualType::isIterator(const ASTNode *node) const {
   const QualType genericType(TY_GENERIC, "T");
   static constexpr TypeChainElementData data = {.bodyScope = nullptr};
   const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, data, {genericType});
-  const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
+  const QualType iteratorQualType(itType, TypeQualifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
 }
 
@@ -245,7 +245,7 @@ bool QualType::isIterable(const ASTNode *node) const {
   const QualType genericType(TY_GENERIC, "T");
   static constexpr TypeChainElementData data = {.bodyScope = nullptr};
   const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, data, {genericType});
-  const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
+  const QualType iteratorQualType(itType, TypeQualifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
 }
 
@@ -283,7 +283,7 @@ bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
   // Heap-allocated values may not be copied via memcpy
-  if (specifiers.isHeap)
+  if (qualifiers.isHeap)
     return false;
 
   // References can't be copied at all
@@ -347,17 +347,17 @@ bool QualType::canBind(const QualType &inputType, bool isTemporary) const {
  *
  * @param otherType Type to compare against
  * @param ignoreArraySize Ignore array sizes
- * @param ignoreSpecifiers Ignore specifiers, except for pointer and reference types
+ * @param ignoreQualifiers Ignore qualifiers, except for pointer and reference types
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
+bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const {
   // Compare type
   if (!type->matches(otherType.type, ignoreArraySize))
     return false;
 
-  // Ignore or compare specifiers
-  return ignoreSpecifiers || specifiers.match(otherType.specifiers, allowConstify);
+  // Ignore or compare qualifiers
+  return ignoreQualifiers || qualifiers.match(otherType.qualifiers, allowConstify);
 }
 
 /**
@@ -473,22 +473,22 @@ bool QualType::needsDeAllocation() const {
  *
  * @param name Name stream
  * @param withSize Include the array size for sized types
- * @param ignorePublic Ignore any potential public specifier
+ * @param ignorePublic Ignore any potential public qualifier
  */
 void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic) const {
-  // Append the specifiers
-  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBase().getSuperType());
-  if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
+  // Append the qualifiers
+  const TypeQualifiers defaultForSuperType = TypeQualifiers::of(getBase().getSuperType());
+  if (!ignorePublic && qualifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
-  if (specifiers.isComposition && !defaultForSuperType.isComposition)
+  if (qualifiers.isComposition && !defaultForSuperType.isComposition)
     name << "compose ";
-  if (specifiers.isConst && !defaultForSuperType.isConst && type->typeChain.size() > 1)
+  if (qualifiers.isConst && !defaultForSuperType.isConst && type->typeChain.size() > 1)
     name << "const ";
-  if (specifiers.isHeap && !defaultForSuperType.isHeap)
+  if (qualifiers.isHeap && !defaultForSuperType.isHeap)
     name << "heap ";
-  if (specifiers.isSigned && !defaultForSuperType.isSigned)
+  if (qualifiers.isSigned && !defaultForSuperType.isSigned)
     name << "signed ";
-  if (!specifiers.isSigned && defaultForSuperType.isSigned)
+  if (!qualifiers.isSigned && defaultForSuperType.isSigned)
     name << "unsigned ";
 
   // Loop through all chain elements
@@ -499,7 +499,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
- * @param ignorePublic Ignore any potential public specifier
+ * @param ignorePublic Ignore any potential public qualifier
  * @return Symbol type name
  */
 std::string QualType::getName(bool withSize, bool ignorePublic) const {
@@ -573,7 +573,7 @@ QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /
  */
 QualType QualType::toNonConst() const {
   QualType qualType = *this;
-  qualType.specifiers.isConst = false;
+  qualType.qualifiers.isConst = false;
   return qualType;
 }
 
@@ -617,10 +617,10 @@ QualType QualType::removeReferenceWrapper() const { return isRef() ? getContaine
 QualType QualType::replaceBaseType(const QualType &newBaseType) const {
   // Create new type
   const Type *newType = type->replaceBase(newBaseType.getType());
-  // Create new specifiers
-  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
+  // Create new qualifiers
+  TypeQualifiers newQualifiers = qualifiers.merge(newBaseType.qualifiers);
   // Return the new qualified type
-  return {newType, newSpecifiers};
+  return {newType, newQualifiers};
 }
 
 /**
@@ -632,7 +632,7 @@ QualType QualType::getWithLambdaCaptures(bool enabled /*=true*/) const {
   // Create new type
   const Type *newType = type->getWithLambdaCaptures(enabled);
   // Return the new qualified type
-  return {newType, specifiers};
+  return {newType, qualifiers};
 }
 
 /**
@@ -644,7 +644,7 @@ QualType QualType::getWithBodyScope(Scope *bodyScope) const {
   // Create new type
   const Type *newType = type->getWithBodyScope(bodyScope);
   // Return the new qualified type
-  return {newType, specifiers};
+  return {newType, qualifiers};
 }
 
 /**
@@ -657,7 +657,7 @@ QualType QualType::getWithTemplateTypes(const QualTypeList &templateTypes) const
   // Create new type
   const Type *newType = type->getWithTemplateTypes(templateTypes);
   // Return the new qualified type
-  return {newType, specifiers};
+  return {newType, qualifiers};
 }
 
 /**
@@ -670,7 +670,7 @@ QualType QualType::getWithBaseTemplateTypes(const QualTypeList &templateTypes) c
   // Create new type
   const Type *newType = type->getWithBaseTemplateTypes(templateTypes);
   // Return the new qualified type
-  return {newType, specifiers};
+  return {newType, qualifiers};
 }
 
 /**
@@ -683,7 +683,7 @@ QualType QualType::getWithFunctionParamAndReturnTypes(const QualTypeList &paramA
   // Create new type
   const Type *newType = type->getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
   // Return the new qualified type
-  return {newType, specifiers};
+  return {newType, qualifiers};
 }
 
 QualType QualType::getWithFunctionParamAndReturnTypes(const QualType &returnType, const QualTypeList &paramTypes) const {
@@ -707,7 +707,7 @@ QualType QualType::getWithFunctionParamAndReturnTypes(const QualType &returnType
  *
  * @return Is const or not
  */
-bool QualType::isConst() const { return isExtendedPrimitive() && specifiers.isConst; }
+bool QualType::isConst() const { return isExtendedPrimitive() && qualifiers.isConst; }
 
 /**
  * Check if the current type is marked signed
@@ -716,7 +716,7 @@ bool QualType::isConst() const { return isExtendedPrimitive() && specifiers.isCo
  */
 bool QualType::isSigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  return specifiers.isSigned;
+  return qualifiers.isSigned;
 }
 
 /**
@@ -726,7 +726,7 @@ bool QualType::isSigned() const {
  */
 bool QualType::isUnsigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  return specifiers.isUnsigned;
+  return qualifiers.isUnsigned;
 }
 
 /**
@@ -736,7 +736,7 @@ bool QualType::isUnsigned() const {
  */
 bool QualType::isInline() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return specifiers.isInline;
+  return qualifiers.isInline;
 }
 
 /**
@@ -746,7 +746,7 @@ bool QualType::isInline() const {
  */
 bool QualType::isPublic() const {
   assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-  return specifiers.isPublic;
+  return qualifiers.isPublic;
 }
 
 /**
@@ -754,21 +754,21 @@ bool QualType::isPublic() const {
  *
  * @return Is heap or not
  */
-bool QualType::isHeap() const { return specifiers.isHeap; }
+bool QualType::isHeap() const { return qualifiers.isHeap; }
 
 /**
  * Check if the current type is marked as composition
  *
  * @return Is composition or not
  */
-bool QualType::isComposition() const { return specifiers.isComposition; }
+bool QualType::isComposition() const { return qualifiers.isComposition; }
 
 /**
  * Make the current type const
  *
  * @param isConst Is const or not
  */
-void QualType::makeConst(bool isConst) { specifiers.isConst = isConst; }
+void QualType::makeConst(bool isConst) { qualifiers.isConst = isConst; }
 
 /**
  * Make the current type unsigned
@@ -777,8 +777,8 @@ void QualType::makeConst(bool isConst) { specifiers.isConst = isConst; }
  */
 void QualType::makeUnsigned(bool isUnsigned) {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  specifiers.isSigned = !isUnsigned;
-  specifiers.isUnsigned = isUnsigned;
+  qualifiers.isSigned = !isUnsigned;
+  qualifiers.isUnsigned = isUnsigned;
 }
 
 /**
@@ -788,7 +788,7 @@ void QualType::makeUnsigned(bool isUnsigned) {
  */
 void QualType::makePublic(bool isPublic) {
   assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-  specifiers.isPublic = isPublic;
+  qualifiers.isPublic = isPublic;
 }
 
 /**
@@ -796,7 +796,7 @@ void QualType::makePublic(bool isPublic) {
  *
  * @param isHeap Is heap or not
  */
-void QualType::makeHeap(bool isHeap) { specifiers.isHeap = isHeap; }
+void QualType::makeHeap(bool isHeap) { qualifiers.isHeap = isHeap; }
 
 /**
  * Check if two types are equal

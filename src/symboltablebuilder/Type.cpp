@@ -561,7 +561,7 @@ bool Type::matches(const Type *otherType, bool ignoreArraySize) const {
       return false;
   }
 
-  // Ignore or compare specifiers
+  // Ignore or compare qualifiers
   return true;
 }
 

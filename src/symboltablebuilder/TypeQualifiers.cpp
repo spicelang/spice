@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
-#include "TypeSpecifiers.h"
+#include "TypeQualifiers.h"
 
 #include <exception/CompilerError.h>
 #include <symboltablebuilder/TypeChain.h>
@@ -8,12 +8,12 @@
 namespace spice::compiler {
 
 /**
- * Get default type specifiers for a given super type
+ * Get default type qualifiers for a given super type
  *
  * @param superType Super type
- * @return Default type specifiers
+ * @return Default type qualifiers
  */
-TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
+TypeQualifiers TypeQualifiers::of(uint16_t superType) {
   switch (superType) {
   case TY_DOUBLE: // fall-through
   case TY_INT:    // fall-through
@@ -42,21 +42,21 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   case TY_DYN:     // fall-through
   case TY_INVALID: // fall-through
   case TY_UNRESOLVED:
-    // Return all-false specifiers to not match anything
+    // Return all-false qalifiers to not match anything
     return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
   default:
-    throw CompilerError(UNHANDLED_BRANCH, "Symbol specifier fallthrough"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Symbol qualifier fallthrough"); // GCOV_EXCL_LINE
   }
 }
 
 /**
- * Merge two sets of type specifiers. If possible, prefer the opposite of the default of the super type
+ * Merge two sets of type qualifiers. If possible, prefer the opposite of the default of the super type
  *
- * @param other Other type specifiers object
- * @return Merged specifiers object
+ * @param other Other type qualifiers object
+ * @return Merged qualifiers object
  */
-TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
-  TypeSpecifiers result;
+TypeQualifiers TypeQualifiers::merge(const TypeQualifiers &other) const {
+  TypeQualifiers result;
   const bool isGeneric = !getBit(BIT_INDEX_SIGNED) && !getBit(BIT_INDEX_UNSIGNED);
   for (uint8_t i = 0; i <= BIT_INDEX_MAX; i++) {
     const bool x = getBit(i);
@@ -72,29 +72,29 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
 }
 
 /**
- * Check if two sets of type specifiers match
+ * Check if two sets of type qualifiers match
  *
- * @param other The rhs specifiers
+ * @param other The rhs qualifiers
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-bool TypeSpecifiers::match(TypeSpecifiers other, bool allowConstify) const {
-  const TypeSpecifiers thisSpecifiers = *this;
+bool TypeQualifiers::match(TypeQualifiers other, bool allowConstify) const {
+  const TypeQualifiers thisQualifiers = *this;
 
   // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
-  if (allowConstify && thisSpecifiers.isConst)
+  if (allowConstify && thisQualifiers.isConst)
     other.isConst = true;
 
-  // Check if specifiers are equal
-  return thisSpecifiers == other;
+  // Check if qualifiers are equal
+  return thisQualifiers == other;
 }
 
 /**
- * Erase all specifiers that are set in the mask. This is used in type matching.
+ * Erase all qualifiers that are set in the mask. This is used in type matching.
  *
  * @param mask Bitmask to erase with
  */
-void TypeSpecifiers::eraseWithMask(const TypeSpecifiers &mask) {
+void TypeQualifiers::eraseWithMask(const TypeQualifiers &mask) {
   // Zero out all bits that are set in the mask
   for (uint8_t i = 0; i <= BIT_INDEX_MAX; i++) {
     if (mask.getBit(i)) {
@@ -111,7 +111,7 @@ void TypeSpecifiers::eraseWithMask(const TypeSpecifiers &mask) {
   }
 }
 
-bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
+bool operator==(const TypeQualifiers &lhs, const TypeQualifiers &rhs) {
   const bool isConst = lhs.isConst == rhs.isConst;
   const bool isSigned = lhs.isSigned == rhs.isSigned;
   const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
@@ -119,7 +119,7 @@ bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
   return isConst && isSigned && isUnsigned && isHeap;
 }
 
-bool TypeSpecifiers::getBit(uint8_t index) const {
+bool TypeQualifiers::getBit(uint8_t index) const {
   switch (index) {
   case BIT_INDEX_CONST:
     return isConst;
@@ -140,7 +140,7 @@ bool TypeSpecifiers::getBit(uint8_t index) const {
   }
 }
 
-bool TypeSpecifiers::setBit(uint8_t index, bool value) {
+bool TypeQualifiers::setBit(uint8_t index, bool value) {
   switch (index) {
   case BIT_INDEX_CONST:
     return isConst = value;

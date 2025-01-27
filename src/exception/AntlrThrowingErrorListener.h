@@ -19,7 +19,7 @@ enum class ThrowingErrorListenerMode : uint8_t {
 class AntlrThrowingErrorListener final : public antlr4::BaseErrorListener {
 public:
   // Constructors
-  AntlrThrowingErrorListener(ThrowingErrorListenerMode mode, SourceFile *sourceFile) : mode(mode), sourceFile(sourceFile){};
+  AntlrThrowingErrorListener(ThrowingErrorListenerMode mode, SourceFile *sourceFile) : mode(mode), sourceFile(sourceFile) {}
 
   // Public methods
   void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,

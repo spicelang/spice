@@ -30,22 +30,22 @@ size_t hash<spice::compiler::Type>::operator()(const spice::compiler::Type &t) c
   return accumulate(t.typeChain.begin(), t.typeChain.end(), 0u, pred);
 }
 
-size_t hash<spice::compiler::TypeSpecifiers>::operator()(const spice::compiler::TypeSpecifiers &specifiers) const noexcept {
-  const size_t hashConst = std::hash<bool>{}(specifiers.isConst);
-  const size_t hashSigned = std::hash<bool>{}(specifiers.isSigned) << 1;
-  const size_t hashUnsigned = std::hash<bool>{}(specifiers.isUnsigned) << 2;
-  const size_t hashHeap = std::hash<bool>{}(specifiers.isHeap) << 3;
-  const size_t hashPublic = std::hash<bool>{}(specifiers.isPublic) << 4;
-  const size_t hashInline = std::hash<bool>{}(specifiers.isInline) << 5;
-  const size_t hashComposition = std::hash<bool>{}(specifiers.isComposition) << 6;
+size_t hash<spice::compiler::TypeQualifiers>::operator()(const spice::compiler::TypeQualifiers &qualifiers) const noexcept {
+  const size_t hashConst = std::hash<bool>{}(qualifiers.isConst);
+  const size_t hashSigned = std::hash<bool>{}(qualifiers.isSigned) << 1;
+  const size_t hashUnsigned = std::hash<bool>{}(qualifiers.isUnsigned) << 2;
+  const size_t hashHeap = std::hash<bool>{}(qualifiers.isHeap) << 3;
+  const size_t hashPublic = std::hash<bool>{}(qualifiers.isPublic) << 4;
+  const size_t hashInline = std::hash<bool>{}(qualifiers.isInline) << 5;
+  const size_t hashComposition = std::hash<bool>{}(qualifiers.isComposition) << 6;
   return hashConst ^ hashSigned ^ hashUnsigned ^ hashHeap ^ hashPublic ^ hashInline ^ hashComposition;
 }
 
 size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const noexcept {
   const size_t hashType = std::hash<const spice::compiler::Type *>{}(qualType.getType());
-  spice::compiler::TypeSpecifiers specifiers = qualType.getSpecifiers();
-  specifiers.isPublic = false; // Ignore the public specifier for hashing
-  const size_t hashQualifiers = std::hash<spice::compiler::TypeSpecifiers>{}(specifiers) << 1;
+  spice::compiler::TypeQualifiers qualifiers = qualType.getQualifiers();
+  qualifiers.isPublic = false; // Ignore the public qualifier for hashing
+  const size_t hashQualifiers = std::hash<spice::compiler::TypeQualifiers>{}(qualifiers) << 1;
   return hashType ^ hashQualifiers;
 }
 

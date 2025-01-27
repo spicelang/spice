@@ -98,7 +98,7 @@ public f<TypeQualifiers> getTypeQualifiersOf(unsigned short superType) {
  * Merge two sets of type qualifiers. If possible, prefer the opposite of the default of the super type
  *
  * @param other Other TypeQualifiers object
- * @return Merged specifiers object
+ * @return Merged qualifiers object
  */
 public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
     result = TypeQualifiers();
@@ -127,7 +127,7 @@ public f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowCo
 
     // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
     if allowConstify && thisQualifiers.isConst && !otherQualifiers.isConst {
-        otherSpecifiers.isConst = true;
+        otherQualifiers.isConst = true;
     }
 
     // Check if qualifiers are equal

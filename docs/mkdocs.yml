@@ -103,7 +103,7 @@ nav:
     - language/functions.md
     - language/lambda-functions.md
     - language/modules.md
-    - language/declaration-specifiers.md
+    - language/declaration-qualifiers.md
     - language/attributes.md
     - language/arrays.md
     - language/pointers.md

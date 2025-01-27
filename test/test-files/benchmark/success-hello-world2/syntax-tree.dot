@@ -10,10 +10,10 @@ digraph {
  L3C15_StmtLstNode -> L4C5_DeclStmtNode;
  L4C5_DataTypeNode [color="lightgreen",label="DataTypeNode"];
  L4C5_DeclStmtNode -> L4C5_DataTypeNode;
- L4C5_SpecifierLstNode [color="lightgreen",label="SpecifierLstNode"];
- L4C5_DataTypeNode -> L4C5_SpecifierLstNode;
- L4C5_SpecifierNode [color="lightgreen",label="SpecifierNode"];
- L4C5_SpecifierLstNode -> L4C5_SpecifierNode;
+ L4C5_QualifierLstNode [color="lightgreen",label="QualifierLstNode"];
+ L4C5_DataTypeNode -> L4C5_QualifierLstNode;
+ L4C5_QualifierNode [color="lightgreen",label="QualifierNode"];
+ L4C5_QualifierLstNode -> L4C5_QualifierNode;
  L4C14_BaseDataTypeNode [color="lightgreen",label="BaseDataTypeNode"];
  L4C5_DataTypeNode -> L4C14_BaseDataTypeNode;
  L4C24_AssignExprNode [color="lightgreen",label="AssignExprNode"];

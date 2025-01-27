@@ -22,7 +22,7 @@ source_filename = "source.spice"
 @anon.string.16 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f17 == 13' evaluated to false.\00", align 1
 @anon.string.17 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f18 == 14' evaluated to false.\00", align 1
 @anon.string.18 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f19 == 12' evaluated to false.\00", align 1
-@anon.string.19 = private unnamed_addr constant [82 x i8] c"Assertion failed: Condition 't.f20 == SpecifierType::COMPOSE' evaluated to false.\00", align 1
+@anon.string.19 = private unnamed_addr constant [82 x i8] c"Assertion failed: Condition 't.f20 == QualifierType::COMPOSE' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1
 
 ; Function Attrs: norecurse

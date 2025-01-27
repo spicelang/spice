@@ -18,9 +18,9 @@ template <> struct hash<spice::compiler::Type> {
   size_t operator()(const spice::compiler::Type &t) const noexcept;
 };
 
-// Implement hash functionality for the TypeSpecifiers class
-template <> struct hash<spice::compiler::TypeSpecifiers> {
-  size_t operator()(const spice::compiler::TypeSpecifiers &specifiers) const noexcept;
+// Implement hash functionality for the TypeQualifiers class
+template <> struct hash<spice::compiler::TypeQualifiers> {
+  size_t operator()(const spice::compiler::TypeQualifiers &qualifiers) const noexcept;
 };
 
 // Implement hash functionality for the QualType class

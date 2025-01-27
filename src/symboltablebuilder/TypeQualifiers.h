@@ -16,23 +16,23 @@ static constexpr uint8_t BIT_INDEX_SIGNED = 5;
 static constexpr uint8_t BIT_INDEX_CONST = 6;
 static constexpr uint8_t BIT_INDEX_MAX = BIT_INDEX_CONST; // Please adjust if something changes above
 
-class TypeSpecifiers {
+class TypeQualifiers {
 public:
   // Constructors
-  TypeSpecifiers() = default;
-  TypeSpecifiers(bool isConst, bool isSigned, bool isUnsigned, bool isHeap)
+  TypeQualifiers() = default;
+  TypeQualifiers(bool isConst, bool isSigned, bool isUnsigned, bool isHeap)
       : isConst(isConst), isSigned(isSigned), isUnsigned(isUnsigned), isHeap(isHeap) {}
 
   // Public static methods
-  static TypeSpecifiers of(uint16_t superType);
+  static TypeQualifiers of(uint16_t superType);
 
   // Public methods
-  [[nodiscard]] TypeSpecifiers merge(const TypeSpecifiers &other) const;
-  [[nodiscard]] bool match(TypeSpecifiers other, bool allowConstify) const;
-  void eraseWithMask(const TypeSpecifiers &mask);
+  [[nodiscard]] TypeQualifiers merge(const TypeQualifiers &other) const;
+  [[nodiscard]] bool match(TypeQualifiers other, bool allowConstify) const;
+  void eraseWithMask(const TypeQualifiers &mask);
 
   // Overloaded operators
-  friend bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs);
+  friend bool operator==(const TypeQualifiers &lhs, const TypeQualifiers &rhs);
 
   // public members
   // Note: Please adjust bit indices above, if something changes here

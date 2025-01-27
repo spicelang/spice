@@ -34,11 +34,11 @@ public p GenericType.ctor(const String& name, const QualTypeList& typeConditions
  *
  * @param qualType Qualified type to be checked
  * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @param ignoreQualifiers Ignore the type qualifiers for type comparison
  * @return True or false
  */
-public f<bool> GenericType.checkConditionsOf(const QualType& qualType, bool ignoreArraySize = false, bool ignoreSpecifiers = false) {
-    return this.checkTypeConditionOf(qualType, ignoreArraySize, ignoreSpecifiers);
+public f<bool> GenericType.checkConditionsOf(const QualType& qualType, bool ignoreArraySize = false, bool ignoreQualifiers = false) {
+    return this.checkTypeConditionOf(qualType, ignoreArraySize, ignoreQualifiers);
 }
 
 /**
@@ -46,17 +46,17 @@ public f<bool> GenericType.checkConditionsOf(const QualType& qualType, bool igno
  *
  * @param qualType Qualified type to be checked
  * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @param ignoreQualifiers Ignore the type qualifiers for type comparison
  * @return True or false
  */
-f<bool> GenericType.checkConditionOf(const QualType& qualType, bool ignoreArraySize, bool ignoreSpecifiers) {
+f<bool> GenericType.checkConditionOf(const QualType& qualType, bool ignoreArraySize, bool ignoreQualifiers) {
     // Succeed if no qualType conditions are set
     if this.typeConditions.isEmpty() {
         return true;
     }
     // Check type conditions
     foreach const QualType& typeCondition : this.typeConditions {
-        if typeCondition.is(SuperType::TY_DYN) || typeCondition.matches(qualType, ignoreArraySize, ignoreSpecifiers, ignoreSpecifiers) {
+        if typeCondition.is(SuperType::TY_DYN) || typeCondition.matches(qualType, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
             return true;
         }
     }

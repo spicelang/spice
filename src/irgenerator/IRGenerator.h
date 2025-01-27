@@ -70,7 +70,7 @@ public:
   std::any visitStmtLst(const StmtLstNode *node) override;
   std::any visitTypeAltsLst(const TypeAltsLstNode *node) override;
   std::any visitDeclStmt(const DeclStmtNode *node) override;
-  std::any visitSpecifierLst(const SpecifierLstNode *node) override;
+  std::any visitQualifierLst(const QualifierLstNode *node) override;
   std::any visitModAttr(const ModAttrNode *node) override;
   std::any visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) override;
   std::any visitCaseConstant(const CaseConstantNode *node) override;

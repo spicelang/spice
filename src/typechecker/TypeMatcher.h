@@ -18,9 +18,9 @@ public:
 
   // Public methods
   static bool matchRequestedToCandidateTypes(const QualTypeList &candidateTypes, const QualTypeList &reqTypes,
-                                             TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictSpecifiers);
+                                             TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictQualifiers);
   static bool matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
-                                            ResolverFct &resolverFct, bool strictSpecifierMatching);
+                                            ResolverFct &resolverFct, bool strictQualifierMatching);
   static void substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping, const ASTNode *node);
   static void substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping, const ASTNode *node);
 };

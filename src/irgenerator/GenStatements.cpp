@@ -88,7 +88,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   return nullptr;
 }
 
-std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
+std::any IRGenerator::visitQualifierLst(const QualifierLstNode *node) {
   return nullptr; // Noop
 }
 

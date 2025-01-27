@@ -1,12 +1,12 @@
 ---
-title: Declaration specifiers
+title: Declaration qualifiers
 ---
 
-## The `public` specifier
+## The `public` qualifier
 
 All structures in Spice, that are accessible from outside the module (like functions, procedures, structs, etc.), have private
 visibility per default. That means that they can't be accessed from outside the module from a source file, that imported the file,
-where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the specifier `public`
+where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the qualifier `public`
 to it.
 
 ### Applicable for
@@ -43,9 +43,9 @@ f<int> main() {
 By having private visibility per default, Spice encourages the programmer to adhere to the information hiding principle and expose
 only the things, that need to be exposed to other modules.
 
-## The `inline` specifier
+## The `inline` qualifier
 
-The `inline` specifier can be used for functions and procedures to mark them as inlineable for the compiler explicitly. By marking
+The `inline` qualifier can be used for functions and procedures to mark them as inlineable for the compiler explicitly. By marking
 a function or procedure as inlineable, the compiler is forced to always inline it.
 
 !!! note
@@ -77,9 +77,9 @@ f<int> main() {
 }
 ```
 
-## The `const` specifier
+## The `const` qualifier
 
-This specifier can be used to make variables immutable after the first assignment.
+This qualifier can be used to make variables immutable after the first assignment.
 
 ### Applicable for
 
@@ -98,7 +98,7 @@ f<int> main() {
 }
 ```
 
-## The `signed` specifier
+## The `signed` qualifier
 
 Marks a numeric variable to use signed numbers explicitly.
 
@@ -116,7 +116,7 @@ f<int> main() {
 }
 ```
 
-## The `unsigned` specifier
+## The `unsigned` qualifier
 
 Marks a numeric variable to use unsigned numbers explicitly.
 
@@ -134,12 +134,12 @@ f<int> main() {
 }
 ```
 
-## The `heap` specifier
+## The `heap` qualifier
 
 Marks a variable to be allocated on the heap. The compiler will generate code to free the memory of the variable, when it goes out
 of scope. For structs, the compiler will generate code to free all fields, that are marked with the `heap` keyword, in the dtor.
 
-*Note: The `heap` specifier only works for pointer types. This is enforced by the compiler.*
+*Note: The `heap` qualifier only works for pointer types. This is enforced by the compiler.*
 
 ### Applicable for
 
@@ -154,11 +154,11 @@ type TestStruct struct {
 }
 ```
 
-## The `compose` specifier
+## The `compose` qualifier
 
 Includes a struct info the current strut. This is useful for composing structs from other structs.
 
-*Note: The `compose` specifiers only works for by-value struct types. This is enforced by the compiler.*
+*Note: The `compose` qualifier only works for by-value struct types. This is enforced by the compiler.*
 
 ### Applicable for
 

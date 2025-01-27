@@ -86,9 +86,9 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
         this.parseTopLevelDefAttr();
     }
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::F) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     // Consume expected tokens 'f<int> main'
@@ -98,7 +98,7 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
     this.lexer.expect(TokenType::GREATER);
     this.lexer.expect(TokenType::MAIN);
 
-    // Parse praamLst
+    // Parse pramLst
     this.lexer.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
         this.parseParamLst();
@@ -119,9 +119,9 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
         this.parseTopLevelDefAttr();
     }
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::F) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::F);
@@ -158,9 +158,9 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
         this.parseTopLevelDefAttr();
     }
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::P) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::P);
@@ -212,9 +212,9 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
         this.parseTopLevelDefAttr();
     }
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::TYPE);
@@ -253,9 +253,9 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
         this.parseTopLevelDefAttr();
     }
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::TYPE);
@@ -283,9 +283,9 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
 f<ASTEnumDefNode*> Parser.parseEnumDef() {
     dyn enumDefNode = this.createNode<ASTEnumDefNode>();
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::TYPE);
@@ -314,9 +314,9 @@ f<ASTGenericTypeDefNode*> Parser.parseGenericTypeDef() {
 f<ASTAliasDefNode*> Parser.parseAliasDef() {
     dyn aliasDefNode = this.createNode<ASTAliasDefNode>();
 
-    // Parse specifierLst
+    // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     this.lexer.expect(TokenType::TYPE);
@@ -683,10 +683,10 @@ f<ASTFieldNode*> Parser.parseField() {
 f<ASTSignatureNode*> Parser.parseSignature() {
     dyn signatureNode = this.createNode<ASTSignatureNode>();
 
-    // Parse specifierLst
+    // Parse qualifierLst
     const dyn options = [TokenType::F, TokenType::P];
     if !this.currentTokenIsOneOf(options, sizeof(options)) {
-        this.parseSpecifierLst();
+        this.parseQualifierLst();
     }
 
     if this.currentTokenIs(TokenType::F) {
@@ -724,7 +724,7 @@ f<ASTStmtNode*> Parser.parseStmt() {
     dyn stmtNode = this.createNode<ASTStmtNode>();
 
     const dyn declStmtSelect = [
-        // declStmt -> dataType -> specifierLst -> specifier
+        // declStmt -> dataType -> qualifierLst -> qualifier
         TokenType::CONST,
         TokenType::SIGNED,
         TokenType::UNSIGNED,
@@ -779,39 +779,39 @@ f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
     return this.concludeNode(declStmtNode);
 }
 
-f<ASTSpecifierLstNode*> Parser.parseSpecifierLst() {
-    dyn specifierLstNode = this.createNode<ASTSpecifierLstNode>();
+f<ASTQualifierLstNode*> Parser.parseQualifierLst() {
+    dyn qualifierLstNode = this.createNode<ASTQualifierLstNode>();
 
-    const dyn specifierSelect = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
+    const dyn qualifierSelect = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
     do {
-        this.parseSpecifier();
-    } while this.currentTokenIsOneOf(specifierSelect, sizeof(specifierSelect));
+        this.parseQualifier();
+    } while this.currentTokenIsOneOf(qualifierSelect, sizeof(qualifierSelect));
 
-    return this.concludeNode(specifierLstNode);
+    return this.concludeNode(qualifierLstNode);
 }
 
-f<ASTSpecifierNode*> Parser.parseSpecifier() {
-    dyn specifierNode = this.createNode<ASTSpecifierNode>();
+f<ASTQualifierNode*> Parser.parseQualifier() {
+    dyn qualifierNode = this.createNode<ASTQualifierNode>();
 
     if this.currentTokenIs(TokenType::CONST) {
-        specifierNode.specifierType = SpecifierType::CONST;
+        qualifierNode.qualifierType = QualifierType::CONST;
     } else if this.currentTokenIs(TokenType::SIGNED) {
-        specifierNode.specifierType = SpecifierType::SIGNED;
+        qualifierNode.qualifierType = QualifierType::SIGNED;
     } else if this.currentTokenIs(TokenType::UNSIGNED) {
-        specifierNode.specifierType = SpecifierType::UNSIGNED;
+        qualifierNode.qualifierType = QualifierType::UNSIGNED;
     } else if this.currentTokenIs(TokenType::INLINE) {
-        specifierNode.specifierType = SpecifierType::INLINE;
+        qualifierNode.qualifierType = QualifierType::INLINE;
     } else if this.currentTokenIs(TokenType::PUBLIC) {
-        specifierNode.specifierType = SpecifierType::PUBLIC;
+        qualifierNode.qualifierType = QualifierType::PUBLIC;
     } else if this.currentTokenIs(TokenType::HEAP) {
-        specifierNode.specifierType = SpecifierType::HEAP;
+        qualifierNode.qualifierType = QualifierType::HEAP;
     } else if this.currentTokenIs(TokenType::COMPOSE) {
-        specifierNode.specifierType = SpecifierType::COMPOSE;
+        qualifierNode.qualifierType = QualifierType::COMPOSE;
     } else {
         assert false;
     }
 
-    return this.concludeNode(specifierNode);
+    return this.concludeNode(qualifierNode);
 }
 
 f<ASTModAttrNode*> Parser.parseModAttr() {
@@ -1403,9 +1403,9 @@ f<ASTLambdaExprNode*> Parser.parseLambdaExpr() {
 f<ASTDataTypeNode*> Parser.parseDataType() {
     dyn dataTypeNode = this.createNode<ASTDataTypeNode>();
 
-    const dyn optionsSpecifierLst = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
-    if this.currentTokenIsOneOf(optionsSpecifierLst, sizeof(optionsSpecifierLst)) {
-        this.parseSpecifierLst();
+    const dyn optionsQualifierLst = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
+    if this.currentTokenIsOneOf(optionsQualifierLst, sizeof(optionsQualifierLst)) {
+        this.parseQualifierLst();
     }
     this.parseBaseDataType();
 

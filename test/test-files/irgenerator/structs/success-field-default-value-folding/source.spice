@@ -1,4 +1,4 @@
-type SpecifierType enum {
+type QualifierType enum {
     NONE,
     CONST,
     SIGNED,
@@ -29,7 +29,7 @@ type Test struct {
     int f17 = 13--
     int f18 = ++13
     int f19 = --13
-    SpecifierType f20 = SpecifierType::COMPOSE
+    QualifierType f20 = QualifierType::COMPOSE
 }
 
 f<int> main() {
@@ -53,7 +53,7 @@ f<int> main() {
     assert t.f17 == 13;
     assert t.f18 == 14;
     assert t.f19 == 12;
-    assert t.f20 == SpecifierType::COMPOSE;
+    assert t.f20 == QualifierType::COMPOSE;
 
     printf("All assertions passed!\n");
 }

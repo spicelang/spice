@@ -446,20 +446,20 @@ public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ======================================================== SpecifierLstNode =====================================================
+// ======================================================== QualifierLstNode =====================================================
 
-public type ASTSpecifierLstNode struct/*: IVisitable*/ {
+public type ASTQualifierLstNode struct/*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
-public p ASTSpecifierLstNode.ctor(CodeLoc codeLoc) {
+public p ASTQualifierLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ========================================================= SpecifierNode =======================================================
+// ========================================================= QualifierNode =======================================================
 
-type SpecifierType enum {
+type QualifierType enum {
     NONE,
     CONST,
     SIGNED,
@@ -470,12 +470,12 @@ type SpecifierType enum {
     COMPOSE
 }
 
-public type ASTSpecifierNode struct/*: IVisitable*/ {
+public type ASTQualifierNode struct/*: IVisitable*/ {
     compose public ASTNode node
-    public SpecifierType specifierType = SpecifierType::NONE
+    public QualifierType qualifierType = QualifierType::NONE
 }
 
-public p ASTSpecifierNode.ctor(CodeLoc codeLoc) {
+public p ASTQualifierNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 

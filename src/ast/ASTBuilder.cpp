@@ -78,8 +78,8 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     for (AttrNode *attr : fctDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
   }
-  if (ctx->specifierLst())
-    fctDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    fctDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   fctDefNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   fctDefNode->returnType->isReturnType = true;
   fctDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
@@ -107,8 +107,8 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     for (AttrNode *attr : procDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
   }
-  if (ctx->specifierLst())
-    procDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    procDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   procDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
   procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
   if (ctx->typeLst()) {
@@ -167,8 +167,8 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
     if (structDefNode->attrs && structDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
       structDefNode->typeId = structDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
   }
-  if (ctx->specifierLst())
-    structDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    structDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   if (ctx->LESS()) {
     structDefNode->hasTemplateTypes = true;
     structDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(0)));
@@ -202,8 +202,8 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     if (interfaceDefNode->attrs && interfaceDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
       interfaceDefNode->typeId = interfaceDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
   }
-  if (ctx->specifierLst())
-    interfaceDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    interfaceDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   if (ctx->LESS()) {
     interfaceDefNode->hasTemplateTypes = true;
     interfaceDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
@@ -222,8 +222,8 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   enumDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
-  if (ctx->specifierLst())
-    enumDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    enumDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   enumDefNode->itemLst = std::any_cast<EnumItemLstNode *>(visit(ctx->enumItemLst()));
 
   // Tell all items about the enum def
@@ -254,8 +254,8 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   aliasDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
-  if (ctx->specifierLst())
-    aliasDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    aliasDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   aliasDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
 
   return concludeNode(aliasDefNode);
@@ -587,17 +587,17 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
 
   // Visit children
-  if (ctx->specifierLst()) {
-    signatureNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst()) {
+    signatureNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   }
   if (ctx->F()) {
     signatureNode->hasReturnType = true;
     signatureNode->signatureType = SignatureNode::SignatureType::TYPE_FUNCTION;
-    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
+    signatureNode->signatureQualifiers = TypeQualifiers::of(TY_FUNCTION);
     signatureNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   } else {
     signatureNode->signatureType = SignatureNode::SignatureType::TYPE_PROCEDURE;
-    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
+    signatureNode->signatureQualifiers = TypeQualifiers::of(TY_PROCEDURE);
   }
   if (ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1) {
     signatureNode->hasTemplateTypes = true;
@@ -653,51 +653,51 @@ std::any ASTBuilder::visitExprStmt(SpiceParser::ExprStmtContext *ctx) {
   return concludeNode(exprStmtNode);
 }
 
-std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
-  const auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
+std::any ASTBuilder::visitQualifierLst(SpiceParser::QualifierLstContext *ctx) {
+  const auto qualifierLstNode = createNode<QualifierLstNode>(ctx);
 
   // Visit children
-  fetchChildrenIntoVector(specifierLstNode->specifiers, ctx->specifier());
+  fetchChildrenIntoVector(qualifierLstNode->qualifiers, ctx->qualifier());
 
-  // Check if specifier combination is invalid
+  // Check if qualifier combination is invalid
   bool seenSignedOrUnsigned = false;
-  for (const SpecifierNode *specifier : specifierLstNode->specifiers) {
-    // Check if we have both, signed and unsigned specifier
-    if (specifier->type != SpecifierNode::SpecifierType::TY_SIGNED && specifier->type != SpecifierNode::SpecifierType::TY_UNSIGNED)
+  for (const QualifierNode *qualifier : qualifierLstNode->qualifiers) {
+    // Check if we have both, signed and unsigned qualifier
+    if (qualifier->type != QualifierNode::QualifierType::TY_SIGNED && qualifier->type != QualifierNode::QualifierType::TY_UNSIGNED)
       continue;
     if (seenSignedOrUnsigned)
-      throw ParserError(specifier->codeLoc, INVALID_SPECIFIER_COMBINATION, "A variable can not be signed and unsigned");
+      throw ParserError(qualifier->codeLoc, INVALID_QUALIFIER_COMBINATION, "A variable can not be signed and unsigned");
     seenSignedOrUnsigned = true;
   }
 
-  return concludeNode(specifierLstNode);
+  return concludeNode(qualifierLstNode);
 }
 
-std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
-  const auto specifierNode = createNode<SpecifierNode>(ctx);
+std::any ASTBuilder::visitQualifier(SpiceParser::QualifierContext *ctx) {
+  const auto qualifierNode = createNode<QualifierNode>(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto token = spice_pointer_cast<TerminalNode *>(subTree);
     const size_t symbolType = token->getSymbol()->getType();
     if (symbolType == SpiceParser::CONST)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_CONST;
+      qualifierNode->type = QualifierNode::QualifierType::TY_CONST;
     else if (symbolType == SpiceParser::SIGNED)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_SIGNED;
+      qualifierNode->type = QualifierNode::QualifierType::TY_SIGNED;
     else if (symbolType == SpiceParser::UNSIGNED)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_UNSIGNED;
+      qualifierNode->type = QualifierNode::QualifierType::TY_UNSIGNED;
     else if (symbolType == SpiceParser::INLINE)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_INLINE;
+      qualifierNode->type = QualifierNode::QualifierType::TY_INLINE;
     else if (symbolType == SpiceParser::PUBLIC)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_PUBLIC;
+      qualifierNode->type = QualifierNode::QualifierType::TY_PUBLIC;
     else if (symbolType == SpiceParser::HEAP)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_HEAP;
+      qualifierNode->type = QualifierNode::QualifierType::TY_HEAP;
     else if (symbolType == SpiceParser::COMPOSE)
-      specifierNode->type = SpecifierNode::SpecifierType::TY_COMPOSITION;
+      qualifierNode->type = QualifierNode::QualifierType::TY_COMPOSITION;
     else
-      assert_fail("Unknown specifier type"); // GCOV_EXCL_LINE
+      assert_fail("Unknown qualifier type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(specifierNode);
+  return concludeNode(qualifierNode);
 }
 
 std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
@@ -1449,8 +1449,8 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   const auto dataTypeNode = createNode<DataTypeNode>(ctx);
 
   // Visit children
-  if (ctx->specifierLst())
-    dataTypeNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->qualifierLst())
+    dataTypeNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
   dataTypeNode->baseDataType = std::any_cast<BaseDataTypeNode *>(visit(ctx->baseDataType()));
 
   // Enrich

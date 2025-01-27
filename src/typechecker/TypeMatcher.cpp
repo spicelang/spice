@@ -8,7 +8,7 @@
 namespace spice::compiler {
 
 bool TypeMatcher::matchRequestedToCandidateTypes(const QualTypeList &candidateTypes, const QualTypeList &reqTypes,
-                                                 TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictSpecifiers) {
+                                                 TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictQualifiers) {
   // Check if the size of template types matches
   if (reqTypes.size() != candidateTypes.size())
     return false;
@@ -19,14 +19,14 @@ bool TypeMatcher::matchRequestedToCandidateTypes(const QualTypeList &candidateTy
     const QualType &candidateType = candidateTypes.at(i);
 
     // Match the pair of template types
-    if (!matchRequestedToCandidateType(candidateType, reqType, typeMapping, resolverFct, strictSpecifiers))
+    if (!matchRequestedToCandidateType(candidateType, reqType, typeMapping, resolverFct, strictQualifiers))
       return false;
   }
   return true;
 }
 
 bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
-                                                ResolverFct &resolverFct, bool strictSpecifierMatching) {
+                                                ResolverFct &resolverFct, bool strictQualifierMatching) {
   // Unwrap as far as possible and remove reference wrappers if possible
   QualType::unwrapBoth(candidateType, requestedType);
 
@@ -36,7 +36,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
     if (candidateType.matchesInterfaceImplementedByStruct(requestedType))
       return true;
     // Normal equality check
-    return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
+    return candidateType.matches(requestedType, true, !strictQualifierMatching, true);
   }
 
   // Check if the candidate type itself is generic
@@ -47,33 +47,33 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
     if (typeMapping.contains(genericTypeName)) { // This is a known generic type
       QualType knownConcreteType = typeMapping.at(genericTypeName);
 
-      // Merge specifiers of candidate type and known concrete type together
-      const TypeSpecifiers mergedSpecifiers = knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers());
-      knownConcreteType.setSpecifiers(mergedSpecifiers);
+      // Merge qualifiers of candidate type and known concrete type together
+      const TypeQualifiers mergedQualifiers = knownConcreteType.getQualifiers().merge(candidateType.getQualifiers());
+      knownConcreteType.setQualifiers(mergedQualifiers);
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())
         knownConcreteType = knownConcreteType.removeReferenceWrapper();
 
       // Check if the known concrete type matches the requested type
-      return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
+      return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
     } else { // This is an unknown generic type
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolverFct(genericTypeName);
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifierMatching))
+      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictQualifierMatching))
         return false;
 
-      // Zero out all specifiers in the requested type, that are present in the candidate type
-      // This is to set all specifiers that are not present in the candidate type to the generic type replacement
-      requestedType.getSpecifiers().eraseWithMask(candidateType.getSpecifiers());
+      // Zero out all qualifiers in the requested type, that are present in the candidate type
+      // This is to set all qualifiers that are not present in the candidate type to the generic type replacement
+      requestedType.getQualifiers().eraseWithMask(candidateType.getQualifiers());
 
       // Add to type mapping
       const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
       assert(newMappingType.is(TY_GENERIC) ||
-             newMappingType.getSpecifiers().isSigned != newMappingType.getSpecifiers().isUnsigned);
+             newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping
@@ -88,7 +88,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       // Check param  and return types
       const QualTypeList &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
       const QualTypeList &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
-      if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifierMatching))
+      if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictQualifierMatching))
         return false;
     } else {
       if (requestedType.getSubType() != candidateType.getSubType())
@@ -99,7 +99,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       // Check template types
       const QualTypeList &candidateTTypes = candidateType.getTemplateTypes();
       const QualTypeList &requestedTTypes = requestedType.getTemplateTypes();
-      if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictSpecifierMatching))
+      if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictQualifierMatching))
         return false;
     }
 

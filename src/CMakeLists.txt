@@ -57,8 +57,8 @@ set(SOURCES
         symboltablebuilder/Type.h
         symboltablebuilder/TypeChain.cpp
         symboltablebuilder/TypeChain.h
-        symboltablebuilder/TypeSpecifiers.cpp
-        symboltablebuilder/TypeSpecifiers.h
+        symboltablebuilder/TypeQualifiers.cpp
+        symboltablebuilder/TypeQualifiers.h
         symboltablebuilder/Lifecycle.cpp
         symboltablebuilder/Lifecycle.h
         symboltablebuilder/ScopeHandle.cpp

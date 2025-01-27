@@ -12,7 +12,7 @@
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
-#include <symboltablebuilder/TypeSpecifiers.h>
+#include <symboltablebuilder/TypeQualifiers.h>
 #include <typechecker/ExprResult.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
@@ -95,7 +95,7 @@ public:
 
   [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
-  void resizeToNumberOfManifestations(const size_t manifestationCount) { // NOLINT(misc-no-recursion)
+  void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
     for (ASTNode *child : getChildren()) {
       assert(child != nullptr);
@@ -308,7 +308,7 @@ public:
 
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   FctNameNode *name;
   TypeLstNode *templateTypeLst = nullptr;
   ParamLstNode *paramLst = nullptr;
@@ -316,7 +316,7 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  TypeSpecifiers specifiers = TypeSpecifiers::of(TY_FUNCTION);
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_FUNCTION);
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *scope = nullptr;
@@ -335,7 +335,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, returnType, name, templateTypeLst, paramLst, body);
+  GET_CHILDREN(attrs, qualifierLst, returnType, name, templateTypeLst, paramLst, body);
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
 
   // Public members
@@ -354,7 +354,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, name, templateTypeLst, paramLst, body);
+  GET_CHILDREN(attrs, qualifierLst, name, templateTypeLst, paramLst, body);
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
 
   // Public members
@@ -373,7 +373,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, templateTypeLst, interfaceTypeLst, fields);
+  GET_CHILDREN(attrs, qualifierLst, templateTypeLst, interfaceTypeLst, fields);
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
   std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
     if (!defaultFctManifestations.contains(fctName))
@@ -384,14 +384,14 @@ public:
 
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   TypeLstNode *templateTypeLst = nullptr;
   TypeLstNode *interfaceTypeLst = nullptr;
   std::vector<FieldNode *> fields;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   bool emitVTable = false;
-  TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_STRUCT);
   std::string structName;
   uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
@@ -412,16 +412,16 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitInterfaceDef(this); }
 
   // Other methods
-  GET_CHILDREN(attrs, specifierLst, templateTypeLst, signatures);
+  GET_CHILDREN(attrs, qualifierLst, templateTypeLst, signatures);
   std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
 
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   TypeLstNode *templateTypeLst = nullptr;
   std::vector<SignatureNode *> signatures;
   bool hasTemplateTypes = false;
-  TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_INTERFACE);
   std::string interfaceName;
   uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
@@ -441,12 +441,12 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEnumDef(this); }
 
   // Other methods
-  GET_CHILDREN(specifierLst, itemLst);
+  GET_CHILDREN(qualifierLst, itemLst);
 
   // Public members
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   EnumItemLstNode *itemLst = nullptr;
-  TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_ENUM);
   std::string enumName;
   uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
@@ -485,12 +485,12 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAliasDef(this); }
 
   // Other methods
-  GET_CHILDREN(specifierLst, dataType);
+  GET_CHILDREN(qualifierLst, dataType);
 
   // Public members
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   DataTypeNode *dataType = nullptr;
-  TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_ALIAS);
   std::string aliasName;
   std::string dataTypeString;
   uint64_t typeId;
@@ -1011,11 +1011,11 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSignature(this); }
 
   // Other methods
-  GET_CHILDREN(specifierLst, returnType, templateTypeLst, paramTypeLst);
+  GET_CHILDREN(qualifierLst, returnType, templateTypeLst, paramTypeLst);
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   DataTypeNode *returnType = nullptr;
   TypeLstNode *templateTypeLst = nullptr;
   TypeLstNode *paramTypeLst = nullptr;
@@ -1023,7 +1023,7 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SignatureType signatureType = SignatureType::TYPE_NONE;
-  TypeSpecifiers signatureSpecifiers;
+  TypeQualifiers signatureQualifiers;
   std::string methodName;
   SymbolTableEntry *entry = nullptr;
   std::vector<Function *> signatureManifestations;
@@ -1077,30 +1077,30 @@ public:
   AssignExprNode *expr = nullptr;
 };
 
-// ======================================================= SpecifierLstNode ======================================================
+// ======================================================= QualifierLstNode ======================================================
 
-class SpecifierLstNode final : public ASTNode {
+class QualifierLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifierLst(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSpecifierLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitQualifierLst(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitQualifierLst(this); }
 
   // Other methods
-  GET_CHILDREN(specifiers);
+  GET_CHILDREN(qualifiers);
 
   // Public members
-  std::vector<SpecifierNode *> specifiers;
+  std::vector<QualifierNode *> qualifiers;
 };
 
-// ========================================================= SpecifierNode =======================================================
+// ========================================================= QualifierNode =======================================================
 
-class SpecifierNode final : public ASTNode {
+class QualifierNode final : public ASTNode {
 public:
   // Enums
-  enum class SpecifierType : uint8_t {
+  enum class QualifierType : uint8_t {
     TY_NONE,
     TY_CONST,
     TY_SIGNED,
@@ -1115,14 +1115,14 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifier(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSpecifier(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitQualifier(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitQualifier(this); }
 
   // Other methods
   GET_CHILDREN();
 
   // Public members
-  SpecifierType type = SpecifierType::TY_NONE;
+  QualifierType type = QualifierType::TY_NONE;
 };
 
 // ========================================================== ModAttrNode ========================================================
@@ -2223,11 +2223,11 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDataType(this); }
 
   // Other methods
-  GET_CHILDREN(specifierLst, baseDataType);
+  GET_CHILDREN(qualifierLst, baseDataType);
   void setFieldTypeRecursive();
 
   // Public members
-  SpecifierLstNode *specifierLst = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
   BaseDataTypeNode *baseDataType = nullptr;
   bool isParamType = false;
   bool isGlobalType = false;
