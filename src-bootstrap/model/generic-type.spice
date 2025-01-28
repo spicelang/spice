@@ -2,7 +2,7 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/symboltablebuilder/type-chain";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 
 // Type aliases

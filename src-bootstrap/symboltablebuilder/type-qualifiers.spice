@@ -1,5 +1,5 @@
 // Own imports
-import "bootstrap/symboltablebuilder/type-chain";
+import "bootstrap/symboltablebuilder/super-type";
 
 // Constants
 const unsigned short BIT_INDEX_COMPOSITION = 0s;
@@ -12,13 +12,13 @@ const unsigned short BIT_INDEX_CONST = 6s;
 const unsigned short BIT_INDEX_MAX = 6s; // Please adjust if something changes above
 
 public type TypeQualifiers struct {
-    bool isConst = false
-    bool isSigned = false
-    bool isUnsigned = false
-    bool isHeap = false
-    bool isPublic = false
-    bool isInline = false
-    bool isComposition = false
+    public bool isConst = false
+    public bool isSigned = false
+    public bool isUnsigned = false
+    public bool isHeap = false
+    public bool isPublic = false
+    public bool isInline = false
+    public bool isComposition = false
 }
 
 public p TypeQualifiers.ctor() {}

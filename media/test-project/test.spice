@@ -1,22 +1,5 @@
-type Visitor struct {}
-
-type SymbolTable struct {}
-
-type Visitable interface {
-    f<bool> accept(Visitor*);
-}
-
-type AstNode struct : Visitable {}
-
-p AstNode.accept(Visitor* v) {}
-
-type AstEntryNode struct : Visitable {
-    AstNode astNode
-    SymbolTable* extFunctionScope
-    bool takesArgs
-}
+import "bootstrap/symboltablebuilder/type-chain";
 
 f<int> main() {
-    AstEntryNode entryNode;
-    printf("%d", entryNode.takesArgs);
+
 }

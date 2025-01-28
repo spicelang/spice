@@ -92,7 +92,7 @@ const QualTypeList &QualType::getTemplateTypes() const { return type->getTemplat
 Struct *QualType::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
-  const std::string structName = getSubType();
+  const std::string &structName = getSubType();
   const QualTypeList &templateTypes = getTemplateTypes();
   return StructManager::match(structDefScope, structName, templateTypes, node);
 }
@@ -152,9 +152,7 @@ bool QualType::isPrimitive() const { return type->isPrimitive(); }
  *
  * @return Extended primitive or not
  */
-bool QualType::isExtendedPrimitive() const {
-  return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE});
-}
+bool QualType::isExtendedPrimitive() const { return type->isExtendedPrimitive(); }
 
 /**
  * Check if the underlying type is a pointer
@@ -287,11 +285,11 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
     return false;
 
   // References can't be copied at all
-  if (is(TY_REF))
+  if (isRef())
     return false;
 
   // In case of an array, the item type is determining the copy triviality
-  if (is(TY_ARRAY))
+  if (isArray())
     return getBase().isTriviallyCopyable(node);
 
   // In case of a struct, the member types determine the copy triviality
@@ -316,17 +314,17 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
 /**
  * Check if the current type implements the given interface type
  *
- * @param symbolType Interface type
+ * @param implementedInterfaceType Interface type
  * @param node Accessing ASTNode
  * @return Struct implements interface or not
  */
-bool QualType::doesImplement(const QualType &symbolType, const ASTNode *node) const {
-  assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
+bool QualType::doesImplement(const QualType &implementedInterfaceType, const ASTNode *node) const {
+  assert(is(TY_STRUCT) && implementedInterfaceType.is(TY_INTERFACE));
   const Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);
   return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const QualType &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
-    return symbolType.matches(interfaceType, false, false, true);
+    return implementedInterfaceType.matches(interfaceType, false, false, true);
   });
 }
 

@@ -1,0 +1,3 @@
+public type IStruct interface {
+
+}

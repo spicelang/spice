@@ -7,18 +7,36 @@ import "bootstrap/reader/code-loc";
 //import "bootstrap/symboltablebuilder/type";
 //import "bootstrap/model/function";
 
+// Operator overload function names
+public const string OP_FCT_PREFIX = "op.";
+public const string OP_FCT_PLUS = "op.plus";
+public const string OP_FCT_MINUS = "op.minus";
+public const string OP_FCT_MUL = "op.mul";
+public const string OP_FCT_DIV = "op.div";
+public const string OP_FCT_EQUAL = "op.equal";
+public const string OP_FCT_NOT_EQUAL = "op.notequal";
+public const string OP_FCT_SHL = "op.shl";
+public const string OP_FCT_SHR = "op.shr";
+public const string OP_FCT_PLUS_EQUAL = "op.plusequal";
+public const string OP_FCT_MINUS_EQUAL = "op.minusequal";
+public const string OP_FCT_MUL_EQUAL = "op.mulequal";
+public const string OP_FCT_DIV_EQUAL = "op.divequal";
+public const string OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
+public const string OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
+public const string OP_FCT_SUBSCRIPT = "op.subscript";
+
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
 public type CompileTimeValue struct {
-    double doubleValue
-    int intValue
-    short shortValue
-    long longValue
-    byte byteValue
-    char charValue
+    double doubleValue = 0.0
+    int intValue = 0
+    short shortValue = 0s
+    long longValue = 0l
+    byte byteValue = (byte) 0
+    char charValue = '\0'
     unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
-    bool boolValue
+    bool boolValue = false
 }
 
 /*public type IVisitable interface {
@@ -29,15 +47,12 @@ public type CompileTimeValue struct {
 
 public type ASTNode struct/*: IVisitable*/ {
     ASTNode* parent = nil<ASTNode*>
-    Vector<ASTNode*> children
     CodeLoc codeLoc
-    string errorMessage
     //Vector<Type> symbolTypes
     bool unreachable = false
-    //Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
-p ASTNode.ctor(CodeLoc codeLoc) {
+public p ASTNode.ctor(const CodeLoc& codeLoc) {
     this.codeLoc = codeLoc;
 }
 
@@ -45,21 +60,18 @@ p ASTNode.ctor(CodeLoc codeLoc) {
     assert false; // Please override at child level
 }*/
 
-public p ASTNode.addChild(ASTNode* child) {
-    this.children.pushBack(child);
-    child.parent = this;
-}
-
-/*public f<T*> ASTNode.getChild<T>(int index) {
-    unsigned long j = 0l;
-    foreach ASTNode *child : children {
-      if (T* typedChild = dynamic_cast<T *>(child)) {
-        if (j++ == i)
-          return typedChild;
-      }
+public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    // Resize children
+    Vector<ASTNode*> children = this.getChildren();
+    foreach ASTNode* child : children {
+        assert child != nil<ASTNode*>;
+        child.resizeToNumberOfManifestations(manifestationCount);
     }
-    return nil<T*>;
-}*/
+    // Reserve this node
+    this.symbolTypes.resize(manifestationCount); // ToDo: Default initializer
+    // Do custom work
+    this.customItemsInitialization(manifestationCount);
+}
 
 // ========================================================== EntryNode ==========================================================
 

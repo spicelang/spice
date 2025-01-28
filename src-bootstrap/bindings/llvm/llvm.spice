@@ -406,6 +406,7 @@ public type OptimizationLevel enum {
 ext f<LLVMContextRef> LLVMContextCreate();
 ext p LLVMContextDispose(LLVMContextRef /*C*/);
 ext f<LLVMModuleRef> LLVMModuleCreateWithNameInContext(string /*ModuleID*/, LLVMContextRef /*C*/);
+ext f<LLVMContextRef> LLVMGetModuleContext(LLVMModuleRef /*M*/);
 ext p LLVMDisposeModule(LLVMModuleRef /*M*/);
 ext f<LLVMBuilderRef> LLVMCreateBuilderInContext(LLVMContextRef /*C*/);
 ext p LLVMDisposeBuilder(LLVMBuilderRef /*B*/);
@@ -653,6 +654,10 @@ public p Module.ctor(string name, const LLVMContext& ctx) {
 
 public p Module.dtor() {
     LLVMDisposeModule(this.self);
+}
+
+public f<LLVMContext> Module.getContext() {
+    return LLVMContext{ LLVMGetModuleContext(this.self) };
 }
 
 public p Module.dump() {

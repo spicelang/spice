@@ -49,6 +49,7 @@ public:
   [[nodiscard]] bool isOneOf(const std::initializer_list<SuperType> &superTypes) const;
   [[nodiscard]] bool isBase(SuperType superType) const;
   [[nodiscard]] bool isPrimitive() const;
+  [[nodiscard]] bool isExtendedPrimitive() const;
   [[nodiscard]] bool isPtr() const;
   [[nodiscard]] bool isRef() const;
   [[nodiscard]] bool isArray() const;
