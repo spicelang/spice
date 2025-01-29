@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'val == 9' evaluated to false.\00", align 1
+@anon.string.0 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'val == 9' evaluated to false.\0A\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable

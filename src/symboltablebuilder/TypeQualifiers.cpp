@@ -19,7 +19,7 @@ TypeQualifiers TypeQualifiers::of(uint16_t superType) {
   case TY_INT:    // fall-through
   case TY_SHORT:  // fall-through
   case TY_LONG:
-    return {/*const*/ false, /*signed*/ true, /*unsigned*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ true, /*unsigned*/ false};
   case TY_BYTE:      // fall-through
   case TY_CHAR:      // fall-through
   case TY_STRING:    // fall-through
@@ -31,19 +31,19 @@ TypeQualifiers TypeQualifiers::of(uint16_t superType) {
   case TY_INTERFACE: // fall-through
   case TY_FUNCTION:  // fall-through
   case TY_PROCEDURE:
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true};
   case TY_GENERIC:
     // Generics must be non-signed and non-unsigned at the same time to ensure a proper function matching
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false};
   case TY_ENUM:  // fall-through
   case TY_ALIAS: // fall-through
   case TY_IMPORT:
-    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
+    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true};
   case TY_DYN:     // fall-through
   case TY_INVALID: // fall-through
   case TY_UNRESOLVED:
-    // Return all-false qalifiers to not match anything
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
+    // Return all-false qualifiers to not match anything
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false};
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Symbol qualifier fallthrough"); // GCOV_EXCL_LINE
   }

@@ -20,8 +20,7 @@ class TypeQualifiers {
 public:
   // Constructors
   TypeQualifiers() = default;
-  TypeQualifiers(bool isConst, bool isSigned, bool isUnsigned, bool isHeap)
-      : isConst(isConst), isSigned(isSigned), isUnsigned(isUnsigned), isHeap(isHeap) {}
+  TypeQualifiers(bool isConst, bool isSigned, bool isUnsigned) : isConst(isConst), isSigned(isSigned), isUnsigned(isUnsigned) {}
 
   // Public static methods
   static TypeQualifiers of(uint16_t superType);

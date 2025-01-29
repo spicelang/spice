@@ -2,11 +2,11 @@
 source_filename = "source.spice"
 
 @anon.array.0 = private unnamed_addr constant [3 x i32] [i32 1, i32 2, i32 3]
-@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\00", align 1
-@anon.string.1 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition '*aPtr == 2' evaluated to false.\00", align 1
-@anon.string.2 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\00", align 1
-@anon.string.3 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition '*aPtr == 3' evaluated to false.\00", align 1
-@anon.string.4 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\00", align 1
+@anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\0A\00", align 1
+@anon.string.1 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition '*aPtr == 2' evaluated to false.\0A\00", align 1
+@anon.string.2 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\0A\00", align 1
+@anon.string.3 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition '*aPtr == 3' evaluated to false.\0A\00", align 1
+@anon.string.4 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition '*aPtr == 1' evaluated to false.\0A\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
