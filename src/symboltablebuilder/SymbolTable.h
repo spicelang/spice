@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -10,7 +9,6 @@
 #include <model/GenericType.h>
 #include <symboltablebuilder/Capture.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
-#include <util/CompilerWarning.h>
 
 #include "../../lib/json/json.hpp"
 

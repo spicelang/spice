@@ -401,13 +401,14 @@ bool QualType::isSelfReferencingStructType(const QualType *typeToCompareWith) co
   Scope *baseTypeBodyScope = getBodyScope();
   for (size_t i = 0; i < baseTypeBodyScope->getFieldCount(); i++) {
     const SymbolTableEntry *field = baseTypeBodyScope->lookupField(i);
+    const QualType &fieldType = field->getQualType();
     // Check if the base type of the field matches with the current type, which is also a base type
     // If yes, this is a self-referencing struct type
-    if (field->getQualType().getBase() == *typeToCompareWith)
+    if (fieldType.getBase() == *typeToCompareWith)
       return true;
 
     // If the field is a struct, check if it is a self-referencing struct type
-    if (field->getQualType().isSelfReferencingStructType(typeToCompareWith))
+    if (fieldType.isSelfReferencingStructType(typeToCompareWith))
       return true;
   }
   return false;
@@ -545,9 +546,9 @@ QualType QualType::toRef(const ASTNode *node) const {
  * @return New type
  */
 QualType QualType::toConstRef(const ASTNode *node) const {
-  QualType qualType = toRef(node);
-  qualType.makeConst();
-  return qualType;
+  QualType newType = toRef(node);
+  newType.makeConst();
+  return newType;
 }
 
 /**
@@ -558,7 +559,7 @@ QualType QualType::toConstRef(const ASTNode *node) const {
  * @param skipDynCheck Skip dynamic check
  * @return New type
  */
-QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
+QualType QualType::toArr(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
   QualType newType = *this;
   newType.type = type->toArr(node, size, skipDynCheck);
   return newType;
@@ -570,9 +571,9 @@ QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /
  * @return New type
  */
 QualType QualType::toNonConst() const {
-  QualType qualType = *this;
-  qualType.qualifiers.isConst = false;
-  return qualType;
+  QualType newType = *this;
+  newType.qualifiers.isConst = false;
+  return newType;
 }
 
 /**
@@ -582,10 +583,10 @@ QualType QualType::toNonConst() const {
  * @return New type
  */
 QualType QualType::getContained() const {
-  assert(isOneOf({TY_PTR, TY_ARRAY, TY_REF, TY_STRING}));
-  QualType qualType = *this;
-  qualType.type = type->getContained();
-  return qualType;
+  assert(isOneOf({TY_PTR, TY_REF, TY_ARRAY, TY_STRING}));
+  QualType newType = *this;
+  newType.type = type->getContained();
+  return newType;
 }
 
 /**
@@ -594,9 +595,9 @@ QualType QualType::getContained() const {
  * @return New type
  */
 QualType QualType::getBase() const {
-  QualType qualType = *this;
-  qualType.type = type->getBase();
-  return qualType;
+  QualType newType = *this;
+  newType.type = type->getBase();
+  return newType;
 }
 
 /**

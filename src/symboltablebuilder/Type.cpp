@@ -121,7 +121,7 @@ const Type *Type::toRef(const ASTNode *node) const {
  * @param skipDynCheck Skip check if array base type is dyn
  * @return Array type of the current type
  */
-const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
+const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynCheck) const {
   // Do not allow arrays of dyn
   if (!skipDynCheck && typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");

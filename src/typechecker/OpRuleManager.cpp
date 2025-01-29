@@ -57,7 +57,7 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
     const bool supportsNRVO = isReturn && !rhs.isTemporary();
     Function *copyCtor = nullptr;
     if (rhs.entry != nullptr && !supportsNRVO && !isReturn && !rhs.isTemporary())
-      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsType, rhs.entry->declNode);
     return {rhsType, copyCtor};
   }
 

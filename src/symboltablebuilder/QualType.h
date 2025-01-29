@@ -101,7 +101,7 @@ public:
   [[nodiscard]] QualType toPtr(const ASTNode *node) const;
   [[nodiscard]] QualType toRef(const ASTNode *node) const;
   [[nodiscard]] QualType toConstRef(const ASTNode *node) const;
-  [[nodiscard]] QualType toArray(const ASTNode *node, size_t size, bool skipDynCheck = false) const;
+  [[nodiscard]] QualType toArr(const ASTNode *node, size_t size, bool skipDynCheck = false) const;
   [[nodiscard]] QualType toNonConst() const;
   [[nodiscard]] QualType getContained() const;
   [[nodiscard]] QualType getBase() const;

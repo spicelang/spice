@@ -24,6 +24,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   if (!isAnonymousSymbol)
     orderIndex = std::ranges::count_if(symbols, [](const auto &entry) { return !entry.second.anonymous; });
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
+  assert(!symbols.contains(name));
   symbols.insert({name, SymbolTableEntry(name, QualType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
   // Set entry to declared
   SymbolTableEntry *entry = &symbols.at(name);

@@ -72,7 +72,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
       // Add to type mapping
       const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
-      assert(newMappingType.is(TY_GENERIC) ||
+      assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
 
