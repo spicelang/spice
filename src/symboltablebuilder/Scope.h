@@ -8,6 +8,7 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
+#include <util/CompilerWarning.h>
 
 namespace spice::compiler {
 
