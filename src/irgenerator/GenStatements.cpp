@@ -104,11 +104,8 @@ std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
   if (node->constant)
     return visit(node->constant);
 
-  // Get constant for enum item
-  assert(node->enumItemEntry->scope->type == ScopeType::ENUM);
-  const auto itemNode = spice_pointer_cast<const EnumItemNode *>(node->enumItemEntry->declNode);
-  llvm::Constant *constant = llvm::ConstantInt::get(builder.getInt32Ty(), itemNode->itemValue);
-  return constant;
+  const SymbolTableEntry *constantEntry = node->entry;
+  return getConst(constantEntry->declNode->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
 }
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {

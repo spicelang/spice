@@ -913,7 +913,7 @@ class ArgLstNode final : public ASTNode {
 public:
   // Structs
   struct ArgInfo {
-    Function* copyCtor = nullptr;
+    Function *copyCtor = nullptr;
   };
 
   // Constructors
@@ -962,6 +962,7 @@ public:
 
   // Other methods
   GET_CHILDREN();
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return {.intValue = static_cast<int32_t>(itemValue)}; }
 
   // Public members
   bool hasValue = false;
@@ -1258,7 +1259,7 @@ public:
   ConstantNode *constant = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
-  const SymbolTableEntry *enumItemEntry = nullptr;
+  const SymbolTableEntry *entry = nullptr;
 };
 
 // ======================================================== ReturnStmtNode =======================================================

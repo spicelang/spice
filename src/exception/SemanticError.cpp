@@ -126,8 +126,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Invalid number of continue calls";
   case FALLTHROUGH_NOT_ALLOWED:
     return "Fallthrough statement not allowed here";
-  case CASE_CONSTANT_NOT_ENUM:
-    return "Case constant not of enum type";
+  case CASE_CONSTANT_INVALID_TYPE:
+    return "Case constant of invalid type";
   case PRINTF_TYPE_ERROR:
     return "Types of printf call not matching";
   case PRINTF_ARG_COUNT_ERROR:
