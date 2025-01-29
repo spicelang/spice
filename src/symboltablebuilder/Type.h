@@ -60,13 +60,13 @@ public:
   [[nodiscard]] bool matches(const Type *otherType, bool ignoreArraySize) const;
 
   // Serialization
-  void getName(std::stringstream &name, bool withSize = false) const;
-  [[nodiscard]] std::string getName(bool withSize = false) const;
+  void getName(std::stringstream &name, bool withSize) const;
+  [[nodiscard]] std::string getName(bool withSize) const;
 
   // Get new type, based on this one
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
   [[nodiscard]] const Type *toRef(const ASTNode *node) const;
-  [[nodiscard]] const Type *toArr(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
+  [[nodiscard]] const Type *toArr(const ASTNode *node, unsigned int size, bool skipDynCheck) const;
   [[nodiscard]] const Type *getContained() const;
   [[nodiscard]] const Type *replaceBase(const Type *newBaseType) const;
   [[nodiscard]] const Type *removeReferenceWrapper() const;

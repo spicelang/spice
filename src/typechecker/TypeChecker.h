@@ -150,7 +150,8 @@ private:
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation
-  void createDefaultStructMethod(const Struct &spiceStruct, const std::string &name, const ParamList &params) const;
+  void createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
+                                 const ParamList &params) const;
   void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
   void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
   void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);

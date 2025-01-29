@@ -265,15 +265,6 @@
           "type": "f<bool>()"
         },
         {
-          "codeLoc": "L19C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "getIdx:L19C1",
-          "orderIndex": 5,
-          "state": "declared",
-          "type": "f<public Pair<unsigned long,T&>>()"
-        },
-        {
           "codeLoc": "L15C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -310,10 +301,19 @@
           "type": "p()"
         },
         {
+          "codeLoc": "L19C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "getIdx:L19C1",
+          "orderIndex": 5,
+          "state": "declared",
+          "type": "f<public Pair<unsigned long,T&>>()"
+        },
+        {
           "codeLoc": "L6C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L6C1",
+          "name": "default_copyctor:L6C1",
           "orderIndex": 8,
           "state": "declared",
           "type": "public p()"
@@ -540,7 +540,7 @@
           "codeLoc": "L6C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L6C1",
+          "name": "default_copyctor:L6C1",
           "orderIndex": 8,
           "state": "declared",
           "type": "public p()"

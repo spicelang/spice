@@ -15,13 +15,15 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
 
 /**
  * Create a default struct method
- * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
+ * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
  * @param spiceStruct Struct instance
+ * @param entryName Name of the symbol table entry
  * @param name Name of the method to create
  * @param params Parameter types of the method
  */
-void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std::string &name, const ParamList &params) const {
+void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
+                                            const ParamList &params) const {
   Scope *structScope = spiceStruct.scope;
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
@@ -33,7 +35,6 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   procedureType.makePublic(); // Always public
 
   // Insert symbol for function into the symbol table
-  const std::string entryName = Function::getSymbolTableEntryName(name, node->codeLoc);
   SymbolTableEntry *procEntry = structScope->insert(entryName, structEntry->declNode);
   procEntry->updateType(procedureType, true);
 
@@ -60,7 +61,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 }
 
 /**
- * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
+ * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
  * For generating a default ctor, the following conditions need to be met:
  * - No user-defined constructors
@@ -119,11 +120,12 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     return;
 
   // Create the default ctor function
-  createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, {});
+  const std::string entryName = Function::getSymbolTableEntryNameDefaultCtor(node->codeLoc);
+  createDefaultStructMethod(spiceStruct, entryName, CTOR_FUNCTION_NAME, {});
 }
 
 /**
- * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
+ * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
  * For generating a default copy ctor, the following conditions need to be met:
  * - No user-defined copy ctor
@@ -181,12 +183,13 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     return;
 
   // Create the default copy ctor function
+  const std::string entryName = Function::getSymbolTableEntryNameDefaultCopyCtor(node->codeLoc);
   const ParamList paramTypes = {{structType.toConstRef(node), false}};
-  createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, paramTypes);
+  createDefaultStructMethod(spiceStruct, entryName, CTOR_FUNCTION_NAME, paramTypes);
 }
 
 /**
- * Checks if the given struct scope already has an user-defined destructor and creates a default one if not.
+ * Checks if the given struct scope already has a user-defined destructor and creates a default one if not.
  *
  * For generating a default dtor, the following conditions need to be met:
  * - No user-defined dtor
@@ -227,7 +230,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     return;
 
   // Create the default dtor function
-  createDefaultStructMethod(spiceStruct, DTOR_FUNCTION_NAME, {});
+  const std::string entryName = Function::getSymbolTableEntryNameDefaultDtor(node->codeLoc);
+  createDefaultStructMethod(spiceStruct, entryName, DTOR_FUNCTION_NAME, {});
 
   // Request memory runtime if we have fields, that are allocated on the heap
   // The string runtime does not use it, but allocates manually to avoid circular dependencies
@@ -378,7 +382,7 @@ Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::
  * @param node Current AST node
  */
 Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
-  assert(entry != nullptr);
+  assert(entry != nullptr && entry->getQualType().is(TY_STRUCT));
   return implicitlyCallStructCopyCtor(entry->getQualType(), node);
 }
 
@@ -388,7 +392,7 @@ Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entr
  * @param thisType Struct type to call the copy ctor on
  * @param node Current AST node
  */
-Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType& thisType, const ASTNode *node) {
+Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) {
   const QualType argType = thisType.removeReferenceWrapper().toConstRef(node);
   const ArgList args = {{argType, false /* we always have an entry here */}};
   return implicitlyCallStructMethod(thisType, CTOR_FUNCTION_NAME, args, node);

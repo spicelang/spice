@@ -434,7 +434,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
         continue;
       }
       // Convert generic symbol type to generic type
-      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
       templateTypesGeneric.push_back(*genericType);

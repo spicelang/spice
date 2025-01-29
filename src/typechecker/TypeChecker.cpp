@@ -583,7 +583,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
-      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getStruct(node)->declNode);
+      const Struct *spiceStruct = localVarType.getStruct(node);
+      assert(spiceStruct != nullptr);
+      auto structDeclNode = spice_pointer_cast<StructDefNode *>(spiceStruct->declNode);
       node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
@@ -2063,7 +2065,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   }
   assert(!actualItemType.is(TY_DYN));
 
-  const QualType arrayType = actualItemType.toArray(node, node->actualSize, true);
+  const QualType arrayType = actualItemType.toArr(node, node->actualSize, true);
   return ExprResult{node->setEvaluatedSymbolType(arrayType, manIdx)};
 }
 
@@ -2383,7 +2385,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
       if (hasSize && hardcodedSize <= 1)
         SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
-      type = type.toArray(node, hardcodedSize);
+      type = type.toArr(node, hardcodedSize);
       break;
     }
     default:                                                               // GCOV_EXCL_LINE

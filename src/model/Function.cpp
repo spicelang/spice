@@ -2,6 +2,8 @@
 
 #include "Function.h"
 
+#include "symboltablebuilder/SymbolTableBuilder.h"
+
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
@@ -132,6 +134,18 @@ std::string Function::getMangledName() const {
 
 std::string Function::getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc) {
   return functionName + ":" + codeLoc.toString();
+}
+
+std::string Function::getSymbolTableEntryNameDefaultCtor(const CodeLoc &structCodeLoc) {
+  return "default_" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
+}
+
+std::string Function::getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc &structCodeLoc) {
+  return "default_copy" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
+}
+
+std::string Function::getSymbolTableEntryNameDefaultDtor(const CodeLoc &structCodeLoc) {
+  return "default_" + std::string(DTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }
 
 /**
