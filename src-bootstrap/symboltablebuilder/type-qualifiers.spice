@@ -21,21 +21,12 @@ public type TypeQualifiers struct {
     public bool isComposition = false
 }
 
-public p TypeQualifiers.ctor() {}
-
-public p TypeQualifiers.ctor(bool isConst, bool isSigned, bool isUnsigned, bool isHeap) {
-    this.isConst = isConst;
-    this.isSigned = isSigned;
-    this.isUnsigned = isUnsigned;
-    this.isHeap = isHeap;
-}
-
-public f<TypeQualifiers> getTypeQualifiersOf(unsigned short superType) {
+public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
     switch superType {
         case SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG: {
             return TypeQualifiers{
                 /*isConst=*/false,
-                /*isSigned*/false,
+                /*isSigned*/true,
                 /*isUnsigned*/false,
                 /*isHeap*/false,
                 /*isPublic*/false,
@@ -147,16 +138,16 @@ public p TypeQualifiers.eraseWithMask(const TypeQualifiers& mask) {
             this.setBit(i, false);
 
             // If we set the signed/unsigned bit to zero, we need to set the other to one
-              if i == BIT_INDEX_SIGNED {
+            if i == BIT_INDEX_SIGNED {
                 this.setBit(BIT_INDEX_UNSIGNED, true);
-              } else if i == BIT_INDEX_UNSIGNED {
+            } else if i == BIT_INDEX_UNSIGNED {
                 this.setBit(BIT_INDEX_SIGNED, true);
-              }
+            }
         }
     }
 }
 
-public p operator==(const TypeQualifiers& lhs, const TypeQualifiers& rhs) {
+public f<bool> operator==(const TypeQualifiers& lhs, const TypeQualifiers& rhs) {
     const bool isConst = lhs.isConst == rhs.isConst;
     const bool isSigned = lhs.isSigned == rhs.isSigned;
     const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
@@ -188,4 +179,29 @@ p TypeQualifiers.setBit(unsigned short index, bool value) {
         case BIT_INDEX_COMPOSITION: { this.isComposition = value; }
         default: { panic(Error("Bit index fallthrough")); }
     }
+}
+
+#[test, test.name="TypeQualifiers Smoke test"]
+public f<bool> testTypeQualifiersSmoke() {
+    TypeQualifiers tqInt = getTypeQualifiersOf(SuperType::TY_INT);
+    assert !tqInt.isConst && tqInt.isSigned && !tqInt.isUnsigned && !tqInt.isHeap && !tqInt.isPublic && !tqInt.isInline && !tqInt.isComposition;
+
+    TypeQualifiers tqGeneric = getTypeQualifiersOf(SuperType::TY_GENERIC);
+    assert !tqGeneric.isConst && !tqGeneric.isSigned && !tqGeneric.isUnsigned && !tqGeneric.isHeap && !tqGeneric.isPublic && !tqGeneric.isInline && !tqGeneric.isComposition;
+
+    // test merge
+    TypeQualifiers merged = tqGeneric.merge(tqInt);
+    assert !merged.isConst && merged.isSigned && !merged.isUnsigned && !merged.isHeap && !merged.isPublic && !merged.isInline && !merged.isComposition;
+
+    // test match
+    TypeQualifiers tqShort = getTypeQualifiersOf(SuperType::TY_SHORT);
+    assert !tqShort.isConst && tqShort.isSigned && !tqShort.isUnsigned && !tqShort.isHeap && !tqShort.isPublic && !tqShort.isInline && !tqShort.isComposition;
+    assert tqShort.match(tqShort, false);
+
+    // test eraseWithMask
+    TypeQualifiers tqGenericCopy = tqGeneric;
+    tqGenericCopy.eraseWithMask(tqShort);
+    assert !tqGenericCopy.isConst && !tqGenericCopy.isSigned && tqGenericCopy.isUnsigned && !tqGenericCopy.isHeap && !tqGenericCopy.isPublic && !tqGenericCopy.isInline && !tqGenericCopy.isComposition;
+
+    return true;
 }
