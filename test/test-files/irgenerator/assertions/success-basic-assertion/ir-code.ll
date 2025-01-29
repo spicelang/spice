@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [55 x i8] c"Assertion failed: Condition 'true' evaluated to false.\00", align 1
+@anon.string.0 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 'true' evaluated to false.\0A\00", align 1
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\00", align 1
+@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

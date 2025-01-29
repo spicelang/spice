@@ -1,18 +1,18 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'add(1, 2) == 3' evaluated to false.\00", align 1
-@anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'add(2, 2) == 4' evaluated to false.\00", align 1
-@anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'add(3, 2) == 5' evaluated to false.\00", align 1
-@anon.string.3 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(5, -4) == 1' evaluated to false.\00", align 1
-@anon.string.4 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(2, 8) == 10' evaluated to false.\00", align 1
-@anon.string.5 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(-3, 5) == 2' evaluated to false.\00", align 1
-@anon.string.6 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(1, 2) == -1' evaluated to false.\00", align 1
-@anon.string.7 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'sub(2, 2) == 0' evaluated to false.\00", align 1
-@anon.string.8 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'sub(3, 2) == 1' evaluated to false.\00", align 1
-@anon.string.9 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(5, -4) == 9' evaluated to false.\00", align 1
-@anon.string.10 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(2, 8) == -6' evaluated to false.\00", align 1
-@anon.string.11 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(-3, 5) == -8' evaluated to false.\00", align 1
+@anon.string.0 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(1, 2) == 3' evaluated to false.\0A\00", align 1
+@anon.string.1 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(2, 2) == 4' evaluated to false.\0A\00", align 1
+@anon.string.2 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(3, 2) == 5' evaluated to false.\0A\00", align 1
+@anon.string.3 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(5, -4) == 1' evaluated to false.\0A\00", align 1
+@anon.string.4 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(2, 8) == 10' evaluated to false.\0A\00", align 1
+@anon.string.5 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(-3, 5) == 2' evaluated to false.\0A\00", align 1
+@anon.string.6 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(1, 2) == -1' evaluated to false.\0A\00", align 1
+@anon.string.7 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(2, 2) == 0' evaluated to false.\0A\00", align 1
+@anon.string.8 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(3, 2) == 1' evaluated to false.\0A\00", align 1
+@anon.string.9 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(5, -4) == 9' evaluated to false.\0A\00", align 1
+@anon.string.10 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(2, 8) == -6' evaluated to false.\0A\00", align 1
+@anon.string.11 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sub(-3, 5) == -8' evaluated to false.\0A\00", align 1
 @allStartMsg0 = private unnamed_addr constant [56 x i8] c"[==========] Running %d test(s) from %d source file(s)\0A\00", align 1
 @allEndMsg0 = private unnamed_addr constant [52 x i8] c"[==========] Ran %d test(s) from %d source file(s)\0A\00", align 1
 @fileStartMsg0 = private unnamed_addr constant [41 x i8] c"[----------] Running %d test(s) from %s\0A\00", align 1

@@ -15,7 +15,7 @@ source_filename = "source.spice"
 @printf.str.9 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 @printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 @printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@anon.string.0 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\00", align 1
+@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 1
 @printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
 
 define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 %1) {
