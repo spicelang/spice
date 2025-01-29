@@ -613,24 +613,23 @@ std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
 
   // Check if a local or global variable can be found by searching for the name
   if (node->identifierFragments.size() == 1)
-    node->enumItemEntry = currentScope->lookup(node->identifierFragments.back());
+    node->entry = currentScope->lookup(node->identifierFragments.back());
 
   // If no local or global was found, search in the name registry
-  if (!node->enumItemEntry) {
+  if (!node->entry) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
     if (!registryEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
-    node->enumItemEntry = registryEntry->targetEntry;
+    node->entry = registryEntry->targetEntry;
   }
-  assert(node->enumItemEntry != nullptr);
+  assert(node->entry != nullptr);
 
   // Check for the correct type
-  if (node->enumItemEntry->scope->type != ScopeType::ENUM)
-    SOFT_ERROR_ER(node, CASE_CONSTANT_NOT_ENUM, "Case constants must be of type enum")
+  const QualType &qualType = node->entry->getQualType();
+  if (!qualType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
+    SOFT_ERROR_ER(node, CASE_CONSTANT_INVALID_TYPE, "Case constants must be of type int, short, long, byte, char, bool or enum")
 
-  const QualType varType = node->enumItemEntry->getQualType();
-  assert(varType.is(TY_INT));
-  return ExprResult{node->setEvaluatedSymbolType(varType, manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(qualType, manIdx)};
 }
 
 std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
