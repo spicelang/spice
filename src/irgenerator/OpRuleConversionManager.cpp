@@ -1605,22 +1605,33 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) const {
+LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs,
+                                                    QualType rhsSTy) const {
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
+  // Handle identity casts
+  if (lhsSTy.matches(rhsSTy, false, true, false))
+    return rhs;
+
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
-  case COMB(TY_DOUBLE, TY_DOUBLE):
-    return {.value = rhsV()};
+  case COMB(TY_DOUBLE, TY_DOUBLE): // fallthrough
+  case COMB(TY_INT, TY_INT):       // fallthrough
+  case COMB(TY_SHORT, TY_SHORT):   // fallthrough
+  case COMB(TY_LONG, TY_LONG):     // fallthrough
+  case COMB(TY_BYTE, TY_BYTE):     // fallthrough
+  case COMB(TY_CHAR, TY_CHAR):     // fallthrough
+  case COMB(TY_STRING, TY_STRING): // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):     // fallthrough
+  case COMB(TY_PTR, TY_PTR):
+    return rhs; // Identity cast
   case COMB(TY_INT, TY_DOUBLE):
     if (lhsSTy.isSigned())
       return {.value = builder.CreateFPToSI(rhsV(), lhsT)};
     else
       return {.value = builder.CreateFPToUI(rhsV(), lhsT)};
-  case COMB(TY_INT, TY_INT):
-    return {.value = rhsV()};
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_INT, TY_BYTE):  // fallthrough
@@ -1633,8 +1644,6 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
       return {.value = builder.CreateFPToUI(rhsV(), lhsT)};
   case COMB(TY_SHORT, TY_INT):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
-  case COMB(TY_SHORT, TY_SHORT):
-    return {.value = rhsV()};
   case COMB(TY_SHORT, TY_LONG):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_LONG, TY_DOUBLE):
@@ -1645,26 +1654,19 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
-  case COMB(TY_LONG, TY_LONG):
-    return {.value = rhsV()};
   case COMB(TY_BYTE, TY_INT):   // fallthrough
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
-  case COMB(TY_BYTE, TY_CHAR): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_BYTE, TY_CHAR):
     return {.value = rhsV()};
   case COMB(TY_CHAR, TY_INT):   // fallthrough
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
-  case COMB(TY_CHAR, TY_BYTE):     // fallthrough
-  case COMB(TY_CHAR, TY_CHAR):     // fallthrough
-  case COMB(TY_STRING, TY_STRING): // fallthrough
-  case COMB(TY_STRING, TY_PTR):    // fallthrough
-  case COMB(TY_BOOL, TY_BOOL):     // fallthrough
-  case COMB(TY_PTR, TY_STRING):    // fallthrough
-  case COMB(TY_PTR, TY_PTR):
+  case COMB(TY_CHAR, TY_BYTE):  // fallthrough
+  case COMB(TY_STRING, TY_PTR): // fallthrough
+  case COMB(TY_PTR, TY_STRING):
     return {.value = rhsV()};
   default:                                                                 // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE

@@ -21,6 +21,10 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
 
+  // Check if lhs is a temporary
+  if (lhs.isTemporary())
+    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot assign to a temporary value");
+
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhsType.is(TY_DYN))
     return {rhsType, nullptr};
@@ -39,7 +43,7 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
-    if (lhsType.matches(rhsModified, false, true, true)) {
+    if (lhsType.matches(rhsModified, false, false, true)) {
       // Check if we support nrvo. If yes, skip the implicit copy ctor call
       const bool supportsNRVO = isReturn && !rhs.isTemporary();
       Function *copyCtor = nullptr;
