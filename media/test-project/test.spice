@@ -1,7 +1,44 @@
-import "bootstrap/symboltablebuilder/type-qualifiers";
+import "std/data/vector";
 
-// Wrapper for 'spice test' unit test
 f<int> main() {
-    testTypeQualifiersSmoke();
-    printf("All assertions passed!");
+    Vector<String> vec;
+    vec.pushBack(String("Hello"));
+    vec.pushBack(String("Dear"));
+    vec.pushBack(String("\n World"));
+
+    vec[1][2] = 'p';
+    String& item0 = vec[0];
+    item0.replaceAll("l", "x");
+    String& item2 = vec.get(2);
+    item2 = item2.trim();
+
+    foreach String s : vec {
+        printf("%s\n", s);
+    }
 }
+
+/*import "std/data/vector";
+
+f<int> main() {
+    Vector<heap byte*> vec;
+    vec.pushBack(sAllocUnsafe(8l));
+    vec.pushBack(sAllocUnsafe(8l));
+    vec.pushBack(sAllocUnsafe(8l));
+    foreach heap byte* allocation : vec {
+        sDealloc(allocation);
+    }
+}*/
+
+/*import "bootstrap/util/block-allocator";
+import "bootstrap/util/memory";
+
+public type TestNode struct {
+    int data = 123
+}
+
+public p TestNode.dtor() {}
+
+f<int> main() {
+    DefaultMemoryManager mm;
+    BlockAllocator<TestNode> ba = BlockAllocator<TestNode>(mm);
+}*/

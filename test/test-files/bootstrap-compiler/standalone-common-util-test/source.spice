@@ -21,6 +21,10 @@ f<string> MockSourceFile.getFileName() {
     return this.fileName;
 }
 
+f<bool> MockSourceFile.isStdFile() {
+    return false;
+}
+
 f<int> main() {
     // getLastFragment
     String lastFragment = getLastFragment(String("this.is.a.test.haystack"), ".");

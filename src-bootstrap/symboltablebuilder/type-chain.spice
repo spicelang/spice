@@ -132,7 +132,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
                 name << "[]";
             }
             if !this.paramTypes.isEmpty() {
-                const QualType& returnType = this.paramTypes.getFront();
+                const QualType& returnType = this.paramTypes.front();
                 name << "<" << returnType.getName(true) << ">";
             }
             name << "(";
