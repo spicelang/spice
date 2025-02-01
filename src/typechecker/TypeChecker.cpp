@@ -909,6 +909,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
+      assert(lhs.entry != nullptr);
       const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
 
@@ -1288,7 +1289,9 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Get result type
   const QualType resultType = opRuleManager.getCastResultType(node, dstType, src);
 
-  SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
+  const bool typesMatch = dstType.matches(src.type, false, true, true);
+  const bool sameContainerType = src.type.isSameContainerTypeAs(dstType);
+  SymbolTableEntry *entry = typesMatch || sameContainerType ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
 }
 
@@ -1386,7 +1389,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     operandType = operandType.removeReferenceWrapper();
 
     // Check if we can apply the subscript operator on the lhs type
-    if (!operandType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
+    if (!operandType.isOneOf({TY_ARRAY, TY_PTR, TY_STRING}))
       SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
                     "Can only apply subscript operator on array type, got " + operandType.getName(true))
 
@@ -1396,7 +1399,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
-    // Check if we have a hardcoded array index
+    // In case of compile time index value and known array size, perform a compile time out-of-bounds check
     if (operandType.isArray() && operandType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
       const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
       const unsigned int constSize = operandType.getArraySize();
