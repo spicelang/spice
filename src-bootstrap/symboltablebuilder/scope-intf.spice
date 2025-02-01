@@ -1,3 +1,8 @@
-public type IScope interface {
+// Own imports
+import "bootstrap/source-file-intf";
 
+public type IScope interface {
+    public f<ISourceFile*> getSourceFile();
+    public f<IScope*> getParent();
+    public f<unsigned long> getFieldCount();
 }

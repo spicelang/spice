@@ -6,7 +6,7 @@ public type IMemoryManager interface {
 public type DefaultMemoryManager struct : IMemoryManager {}
 
 public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
-    Result<heap byte*> allocation = sAlloc(size);
+    const Result<heap byte*> allocation = sAlloc(size);
     return allocation.unwrap();
 }
 

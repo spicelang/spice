@@ -1,3 +1,55 @@
-public type IType interface {
+// Std imports
+import "std/text/stringstream";
 
+// Own imports
+import "bootstrap/source-file-intf";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/bindings/llvm/llvm" as llvm;
+
+public type IType interface {
+    // Getters and setters on type parts
+    public f<SuperType> getSuperType();
+    public f<String&> getSubType();
+    public f<unsigned int> getArraySize();
+    public f<IScope*> getBodyScope();
+    // ToDo
+    public f<bool> hasLambdaCaptures();
+
+    // Queries on the type
+    public f<bool> is(SuperType);
+    public f<bool> isOneOf(SuperType[], unsigned long);
+    public f<bool> isBase(SuperType);
+    public f<bool> isPrimitive();
+    public f<bool> isExtendedPrimitive();
+    public f<bool> isPtr();
+    public f<bool> isRef();
+    public f<bool> isArray();
+    public f<bool> hasAnyGenericParts();
+
+    // Complex queries on the type
+    public f<bool> isSameContainerTypeAs(const IType*);
+    public f<bool> matches(const IType*, bool);
+
+    // Serialization
+    public p getName(StringStream&, bool);
+    public f<String> getName(bool);
+
+    // Get new type, base on this one
+    public f<const Type*> toPtr(const ASTNode*);
+    public f<const Type*> toRef(const ASTNode*);
+    public f<const Type*> toArr(const ASTNode*, unsigned int, bool);
+    public f<const Type*> getContained();
+    public f<const Type*> replaceBase(const IType*);
+    public f<const Type*> removeReferenceWrapper();
+    public f<const Type*> getBase();
+    public f<const Type*> getWithLambdaCaptures(bool);
+    public f<const Type*> getWithBodyScope(IScope*);
+    // ToDo
+
+    // LLVM helpers
+    public f<llvm::Type> toLLVMType(ISourceFile*);
+
+    // Helpers
+    public f<TypeChain> getTypeChain();
 }

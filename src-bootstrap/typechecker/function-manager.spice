@@ -11,8 +11,6 @@ import "bootstrap/symboltablebuilder/qual-type";
 // Aliases
 public type FunctionManifestationList alias UnorderedMap</*mangledName=*/String, Function>;
 public type FunctionRegistry alias Map</*fctId=*/String, /*manifestaionList=*/FunctionManifestationList>;
-public type Arg alias Pair</*type=*/QualType, /*isTemporary=*/bool>;
-public type ArgList alias Vector</*arg=*/Arg>;
 
 type MatchResult enum {
     MATCHED,

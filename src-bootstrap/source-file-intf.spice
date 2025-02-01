@@ -1,4 +1,5 @@
 public type ISourceFile interface {
     public f<unsigned long> getLineCount();
     public f<string> getFileName();
+    public f<bool> isStdFile();
 }
