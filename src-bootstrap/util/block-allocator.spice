@@ -4,14 +4,13 @@ import "std/os/system";
 
 // Own imports
 import "bootstrap/util/memory";
-import "bootstrap/ast/ast-nodes";
 
 type Base dyn;
 type T dyn;
 
 public type BlockAllocator<Base> struct {
     IMemoryManager& memoryManager
-    Vector<byte*> memoryBlocks
+    Vector<heap byte*> memoryBlocks
     Vector<Base*> allocatedObjects
     unsigned long blockSize
     unsigned long offsetInBlock = 0l
@@ -29,7 +28,7 @@ public p BlockAllocator.ctor(IMemoryManager& memoryManager, unsigned long blockS
 public p BlockAllocator.dtor() {
     // Destruct all objects
     foreach Base* ptr : this.allocatedObjects {
-        sDelete(ptr);
+        sDestroy(ptr);
     }
     this.allocatedObjects.clear();
 

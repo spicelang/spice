@@ -18,7 +18,7 @@ type T dyn;
   */
 public f<Result<heap byte*>> sAlloc(unsigned long size) {
     heap byte* ptr = malloc(size);
-    return ptr != nil<heap byte*> ? ok(ptr) : err<heap byte*>("Out of memory occurred!");
+    return ptr != nil<heap byte*> ? ok(ptr) : err<heap byte*>("OOM occurred in sAlloc!");
 }
 
 /**
@@ -31,7 +31,7 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
 public f<heap byte*> sAllocUnsafe(unsigned long size) {
     heap byte* ptr = malloc(size);
     if ptr != nil<heap byte*> { return ptr; }
-    panic(Error("OOM occurred in sAllocUnsafe"));
+    panic(Error("OOM occurred in sAllocUnsafe!"));
 }
 
 /**
@@ -43,8 +43,29 @@ public f<heap byte*> sAllocUnsafe(unsigned long size) {
   * @return A pointer to the reallocated block, or an error if the reallocation failed.
   */
 public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
+    if ptr == nil<heap byte*> { return err<heap byte*>("Original pointer is nil!"); }
+    if size == 0l { return err<heap byte*>("Size is 0!"); }
     heap byte* newPtr = realloc(ptr, size);
-    return newPtr != nil<heap byte*> ? ok(newPtr) : err<heap byte*>("Out of memory occurred!");
+    return newPtr != nil<heap byte*> ? ok(newPtr) : err<heap byte*>("OOM occurred in sRealloc!");
+}
+
+/**
+  * Reallocates a block of memory to the given size.
+  * Subsequently moves the data from the old memory space to the new one.
+  * This panics in case of invalid input or an out of memory situation.
+  *
+  * @param ptr The pointer to the block to reallocate.
+  * @param size The new size of the block.
+  * @return A pointer to the reallocated block, or an error if the reallocation failed.
+  */
+public f<heap byte*> sReallocUnsafe(heap byte* ptr, unsigned long size) {
+    if ptr == nil<heap byte*> { panic(Error("Original pointer is nil!")); }
+    if size == 0l { panic(Error("Size is 0!")); }
+    heap byte* newPtr = realloc(ptr, size);
+    if newPtr == nil<heap byte*> {
+        panic(Error("OOM occurred in sReallocUnsafe!"));
+    }
+    return newPtr;
 }
 
 /**
@@ -64,15 +85,19 @@ public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigne
 }
 
 /**
-  * Frees a block of memory.
-  * The pointer is zeroed out after freeing the memory to prevent accidental double frees.
+  * Copies a block of memory to a new block of memory.
   *
-  * @param ptr The pointer to the block to free.
+  * @param oldPtr The pointer to the block to copy.
+  * @param newPtr The pointer to the new block to copy to.
+  * @param size The size of the block to copy.
+  * @return A pointer to the copied block, or an error if the copy failed.
   */
-public p sDealloc(heap byte*& ptr) {
-    if ptr == nil<heap byte*> { return; }
-    free(ptr);
-    ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
+public f<heap byte*> sCopyUnsafe(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
+    if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
+        panic(Error("Cannot copy from or to nil pointer!"));
+    }
+    memcpy(newPtr, oldPtr, size);
+    return newPtr;
 }
 
 /**
@@ -122,15 +147,34 @@ public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
 }
 
 /**
+ * Destroys the given object by calling its dtor if available
+ *
+ * @param obj The object to destroy
+ */
+public p sDestroy<T>(T& obj) {
+    obj.dtor();
+}
+
+/**
+  * Frees a block of memory.
+  * The pointer is zeroed out after freeing the memory to prevent accidental double frees.
+  *
+  * @param ptr The pointer to the block to free.
+  */
+public p sDealloc(heap byte*& ptr) {
+    if ptr == nil<heap byte*> { return; }
+    free(ptr);
+    ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
+}
+
+/**
  * Destroys the given heap-allocated instance and frees the memory.
  *
  * @param ptr The pointer to the heap-allocated instance
  */
 public p sDelete<T>(heap T*& ptr) {
     unsafe {
-        // Destruct the object
-        ptr.dtor();
-        // Deallocate the memory
+        sDestruct(*ptr);
         sDealloc((heap byte*&) ptr);
     }
 }
