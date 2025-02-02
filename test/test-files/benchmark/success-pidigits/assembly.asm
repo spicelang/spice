@@ -1,7 +1,7 @@
-	.text
 	.file	"source.spice"
+	.text
 	.globl	main                            # -- Begin function main
-	.p2align	4, 0x90
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc

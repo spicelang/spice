@@ -1,6 +1,6 @@
-	.text
 	.file	"source.spice"
-	.p2align	4, 0x90                         # -- Begin function _Z4fiboi
+	.text
+	.p2align	4                               # -- Begin function _Z4fiboi
 	.type	.L_Z4fiboi,@function
 .L_Z4fiboi:                             # @_Z4fiboi
 # %bb.0:
@@ -16,7 +16,7 @@
 	jmp	.LBB0_2
 .LBB0_3:                                # %if.exit.L2.preheader
 	xorl	%ebx, %ebx
-	.p2align	4, 0x90
+	.p2align	4
 .LBB0_4:                                # %if.exit.L2
                                         # =>This Inner Loop Header: Depth=1
 	leal	-1(%r14), %edi
@@ -37,7 +37,7 @@
 	.size	.L_Z4fiboi, .Lfunc_end0-.L_Z4fiboi
                                         # -- End function
 	.globl	main                            # -- Begin function main
-	.p2align	4, 0x90
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc

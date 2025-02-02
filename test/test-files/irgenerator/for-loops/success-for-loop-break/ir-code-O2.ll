@@ -12,7 +12,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 for.body.L2:                                      ; preds = %for.body.L2, %0
   %counter.09 = phi i32 [ 0, %0 ], [ %3, %for.body.L2 ]
   %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %counter.09)
-  %2 = icmp ugt i32 %counter.09, 9000
+  %2 = icmp samesign ugt i32 %counter.09, 9000
   %3 = add nuw nsw i32 %counter.09, 2
   br i1 %2, label %for.body.L5, label %for.body.L2
 

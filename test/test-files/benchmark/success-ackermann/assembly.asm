@@ -1,6 +1,6 @@
-	.text
 	.file	"source.spice"
-	.p2align	4, 0x90                         # -- Begin function _Z3ackii
+	.text
+	.p2align	4                               # -- Begin function _Z3ackii
 	.type	.L_Z3ackii,@function
 .L_Z3ackii:                             # @_Z3ackii
 # %bb.0:
@@ -11,7 +11,7 @@
 	pushq	%rbx
 	movl	%edi, %ebx
 	jmp	.LBB0_2
-	.p2align	4, 0x90
+	.p2align	4
 .LBB0_3:                                #   in Loop: Header=BB0_2 Depth=1
 	movl	$1, %eax
 	decl	%ebx
@@ -37,7 +37,7 @@
 	.size	.L_Z3ackii, .Lfunc_end0-.L_Z3ackii
                                         # -- End function
 	.globl	main                            # -- Begin function main
-	.p2align	4, 0x90
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc

@@ -200,7 +200,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   switchToBlock(bThen);
   // Create constant for error message
   const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.\n";
-  llvm::Constant *globalString = builder.CreateGlobalStringPtr(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+  llvm::Constant *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
   // Print the error message
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
   builder.CreateCall(printfFct, globalString);

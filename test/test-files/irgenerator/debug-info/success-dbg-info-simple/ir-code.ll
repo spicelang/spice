@@ -33,11 +33,11 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !46 {
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !54
   store i64 6, ptr %ts, align 8, !dbg !55
   %3 = load %struct.String, ptr %2, align 8, !dbg !55
-  %4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !55
+  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !55
   store %struct.String %3, ptr %4, align 8, !dbg !55
   %5 = load ptr, ptr %ref, align 8, !dbg !55
   %6 = load i32, ptr %5, align 4, !dbg !55
-  %7 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !55
+  %7 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !55
     #dbg_declare(ptr %ts, !56, !DIExpression(), !57)
   store i32 %6, ptr %7, align 4, !dbg !55
   %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !58

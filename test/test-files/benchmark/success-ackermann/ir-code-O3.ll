@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc range(i32 -2147483647, -2147483648) i32 @_Z3ackii(i32 %0, i32 %1) unnamed_addr #0 {
+define private fastcc range(i32 -2147483647, -2147483648) i32 @_Z3ackii(i32 range(i32 0, 4) %0, i32 %1) unnamed_addr #0 {
   %3 = icmp eq i32 %0, 0
   br i1 %3, label %if.then.L2, label %if.exit.L2
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <symboltablebuilder/SymbolTableEntry.h>
+
 #include <llvm/IR/Value.h>
 
 namespace spice::compiler {
@@ -19,7 +21,7 @@ struct LLVMExprResult {
   SymbolTableEntry *entry = nullptr;
   const ASTNode *node = nullptr;
 
-  [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
+  [[nodiscard]] bool isTemporary() const { return entry == nullptr || entry->anonymous; }
 };
 
 } // namespace spice::compiler

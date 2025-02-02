@@ -1,6 +1,6 @@
-	.text
 	.file	"source.spice"
-	.p2align	4, 0x90                         # -- Begin function _Z3fibi
+	.text
+	.p2align	4                               # -- Begin function _Z3fibi
 	.type	.L_Z3fibi,@function
 .L_Z3fibi:                              # @_Z3fibi
 # %bb.0:
@@ -14,7 +14,7 @@
 	movl	%edi, %r14d
 	decl	%r14d
 	xorl	%ebx, %ebx
-	.p2align	4, 0x90
+	.p2align	4
 .LBB0_2:                                # %if.exit.L4
                                         # =>This Inner Loop Header: Depth=1
 	movl	%r14d, %edi
@@ -37,7 +37,7 @@
 	.size	.L_Z3fibi, .Lfunc_end0-.L_Z3fibi
                                         # -- End function
 	.globl	main                            # -- Begin function main
-	.p2align	4, 0x90
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc
@@ -214,7 +214,7 @@ main:                                   # @main
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
-	.p2align	4, 0x90                         # -- Begin function _Z15lambda.L12C29.0v
+	.p2align	4                               # -- Begin function _Z15lambda.L12C29.0v
 	.type	.L_Z15lambda.L12C29.0v,@function
 .L_Z15lambda.L12C29.0v:                 # @_Z15lambda.L12C29.0v
 # %bb.0:

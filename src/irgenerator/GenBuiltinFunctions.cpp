@@ -133,7 +133,7 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
   // Create constant for error message
   const std::string codeLoc = node->codeLoc.toPrettyString();
   const std::string templateStr = "Program panicked at " + codeLoc + ": %s\n" + node->getErrorMessage() + "\n";
-  llvm::Constant *globalString = builder.CreateGlobalStringPtr(templateStr, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+  llvm::Constant *globalString = builder.CreateGlobalString(templateStr, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
 
   // Get actual error message
   llvm::Value *errorObjPtr = resolveAddress(node->assignExpr);

@@ -57,7 +57,7 @@ define dso_local i32 @main() #1 {
   store i32 0, ptr %result, align 4
   store i32 -4321, ptr %i, align 4
   store ptr %i, ptr %1, align 8
-  %3 = getelementptr inbounds %struct.Struct, ptr %1, i32 0, i32 1
+  %3 = getelementptr inbounds nuw %struct.Struct, ptr %1, i32 0, i32 1
   store i1 true, ptr %3, align 1
   call void @_Z4procRiRK6Struct(ptr %i, ptr %1)
   %4 = load i32, ptr %i, align 4
@@ -72,7 +72,7 @@ assert.then.L20:                                  ; preds = %0
 assert.exit.L20:                                  ; preds = %0
   store double 6.900000e+01, ptr %d, align 8
   store ptr %i, ptr %2, align 8
-  %7 = getelementptr inbounds %struct.Struct, ptr %2, i32 0, i32 1
+  %7 = getelementptr inbounds nuw %struct.Struct, ptr %2, i32 0, i32 1
   store i1 false, ptr %7, align 1
   %8 = call i32 @_Z4funcRdRK6Struct(ptr %d, ptr %2)
   store i32 %8, ptr %result, align 4

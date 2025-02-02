@@ -14,7 +14,7 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
 
   // Generate global string constant
-  builder.CreateGlobalStringPtr(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
+  builder.CreateGlobalString(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
   llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
 
   // Set global attributes

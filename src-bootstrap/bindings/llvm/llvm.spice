@@ -439,7 +439,7 @@ ext f<LLVMBasicBlockRef> LLVMGetInsertBlock(LLVMBuilderRef /*Builder*/);
 ext p LLVMAppendExistingBasicBlock(LLVMValueRef /*Fn*/, LLVMBasicBlockRef /*BB*/);
 ext p LLVMPositionBuilderAtEnd(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*BB*/);
 ext f<LLVMValueRef> LLVMGetNamedGlobal(LLVMModuleRef /*M*/, string /*Name*/);
-ext f<LLVMValueRef> LLVMBuildGlobalStringPtr(LLVMBuilderRef /*B*/, string /*Str*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGlobalString(LLVMBuilderRef /*B*/, string /*Str*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildRet(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/);
 ext f<LLVMValueRef> LLVMBuildRetVoid(LLVMBuilderRef /*B*/);
 ext f<LLVMValueRef> LLVMBuildBr(LLVMBuilderRef /*B*/, LLVMBasicBlockRef /*Dest*/);
@@ -833,8 +833,8 @@ public p IRBuilder.setInsertPoint(BasicBlock bb) {
     LLVMPositionBuilderAtEnd(this.self, bb.self);
 }
 
-public f<Value> IRBuilder.createGlobalStringPtr(string content, string name) {
-    return Value{ LLVMBuildGlobalStringPtr(this.self, content, name) };
+public f<Value> IRBuilder.createGlobalString(string content, string name) {
+    return Value{ LLVMBuildGlobalString(this.self, content, name) };
 }
 
 public f<Value> IRBuilder.createAlloca(Type ty, Value arraySize = Value(), string name = "") {

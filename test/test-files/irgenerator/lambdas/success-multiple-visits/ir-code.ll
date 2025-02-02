@@ -15,14 +15,14 @@ define private void @_Z4testv() {
   %1 = load i32, ptr %t, align 4
   store i32 %1, ptr %captures, align 4
   %2 = load i32, ptr %x, align 4
-  %3 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %2, ptr %3, align 4
   store ptr @_Z14lambda.L3C13.0v, ptr %fat.ptr, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %4, align 8
   %5 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %5, ptr %l, align 8
-  %6 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
+  %6 = getelementptr inbounds nuw { ptr, ptr }, ptr %l, i32 0, i32 1
   %captures1 = load ptr, ptr %6, align 8
   %fct = load ptr, ptr %l, align 8
   call void %fct(ptr %captures1)
@@ -33,7 +33,7 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %x = getelementptr inbounds { i32, i32 }, ptr %2, i32 0, i32 1
+  %x = getelementptr inbounds nuw { i32, i32 }, ptr %2, i32 0, i32 1
   %3 = load i32, ptr %x, align 4
   %4 = load i32, ptr %2, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, i32 %4)
@@ -54,14 +54,14 @@ define private void @_Z4testi(i32 %0) {
   %2 = load i32, ptr %t, align 4
   store i32 %2, ptr %captures, align 4
   %3 = load i32, ptr %x, align 4
-  %4 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %3, ptr %4, align 4
   store ptr @_Z14lambda.L3C13.1v, ptr %fat.ptr, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %5, align 8
   %6 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %6, ptr %l, align 8
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
+  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %l, i32 0, i32 1
   %captures1 = load ptr, ptr %7, align 8
   %fct = load ptr, ptr %l, align 8
   call void %fct(ptr %captures1)
@@ -72,7 +72,7 @@ define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) 
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %x = getelementptr inbounds { i32, i32 }, ptr %2, i32 0, i32 1
+  %x = getelementptr inbounds nuw { i32, i32 }, ptr %2, i32 0, i32 1
   %3 = load i32, ptr %x, align 4
   %4 = load i32, ptr %2, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3, i32 %4)

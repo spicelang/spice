@@ -13,7 +13,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store double 3.467000e+00, ptr %dbl, align 8
   store ptr %dbl, ptr %doubleVec, align 8
-  %1 = getelementptr inbounds %struct.Vector, ptr %doubleVec, i32 0, i32 1
+  %1 = getelementptr inbounds nuw %struct.Vector, ptr %doubleVec, i32 0, i32 1
   store i32 1, ptr %1, align 4
   %cap_addr = getelementptr inbounds %struct.Vector, ptr %doubleVec, i64 0, i32 1
   %2 = load i32, ptr %cap_addr, align 4

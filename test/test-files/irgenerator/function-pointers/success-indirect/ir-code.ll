@@ -28,7 +28,7 @@ define dso_local i32 @main() #0 {
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store ptr @_Z4testPKc, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %2, ptr %testFct, align 8

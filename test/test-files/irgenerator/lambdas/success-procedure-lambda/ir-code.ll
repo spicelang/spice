@@ -23,14 +23,14 @@ define dso_local i32 @main() #0 {
   %arg.copy = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C31.0v, ptr %fat.ptr, align 8
-  %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %3, align 8
   %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
   %fct = load ptr, ptr %callbackWithoutArgs, align 8
   call void %fct()
   store ptr @_Z14lambda.L7C44.0R6Stringd, ptr %fat.ptr1, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
   store ptr poison, ptr %5, align 8
   %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %6, ptr %callbackWithArgs1, align 8
@@ -38,7 +38,7 @@ define dso_local i32 @main() #0 {
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
   call void %fct2(ptr %1, double 3.140000e+00)
   store ptr @_Z15lambda.L12C41.06Stringb, ptr %fat.ptr3, align 8
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
+  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
   store ptr poison, ptr %7, align 8
   %8 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %8, ptr %callbackWithArgs2, align 8

@@ -14,7 +14,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i32 123, ptr %t, align 4
   store i1 true, ptr %ts, align 1
-  %1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
+  %1 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 1
   store ptr %t, ptr %1, align 8
   %f2_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
   %2 = load ptr, ptr %f2_addr, align 8

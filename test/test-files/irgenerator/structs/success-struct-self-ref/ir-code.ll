@@ -16,13 +16,13 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store %struct.TreeNode zeroinitializer, ptr %rootNode, align 8
   store ptr %rootNode, ptr %_childNode1, align 8
-  %1 = getelementptr inbounds %struct.TreeNode, ptr %_childNode1, i32 0, i32 1
+  %1 = getelementptr inbounds nuw %struct.TreeNode, ptr %_childNode1, i32 0, i32 1
   store i32 1, ptr %1, align 4
   store ptr %rootNode, ptr %childNode2, align 8
-  %2 = getelementptr inbounds %struct.TreeNode, ptr %childNode2, i32 0, i32 1
+  %2 = getelementptr inbounds nuw %struct.TreeNode, ptr %childNode2, i32 0, i32 1
   store i32 2, ptr %2, align 4
   store ptr %childNode2, ptr %childNode21, align 8
-  %3 = getelementptr inbounds %struct.TreeNode, ptr %childNode21, i32 0, i32 1
+  %3 = getelementptr inbounds nuw %struct.TreeNode, ptr %childNode21, i32 0, i32 1
   store i32 3, ptr %3, align 4
   store ptr %childNode21, ptr %curNode, align 8
   br label %while.head.L21

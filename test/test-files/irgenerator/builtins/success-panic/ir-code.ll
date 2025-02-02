@@ -11,7 +11,7 @@ define private void @_Z3foov() {
   %1 = alloca %struct.Error, align 8
   %2 = load ptr, ptr @stderr, align 8
   call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.1)
-  %3 = getelementptr inbounds %struct.Error, ptr %1, i32 0, i32 1
+  %3 = getelementptr inbounds nuw %struct.Error, ptr %1, i32 0, i32 1
   %4 = load ptr, ptr %3, align 8
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0, ptr %4)
   call void @exit(i32 1)

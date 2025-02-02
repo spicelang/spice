@@ -17,21 +17,21 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.0.0.extract2 = extractvalue %struct.NumberIterator %2, 0, 0
   store ptr %.fca.0.0.extract2, ptr %shortIterator, align 8
   %.fca.1.extract4 = extractvalue %struct.NumberIterator %2, 1
-  %.fca.1.gep5 = getelementptr inbounds i8, ptr %shortIterator, i64 8
+  %.fca.1.gep5 = getelementptr inbounds nuw i8, ptr %shortIterator, i64 8
   store i16 %.fca.1.extract4, ptr %.fca.1.gep5, align 8
   %.fca.2.extract6 = extractvalue %struct.NumberIterator %2, 2
-  %.fca.2.gep7 = getelementptr inbounds i8, ptr %shortIterator, i64 10
+  %.fca.2.gep7 = getelementptr inbounds nuw i8, ptr %shortIterator, i64 10
   store i16 %.fca.2.extract6, ptr %.fca.2.gep7, align 2
   %.fca.3.extract8 = extractvalue %struct.NumberIterator %2, 3
-  %.fca.3.gep9 = getelementptr inbounds i8, ptr %shortIterator, i64 12
+  %.fca.3.gep9 = getelementptr inbounds nuw i8, ptr %shortIterator, i64 12
   store i16 %.fca.3.extract8, ptr %.fca.3.gep9, align 4
   %3 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr nonnull %shortIterator) #2
   br i1 %3, label %foreach.body.L5.lr.ph, label %foreach.exit.L5
 
 foreach.body.L5.lr.ph:                            ; preds = %0
-  %.fca.1.gep = getelementptr inbounds i8, ptr %1, i64 8
-  %.fca.2.gep = getelementptr inbounds i8, ptr %1, i64 16
-  %.fca.3.gep = getelementptr inbounds i8, ptr %1, i64 24
+  %.fca.1.gep = getelementptr inbounds nuw i8, ptr %1, i64 8
+  %.fca.2.gep = getelementptr inbounds nuw i8, ptr %1, i64 16
+  %.fca.3.gep = getelementptr inbounds nuw i8, ptr %1, i64 24
   br label %foreach.body.L5
 
 foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.ph, %foreach.tail.L5
