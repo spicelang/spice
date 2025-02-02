@@ -24,25 +24,25 @@ define dso_local i32 @main() #0 {
   %1 = load i32, ptr %w, align 4
   store i32 %1, ptr %captures, align 4
   %2 = load i32, ptr %z, align 4
-  %3 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %2, ptr %3, align 4
   store ptr @_Z14lambda.L4C20.0Ri, ptr %fat.ptr, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %4, align 8
   %5 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %5, ptr %foo1, align 8
   %6 = load i32, ptr %w, align 4
   store i32 %6, ptr %captures1, align 4
   %7 = load i32, ptr %z, align 4
-  %8 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 1
+  %8 = getelementptr inbounds nuw { i32, i32 }, ptr %captures1, i32 0, i32 1
   store i32 %7, ptr %8, align 4
   store ptr @_Z14lambda.L7C26.0Ri, ptr %fat.ptr2, align 8
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
+  %9 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
   store ptr %captures1, ptr %9, align 8
   %10 = load { ptr, ptr }, ptr %fat.ptr2, align 8
   store { ptr, ptr } %10, ptr %foo2, align 8
   store i32 1, ptr %x, align 4
-  %11 = getelementptr inbounds { ptr, ptr }, ptr %foo1, i32 0, i32 1
+  %11 = getelementptr inbounds nuw { ptr, ptr }, ptr %foo1, i32 0, i32 1
   %captures3 = load ptr, ptr %11, align 8
   %fct = load ptr, ptr %foo1, align 8
   call void %fct(ptr %captures3, ptr %x)
@@ -56,7 +56,7 @@ assert.then.L13:                                  ; preds = %0
   unreachable
 
 assert.exit.L13:                                  ; preds = %0
-  %15 = getelementptr inbounds { ptr, ptr }, ptr %foo2, i32 0, i32 1
+  %15 = getelementptr inbounds nuw { ptr, ptr }, ptr %foo2, i32 0, i32 1
   %captures4 = load ptr, ptr %15, align 8
   %fct5 = load ptr, ptr %foo2, align 8
   %16 = call i1 %fct5(ptr %captures4, ptr %x)
@@ -89,7 +89,7 @@ define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8)
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
+  %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4
   %5 = load i32, ptr %z, align 4
   %6 = add nsw i32 %5, %4
@@ -107,7 +107,7 @@ define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
+  %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4
   %5 = load i32, ptr %z, align 4
   %6 = add nsw i32 %5, %4

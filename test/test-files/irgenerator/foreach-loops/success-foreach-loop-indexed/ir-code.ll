@@ -33,7 +33,7 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   store %struct.Pair %pair, ptr %pair_addr, align 8
   %5 = load i64, ptr %pair_addr, align 8
   store i64 %5, ptr %index, align 8
-  %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1
+  %item_addr = getelementptr inbounds nuw %struct.Pair, ptr %pair_addr, i32 0, i32 1
   %6 = load ptr, ptr %item_addr, align 8
   %7 = load i64, ptr %index, align 8
   %8 = load i32, ptr %6, align 4

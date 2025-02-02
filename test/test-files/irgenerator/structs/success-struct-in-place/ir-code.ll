@@ -37,7 +37,7 @@ define private %struct.ShoppingCart @_Z15newShoppingCartv() {
   store %struct.ShoppingItem { ptr @anon.string.4, double 6.000000e+00, ptr @anon.string.5 }, ptr %4, align 8
   store ptr @anon.string.6, ptr %1, align 8
   %5 = load [3 x %struct.ShoppingItem], ptr %items, align 8
-  %6 = getelementptr inbounds %struct.ShoppingCart, ptr %1, i32 0, i32 1
+  %6 = getelementptr inbounds nuw %struct.ShoppingCart, ptr %1, i32 0, i32 1
   store [3 x %struct.ShoppingItem] %5, ptr %6, align 8
   %7 = load %struct.ShoppingCart, ptr %1, align 8
   ret %struct.ShoppingCart %7
@@ -50,7 +50,7 @@ define private %struct.ShoppingCart @_Z19anotherShoppingCartv() {
   store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @anon.string.7, double 1.000000e+02, ptr @anon.string.8 }, %struct.ShoppingItem { ptr @anon.string.9, double 1.255000e+02, ptr @anon.string.10 }, %struct.ShoppingItem { ptr @anon.string.11, double 6.000000e+00, ptr @anon.string.12 }], ptr %items, align 8
   store ptr @anon.string.13, ptr %1, align 8
   %2 = load [3 x %struct.ShoppingItem], ptr %items, align 8
-  %3 = getelementptr inbounds %struct.ShoppingCart, ptr %1, i32 0, i32 1
+  %3 = getelementptr inbounds nuw %struct.ShoppingCart, ptr %1, i32 0, i32 1
   store [3 x %struct.ShoppingItem] %2, ptr %3, align 8
   %4 = load %struct.ShoppingCart, ptr %1, align 8
   ret %struct.ShoppingCart %4

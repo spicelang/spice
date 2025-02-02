@@ -18,23 +18,23 @@ $_ZTV3Car = comdat any
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"Is driving: %d\00", align 1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
-define private fastcc void @_ZN3Car4ctorEv(ptr nocapture noundef nonnull writeonly align 8 dereferenceable(16) %0) unnamed_addr #0 {
-  store ptr getelementptr inbounds (i8, ptr @_ZTV3Car, i64 16), ptr %0, align 8
-  %2 = getelementptr inbounds i8, ptr %0, i64 8
+define private fastcc void @_ZN3Car4ctorEv(ptr nocapture noundef nonnull writeonly align 8 dereferenceable(16) initializes((0, 9)) %0) unnamed_addr #0 {
+  store ptr getelementptr inbounds nuw (i8, ptr @_ZTV3Car, i64 16), ptr %0, align 8
+  %2 = getelementptr inbounds nuw i8, ptr %0, i64 8
   store i1 false, ptr %2, align 8
   ret void
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
-define private void @_ZN3Car5driveEi(ptr nocapture noundef nonnull writeonly align 8 dereferenceable(16) %0, i32 %1) #0 {
-  %driving_addr = getelementptr inbounds i8, ptr %0, i64 8
+define private void @_ZN3Car5driveEi(ptr nocapture noundef nonnull writeonly align 8 dereferenceable(16) initializes((8, 9)) %0, i32 %1) #0 {
+  %driving_addr = getelementptr inbounds nuw i8, ptr %0, i64 8
   store i1 true, ptr %driving_addr, align 8
   ret void
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
 define private i1 @_ZN3Car9isDrivingEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(16) %0) #1 {
-  %driving_addr = getelementptr inbounds i8, ptr %0, i64 8
+  %driving_addr = getelementptr inbounds nuw i8, ptr %0, i64 8
   %2 = load i1, ptr %driving_addr, align 8
   ret i1 %2
 }
@@ -47,7 +47,7 @@ define dso_local i32 @main() local_unnamed_addr #2 {
   %fct = load ptr, ptr %vtable.addr, align 8
   call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %car, i32 12) #4
   %vtable.addr1 = load ptr, ptr %car, align 8
-  %vfct.addr2 = getelementptr inbounds i8, ptr %vtable.addr1, i64 8
+  %vfct.addr2 = getelementptr inbounds nuw i8, ptr %vtable.addr1, i64 8
   %fct3 = load ptr, ptr %vfct.addr2, align 8
   %1 = call i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %car) #4
   %2 = zext i1 %1 to i32

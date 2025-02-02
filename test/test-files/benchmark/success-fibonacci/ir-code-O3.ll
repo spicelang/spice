@@ -21,7 +21,7 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
   %4 = tail call fastcc i32 @_Z4fiboi(i32 %3)
   %5 = add nsw i32 %.tr5, -2
   %6 = add nsw i32 %4, %accumulator.tr4
-  %7 = icmp ult i32 %.tr5, 4
+  %7 = icmp samesign ult i32 %.tr5, 4
   br i1 %7, label %common.ret, label %if.exit.L2
 }
 

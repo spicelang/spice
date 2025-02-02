@@ -25,15 +25,15 @@ define dso_local i32 @main() #0 {
   store i32 123, ptr %i, align 4
   store double 1.234560e+02, ptr %d, align 8
   store ptr @_Z15lambda.L11C39.0v, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %i, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   %3 = call i32 @pthread_create(ptr %tid1, ptr null, { ptr, ptr } %2, ptr null)
   store ptr %d, ptr %captures, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %captures, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %captures, i32 0, i32 1
   store ptr %i, ptr %4, align 8
   store ptr @_Z15lambda.L15C39.0v, ptr %fat.ptr1, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
   store ptr %captures, ptr %5, align 8
   %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   %7 = call i32 @pthread_create(ptr %tid2, ptr null, { ptr, ptr } %6, ptr null)
@@ -65,7 +65,7 @@ define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8)
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %i.addr = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 1
+  %i.addr = getelementptr inbounds nuw { ptr, ptr }, ptr %2, i32 0, i32 1
   %3 = load volatile ptr, ptr %i.addr, align 8
   %4 = load volatile i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1

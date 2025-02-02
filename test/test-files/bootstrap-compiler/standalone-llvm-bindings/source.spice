@@ -28,7 +28,7 @@ f<int> main() {
 
     llvm::Value calcResult = builder.createAdd(builder.getInt32(1), builder.getInt32(2), "calcResult");
 
-    llvm::Value helloWorldStr = builder.createGlobalStringPtr("Hello, world!\n", "helloWorldStr");
+    llvm::Value helloWorldStr = builder.createGlobalString("Hello, world!\n", "helloWorldStr");
     Vector<llvm::Type> printfArgTypes;
     printfArgTypes.pushBack(builder.getPtrTy());
     printfArgTypes.pushBack(builder.getInt32Ty());

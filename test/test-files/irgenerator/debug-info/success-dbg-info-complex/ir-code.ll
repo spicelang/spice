@@ -384,7 +384,7 @@ foreach.body.L61:                                 ; preds = %foreach.head.L61
   store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !122
   %108 = load i64, ptr %pair_addr, align 8, !dbg !122
   store i64 %108, ptr %idx, align 8, !dbg !122
-  %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !122
+  %item_addr = getelementptr inbounds nuw %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !122
   %109 = load ptr, ptr %item_addr, align 8, !dbg !122
   store ptr %109, ptr %12, align 8, !dbg !122
   %110 = load i64, ptr %idx, align 8, !dbg !123

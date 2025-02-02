@@ -1,4 +1,65 @@
+import "bootstrap/bindings/llvm/llvm" as llvm;
 import "std/data/vector";
+
+f<int> main() {
+    llvm::initializeNativeTarget();
+    llvm::initializeNativeAsmPrinter();
+
+    heap string targetTriple = llvm::getDefaultTargetTriple();
+    string error;
+    llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
+    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::Default, llvm::LLVMRelocMode::Default, llvm::LLVMCodeModel::Default);
+
+    llvm::LLVMContext context;
+    llvm::Module module = llvm::Module("test", context);
+    module.setDataLayout(targetMachine.createDataLayout());
+    //module.setTargetTriple(targetTriple); // This emits target dependent information in the IR, which is not what we want here.
+    llvm::IRBuilder builder = llvm::IRBuilder(context);
+
+    llvm::Type returnType = builder.getInt32Ty();
+    Vector<llvm::Type> argTypes;
+    llvm::Type funcType = llvm::getFunctionType(returnType, argTypes);
+    llvm::Function func = llvm::Function(module, "main", funcType);
+    func.setLinkage(llvm::LLVMLinkage::ExternalLinkage);
+
+    llvm::BasicBlock entry = llvm::BasicBlock(context, "");
+    func.pushBack(entry);
+    builder.setInsertPoint(entry);
+
+    llvm::Value calcResult = builder.createAdd(builder.getInt32(1), builder.getInt32(2), "calcResult");
+
+    llvm::Value helloWorldStr = builder.createGlobalString("Hello, world!\n", "helloWorldStr");
+    Vector<llvm::Type> printfArgTypes;
+    printfArgTypes.pushBack(builder.getPtrTy());
+    printfArgTypes.pushBack(builder.getInt32Ty());
+    llvm::Type printfFuncType = llvm::getFunctionType(builder.getInt32Ty(), printfArgTypes, true);
+    llvm::Function printfFunc = module.getOrInsertFunction("printf", printfFuncType);
+
+    Vector<llvm::Value> printfArgs;
+    printfArgs.pushBack(helloWorldStr);
+    printfArgs.pushBack(calcResult);
+    builder.createCall(printfFunc, printfArgs);
+
+    builder.createRet(builder.getInt32(0));
+
+    assert !llvm::verifyFunction(func);
+    string output;
+    assert !llvm::verifyModule(module, &output);
+
+    printf("Unoptimized IR:\n%s", module.print());
+
+    llvm::PassBuilderOptions pto;
+    llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
+    passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    passBuilder.addPass(llvm::AlwaysInlinerPass());
+    passBuilder.run(module, targetMachine);
+
+    printf("Optimized IR:\n%s", module.print());
+
+    targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
+}
+
+/*import "std/data/vector";
 
 f<int> main() {
     Vector<String> vec;
@@ -15,7 +76,7 @@ f<int> main() {
     foreach String s : vec {
         printf("%s\n", s);
     }
-}
+}*/
 
 /*import "std/data/vector";
 

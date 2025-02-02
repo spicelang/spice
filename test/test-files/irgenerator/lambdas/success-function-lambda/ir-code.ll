@@ -27,7 +27,7 @@ define dso_local i32 @main() #0 {
   %arg.copy = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
-  %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %3, align 8
   %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
@@ -35,7 +35,7 @@ define dso_local i32 @main() #0 {
   %5 = call ptr %fct()
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %5)
   store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %fat.ptr1, align 8
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
   store ptr poison, ptr %7, align 8
   %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
@@ -45,7 +45,7 @@ define dso_local i32 @main() #0 {
   %10 = zext i1 %9 to i32
   %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %10)
   store ptr @_Z15lambda.L13C49.06Strings, ptr %fat.ptr3, align 8
-  %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
+  %12 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
   store ptr poison, ptr %12, align 8
   %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8

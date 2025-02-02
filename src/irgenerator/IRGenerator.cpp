@@ -209,7 +209,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
   // String
   if (symbolType.is(TY_STRING))
-    return builder.CreateGlobalStringPtr("", "", 0, module);
+    return builder.CreateGlobalString("", "", 0, module);
 
   // Bool
   if (symbolType.is(TY_BOOL))
@@ -551,7 +551,7 @@ llvm::Constant *IRGenerator::createGlobalStringConst(const std::string &baseName
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
   // Create global
-  llvm::Constant *globalAddr = builder.CreateGlobalStringPtr(value, globalName, 0, module);
+  llvm::Constant *globalAddr = builder.CreateGlobalString(value, globalName, 0, module);
   llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
   // Create debug info
   if (cliOptions.generateDebugInfo)

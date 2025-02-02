@@ -20,12 +20,12 @@ define dso_local i32 @main() #0 {
   store i32 12, ptr %input, align 4
   store i1 true, ptr %boolean, align 1
   store ptr @anon.string.0, ptr %nestedInstance, align 8
-  %1 = getelementptr inbounds %struct.Nested, ptr %nestedInstance, i32 0, i32 1
+  %1 = getelementptr inbounds nuw %struct.Nested, ptr %nestedInstance, i32 0, i32 1
   store ptr %boolean, ptr %1, align 8
   store ptr %input, ptr %instance, align 8
-  %2 = getelementptr inbounds %struct.TestStruct, ptr %instance, i32 0, i32 1
+  %2 = getelementptr inbounds nuw %struct.TestStruct, ptr %instance, i32 0, i32 1
   store double 4.634000e+01, ptr %2, align 8
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %instance, i32 0, i32 2
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %instance, i32 0, i32 2
   store ptr %nestedInstance, ptr %3, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr %instance1, ptr %instance, i64 24, i1 false)
   %nested_addr = getelementptr inbounds %struct.TestStruct, ptr %instance, i64 0, i32 2
