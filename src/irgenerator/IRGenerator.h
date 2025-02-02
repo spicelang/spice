@@ -12,6 +12,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class ExprNode;
+
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const CAPTURES_PARAM_NAME = "captures";
@@ -121,8 +124,8 @@ public:
   llvm::Value *insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
-  llvm::Value *resolveValue(const ASTNode *node);
-  llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult) const;
+  llvm::Value *resolveValue(const ExprNode *node);
+  llvm::Value *resolveValue(const ExprNode *node, LLVMExprResult &exprResult) const;
   llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult) const;
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
@@ -140,8 +143,8 @@ private:
                       Likeliness likeliness = UNSPECIFIED);
   void verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
-  LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode, const ASTNode *node);
-  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, const ASTNode *node,
+  LLVMExprResult doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ExprNode *rhsNode, const ASTNode *node,
                               bool isDecl = false);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs, const QualType &rhsSType,
                               const ASTNode *node, bool isDecl);

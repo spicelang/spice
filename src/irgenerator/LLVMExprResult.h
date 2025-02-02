@@ -10,7 +10,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class SymbolTableEntry;
-class ASTNode;
+class ExprNode;
 
 // For routing through multiple LLVM values at once
 struct LLVMExprResult {
@@ -19,7 +19,7 @@ struct LLVMExprResult {
   llvm::Value *ptr = nullptr;
   llvm::Value *refPtr = nullptr;
   SymbolTableEntry *entry = nullptr;
-  const ASTNode *node = nullptr;
+  const ExprNode *node = nullptr;
 
   [[nodiscard]] bool isTemporary() const { return entry == nullptr || entry->anonymous; }
 };

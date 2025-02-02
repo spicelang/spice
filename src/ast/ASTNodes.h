@@ -95,14 +95,12 @@ public:
 
   [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
-  void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
+  virtual void resizeToNumberOfManifestations(size_t manifestationCount){ // NOLINT(misc-no-recursion)
     // Resize children
     for (ASTNode *child : getChildren()) {
       assert(child != nullptr);
       child->resizeToNumberOfManifestations(manifestationCount);
     }
-    // Reserve this node
-    symbolTypes.resize(manifestationCount, QualType(TY_INVALID));
     // Do custom work
     customItemsInitialization(manifestationCount);
   }
@@ -117,21 +115,6 @@ public:
   } // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
-
-  QualType setEvaluatedSymbolType(const QualType &symbolType, const size_t idx) {
-    assert(symbolTypes.size() > idx);
-    symbolTypes.at(idx) = symbolType;
-    return symbolType;
-  }
-
-  [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
-    if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
-      return symbolTypes.at(idx);
-    const std::vector<ASTNode *> children = getChildren();
-    if (children.size() != 1)
-      throw CompilerError(INTERNAL_ERROR, "Cannot deduce evaluated symbol type");
-    return children.front()->getEvaluatedSymbolType(idx);
-  }
 
   [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
     const std::vector<ASTNode *> children = getChildren();
@@ -181,12 +164,11 @@ public:
   // Public members
   ASTNode *parent = nullptr;
   const CodeLoc codeLoc;
-  QualTypeList symbolTypes;
 };
 
 // Make sure we have no unexpected increases in memory consumption
 // Note: If this is adjusted, please run UnitBlockAllocator, which depends on the ASTNode size
-static_assert(sizeof(ASTNode) == 72);
+static_assert(sizeof(ASTNode) == 48);
 
 // ========================================================== EntryNode ==========================================================
 
@@ -236,7 +218,7 @@ public:
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(StmtNode) == 80);
+static_assert(sizeof(StmtNode) == 56);
 
 // ========================================================== ExprNode ===========================================================
 
@@ -248,6 +230,34 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  void resizeToNumberOfManifestations(size_t manifestationCount) override {
+    // Reserve this node
+    symbolTypes.resize(manifestationCount, QualType(TY_INVALID));
+    // Call parent
+    ASTNode::resizeToNumberOfManifestations(manifestationCount);
+  }
+
+  QualType setEvaluatedSymbolType(const QualType &symbolType, const size_t idx) {
+    assert(symbolTypes.size() > idx);
+    symbolTypes.at(idx) = symbolType;
+    return symbolType;
+  }
+
+  [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
+    if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
+      return symbolTypes.at(idx);
+    const std::vector<ASTNode *> children = getChildren();
+    if (children.size() != 1)
+      throw CompilerError(INTERNAL_ERROR, "Cannot deduce evaluated symbol type");
+    const auto expr = spice_pointer_cast<ExprNode *>(children.front());
+    return expr->getEvaluatedSymbolType(idx);
+  }
+
+private:
+  // Private members
+  QualTypeList symbolTypes;
 };
 
 // Make sure we have no unexpected increases in memory consumption
@@ -1252,10 +1262,10 @@ public:
 
 // ======================================================== CaseConstantNode =====================================================
 
-class CaseConstantNode final : public ASTNode {
+class CaseConstantNode final : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseConstant(this); }
@@ -1289,6 +1299,7 @@ public:
 
   // Public members
   AssignExprNode *assignExpr = nullptr;
+  QualType returnType;
   Function *calledCopyCtor = nullptr;
   bool hasReturnValue = false;
 };
@@ -2208,7 +2219,7 @@ public:
 
 // ======================================================= DataTypeNode ==========================================================
 
-class DataTypeNode final : public ASTNode {
+class DataTypeNode final : public ExprNode {
 public:
   // Enums
   enum class TypeModifierType : uint8_t {
@@ -2226,7 +2237,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDataType(this); }
@@ -2248,7 +2259,7 @@ public:
 
 // ==================================================== BaseDataTypeNode =========================================================
 
-class BaseDataTypeNode final : public ASTNode {
+class BaseDataTypeNode final : public ExprNode {
 public:
   // Enums
   enum class Type : uint8_t {
@@ -2267,7 +2278,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBaseDataType(this); }
@@ -2284,10 +2295,10 @@ public:
 
 // ==================================================== CustomDataTypeNode =======================================================
 
-class CustomDataTypeNode final : public ASTNode {
+class CustomDataTypeNode final : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCustomDataType(this); }
@@ -2306,10 +2317,10 @@ public:
 
 // =================================================== FunctionDataTypeNode ======================================================
 
-class FunctionDataTypeNode final : public ASTNode {
+class FunctionDataTypeNode final : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionDataType(this); }
