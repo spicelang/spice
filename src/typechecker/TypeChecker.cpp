@@ -603,7 +603,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   // Update the state of the variable
   localVarEntry->updateState(INITIALIZED, node);
 
-  return node->setEvaluatedSymbolType(localVarType, manIdx);
+  return localVarType;
 }
 
 std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
@@ -671,7 +671,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     }
   }
 
-  return node->setEvaluatedSymbolType(returnType, manIdx);
+  return node->returnType = returnType;
 }
 
 std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {

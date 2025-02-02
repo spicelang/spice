@@ -7,7 +7,12 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return ExprResult{(node)->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                          \
+    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
+      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
+      return ExprResult{exprNode->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                      \
+    } else {                                                                                                                     \
+      return ExprResult{QualType(TY_UNRESOLVED)};                                                                                \
+    }                                                                                                                            \
   }
 
 #define SOFT_ERROR_QT(node, type, message)                                                                                       \
@@ -29,22 +34,28 @@
   }
 
 #define HANDLE_UNRESOLVED_TYPE_ER(type)                                                                                          \
-  {                                                                                                                              \
-    if ((type).is(TY_UNRESOLVED))                                                                                                \
-      return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                          \
+  if ((type).is(TY_UNRESOLVED)) {                                                                                                \
+    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
+      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
+      return ExprResult{exprNode->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                      \
+    } else {                                                                                                                     \
+      return ExprResult{QualType(TY_UNRESOLVED)};                                                                                \
+    }                                                                                                                            \
   }
 
 #define HANDLE_UNRESOLVED_TYPE_QT(qualType)                                                                                      \
-  {                                                                                                                              \
-    if ((qualType).is(TY_UNRESOLVED))                                                                                            \
-      return node->setEvaluatedSymbolType(qualType, manIdx);                                                                     \
+  if ((qualType).is(TY_UNRESOLVED)) {                                                                                            \
+    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
+      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
+      return exprNode->setEvaluatedSymbolType(qualType, manIdx);                                                                 \
+    } else {                                                                                                                     \
+      return qualType;                                                                                                           \
+    }                                                                                                                            \
   }
 
 #define HANDLE_UNRESOLVED_TYPE_PTR(type)                                                                                         \
-  {                                                                                                                              \
-    if ((type).is(TY_UNRESOLVED))                                                                                                \
-      return nullptr;                                                                                                            \
-  }
+  if ((type).is(TY_UNRESOLVED))                                                                                                  \
+    return nullptr;
 
 #define CHECK_ABORT_FLAG_V()                                                                                                     \
   if (resourceManager.abortCompilation)                                                                                          \
@@ -53,4 +64,5 @@
 #define CHECK_ABORT_FLAG_B()                                                                                                     \
   if (resourceManager.abortCompilation)                                                                                          \
     return true;
+
 #pragma warning(default : 4129)

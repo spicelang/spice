@@ -125,13 +125,13 @@ llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr
   return builder.CreateStructGEP(type, basePtr, index, varName);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ASTNode *node) {
+llvm::Value *IRGenerator::resolveValue(const ExprNode *node) {
   // Visit the given AST node
   auto exprResult = any_cast<LLVMExprResult>(visit(node));
   return resolveValue(node, exprResult);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &exprResult) const {
+llvm::Value *IRGenerator::resolveValue(const ExprNode *node, LLVMExprResult &exprResult) const {
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult);
 }
 
@@ -385,14 +385,14 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
     throw CompilerError(codeLoc, INVALID_MODULE, output); // LCOV_EXCL_LINE
 }
 
-LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode, const ASTNode *node) {
+LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node) {
   // Get entry of left side
   auto [value, constant, ptr, refPtr, entry, _] = std::any_cast<LLVMExprResult>(visit(lhsNode));
   llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? refPtr : ptr;
   return doAssignment(lhsAddress, entry, rhsNode, node);
 }
 
-LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
+LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ExprNode *rhsNode,
                                          const ASTNode *node, bool isDecl) {
   // Get symbol type of right side
   const QualType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);

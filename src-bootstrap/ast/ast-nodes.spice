@@ -17,8 +17,6 @@ import "bootstrap/ast/ast-node-intf";
 public type ASTNode struct/*: IVisitable*/ {
     ASTNode* parent = nil<ASTNode*>
     CodeLoc codeLoc
-    //Vector<Type> symbolTypes
-    bool unreachable = false
 }
 
 public p ASTNode.ctor(const CodeLoc& codeLoc) {
@@ -36,8 +34,6 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
         assert child != nil<ASTNode*>;
         child.resizeToNumberOfManifestations(manifestationCount);
     }
-    // Reserve this node
-    this.symbolTypes.resize(manifestationCount); // ToDo: Default initializer
     // Do custom work
     this.customItemsInitialization(manifestationCount);
 }
@@ -53,15 +49,60 @@ public p ASTEntryNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
+// ======================================================= TopLevelDefNode =======================================================
+
+public type ASTTopLevelDefNode struct/*: IVisitable*/ {
+    compose public ASTNode node
+}
+
+public p ASTTopLevelDefNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+
+// =========================================================== StmtNode ==========================================================
+
+public type ASTStmtNode struct/*: IVisitable*/ {
+    compose public ASTNode node
+    bool unreachable = false
+}
+
+public p ASTStmtNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+
+// =========================================================== ExprNode ==========================================================
+
+public type ASTExprNode struct/*: IVisitable*/ {
+    compose public ASTNode node
+    QualTypeList symbolTypes
+}
+
+public p ASTExprNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+
+public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    // Resize children
+    Vector<ASTNode*> children/* = this.getChildren()*/;
+    foreach ASTNode* child : children {
+        assert child != nil<ASTNode*>;
+        child.resizeToNumberOfManifestations(manifestationCount);
+    }
+    // Reserve this node
+    this.symbolTypes.resize(manifestationCount); // ToDo: Default initializer
+    // Do custom work
+    this.customItemsInitialization(manifestationCount);
+}
+
 // ======================================================== MainFctDefNode =======================================================
 
 public type ASTMainFctDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================= FctNameNode =========================================================
@@ -75,202 +116,212 @@ public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
+// ======================================================== FctDefBaseNode =======================================================
+
+public type ASTFctDefBaseNode struct/*: IVisitable*/ {
+    compose public ASTTopLevelDefNode node
+}
+
+public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTTopLevelDefNode(codeLoc);
+}
+
 // ========================================================== FctDefNode =========================================================
 
 public type ASTFctDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTFctDefBaseNode node
 
 }
 
 public p ASTFctDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTFctDefBaseNode(codeLoc);
 }
 
 // ========================================================== ProcDefNode ========================================================
 
 public type ASTProcDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTFctDefBaseNode node
 
 }
 
 public p ASTProcDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTFctDefBaseNode(codeLoc);
 }
 
 // ========================================================= StructDefNode =======================================================
 
 public type ASTStructDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ======================================================== InterfaceDefNode =====================================================
 
 public type ASTInterfaceDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================== EnumDefNode ========================================================
 
 public type ASTEnumDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ======================================================= GenericTypeDefNode ====================================================
 
 public type ASTGenericTypeDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================== AliasDefNode =======================================================
 
 public type ASTAliasDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ======================================================== GlobalVarDefNode =====================================================
 
 public type ASTGlobalVarDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================== ExtDeclNode ========================================================
 
 public type ASTExtDeclNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTExtDeclNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================= ImportDefNode =======================================================
 
 public type ASTImportDefNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTTopLevelDefNode node
 
 }
 
 public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTTopLevelDefNode(codeLoc);
 }
 
 // ========================================================== UnsafeBlockNode ========================================================
 
 public type ASTUnsafeBlockNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================== ForLoopNode ========================================================
 
 public type ASTForLoopNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ======================================================== ForeachLoopNode ======================================================
 
 public type ASTForeachLoopNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================= WhileLoopNode =======================================================
 
 public type ASTWhileLoopNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ======================================================== DoWhileLoopNode ======================================================
 
 public type ASTDoWhileLoopNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================== IfStmtNode ========================================================
 
 public type ASTIfStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================== ElseStmtNode =======================================================
 
 public type ASTElseStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================= SwitchStmtNode ======================================================
 
 public type ASTSwitchStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================= CaseBranchNode ======================================================
@@ -298,12 +349,12 @@ public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
 public type ASTAnonymousBlockStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================== StmtLstNode ========================================================
@@ -419,12 +470,23 @@ public p ASTStmtNode.ctor(CodeLoc codeLoc) {
 // ========================================================== DeclStmtNode =======================================================
 
 public type ASTDeclStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
+}
+
+// ========================================================== ExprStmtNode =======================================================
+
+public type ASTExprStmtNode struct/*: IVisitable*/ {
+    compose public ASTStmtNode node
+
+}
+
+public p ASTExprStmtNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ======================================================== QualifierLstNode =====================================================
@@ -518,67 +580,77 @@ public p ASTAttrNode.ctor(CodeLoc codeLoc) {
 // ========================================================= CaseConstantNode ====================================================
 
 public type ASTCaseConstantNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================= ReturnStmtNode ======================================================
 
 public type ASTReturnStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================= BreakStmtNode =======================================================
 
 public type ASTBreakStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ======================================================== ContinueStmtNode =====================================================
 
 public type ASTContinueStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTContinueStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ======================================================= FallthroughStmtNode ===================================================
 
 public type ASTFallthroughStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
 }
 
 // ========================================================= AssertStmtNode ======================================================
 
 public type ASTAssertStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTStmtNode node
 
 }
 
 public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTStmtNode(codeLoc);
+}
+
+// ========================================================= BuiltinCallNode ======================================================
+
+public type ASTBuiltinCallNode struct/*: IVisitable*/ {
+    compose public ASTExprNode node
+}
+
+public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================= PrintfCallNode =======================================================
@@ -636,309 +708,330 @@ public p ASTPanicCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ========================================================= AssignExprNode =======================================================
+// ========================================================== SysCallNode ========================================================
 
-public type ASTAssignExprNode struct/*: IVisitable*/ {
+public type ASTSysCallNode struct/*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
-public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
+public p ASTSysCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+}
+
+// ========================================================= AssignExprNode =======================================================
+
+public type ASTAssignExprNode struct/*: IVisitable*/ {
+    compose public ASTExprNode node
+
+}
+
+public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================== TernaryExprNode ======================================================
 
 public type ASTTernaryExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTTernaryExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= LogicalOrExprNode =====================================================
 
 public type ASTLogicalOrExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= LogicalAndExprNode ====================================================
 
 public type ASTLogicalAndExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTLogicalAndExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= BitwiseOrExprNode =====================================================
 
 public type ASTBitwiseOrExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= BitwiseXorExprNode ====================================================
 
 public type ASTBitwiseXorExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= BitwiseAndExprNode ====================================================
 
 public type ASTBitwiseAndExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================== EqualityExprNode =====================================================
 
 public type ASTEqualityExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= RelationalExprNode ====================================================
 
 public type ASTRelationalExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================= ShiftExprNode =======================================================
 
 public type ASTShiftExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================== AdditiveExprNode =====================================================
 
 public type ASTAdditiveExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
 public type ASTMultiplicativeExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================== CastExprNode =======================================================
 
 public type ASTCastExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
 public type ASTPrefixUnaryExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
 public type ASTPostfixUnaryExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================= AtomicExprNode ======================================================
 
 public type ASTAtomicExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // =========================================================== ValueNode =========================================================
 
 public type ASTValueNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTValueNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================== ConstantNode =======================================================
 
 public type ASTConstantNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
     CompileTimeValue compileTimeValue
 }
 
 public p ASTConstantNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================== FctCallNode ========================================================
 
 public type ASTFctCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ==================================================== ArrayInitializationNode ==================================================
 
 public type ASTArrayInitializationNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ==================================================== StructInstantiationNode ==================================================
 
 public type ASTStructInstantiationNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
+}
+
+// ========================================================= LambdaBaseNode ======================================================
+
+public type ASTLambdaBaseNode struct/*: IVisitable*/ {
+    compose public ASTExprNode node
+}
+
+public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ========================================================= LambdaFuncNode ======================================================
 
 public type ASTLambdaFuncNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTLambdaBaseNode node
 
 }
 
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTLambdaBaseNode(codeLoc);
 }
 
 // ========================================================= LambdaProcNode ======================================================
 
 public type ASTLambdaProcNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTLambdaBaseNode node
 
 }
 
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTLambdaBaseNode(codeLoc);
 }
 
 // ========================================================= LambdaExprNode =======================================================
 
 public type ASTLambdaExprNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ASTLambdaBaseNode node
 
 }
 
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ASTLambdaBaseNode(codeLoc);
 }
 
 // ========================================================== DataTypeNode =======================================================
 
 public type ASTDataTypeNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ExprNode node
 
 }
 
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ExprNode(codeLoc);
 }
 
 // ======================================================== BaseDataTypeNode =====================================================
 
 public type ASTBaseDataTypeNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ExprNode node
 
 }
 
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ExprNode(codeLoc);
 }
 
 // ======================================================= CustomDataTypeNode ====================================================
 
 public type ASTCustomDataTypeNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ExprNode node
 }
 
 public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ExprNode(codeLoc);
 }
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
 public type ASTFunctionDataTypeNode struct/*: IVisitable*/ {
-    compose public ASTNode node
+    compose public ExprNode node
 
 }
 
 public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
+    this.node = ExprNode(codeLoc);
 }
