@@ -66,21 +66,26 @@ size_t FileUtil::getLineCount(const std::filesystem::path &filePath) {
  * Execute external command. Used to execute compiled binaries
  *
  * @param command Command to execute
+ * @param redirectStdErrToStdOut Redirect StdErr to StdOut
  * @return Result struct
  */
-ExecResult FileUtil::exec(const std::string &command) {
+ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOut) {
 #ifdef _WIN32
-  const std::string quotedCommand = "\"" + command + " 2>&1\""; // Redirect stderr to stdout
+  std::string redirectedCommand = command;
+  if (redirectStdErrToStdOut)
+    redirectedCommand = "\"" + command + " 2>&1\""; // Redirect stderr to stdout
   FILE *pipe = _popen(quotedCommand.c_str(), "r");
 #else
-  const std::string redirectedCommand = command + " 2>&1"; // Redirect stderr to stdout
+  std::string redirectedCommand = command;
+  if (redirectStdErrToStdOut)
+    redirectedCommand += " 2>&1"; // Redirect stderr to stdout
   FILE *pipe = popen(redirectedCommand.c_str(), "r");
 #endif
 
   if (!pipe)                                                                // GCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // GCOV_EXCL_LINE
 
-  std::array<char, 128> buffer;
+  std::array<char, 128> buffer{};
   std::stringstream result;
   while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
     result << buffer.data();

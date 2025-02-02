@@ -28,7 +28,7 @@ public:
   static void writeToFile(const std::filesystem::path &filePath, const std::string &fileContent);
   static std::string getFileContent(const std::filesystem::path &filePath);
   static size_t getLineCount(const std::filesystem::path &filePath);
-  static ExecResult exec(const std::string &command);
+  static ExecResult exec(const std::string &command, bool redirectStdErrToStdOut = false);
   static bool isCommandAvailable(const std::string &cmd);
   static bool isGraphvizInstalled();
   static ExternalBinaryFinderResult findLinkerInvoker();
