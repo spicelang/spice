@@ -182,11 +182,10 @@ public:
   ASTNode *parent = nullptr;
   const CodeLoc codeLoc;
   QualTypeList symbolTypes;
-  bool unreachable = false;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(ASTNode) == 80);
+static_assert(sizeof(ASTNode) == 72);
 
 // ========================================================== EntryNode ==========================================================
 
@@ -230,7 +229,13 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Public members
+  bool unreachable = false;
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(StmtNode) == 80);
 
 // ========================================================== ExprNode ===========================================================
 
@@ -243,6 +248,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(ExprNode) == 72);
 
 // ======================================================== MainFctDefNode =======================================================
 
