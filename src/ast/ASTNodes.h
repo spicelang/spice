@@ -185,6 +185,7 @@ public:
 };
 
 // Make sure we have no unexpected increases in memory consumption
+// Note: If this is adjusted, please run UnitBlockAllocator, which depends on the ASTNode size
 static_assert(sizeof(ASTNode) == 72);
 
 // ========================================================== EntryNode ==========================================================
