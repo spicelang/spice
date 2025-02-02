@@ -74,7 +74,7 @@ ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOu
   std::string redirectedCommand = command;
   if (redirectStdErrToStdOut)
     redirectedCommand = "\"" + command + " 2>&1\""; // Redirect stderr to stdout
-  FILE *pipe = _popen(quotedCommand.c_str(), "r");
+  FILE *pipe = _popen(redirectedCommand.c_str(), "r");
 #else
   std::string redirectedCommand = command;
   if (redirectStdErrToStdOut)
