@@ -55,7 +55,6 @@
     core.linker.flag = "-lLLVMCFIVerify",
     core.linker.flag = "-lLLVMCGData",
     core.linker.flag = "-lLLVMCodeGen",
-    core.linker.flag = "-lLLVMCodeGenData",
     core.linker.flag = "-lLLVMCodeGenTypes",
     core.linker.flag = "-lLLVMCore",
     core.linker.flag = "-lLLVMCoroutines",
