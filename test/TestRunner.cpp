@@ -221,7 +221,7 @@ void execTestCase(const TestCase &testCase) {
       cmd << TestUtil::getDefaultExecutableName();
       if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-      const auto [output, exitCode] = FileUtil::exec(cmd.str());
+      const auto [output, exitCode] = FileUtil::exec(cmd.str(), true);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one
