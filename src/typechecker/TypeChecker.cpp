@@ -909,8 +909,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
-      assert(lhs.entry != nullptr);
-      const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
+      const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it

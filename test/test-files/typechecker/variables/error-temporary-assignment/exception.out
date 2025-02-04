@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:5:
+Wrong data type for operator: Cannot assign to a temporary value
+
+2  (1) = 4;
+   ^^^^^^^
