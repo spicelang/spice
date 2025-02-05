@@ -799,7 +799,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     std::vector<llvm::Value *> indices = {builder.getInt64(0)};
     for (const size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
-    const std::string name = fieldName + "_addr";
+    const std::string name = fieldName + ".addr";
     llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(sourceFile), lhs.ptr, indices, name);
 
     // Set as ptr or refPtr, depending on the type

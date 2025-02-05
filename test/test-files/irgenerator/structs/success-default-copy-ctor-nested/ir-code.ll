@@ -17,12 +17,12 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
   %4 = getelementptr inbounds %struct.Inner, ptr %3, i64 0, i32 0
   store i16 -43, ptr %4, align 2
   %5 = load ptr, ptr %this, align 8
-  %x_addr = getelementptr inbounds %struct.Inner, ptr %5, i64 0, i32 0
+  %x.addr = getelementptr inbounds %struct.Inner, ptr %5, i64 0, i32 0
   %6 = load ptr, ptr %other, align 8
-  %x_addr1 = getelementptr inbounds %struct.Inner, ptr %6, i64 0, i32 0
-  %7 = load i16, ptr %x_addr1, align 2
+  %x.addr1 = getelementptr inbounds %struct.Inner, ptr %6, i64 0, i32 0
+  %7 = load i16, ptr %x.addr1, align 2
   %8 = add nsw i16 %7, 5
-  store i16 %8, ptr %x_addr, align 2
+  store i16 %8, ptr %x.addr, align 2
   ret void
 }
 
@@ -55,17 +55,17 @@ define dso_local i32 @main() #1 {
   %outer2 = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
   store %struct.Outer { %struct.Middle { %struct.Inner { i16 -43 } } }, ptr %outer, align 2
-  %middle_addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
-  %inner_addr = getelementptr inbounds %struct.Middle, ptr %middle_addr, i64 0, i32 0
-  %x_addr = getelementptr inbounds %struct.Inner, ptr %inner_addr, i64 0, i32 0
-  %1 = load i16, ptr %x_addr, align 2
+  %middle.addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
+  %inner.addr = getelementptr inbounds %struct.Middle, ptr %middle.addr, i64 0, i32 0
+  %x.addr = getelementptr inbounds %struct.Inner, ptr %inner.addr, i64 0, i32 0
+  %1 = load i16, ptr %x.addr, align 2
   %2 = sext i16 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
   call void @_ZN5Outer4ctorERK5Outer(ptr %outer2, ptr %outer)
-  %middle_addr1 = getelementptr inbounds %struct.Outer, ptr %outer2, i64 0, i32 0
-  %inner_addr2 = getelementptr inbounds %struct.Middle, ptr %middle_addr1, i64 0, i32 0
-  %x_addr3 = getelementptr inbounds %struct.Inner, ptr %inner_addr2, i64 0, i32 0
-  %4 = load i16, ptr %x_addr3, align 2
+  %middle.addr1 = getelementptr inbounds %struct.Outer, ptr %outer2, i64 0, i32 0
+  %inner.addr2 = getelementptr inbounds %struct.Middle, ptr %middle.addr1, i64 0, i32 0
+  %x.addr3 = getelementptr inbounds %struct.Inner, ptr %inner.addr2, i64 0, i32 0
+  %4 = load i16, ptr %x.addr3, align 2
   %5 = sext i16 %4 to i32
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
   %7 = load i32, ptr %result, align 4

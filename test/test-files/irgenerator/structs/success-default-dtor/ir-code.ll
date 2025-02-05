@@ -30,10 +30,10 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   %4 = call %struct.Result @_Z6sAllocm(i64 10)
   store %struct.Result %4, ptr %res, align 8
   %5 = load ptr, ptr %this, align 8
-  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
+  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   %7 = load ptr, ptr %6, align 8
-  store ptr %7, ptr %data_addr, align 8
+  store ptr %7, ptr %data.addr, align 8
   ret void
 }
 
@@ -50,15 +50,15 @@ define dso_local i32 @main() #1 {
   store ptr null, ptr %sPtr, align 8
   call void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   store ptr %s, ptr %sPtr, align 8
-  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i64 0, i32 0
-  %1 = load ptr, ptr %data_addr, align 8
+  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i64 0, i32 0
+  %1 = load ptr, ptr %data.addr, align 8
   %2 = icmp eq ptr %1, null
   %3 = zext i1 %2 to i32
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   call void @_ZN20StructWithHeapFields4dtorEv(ptr %s)
   %5 = load ptr, ptr %sPtr, align 8
-  %data_addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
-  %6 = load ptr, ptr %data_addr1, align 8
+  %data.addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
+  %6 = load ptr, ptr %data.addr1, align 8
   %7 = icmp eq ptr %6, null
   %8 = zext i1 %7 to i32
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)

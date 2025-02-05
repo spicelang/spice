@@ -10,8 +10,8 @@ define private ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferencea
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %field_addr = getelementptr inbounds %struct.Test, ptr %2, i64 0, i32 0
-  store ptr %field_addr, ptr %result, align 8
+  %field.addr = getelementptr inbounds %struct.Test, ptr %2, i64 0, i32 0
+  store ptr %field.addr, ptr %result, align 8
   %3 = load ptr, ptr %result, align 8
   ret ptr %3
 }

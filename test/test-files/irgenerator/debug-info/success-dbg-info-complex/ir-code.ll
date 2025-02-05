@@ -56,7 +56,7 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   %11 = alloca %struct.VectorIterator, align 8
   %idx = alloca i64, align 8
   %item2 = alloca ptr, align 8
-  %pair_addr = alloca %struct.Pair, align 8
+  %pair.addr = alloca %struct.Pair, align 8
   %12 = alloca ptr, align 8
   store i32 0, ptr %result, align 4, !dbg !23
     #dbg_declare(ptr %_argc, !24, !DIExpression(), !23)
@@ -381,11 +381,11 @@ foreach.head.L61:                                 ; preds = %foreach.tail.L61, %
 
 foreach.body.L61:                                 ; preds = %foreach.head.L61
   %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %11), !dbg !122
-  store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !122
-  %108 = load i64, ptr %pair_addr, align 8, !dbg !122
+  store %struct.Pair %pair3, ptr %pair.addr, align 8, !dbg !122
+  %108 = load i64, ptr %pair.addr, align 8, !dbg !122
   store i64 %108, ptr %idx, align 8, !dbg !122
-  %item_addr = getelementptr inbounds nuw %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !122
-  %109 = load ptr, ptr %item_addr, align 8, !dbg !122
+  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %pair.addr, i32 0, i32 1, !dbg !122
+  %109 = load ptr, ptr %item.addr, align 8, !dbg !122
   store ptr %109, ptr %12, align 8, !dbg !122
   %110 = load i64, ptr %idx, align 8, !dbg !123
   %111 = trunc i64 %110 to i32, !dbg !123

@@ -15,7 +15,7 @@ define dso_local i32 @main() #0 {
   %1 = alloca %struct.ArrayIterator, align 8
   %index = alloca i64, align 8
   %item = alloca i32, align 4
-  %pair_addr = alloca %struct.Pair, align 8
+  %pair.addr = alloca %struct.Pair, align 8
   store i32 0, ptr %result, align 4
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
   %2 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
@@ -30,11 +30,11 @@ foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
   %pair = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
-  store %struct.Pair %pair, ptr %pair_addr, align 8
-  %5 = load i64, ptr %pair_addr, align 8
+  store %struct.Pair %pair, ptr %pair.addr, align 8
+  %5 = load i64, ptr %pair.addr, align 8
   store i64 %5, ptr %index, align 8
-  %item_addr = getelementptr inbounds nuw %struct.Pair, ptr %pair_addr, i32 0, i32 1
-  %6 = load ptr, ptr %item_addr, align 8
+  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %pair.addr, i32 0, i32 1
+  %6 = load ptr, ptr %item.addr, align 8
   %7 = load i64, ptr %index, align 8
   %8 = load i32, ptr %6, align 4
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %7, i32 %8)

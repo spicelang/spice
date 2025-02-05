@@ -13,8 +13,8 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i32 123, ptr %1, align 4
   store ptr %1, ptr %str, align 8
-  %ref_addr = getelementptr inbounds %struct.Struct, ptr %str, i64 0, i32 0
-  %2 = load ptr, ptr %ref_addr, align 8
+  %ref.addr = getelementptr inbounds %struct.Struct, ptr %str, i64 0, i32 0
+  %2 = load ptr, ptr %ref.addr, align 8
   %3 = load i32, ptr %2, align 4
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   %5 = load i32, ptr %result, align 4

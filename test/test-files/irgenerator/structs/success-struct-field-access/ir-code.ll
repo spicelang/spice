@@ -13,10 +13,10 @@ define dso_local i32 @main() #0 {
   %john = alloca %struct.Person, align 8
   store i32 0, ptr %result, align 4
   store %struct.Person { ptr @anon.string.0, ptr @anon.string.1, i32 46 }, ptr %john, align 8
-  %age_addr = getelementptr inbounds %struct.Person, ptr %john, i64 0, i32 2
-  store i32 47, ptr %age_addr, align 4
-  %age_addr1 = getelementptr inbounds %struct.Person, ptr %john, i64 0, i32 2
-  %1 = load i32, ptr %age_addr1, align 4
+  %age.addr = getelementptr inbounds %struct.Person, ptr %john, i64 0, i32 2
+  store i32 47, ptr %age.addr, align 4
+  %age.addr1 = getelementptr inbounds %struct.Person, ptr %john, i64 0, i32 2
+  %1 = load i32, ptr %age.addr1, align 4
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
