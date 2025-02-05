@@ -47,17 +47,17 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
   %8 = getelementptr inbounds %struct.Person, ptr %5, i64 0, i32 3
   store i32 0, ptr %8, align 4
   %9 = load ptr, ptr %this, align 8
-  %firstName_addr = getelementptr inbounds %struct.Person, ptr %9, i64 0, i32 1
+  %firstName.addr = getelementptr inbounds %struct.Person, ptr %9, i64 0, i32 1
   %10 = load ptr, ptr %firstName, align 8
-  store ptr %10, ptr %firstName_addr, align 8
+  store ptr %10, ptr %firstName.addr, align 8
   %11 = load ptr, ptr %this, align 8
-  %lastName_addr = getelementptr inbounds %struct.Person, ptr %11, i64 0, i32 2
+  %lastName.addr = getelementptr inbounds %struct.Person, ptr %11, i64 0, i32 2
   %12 = load ptr, ptr %lastName, align 8
-  store ptr %12, ptr %lastName_addr, align 8
+  store ptr %12, ptr %lastName.addr, align 8
   %13 = load ptr, ptr %this, align 8
-  %age_addr = getelementptr inbounds %struct.Person, ptr %13, i64 0, i32 3
+  %age.addr = getelementptr inbounds %struct.Person, ptr %13, i64 0, i32 3
   %14 = load i32, ptr %age, align 4
-  store i32 %14, ptr %age_addr, align 4
+  store i32 %14, ptr %age.addr, align 4
   ret void
 }
 

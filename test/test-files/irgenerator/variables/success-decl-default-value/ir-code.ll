@@ -58,8 +58,8 @@ define dso_local i32 @main() #0 {
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 %19)
   store [4 x %struct.NestedStruct] [%struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }], ptr %structArrayVar, align 8
   %21 = getelementptr inbounds [4 x %struct.NestedStruct], ptr %structArrayVar, i64 0, i32 2
-  %field2_addr = getelementptr inbounds %struct.NestedStruct, ptr %21, i64 0, i32 1
-  %22 = load ptr, ptr %field2_addr, align 8
+  %field2.addr = getelementptr inbounds %struct.NestedStruct, ptr %21, i64 0, i32 1
+  %22 = load ptr, ptr %field2.addr, align 8
   %23 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr %22)
   %24 = load i32, ptr %result, align 4
   ret i32 %24

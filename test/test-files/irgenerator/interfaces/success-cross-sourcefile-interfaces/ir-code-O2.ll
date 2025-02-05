@@ -27,15 +27,15 @@ define private fastcc void @_ZN3Car4ctorEv(ptr nocapture noundef nonnull writeon
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
 define private void @_ZN3Car5driveEi(ptr nocapture noundef nonnull writeonly align 8 dereferenceable(16) initializes((8, 9)) %0, i32 %1) #0 {
-  %driving_addr = getelementptr inbounds nuw i8, ptr %0, i64 8
-  store i1 true, ptr %driving_addr, align 8
+  %driving.addr = getelementptr inbounds nuw i8, ptr %0, i64 8
+  store i1 true, ptr %driving.addr, align 8
   ret void
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
 define private i1 @_ZN3Car9isDrivingEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(16) %0) #1 {
-  %driving_addr = getelementptr inbounds nuw i8, ptr %0, i64 8
-  %2 = load i1, ptr %driving_addr, align 8
+  %driving.addr = getelementptr inbounds nuw i8, ptr %0, i64 8
+  %2 = load i1, ptr %driving.addr, align 8
   ret i1 %2
 }
 

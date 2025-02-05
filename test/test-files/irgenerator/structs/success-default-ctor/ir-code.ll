@@ -31,17 +31,17 @@ define dso_local i32 @main() #1 {
   %ts = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN10TestStruct4ctorEv(ptr %ts)
-  %i_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
-  %1 = load i32, ptr %i_addr, align 4
+  %i.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
+  %1 = load i32, ptr %i.addr, align 4
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
-  %s_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
-  %3 = load ptr, ptr %s_addr, align 8
+  %s.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
+  %3 = load ptr, ptr %s.addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %3)
-  %d_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 2
-  %5 = load double, ptr %d_addr, align 8
+  %d.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 2
+  %5 = load double, ptr %d.addr, align 8
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, double %5)
-  %b_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 3
-  %7 = load i1, ptr %b_addr, align 1
+  %b.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 3
+  %7 = load i1, ptr %b.addr, align 1
   %8 = zext i1 %7 to i32
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %8)
   %10 = load i32, ptr %result, align 4

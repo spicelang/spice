@@ -23,12 +23,12 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
   %4 = getelementptr inbounds %struct.Vector, ptr %2, i64 0, i32 1
   store ptr @0, ptr %4, align 8
   %5 = load ptr, ptr %this, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %5, i64 0, i32 0
-  store i1 false, ptr %field1_addr, align 1
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %5, i64 0, i32 0
+  store i1 false, ptr %field1.addr, align 1
   %6 = load ptr, ptr %this, align 8
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 1
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 1
   %7 = load ptr, ptr %msg, align 8
-  store ptr %7, ptr %field2_addr, align 8
+  store ptr %7, ptr %field2.addr, align 8
   ret void
 }
 
@@ -43,12 +43,12 @@ define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereference
   %5 = getelementptr inbounds %struct.Vector, ptr %3, i64 0, i32 1
   store ptr @1, ptr %5, align 8
   %6 = load ptr, ptr %this, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 0
-  store i1 false, ptr %field1_addr, align 1
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 0
+  store i1 false, ptr %field1.addr, align 1
   %7 = load ptr, ptr %this, align 8
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %7, i64 0, i32 1
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %7, i64 0, i32 1
   %8 = load ptr, ptr %msg, align 8
-  store ptr %8, ptr %field2_addr, align 8
+  store ptr %8, ptr %field2.addr, align 8
   ret void
 }
 
@@ -66,20 +66,20 @@ define dso_local i32 @main() #0 {
   %1 = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
-  %2 = load i1, ptr %field1_addr, align 1
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
+  %2 = load i1, ptr %field1.addr, align 1
   %3 = zext i1 %2 to i32
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
-  %4 = load ptr, ptr %field2_addr, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
+  %4 = load ptr, ptr %field2.addr, align 8
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
   call void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.2)
   %6 = load %struct.Vector, ptr %1, align 8
   store %struct.Vector %6, ptr %vec, align 8
-  %field1_addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
-  %7 = load i1, ptr %field1_addr1, align 1
+  %field1.addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
+  %7 = load i1, ptr %field1.addr1, align 1
   %8 = zext i1 %7 to i32
-  %field2_addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
-  %9 = load ptr, ptr %field2_addr2, align 8
+  %field2.addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
+  %9 = load ptr, ptr %field2.addr2, align 8
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8, ptr %9)
   %11 = call ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %11)

@@ -34,8 +34,8 @@ define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenc
   %3 = getelementptr inbounds %struct.InnerTest, ptr %2, i64 0, i32 1
   store i32 0, ptr %3, align 4
   %4 = load ptr, ptr %this, align 8
-  %a_addr = getelementptr inbounds %struct.InnerTest, ptr %4, i64 0, i32 1
-  store i32 0, ptr %a_addr, align 4
+  %a.addr = getelementptr inbounds %struct.InnerTest, ptr %4, i64 0, i32 1
+  store i32 0, ptr %a.addr, align 4
   ret void
 }
 

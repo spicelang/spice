@@ -13,10 +13,10 @@ define private void @_Z8birthdayP6Person(ptr %0) {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8
-  %age_addr = getelementptr inbounds %struct.Person, ptr %2, i64 0, i32 2
-  %3 = load i32, ptr %age_addr, align 4
+  %age.addr = getelementptr inbounds %struct.Person, ptr %2, i64 0, i32 2
+  %3 = load i32, ptr %age.addr, align 4
   %4 = add i32 %3, 1
-  store i32 %4, ptr %age_addr, align 4
+  store i32 %4, ptr %age.addr, align 4
   ret void
 }
 
@@ -26,17 +26,17 @@ define dso_local i32 @main() #0 {
   %mike = alloca %struct.Person, align 8
   store i32 0, ptr %result, align 4
   store %struct.Person { ptr @anon.string.0, ptr @anon.string.1, i32 32 }, ptr %mike, align 8
-  %lastName_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 1
-  %1 = load ptr, ptr %lastName_addr, align 8
-  %firstName_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 0
-  %2 = load ptr, ptr %firstName_addr, align 8
+  %lastName.addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 1
+  %1 = load ptr, ptr %lastName.addr, align 8
+  %firstName.addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 0
+  %2 = load ptr, ptr %firstName.addr, align 8
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1, ptr %2)
-  %age_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
-  %4 = load i32, ptr %age_addr, align 4
+  %age.addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
+  %4 = load i32, ptr %age.addr, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
   call void @_Z8birthdayP6Person(ptr %mike)
-  %age_addr1 = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
-  %6 = load i32, ptr %age_addr1, align 4
+  %age.addr1 = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
+  %6 = load i32, ptr %age.addr1, align 4
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %6)
   %8 = load i32, ptr %result, align 4
   ret i32 %8

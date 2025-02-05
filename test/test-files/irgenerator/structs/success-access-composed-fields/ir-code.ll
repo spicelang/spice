@@ -14,18 +14,18 @@ define dso_local i32 @main() #0 {
   %d = alloca %struct.D, align 8
   store i32 0, ptr %result, align 4
   store %struct.D zeroinitializer, ptr %d, align 4
-  %f1_addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 0, i32 0
-  store i32 1, ptr %f1_addr, align 4
-  %f2_addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 2
-  store i32 2, ptr %f2_addr, align 4
-  %f3_addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 1, i32 1, i32 0
-  store i32 3, ptr %f3_addr, align 4
-  %f1_addr1 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 0, i32 0
-  %1 = load i32, ptr %f1_addr1, align 4
-  %f2_addr2 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 2
-  %2 = load i32, ptr %f2_addr2, align 4
-  %f3_addr3 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 1, i32 1, i32 0
-  %3 = load i32, ptr %f3_addr3, align 4
+  %f1.addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 0, i32 0
+  store i32 1, ptr %f1.addr, align 4
+  %f2.addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 2
+  store i32 2, ptr %f2.addr, align 4
+  %f3.addr = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 1, i32 1, i32 0
+  store i32 3, ptr %f3.addr, align 4
+  %f1.addr1 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 0, i32 0
+  %1 = load i32, ptr %f1.addr1, align 4
+  %f2.addr2 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 2
+  %2 = load i32, ptr %f2.addr2, align 4
+  %f3.addr3 = getelementptr inbounds %struct.D, ptr %d, i64 0, i32 1, i32 1, i32 0
+  %3 = load i32, ptr %f3.addr3, align 4
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, i32 %2, i32 %3)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
