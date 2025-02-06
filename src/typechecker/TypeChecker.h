@@ -147,6 +147,8 @@ private:
   static void autoDeReference(QualType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   static void requestRevisitIfRequired(const Function *fct);
+  void ensureLoadedRuntimeForTypeName(const std::string &typeName) const;
+  void ensureLoadedRuntimeForFunctionName(const std::string &functionName) const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation

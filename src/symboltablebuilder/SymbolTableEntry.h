@@ -40,6 +40,8 @@ public:
   void pushAddress(llvm::Value *address);
   void popAddress();
   [[nodiscard]] bool isField() const;
+  [[nodiscard]] bool isFunctionOrProcedure() const;
+  [[nodiscard]] bool isMethod() const;
   [[nodiscard]] const Lifecycle &getLifecycle() const { return lifecycle; }
   [[nodiscard]] bool isInitialized() const { return lifecycle.isInitialized(); }
   [[nodiscard]] nlohmann::ordered_json toJSON() const;

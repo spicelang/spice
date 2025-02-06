@@ -1759,21 +1759,19 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     data.thisType = firstFragEntry->getQualType();
     Scope *structBodyScope = data.thisType.getBase().getBodyScope();
     assert(structBodyScope != nullptr);
-    if (bool success = visitMethodCall(node, structBodyScope, concreteTemplateTypes); !success) // Check if soft errors occurred
+    if (!visitMethodCall(node, structBodyScope, concreteTemplateTypes)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
     // This is a function pointer call
     const QualType &functionType = firstFragEntry->getQualType().getBase();
     assert(functionType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-    bool success = visitFctPtrCall(node, functionType);
-    if (!success) // Check if soft errors occurred
+    if (!visitFctPtrCall(node, functionType)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall() || data.isCtorCall());
-    bool success = visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName);
-    if (!success) // Check if soft errors occurred
+    if (!visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
 
@@ -1899,14 +1897,10 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
-  // Check if this is a ctor call to the String type
+  // Check if this is a well-known ctor/fct call
   if (node->functionNameFragments.size() == 1) {
-    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
-      if (fqFunctionName == typeName && !sourceFile->isRT(runtimeModule))
-        sourceFile->requestRuntimeModule(runtimeModule);
-    for (const auto &[fctName, runtimeModule] : FCT_NAME_TO_RT_MODULE_MAPPING)
-      if (fqFunctionName == fctName && !sourceFile->isRT(runtimeModule))
-        sourceFile->requestRuntimeModule(runtimeModule);
+    ensureLoadedRuntimeForTypeName(fqFunctionName);
+    ensureLoadedRuntimeForFunctionName(fqFunctionName);
   }
 
   // Check if the type is generic (possible in case of ctor call)
@@ -2485,9 +2479,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Check this type requires a runtime module
   if (node->typeNameFragments.size() == 1)
-    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
-      if (firstFragment == typeName && !sourceFile->isRT(runtimeModule))
-        sourceFile->requestRuntimeModule(runtimeModule);
+   ensureLoadedRuntimeForTypeName(firstFragment);
 
   // Check if it is a generic type
   bool isImported = node->typeNameFragments.size() > 1;
@@ -2498,9 +2490,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (typeMapping.contains(firstFragment))
       symbolType = typeMapping.at(firstFragment);
 
-    // Check if the replacement is a String type
-    if (!isImported && symbolType.isStringObj() && !sourceFile->isStringRT())
-      sourceFile->requestRuntimeModule(STRING_RT);
+    // Check if the replacement requires a runtime module
+    if (symbolType.is(TY_STRUCT))
+      ensureLoadedRuntimeForTypeName(symbolType.getSubType());
 
     return node->setEvaluatedSymbolType(symbolType, manIdx);
   }
@@ -2745,6 +2737,34 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
 void TypeChecker::requestRevisitIfRequired(const Function *fct) {
   if (fct && !fct->alreadyTypeChecked)
     fct->entry->scope->sourceFile->reVisitRequested = true;
+}
+
+/**
+ * Check type name against well-known type names that require a runtime import. If found one, auto-import the runtime module.
+ *
+ * @param typeName Given type name
+ */
+void TypeChecker::ensureLoadedRuntimeForTypeName(const std::string &typeName) const {
+  for (const auto &[wellKnownTypeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING) {
+    if (typeName == wellKnownTypeName && !sourceFile->isRT(runtimeModule)) {
+      sourceFile->requestRuntimeModule(runtimeModule);
+      break;
+    }
+  }
+}
+
+/**
+ * Check type name against well-known function names that require a runtime import. If found one, auto-import the runtime module.
+ *
+ * @param functionName Given function name
+ */
+void TypeChecker::ensureLoadedRuntimeForFunctionName(const std::string &functionName) const {
+  for (const auto &[wellKnownFunctionName, runtimeModule] : FCT_NAME_TO_RT_MODULE_MAPPING) {
+    if (functionName == wellKnownFunctionName && !sourceFile->isRT(runtimeModule)) {
+      sourceFile->requestRuntimeModule(runtimeModule);
+      break;
+    }
+  }
 }
 
 /**
