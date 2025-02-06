@@ -15,7 +15,7 @@ public type Reader struct {
 
 public p Reader.ctor(const FilePath& inputPath) {
     this.filePath = inputPath;
-    this.curCodeLoc = CodeLoc(1l, 0l, inputPath.toString());
+    this.curCodeLoc = CodeLoc(1, 0, inputPath.toString());
 
     // Open the file input stream
     Result<File> result = openFile(inputPath.toString(), MODE_READ);
@@ -54,7 +54,7 @@ public p Reader.advance() {
     this.curChar = this.file.readChar();
     if this.curChar == '\n' {
         this.curCodeLoc.line++;
-        this.curCodeLoc.col = 0l;
+        this.curCodeLoc.col = 0;
     } else {
         this.curCodeLoc.col++;
     }

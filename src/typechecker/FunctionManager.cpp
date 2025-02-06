@@ -173,9 +173,7 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
       // Create empty type mapping
       TypeMapping &typeMapping = candidate.typeMapping;
 
-      bool forceSubstantiation = false;
-      const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
-                                                         strictQualifierMatching, forceSubstantiation, nullptr);
+      const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping, strictQualifierMatching, nullptr);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -243,9 +241,8 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
         typeMapping.insert({typeName, templateType});
       }
 
-      bool forceSubstantiation = false;
       MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
-                                                   strictQualifierMatching, forceSubstantiation, callNode);
+                                                   strictQualifierMatching, callNode);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -256,7 +253,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
       candidate.entry->used = true;
 
       // Check if the function is generic needs to be substantiated
-      if (presetFunction.templateTypes.empty() && !forceSubstantiation) {
+      if (presetFunction.templateTypes.empty()) {
         assert(matchScope->functions.contains(fctId) && matchScope->functions.at(fctId).contains(signature));
         matches.push_back(&matchScope->functions.at(fctId).at(signature));
         matches.back()->used = true;
@@ -324,7 +321,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
   lookupCache[cacheKey] = matches.front();
 
   // Trigger revisit in type checker if required
-  typeChecker->requestRevisitIfRequired(matches.front());
+  TypeChecker::requestRevisitIfRequired(matches.front());
 
   // Return the very match
   return matches.front();
@@ -332,8 +329,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
 
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
                                                 const QualType &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
-                                                bool strictQualifierMatching, bool &forceSubstantiation,
-                                                const ASTNode *callNode) {
+                                                bool strictQualifierMatching, const ASTNode *callNode) {
   // Check name requirement
   if (!matchName(candidate, reqName))
     return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
@@ -343,7 +339,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Check arg types requirement
-  if (!matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, forceSubstantiation, callNode))
+  if (!matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, callNode))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Check if there are unresolved generic types
@@ -420,12 +416,11 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
  * @param reqArgs Requested argument types
  * @param typeMapping Concrete template type mapping
  * @param strictQualifierMatching Match qualifiers strictly
- * @param needsSubstantiation Do we want to create a substantiation after successfully matching
  * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
 bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
-                                    bool strictQualifierMatching, bool &needsSubstantiation, const ASTNode *callNode) {
+                                    bool strictQualifierMatching, const ASTNode *callNode) {
   std::vector<Param> &candidateParamList = candidate.paramList;
 
   // If the number of arguments does not match with the number of params, the matching fails
@@ -458,12 +453,6 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
       if (callNode)
         throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
       return false;
-    }
-
-    // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType = candidateParamType.getWithLambdaCaptures();
-      needsSubstantiation = true;
     }
   }
 

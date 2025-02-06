@@ -55,7 +55,6 @@ public:
   [[nodiscard]] const QualType &getFunctionReturnType() const;
   [[nodiscard]] QualTypeList getFunctionParamTypes() const;
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
-  [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
   Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
@@ -107,7 +106,6 @@ public:
   [[nodiscard]] QualType getBase() const;
   [[nodiscard]] QualType removeReferenceWrapper() const;
   [[nodiscard]] QualType replaceBaseType(const QualType &newBaseType) const;
-  [[nodiscard]] QualType getWithLambdaCaptures(bool enabled = true) const;
   [[nodiscard]] QualType getWithBodyScope(Scope *bodyScope) const;
   [[nodiscard]] QualType getWithTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] QualType getWithBaseTemplateTypes(const QualTypeList &templateTypes) const;

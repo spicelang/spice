@@ -1,17 +1,37 @@
-f<int> main() {
-    (1) = 4;
+import "std/io/cli-parser";
+
+type CliOptions struct {
+    bool sayHi = false
 }
 
-/*import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
-
-public type TestNode struct {
-    int data = 123
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
 }
 
-public p TestNode.dtor() {}
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2025");
 
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
+}
+
+/*import "bootstrap/util/deferred-logic";
+
+// Wrapper for 'spice test' unit test
 f<int> main() {
-    DefaultMemoryManager mm;
-    BlockAllocator<TestNode> ba = BlockAllocator<TestNode>(mm);
+    testDeferredLogic();
+    printf("All assertions passed!");
 }*/

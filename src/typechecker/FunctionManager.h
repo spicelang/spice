@@ -60,12 +60,12 @@ private:
   [[nodiscard]] static MatchResult matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
                                                       const QualType &reqThisType, const ArgList &reqArgs,
                                                       TypeMapping &typeMapping, bool strictQualifierMatching,
-                                                      bool &forceSubstantiation, const ASTNode *callNode);
+                                                      const ASTNode *callNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &reqName);
   [[nodiscard]] static bool matchThisType(Function &candidate, const QualType &reqThisType, TypeMapping &typeMapping,
                                           bool strictQualifierMatching, const ASTNode *callNode);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
-                                          bool strictQualifierMatching, bool &needsSubstantiation, const ASTNode *callNode);
+                                          bool strictQualifierMatching, const ASTNode *callNode);
   static void substantiateReturnType(Function &candidate, const TypeMapping &typeMapping, const ASTNode *callNode);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
