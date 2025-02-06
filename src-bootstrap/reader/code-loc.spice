@@ -2,15 +2,15 @@
 import "std/type/type-conversion";
 
 public type CodeLoc struct {
-    public unsigned long line
-    public unsigned long col
     public string sourceFilePath
+    public unsigned int line
+    public unsigned int col
 }
 
-public p CodeLoc.ctor(unsigned long line, unsigned long col, string sourceFilePath = "") {
+public p CodeLoc.ctor(unsigned int line, unsigned int col, string sourceFilePath = "") {
+    this.sourceFilePath = sourceFilePath;
     this.line = line;
     this.col = col;
-    this.sourceFilePath = sourceFilePath;
 }
 
 /**

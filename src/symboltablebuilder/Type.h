@@ -41,7 +41,6 @@ public:
   [[nodiscard]] const QualType &getFunctionReturnType() const;
   [[nodiscard]] QualTypeList getFunctionParamTypes() const;
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
-  [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
 
   // Queries on the type
@@ -71,7 +70,6 @@ public:
   [[nodiscard]] const Type *replaceBase(const Type *newBaseType) const;
   [[nodiscard]] const Type *removeReferenceWrapper() const;
   [[nodiscard]] const Type *getBase() const;
-  [[nodiscard]] const Type *getWithLambdaCaptures(bool enabled) const;
   [[nodiscard]] const Type *getWithBodyScope(Scope *bodyScope) const;
   [[nodiscard]] const Type *getWithTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] const Type *getWithBaseTemplateTypes(const QualTypeList &templateTypes) const;

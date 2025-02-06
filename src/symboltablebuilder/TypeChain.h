@@ -43,7 +43,6 @@ enum SuperType : uint8_t {
 union TypeChainElementData {
   unsigned int arraySize;     // TY_ARRAY
   Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
-  bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas)
 };
 
 // Structs

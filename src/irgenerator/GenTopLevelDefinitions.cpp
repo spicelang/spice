@@ -177,9 +177,6 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
-        // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
-          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
         // Add it to the lists
@@ -348,9 +345,6 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
-        // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
-          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
         // Add it to the lists

@@ -159,7 +159,7 @@ private:
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
   llvm::Type *buildCapturesContainerType(const CaptureMap &captures) const;
-  void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
+  void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *capturesPtrPtrPtr, llvm::Type *structType);
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);

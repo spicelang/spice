@@ -70,13 +70,6 @@ QualTypeList QualType::getFunctionParamTypes() const { return type->getFunctionP
 const QualTypeList &QualType::getFunctionParamAndReturnTypes() const { return type->getFunctionParamAndReturnTypes(); }
 
 /**
- * Check if the underlying type has lambda captures
- *
- * @return Has lambda captures or not
- */
-bool QualType::hasLambdaCaptures() const { return type->hasLambdaCaptures(); }
-
-/**
  * Get the template types of the underlying type
  *
  * @return Template types
@@ -723,18 +716,6 @@ QualType QualType::replaceBaseType(const QualType &newBaseType) const {
   TypeQualifiers newQualifiers = qualifiers.merge(newBaseType.qualifiers);
   // Return the new qualified type
   return {newType, newQualifiers};
-}
-
-/**
- * Retrieve the same type, but with lambda captures enabled
- *
- * @return Same type with lambda captures
- */
-QualType QualType::getWithLambdaCaptures(bool enabled /*=true*/) const {
-  // Create new type
-  const Type *newType = type->getWithLambdaCaptures(enabled);
-  // Return the new qualified type
-  return {newType, qualifiers};
 }
 
 /**

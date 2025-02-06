@@ -100,8 +100,6 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
     break;
   case TY_FUNCTION: {
     name << "f";
-    if (data.hasCaptures)
-      name << "[]";
     if (!paramTypes.empty()) {
       name << "<";
       paramTypes.front().getName(name, true, ignorePublic);
@@ -117,10 +115,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
     break;
   }
   case TY_PROCEDURE: {
-    name << "p";
-    if (data.hasCaptures)
-      name << "[]";
-    name << "(";
+    name << "p(";
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         name << ",";

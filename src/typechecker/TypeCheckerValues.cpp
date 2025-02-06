@@ -594,9 +594,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  const QualType functionType = QualType(TY_FUNCTION)
-                                    .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
-                                    .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
+  const QualType functionType = QualType(TY_FUNCTION).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -641,9 +639,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  const QualType functionType = QualType(TY_PROCEDURE)
-                                    .getWithFunctionParamAndReturnTypes(QualType(TY_DYN), paramTypes)
-                                    .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
+  const QualType functionType = QualType(TY_PROCEDURE).getWithFunctionParamAndReturnTypes(QualType(TY_DYN), paramTypes);
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -688,9 +684,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
   // Prepare type of function
   const SuperType superType = returnType.is(TY_DYN) ? TY_PROCEDURE : TY_FUNCTION;
-  const QualType functionType = QualType(superType)
-                                    .getWithFunctionParamAndReturnTypes(returnType, paramTypes)
-                                    .getWithLambdaCaptures(!bodyScope->symbolTable.captures.empty());
+  const QualType functionType = QualType(superType).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();

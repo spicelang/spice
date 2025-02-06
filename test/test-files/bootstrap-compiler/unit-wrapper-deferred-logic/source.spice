@@ -1,0 +1,7 @@
+import "bootstrap/util/deferred-logic";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testDeferredLogic();
+    printf("All assertions passed!");
+}

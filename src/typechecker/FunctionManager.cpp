@@ -330,7 +330,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
   lookupCache[cacheKey] = matches.front();
 
   // Trigger revisit in type checker if required
-  typeChecker->requestRevisitIfRequired(matches.front());
+  TypeChecker::requestRevisitIfRequired(matches.front());
 
   // Return the very match
   return matches.front();
@@ -474,12 +474,6 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
       if (callNode)
         throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
       return false;
-    }
-
-    // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateType = candidateType.getWithLambdaCaptures();
-      needsSubstantiation = true;
     }
   }
 

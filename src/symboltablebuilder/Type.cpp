@@ -356,22 +356,6 @@ const Type *Type::getBase() const {
 }
 
 /**
- * Retrieve the same type, but with lambda captures
- *
- * @return Type with lambda captures
- */
-const Type *Type::getWithLambdaCaptures(bool enabled) const {
-  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-
-  // Create new type chain
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.front().data.hasCaptures = enabled;
-
-  // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newTypeChain);
-}
-
-/**
  * Retrieve the same type, but with the body scope removed
  *
  * @return Type with body scope removed
@@ -527,16 +511,6 @@ QualTypeList Type::getFunctionParamTypes() const {
   if (typeChain.back().paramTypes.empty())
     return {};
   return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
-}
-
-/**
- * Check if a function or procedure type has captures
- *
- * @return Has captures
- */
-bool Type::hasLambdaCaptures() const {
-  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return typeChain.front().data.hasCaptures;
 }
 
 /**

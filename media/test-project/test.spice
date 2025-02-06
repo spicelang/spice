@@ -1,27 +1,37 @@
-import "std/text/format";
+import "std/io/cli-parser";
 
-f<int> main() {
-    printf("toUpper: %c\n", toUpper('j'));
-    printf("toUpper: %s\n", toUpper(String("This is a test.")));
-    printf("toLower: %c\n", toLower('L'));
-    printf("toLower: %s\n", toLower(String("This is a test.")));
-    printf("capizalize: %s\n", capitalize(String("word")));
-
-    printf("formatThousandsDelimiter: %s\n", formatThousandsDelimiter(12345678));
-    printf("formatThousandsDelimiter: %s\n", formatThousandsDelimiter(12345678, '.'));
-
-    printf("formatStorageSize: %s\n", formatStorageSize(1l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456l, true));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456789l));
-    printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456789l, true));
+type CliOptions struct {
+    bool sayHi = false
 }
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2025");
+
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
+}
+
+/*import "bootstrap/util/deferred-logic";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testDeferredLogic();
+    printf("All assertions passed!");
+}*/
