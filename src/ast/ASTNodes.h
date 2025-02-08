@@ -2061,7 +2061,7 @@ public:
     FctCallType callType = FctCallType::TYPE_ORDINARY;
     bool isImported = false;
     QualType thisType = QualType(TY_DYN); // Is filled if method or ctor call
-    std::vector<ExprResult> argResults;
+    ArgList args;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;
 

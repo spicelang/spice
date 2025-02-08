@@ -1676,16 +1676,16 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Retrieve arg types
-  data.argResults.clear();
+  data.args.clear();
   if (node->hasArgs) {
-    data.argResults.reserve(node->argLst->args.size());
+    data.args.reserve(node->argLst->args.size());
     for (AssignExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
       assert(!argResult.type.hasAnyGenericParts());
       // Save arg type to arg types list
-      data.argResults.push_back(argResult);
+      data.args.emplace_back(argResult.type, argResult.isTemporary());
     }
   }
 
@@ -1785,8 +1785,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       // Build error message
       const std::string functionName = data.isCtorCall() ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
       ParamList errArgTypes;
-      errArgTypes.reserve(data.argResults.size());
-      for (const auto &[type, _] : data.argResults)
+      errArgTypes.reserve(data.args.size());
+      for (const auto &type : data.args | std::views::keys)
         errArgTypes.push_back({type, false});
       const std::string signature = Function::getSignature(functionName, data.thisType, QualType(TY_DYN), errArgTypes, {}, false);
       // Throw error
@@ -1823,9 +1823,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
 
     node->argLst->argInfos.clear();
-    for (size_t argIdx = 0; argIdx < data.argResults.size(); argIdx++) {
+    for (size_t argIdx = 0; argIdx < data.args.size(); argIdx++) {
       const QualType &expectedType = paramTypes.at(argIdx);
-      const auto &[actualType, entry] = data.argResults.at(argIdx);
+      const auto &[actualType, _] = data.args.at(argIdx);
 
       Function *copyCtor = nullptr;
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
@@ -1895,7 +1895,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 }
 
 bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName) {
-  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  FctCallNode::FctCallData& data = node->data.at(manIdx);
+  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
 
   // Check if this is a well-known ctor/fct call
   if (node->functionNameFragments.size() == 1) {
@@ -1918,11 +1919,11 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, msg)
   }
   const SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
-  data.calleeParentScope = functionRegistryEntry->targetScope;
+  calleeParentScope = functionRegistryEntry->targetScope;
 
   // Check if the target symbol is a struct -> this must be a constructor call
   if (functionEntry != nullptr && functionEntry->getQualType().is(TY_STRUCT))
-    data.callType = FctCallNode::FctCallType::TYPE_CTOR;
+    callType = FctCallNode::FctCallType::TYPE_CTOR;
 
   // For constructor calls, do some preparation
   std::string functionName = node->functionNameFragments.back();
@@ -1943,44 +1944,43 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     functionName = CTOR_FUNCTION_NAME;
 
     // Set the 'this' type of the function to the struct type
-    data.thisType = structEntry->getQualType().getWithBodyScope(thisStruct->scope);
-    data.calleeParentScope = thisStruct->scope;
+    thisType = structEntry->getQualType().getWithBodyScope(thisStruct->scope);
+    calleeParentScope = thisStruct->scope;
   }
 
   // Attach the concrete template types to the 'this' type
-  if (!data.thisType.is(TY_DYN) && !templateTypes.empty())
-    data.thisType = data.thisType.getWithTemplateTypes(templateTypes);
+  if (!thisType.is(TY_DYN) && !templateTypes.empty())
+    thisType = thisType.getWithTemplateTypes(templateTypes);
 
   // Map local arg types to imported types
-  ArgList localArgs;
-  localArgs.reserve(data.argResults.size());
-  for (const ExprResult &argResult : data.argResults)
-    localArgs.emplace_back(mapLocalTypeToImportedScopeType(data.calleeParentScope, argResult.type), argResult.isTemporary());
+  for (QualType &argType : args | std::views::keys)
+    argType = mapLocalTypeToImportedScopeType(calleeParentScope, argType);
 
   // Map local template types to imported types
   for (QualType &templateType : templateTypes)
-    templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
+    templateType = mapLocalTypeToImportedScopeType(calleeParentScope, templateType);
 
   // Retrieve function object
-  Scope *matchScope = data.calleeParentScope;
-  data.callee = FunctionManager::match(this, matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
+  Scope *matchScope = calleeParentScope;
+  callee = FunctionManager::match(this, matchScope, functionName, data.thisType, data.args, templateTypes, false, node);
 
   return true;
 }
 
 bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const {
-  const auto &[callType, isImported, thisType, argResults, callee, calleeParentScope] = node->data.at(manIdx);
+  const FctCallNode::FctCallData& data = node->data.at(manIdx);
+  const auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
 
   // Check if the given argument types match the type
   const QualTypeList expectedArgTypes = functionType.getFunctionParamTypes();
-  if (argResults.size() != expectedArgTypes.size())
+  if (args.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
   // Create resolver function, that always returns a nullptr
   TypeMatcher::ResolverFct resolverFct = [](const std::string &) { return nullptr; };
 
-  for (size_t i = 0; i < argResults.size(); i++) {
-    const QualType &actualType = argResults.at(i).type;
+  for (size_t i = 0; i < args.size(); i++) {
+    const QualType &actualType = args.at(i).first;
     const QualType &expectedType = expectedArgTypes.at(i);
     if (TypeMapping tm; !TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
@@ -1990,7 +1990,8 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
 }
 
 bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) {
-  auto &[callType, isImported, thisType, argResults, callee, calleeParentScope] = node->data.at(manIdx);
+  FctCallNode::FctCallData& data = node->data.at(manIdx);
+  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -2021,9 +2022,8 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 
   // Map local arg types to imported types
   Scope *matchScope = calleeParentScope = structScope;
-  ArgList localArgs;
-  for (const ExprResult &argResult : argResults)
-    localArgs.emplace_back(mapLocalTypeToImportedScopeType(calleeParentScope, argResult.type), argResult.isTemporary());
+  for (QualType &argType : args | std::views::keys)
+    argType = mapLocalTypeToImportedScopeType(calleeParentScope, argType);
 
   // Map local template types to imported types
   for (QualType &templateType : templateTypes)
@@ -2036,7 +2036,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  callee = FunctionManager::match(this, matchScope, functionName, localThisType, localArgs, templateTypes, false, node);
+  callee = FunctionManager::match(this, matchScope, functionName, localThisType, args, templateTypes, false, node);
 
   return true;
 }

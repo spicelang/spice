@@ -1,5 +1,7 @@
+p foo() {}
+
 f<int> main() {
-    (1) = 4;
+    foo();
 }
 
 /*import "bootstrap/util/block-allocator";
