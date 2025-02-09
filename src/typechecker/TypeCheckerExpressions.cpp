@@ -542,8 +542,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const std::string &fieldName = node->identifier;
 
     // Check if lhs is enum or strobj
-    QualType lhsBaseTy = operandType;
-    autoDeReference(lhsBaseTy);
+    const QualType lhsBaseTy = operandType.autoDeReference();
     if (!lhsBaseTy.is(TY_STRUCT))
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + operandType.getName(false))
 

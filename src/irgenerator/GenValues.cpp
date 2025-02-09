@@ -136,8 +136,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Get arg values
   if (node->hasArgs) {
-    argValues.reserve(node->argLst->args.size());
     const std::vector<AssignExprNode *> args = node->argLst->args;
+    argValues.reserve(args.size());
     const QualTypeList paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
@@ -259,9 +259,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   if (data.isMethodCall() || data.isCtorCall() || data.isVirtualMethodCall()) {
-    llvm::Type *thisType = data.thisType.toLLVMType(sourceFile);
     result->addParamAttr(0, llvm::Attribute::NoUndef);
     result->addParamAttr(0, llvm::Attribute::NonNull);
+    llvm::Type *thisType = data.thisType.toLLVMType(sourceFile);
     result->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(thisType));
     result->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(thisType)));
   }

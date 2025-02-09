@@ -438,13 +438,12 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
     templateType = mapLocalTypeToImportedScopeType(calleeParentScope, templateType);
 
   // 'this' type
-  QualType localThisType = thisType;
-  autoDeReference(localThisType);
-  localThisType = mapLocalTypeToImportedScopeType(calleeParentScope, localThisType);
+  thisType = thisType.autoDeReference();
+  thisType = mapLocalTypeToImportedScopeType(calleeParentScope, thisType);
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  callee = FunctionManager::match(this, matchScope, functionName, localThisType, args, templateTypes, false, node);
+  callee = FunctionManager::match(this, matchScope, functionName, thisType, args, templateTypes, false, node);
 
   return true;
 }

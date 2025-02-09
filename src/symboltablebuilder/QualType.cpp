@@ -623,10 +623,24 @@ QualType QualType::getAliased(const SymbolTableEntry *aliasEntry) const {
 QualType QualType::removeReferenceWrapper() const { return isRef() ? getContained() : *this; }
 
 /**
+ * Auto-dereference the given symbol type (peeling off all ptr/ref wrappers).
+ * This process is NOT equivalent with getBase() because getBase() also removes e.g. array wrappers
+ *
+ * @return New type
+ */
+QualType QualType::autoDeReference() const {
+  QualType newType = *this;
+  while (newType.isOneOf({TY_PTR, TY_REF}))
+    newType = newType.getContained();
+  return newType;
+}
+
+
+/**
  * Replace the base type with another one
  *
  * @param newBaseType New base type
- * @return The new type
+ * @return New type
  */
 QualType QualType::replaceBaseType(const QualType &newBaseType) const {
   // Create new type

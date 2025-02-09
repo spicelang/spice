@@ -56,7 +56,7 @@ for.body.L11:
   store ptr %.fca.0.0.load, ptr %threads, align 8
   store ptr %.fca.0.1.load, ptr %.fca.0.0.1.gep, align 8
   store i64 %.fca.1.load, ptr %.fca.0.1.gep9, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %threads) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %threads) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.1 = load ptr, ptr %0, align 8
   %.fca.0.1.load.1 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -66,7 +66,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.1, ptr %.fca.1.insert5.fca.0.1.gep.1, align 8
   %.fca.1.insert5.fca.1.gep.1 = getelementptr inbounds nuw i8, ptr %threads, i64 40
   store i64 %.fca.1.load.1, ptr %.fca.1.insert5.fca.1.gep.1, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.1.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.2 = load ptr, ptr %0, align 8
   %.fca.0.1.load.2 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -76,7 +76,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.2, ptr %.fca.1.insert5.fca.0.1.gep.2, align 8
   %.fca.1.insert5.fca.1.gep.2 = getelementptr inbounds nuw i8, ptr %threads, i64 64
   store i64 %.fca.1.load.2, ptr %.fca.1.insert5.fca.1.gep.2, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.2.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.3 = load ptr, ptr %0, align 8
   %.fca.0.1.load.3 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -86,7 +86,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.3, ptr %.fca.1.insert5.fca.0.1.gep.3, align 8
   %.fca.1.insert5.fca.1.gep.3 = getelementptr inbounds nuw i8, ptr %threads, i64 88
   store i64 %.fca.1.load.3, ptr %.fca.1.insert5.fca.1.gep.3, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.3.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.4 = load ptr, ptr %0, align 8
   %.fca.0.1.load.4 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -96,7 +96,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.4, ptr %.fca.1.insert5.fca.0.1.gep.4, align 8
   %.fca.1.insert5.fca.1.gep.4 = getelementptr inbounds nuw i8, ptr %threads, i64 112
   store i64 %.fca.1.load.4, ptr %.fca.1.insert5.fca.1.gep.4, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.4.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.5 = load ptr, ptr %0, align 8
   %.fca.0.1.load.5 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -106,7 +106,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.5, ptr %.fca.1.insert5.fca.0.1.gep.5, align 8
   %.fca.1.insert5.fca.1.gep.5 = getelementptr inbounds nuw i8, ptr %threads, i64 136
   store i64 %.fca.1.load.5, ptr %.fca.1.insert5.fca.1.gep.5, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.5.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.6 = load ptr, ptr %0, align 8
   %.fca.0.1.load.6 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -116,7 +116,7 @@ for.body.L11:
   store ptr %.fca.0.1.load.6, ptr %.fca.1.insert5.fca.0.1.gep.6, align 8
   %.fca.1.insert5.fca.1.gep.6 = getelementptr inbounds nuw i8, ptr %threads, i64 160
   store i64 %.fca.1.load.6, ptr %.fca.1.insert5.fca.1.gep.6, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.6.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.7 = load ptr, ptr %0, align 8
   %.fca.0.1.load.7 = load ptr, ptr %.fca.0.1.gep, align 8
@@ -126,16 +126,16 @@ for.body.L11:
   store ptr %.fca.0.1.load.7, ptr %.fca.1.insert5.fca.0.1.gep.7, align 8
   %.fca.1.insert5.fca.1.gep.7 = getelementptr inbounds nuw i8, ptr %threads, i64 184
   store i64 %.fca.1.load.7, ptr %.fca.1.insert5.fca.1.gep.7, align 8
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.7.0.0.gep) #4
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep) #4
   %puts = call i32 @puts(ptr nonnull dereferenceable(1) @str)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %threads) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.1.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.2.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.3.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.4.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.5.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.6.0.0.gep) #4
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(8) %.fca.7.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %threads) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #4
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep) #4
   %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }

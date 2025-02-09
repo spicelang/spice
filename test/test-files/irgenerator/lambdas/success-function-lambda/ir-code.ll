@@ -85,7 +85,7 @@ define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %5 = load double, ptr %d, align 8
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %4, double %5)
   %7 = load ptr, ptr %str, align 8
-  %8 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(8) %7)
+  %8 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %7)
   %9 = call i1 @_Z10isRawEqualPKcPKc(ptr %8, ptr @anon.string.1)
   br i1 %9, label %land.1.L9C16, label %land.exit.L9C16
 

@@ -108,6 +108,7 @@ public:
   [[nodiscard]] QualType getBase() const;
   [[nodiscard]] QualType getAliased(const SymbolTableEntry *aliasEntry) const;
   [[nodiscard]] QualType removeReferenceWrapper() const;
+  [[nodiscard]] QualType autoDeReference() const;
   [[nodiscard]] QualType replaceBaseType(const QualType &newBaseType) const;
   [[nodiscard]] QualType getWithLambdaCaptures(bool enabled = true) const;
   [[nodiscard]] QualType getWithBodyScope(Scope *bodyScope) const;
