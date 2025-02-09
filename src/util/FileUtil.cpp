@@ -70,16 +70,18 @@ size_t FileUtil::getLineCount(const std::filesystem::path &filePath) {
  * @return Result struct
  */
 ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOut) {
-#ifdef _WIN32
+#if OS_UNIX
+  std::string redirectedCommand = command;
+  if (redirectStdErrToStdOut)
+    redirectedCommand += " 2>&1"; // Redirect stderr to stdout
+  FILE *pipe = popen(redirectedCommand.c_str(), "r");
+#elif OS_WINDOWS
   std::string redirectedCommand = command;
   if (redirectStdErrToStdOut)
     redirectedCommand = "\"" + command + " 2>&1\""; // Redirect stderr to stdout
   FILE *pipe = _popen(redirectedCommand.c_str(), "r");
 #else
-  std::string redirectedCommand = command;
-  if (redirectStdErrToStdOut)
-    redirectedCommand += " 2>&1"; // Redirect stderr to stdout
-  FILE *pipe = popen(redirectedCommand.c_str(), "r");
+#error "Unsupported platform"
 #endif
 
   if (!pipe)                                                                // GCOV_EXCL_LINE
@@ -90,10 +92,12 @@ ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOu
   while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
     result << buffer.data();
 
-#ifdef _WIN32
+#if OS_UNIX
+  const int exitCode = pclose(pipe) / 256;
+#elif OS_WINDOWS
   const int exitCode = _pclose(pipe);
 #else
-  const int exitCode = pclose(pipe) / 256;
+#error "Unsupported platform"
 #endif
   return {result.str(), exitCode};
 }
@@ -105,10 +109,10 @@ ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOu
  * @return Present or not
  */
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
-#if OS_WINDOWS
+#if OS_UNIX
+const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+#elif OS_WINDOWS
   const std::string checkCmd = "where " + cmd + " > nul 2>&1";
-#elif OS_UNIX
-  const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
 #else
 #error "Unsupported platform"
 #endif
@@ -129,7 +133,7 @@ bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
  * @return Name of path to the linker invoker executable
  */
 ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
-#ifdef OS_UNIX
+#if OS_UNIX
   for (const char *linkerInvokerName : {"clang", "gcc"})
     for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerInvokerName))
@@ -138,6 +142,8 @@ ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
   for (const char *linkerInvokerName : {"clang", "gcc"})
     if (isCommandAvailable(std::string(linkerInvokerName) + " -v"))
       return ExternalBinaryFinderResult{linkerInvokerName, linkerInvokerName};
+#else
+#error "Unsupported platform"
 #endif
   const auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
   throw LinkerError(LINKER_NOT_FOUND, msg);                                                             // LCOV_EXCL_LINE
@@ -150,7 +156,7 @@ ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
  * @return Name of path to the linker executable
  */
 ExternalBinaryFinderResult FileUtil::findLinker(const CliOptions &cliOptions) {
-#ifdef OS_UNIX
+#if OS_UNIX
   std::vector<const char *> linkerList;
   linkerList.reserve(5);
   // mold does only support linking for unix and darwin
@@ -169,6 +175,8 @@ ExternalBinaryFinderResult FileUtil::findLinker(const CliOptions &cliOptions) {
   for (const char *linkerName : {"lld", "ld"})
     if (isCommandAvailable(std::string(linkerName) + " -v"))
       return ExternalBinaryFinderResult{linkerName, linkerName};
+#else
+#error "Unsupported platform"
 #endif
   const auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
   throw LinkerError(LINKER_NOT_FOUND, msg);                                                              // LCOV_EXCL_LINE
@@ -181,7 +189,7 @@ ExternalBinaryFinderResult FileUtil::findLinker(const CliOptions &cliOptions) {
  * @return Std directory
  */
 std::filesystem::path FileUtil::getStdDir() {
-#ifdef OS_UNIX
+#if OS_UNIX
   if (exists(std::filesystem::path("/usr/lib/spice/std/")))
     return {"/usr/lib/spice/std/"};
 #endif
@@ -211,10 +219,10 @@ std::filesystem::path FileUtil::getBootstrapDir() {
  * @return Installation directory
  */
 std::filesystem::path FileUtil::getSpiceBinDir() {
-#if OS_WINDOWS
+#if OS_UNIX
+return "/usr/local/bin/";
+#elif OS_WINDOWS
   return std::filesystem::path(std::getenv("USERPROFILE")) / "spice" / "bin";
-#elif OS_UNIX
-  return "/usr/local/bin/";
 #else
 #error "Unsupported platform"
 #endif

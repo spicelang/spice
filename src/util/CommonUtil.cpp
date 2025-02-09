@@ -3,16 +3,15 @@
 #include "CommonUtil.h"
 
 #include <cxxabi.h>
-
-#include <SourceFile.h>
-
-#ifdef OS_WINDOWS
-#include <windows.h>
-#elif OS_UNIX
+#if OS_UNIX
 #include <unistd.h>
+#elif OS_WINDOWS
+#include <windows.h>
 #else
 #error "Unsupported platform"
 #endif
+
+#include <SourceFile.h>
 
 namespace spice::compiler {
 
@@ -81,12 +80,12 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
  * @return Page size in bytes
  */
 size_t CommonUtil::getSystemPageSize() {
-#ifdef OS_WINDOWS
+#if OS_UNIX
+  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
+#elif OS_WINDOWS
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return static_cast<size_t>(si.dwPageSize);
-#elif OS_UNIX
-  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
 #else
 #error "Unsupported platform"
 #endif
@@ -130,7 +129,7 @@ std::string CommonUtil::demangleTypeName(const char *mangledName) {
 }
 
 /**
- * Check if the given string is a valid mangled name
+ * Check if the given string is a valid, mangled name
  *
  * @return
  */
