@@ -31,6 +31,7 @@ const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.dot";
 const char *const REF_NAME_DEP_GRAPH = "dependency-graph.dot";
 const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
 const char *const REF_NAME_TYPE_REGISTRY = "type-registry.out";
+const char *const REF_NAME_CACHE_STATS = "cache-stats.out";
 const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
 static constexpr const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};

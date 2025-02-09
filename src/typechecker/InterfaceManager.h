@@ -26,11 +26,14 @@ public:
   static Interface *insert(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
   [[nodiscard]] static Interface *match(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
                                         const ASTNode *node);
-  static void clear();
+  static void cleanup();
+  [[nodiscard]] static std::string dumpLookupCacheStatistics();
 
 private:
   // Private members
   static std::unordered_map<uint64_t, Interface *> lookupCache;
+  static size_t lookupCacheHits;
+  static size_t lookupCacheMisses;
 
   // Private methods
   [[nodiscard]] static Interface *insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode);

@@ -48,11 +48,14 @@ public:
   static Function *match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                          const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictQualifierMatching,
                          const ASTNode *callNode);
-  static void clear();
+  static void cleanup();
+  [[nodiscard]] static std::string dumpLookupCacheStatistics();
 
 private:
   // Private members
   static std::unordered_map<uint64_t, Function *> lookupCache;
+  static size_t lookupCacheHits;
+  static size_t lookupCacheMisses;
 
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,

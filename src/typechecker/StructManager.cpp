@@ -14,6 +14,8 @@ namespace spice::compiler {
 
 // Static member initialization
 std::unordered_map<uint64_t, Struct *> StructManager::lookupCache = {};
+size_t StructManager::lookupCacheHits = 0;
+size_t StructManager::lookupCacheMisses = 0;
 
 Struct *StructManager::insert(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
@@ -61,8 +63,11 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
                              const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, qt, reqTemplateTypes);
-  if (lookupCache.contains(cacheKey))
+  if (lookupCache.contains(cacheKey)) {
+    lookupCacheHits++;
     return lookupCache.at(cacheKey);
+  }
+  lookupCacheMisses++;
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
@@ -304,8 +309,24 @@ uint64_t StructManager::getCacheKey(Scope *scope, const std::string &name, const
 }
 
 /**
- * Clear all statics
+ * Clear the lookup cache
  */
-void StructManager::clear() { lookupCache.clear(); }
+void StructManager::cleanup() {
+  lookupCache.clear();
+  lookupCacheHits = 0;
+  lookupCacheMisses = 0;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+std::string StructManager::dumpLookupCacheStatistics() {
+  std::stringstream stats;
+  stats << "StructManager lookup cache statistics:" << std::endl;
+  stats << "  lookup cache entries: " << lookupCache.size() << std::endl;
+  stats << "  lookup cache hits: " << lookupCacheHits << std::endl;
+  stats << "  lookup cache misses: " << lookupCacheMisses << std::endl;
+  return stats.str();
+}
 
 } // namespace spice::compiler

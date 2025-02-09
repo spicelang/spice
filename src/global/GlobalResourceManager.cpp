@@ -49,11 +49,11 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 }
 
 GlobalResourceManager::~GlobalResourceManager() {
-  // Cleanup all statics
+  // Notify all global components to prepare to destroy
   TypeRegistry::clear();
-  FunctionManager::clear();
-  StructManager::clear();
-  InterfaceManager::clear();
+  FunctionManager::cleanup();
+  StructManager::cleanup();
+  InterfaceManager::cleanup();
   // Cleanup all LLVM statics
   llvm::llvm_shutdown();
 }

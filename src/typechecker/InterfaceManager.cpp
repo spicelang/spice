@@ -13,6 +13,8 @@ namespace spice::compiler {
 
 // Static member initialization
 std::unordered_map<uint64_t, Interface *> InterfaceManager::lookupCache = {};
+size_t InterfaceManager::lookupCacheHits = 0;
+size_t InterfaceManager::lookupCacheMisses = 0;
 
 Interface *InterfaceManager::insert(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
@@ -56,8 +58,11 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
                                    const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
-  if (lookupCache.contains(cacheKey))
+  if (lookupCache.contains(cacheKey)) {
+    lookupCacheHits++;
     return lookupCache.at(cacheKey);
+  }
+  lookupCacheMisses++;
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
@@ -261,8 +266,24 @@ uint64_t InterfaceManager::getCacheKey(Scope *scope, const std::string &name, co
 }
 
 /**
- * Clear all statics
+ * Clear the lookup cache
  */
-void InterfaceManager::clear() { lookupCache.clear(); }
+void InterfaceManager::cleanup() {
+  lookupCache.clear();
+  lookupCacheHits = 0;
+  lookupCacheMisses = 0;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+std::string InterfaceManager::dumpLookupCacheStatistics() {
+  std::stringstream stats;
+  stats << "InterfaceManager lookup cache statistics:" << std::endl;
+  stats << "  lookup cache entries: " << lookupCache.size() << std::endl;
+  stats << "  lookup cache hits: " << lookupCacheHits << std::endl;
+  stats << "  lookup cache misses: " << lookupCacheMisses << std::endl;
+  return stats.str();
+}
 
 } // namespace spice::compiler

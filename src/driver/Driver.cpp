@@ -359,6 +359,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
   // --dump-types
   subCmd->add_flag<bool>("--dump-types,-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
+  // --dump-cache-stats
+  subCmd->add_flag<bool>("--dump-cache-stats,-cache-stats", cliOptions.dumpSettings.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
   // --dump-assembly
