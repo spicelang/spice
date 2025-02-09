@@ -58,6 +58,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpAST= */ false,
           /* dumpSymbolTables= */ false,
           /* dumpTypes= */ false,
+          /* dumpCacheStats= */ false,
           /* dumpDependencyGraph= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,
@@ -76,7 +77,7 @@ void execTestCase(const TestCase &testCase) {
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
-  static_assert(sizeof(CliOptions::DumpSettings) == 10, "CliOptions::DumpSettings struct size changed");
+  static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
@@ -210,6 +211,15 @@ void execTestCase(const TestCase &testCase) {
 
     // Check type registry output
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&] { return TypeRegistry::dump(); });
+
+    // Check cache stats output
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_CACHE_STATS, [&] {
+      std::stringstream cacheStats;
+      cacheStats << FunctionManager::dumpLookupCacheStatistics() << std::endl;
+      cacheStats << StructManager::dumpLookupCacheStatistics() << std::endl;
+      cacheStats << InterfaceManager::dumpLookupCacheStatistics() << std::endl;
+      return cacheStats.str();
+    });
 
     // Check if the execution output matches the expected output
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&] {

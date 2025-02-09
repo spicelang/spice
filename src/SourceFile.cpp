@@ -535,6 +535,19 @@ void SourceFile::concludeCompilation() {
   if (isMainFile && cliOptions.dumpSettings.dumpTypes)
     dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
 
+  // Save cache statistics as string in the compiler output
+  if (isMainFile && (cliOptions.dumpSettings.dumpCacheStats || cliOptions.testMode)) {
+    std::stringstream cacheStats;
+    cacheStats << FunctionManager::dumpLookupCacheStatistics() << std::endl;
+    cacheStats << StructManager::dumpLookupCacheStatistics() << std::endl;
+    cacheStats << InterfaceManager::dumpLookupCacheStatistics() << std::endl;
+    compilerOutput.cacheStats = cacheStats.str();
+  }
+
+  // Dump lookup cache statistics
+  if (isMainFile && cliOptions.dumpSettings.dumpCacheStats)
+    dumpOutput(compilerOutput.cacheStats, "Cache Statistics", "cache-stats.out");
+
   // Print warning if verifier is disabled
   if (isMainFile && cliOptions.disableVerifier) {
     const std::string warningMessage =
@@ -796,7 +809,7 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
     // If this is an IR dump whilst having optimization enabled, we may not abort when dumping unoptimized IR,
     // because we also have to dump the optimized IR
     if (cliOptions.dumpSettings.dumpIR && fileSuffix == "ir-code.ll") {
-      resourceManager.abortCompilation = cliOptions.optLevel == OptLevel::O0;
+      resourceManager.abortCompilation = cliOptions.optLevel == O0;
     } else {
       resourceManager.abortCompilation = true;
     }

@@ -29,11 +29,14 @@ public:
   static Struct *insert(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
   [[nodiscard]] static Struct *match(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
                                      const ASTNode *node);
-  static void clear();
+  static void cleanup();
+  [[nodiscard]] static std::string dumpLookupCacheStatistics();
 
 private:
   // Private members
   static std::unordered_map<uint64_t, Struct *> lookupCache;
+  static size_t lookupCacheHits;
+  static size_t lookupCacheMisses;
 
   // Private methods
   [[nodiscard]] static Struct *insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode);

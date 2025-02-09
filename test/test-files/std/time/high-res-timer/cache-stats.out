@@ -1,0 +1,15 @@
+FunctionManager lookup cache statistics:
+  lookup cache entries: 17
+  lookup cache hits: 19
+  lookup cache misses: 47
+
+StructManager lookup cache statistics:
+  lookup cache entries: 3
+  lookup cache hits: 22
+  lookup cache misses: 3
+
+InterfaceManager lookup cache statistics:
+  lookup cache entries: 0
+  lookup cache hits: 0
+  lookup cache misses: 0
+

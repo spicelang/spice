@@ -54,6 +54,7 @@ struct CliOptions {
     bool dumpAST = false;
     bool dumpSymbolTable = false;
     bool dumpTypes = false;
+    bool dumpCacheStats = false;
     bool dumpDependencyGraph = false;
     bool dumpIR = false;
     bool dumpAssembly = false;
@@ -74,7 +75,7 @@ struct CliOptions {
 };
 
 /**
- * Helper class to setup the driver and command line parser
+ * Helper class to set up the driver and command line parser
  */
 class Driver {
 public:

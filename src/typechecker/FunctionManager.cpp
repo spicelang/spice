@@ -16,6 +16,8 @@ namespace spice::compiler {
 
 // Static member initialization
 std::unordered_map<uint64_t, Function *> FunctionManager::lookupCache = {};
+size_t FunctionManager::lookupCacheHits = 0;
+size_t FunctionManager::lookupCacheMisses = 0;
 
 Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
@@ -146,8 +148,11 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, {});
-  if (lookupCache.contains(cacheKey))
+  if (lookupCache.contains(cacheKey)) {
+    lookupCacheHits++;
     return lookupCache.at(cacheKey);
+  }
+  lookupCacheMisses++;
 
   const auto pred = [&](const Arg &arg) { return arg.first.hasAnyGenericParts(); };
   const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
@@ -214,8 +219,11 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
-  if (lookupCache.contains(cacheKey))
+  if (lookupCache.contains(cacheKey)) {
+    lookupCacheHits++;
     return lookupCache.at(cacheKey);
+  }
+  lookupCacheMisses++;
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
@@ -530,8 +538,24 @@ uint64_t FunctionManager::getCacheKey(Scope *scope, const std::string &name, con
 }
 
 /**
- * Clear all statics
+ * Clear the lookup cache
  */
-void FunctionManager::clear() { lookupCache.clear(); }
+void FunctionManager::cleanup() {
+  lookupCache.clear();
+  lookupCacheHits = 0;
+  lookupCacheMisses = 0;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+std::string FunctionManager::dumpLookupCacheStatistics() {
+  std::stringstream stats;
+  stats << "FunctionManager lookup cache statistics:" << std::endl;
+  stats << "  lookup cache entries: " << lookupCache.size() << std::endl;
+  stats << "  lookup cache hits: " << lookupCacheHits << std::endl;
+  stats << "  lookup cache misses: " << lookupCacheMisses << std::endl;
+  return stats.str();
+}
 
 } // namespace spice::compiler

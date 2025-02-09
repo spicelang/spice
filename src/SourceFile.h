@@ -91,6 +91,7 @@ struct CompilerOutput {
   std::string irOptString;
   std::string asmString;
   std::string typesString;
+  std::string cacheStats;
   std::vector<CompilerWarning> warnings;
   TimerOutput times;
 };
