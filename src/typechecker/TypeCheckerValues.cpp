@@ -80,17 +80,12 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   default:                                                          // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
   }
-
-  // Create symbol type
-  QualType symbolType(superType);
-  symbolType.setQualifiers(TypeQualifiers::of(superType));
-
-  return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(superType), manIdx)};
 }
 
 std::any TypeChecker::visitFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
   // Retrieve arg types
   args.clear();
@@ -134,12 +129,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   const std::string &fqFunctionName = isAlias ? structEntry->getQualType().getSubType() : node->fqFunctionName;
 
   // Get the concrete template types
-  QualTypeList concreteTemplateTypes;
+  templateTypes.clear();
   if (isAlias) {
     // Retrieve concrete template types from type alias
-    concreteTemplateTypes = structEntry->getQualType().getTemplateTypes();
+    templateTypes = structEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
+    if (!templateTypes.empty() && node->hasTemplateTypes)
       SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
@@ -157,7 +152,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       if (templateType.is(TY_GENERIC))
         SOFT_ERROR_ER(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
 
-      concreteTemplateTypes.push_back(templateType);
+      templateTypes.push_back(templateType);
     }
   }
 
@@ -167,7 +162,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     thisType = firstFragEntry->getQualType();
     Scope *structBodyScope = thisType.getBase().getBodyScope();
     assert(structBodyScope != nullptr);
-    if (!visitMethodCall(node, structBodyScope, concreteTemplateTypes)) // Check if soft errors occurred
+    if (!visitMethodCall(node, structBodyScope)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
     assert(calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
@@ -179,7 +174,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall() || data.isCtorCall());
-    if (!visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName)) // Check if soft errors occurred
+    if (!visitOrdinaryFctCall(node, fqFunctionName)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
     assert(calleeParentScope != nullptr);
 
@@ -290,9 +285,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
   // Check if this is a well-known ctor/fct call
   if (node->functionNameFragments.size() == 1) {
@@ -360,7 +355,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
 
 bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const {
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
-  const auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
+  const auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
   // Check if the given argument types match the type
   const QualTypeList expectedArgTypes = functionType.getFunctionParamTypes();
@@ -380,9 +375,9 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -465,6 +460,10 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
+
+  // Check visibility
+  if (!structEntry->getQualType().isPublic() && structEntry->scope->isImportedBy(currentScope))
+    SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Struct '" + structName + "' has insufficient visibility")
 
   // Get struct type
   QualType structType = structEntry->getQualType();

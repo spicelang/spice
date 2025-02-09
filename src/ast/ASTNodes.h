@@ -2060,6 +2060,7 @@ public:
     // Members
     FctCallType callType = FctCallType::TYPE_ORDINARY;
     bool isImported = false;
+    QualTypeList templateTypes;
     QualType thisType = QualType(TY_DYN); // Is filled if method or ctor call
     ArgList args;
     Function *callee = nullptr;

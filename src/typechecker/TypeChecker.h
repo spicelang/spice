@@ -130,16 +130,15 @@ public:
 private:
   // Private members
   OpRuleManager opRuleManager = OpRuleManager(this);
-  Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
   TypeMapping typeMapping;
   bool typeCheckedMainFct = false;
 
   // Private methods
-  bool visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName);
+  bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName);
   bool visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const;
-  bool visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes);
+  bool visitMethodCall(FctCallNode *node, Scope *structScope);
   bool checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node);
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;

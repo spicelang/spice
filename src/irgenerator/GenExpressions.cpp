@@ -893,40 +893,40 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(!node->identifierFragments.empty());
 
   // Get symbol table entry
-  const auto &[varEntry, accessScope, capture] = node->data.at(manIdx);
-  assert(varEntry != nullptr);
+  const auto &[entry, accessScope, capture] = node->data.at(manIdx);
+  assert(entry != nullptr);
   assert(accessScope != nullptr);
-  const QualType varSymbolType = varEntry->getQualType();
+  const QualType varSymbolType = entry->getQualType();
   llvm::Type *varType = varSymbolType.toLLVMType(sourceFile);
 
   // Check if external global variable
-  if (varEntry->global && accessScope->isImportedBy(rootScope)) {
+  if (entry->global && accessScope->isImportedBy(rootScope)) {
     // External global variables need to be declared and allocated in the current module
-    llvm::Value *varAddress = module->getOrInsertGlobal(varEntry->name, varType);
-    varEntry->updateAddress(varAddress);
+    llvm::Value *varAddress = module->getOrInsertGlobal(entry->name, varType);
+    entry->updateAddress(varAddress);
   }
 
   // Check if enum item
   if (accessScope->type == ScopeType::ENUM) {
-    const auto itemNode = spice_pointer_cast<const EnumItemNode *>(varEntry->declNode);
+    const auto itemNode = spice_pointer_cast<const EnumItemNode *>(entry->declNode);
     llvm::Constant *constantItemValue = llvm::ConstantInt::get(varType, itemNode->itemValue);
-    return LLVMExprResult{.constant = constantItemValue, .entry = varEntry};
+    return LLVMExprResult{.constant = constantItemValue, .entry = entry};
   }
 
-  llvm::Value *address = varEntry->getAddress();
+  llvm::Value *address = entry->getAddress();
   assert(address != nullptr);
 
   // If this is a function/procedure reference, return it as value
-  if (varEntry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+  if (entry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     llvm::Value *fatPtr = buildFatFctPtr(nullptr, nullptr, address);
-    return LLVMExprResult{.ptr = fatPtr, .entry = varEntry};
+    return LLVMExprResult{.ptr = fatPtr, .entry = entry};
   }
 
   // Load the address of the referenced variable
   if (varSymbolType.isRef() || (capture && capture->getMode() == BY_REFERENCE))
-    return LLVMExprResult{.refPtr = address, .entry = varEntry};
+    return LLVMExprResult{.refPtr = address, .entry = entry};
 
-  return LLVMExprResult{.ptr = address, .entry = varEntry};
+  return LLVMExprResult{.ptr = address, .entry = entry};
 }
 
 } // namespace spice::compiler
