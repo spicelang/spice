@@ -144,7 +144,6 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     // Lookup the scope of the concrete struct or interface type
     // Only do this, if the struct or interface is not self-referencing, because in that case we'd end up in an infinite recursion
     if (!baseType.isSelfReferencingStructType()) {
-      Scope *matchScope = baseType.getBodyScope()->parent;
       if (baseType.is(TY_STRUCT)) { // Struct
         const Struct *spiceStruct = baseType.getStruct(node, templateTypes);
         if (!spiceStruct) {

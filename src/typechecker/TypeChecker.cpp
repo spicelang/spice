@@ -113,7 +113,7 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
   if (!symbolType.isBase(TY_STRUCT))
     return symbolType;
 
-  // If the source scope is in the current source file, we can return the symbol type as is
+  // If the given source file is in the current one, we can return the symbol type as is
   const SourceFile *sourceSourceFile = sourceScope->sourceFile;
   if (sourceSourceFile == sourceFile)
     return symbolType;

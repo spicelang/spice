@@ -106,6 +106,29 @@ Struct *QualType::getStruct(const ASTNode *node, const QualTypeList &templateTyp
 Struct *QualType::getStruct(const ASTNode *node) const { return getStruct(node, type->getTemplateTypes()); }
 
 /**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Struct instance
+ */
+Struct *QualType::getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes) {
+  Struct *spiceStruct = getStruct(node, templateTypes);
+  type = type->getWithBodyScope(spiceStruct->scope)->getWithTemplateTypes(spiceStruct->getTemplateTypes());
+  return spiceStruct;
+}
+
+/**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+Struct *QualType::getStructAndAdjustType(const ASTNode *node) { return getStructAndAdjustType(node, type->getTemplateTypes()); }
+
+/**
  * Get the interface instance for an interface type
  *
  * @param node Accessing AST node

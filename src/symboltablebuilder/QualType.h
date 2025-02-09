@@ -60,6 +60,8 @@ public:
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes);
+  [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node);
   [[nodiscard]] Interface *getInterface(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
 

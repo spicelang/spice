@@ -456,11 +456,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Retrieve struct name
   const auto [aliasedEntry, isAlias] = rootScope->symbolTable.lookupWithAliasResolution(node->fqStructName);
-  std::string structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
-
-  // Check if access scope was altered
-  if (accessScope != nullptr && accessScope != currentScope)
-    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
+  const std::string &structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
 
   // Retrieve struct
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
@@ -468,7 +464,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
-  accessScope = registryEntry->targetScope;
 
   // Get struct type
   QualType structType = structEntry->getQualType();
@@ -496,24 +491,14 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Get the struct instance
-  structName = structEntry->name;
-  Struct *spiceStruct = structType.getStruct(node, concreteTemplateTypes);
+  Struct *spiceStruct = node->instantiatedStructs.at(manIdx) = structType.getStructAndAdjustType(node, concreteTemplateTypes);
   if (!spiceStruct)
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + spiceStruct->getSignature() + "' could not be found")
-  Scope *structScope = spiceStruct->scope;
-  structType = structType.getWithBodyScope(structScope);
-  node->instantiatedStructs.at(manIdx) = spiceStruct;
 
   // Struct instantiation for an inheriting struct is forbidden, because the vtable needs to be initialized and this is done in
   // the ctor of the struct, which is never called in case of struct instantiation
   if (!spiceStruct->interfaceTypes.empty())
     SOFT_ERROR_ER(node, INVALID_STRUCT_INSTANTIATION, "Struct instantiations for inheriting structs are forbidden")
-
-  // Set template types to the struct
-  QualTypeList templateTypes;
-  for (const GenericType &genericType : spiceStruct->templateTypes)
-    templateTypes.emplace_back(genericType);
-  structType = structType.getWithTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
   if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
@@ -523,14 +508,14 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
-    const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
+    const size_t explicitFieldsStartIdx = spiceStruct->scope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
-      SymbolTableEntry *expectedField = structScope->lookupField(explicitFieldsStartIdx + i);
+      SymbolTableEntry *expectedField = spiceStruct->scope->lookupField(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       const ExprResult expected = {expectedField->getQualType(), expectedField};
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
