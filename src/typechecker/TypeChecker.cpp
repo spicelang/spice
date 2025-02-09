@@ -89,14 +89,14 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
   if (targetSourceFile == sourceFile)
     return symbolType;
 
-  // Match the scope of the symbol type against all scopes in the name registry of the target source file
+  // Match the scope of the symbol type against all scopes in the name registry of the target file
   for (const auto &entry : targetSourceFile->exportedNameRegistry | std::views::values)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->scope == symbolType.getBase().getBodyScope())
           return symbolType;
 
-  // The target source file does not know about the struct at all
+  // The target file does not know about the struct at all
   // -> show it how to find the struct
   const std::string structName = symbolType.getBase().getSubType();
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
@@ -135,17 +135,6 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
   sourceFile->addNameRegistryEntry(baseType.getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
-}
-
-/**
- * Auto-dereference the given symbol type.
- * This process is NOT equivalent with getBase() because getBase() also removes e.g. array wrappers
- *
- * @param symbolType Input symbol type
- */
-void TypeChecker::autoDeReference(QualType &symbolType) {
-  while (symbolType.isPtr() || symbolType.isRef())
-    symbolType = symbolType.getContained();
 }
 
 /**

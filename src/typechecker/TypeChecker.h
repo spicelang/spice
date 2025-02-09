@@ -144,7 +144,6 @@ private:
   [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node);
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
-  static void autoDeReference(QualType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   static void requestRevisitIfRequired(const Function *fct);
   void ensureLoadedRuntimeForTypeName(const std::string &typeName) const;
