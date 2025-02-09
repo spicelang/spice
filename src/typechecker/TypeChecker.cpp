@@ -1673,19 +1673,20 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 }
 
 std::any TypeChecker::visitFctCall(FctCallNode *node) {
-  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  FctCallNode::FctCallData& data = node->data.at(manIdx);
+  auto &[callType, isImported, thisType, args, callee, calleeParentScope] = data;
 
   // Retrieve arg types
-  data.args.clear();
+  args.clear();
   if (node->hasArgs) {
-    data.args.reserve(node->argLst->args.size());
+    args.reserve(node->argLst->args.size());
     for (AssignExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
       assert(!argResult.type.hasAnyGenericParts());
       // Save arg type to arg types list
-      data.args.emplace_back(argResult.type, argResult.isTemporary());
+      args.emplace_back(argResult.type, argResult.isTemporary());
     }
   }
 
@@ -1704,11 +1705,11 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
     if (baseType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
       if (firstFragEntry->scope->type == ScopeType::GLOBAL)
-        data.callType = FctCallNode::FctCallType::TYPE_CTOR;
+        callType = FctCallNode::FctCallType::TYPE_CTOR;
       else
-        data.callType = FctCallNode::FctCallType::TYPE_METHOD;
+        callType = FctCallNode::FctCallType::TYPE_METHOD;
     } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != ScopeType::GLOBAL) {
-      data.callType = FctCallNode::FctCallType::TYPE_FCT_PTR;
+      callType = FctCallNode::FctCallType::TYPE_FCT_PTR;
     }
   }
 
@@ -1756,12 +1757,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Check if this is a method call or a normal function call
   if (data.isMethodCall()) {
     // This is a method call
-    data.thisType = firstFragEntry->getQualType();
-    Scope *structBodyScope = data.thisType.getBase().getBodyScope();
+    thisType = firstFragEntry->getQualType();
+    Scope *structBodyScope = thisType.getBase().getBodyScope();
     assert(structBodyScope != nullptr);
     if (!visitMethodCall(node, structBodyScope, concreteTemplateTypes)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
-    assert(data.calleeParentScope != nullptr);
+    assert(calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
     // This is a function pointer call
     const QualType &functionType = firstFragEntry->getQualType().getBase();
@@ -1773,7 +1774,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(data.isOrdinaryCall() || data.isCtorCall());
     if (!visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName)) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};
-    assert(data.calleeParentScope != nullptr);
+    assert(calleeParentScope != nullptr);
 
     // If the call is no ordinary call, it must be a constructor, which takes a struct as this type.
     assert(data.isOrdinaryCall() || data.thisType.is(TY_STRUCT));
@@ -1781,29 +1782,29 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   if (!data.isFctPtrCall()) {
     // Check if we were able to find a function
-    if (!data.callee) {
+    if (!callee) {
       // Build error message
       const std::string functionName = data.isCtorCall() ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
       ParamList errArgTypes;
-      errArgTypes.reserve(data.args.size());
-      for (const auto &type : data.args | std::views::keys)
+      errArgTypes.reserve(args.size());
+      for (const auto &type : args | std::views::keys)
         errArgTypes.push_back({type, false});
-      const std::string signature = Function::getSignature(functionName, data.thisType, QualType(TY_DYN), errArgTypes, {}, false);
+      const std::string signature = Function::getSignature(functionName, thisType, QualType(TY_DYN), errArgTypes, {}, false);
       // Throw error
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
     }
 
     // Check if we need to request a re-visit, because the function body was not type-checked yet
-    requestRevisitIfRequired(data.callee);
+    requestRevisitIfRequired(callee);
 
     // Get function entry from function object
-    SymbolTableEntry *functionEntry = data.callee->entry;
+    SymbolTableEntry *functionEntry = callee->entry;
 
     // Check if the called function has sufficient visibility
-    data.isImported = data.calleeParentScope->isImportedBy(rootScope);
-    if (data.isImported && !functionEntry->getQualType().isPublic()) {
+    isImported = calleeParentScope->isImportedBy(rootScope);
+    if (isImported && !functionEntry->getQualType().isPublic()) {
       const QualType functionEntryType = functionEntry->getQualType();
-      const std::string signature = data.callee->getSignature();
+      const std::string signature = callee->getSignature();
       if (functionEntryType.is(TY_FUNCTION))
         SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Function '" + signature + "' has insufficient visibility")
       else
@@ -1818,14 +1819,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       const QualType &functionType = firstFragEntry->getQualType().getBase();
       paramTypes = functionType.getFunctionParamTypes();
     } else {
-      assert(data.callee != nullptr);
-      paramTypes = data.callee->getParamTypes();
+      assert(callee != nullptr);
+      paramTypes = callee->getParamTypes();
     }
 
     node->argLst->argInfos.clear();
-    for (size_t argIdx = 0; argIdx < data.args.size(); argIdx++) {
+    for (size_t argIdx = 0; argIdx < args.size(); argIdx++) {
       const QualType &expectedType = paramTypes.at(argIdx);
-      const auto &[actualType, _] = data.args.at(argIdx);
+      const auto &[actualType, _] = args.at(argIdx);
 
       Function *copyCtor = nullptr;
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
@@ -1839,18 +1840,18 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Retrieve return type
-  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().is(TY_FUNCTION) : data.callee->isFunction();
+  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().is(TY_FUNCTION) : callee->isFunction();
   QualType returnType;
   if (data.isFctPtrCall()) {
     returnType = isFct ? firstFragEntry->getQualType().getBase().getFunctionReturnType() : QualType(TY_BOOL);
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
-    returnType = data.thisType;
-  } else if (data.callee->isProcedure()) {
+    returnType = thisType;
+  } else if (callee->isProcedure()) {
     // Procedures always have the return type 'dyn'
     returnType = QualType(TY_DYN);
   } else {
-    returnType = data.callee->returnType;
+    returnType = callee->returnType;
   }
 
   // Initialize return type if required
@@ -1882,8 +1883,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     // Check if we want to ignore the discarded return value
     bool ignoreUnusedReturnValue = false;
     if (!data.isFctPtrCall()) {
-      assert(data.callee != nullptr);
-      auto fctDef = dynamic_cast<const FctDefNode *>(data.callee->declNode);
+      assert(callee != nullptr);
+      auto fctDef = dynamic_cast<const FctDefNode *>(callee->declNode);
       ignoreUnusedReturnValue = fctDef && fctDef->attrs && fctDef->attrs->attrLst->hasAttr(ATTR_IGNORE_UNUSED_RETURN_VALUE);
     }
 
