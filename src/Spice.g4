@@ -29,6 +29,7 @@ ifStmt: IF assignExpr stmtLst elseStmt?;
 elseStmt: ELSE ifStmt | ELSE stmtLst;
 switchStmt: SWITCH assignExpr LBRACE caseBranch* defaultBranch? RBRACE;
 caseBranch: CASE caseConstant (COMMA caseConstant)* COLON stmtLst;
+caseConstant: constant | (IDENTIFIER SCOPE_ACCESS)? TYPE_IDENTIFIER (SCOPE_ACCESS TYPE_IDENTIFIER)*;
 defaultBranch: DEFAULT COLON stmtLst;
 anonymousBlockStmt: stmtLst;
 
@@ -52,7 +53,6 @@ topLevelDefAttr: TOPLEVEL_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
-caseConstant: constant | (IDENTIFIER SCOPE_ACCESS)? TYPE_IDENTIFIER (SCOPE_ACCESS TYPE_IDENTIFIER)*;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;

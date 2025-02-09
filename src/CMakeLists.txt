@@ -66,8 +66,15 @@ set(SOURCES
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
-        typechecker/TypeCheckerPrepare.cpp
-        typechecker/TypeCheckerCheck.cpp
+        typechecker/TypeCheckerTopLevelDefinitions.cpp
+        typechecker/TypeCheckerTopLevelDefinitionsPrepare.cpp
+        typechecker/TypeCheckerTopLevelDefinitionsCheck.cpp
+        typechecker/TypeCheckerControlStructures.cpp
+        typechecker/TypeCheckerStatements.cpp
+        typechecker/TypeCheckBuiltinFunctions.cpp
+        typechecker/TypeCheckerExpressions.cpp
+        typechecker/TypeCheckerValues.cpp
+        typechecker/TypeCheckMeta.cpp
         typechecker/TypeCheckerImplicit.cpp
         typechecker/OpRuleManager.cpp
         typechecker/OpRuleManager.h

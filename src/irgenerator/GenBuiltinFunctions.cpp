@@ -22,8 +22,8 @@ std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
     return visit(node->panicCall);
   if (node->sysCall)
     return visit(node->sysCall);
-  assert_fail("Unknown builtin call");
-  return nullptr;
+  assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
+  return nullptr;                      // LCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
