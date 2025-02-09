@@ -49,7 +49,7 @@ void CompilerPass::changeToScope(const std::string &scopeName, ScopeType scopeTy
  */
 void CompilerPass::changeToParentScope([[maybe_unused]] ScopeType oldScopeType) {
   assert(currentScope->type == oldScopeType);
-  assert(currentScope->parent != nullptr);
+  assert(!currentScope->isRootScope());
   currentScope = currentScope->parent;
 }
 

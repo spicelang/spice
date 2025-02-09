@@ -90,29 +90,50 @@ SymbolTableEntry *SymbolTable::copySymbol(const std::string &originalName, const
  */
 SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the symbol exists in the current scope. If yes, take it
-  SymbolTableEntry *entry = lookupStrict(name);
-  if (!entry) { // Symbol was not found in the current scope
-    // We reached the root scope, the symbol does not exist at all
-    if (parent == nullptr)
-      return nullptr;
-    // If we search for the result variable, we want to stop the search when exiting a lambda body
-    if (name == RETURN_VARIABLE_NAME && scope->type == ScopeType::LAMBDA_BODY)
-      return nullptr;
-    // If there is a parent scope, continue the search there
-    entry = parent->lookup(name);
-    // Symbol was also not found in all the parent scopes, return nullptr
-    if (!entry)
-      return nullptr;
+  if (SymbolTableEntry *entry = lookupStrict(name))
+    return entry;
 
-    // Check if this scope requires capturing and capture the variable if appropriate
-    if (capturingRequired && !captures.contains(name) && !entry->getQualType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
-      // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
-      entry->isVolatile = scope->isInAsyncScope() && !entry->scope->isInAsyncScope();
-      // Add the capture to the current scope
-      captures.insert({name, Capture(entry)});
-    }
+  // Symbol was not found in the current scope
+  // We reached the root scope, the symbol does not exist at all
+  if (!parent)
+    return nullptr;
+  // If we search for the result variable, we want to stop the search when exiting a lambda body
+  if (name == RETURN_VARIABLE_NAME && scope->type == ScopeType::LAMBDA_BODY)
+    return nullptr;
+  // If there is a parent scope, continue the search there
+  SymbolTableEntry *entry = parent->lookup(name);
+  // Symbol was also not found in all the parent scopes, return nullptr
+  if (!entry)
+    return nullptr;
+  // Check if this scope requires capturing and capture the variable if appropriate
+  if (capturingRequired && !captures.contains(name) && !entry->getQualType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
+    // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
+    entry->isVolatile = scope->isInAsyncScope() && !entry->scope->isInAsyncScope();
+    // Add the capture to the current scope
+    captures.emplace(name, Capture(entry));
   }
   return entry;
+}
+
+/**
+ * Check if a symbol exists in the current or any parent scope and return it if possible.
+ * If the target symbol is an alias symbol, resolve the alias container entry.
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found + alias or not
+ */
+std::pair<SymbolTableEntry *, bool> SymbolTable::lookupWithAliasResolution(const std::string &name) {
+  SymbolTableEntry *entry = lookup(name);
+  if (!entry || !entry->getQualType().is(TY_ALIAS))
+    return {entry, false};
+
+  // We have an alias type here, resolve it
+  assert(entry->scope->isRootScope());
+  entry->used = true;
+  const std::string aliasedContainerEntryName = entry->name + ALIAS_CONTAINER_SUFFIX;
+  SymbolTableEntry *aliasedTypeContainerEntry = entry->scope->lookupStrict(aliasedContainerEntryName);
+  assert(aliasedTypeContainerEntry != nullptr);
+  return {aliasedTypeContainerEntry, true};
 }
 
 /**

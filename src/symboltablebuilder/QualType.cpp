@@ -601,6 +601,21 @@ QualType QualType::getBase() const {
 }
 
 /**
+ * Get aliased type for an alias type
+ *
+ * @param aliasEntry Entry of the alias definition
+ * @return Aliased type
+ */
+QualType QualType::getAliased(const SymbolTableEntry *aliasEntry) const {
+  assert(is(TY_ALIAS));
+  // Get type of aliased type container entry
+  const std::string aliasedContainerEntryName = aliasEntry->name + ALIAS_CONTAINER_SUFFIX;
+  const SymbolTableEntry *aliasedTypeContainerEntry = aliasEntry->scope->lookupStrict(aliasedContainerEntryName);
+  assert(aliasedTypeContainerEntry != nullptr);
+  return aliasedTypeContainerEntry->getQualType();
+}
+
+/**
  * Remove reference of this type, if it is a reference
  *
  * @return New type

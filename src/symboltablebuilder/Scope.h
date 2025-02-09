@@ -74,7 +74,7 @@ public:
 
   // Generic types
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
-  GenericType *lookupGenericType(const std::string &typeName);
+  GenericType *lookupGenericTypeStrict(const std::string &typeName);
 
   // Util
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
@@ -89,6 +89,7 @@ public:
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
+  ALWAYS_INLINE [[nodiscard]] bool isRootScope() const { return parent == nullptr; }
 
   // Wrapper methods for symbol table
   ALWAYS_INLINE SymbolTableEntry *insert(const std::string &name, ASTNode *declNode) {

@@ -21,6 +21,7 @@ class Struct;
 class Interface;
 class GenericType;
 class QualType;
+class SymbolTableEntry;
 enum SuperType : uint8_t;
 
 // Constants
@@ -105,6 +106,7 @@ public:
   [[nodiscard]] QualType toNonConst() const;
   [[nodiscard]] QualType getContained() const;
   [[nodiscard]] QualType getBase() const;
+  [[nodiscard]] QualType getAliased(const SymbolTableEntry *aliasEntry) const;
   [[nodiscard]] QualType removeReferenceWrapper() const;
   [[nodiscard]] QualType replaceBaseType(const QualType &newBaseType) const;
   [[nodiscard]] QualType getWithLambdaCaptures(bool enabled = true) const;

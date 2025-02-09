@@ -1,5 +1,11 @@
+import "test2" as s1;
+
 f<int> main() {
-    (1) = 4;
+    dyn v = s1::Vector<int>{};
+    v.setData(12);
+    printf("Data: %d\n", v.data);
+    v.setData(1.5);
+    printf("Data: %d\n", v.data);
 }
 
 /*import "bootstrap/util/block-allocator";
