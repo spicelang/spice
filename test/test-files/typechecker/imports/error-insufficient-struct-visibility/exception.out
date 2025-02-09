@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./source.spice:5:28:
-Insufficient symbol visibility: Cannot access struct 'Vector' due to its private visibility
+[Error|Semantic] ./source.spice:4:13:
+Insufficient symbol visibility: Struct 's1::Vector' has insufficient visibility
 
-5  ntf("Result: %d/n", s.i);
-                       ^
+4  dyn s = s1::Vector{1};
+           ^^^^^^^^^^^^^

@@ -189,6 +189,17 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
   assert(!typeChain.empty() && !is(TY_INVALID));
   llvm::LLVMContext &context = sourceFile->llvmModule->getContext();
 
+  if (isOneOf({TY_PTR, TY_REF, TY_STRING}) || (isArray() && getArraySize() == 0))
+    return llvm::PointerType::get(context, 0);
+
+  if (isArray()) {
+    assert(getArraySize() > 0);
+    llvm::Type *containedType = sourceFile->getLLVMType(getContained());
+    return llvm::ArrayType::get(containedType, getArraySize());
+  }
+
+  assert(!hasAnyGenericParts());
+
   if (is(TY_DOUBLE))
     return llvm::Type::getDoubleTy(context);
 
@@ -257,18 +268,9 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     return structType;
   }
 
-  if (isOneOf({TY_PTR, TY_REF, TY_STRING}) || (isArray() && getArraySize() == 0))
-    return llvm::PointerType::get(context, 0);
-
   if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
     return llvm::StructType::get(context, {ptrTy, ptrTy});
-  }
-
-  if (isArray()) {
-    assert(getArraySize() > 0);
-    llvm::Type *containedType = sourceFile->getLLVMType(getContained());
-    return llvm::ArrayType::get(containedType, getArraySize());
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true)); // GCOVR_EXCL_LINE

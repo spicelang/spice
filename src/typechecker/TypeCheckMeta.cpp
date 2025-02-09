@@ -263,7 +263,6 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
 
 std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
-  Scope *localAccessScope = accessScope ? accessScope : currentScope;
   const std::string firstFragment = node->typeNameFragments.front();
 
   // Check this type requires a runtime module
@@ -292,7 +291,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);
   entry->used = true;
-  localAccessScope = registryEntry->targetScope->parent;
+  Scope *defScope = registryEntry->targetScope->parent;
   QualType entryType = entry->getQualType();
 
   // Enums can early-return
@@ -306,8 +305,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
     if (node->templateTypeLst) {
-      assert(localAccessScope != nullptr);
-      isImported = localAccessScope->isImportedBy(rootScope);
+      assert(defScope != nullptr);
+      isImported = defScope->isImportedBy(rootScope);
 
       templateTypes.reserve(node->templateTypeLst->dataTypes.size());
       for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
@@ -317,7 +316,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
           allTemplateTypesConcrete = false;
         } else if (isImported) {
           // Introduce the local type to the imported source file
-          [[maybe_unused]] QualType importedType = mapLocalTypeToImportedScopeType(localAccessScope, templateType);
+          [[maybe_unused]] QualType importedType = mapLocalTypeToImportedScopeType(defScope, templateType);
           assert(importedType.is(templateType.getSuperType()));
         }
         templateTypes.push_back(templateType);
@@ -342,12 +341,12 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
       if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
-        if (const Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node))
+        if (const Struct *spiceStruct = StructManager::match(defScope, structName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
       } else {
         assert(entryType.is(TY_INTERFACE));
         const std::string interfaceName = node->typeNameFragments.back();
-        if (const Interface *spiceInterface = InterfaceManager::match(localAccessScope, interfaceName, templateTypes, node))
+        if (const Interface *spiceInterface = InterfaceManager::match(defScope, interfaceName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceInterface->scope);
       }
     }

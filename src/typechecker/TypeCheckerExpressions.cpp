@@ -414,9 +414,6 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
 }
 
 std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
-  // Reset access scope
-  accessScope = nullptr;
-
   // If no operator is applied, simply visit the postfix unary expression
   if (node->op == PrefixUnaryExprNode::PrefixUnaryOp::OP_NONE)
     return visit(node->postfixUnaryExpr);
@@ -469,7 +466,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF:
     operandType = OpRuleManager::getPrefixBitwiseAndResultType(node, operand);
     break;
-  default:
+  default:                                                                 // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
@@ -605,12 +602,12 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     break;
   }
-  default:
+  default:                                                                  // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   if (operandType.is(TY_INVALID)) {
-    const std::string varName = operandEntry ? operandEntry->name : "";
+    const std::string &varName = operandEntry ? operandEntry->name : "";
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared")
   }
 
@@ -636,32 +633,34 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   // Identifier (local or global variable access)
   assert(!node->fqIdentifier.empty());
-  if (!accessScope)
-    accessScope = currentScope;
+
+  auto &[entry, accessScope, capture] = node->data.at(manIdx);
+  accessScope = currentScope;
 
   // Check if a local or global variable can be found by searching for the name
-  SymbolTableEntry *varEntry = nullptr;
   if (node->identifierFragments.size() == 1)
-    varEntry = accessScope->lookup(node->identifierFragments.back());
+    entry = accessScope->lookup(node->identifierFragments.back());
 
   // If no local or global was found, search in the name registry
-  if (!varEntry) {
+  if (!entry) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
     if (!registryEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
-    varEntry = registryEntry->targetEntry;
+    entry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
   }
-  assert(varEntry != nullptr);
-  assert(accessScope != nullptr);
-  AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
-  data = {varEntry, accessScope, accessScope->symbolTable.lookupCapture(varEntry->name)};
-  const QualType varType = varEntry->getQualType();
-  HANDLE_UNRESOLVED_TYPE_ER(varType)
+  assert(entry != nullptr);
+  entry->used = true;
+  capture = accessScope->symbolTable.lookupCapture(entry->name);
 
-  if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
+  const QualType varType = entry->getQualType();
+  HANDLE_UNRESOLVED_TYPE_ER(varType)
+  if (varType.is(TY_INVALID))
+    SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + entry->name + "' was used before declared.")
+
+  if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && entry->global) {
     // Check if overloaded function was referenced
-    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations(varEntry->name);
+    const std::vector<Function *> *manifestations = entry->declNode->getFctManifestations(entry->name);
     if (manifestations->size() > 1)
       SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT, "Overloaded functions / functions with optional params cannot be referenced")
     if (!manifestations->front()->templateTypes.empty())
@@ -672,46 +671,36 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     referencedFunction->entry->used = true;
   }
 
-  if (varType.is(TY_INVALID))
-    SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
-
   // The base type should be an extended primitive
   const QualType baseType = varType.getBase();
   if (!baseType.isExtendedPrimitive() && !baseType.is(TY_DYN))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName(false) + " cannot be accessed here")
 
-  // Check if is an imported variable
-  if (accessScope->isImportedBy(rootScope)) {
-    // Check if the entry is public
-    if (varEntry->scope->type != ScopeType::ENUM && !varEntry->getQualType().isPublic())
-      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
-  }
-
   // Check if we have seen a 'this.' prefix, because the generator needs that
-  if (varEntry->scope->type == ScopeType::STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
+  if (entry->scope->type == ScopeType::STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE,
                   "The symbol '" + node->fqIdentifier + "' could not be found. Missing 'this.' prefix?")
 
-  // Set symbol table entry to used
-  varEntry->used = true;
+  // Ensure that the entry is public, if the symbol is imported.
+  // An exception are enum items. There it is sufficient, that the enum itself is public.
+  if (accessScope->isImportedBy(rootScope) && accessScope->type != ScopeType::ENUM)
+    if (!entry->getQualType().getBase().isPublic())
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + entry->name + "' due to its private visibility")
 
-  // Retrieve scope for the new scope path fragment
+  // For enum item access, use access scope of the enum
+  if (entry->scope->type == ScopeType::ENUM)
+    accessScope = entry->scope;
+
+  // For struct access, use access scope of the struct
   if (baseType.is(TY_STRUCT)) {
-    // Set access scope to struct scope
     const std::string &structName = baseType.getSubType();
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(structName);
     assert(nameRegistryEntry != nullptr);
-
-    // Change the access scope to the struct scope
-    data.accessScope = accessScope = nameRegistryEntry->targetScope;
-
-    // Check if the entry is public if it is imported
-    assert(nameRegistryEntry->targetEntry != nullptr);
-    if (!nameRegistryEntry->targetEntry->getQualType().isPublic() && accessScope->parent->isImportedBy(rootScope))
-      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access struct '" + structName + "' due to its private visibility")
+    accessScope = nameRegistryEntry->targetScope;
+    assert(accessScope != nullptr);
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), varEntry};
+  return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), entry};
 }
 
 } // namespace spice::compiler

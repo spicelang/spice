@@ -22,18 +22,3 @@ f<int> main() {
         printf("%d: %d\n", first, second);
     }
 }
-
-
-/*import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
-
-public type TestNode struct {
-    int data = 123
-}
-
-public p TestNode.dtor() {}
-
-f<int> main() {
-    DefaultMemoryManager mm;
-    BlockAllocator<TestNode> ba = BlockAllocator<TestNode>(mm);
-}*/
