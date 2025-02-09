@@ -58,7 +58,9 @@ public:
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
   [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
-  Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Struct *getStruct(const ASTNode *node, const QualTypeList &templateTypes) const;
+  [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Interface *getInterface(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
 
   // Queries on the type

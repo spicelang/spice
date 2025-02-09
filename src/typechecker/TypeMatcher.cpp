@@ -146,7 +146,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     if (!baseType.isSelfReferencingStructType()) {
       Scope *matchScope = baseType.getBodyScope()->parent;
       if (baseType.is(TY_STRUCT)) { // Struct
-        const Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        const Struct *spiceStruct = baseType.getStruct(node, templateTypes);
         if (!spiceStruct) {
           assert(node != nullptr);
           const std::string signature = Struct::getSignature(baseType.getSubType(), templateTypes);
@@ -154,7 +154,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
         }
         type = type.getWithBodyScope(spiceStruct->scope);
       } else { // Interface
-        const Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        const Interface *spiceInterface = baseType.getInterface(node, templateTypes);
         if (!spiceInterface) {
           assert(node != nullptr);
           const std::string signature = Interface::getSignature(baseType.getSubType(), templateTypes);

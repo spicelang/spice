@@ -342,7 +342,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
       if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
-        if (Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node))
+        if (const Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
       } else {
         assert(entryType.is(TY_INTERFACE));

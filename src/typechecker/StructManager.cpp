@@ -156,7 +156,7 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
 
         // Instantiate structs
         if (baseType.is(TY_STRUCT))
-          baseType.getStruct(node);
+          (void)baseType.getStruct(node);
       }
 
       // Instantiate implemented interfaces if required
@@ -170,10 +170,8 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping, node);
 
         // Instantiate interface
-        Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
-        Interface *spiceInterface = InterfaceManager::match(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
+        Interface *spiceInterface = interfaceType.getInterface(node, templateTypes);
         assert(spiceInterface != nullptr);
-
         interfaceType = spiceInterface->entry->getQualType();
       }
 

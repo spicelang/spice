@@ -164,10 +164,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Check if the struct implements all methods of all attached interfaces
     size_t vtableIndex = 0;
     for (const QualType &interfaceType : manifestation->interfaceTypes) {
-      // Retrieve interface instance
-      const std::string interfaceName = interfaceType.getSubType();
-      Scope *matchScope = interfaceType.getBodyScope()->parent;
-      const Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      const Interface *interface = interfaceType.getInterface(node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct

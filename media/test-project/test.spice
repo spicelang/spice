@@ -1,11 +1,17 @@
-import "test2" as s1;
+import "std/data/vector";
 
 f<int> main() {
-    dyn v = s1::Vector<int>{};
-    v.setData(12);
-    printf("Data: %d\n", v.data);
-    v.setData(1.5);
-    printf("Data: %d\n", v.data);
+    Vector<int> intVector;
+    intVector.pushBack(1);
+    intVector.pushBack(5);
+    intVector.pushBack(4);
+    intVector.pushBack(0);
+    intVector.pushBack(12);
+    intVector.pushBack(12345);
+    intVector.pushBack(9);
+    foreach const int item : intVector {
+        printf("Item: %d\n", item);
+    }
 }
 
 /*import "bootstrap/util/block-allocator";

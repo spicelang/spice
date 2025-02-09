@@ -552,8 +552,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
-      Scope *matchScope = structScope->parent;
-      Struct *spiceStruct = StructManager::match(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
+      const Struct *spiceStruct = lhsBaseTy.getStruct(node);
       assert(spiceStruct != nullptr);
       structScope = spiceStruct->scope;
     }

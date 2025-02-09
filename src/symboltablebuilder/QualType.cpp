@@ -87,14 +87,36 @@ const QualTypeList &QualType::getTemplateTypes() const { return type->getTemplat
  * Get the struct instance for a struct type
  *
  * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
  * @return Struct instance
  */
-Struct *QualType::getStruct(const ASTNode *node) const {
+Struct *QualType::getStruct(const ASTNode *node, const QualTypeList &templateTypes) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
   const std::string &structName = getSubType();
-  const QualTypeList &templateTypes = getTemplateTypes();
   return StructManager::match(structDefScope, structName, templateTypes, node);
+}
+
+/**
+ * Get the struct instance for a struct type
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+Struct *QualType::getStruct(const ASTNode *node) const { return getStruct(node, type->getTemplateTypes()); }
+
+/**
+ * Get the interface instance for an interface type
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Interface instance
+ */
+Interface *QualType::getInterface(const ASTNode *node, const QualTypeList &templateTypes) const {
+  assert(is(TY_INTERFACE));
+  Scope *interfaceDefScope = getBodyScope()->parent;
+  const std::string structName = getSubType();
+  return InterfaceManager::match(interfaceDefScope, structName, templateTypes, node);
 }
 
 /**
@@ -103,13 +125,7 @@ Struct *QualType::getStruct(const ASTNode *node) const {
  * @param node Accessing AST node
  * @return Interface instance
  */
-Interface *QualType::getInterface(const ASTNode *node) const {
-  assert(is(TY_INTERFACE));
-  Scope *interfaceDefScope = getBodyScope()->parent;
-  const std::string structName = getSubType();
-  const QualTypeList &templateTypes = getTemplateTypes();
-  return InterfaceManager::match(interfaceDefScope, structName, templateTypes, node);
-}
+Interface *QualType::getInterface(const ASTNode *node) const { return getInterface(node, type->getTemplateTypes()); }
 
 /**
  * Check if the underlying type is of a certain super type
@@ -634,7 +650,6 @@ QualType QualType::autoDeReference() const {
     newType = newType.getContained();
   return newType;
 }
-
 
 /**
  * Replace the base type with another one

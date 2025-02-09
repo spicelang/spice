@@ -353,13 +353,12 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   // Substantiate return type
   substantiateReturnType(candidate, typeMapping, callNode);
 
+  // Set the match scope to the scope of the concrete substantiation
   const QualType &thisType = candidate.thisType;
   if (!thisType.is(TY_DYN)) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
-      const std::string &structName = thisType.getSubType();
-      Scope *scope = thisType.getBodyScope()->parent;
-      Struct *spiceStruct = StructManager::match(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
+      const Struct *spiceStruct = thisType.getStruct(candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
