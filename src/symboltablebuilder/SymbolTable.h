@@ -40,6 +40,7 @@ public:
   SymbolTableEntry *insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix = 0);
   SymbolTableEntry *copySymbol(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &name);
+  std::pair<SymbolTableEntry *, bool> lookupWithAliasResolution(const std::string &name);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath);
   SymbolTableEntry *lookupStrictByIndex(unsigned int orderIndex);

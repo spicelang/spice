@@ -86,7 +86,7 @@ Scope *Scope::getChildScope(const std::string &scopeName) const {
  * @return Collection of EOL variables
  */
 std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc-no-recursion)
-  assert(parent != nullptr);                                      // Should not be called in root scope
+  assert(!isRootScope());                                         // Should not be called in root scope
   std::vector<SymbolTableEntry *> varsGoingOutOfScope;
 
   // Collect all variables in this scope
@@ -103,7 +103,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
 
   // If this is the scope of a dtor, also return all fields of the struct
   if (isDtorScope) {
-    assert(parent != nullptr && parent->type == ScopeType::STRUCT);
+    assert(!isRootScope() && parent->type == ScopeType::STRUCT);
     // Get all fields of the struct
     for (const auto &[name, entry] : parent->symbolTable.symbols)
       if (!entry.getQualType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
@@ -125,16 +125,14 @@ void Scope::insertGenericType(const std::string &typeName, const GenericType &ge
 }
 
 /**
- * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
- * If the generic type does not exist at all, the function will return a nullptr.
+ * Search for a generic type by its name in this scope.
+ * If the generic type is not found, a nullptr is returned.
  *
  * @param typeName Name of the generic type
  * @return Generic type
  */
-GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(misc-no-recursion)
-  if (genericTypes.contains(typeName))
-    return &genericTypes.at(typeName);
-  return parent ? parent->lookupGenericType(typeName) : nullptr;
+GenericType *Scope::lookupGenericTypeStrict(const std::string &typeName) {
+  return genericTypes.contains(typeName) ? &genericTypes.at(typeName) : nullptr;
 }
 
 /**
@@ -333,7 +331,7 @@ bool Scope::hasRefFields() {
  * @return Number of loops
  */
 unsigned int Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
-  assert(parent != nullptr);
+  assert(!isRootScope());
   if (parent->parent == nullptr)
     return 0;
   unsigned int loopCount = parent->getLoopNestingDepth();
@@ -348,7 +346,7 @@ unsigned int Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
  * @return Child scope of switch statement or not
  */
 bool Scope::isInCaseBranch() const { // NOLINT(misc-no-recursion)
-  assert(parent != nullptr);
+  assert(!isRootScope());
   if (parent->parent == nullptr)
     return false;
   if (type == ScopeType::CASE_BODY)
@@ -364,7 +362,7 @@ bool Scope::isInCaseBranch() const { // NOLINT(misc-no-recursion)
 bool Scope::isInAsyncScope() const { // NOLINT(misc-no-recursion)
   if (isAsyncScope)
     return true;
-  return parent != nullptr && parent->isInAsyncScope();
+  return !isRootScope() && parent->isInAsyncScope();
 }
 
 /**
@@ -375,7 +373,7 @@ bool Scope::isInAsyncScope() const { // NOLINT(misc-no-recursion)
 bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
   if (type == ScopeType::UNSAFE_BODY)
     return true;
-  return parent != nullptr && parent->doesAllowUnsafeOperations();
+  return !isRootScope() && parent->doesAllowUnsafeOperations();
 }
 
 /**

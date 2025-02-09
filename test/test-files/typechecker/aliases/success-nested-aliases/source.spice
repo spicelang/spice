@@ -1,0 +1,10 @@
+type Alias1 alias int;
+type Alias2 alias Alias1;
+type Alias3 alias Alias2;
+
+f<int> main() {
+    Alias3 a3 = 1;
+    Alias2 a2 = a3 + 2;
+    Alias1 a1 = a2 + 3;
+    printf("Result: %d\n", a1);
+}

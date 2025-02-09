@@ -77,7 +77,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -216,7 +216,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      const GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -326,7 +326,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
       templateTypesGeneric.push_back(*genericType);
@@ -434,7 +434,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
         continue;
       }
       // Convert generic symbol type to generic type
-      const GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
       templateTypesGeneric.push_back(*genericType);

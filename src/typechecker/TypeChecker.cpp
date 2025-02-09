@@ -473,7 +473,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         return static_cast<std::vector<Function *> *>(nullptr);
       }
       // Convert generic symbol type to generic type
-      const GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
+      const GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -1714,23 +1714,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Get struct name. Retrieve it from alias if required
-  std::string fqFunctionName = node->fqFunctionName;
-  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(fqFunctionName);
-  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
-  const bool isAliasType = aliasEntry && aliasEntry->getQualType().is(TY_ALIAS);
-  if (isAliasType) {
-    aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
-    assert(aliasedTypeContainerEntry != nullptr);
-    // Set alias entry used
-    aliasEntry->used = true;
-    fqFunctionName = aliasedTypeContainerEntry->getQualType().getSubType();
-  }
+  const auto &[structEntry, isAlias] = rootScope->symbolTable.lookupWithAliasResolution(node->fqFunctionName);
+  const std::string &fqFunctionName = isAlias ? structEntry->getQualType().getSubType() : node->fqFunctionName;
 
   // Get the concrete template types
   QualTypeList concreteTemplateTypes;
-  if (isAliasType) {
+  if (isAlias) {
     // Retrieve concrete template types from type alias
-    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
+    concreteTemplateTypes = structEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
       SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
@@ -1906,7 +1897,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
   }
 
   // Check if the type is generic (possible in case of ctor call)
-  const QualType *genericType = rootScope->lookupGenericType(fqFunctionName);
+  const QualType *genericType = rootScope->lookupGenericTypeStrict(fqFunctionName);
   if (genericType && typeMapping.contains(fqFunctionName)) {
     const QualType &replacementType = typeMapping.at(fqFunctionName);
     if (replacementType.is(TY_STRUCT))
@@ -2066,18 +2057,9 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 }
 
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
-  // Get struct name. Retrieve it from alias if required
-  std::string structName = node->fqStructName;
-  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(structName);
-  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
-  const bool isAliasType = aliasEntry && aliasEntry->getQualType().is(TY_ALIAS);
-  if (isAliasType) {
-    aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
-    assert(aliasedTypeContainerEntry != nullptr);
-    // Set alias entry used
-    aliasEntry->used = true;
-    structName = aliasedTypeContainerEntry->getQualType().getSubType();
-  }
+  // Retrieve struct name
+  const auto [aliasedEntry, isAlias] = rootScope->symbolTable.lookupWithAliasResolution(node->fqStructName);
+  std::string structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
 
   // Check if access scope was altered
   if (accessScope != nullptr && accessScope != currentScope)
@@ -2096,9 +2078,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Get the concrete template types
   QualTypeList concreteTemplateTypes;
-  if (isAliasType) {
+  if (isAlias) {
     // Retrieve concrete template types from type alias
-    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
+    concreteTemplateTypes = aliasedEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->templateTypeLst)
       SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
@@ -2475,21 +2457,18 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
 std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
   Scope *localAccessScope = accessScope ? accessScope : currentScope;
-
   const std::string firstFragment = node->typeNameFragments.front();
 
   // Check this type requires a runtime module
   if (node->typeNameFragments.size() == 1)
    ensureLoadedRuntimeForTypeName(firstFragment);
 
-  // Check if it is a generic type
+  // A type can either be a single fragment like "Test" or multiple fragments "a.b.Test", which means it is imported.
   bool isImported = node->typeNameFragments.size() > 1;
-  const QualType *genericType = rootScope->lookupGenericType(firstFragment);
-  if (!isImported && genericType) {
+  if (const QualType *genericType = rootScope->lookupGenericTypeStrict(firstFragment)) {
+    assert(!isImported);
     // Take the concrete replacement type for the name of this generic type if available
-    QualType symbolType = *genericType;
-    if (typeMapping.contains(firstFragment))
-      symbolType = typeMapping.at(firstFragment);
+    const QualType &symbolType = typeMapping.contains(firstFragment) ? typeMapping.at(firstFragment) : *genericType;
 
     // Check if the replacement requires a runtime module
     if (symbolType.is(TY_STRUCT))
@@ -2507,8 +2486,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   assert(entry != nullptr);
   entry->used = true;
   localAccessScope = registryEntry->targetScope->parent;
-
-  // Get struct type
   QualType entryType = entry->getQualType();
 
   // Enums can early-return
@@ -2571,14 +2548,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
 
-  if (entryType.is(TY_ALIAS)) {
-    // Get type of aliased type container entry
-    const std::string aliasedContainerEntryName = entry->name + ALIAS_CONTAINER_SUFFIX;
-    SymbolTableEntry *aliasedTypeContainerEntry = entry->scope->lookupStrict(aliasedContainerEntryName);
-    assert(aliasedTypeContainerEntry != nullptr);
-    return node->setEvaluatedSymbolType(aliasedTypeContainerEntry->getQualType(), manIdx);
-  }
+  if (entryType.is(TY_ALIAS))
+    return node->setEvaluatedSymbolType(entryType.getAliased(entry), manIdx);
 
+  // We tried everything to resolve it, but this type is still unknown
   const bool isInvalid = entryType.is(TY_INVALID);
   SOFT_ERROR_QT(node, EXPECTED_TYPE, isInvalid ? "Used type before declared" : "Expected type, but got " + entryType.getName())
 }

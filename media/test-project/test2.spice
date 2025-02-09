@@ -1,1 +1,9 @@
-public type TestAlias alias int;
+type T int|double;
+
+public type Vector<T> struct {
+    public T data
+}
+
+public p Vector.setData<T>(T data) {
+    this.data = data;
+}
