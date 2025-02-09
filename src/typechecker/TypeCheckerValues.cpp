@@ -238,6 +238,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       Function *copyCtor = nullptr;
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
         copyCtor = matchCopyCtor(actualType, node);
+        // Insert anonymous symbol to track the dtor call of the copy
         currentScope->symbolTable.insertAnonymous(actualType, node, argIdx + 1); // +1 because 0 is reserved for return value
       }
 
@@ -264,9 +265,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (returnBaseType.is(TY_STRUCT))
     returnType = mapImportedScopeTypeToLocalType(returnBaseType.getBodyScope(), returnType);
 
-  // Add anonymous symbol to keep track of de-allocation
+  // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.is(TY_STRUCT))
+  if (returnType.is(TY_STRUCT) && !returnType.isTriviallyDestructible(node))
     anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
 
   // Remove public qualifier to not have public local variables
@@ -530,21 +531,18 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       }
     }
   } else {
-    for (QualType &fieldType : spiceStruct->fieldTypes) {
-      if (fieldType.isRef())
-        SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
-                      "The struct takes at least one reference field. You need to instantiate it with all fields.")
-    }
+    if (std::ranges::any_of(spiceStruct->fieldTypes, [](const QualType &fieldType) { return fieldType.isRef(); }))
+      SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
+                    "The struct takes at least one reference field. You need to instantiate it with all fields.")
   }
 
   // Update type of struct entry
   structEntry->updateType(structType, true);
 
-  // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
+  // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
   SymbolTableEntry *anonymousEntry = nullptr;
-  if (node->fieldLst != nullptr)
-    if (std::ranges::any_of(node->fieldLst->args, [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
-      anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
+  if (!structType.isTriviallyDestructible(node))
+    anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public qualifier to not have public local variables
   structType.getQualifiers().isPublic = false;

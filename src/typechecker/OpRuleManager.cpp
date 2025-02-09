@@ -726,13 +726,14 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   // Procedures always have the return type 'bool'
   if (callee->isProcedure())
     return ExprResult(QualType(TY_BOOL));
+  const QualType &returnType = callee->returnType;
 
-  // Add anonymous symbol to keep track of de-allocation
+  // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (callee->returnType.is(TY_STRUCT))
-    anonymousSymbol = typeChecker->currentScope->symbolTable.insertAnonymous(callee->returnType, node, opIdx);
+  if (returnType.is(TY_STRUCT) && !returnType.isTriviallyDestructible(node))
+    anonymousSymbol = typeChecker->currentScope->symbolTable.insertAnonymous(returnType, node, opIdx);
 
-  return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType), anonymousSymbol};
+  return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, returnType), anonymousSymbol};
 }
 
 QualType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,

@@ -312,13 +312,15 @@ bool QualType::isErrorObj() const {
 bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
 
 /**
- * Check if copying an instance of the current type would require calling other copy ctors.
+ * Check if copying an instance of the current type would require a call to the copy ctor.
  * If this function return true, the type can be copied by calling memcpy.
  *
  * @param node Accessing ASTNode
  * @return Trivially copyable or not
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
+  assert(!hasAnyGenericParts());
+
   // Heap-allocated values may not be copied via memcpy
   if (qualifiers.isHeap)
     return false;
@@ -335,8 +337,6 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
   if (is(TY_STRUCT)) {
     // If the struct has a copy ctor, it is a non-trivially copyable one
     const Struct *spiceStruct = getStruct(node);
-
-    // If the struct itself has a copy ctor, it is not trivially copyable
     const std::vector args = {Arg(toConstRef(node), false)};
     const Function *copyCtor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, args, true);
     if (copyCtor != nullptr)
@@ -349,6 +349,41 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
 
   return true;
 }
+
+/**
+ * Check if destructing an instance of the current type would require calling other dtors.
+ * If this function return true, the type does not need to be destructed
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially destructible or not
+ */
+bool QualType::isTriviallyDestructible(const ASTNode *node) const {
+  assert(!hasAnyGenericParts());
+
+  // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
+  if (qualifiers.isHeap)
+    return false;
+
+  // In case of an array, the item type is determining the destructing triviality
+  if (isArray())
+    return getBase().isTriviallyDestructible(node);
+
+  // In case of a struct, the member types determine the destructing triviality
+  if (is(TY_STRUCT)) {
+    // If the struct has a dtor, it is a non-trivially destructible one
+    const Struct *spiceStruct = getStruct(node);
+    const Function *dtor = FunctionManager::lookup(spiceStruct->scope, DTOR_FUNCTION_NAME, *this, {}, true);
+    if (dtor != nullptr)
+      return false;
+
+    // Check if all member types are trivially destructible
+    const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyDestructible(node); }; // NOLINT(*-no-recursion)
+    return std::ranges::all_of(spiceStruct->fieldTypes, pred);
+  }
+
+  return true;
+}
+
 
 /**
  * Check if the current type implements the given interface type
