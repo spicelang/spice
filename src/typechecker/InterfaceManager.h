@@ -37,7 +37,7 @@ private:
   [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &reqName);
   [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes,
                                                TypeMapping &typeMapping, const ASTNode *node);
-  static void substantiateSignatures(Interface &candidate, TypeMapping &typeMapping, const ASTNode *node);
+  static void substantiateSignatures(Interface &candidate, const TypeMapping &typeMapping, const ASTNode *node);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Interface &candidate,
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes);

@@ -76,8 +76,9 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
 
     iteratorType = QualType(node->getIteratorFct->returnType);
-    // Create anonymous entry for the iterator
-    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
+    // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
+    if (!iteratorType.isTriviallyDestructible(iteratorNode))
+      currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
 
   // Change to foreach body scope

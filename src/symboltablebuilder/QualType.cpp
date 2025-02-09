@@ -87,14 +87,59 @@ const QualTypeList &QualType::getTemplateTypes() const { return type->getTemplat
  * Get the struct instance for a struct type
  *
  * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
  * @return Struct instance
  */
-Struct *QualType::getStruct(const ASTNode *node) const {
+Struct *QualType::getStruct(const ASTNode *node, const QualTypeList &templateTypes) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
   const std::string &structName = getSubType();
-  const QualTypeList &templateTypes = getTemplateTypes();
   return StructManager::match(structDefScope, structName, templateTypes, node);
+}
+
+/**
+ * Get the struct instance for a struct type
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+Struct *QualType::getStruct(const ASTNode *node) const { return getStruct(node, type->getTemplateTypes()); }
+
+/**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Struct instance
+ */
+Struct *QualType::getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes) {
+  Struct *spiceStruct = getStruct(node, templateTypes);
+  type = type->getWithBodyScope(spiceStruct->scope)->getWithTemplateTypes(spiceStruct->getTemplateTypes());
+  return spiceStruct;
+}
+
+/**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+Struct *QualType::getStructAndAdjustType(const ASTNode *node) { return getStructAndAdjustType(node, type->getTemplateTypes()); }
+
+/**
+ * Get the interface instance for an interface type
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Interface instance
+ */
+Interface *QualType::getInterface(const ASTNode *node, const QualTypeList &templateTypes) const {
+  assert(is(TY_INTERFACE));
+  Scope *interfaceDefScope = getBodyScope()->parent;
+  const std::string structName = getSubType();
+  return InterfaceManager::match(interfaceDefScope, structName, templateTypes, node);
 }
 
 /**
@@ -103,13 +148,7 @@ Struct *QualType::getStruct(const ASTNode *node) const {
  * @param node Accessing AST node
  * @return Interface instance
  */
-Interface *QualType::getInterface(const ASTNode *node) const {
-  assert(is(TY_INTERFACE));
-  Scope *interfaceDefScope = getBodyScope()->parent;
-  const std::string structName = getSubType();
-  const QualTypeList &templateTypes = getTemplateTypes();
-  return InterfaceManager::match(interfaceDefScope, structName, templateTypes, node);
-}
+Interface *QualType::getInterface(const ASTNode *node) const { return getInterface(node, type->getTemplateTypes()); }
 
 /**
  * Check if the underlying type is of a certain super type
@@ -273,13 +312,15 @@ bool QualType::isErrorObj() const {
 bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
 
 /**
- * Check if copying an instance of the current type would require calling other copy ctors.
+ * Check if copying an instance of the current type would require a call to the copy ctor.
  * If this function return true, the type can be copied by calling memcpy.
  *
  * @param node Accessing ASTNode
  * @return Trivially copyable or not
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
+  assert(!hasAnyGenericParts());
+
   // Heap-allocated values may not be copied via memcpy
   if (qualifiers.isHeap)
     return false;
@@ -296,8 +337,6 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
   if (is(TY_STRUCT)) {
     // If the struct has a copy ctor, it is a non-trivially copyable one
     const Struct *spiceStruct = getStruct(node);
-
-    // If the struct itself has a copy ctor, it is not trivially copyable
     const std::vector args = {Arg(toConstRef(node), false)};
     const Function *copyCtor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, args, true);
     if (copyCtor != nullptr)
@@ -310,6 +349,41 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
 
   return true;
 }
+
+/**
+ * Check if destructing an instance of the current type would require calling other dtors.
+ * If this function return true, the type does not need to be destructed
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially destructible or not
+ */
+bool QualType::isTriviallyDestructible(const ASTNode *node) const {
+  assert(!hasAnyGenericParts());
+
+  // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
+  if (qualifiers.isHeap)
+    return false;
+
+  // In case of an array, the item type is determining the destructing triviality
+  if (isArray())
+    return getBase().isTriviallyDestructible(node);
+
+  // In case of a struct, the member types determine the destructing triviality
+  if (is(TY_STRUCT)) {
+    // If the struct has a dtor, it is a non-trivially destructible one
+    const Struct *spiceStruct = getStruct(node);
+    const Function *dtor = FunctionManager::lookup(spiceStruct->scope, DTOR_FUNCTION_NAME, *this, {}, true);
+    if (dtor != nullptr)
+      return false;
+
+    // Check if all member types are trivially destructible
+    const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyDestructible(node); }; // NOLINT(*-no-recursion)
+    return std::ranges::all_of(spiceStruct->fieldTypes, pred);
+  }
+
+  return true;
+}
+
 
 /**
  * Check if the current type implements the given interface type
@@ -634,7 +708,6 @@ QualType QualType::autoDeReference() const {
     newType = newType.getContained();
   return newType;
 }
-
 
 /**
  * Replace the base type with another one

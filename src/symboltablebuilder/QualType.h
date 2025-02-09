@@ -58,7 +58,11 @@ public:
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
   [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
-  Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Struct *getStruct(const ASTNode *node, const QualTypeList &templateTypes) const;
+  [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes);
+  [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node);
+  [[nodiscard]] Interface *getInterface(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
 
   // Queries on the type
@@ -82,6 +86,7 @@ public:
 
   // Complex queries on the type
   [[nodiscard]] bool isTriviallyCopyable(const ASTNode *node) const;
+  [[nodiscard]] bool isTriviallyDestructible(const ASTNode *node) const;
   [[nodiscard]] bool doesImplement(const QualType &implementedInterfaceType, const ASTNode *node) const;
   [[nodiscard]] bool canBind(const QualType &inputType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const;

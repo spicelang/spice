@@ -204,7 +204,7 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeLi
  * @param typeMapping Generic type mapping
  * @param node Instantiation AST node for printing error messages
  */
-void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping &typeMapping, const ASTNode *node) {
+void InterfaceManager::substantiateSignatures(Interface &candidate, const TypeMapping &typeMapping, const ASTNode *node) {
   // Loop over all signatures and substantiate the generic ones
   for (Function *method : candidate.methods) {
     // Skip methods, that are already fully substantiated

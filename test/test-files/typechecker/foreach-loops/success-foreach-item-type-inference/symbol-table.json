@@ -388,15 +388,6 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L30C24",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "anon.L30C24",
-          "orderIndex": 18446744073709551615,
-          "state": "initialized",
-          "type": "MockIterator<short>"
-        },
-        {
           "codeLoc": "L29C1",
           "isGlobal": false,
           "isVolatile": false,

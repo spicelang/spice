@@ -238,6 +238,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       Function *copyCtor = nullptr;
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
         copyCtor = matchCopyCtor(actualType, node);
+        // Insert anonymous symbol to track the dtor call of the copy
         currentScope->symbolTable.insertAnonymous(actualType, node, argIdx + 1); // +1 because 0 is reserved for return value
       }
 
@@ -252,35 +253,22 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (data.isFctPtrCall()) {
     returnType = isFct ? firstFragEntry->getQualType().getBase().getFunctionReturnType() : QualType(TY_BOOL);
   } else if (data.isCtorCall()) {
-    // Set return type to 'this' type
     returnType = thisType;
   } else if (callee->isProcedure()) {
-    // Procedures always have the return type 'dyn'
     returnType = QualType(TY_DYN);
   } else {
     returnType = callee->returnType;
   }
+  const QualType returnBaseType = returnType.getBase();
 
-  // Initialize return type if required
+  // Make sure this source file knows about the return type
+  if (returnBaseType.is(TY_STRUCT))
+    returnType = mapImportedScopeTypeToLocalType(returnBaseType.getBodyScope(), returnType);
+
+  // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.isBase(TY_STRUCT)) {
-    QualType returnBaseType = returnType.getBase();
-    const std::string &structName = returnBaseType.getSubType();
-    Scope *matchScope = returnBaseType.getBodyScope()->parent;
-    assert(matchScope != nullptr);
-    Struct *spiceStruct = StructManager::match(matchScope, structName, returnBaseType.getTemplateTypes(), node);
-    if (!spiceStruct) {
-      const std::string signature = Struct::getSignature(structName, returnBaseType.getTemplateTypes());
-      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE,
-                    "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
-    }
-    returnType = returnType.getWithBodyScope(spiceStruct->scope).replaceBaseType(returnBaseType);
-    returnType = mapImportedScopeTypeToLocalType(returnType.getBase().getBodyScope(), returnType);
-
-    // Add anonymous symbol to keep track of de-allocation
-    if (returnType.is(TY_STRUCT))
-      anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
-  }
+  if (returnType.is(TY_STRUCT) && !returnType.isTriviallyDestructible(node))
+    anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
 
   // Remove public qualifier to not have public local variables
   returnType.getQualifiers().isPublic = false;
@@ -330,26 +318,21 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
   calleeParentScope = functionRegistryEntry->targetScope;
 
   // Check if the target symbol is a struct -> this must be a constructor call
-  if (functionEntry != nullptr && functionEntry->getQualType().is(TY_STRUCT))
-    callType = FctCallNode::FctCallType::TYPE_CTOR;
-
-  // For constructor calls, do some preparation
   std::string functionName = node->functionNameFragments.back();
-  if (data.isCtorCall()) {
+  if (functionEntry != nullptr && functionEntry->getQualType().is(TY_STRUCT)) {
+    callType = FctCallNode::FctCallType::TYPE_CTOR;
+    functionName = CTOR_FUNCTION_NAME;
+
     const NameRegistryEntry *structRegistryEntry = functionRegistryEntry;
     const SymbolTableEntry *structEntry = functionEntry;
-    const std::string structName = structRegistryEntry->targetEntry->name;
 
     // Substantiate potentially generic this struct
-    const Struct *thisStruct = StructManager::match(structEntry->scope, structName, templateTypes, node);
+    const Struct *thisStruct = structEntry->getQualType().getStruct(node, templateTypes);
     if (!thisStruct) {
-      const std::string signature = Struct::getSignature(structName, templateTypes);
-      SOFT_ERROR_BOOL(node, UNKNOWN_DATATYPE,
-                      "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
+      const std::string signature = Struct::getSignature(structRegistryEntry->targetEntry->name, templateTypes);
+      const std::string errorMsg = "Could not find struct candidate for struct '" + signature + "'. Do the template types match?";
+      SOFT_ERROR_BOOL(node, UNKNOWN_DATATYPE, errorMsg)
     }
-
-    // Override function name
-    functionName = CTOR_FUNCTION_NAME;
 
     // Set the 'this' type of the function to the struct type
     thisType = structEntry->getQualType().getWithBodyScope(thisStruct->scope);
@@ -474,11 +457,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Retrieve struct name
   const auto [aliasedEntry, isAlias] = rootScope->symbolTable.lookupWithAliasResolution(node->fqStructName);
-  std::string structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
-
-  // Check if access scope was altered
-  if (accessScope != nullptr && accessScope != currentScope)
-    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
+  const std::string &structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
 
   // Retrieve struct
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
@@ -486,7 +465,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
-  Scope *structScope = accessScope = registryEntry->targetScope;
 
   // Get struct type
   QualType structType = structEntry->getQualType();
@@ -514,28 +492,14 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Get the struct instance
-  structName = structEntry->name;
-  Struct *spiceStruct = StructManager::match(structScope->parent, structName, concreteTemplateTypes, node);
-  if (!spiceStruct) {
-    const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
-    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found")
-  }
-  node->instantiatedStructs.at(manIdx) = spiceStruct;
+  Struct *spiceStruct = node->instantiatedStructs.at(manIdx) = structType.getStructAndAdjustType(node, concreteTemplateTypes);
+  if (!spiceStruct)
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + spiceStruct->getSignature() + "' could not be found")
 
   // Struct instantiation for an inheriting struct is forbidden, because the vtable needs to be initialized and this is done in
   // the ctor of the struct, which is never called in case of struct instantiation
   if (!spiceStruct->interfaceTypes.empty())
     SOFT_ERROR_ER(node, INVALID_STRUCT_INSTANTIATION, "Struct instantiations for inheriting structs are forbidden")
-
-  // Use scope of concrete substantiation and not the scope of the generic type
-  structScope = spiceStruct->scope;
-  structType = structType.getWithBodyScope(structScope);
-
-  // Set template types to the struct
-  QualTypeList templateTypes;
-  for (const GenericType &genericType : spiceStruct->templateTypes)
-    templateTypes.emplace_back(genericType);
-  structType = structType.getWithTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
   if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
@@ -545,14 +509,14 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
-    const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
+    const size_t explicitFieldsStartIdx = spiceStruct->scope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
-      SymbolTableEntry *expectedField = structScope->lookupField(explicitFieldsStartIdx + i);
+      SymbolTableEntry *expectedField = spiceStruct->scope->lookupField(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       const ExprResult expected = {expectedField->getQualType(), expectedField};
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
@@ -567,21 +531,18 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       }
     }
   } else {
-    for (QualType &fieldType : spiceStruct->fieldTypes) {
-      if (fieldType.isRef())
-        SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
-                      "The struct takes at least one reference field. You need to instantiate it with all fields.")
-    }
+    if (std::ranges::any_of(spiceStruct->fieldTypes, [](const QualType &fieldType) { return fieldType.isRef(); }))
+      SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
+                    "The struct takes at least one reference field. You need to instantiate it with all fields.")
   }
 
   // Update type of struct entry
   structEntry->updateType(structType, true);
 
-  // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
+  // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
   SymbolTableEntry *anonymousEntry = nullptr;
-  if (node->fieldLst != nullptr)
-    if (std::ranges::any_of(node->fieldLst->args, [](const AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
-      anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
+  if (!structType.isTriviallyDestructible(node))
+    anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public qualifier to not have public local variables
   structType.getQualifiers().isPublic = false;
