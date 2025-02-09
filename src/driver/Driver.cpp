@@ -85,10 +85,12 @@ void Driver::init() {
     if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
       cliOptions.outputPath.replace_extension("wasm");
     } else {
-#if OS_WINDOWS
+#if OS_UNIX
+      cliOptions.outputPath.replace_extension("");
+#elif OS_WINDOWS
       cliOptions.outputPath.replace_extension("exe");
 #else
-      cliOptions.outputPath.replace_extension("");
+#error "Unsupported platform"
 #endif
     }
 
@@ -364,7 +366,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --dump-object-file
   subCmd->add_flag<bool>("--dump-object-file,-obj", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
   // --dump-dependency-graph
-  subCmd->add_flag<bool>("--dump-dependency-graph,-dep", cliOptions.dumpSettings.dumpDependencyGraph, "Dump compile unit dependency graph");
+  subCmd->add_flag<bool>("--dump-dependency-graph,-dep", cliOptions.dumpSettings.dumpDependencyGraph,
+                         "Dump compile unit dependency graph");
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
