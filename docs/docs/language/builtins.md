@@ -66,14 +66,14 @@ sizeof("Hello World!"); // 64 (Strings are Char pointers internally)
 Alignof returns the alignment of a variable, constant or type in bytes. To get the alignment in bits, simply multiply the result by 8.
 
 ### Signature
-`int alignof(<any variable>)` or `int alignof(type <any type>)`
+`int alignof(<any variable>)` or `int alignof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
 ### Usage example
 ```spice
 alignof(12); // 4
-alignof(type int) // 4
+alignof<int>() // 4
 
 DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
 alignof(intArray); // 8 (the long value is the widest type in the struct)

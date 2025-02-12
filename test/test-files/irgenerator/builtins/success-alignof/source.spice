@@ -16,5 +16,5 @@ f<int> main() {
     printf("Alignment of int[]: %d\n", alignof([1, 2, 3, 4, 5, 6, 7]));
     int intVariable = 123;
     printf("Alignment of int*: %d\n", alignof(&intVariable));
-    printf("Alignment of struct instance: %d\n", alignof(type Struct));
+    printf("Alignment of struct instance: %d\n", alignof<Struct>());
 }

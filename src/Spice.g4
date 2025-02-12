@@ -63,7 +63,7 @@ assertStmt: ASSERT assignExpr SEMICOLON;
 builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall | panicCall | sysCall;
 printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF (LPAREN assignExpr RPAREN | LESS dataType GREATER LPAREN RPAREN);
-alignOfCall: ALIGNOF LPAREN (assignExpr | TYPE dataType) RPAREN;
+alignOfCall: ALIGNOF (LPAREN assignExpr RPAREN | LESS dataType GREATER LPAREN RPAREN);
 lenCall: LEN LPAREN assignExpr RPAREN;
 panicCall: PANIC LPAREN assignExpr RPAREN;
 sysCall: SYSCALL LPAREN assignExpr (COMMA assignExpr)* RPAREN;
