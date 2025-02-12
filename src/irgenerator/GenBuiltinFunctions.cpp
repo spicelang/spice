@@ -80,10 +80,10 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
     type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
-  const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
+  const llvm::TypeSize sizeInBytes = module->getDataLayout().getTypeAllocSize(type);
 
   // Return size value
-  llvm::Value *sizeValue = builder.getInt64(sizeInBits);
+  llvm::Value *sizeValue = builder.getInt64(sizeInBytes);
   return LLVMExprResult{.value = sizeValue};
 }
 
@@ -95,11 +95,11 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
     type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
-  const llvm::Align align = module->getDataLayout().getABITypeAlign(type);
+  const llvm::Align alignmentInBytes = module->getDataLayout().getABITypeAlign(type);
 
   // Return align value
-  llvm::Value *sizeValue = builder.getInt64(align.value());
-  return LLVMExprResult{.value = sizeValue};
+  llvm::Value *alignValue = builder.getInt64(alignmentInBytes.value());
+  return LLVMExprResult{.value = alignValue};
 }
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {

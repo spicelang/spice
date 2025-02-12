@@ -44,7 +44,7 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 ```
 
 ## The `sizeof` builtin
-Sizeof returns the internal size of a variable, constant or type in bits. To get the size in bytes, simply divide the result by 8.
+Sizeof returns the internal size of a variable, constant or type in bytes. To get the size in bits, simply multiply the result by 8.
 
 ### Signature
 `int sizeof(<any variable>)` or `int sizeof<any type>()`
@@ -53,13 +53,13 @@ Sizeof returns the internal size of a variable, constant or type in bits. To get
 
 ### Usage example
 ```spice
-sizeof(12); // 32
-sizeof<int>() // 32
+sizeof(12); // 4
+sizeof<int>() // 4
 
 int[9] intArray = [];
-sizeof(intArray); // 9 * 32 = 288
+sizeof(intArray); // 9 * 4 = 36
 
-sizeof("Hello World!"); // 64 (Strings are Char pointers internally)
+sizeof("Hello World!"); // 8 (Strings are Char pointers internally)
 ```
 
 ## The `alignof` builtin

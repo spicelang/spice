@@ -1,11 +1,11 @@
-Size of double: 64
-Size of int: 32
-Size of short: 16
-Size of long: 64
-Size of byte: 8
-Size of char: 8
-Size of string: 64
+Size of double: 8
+Size of int: 4
+Size of short: 2
+Size of long: 8
+Size of byte: 1
+Size of char: 1
+Size of string: 8
 Size of bool: 1
-Size of int[]: 224
-Size of int*: 64
-Size of struct type: 128
+Size of int[7]: 28
+Size of int*: 8
+Size of struct type: 16

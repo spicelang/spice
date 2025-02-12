@@ -13,8 +13,8 @@ f<int> main() {
     Test t;
     t.f1 = -2147483647;
     t.f2 = 9223372036854775807l;
-    assert sizeof<Test>() == 16 * 8;
-    assert sizeof(t) == 16 * 8;
+    assert sizeof<Test>() == 16;
+    assert sizeof(t) == 16;
     assert t.f1 == -2147483647;
     assert t.f2 == 9223372036854775807l;
 
@@ -22,8 +22,8 @@ f<int> main() {
     tp.f1 = -2147483647;
     tp.f2 = 9223372036854775807l;
 
-    assert sizeof<TestPacked>() == 12 * 8;
-    assert sizeof(tp) == 12 * 8;
+    assert sizeof<TestPacked>() == 12;
+    assert sizeof(tp) == 12;
     assert tp.f1 == -2147483647;
     assert tp.f2 == 9223372036854775807l;
 

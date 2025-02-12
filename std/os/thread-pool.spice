@@ -62,7 +62,6 @@ public p ThreadPool.start() {
         Thread& workerThread = this.workerThreads.back();
         workerThread.run();
     }
-    sizeof(0);
 }
 
 /**

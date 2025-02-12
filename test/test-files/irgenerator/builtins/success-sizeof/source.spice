@@ -13,7 +13,7 @@ f<int> main() {
     printf("Size of char: %d\n", sizeof((char) 65));
     printf("Size of string: %d\n", sizeof("Hello Spice!"));
     printf("Size of bool: %d\n", sizeof(false));
-    printf("Size of int[]: %d\n", sizeof([1, 2, 3, 4, 5, 6, 7]));
+    printf("Size of int[7]: %d\n", sizeof([1, 2, 3, 4, 5, 6, 7]));
     int intVariable = 123;
     printf("Size of int*: %d\n", sizeof(&intVariable));
     printf("Size of struct type: %d\n", sizeof<Struct>());
