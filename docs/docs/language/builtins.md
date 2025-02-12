@@ -2,7 +2,8 @@
 title: Builtin Functions
 ---
 
-Spice offers five builtin functions out of the box. Those can be used anywhere without having to be imported manually and can be used to establish a minimal setup for testing or the like.
+Spice offers six builtin functions out of the box. Those can be used anywhere without having to be imported manually and
+can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin
 Printf works the same as the `printf` function in C and is designed for printing a string to the standard text output (cout).
@@ -98,7 +99,8 @@ len(stringArray); // 5
 ```
 
 ## The `panic` builtin
-Panic is used to terminate the program with an error message.
+Panic is used to terminate the program with an error message. The error message will be printed to stanard error (stderr)
+and the program will terminate with exit code `1`.
 
 ### Signature
 `void panic(const Error& error)`

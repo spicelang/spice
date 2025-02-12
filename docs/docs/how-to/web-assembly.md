@@ -22,6 +22,12 @@ public f<int> fibo(int n) {
     if n <= 1 { return n; }
     return fibo(n - 1) + fibo(n - 2);
 }
+
+// Main function can be deleted, when compiling with --no-entry
+f<int> main() {
+   int fiboBase = 45;
+   printf("Fibonacci of %d: %d", fiboBase, fibo(fiboBase));
+}
 ```
 
 You can test, if the code works by compiling and running it, using the following command: <br>
@@ -89,9 +95,7 @@ function fibo(n) {
 ```
 
 As you can see, you can load the `main.wasm` file in JavaScript using the WebAssembly module. When successful, we can call all
-exposed Spice functions using their mangled names. If you don't know the mangled name of your function, you can either use
-`wasm-objdump` like described above or add the flag `-asm` to the compile command to dump the assembly. There you will find the
-mangled names of all functions.
+exposed (`public`) Spice functions using their name.
 
 ## Execute
 

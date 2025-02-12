@@ -22,9 +22,7 @@ f<int> main() {
 ## Run your first program
 
 Save the file and open a terminal in the directory, where the `hello-world.spice` file lives. Then run the following command:
-`spice build hello-world.spice`. As of now, the current directory should contain an executable file called `hello-world` (Linux)
-or `hello-world.exe` (Windows). <br>
-Now run `./hello-world` (Linux) or `.\hello-world.exe` (Windows) in your terminal instance.
+`spice run hello-world.spice`.
 
 This is what you should see:
 ```shell
@@ -33,3 +31,5 @@ Hello World!
 ```
 
 Congratulations! You just wrote and executed your first Spice program!
+
+You can follow the next pages to see, what else Spice can do for you. Feel free to skip to sections of interest to you.

@@ -2,7 +2,7 @@
 title: Builtin data types
 ---
 
-In extension to the [primitive data types](primitive-types.md), Spice offers builtin data types.
+In extension to the [primitive data types](primitive-types.md), Spice offers several builtin data types.
 
 ## The `String` data type
 In opposite to the [string primitive type](primitive-types.md#the-string-data-type), the `String` builtin type is
@@ -11,7 +11,7 @@ mutable and offers several ways to modify the contained value.
 !!! tip "Tip"
     Use the `string` primitive type over the `String` builtin type as much as possible, due to its advantages in runtime
     performance. The usage of the `String` builtin type is only recommended, when you need to modify the value of the
-    string at runtime. `string` variables are always immutable.
+    string at runtime. `string` values are always immutable.
 
 ### Constructors
 The `String` builtin type offers the following constructors:
