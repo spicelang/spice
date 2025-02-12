@@ -109,7 +109,7 @@ public f<heap byte*> sCopyUnsafe(heap byte* oldPtr, heap byte* newPtr, unsigned 
 public f<heap T*> sNew<T>() {
     unsafe {
         // Allocate memory for the instance
-        Result<heap byte*> res = sAlloc(sizeof(type T));
+        Result<heap byte*> res = sAlloc(sizeof<T>());
         return (heap T*) res.unwrap();
     }
 }
@@ -124,10 +124,10 @@ public f<heap T*> sNew<T>() {
 public f<heap T*> sNew<T>(const T& val) {
     unsafe {
         // Allocate memory for the instance
-        Result<heap byte*> res = sAlloc(sizeof(type T));
+        Result<heap byte*> res = sAlloc(sizeof<T>());
         result = (heap T*) res.unwrap();
         // Copy the value into the heap-allocated memory
-        sCopy((heap byte*) &val, (heap byte*) result, sizeof(type T));
+        sCopy((heap byte*) &val, (heap byte*) result, sizeof<T>());
     }
 }
 
@@ -141,7 +141,7 @@ public f<heap T*> sNew<T>(const T& val) {
 public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
     unsafe {
         // Copy the value into the heap-allocated memory
-        sCopy((heap byte*) &val, ptr, sizeof(type T));
+        sCopy((heap byte*) &val, ptr, sizeof<T>());
         return (T*) ptr;
     }
 }

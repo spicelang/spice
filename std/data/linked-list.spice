@@ -287,7 +287,7 @@ public inline p LinkedList.clear() {
 f<heap Node<T>*> LinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
+        Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
         newNode = (heap Node<T>*) allocResult.unwrap();
     }
     newNode.value = value;

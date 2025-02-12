@@ -30,7 +30,7 @@ public type Vector<T> struct : IIterable<T> {
 
 public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
-    const long itemSize = sizeof(type T) / 8l;
+    const long itemSize = sizeof<T>() / 8l;
     assert itemSize != 0l;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initialCapacity);
@@ -249,7 +249,7 @@ public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    const unsigned long itemSize = sizeof(type T) / 8l;
+    const unsigned long itemSize = sizeof<T>() / 8l;
     return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
 }
 
@@ -262,7 +262,7 @@ public f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
  */
 p Vector.resize(unsigned long itemCount) {
     // Allocate the new memory
-    const long itemSize = sizeof(type T) / 8l;
+    const long itemSize = sizeof<T>() / 8l;
     assert itemSize != 0l;
     unsafe {
         heap byte*& oldAddress = (heap byte*) this.contents;
