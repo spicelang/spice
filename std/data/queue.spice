@@ -43,7 +43,7 @@ public p Queue.ctor(unsigned int initAllocItems) {
 
 public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
-    const long itemSize = sizeof<T>() / 8l;
+    const long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = (heap T*) allocResult.unwrap();
@@ -196,7 +196,7 @@ public f<bool> operator!=<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
  */
 p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
-    const unsigned long itemSize = sizeof<T>() / 8l;
+    const unsigned long itemSize = sizeof<T>();
     unsafe {
         // Allocate a new chunk of memory with the requested size
         heap byte*& oldAddress = (heap byte*) this.contents;

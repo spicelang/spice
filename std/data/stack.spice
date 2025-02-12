@@ -40,7 +40,7 @@ public p Stack.ctor(unsigned int initAllocItems) {
 
 public p Stack.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
-    const unsigned long itemSize = sizeof<T>() / 8l;
+    const unsigned long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = (heap T*) allocResult.unwrap();
@@ -144,7 +144,7 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    const unsigned long itemSize = sizeof<T>() / 8l;
+    const unsigned long itemSize = sizeof<T>();
     return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
 }
 
@@ -157,7 +157,7 @@ public f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
  */
 p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
-    const unsigned long itemSize = sizeof<T>() / 8l;
+    const unsigned long itemSize = sizeof<T>();
     unsafe {
         heap byte*& oldAddress = (heap byte*) this.contents;
         unsigned long newSize = (unsigned long) (itemSize * itemCount);
