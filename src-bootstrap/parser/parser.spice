@@ -970,16 +970,18 @@ f<ASTSizeofCallNode*> Parser.parseSizeOfCall() {
     dyn sizeofCallNode = this.createNode<ASTSizeofCallNode>();
 
     this.lexer.expect(TokenType::SIZEOF);
-    this.lexer.expect(TokenType::LPAREN);
 
-    if this.currentTokenIs(TokenType::TYPE) {
-        this.lexer.expect(TokenType::TYPE);
-        this.parseDataType();
-    } else {
+    if this.currentTokenIs(TokenType::LPAREN) {
+        this.lexer.expect(TokenType::LPAREN);
         this.parseAssignExpr();
+        this.lexer.expect(TokenType::RPAREN);
+    } else {
+        this.lexer.expect(TokenType::LESS);
+        this.parseDataType();
+        this.lexer.expect(TokenType::GREATER);
+        this.lexer.expect(TokenType::LPAREN);
+        this.lexer.expect(TokenType::RPAREN);
     }
-
-    this.lexer.expect(TokenType::RPAREN);
 
     return this.concludeNode(sizeofCallNode);
 }
