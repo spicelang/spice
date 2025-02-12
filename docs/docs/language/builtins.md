@@ -47,14 +47,14 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 Sizeof returns the internal size of a variable, constant or type in bits. To get the size in bytes, simply divide the result by 8.
 
 ### Signature
-`int sizeof(<any variable>)` or `int sizeof(type <any type>)`
+`int sizeof(<any variable>)` or `int sizeof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
 ### Usage example
 ```spice
 sizeof(12); // 32
-sizeof(type int) // 32
+sizeof<int>() // 32
 
 int[9] intArray = [];
 sizeof(intArray); // 9 * 32 = 288
@@ -73,12 +73,12 @@ Alignof returns the alignment of a variable, constant or type in bytes. To get t
 ### Usage example
 ```spice
 alignof(12); // 4
-sizeof(type int) // 4
+alignof(type int) // 4
 
 DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
-sizeof(intArray); // 8 (the long value is the widest type in the struct)
+alignof(intArray); // 8 (the long value is the widest type in the struct)
 
-sizeof("Hello World!"); // 8 (Strings are Char pointers internally)
+alignof("Hello World!"); // 8 (Strings are Char pointers internally)
 ```
 
 ## The `len` builtin
