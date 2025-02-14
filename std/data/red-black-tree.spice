@@ -144,7 +144,7 @@ public p RedBlackTree.remove(const K& key) {
     // Use dealloc, because we don't want to call the destructor.
     // The destructor would delete children and parent.
     unsafe {
-        sDealloc((byte*) z);
+        sDealloc(cast<byte*>(z));
     }
 
     // Do a fixup if required

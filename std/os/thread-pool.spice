@@ -29,7 +29,7 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
     this.queuedJobs = Queue<p()>();
     this.runningJobs = Atomic<unsigned short>(0s);
-    this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : (unsigned short) getCPUCoreCount();
+    this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : cast<unsigned short>(getCPUCoreCount());
 }
 
 /**
@@ -129,7 +129,7 @@ public f<unsigned short> ThreadPool.getRunningJobCount() {
  * Retrieve the number of jobs that are currently queued.
  */
 public f<unsigned short> ThreadPool.getQueuedJobCount() {
-    return (unsigned short) this.queuedJobs.getSize();
+    return cast<unsigned short>(this.queuedJobs.getSize());
 }
 
 /**

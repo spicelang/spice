@@ -566,6 +566,9 @@ f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
     if identifier == "ext" {
         return Token(TokenType::EXT, "ext", codeLoc);
     }
+    if identifier == "cast" {
+        return Token(TokenType::CAST, "cast", codeLoc);
+    }
     if identifier == "true" {
         return Token(TokenType::TRUE, "true", codeLoc);
     }

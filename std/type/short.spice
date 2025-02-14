@@ -14,29 +14,29 @@ public f<double> toDouble(short input) {
 
 // Converts a short to an int
 public f<int> toInt(short input) {
-    return (int) input;
+    return cast<int>(input);
 }
 
 // Converts a short to a long
 public f<long> toLong(short input) {
-    return (long) input;
+    return cast<long>(input);
 }
 
 // Converts a short to a byte
 public f<byte> toByte(short input) {
-    return (byte) ((int) input);
+    return cast<byte>(cast<int>(input));
 }
 
 // Converts a short to a char
 public f<char> toChar(short input) {
-    return (char) input;
+    return cast<char>(input);
 }
 
 // Converts a short to a string
 public f<String> toString(short input) {
     const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
     result = String(length);
-    snprintf((char*) result.getRaw(), length + 1l, "%hd", input);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hd", input);
 }
 
 // Converts a short to a boolean

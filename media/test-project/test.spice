@@ -1,7 +1,3 @@
 f<int> main() {
-    int i = cast<int>(1s);
-    int i = (int) 1s;
-    int i = 1s as int;
-    int i as<int>(1s);
-    int i = int(1s);
+
 }

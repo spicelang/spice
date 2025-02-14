@@ -192,7 +192,7 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
     return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
-  const AtomicExprNode* atomicExpr = lhs->postfixUnaryExpr ? lhs->postfixUnaryExpr->atomicExpr : nullptr;
+  const AtomicExprNode *atomicExpr = lhs->postfixUnaryExpr ? lhs->postfixUnaryExpr->atomicExpr : nullptr;
   if (atomicExpr && atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME) {
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
@@ -439,9 +439,13 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr->hasCompileTimeValue(); }
+bool CastExprNode::hasCompileTimeValue() const {
+  return isCast ? assignExpr->hasCompileTimeValue() : prefixUnaryExpr->hasCompileTimeValue();
+}
 
-CompileTimeValue CastExprNode::getCompileTimeValue() const { return prefixUnaryExpr->getCompileTimeValue(); }
+CompileTimeValue CastExprNode::getCompileTimeValue() const {
+  return isCast ? assignExpr->getCompileTimeValue() : prefixUnaryExpr->getCompileTimeValue();
+}
 
 bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr)

@@ -4,7 +4,7 @@ type Test struct {
 }
 
 f<byte> Test.getByte() {
-    result = (byte) 12;
+    result = cast<byte>(12);
 }
 
 f<int> main() {

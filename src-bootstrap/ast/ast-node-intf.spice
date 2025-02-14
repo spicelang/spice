@@ -32,7 +32,7 @@ public type CompileTimeValue struct {
     int intValue = 0
     short shortValue = 0s
     long longValue = 0l
-    byte byteValue = (byte) 0
+    byte byteValue = cast<byte>(0)
     char charValue = '\0'
     unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
     bool boolValue = false

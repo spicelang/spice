@@ -6,24 +6,24 @@ ext f<unsigned int> snprintf(char*, unsigned long, string, double);
 
 // Converts a double to an int
 public f<int> toInt(double input) {
-    return (int) input;
+    return cast<int>(input);
 }
 
 // Converts a double to a short
 public f<short> toShort(double input) {
-    return (short) input;
+    return cast<short>(input);
 }
 
 // Converts a double to a long
 public f<long> toLong(double input) {
-    return (long) input;
+    return cast<long>(input);
 }
 
 // Converts a double to a string
 public f<String> toString(double input) {
     const unsigned int length = snprintf(nil<char*>, 0l, "%f", input);
     result = String(length); // Assuming this length is enough
-    snprintf((char*) result.getRaw(), length + 1l, "%f", input);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%f", input);
 }
 
 // Converts a double to a boolean

@@ -391,12 +391,12 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   if (!node->isCast)
     return visit(node->prefixUnaryExpr);
 
-  // Visit source type
-  const auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr));
-  HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
   const auto dstType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
+  // Visit source type
+  const auto src = std::any_cast<ExprResult>(visit(node->assignExpr));
+  HANDLE_UNRESOLVED_TYPE_ER(src.type)
 
   // Check for identity cast
   if (src.type == dstType) {

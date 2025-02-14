@@ -17,7 +17,7 @@ source_filename = "source.spice"
 @anon.string.11 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '!t.f12' evaluated to false.\0A\00", align 1
 @anon.string.12 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f13 == 333' evaluated to false.\0A\00", align 1
 @anon.string.13 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f14 == 11l' evaluated to false.\0A\00", align 1
-@anon.string.14 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 't.f15 == (byte) 63' evaluated to false.\0A\00", align 1
+@anon.string.14 = private unnamed_addr constant [75 x i8] c"Assertion failed: Condition 't.f15 == cast<byte>(63)' evaluated to false.\0A\00", align 1
 @anon.string.15 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f16 == 13' evaluated to false.\0A\00", align 1
 @anon.string.16 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f17 == 13' evaluated to false.\0A\00", align 1
 @anon.string.17 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f18 == 14' evaluated to false.\0A\00", align 1

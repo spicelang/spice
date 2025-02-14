@@ -62,7 +62,7 @@ public f<llvm::Value> IRGenerator.createAlloca(llvm::Type llvmType, String varNa
         // Resotre old basic block
         this.builder.setInsertPoint(currentBlock);
     }
-    return (llvm::Value) allocaInsertInst;
+    return cast<llvm::Value>(allocaInsertInst);
 }
 
 public f<llvm::Value> IRGenerator.insertLoad(llvm::Type llvmType, llvm::Value ptr, bool isVolatile, const String& varName = "") {

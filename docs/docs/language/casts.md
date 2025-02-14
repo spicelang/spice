@@ -11,7 +11,7 @@ destination type.
 Casting an int to the short data type:
 ```spice
 int intVar = 12;
-short shortVar = (short) intVar;
+short shortVar = cast<short>(intVar);
 ```
 
 Example for casting for a function call:
@@ -23,6 +23,6 @@ p testProc(char c, long l) {
 f<int> main() {
     int i = 1234567;
     short s = 65s;
-    testProc((char) s, (long) i);
+    testProc(cast<char>(s), cast<long>(i));
 }
 ```

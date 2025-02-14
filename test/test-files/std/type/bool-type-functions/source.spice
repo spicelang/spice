@@ -27,9 +27,9 @@ f<int> main() {
 
     // toByte()
     byte asByte1 = toByte(true);
-    assert asByte1 == (byte) 1;
+    assert asByte1 == cast<byte>(1);
     byte asByte2 = toByte(false);
-    assert asByte2 == (byte) 0;
+    assert asByte2 == cast<byte>(0);
 
     // toString()
     string asString1 = toString(true);

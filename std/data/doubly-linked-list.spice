@@ -112,7 +112,7 @@ public p DoublyLinkedList.removeAt(unsigned long idx) {
 }
 
 public p DoublyLinkedList.removeAt(unsigned int idx) {
-    this.removeAt((unsigned long) idx);
+    this.removeAt(cast<unsigned long>(idx));
 }
 
 public p DoublyLinkedList.removeFront() {
@@ -143,7 +143,7 @@ public f<T&> DoublyLinkedList.get(unsigned long idx) {
 }
 
 public f<T&> DoublyLinkedList.get(unsigned int idx) {
-    return this.get((unsigned long) idx);
+    return this.get(cast<unsigned long>(idx));
 }
 
 public inline f<T&> DoublyLinkedList.getFront() {
@@ -160,7 +160,7 @@ f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = (heap Node<T>*) allocResult.unwrap();
+        newNode = cast<heap Node<T>*>(allocResult.unwrap());
     }
     newNode.value = value;
     newNode.prev = nil<Node<T>*>;

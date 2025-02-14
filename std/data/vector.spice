@@ -30,17 +30,17 @@ public type Vector<T> struct : IIterable<T> {
 
 public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
-    const long itemSize = sizeof<T>();
-    assert itemSize != 0l;
+    const unsigned long itemSize = sizeof<T>();
+    assert itemSize > 0l;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initialCapacity);
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
     }
     this.capacity = initialCapacity;
 }
 
 public p Vector.ctor(unsigned int initialCapacity) {
-    this.ctor((long) initialCapacity);
+    this.ctor(cast<unsigned long>(initialCapacity));
 }
 
 public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
@@ -58,7 +58,7 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
 public p Vector.ctor(const Vector<T>& original) {
     this.ctor(original.capacity);
     unsafe {
-        sCopy((heap byte*) original.contents, (heap byte*) this.contents, original.size);
+        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
     }
     this.size = original.size;
 }
@@ -116,7 +116,7 @@ public f<T&> Vector.get(unsigned long index) {
  * @return item at index
  */
 public f<T&> Vector.get(unsigned int index) {
-    return this.get((unsigned long) index);
+    return this.get(cast<unsigned long>(index));
 }
 
 /**
@@ -134,7 +134,7 @@ public f<T&> operator[]<T>(Vector<T>& v, unsigned long index) {
  * @return item at index
  */
 public f<T&> operator[]<T>(Vector<T>& v, unsigned int index) {
-    return v.get((unsigned long) index);
+    return v.get(cast<unsigned long>(index));
 }
 
 /**
@@ -162,7 +162,7 @@ public p Vector.removeAt(unsigned long index) {
  * @param index Index of the item to remove
  */
 public p Vector.removeAt(unsigned int index) {
-    this.removeAt((unsigned long) index);
+    this.removeAt(cast<unsigned long>(index));
 }
 
 /**
@@ -204,7 +204,7 @@ public p Vector.reserve(unsigned long itemCount) {
  */
 public p Vector.reserve(unsigned int itemCount) {
     if itemCount > this.capacity {
-        this.resize((long) itemCount);
+        this.resize(cast<unsigned long>(itemCount));
     }
 }
 
@@ -231,7 +231,7 @@ public f<long> Vector.getCapacity() {
  */
 public f<T*> Vector.getDataPtr() {
     unsafe {
-        return (T*) this.contents;
+        return cast<T*>(this.contents);
     }
 }
 
@@ -265,10 +265,10 @@ p Vector.resize(unsigned long itemCount) {
     const long itemSize = sizeof<T>();
     assert itemSize != 0l;
     unsafe {
-        heap byte*& oldAddress = (heap byte*) this.contents;
-        unsigned long newSize = (unsigned long) (itemSize * itemCount);
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
     }
     // Set new capacity
     this.capacity = itemCount;

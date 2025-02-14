@@ -110,7 +110,7 @@ public f<heap T*> sNew<T>() {
     unsafe {
         // Allocate memory for the instance
         Result<heap byte*> res = sAlloc(sizeof<T>());
-        return (heap T*) res.unwrap();
+        return cast<heap T*>(res.unwrap());
     }
 }
 
@@ -125,9 +125,9 @@ public f<heap T*> sNew<T>(const T& val) {
     unsafe {
         // Allocate memory for the instance
         Result<heap byte*> res = sAlloc(sizeof<T>());
-        result = (heap T*) res.unwrap();
+        result = cast<heap T*>(res.unwrap());
         // Copy the value into the heap-allocated memory
-        sCopy((heap byte*) &val, (heap byte*) result, sizeof<T>());
+        sCopy(cast<heap byte*>(&val), cast<heap byte*>(result), sizeof<T>());
     }
 }
 
@@ -141,8 +141,8 @@ public f<heap T*> sNew<T>(const T& val) {
 public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
     unsafe {
         // Copy the value into the heap-allocated memory
-        sCopy((heap byte*) &val, ptr, sizeof<T>());
-        return (T*) ptr;
+        sCopy(cast<heap byte*>(&val), ptr, sizeof<T>());
+        return cast<T*>(ptr);
     }
 }
 
@@ -175,7 +175,7 @@ public p sDealloc(heap byte*& ptr) {
 public p sDelete<T>(heap T*& ptr) {
     unsafe {
         sDestruct(*ptr);
-        sDealloc((heap byte*&) ptr);
+        sDealloc(cast<heap byte*&>(ptr));
     }
 }
 
@@ -188,6 +188,6 @@ public p sDelete<T>(heap T*& ptr) {
  */
 public f<bool> sCompare<T>(const heap T* a, const heap T* b, unsigned long size) {
     unsafe {
-        return memcmp((const byte*) a, (const byte*) b, size) == 0;
+        return memcmp(cast<const byte*>(a), cast<const byte*>(b), size) == 0;
     }
 }

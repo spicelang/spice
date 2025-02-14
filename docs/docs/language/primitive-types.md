@@ -55,10 +55,10 @@ Bytes are unsigned, whole numbers of 8-bit, which have a range from a min of 0 t
 
 In Spice, variables of type `byte` can be defined like this:
 ```spice
-byte variable1 = (byte) 11;
+byte variable1 = cast<byte>(11);
 
 byte variable2;
-variable2 = (byte) 12;
+variable2 = cast<byte>(12);
 ```
 
 ## The `char` data type

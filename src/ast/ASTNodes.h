@@ -1870,13 +1870,14 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCastExpr(this); }
 
   // Other methods
-  GET_CHILDREN(dataType, prefixUnaryExpr);
+  GET_CHILDREN(prefixUnaryExpr, dataType, assignExpr);
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
-  DataTypeNode *dataType = nullptr;
   PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
+  DataTypeNode *dataType = nullptr;
+  AssignExprNode *assignExpr = nullptr;
   bool isCast = false;
 };
 

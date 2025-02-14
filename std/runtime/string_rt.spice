@@ -41,7 +41,7 @@ public p String.ctor(const string value = "") {
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
         // Save initial value
-        memcpy(this.contents, (char*) value, this.length + 1l); // +1 because of null terminator
+        memcpy(this.contents, cast<char*>(value), this.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -77,8 +77,8 @@ public p String.ctor(const String& value) {
 }
 
 public p String.ctor<IntLong>(IntLong initialSize) {
-    this.length = (unsigned long) initialSize;
-    this.capacity = initialSize > INITIAL_ALLOC_COUNT ? (unsigned long) initialSize * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
+    this.length = cast<unsigned long>(initialSize);
+    this.capacity = initialSize > INITIAL_ALLOC_COUNT ? cast<unsigned long>(initialSize * RESIZE_FACTOR) : INITIAL_ALLOC_COUNT;
 
     unsafe {
         // Allocate space for the initial number of elements
@@ -295,7 +295,7 @@ public f<char&> operator[](String& str, unsigned long idx) {
 }
 
 public f<char&> operator[](String& str, unsigned int idx) {
-    return str[(unsigned long) idx];
+    return str[cast<unsigned long>(idx)];
 }
 
 /**
@@ -305,7 +305,7 @@ public f<char&> operator[](String& str, unsigned int idx) {
  */
 public inline f<string> String.getRaw() {
     unsafe {
-        return (string) this.contents;
+        return cast<string>(this.contents);
     }
 }
 
@@ -361,11 +361,11 @@ public p String.clear() {
  */
 public f<long> String.find(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
-    if startIndex >= this.length { return (long) -1l; }
+    if startIndex >= this.length { return -1l; }
 
     const unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return (long) -1l; }
+    if this.length < needleLength { return -1l; }
 
     // Search needle in haystack
     for unsigned long idx = startIndex; idx <= this.length - needleLength; idx++ {
@@ -380,7 +380,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
         // Whole string was matched
         return idx;
     }
-    return (long) -1l;
+    return -1l;
 }
 
 /**
@@ -390,7 +390,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @return Index, where the substring was found / -1
  */
 public f<long> String.find(string needle, unsigned int startIndex) {
-    return this.find(needle, (unsigned long) startIndex);
+    return this.find(needle, cast<unsigned long>(startIndex));
 }
 
 /**
@@ -412,11 +412,11 @@ public f<long> String.find(char needle, unsigned long startIndex = 0l) {
  */
 public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
-    if startIndex >= this.length { return (long) -1l; }
+    if startIndex >= this.length { return -1l; }
 
     const unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return (long) -1l; }
+    if this.length < needleLength { return -1l; }
 
     if startIndex == 0l { startIndex = this.length - needleLength; }
 
@@ -433,7 +433,7 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
         // Whole string was matched
         return idx;
     }
-    return (long) -1l;
+    return -1l;
 }
 
 /**
@@ -443,7 +443,7 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
  * @return Index, where the substring was found / -1
  */
 public f<long> String.rfind(string needle, unsigned int startIndex) {
-    return this.rfind(needle, (unsigned long) startIndex);
+    return this.rfind(needle, cast<unsigned long>(startIndex));
 }
 
 /**
@@ -515,7 +515,7 @@ public f<bool> String.replace(
     unsigned long startIdx = 0l
 ) {
     // Abort, if needle or replacement are both nullptr
-    if (char*) needle == nil<char*> || (char*) replacement == nil<char*> {
+    if cast<char*>(needle) == nil<char*> || cast<char*>(replacement) == nil<char*> {
         return false;
     }
 
@@ -546,7 +546,7 @@ public f<bool> String.replace(
         }
 
         // Replace needle with replacement
-        memcpy(startAddr, (char*) replacement, replacementLength);
+        memcpy(startAddr, cast<char*>(replacement), replacementLength);
     }
 
     // Update length
@@ -615,7 +615,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
     substring.reserve(length);
     substring.length = length;
     const unsigned long endIdx = startIdx + length;
-    for unsigned long charIndex = (unsigned long) startIdx; charIndex < endIdx; charIndex++ {
+    for unsigned long charIndex = cast<unsigned long>(startIdx); charIndex < endIdx; charIndex++ {
         unsafe {
             substring.contents[charIndex - startIdx] = this.contents[charIndex];
         }
@@ -660,7 +660,7 @@ public f<String> String.trim() {
  */
 public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
     if charCount > this.capacity {
-        this.resize((unsigned long) charCount);
+        this.resize(cast<unsigned long>(charCount));
     }
 }
 
@@ -697,7 +697,7 @@ p String.checkForOOM() {
  */
 public f<unsigned long> getRawLength(string input) {
     // Handle nullptr gracefully
-    if (char*) input == nil<char*> { return 0l; }
+    if cast<char*>(input) == nil<char*> { return 0l; }
     // Otherwise count the chars until the null terminator
     result = 0l;
     while input[result] != '\0' {

@@ -35,7 +35,7 @@ public inline f<N&> NumberIterator.get() {
  * @return Pair of current index and a reference to the current number
  */
 public inline f<Pair<unsigned long, N&>> NumberIterator.getIdx() {
-    unsigned long idx = (unsigned long) this.currentNumber - this.lowerBound;
+    unsigned long idx = cast<unsigned long>(this.currentNumber - this.lowerBound);
     return Pair<unsigned long, N&>(idx, this.currentNumber);
 }
 

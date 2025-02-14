@@ -38,7 +38,7 @@ public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
 }
 
 public p Queue.ctor(unsigned int initAllocItems) {
-    this.ctor((long) initAllocItems);
+    this.ctor(cast<unsigned long>(initAllocItems));
 }
 
 public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
@@ -46,7 +46,7 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     const long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
     }
     this.capacity = initAllocItems;
 }
@@ -54,7 +54,7 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
 public p Queue.ctor(const Queue<T>& original) {
     this.ctor(original.capacity);
     unsafe {
-        sCopy((heap byte*) original.contents, (heap byte*) this.contents, original.size);
+        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
     }
     this.size = original.size;
     this.idxFront = original.idxFront;
@@ -199,9 +199,9 @@ p Queue.resize(unsigned long itemCount) {
     const unsigned long itemSize = sizeof<T>();
     unsafe {
         // Allocate a new chunk of memory with the requested size
-        heap byte*& oldAddress = (heap byte*) this.contents;
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
         Result<heap byte*> allocResult = sRealloc(oldAddress, itemSize * itemCount);
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
     }
     // Set new capacity
     this.capacity = itemCount;

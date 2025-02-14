@@ -15,7 +15,7 @@ f<int> main() {
 
     // toByte()
     byte asByte = toByte(12s);
-    assert asByte == (byte) 12;
+    assert asByte == cast<byte>(12);
 
     // toChar()
     char asChar = toChar(66s);
