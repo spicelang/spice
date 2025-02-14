@@ -9,8 +9,8 @@ f<int> main() {
     printf("Alignment of int: %d\n", alignof(353));
     printf("Alignment of short: %d\n", alignof(35s));
     printf("Alignment of long: %d\n", alignof(9223372036854775807l));
-    printf("Alignment of byte: %d\n", alignof((byte) 13));
-    printf("Alignment of char: %d\n", alignof((char) 65));
+    printf("Alignment of byte: %d\n", alignof(cast<byte>(13)));
+    printf("Alignment of char: %d\n", alignof(cast<char>(65)));
     printf("Alignment of string: %d\n", alignof("Hello Spice!"));
     printf("Alignment of bool: %d\n", alignof(false));
     printf("Alignment of int[]: %d\n", alignof([1, 2, 3, 4, 5, 6, 7]));

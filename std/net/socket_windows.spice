@@ -121,7 +121,7 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
 
     // Construct socket object
     const Socket s = Socket { sockFd, /*connFd*/ 0 };
-    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), InAddr { INADDR_ANY }};
+    SockAddrIn servAddr = SockAddrIn { cast<short>(AF_INET), htons(port), InAddr { INADDR_ANY }};
 
     // Bind to target address
     int bindResult = bind(sockFd, &servAddr, 16u /* hardcoded sizeof(servaddr) */);

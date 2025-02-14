@@ -13,7 +13,7 @@ type WholeNumber int|short|long;
  * @return Factorial of input
  */
 public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
-    Numeric fac = (Numeric) 1;
+    Numeric fac = cast<Numeric>(1);
     for (int i = 1; i <= input; i++) {
         fac *= i;
     }
@@ -107,7 +107,7 @@ public f<double> sin<Numeric>(Numeric x) {
     bool negative = x < 0 ? true : false;
     x = abs(x);
     if x > 360 {
-        x -= (Numeric) (x / 360) * 360;
+        x -= cast<Numeric>((x / 360) * 360);
     }
     double xRad = degToRad(0.0 + x);
     double res = 0.0;
@@ -130,7 +130,7 @@ public f<double> sin<Numeric>(Numeric x) {
 public f<double> cos<Numeric>(Numeric x) {
     x = abs(x);
     if x > 360 {
-        x -= (Numeric) (x / 360) * 360;
+        x -= cast<Numeric>((x / 360) * 360);
     }
     double xRad = degToRad(0.0 + x);
     double res = 0.0;

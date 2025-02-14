@@ -1,6 +1,6 @@
 f<int> main() {
     long l = 1234l;
     long* lPtr = &l;
-    int* iPtr = (int*) lPtr;
+    int* iPtr = cast<int*>(lPtr);
     printf("Int: %d\n", *iPtr);
 }

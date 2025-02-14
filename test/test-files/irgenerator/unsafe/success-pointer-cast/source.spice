@@ -3,7 +3,7 @@ f<int> main() {
     long* lPtr = &l;
     int* iPtr;
     unsafe {
-        iPtr = (int*) lPtr;
+        iPtr = cast<int*>(lPtr);
     }
     printf("Int: %d\n", *iPtr);
 }

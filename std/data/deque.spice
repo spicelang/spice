@@ -41,7 +41,7 @@ public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
 }
 
 public p Deque.ctor(unsigned int initAllocItems) {
-    this.ctor((long) initAllocItems);
+    this.ctor(cast<unsigned long>(initAllocItems));
 }
 
 public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
@@ -49,7 +49,7 @@ public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     const long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
     }
     this.capacity = initAllocItems;
 }
@@ -57,7 +57,7 @@ public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
 public p Deque.ctor(const Deque<T>& original) {
     this.ctor(original.capacity);
     unsafe {
-        sCopy((heap byte*) original.contents, (heap byte*) this.contents, original.size);
+        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
     }
     this.size = original.size;
     this.idxFront = original.idxFront;
@@ -255,7 +255,7 @@ p Deque.resize(unsigned long itemCount) {
         Result<heap byte*> allocResult = sAlloc(newSize);
         // Take ownership of the old pointer to free it at the end of the scope
         heap T* oldAddress = this.contents;
-        this.contents = (heap T*) allocResult.unwrap();
+        this.contents = cast<heap T*>(allocResult.unwrap());
         // Copy data over to new memory chunk
         for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
             unsigned long oldIndex = this.idxFront + newIndex;

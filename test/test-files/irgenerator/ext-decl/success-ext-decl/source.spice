@@ -3,6 +3,6 @@ ext p free(byte*);
 
 f<int> main() {
     byte* address = malloc(1l);
-    *address = (byte) 12;
+    *address = cast<byte>(12);
     free(address);
 }

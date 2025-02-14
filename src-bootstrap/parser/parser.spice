@@ -1212,12 +1212,17 @@ f<ASTCastExprNode*> Parser.parseCastExpr() {
     dyn castExprNode = this.createNode<ASTCastExprNode>();
 
     // Parse target type
-    this.lexer.expect(TokenType::LPAREN);
-    this.parseDataType();
-    this.lexer.expect(TokenType::RPAREN);
-
-    // Parse rhs
-    this.parsePrefixUnaryExpr();
+    if this.currentTokenIs(TokenType::CAST) {
+        this.lexer.expect(TokenType::CAST);
+        this.lexer.expect(TokenType::LESS);
+        this.parseDataType();
+        this.lexer.expect(TokenType::GREATER);
+        this.lexer.expect(TokenType::LPAREN);
+        this.parsePrefixUnaryExpr();
+        this.lexer.expect(TokenType::RPAREN);
+    } else {
+        this.parsePrefixUnaryExpr();
+    }
 
     return this.concludeNode(castExprNode);
 }

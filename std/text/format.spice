@@ -37,8 +37,8 @@ public f<String> formatStorageSize(long bytes) {
  * @return Char in upper case
  */
 public f<char> toUpper(char c) {
-    if c >= (char) MIN_LOWER_CHAR && c <= (char) MAX_LOWER_CHAR {
-        c += (char) ASCII_SHIFT_OFFSET;
+    if c >= cast<char>(MIN_LOWER_CHAR) && c <= cast<char>(MAX_LOWER_CHAR) {
+        c += cast<char>(ASCII_SHIFT_OFFSET);
     }
     return c;
 }
@@ -50,8 +50,8 @@ public f<char> toUpper(char c) {
  */
 /*public p toLower(String& text) {
     foreach char& c : text {
-        if c >= (char) MIN_UPPER_CHAR && c <= (char) MAX_UPPER_CHAR {
-            c -= ASCII_SHIFT_OFFSET;
+        if c >= cast<char>(MIN_UPPER_CHAR) && c <= cast<char>(MAX_UPPER_CHAR) {
+            c -= cast<char>(ASCII_SHIFT_OFFSET);
         }
     }
     return text;
@@ -63,8 +63,8 @@ public f<char> toUpper(char c) {
  * @return Char in lower case
  */
 public f<char> toLower(char c) {
-    if c >= (char) MIN_UPPER_CHAR && c <= (char) MAX_UPPER_CHAR {
-        c -= (char) ASCII_SHIFT_OFFSET;
+    if c >= cast<char>(MIN_UPPER_CHAR) && c <= cast<char>(MAX_UPPER_CHAR) {
+        c -= cast<char>(ASCII_SHIFT_OFFSET);
     }
     return c;
 }
@@ -75,8 +75,8 @@ public f<char> toLower(char c) {
  * @return Capitalized text
  */
 /*public p capitalize(String& text) {
-    if text[0] >= (char) MIN_LOWER_CHAR && text[0] <= (char) MAX_LOWER_CHAR {
-        text[0] += (char) ASCII_SHIFT_OFFSET;
+    if text[0] >= cast<char>(MIN_LOWER_CHAR) && text[0] <= cast<char>(MAX_LOWER_CHAR) {
+        text[0] += cast<char>(ASCII_SHIFT_OFFSET);
     }
     return text;
 }*/

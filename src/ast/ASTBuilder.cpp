@@ -1154,10 +1154,12 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   const auto castExprNode = createNode<CastExprNode>(ctx);
 
   if (ctx->dataType()) {
-    castExprNode->isCast = true;
     castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+    castExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    castExprNode->isCast = true;
+  } else {
+    castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
   }
-  castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
 
   return concludeNode(castExprNode);
 }

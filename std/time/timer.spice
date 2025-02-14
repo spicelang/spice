@@ -63,7 +63,7 @@ public f<double> Timer.getDurationInMinutes() {
 public f<unsigned long> Timer.getDuration() {
     if this.mode == TimerMode::MICROS { return this.getDurationInMicros(); }
     if this.mode == TimerMode::MILLIS { return this.getDurationInMillis(); }
-    if this.mode == TimerMode::SECONDS { return (unsigned long) this.getDurationInSeconds(); }
-    if this.mode == TimerMode::MINUTES { return (unsigned long) this.getDurationInMinutes(); }
+    if this.mode == TimerMode::SECONDS { return cast<unsigned long>(this.getDurationInSeconds()); }
+    if this.mode == TimerMode::MINUTES { return cast<unsigned long>(this.getDurationInMinutes()); }
     return 0l;
 }

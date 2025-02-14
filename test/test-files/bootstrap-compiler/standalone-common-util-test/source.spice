@@ -41,10 +41,10 @@ f<int> main() {
     const MockSourceFile msf4 = MockSourceFile("file4.spice", 1234l);
     Vector<const ISourceFile*> sourceFiles;
     unsafe {
-        sourceFiles.pushBack((const ISourceFile*) &msf1);
-        sourceFiles.pushBack((const ISourceFile*) &msf2);
-        sourceFiles.pushBack((const ISourceFile*) &msf3);
-        sourceFiles.pushBack((const ISourceFile*) &msf4);
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf1));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf2));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf3));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf4));
     }
     const String cim = getCircularImportMessage(sourceFiles);
     printf("Circular error message:\n%s\n", cim);

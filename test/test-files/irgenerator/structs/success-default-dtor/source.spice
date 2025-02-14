@@ -5,7 +5,7 @@ type StructWithHeapFields struct {
 p StructWithHeapFields.ctor() {
     dyn res = sAlloc(10l);
     unsafe {
-        this.data = (heap int*) res.unwrap();
+        this.data = cast<heap int*>(res.unwrap());
     }
 }
 

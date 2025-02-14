@@ -95,7 +95,7 @@ public f<bool> File.close() {
  */
 public f<char> File.readChar() {
     assert !this.isEOF;
-    result = (char) fgetc(this.filePtr);
+    result = cast<char>(fgetc(this.filePtr));
     this.isEOF = result == EOF;
 }
 
@@ -110,7 +110,7 @@ public f<String> File.readLine() {
     char buffer;
     while (buffer = this.readChar()) != EOF {
         if buffer == '\n' { break; }
-        result += (char) buffer;
+        result += cast<char>(buffer);
     }
     if buffer == EOF {
         this.isEOF = true;
@@ -124,7 +124,7 @@ public f<String> File.readLine() {
  * @return True if successful, false if not
  */
 public f<bool> File.write(char value) {
-    return fputc((int) value, this.filePtr) != STATUS_ERROR;
+    return fputc(cast<int>(value), this.filePtr) != STATUS_ERROR;
 }
 
 /**
@@ -156,7 +156,7 @@ public f<unsigned long> File.getSize() {
     // Remember current cursor position
     unsigned long curPos = ftell(this.filePtr);
     // Move the cursor to the end of the file
-    fseek(this.filePtr, (long) 0, SEEK_END);
+    fseek(this.filePtr, 0l, SEEK_END);
     // Get the cursor position
     unsigned long size = ftell(this.filePtr);
     // Move cursor back to the remembered position
@@ -240,8 +240,8 @@ public f<Result<String>> readFile(string path) {
     // Read from the file char by char
     char buffer;
     String output = String();
-    while (buffer = file.readChar()) != (char) EOF {
-        output += (char) buffer;
+    while (buffer = file.readChar()) != cast<char>(EOF) {
+        output += cast<char>(buffer);
     }
     // Close the file
     file.close();

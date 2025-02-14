@@ -18,7 +18,7 @@ public type BlockAllocator<Base> struct {
 
 public p BlockAllocator.ctor(IMemoryManager& memoryManager, unsigned long blockSize = 0l) {
     this.memoryManager = memoryManager;
-    this.blockSize = blockSize == 0l ? (unsigned long) getPageSize() : blockSize;
+    this.blockSize = blockSize == 0l ? cast<unsigned long>(getPageSize()) : blockSize;
     // We do not allow allocating objects that exceed the block size
     assert sizeof<Base>() <= this.blockSize;
     // Allocate the first block

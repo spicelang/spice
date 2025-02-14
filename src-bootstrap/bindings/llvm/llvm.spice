@@ -591,7 +591,7 @@ public type StructType struct {
 }
 
 public p StructType.ctor(const LLVMContext& context, const Vector<Type>& elementTypes, bool packed = false) {
-    this.self = LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, (unsigned int) elementTypes.getSize(), packed);
+    this.self = LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), packed);
 }
 
 public p StructType.ctor(const LLVMContext& context, string name = "") {
@@ -603,7 +603,7 @@ public f<string> StructType.getName() {
 }
 
 public p StructType.setBody(const Vector<Type>& elementTypes, bool packed = false) {
-    LLVMStructSetBody(this.self, &elementTypes.getDataPtr().self, (unsigned int) elementTypes.getSize(), packed);
+    LLVMStructSetBody(this.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), packed);
 }
 
 public p StructType.dump() {
@@ -767,27 +767,27 @@ public f<Type> IRBuilder.getPtrTy() {
 
 public f<Value> IRBuilder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
 }
 
 public f<Value> IRBuilder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt8TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
 }
 
 public f<Value> IRBuilder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt16TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
 }
 
 public f<Value> IRBuilder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt32TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
 }
 
 public f<Value> IRBuilder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt64TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
 }
 
 public f<Value> IRBuilder.getFalse() {
@@ -811,15 +811,15 @@ public f<Value> IRBuilder.getNull(Type ty) {
 
 public f<Value> IRBuilder.getStruct(const Vector<Value>& values, bool packed = false) {
     unsafe {
-        LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
-        LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, (unsigned int) values.getSize(), packed);
+        LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
+        LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, cast<unsigned int>(values.getSize()), packed);
         return Value{ valueRef };
     }
 }
 
 public f<Value> IRBuilder.getArray(Type ty, const Vector<Value>& values) {
     unsafe {
-        LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
+        LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
         LLVMValueRef valueRef = LLVMConstArray2(ty.self, valuesRef, values.getSize());
         return Value{ valueRef };
     }
@@ -863,16 +863,16 @@ public f<Value> IRBuilder.createLoad(Value ptr, Type ty, string name = "", bool 
 
 public f<Value> IRBuilder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
-        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
-        LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
+        LLVMValueRef* indicesRef = cast<LLVMValueRef*>(indices.getDataPtr());
+        LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
         return Value{ valueRef };
     }
 }
 
 public f<Value> IRBuilder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
-        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
-        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
+        LLVMValueRef* indicesRef = cast<LLVMValueRef*>(indices.getDataPtr());
+        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
         return Value{ valueRef };
     }
 }
@@ -984,8 +984,8 @@ public f<Value> IRBuilder.createNot(Value value, string name = "") {
 
 public f<Value> IRBuilder.createCall(Function callee, const Vector<Value>& args, string name = "") {
     unsafe {
-        LLVMValueRef* argsRef = (LLVMValueRef*) args.getDataPtr();
-        LLVMValueRef valueRef = LLVMBuildCall2(this.self, callee.fctType.self, callee.self, argsRef, (unsigned int) args.getSize(), name);
+        LLVMValueRef* argsRef = cast<LLVMValueRef*>(args.getDataPtr());
+        LLVMValueRef valueRef = LLVMBuildCall2(this.self, callee.fctType.self, callee.self, argsRef, cast<unsigned int>(args.getSize()), name);
         return Value{ valueRef };
     }
 }
@@ -1157,8 +1157,8 @@ public f<LLVMError> PassBuilder.run(const Module& module, const TargetMachine& t
 public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
     unsafe {
         LLVMTypeRef returnTypeRef = returnType.self;
-        LLVMTypeRef* paramTypesRef = (LLVMTypeRef*) paramTypes.getDataPtr();
-        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, (unsigned int) paramTypes.getSize(), isVarArg);
+        LLVMTypeRef* paramTypesRef = cast<LLVMTypeRef*>(paramTypes.getDataPtr());
+        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, cast<unsigned int>(paramTypes.getSize()), isVarArg);
         return Type{ typeRef };
     }
 }
@@ -1257,7 +1257,7 @@ public f<String> getVersionString() {
     LLVMGetVersion(&major, &minor, &patch);
     const unsigned int length = snprintf(nil<char*>, 0l, "%d.%d.%d", major, minor, patch);
     result = String(length);
-    snprintf((char*) result.getRaw(), length + 1l, "%d.%d.%d", major, minor, patch);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%d.%d.%d", major, minor, patch);
 }
 
 public p llvm_shutdown() {

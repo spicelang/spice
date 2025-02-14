@@ -9,8 +9,8 @@ f<int> main() {
     printf("Size of int: %d\n", sizeof(353));
     printf("Size of short: %d\n", sizeof(35s));
     printf("Size of long: %d\n", sizeof(9223372036854775807l));
-    printf("Size of byte: %d\n", sizeof((byte) 13));
-    printf("Size of char: %d\n", sizeof((char) 65));
+    printf("Size of byte: %d\n", sizeof(cast<byte>(13)));
+    printf("Size of char: %d\n", sizeof(cast<char>(65)));
     printf("Size of string: %d\n", sizeof("Hello Spice!"));
     printf("Size of bool: %d\n", sizeof(false));
     printf("Size of int[7]: %d\n", sizeof([1, 2, 3, 4, 5, 6, 7]));

@@ -15,7 +15,7 @@ public f<int> toInt(string input, int base = 10) {
 
 // Converts a string to a short
 public f<short> toShort(string input, int base = 10) {
-    return (short) atoi(input, nil<char**>, base);
+    return cast<short>(atoi(input, nil<char**>, base));
 }
 
 // Converts a string to a long
@@ -25,7 +25,7 @@ public f<long> toLong(string input, int base = 10) {
 
 // Converts a string to a byte
 public f<byte> toByte(string input, int base = 10) {
-    return (byte) atoi(input, nil<char**>, base);
+    return cast<byte>(atoi(input, nil<char**>, base));
 }
 
 // Converts a string to a char

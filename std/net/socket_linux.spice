@@ -93,7 +93,7 @@ public f<long> Socket.write(string message) {
     if messageLength == 0l { return 0l; }
     byte* messageBytes = nil<byte*>;
     unsafe {
-        messageBytes = (byte*) message;
+        messageBytes = cast<byte*>(message);
     }
     return write(this.connFd, messageBytes, messageLength);
 }

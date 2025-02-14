@@ -14,17 +14,17 @@ public f<int> toInt(bool input) {
 
 // Converts a bool to a short
 public f<short> toShort(bool input) {
-    return (short) (input ? 1 : 0);
+    return cast<short>(input ? 1 : 0);
 }
 
 // Converts a bool to a long
 public f<long> toLong(bool input) {
-    return (long) (input ? 1 : 0);
+    return cast<long>(input ? 1 : 0);
 }
 
 // Converts a bool to a byte
 public f<byte> toByte(bool input) {
-    result = (byte) (input ? 1 : 0);
+    result = cast<byte>(input ? 1 : 0);
 }
 
 // Converts a bool to a string

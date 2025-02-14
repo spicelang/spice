@@ -8,16 +8,16 @@ public type IHashable interface {
 }
 
 public f<unsigned long> hash<TT>(TT input) {
-    return (unsigned long) input;
+    return cast<unsigned long>(input);
 }
 
 public f<unsigned long> hash<TC>(TC input) {
-    return (unsigned long) ((unsigned int) input);
+    return cast<unsigned long>(input);
 }
 
 public f<unsigned long> hash(double input) {
     unsafe {
-        return *((unsigned long*) &input);
+        return *(cast<unsigned long*>(&input));
     }
 }
 
@@ -25,7 +25,7 @@ public f<unsigned long> hash(double input) {
 public f<unsigned long> hash(string input) {
     unsigned long hash = 5381l;
     for unsigned long i = 0l; i < len(input); i++ {
-        unsigned long c = (unsigned long) ((unsigned int) input[i]);
+        unsigned long c = cast<unsigned long>(cast<unsigned int>(input[i]));
         hash = ((hash << 5l) + hash) + c; // hash * 33 + c
     }
     return hash;

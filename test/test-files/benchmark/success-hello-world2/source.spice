@@ -3,6 +3,6 @@
 f<int> main() {
     unsigned long dx = 0x357620655410l;
     while dx > 0 {
-        printf("%c", (char) (0x726F6C6564574820l >> (((dx >>= 4) & 0xFl) << 3)));
+        printf("%c", cast<char>(0x726F6C6564574820l >> (((dx >>= 4) & 0xFl) << 3)));
     }
 }

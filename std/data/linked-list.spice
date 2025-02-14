@@ -111,7 +111,7 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
  * @param value Value to insert
  */
 public inline p LinkedList.insertAt(unsigned int idx, const T& value) {
-    this.insertAt((unsigned long) idx, value);
+    this.insertAt(cast<unsigned long>(idx), value);
 }
 
 /**
@@ -127,7 +127,7 @@ public p LinkedList.remove(const T& valueToRemove) {
         Node<T>* temp = this.tail;
         this.tail = this.tail.next;
         unsafe {
-            sDealloc((heap byte*) temp);
+            sDealloc(cast<heap byte*>(temp));
         }
         this.size--;
         return;
@@ -142,7 +142,7 @@ public p LinkedList.remove(const T& valueToRemove) {
     Node<T>* temp = curr.next;
     curr.next = curr.next.next;
     unsafe {
-        sDealloc((heap byte*) temp);
+        sDealloc(cast<heap byte*>(temp));
     }
 
     this.size--;
@@ -161,7 +161,7 @@ public p LinkedList.removeAt(unsigned long idx) {
         Node<T>* temp = this.tail;
         this.tail = this.tail.next;
         unsafe {
-            sDealloc((heap byte*) temp);
+            sDealloc(cast<heap byte*>(temp));
         }
         this.size--;
         return;
@@ -175,7 +175,7 @@ public p LinkedList.removeAt(unsigned long idx) {
     Node<T>* temp = curr.next;
     curr.next = curr.next.next;
     unsafe {
-        sDealloc((heap byte*) temp);
+        sDealloc(cast<heap byte*>(temp));
     }
 
     if idx == this.size - 1l {
@@ -191,7 +191,7 @@ public p LinkedList.removeAt(unsigned long idx) {
  * @param idx Index to remove
  */
 public inline p LinkedList.removeAt(unsigned int idx) {
-    this.removeAt((unsigned long) idx);
+    this.removeAt(cast<unsigned long>(idx));
 }
 
 /**
@@ -252,7 +252,7 @@ public f<T&> LinkedList.get(unsigned long idx) {
  * @return Reference to the item
  */
 public inline f<T&> LinkedList.get(unsigned int idx) {
-    return this.get((unsigned long) idx);
+    return this.get(cast<unsigned long>(idx));
 }
 
 /**
@@ -288,7 +288,7 @@ f<heap Node<T>*> LinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = (heap Node<T>*) allocResult.unwrap();
+        newNode = cast<heap Node<T>*>(allocResult.unwrap());
     }
     newNode.value = value;
     newNode.next = nil<heap Node<T>*>;

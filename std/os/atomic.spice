@@ -9,7 +9,7 @@ public type Atomic<T> struct {
 }
 
 public p Atomic.ctor() {
-    this.value = (T) 0;
+    this.value = cast<T>(0);
 }
 
 public p Atomic.ctor(T value) {

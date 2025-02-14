@@ -1,4 +1,4 @@
 f<int> main() {
     char* s = "abc";
-    printf("%s\n", (char*) s);
+    printf("%s\n", cast<char*>(s));
 }

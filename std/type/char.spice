@@ -4,27 +4,27 @@ public const unsigned int CHAR_MAX_VALUE = 255;
 
 // Converts a char to a double
 public f<double> toDouble(char input) {
-    return 0.0 + (int) input;
+    return 0.0 + cast<int>(input);
 }
 
 // Converts a char to an int
 public f<int> toInt(char input) {
-    return (int) input;
+    return cast<int>(input);
 }
 
 // Converts a char to a short
 public f<short> toShort(char input) {
-    return (short) ((int) input);
+    return cast<short>(cast<int>(input));
 }
 
 // Converts a char to a long
 public f<long> toLong(char input) {
-    return (long) ((int) input);
+    return cast<long>(cast<int>(input));
 }
 
 // Converts a char to a byte
 public f<byte> toByte(char input) {
-    result = (byte) input;
+    result = cast<byte>(input);
 }
 
 // Converts a char to a string

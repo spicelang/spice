@@ -101,7 +101,7 @@ public f<int> mkDir(string path, int mode) {
 public f<int> mkDirs(string path, int mode) {
     // ToDo: Implement
 
-    /*char[] pathChars = (char[]) path;
+    /*char[] pathChars = cast<char[]>(path);
     for int i = 0; i < path.length(); i++ {
 
     }*/
@@ -139,7 +139,7 @@ public f<bool> dirExists(string path) {
         if stat(path, &fs) != 0 {
             return false;
         }
-        return ((int) fs.st_mode & IF_MT) == IF_DIR;
+        return (fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
 }

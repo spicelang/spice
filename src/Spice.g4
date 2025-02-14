@@ -81,7 +81,7 @@ relationalExpr: shiftExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) shiftEx
 shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)*;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
-castExpr: (LPAREN dataType RPAREN)? prefixUnaryExpr;
+castExpr: prefixUnaryExpr | CAST LESS dataType GREATER LPAREN assignExpr RPAREN;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
 postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
 atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
@@ -156,6 +156,7 @@ ALIGNOF: 'alignof';
 LEN: 'len';
 PANIC: 'panic';
 SYSCALL: 'syscall';
+CAST: 'cast';
 EXT: 'ext';
 TRUE: 'true';
 FALSE: 'false';

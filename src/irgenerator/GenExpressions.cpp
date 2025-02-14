@@ -594,7 +594,7 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
   const QualType targetSTy = node->getEvaluatedSymbolType(manIdx);
 
   // Evaluate rhs
-  const PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
+  const AssignExprNode *rhsNode = node->assignExpr;
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
