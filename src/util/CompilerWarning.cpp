@@ -70,6 +70,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
     return "Identity cast";
   case SINGLE_GENERIC_TYPE_CONDITION:
     return "Only one type condition";
+  case INEFFECTIVE_GENERIC_TYPE_CONDITION:
+    return "Ineffective type condition";
   case BOOL_ASSIGN_AS_CONDITION:
     return "Bool assignment as condition";
   case ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION:

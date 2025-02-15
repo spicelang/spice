@@ -546,8 +546,7 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   for (const auto &typeAlt : node->typeAltsLst->dataTypes) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));
     HANDLE_UNRESOLVED_TYPE_PTR(typeCondition)
-    if (!typeCondition.is(TY_DYN))
-      typeConditions.push_back(typeCondition);
+    typeConditions.push_back(typeCondition);
   }
 
   // Add generic type to the scope
@@ -558,6 +557,13 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   if (typeConditions.size() == 1 && !typeConditions.front().is(TY_DYN))
     sourceFile->compilerOutput.warnings.emplace_back(node->typeAltsLst->codeLoc, SINGLE_GENERIC_TYPE_CONDITION,
                                                      "Generic type is locked to one type");
+
+  // Check if the list contains the dyn type, along with other types
+  const bool containsDynType = std::ranges::any_of(typeConditions, [&](const QualType &type) { return type.is(TY_DYN); });
+  if (containsDynType && typeConditions.size() > 1)
+    sourceFile->compilerOutput.warnings.emplace_back(
+        node->typeAltsLst->codeLoc, INEFFECTIVE_GENERIC_TYPE_CONDITION,
+        "One or several type conditions are superfluous, because the dyn type condition is given");
 
   return nullptr;
 }
