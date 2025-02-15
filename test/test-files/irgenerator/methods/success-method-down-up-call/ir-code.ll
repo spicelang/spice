@@ -11,16 +11,16 @@ define dso_local i32 @main() #0 {
   %s = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
   store %struct.TestStruct { i8 97, i32 1 }, ptr %s, align 4
-  call void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %s)
+  call void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %s)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }
 
-define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
+define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = call i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %2)
+  %3 = call i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %2)
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   ret void
 }
@@ -28,7 +28,7 @@ define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 4 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
+define private i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -45,7 +45,7 @@ if.then.L18:                                      ; preds = %1
   %7 = add nsw i32 %6, 1
   store i32 %7, ptr %test.addr1, align 4
   %8 = load ptr, ptr %this, align 8
-  call void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %8)
+  call void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %8)
   br label %if.exit.L18
 
 if.exit.L18:                                      ; preds = %if.then.L18, %1
