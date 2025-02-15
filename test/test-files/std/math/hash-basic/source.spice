@@ -1,13 +1,24 @@
 import "std/math/hash";
 
+type HashableType struct : IHashable {
+    unsigned long content = 124l
+}
+
+f<Hash> HashableType.hash() {
+    return this.content;
+}
+
 f<int> main() {
-    // Trivial hashes
-    printf("Hash (int): %d\n", hash(123));
-    printf("Hash (long): %d\n", hash(123l));
-    printf("Hash (short): %d\n", hash(123s));
-    printf("Hash (char): %d\n", hash(123.0));
-    printf("Hash (byte): %d\n", hash(123.0));
-    printf("Hash (string): %d\n", hash("Hello, World!"));
-    // Complex hashes
-    printf("Hash (double): %d\n", hash(123.0));
+    // Commonly used hash functions
+    printf("Hash (double): %lu\n", hash(123.0));
+    printf("Hash (int): %lu\n", hash(123));
+    printf("Hash (short): %lu\n", hash(123s));
+    printf("Hash (long): %lu\n", hash(123l));
+    printf("Hash (char): %lu\n", hash(cast<char>(123)));
+    printf("Hash (byte): %lu\n", hash(cast<byte>(123)));
+    printf("Hash (string): %lu\n", hash("Hello, World!"));
+    printf("Hash (String): %lu\n", hash(String("Hello, World!")));
+    // Custom hash implementation
+    const HashableType ht;
+    printf("Hash (HashableType): %lu\n", hash(ht));
 }

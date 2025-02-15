@@ -1,0 +1,38 @@
+import "std/data/unordered-map";
+
+f<int> main() {
+    UnorderedMap<String, int> map = UnorderedMap<String, int>();
+    assert map.getSize() == 0;
+    assert map.isEmpty();
+    map.upsert(String("one"), 1);
+    map.upsert(String("two"), 2);
+    map.upsert(String("three"), 3);
+    map.upsert(String("four"), 4);
+    assert map.getSize() == 4;
+    assert !map.isEmpty();
+    assert map.contains(String("one"));
+    assert map.contains(String("two"));
+    assert map.contains(String("three"));
+    assert map.contains(String("four"));
+    assert !map.contains(String("five"));
+    assert map.get(String("one")) == 1;
+    assert map[String("two")] == 2;
+    assert map.get(String("three")) == 3;
+    assert map.get(String("four")) == 4;
+    const Result<int> item5 = map.getSafe(String("five"));
+    assert item5.isErr();
+    map.remove(String("two"));
+    assert !map.contains(String("two"));
+    assert map.getSize() == 3;
+    map.clear();
+    assert map.getSize() == 0;
+    assert map.isEmpty();
+    map.upsert(String("one"), 1);
+    map.upsert(String("one"), 11);
+    assert map.getSize() == 1;
+    assert map[String("one")] == 11;
+    map.remove(String("one"));
+    assert map.isEmpty();
+
+    printf("All assertions passed!\n");
+}

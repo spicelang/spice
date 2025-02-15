@@ -146,8 +146,7 @@ inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
 }
 
 inline f<unsigned long> HashTable.hash(const K& key) {
-    const K keyCopy = key; // ToDo: Avoid copy of key
-    return hash(keyCopy) % this.buckets.getSize();
+    return hash(key) % this.buckets.getSize();
 }
 
 /**

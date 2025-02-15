@@ -3,34 +3,77 @@ type TT int|long|short|bool; // Trivially hashable types
 type TC byte|char; // Trivially hashable types with one additional cast
 type T dyn; // Any type
 
+// Aliases
+public type Hash alias unsigned long;
+
 public type IHashable interface {
-    public f<unsigned long> hash<T>(const T&);
+    public f<Hash> hash();
 }
 
-public f<unsigned long> hash<TT>(TT input) {
-    return cast<unsigned long>(input);
+/**
+ * Hash primitive numeric type
+ *
+ * @param input Primitieve numeric to hash
+ * @return Hash of primitive numeric
+ */
+public f<Hash> hash<TT>(TT input) {
+    return cast<Hash>(input);
 }
 
-public f<unsigned long> hash<TC>(TC input) {
-    return cast<unsigned long>(input);
+/**
+ * Hash primitive numeric type
+ *
+ * @param input Primitieve numeric to hash
+ * @return Hash of primitive numeric
+ */
+public f<Hash> hash<TC>(TC input) {
+    return cast<Hash>(cast<unsigned int>(input));
 }
 
-public f<unsigned long> hash(double input) {
+/**
+ * Hash a double value
+ *
+ * @param input Double to hash
+ * @return Hash of double
+ */
+public f<Hash> hash(double input) {
     unsafe {
-        return *(cast<unsigned long*>(&input));
+        return *(cast<Hash*>(&input));
     }
 }
 
-// djb2 hash
-public f<unsigned long> hash(string input) {
-    unsigned long hash = 5381l;
+/**
+ * Hash contents of an immutable string
+ *
+ * @param input String to hash
+ * @return Hash of string
+ */
+public f<Hash> hash(string input) {
+    // Hash using djb2 algorithm
+    Hash hash = 5381l;
     for unsigned long i = 0l; i < len(input); i++ {
-        unsigned long c = cast<unsigned long>(cast<unsigned int>(input[i]));
+        Hash c = cast<Hash>(cast<unsigned int>(input[i]));
         hash = ((hash << 5l) + hash) + c; // hash * 33 + c
     }
     return hash;
 }
 
-/*public f<unsigned long> hash<T>(const T& input) {
-    return input.hash();
-}*/
+/**
+ * Hash contents of a mutable String object
+ *
+ * @param input String to hash
+ * @return Hash of string
+ */
+public f<Hash> hash(const String& input) {
+    return hash(input.getRaw());
+}
+
+/**
+ * Dispatch function for structs, that implement the IHashable interface
+ *
+ * @param hashable Hashable object
+ * @return Hash of the struct
+ */
+public f<Hash> hash(const IHashable& hashable) {
+    return hashable.hash();
+}

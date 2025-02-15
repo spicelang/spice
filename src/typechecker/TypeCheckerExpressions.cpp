@@ -490,9 +490,6 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
     const auto index = std::any_cast<ExprResult>(visit(indexAssignExpr));
     HANDLE_UNRESOLVED_TYPE_ER(index.type)
-    // Check if the index is of the right type
-    if (!index.type.isOneOf({TY_INT, TY_LONG}))
-      SOFT_ERROR_ER(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
 
     // Check is there is an overloaded operator function available, if yes accept it
     const auto [type, _] = opRuleManager.isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SUBSCRIPT, {operand, index}, 0);
@@ -502,6 +499,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
 
     operandType = operandType.removeReferenceWrapper();
+
+    // Check if the index is of the right type
+    if (!index.type.isOneOf({TY_INT, TY_LONG}))
+      SOFT_ERROR_ER(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
 
     // Check if we can apply the subscript operator on the lhs type
     if (!operandType.isOneOf({TY_ARRAY, TY_PTR, TY_STRING}))
