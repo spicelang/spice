@@ -2,6 +2,8 @@
 
 #include "LinkerError.h"
 
+#include <util/GlobalDefinitions.h>
+
 namespace spice::compiler {
 
 /**
@@ -32,7 +34,8 @@ std::string LinkerError::getMessagePrefix(LinkerErrorType errorType) {
   case LINKER_ERROR:
     return "Linker error occurred";
   }
-  return "Unknown error"; // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // GCOV_EXCL_LINE
+  return "Unknown error";       // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

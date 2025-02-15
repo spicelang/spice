@@ -79,7 +79,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
   case VERIFIER_DISABLED:
     return "Verifier disabled";
   }
-  return "Unknown warning"; // GCOV_EXCL_LINE
+  assert_fail("Unknown warning"); // GCOV_EXCL_LINE
+  return "Unknown warning";       // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

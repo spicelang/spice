@@ -239,7 +239,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
   case COMING_SOON_SA:
     return "Coming soon";
   }
-  return "Unknown error"; // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // GCOV_EXCL_LINE
+  return "Unknown error";       // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

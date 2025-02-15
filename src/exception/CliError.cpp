@@ -2,6 +2,8 @@
 
 #include "CliError.h"
 
+#include <util/GlobalDefinitions.h>
+
 namespace spice::compiler {
 
 /**
@@ -44,7 +46,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
   case COMING_SOON_CLI:
     return "Coming soon";
   }
-  return "Unknown error";
+  assert_fail("Unknown error"); // GCOV_EXCL_LINE
+  return "Unknown error";       // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler
