@@ -60,7 +60,8 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType errorType) {
   case INVALID_MODULE:         // LCOV_EXCL_LINE
     return "Invalid module";   // LCOV_EXCL_LINE
   }
-  return "Unknown error"; // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // GCOV_EXCL_LINE
+  return "Unknown error";       // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler
