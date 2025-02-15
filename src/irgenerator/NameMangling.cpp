@@ -205,7 +205,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     out << (signedness ? "a" : "h");
     break;
   case TY_CHAR:
-    out << (signedness ? "c" : "h");
+    out << "c";
     break;
   case TY_STRING:
     out << "PKc";
