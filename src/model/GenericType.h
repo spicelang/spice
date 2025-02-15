@@ -26,7 +26,7 @@ public:
 
   // Public methods
   [[nodiscard]] bool checkConditionsOf(const QualType &qualType, bool ignoreArraySize = false,
-                                       bool igoreQualifiers = false) const;
+                                       bool ignoreQualifiers = false) const;
 
   // Public members
   bool used = false;
@@ -36,7 +36,7 @@ private:
   QualTypeList typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const QualType &qualType, bool ignoreArraySize, bool ignoreQualifiers) const;
+  [[nodiscard]] bool checkTypeConditionOf(const QualType &requestedType, bool ignoreArraySize, bool ignoreQualifiers) const;
 };
 
 } // namespace spice::compiler

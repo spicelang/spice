@@ -1,0 +1,1 @@
+[Warning] ./source.spice:1:8: Ineffective type condition: One or several type conditions are superfluous, because the dyn type condition is given
