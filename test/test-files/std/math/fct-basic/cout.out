@@ -6,6 +6,54 @@ Abs (long): 1234567890
 Abs (long): 987654321
 Abs (double): 56.123000
 Abs (double): 348.120000
+Max (int, int): 2
+Max (int, int): -1
+Max (short, short): 263
+Max (short, short): -165
+Max (long, long): 3495872345
+Max (long, long): -239458723
+Max (double, double): 34.234971
+Max (double, double): -34.234970
+Min (int, int): 1
+Min (int, int): -2
+Min (short, short): 165
+Min (short, short): -263
+Min (long, long): 239458723
+Min (long, long): -3495872345
+Min (double, double): 34.234970
+Min (double, double): -34.234971
+Trunc (double): 1
+Trunc (double): 1
+Trunc (double): -1
+Trunc (double): -1
+Floor (double): 1
+Floor (double): 1
+Floor (double): -2
+Floor (double): -2
+Ceil (double): 2
+Ceil (double): 2
+Ceil (double): -1
+Ceil (double): -1
+Round (double): 1
+Round (double): 2
+Round (double): -1
+Round (double): -2
+Round to 0 places (double): 1.000000
+Round to 0 places (double): 2.000000
+Round to 0 places (double): -1.000000
+Round to 0 places (double): -2.000000
+Round to 1 place (double): 1.000000
+Round to 1 place (double): 1.100000
+Round to 1 place (double): -1.000000
+Round to 1 place (double): -1.100000
+Round to 3 place (double): 1.499000
+Round to 3 place (double): 1.500000
+Round to 3 place (double): -1.499000
+Round to 3 place (double): -1.500000
+Round to 4 place (double): 1.499000
+Round to 4 place (double): 1.500000
+Round to 4 place (double): -1.499000
+Round to 4 place (double): -1.500000
 Deg2Rad: 7.330383
 Deg2Rad: 0.744872
 Deg2Rad: 5.610413

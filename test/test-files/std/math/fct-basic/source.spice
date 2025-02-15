@@ -5,10 +5,65 @@ f<int> main() {
     printf("Abs (int): %d\n", fct::abs(-137));
     printf("Abs (short): %d\n", fct::abs(56s));
     printf("Abs (short): %d\n", fct::abs(-3s));
-    printf("Abs (long): %d\n", fct::abs(1234567890l));
-    printf("Abs (long): %d\n", fct::abs(-987654321l));
+    printf("Abs (long): %lld\n", fct::abs(1234567890l));
+    printf("Abs (long): %lld\n", fct::abs(-987654321l));
     printf("Abs (double): %f\n", fct::abs(56.123));
     printf("Abs (double): %f\n", fct::abs(-348.12));
+
+    printf("Max (int, int): %d\n", max(1, 2));
+    printf("Max (int, int): %d\n", max(-1, -2));
+    printf("Max (short, short): %d\n", max(165s, 263s));
+    printf("Max (short, short): %d\n", max(-165s, -263s));
+    printf("Max (long, long): %lld\n", max(3495872345l, 239458723l));
+    printf("Max (long, long): %lld\n", max(-3495872345l, -239458723l));
+    printf("Max (double, double): %f\n", max(34.234971, 34.23497));
+    printf("Max (double, double): %f\n", max(-34.234971, -34.23497));
+
+    printf("Min (int, int): %d\n", min(1, 2));
+    printf("Min (int, int): %d\n", min(-1, -2));
+    printf("Min (short, short): %d\n", min(165s, 263s));
+    printf("Min (short, short): %d\n", min(-165s, -263s));
+    printf("Min (long, long): %lld\n", min(3495872345l, 239458723l));
+    printf("Min (long, long): %lld\n", min(-3495872345l, -239458723l));
+    printf("Min (double, double): %f\n", min(34.234971, 34.23497));
+    printf("Min (double, double): %f\n", min(-34.234971, -34.23497));
+
+    printf("Trunc (double): %d\n", trunc(1.499));
+    printf("Trunc (double): %d\n", trunc(1.500));
+    printf("Trunc (double): %d\n", trunc(-1.499));
+    printf("Trunc (double): %d\n", trunc(-1.500));
+
+    printf("Floor (double): %d\n", floor(1.499));
+    printf("Floor (double): %d\n", floor(1.500));
+    printf("Floor (double): %d\n", floor(-1.499));
+    printf("Floor (double): %d\n", floor(-1.500));
+
+    printf("Ceil (double): %d\n", ceil(1.499));
+    printf("Ceil (double): %d\n", ceil(1.500));
+    printf("Ceil (double): %d\n", ceil(-1.499));
+    printf("Ceil (double): %d\n", ceil(-1.500));
+
+    printf("Round (double): %d\n", round(1.499));
+    printf("Round (double): %d\n", round(1.500));
+    printf("Round (double): %d\n", round(-1.499));
+    printf("Round (double): %d\n", round(-1.500));
+
+    printf("Round to 0 places (double): %f\n", round(1.499, 0));
+    printf("Round to 0 places (double): %f\n", round(1.500, 0));
+    printf("Round to 0 places (double): %f\n", round(-1.499, 0));
+    printf("Round to 0 places (double): %f\n", round(-1.500, 0));
+    printf("Round to 1 place (double): %f\n", round(1.049, 1));
+    printf("Round to 1 place (double): %f\n", round(1.050, 1));
+    printf("Round to 1 place (double): %f\n", round(-1.049, 1));
+    printf("Round to 1 place (double): %f\n", round(-1.050, 1));
+    printf("Round to 3 place (double): %f\n", round(1.499, 3));
+    printf("Round to 3 place (double): %f\n", round(1.500, 3));
+    printf("Round to 3 place (double): %f\n", round(-1.499, 3));
+    printf("Round to 3 place (double): %f\n", round(-1.500, 3));
+    printf("Round to 4 place (double): %f\n", round(1.499, 4));
+    printf("Round to 4 place (double): %f\n", round(1.500, 4));
+    printf("Round to 4 place (double): %f\n", round(-1.499, 4));
+    printf("Round to 4 place (double): %f\n", round(-1.500, 4));
 
     printf("Deg2Rad: %f\n", degToRad(420.0));
     printf("Deg2Rad: %f\n", degToRad(42.678));
