@@ -1,24 +1,10 @@
 // Imports
 import "std/math/const";
-import "std/type/double";
+import "std/type/double" as doubleType;
 
 // Generic type defs
 type Numeric double|int|short|long;
 type WholeNumber int|short|long;
-
-/**
- * Calculate the factorial of the input
- *
- * @param input Input number
- * @return Factorial of input
- */
-public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
-    Numeric fac = cast<Numeric>(1);
-    for (int i = 1; i <= input; i++) {
-        fac *= i;
-    }
-    return fac;
-}
 
 /**
  * Calculate absolute value of the input
@@ -53,13 +39,25 @@ public inline f<Numeric> min<Numeric>(Numeric input1, Numeric input2) {
 }
 
 /**
+ * Truncate the number to a whole number
+ *
+ * @param input Intput number
+ * @return Rounding result
+ */
+public inline f<int> trunc(double input) {
+    return doubleType::toInt(input);
+}
+
+/**
  * Round the input number down
  *
  * @param input Intput number
  * @return Rounding result
  */
 public inline f<int> floor(double input) {
-    return toInt(input);
+    const int truncated = trunc(input);
+    if input >= 0.0 { return truncated; }
+    return truncated == input ? truncated : truncated - 1;
 }
 
 /**
@@ -69,11 +67,36 @@ public inline f<int> floor(double input) {
  * @return Rounding result
  */
 public inline f<int> ceil(double input) {
-    int truncatedInt = toInt(input);
-    if truncatedInt != input {
-        truncatedInt++;
+    const int truncated = trunc(input);
+    if input <= 0.0 { return truncated; }
+    return truncated == input ? truncated : truncated + 1;
+}
+
+/**
+ * Round the input number to a whole number
+ * Note: 0.499999 is rounded down to 0, 0.5 is rounded up to 1.
+ *
+ * @param input Input number
+ * @return Rounding result
+ */
+public inline f<int> round(double input) {
+    return cast<int>(input + (input >= 0.0 ? 0.5 : -0.5));
+}
+
+/**
+ * Round the input number to the given number of decimal places
+ * Note: For 2 places 0.444 is rounded down to 0.44, 0.445 is rounded up to 0.45.
+ *
+ * @param input Input number
+ * @param places Number of decimal places
+ * @param Rounding result
+ */
+public inline f<double> round(double input, unsigned int places) {
+    double factor = 1.0;
+    for unsigned int i = 0u; i < places; i++ {
+        factor *= 10.0;
     }
-    return truncatedInt;
+    return cast<int>(input * factor + (input >= 0.0 ? 0.5 : -0.5)) / factor;
 }
 
 /**
@@ -142,4 +165,18 @@ public f<double> cos<Numeric>(Numeric x) {
         term *= -xRad * xRad / k / (k - 1);
     }
     return res;
+}
+
+/**
+ * Calculate the factorial of the input
+ *
+ * @param input Input number
+ * @return Factorial of input
+ */
+public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
+    Numeric fac = cast<Numeric>(1);
+    for (int i = 1; i <= input; i++) {
+        fac *= i;
+    }
+    return fac;
 }
