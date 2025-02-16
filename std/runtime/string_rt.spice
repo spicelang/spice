@@ -145,6 +145,45 @@ public p String.append(const char c) {
     }
 }
 
+p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLength) {
+    // Check if the position is out of bounds
+    if position > this.length {
+        panic(Error("Insert index out of bounds"));
+    }
+    // Check if we need to re-allocate memory
+    while this.capacity < this.length + strLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+    this.length += strLength;
+    unsafe {
+        // Shift all chars, starting from the back
+        for unsigned long i = this.length; i > position; i-- {
+            this.contents[i] = this.contents[i - strLength];
+        }
+    }
+}
+
+public p String.insert<IntLong>(unsigned IntLong position, string str) {
+    const unsigned long strLength = len(str);
+    this.prepareInsert(position, strLength);
+    unsafe {
+        for unsigned long i = 0l; i < strLength; i++ {
+            this.contents[position + i] = str[i];
+        }
+    }
+}
+
+public p String.insert<IntLong>(unsigned IntLong position, const String& str) {
+    this.insert(position, str.getRaw());
+}
+
+public p String.insert<IntLong>(unsigned IntLong position, char c) {
+    this.prepareInsert(position, 1l);
+    unsafe {
+        this.contents[position] = c;
+    }
+}
+
 /**
  * Concatenates two strings and returns the result
  *

@@ -39,6 +39,11 @@ f<int> main() {
     assert s.getRaw() == "This was a demo. And because this was a d, it was a demonstration.";
     assert s.replaceAll('t', 'y') == 4;
     assert s.getRaw() == "This was a demo. And because yhis was a d, iy was a demonsyrayion.";
+    String test = String("Test");
+    test.insert(4, '.');
+    test.insert(2, "--");
+    test.insert(4, String("foo"));
+    assert test.getRaw() == "Te--foost.";
 
     printf("All assertions passed!");
 }
