@@ -1,0 +1,57 @@
+// Double
+public const unsigned int DOUBLE_SIZE = 8; // sizeof<double>()
+public const double DOUBLE_MIN_VALUE = -1.7976931348623157e+308;
+public const double DOUBLE_MAX_VALUE = 1.7976931348623157e+308;
+
+// Int
+public const int INT_SIZE = 4; // sizeof<int>()
+public const int INT_MIN_VALUE = -2147483648;
+public const int INT_MAX_VALUE = 2147483647;
+public const unsigned int UINT_MIN_VALUE = 0;
+public const unsigned int UINT_MAX_VALUE = 4294967295u;
+
+// Long
+public const unsigned int SIZE = 8; // sizeof<long>()
+public const long MIN_VALUE = -9223372036854775808l;
+public const long MAX_VALUE = 9223372036854775807l;
+public const unsigned long ULONG_MIN_VALUE = 0ul;
+public const unsigned long ULONG_MAX_VALUE = 18446744073709551615ul;
+
+// Short
+public const unsigned int SHORT_SIZE = 2; // sizeof<short>()
+public const short SHORT_MIN_VALUE = -32768s;
+public const short SHORT_MAX_VALUE = 32767s;
+public const unsigned short USHORT_MIN_VALUE = 0s;
+public const unsigned short USHORT_MAX_VALUE = 65535us;
+
+// Char
+public const unsigned int CHAR_SIZE = 1; // sizeof<char>()
+public const unsigned int CHAR_MIN_VALUE = 0;
+public const unsigned int CHAR_MAX_VALUE = 255;
+
+// Byte
+public const unsigned int BYTE_SIZE = 1; // sizeof<byte>()
+public const unsigned int BYTE_MIN_VALUE = 0;
+public const unsigned int BYTE_MAX_VALUE = 255;
+
+// Bool
+public const int BOOL_SIZE = 1; // sizeof<bool>()
+public const bool TRUE = true;
+public const bool FALSE = false;
+
+// Common type aliases
+public type Size alias unsigned long;
+public type PtrDiff alias unsigned long;
+
+// Integer type aliases
+public type I8 alias unsigned signed byte;
+public type U8 alias unsigned unsigned byte;
+public type I16 alias unsigned signed short;
+public type U16 alias unsigned unsigned short;
+public type I32 alias unsigned signed int;
+public type U32 alias unsigned unsigned int;
+public type I64 alias unsigned signed long;
+public type U64 alias unsigned unsigned long;
+
+// Floating point type aliases
+public type F64 alias double;
