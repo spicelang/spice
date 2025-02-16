@@ -559,6 +559,9 @@ static constexpr UnaryOpRule POSTFIX_MINUS_MINUS_OP_RULES[] = {
 // Cast op rules
 static constexpr BinaryOpRule CAST_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // (double) double -> double
+    BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // (double) int -> double
+    BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // (double) short -> double
+    BinaryOpRule(TY_DOUBLE, TY_LONG, TY_DOUBLE, false),   // (double) long -> double
     BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // (int) double -> int
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // (int) int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // (int) short -> int
@@ -595,8 +598,9 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker);
 
   // Public methods
-  std::pair<QualType, Function*> getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
-                               bool isReturn = false, const char *errMsgPrefix = "") const;
+  std::pair<QualType, Function *> getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                      bool isDecl = false, bool isReturn = false,
+                                                      const char *errMsgPrefix = "") const;
   QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                     bool isDecl = false) const;
   ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);

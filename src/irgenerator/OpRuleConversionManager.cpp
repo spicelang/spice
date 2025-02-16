@@ -1627,33 +1627,26 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   case COMB(TY_BOOL, TY_BOOL):     // fallthrough
   case COMB(TY_PTR, TY_PTR):
     return rhs; // Identity cast
+  case COMB(TY_DOUBLE, TY_INT):
+  case COMB(TY_DOUBLE, TY_SHORT):
+  case COMB(TY_DOUBLE, TY_LONG):
+    return {.value = rhsSTy.isSigned() ? builder.CreateSIToFP(rhsV(), lhsT) : builder.CreateUIToFP(rhsV(), lhsT)};
   case COMB(TY_INT, TY_DOUBLE):
-    if (lhsSTy.isSigned())
-      return {.value = builder.CreateFPToSI(rhsV(), lhsT)};
-    else
-      return {.value = builder.CreateFPToUI(rhsV(), lhsT)};
+    return {.value = lhsSTy.isSigned() ? builder.CreateFPToSI(rhsV(), lhsT) : builder.CreateFPToUI(rhsV(), lhsT)};
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_INT, TY_BYTE):  // fallthrough
   case COMB(TY_INT, TY_CHAR):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_SHORT, TY_DOUBLE):
-    if (lhsSTy.isSigned())
-      return {.value = builder.CreateFPToSI(rhsV(), lhsT)};
-    else
-      return {.value = builder.CreateFPToUI(rhsV(), lhsT)};
-  case COMB(TY_SHORT, TY_INT):
-    return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
+    return {.value = lhsSTy.isSigned() ? builder.CreateFPToSI(rhsV(), lhsT) : builder.CreateFPToUI(rhsV(), lhsT)};
+  case COMB(TY_SHORT, TY_INT): // fallthrough
   case COMB(TY_SHORT, TY_LONG):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_LONG, TY_DOUBLE):
-    if (lhsSTy.isSigned())
-      return {.value = builder.CreateFPToSI(rhsV(), lhsT)};
-    else
-      return {.value = builder.CreateFPToUI(rhsV(), lhsT)};
-  case COMB(TY_LONG, TY_INT): // fallthrough
-  case COMB(TY_LONG, TY_SHORT):
-    return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
+    return {.value = lhsSTy.isSigned() ? builder.CreateFPToSI(rhsV(), lhsT) : builder.CreateFPToUI(rhsV(), lhsT)};
+  case COMB(TY_LONG, TY_INT):   // fallthrough
+  case COMB(TY_LONG, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_INT):   // fallthrough
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG):
