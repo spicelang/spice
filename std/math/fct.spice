@@ -1,6 +1,6 @@
 // Imports
 import "std/math/const";
-import "std/type/double" as doubleType;
+import "std/type/double";
 
 // Generic type defs
 type Numeric double|int|short|long;
@@ -45,7 +45,7 @@ public inline f<Numeric> min<Numeric>(Numeric input1, Numeric input2) {
  * @return Rounding result
  */
 public inline f<int> trunc(double input) {
-    return doubleType::toInt(input);
+    return toInt(input);
 }
 
 /**

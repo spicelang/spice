@@ -1,0 +1,19 @@
+toUpper: J
+toUpper: THIS IS A TEST.
+toLower: l
+toLower: this is a test.
+capizalize: Word
+formatStorageSize: 1.000000 B
+formatStorageSize: 1.000000 B
+formatStorageSize: 1.230000 KB
+formatStorageSize: 1.210000 KiB
+formatStorageSize: 1.230000 MB
+formatStorageSize: 1.180000 MiB
+formatStorageSize: 1.230000 GB
+formatStorageSize: 1.150000 GiB
+formatStorageSize: 1.230000 TB
+formatStorageSize: 1.120000 TiB
+formatStorageSize: 1.230000 PB
+formatStorageSize: 1.100000 PiB
+formatStorageSize: 1.230000 EB
+formatStorageSize: 1.070000 EiB
