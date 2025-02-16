@@ -1,50 +1,9 @@
-public const unsigned int SHORT_SIZE = 16;
-public const short SHORT_MIN_VALUE = -32768s;
-public const short SHORT_MAX_VALUE = 32767s;
-public const unsigned short USHORT_MIN_VALUE = 0s;
-public const unsigned short USHORT_MAX_VALUE = 65535us;
-
-// External functions
-ext f<unsigned int> snprintf(char*, unsigned long, string, short);
-
-// Converts a short to a double
-public f<double> toDouble(short input) {
-    return 0.0 + input;
-}
-
-// Converts a short to an int
-public f<int> toInt(short input) {
-    return cast<int>(input);
-}
-
-// Converts a short to a long
-public f<long> toLong(short input) {
-    return cast<long>(input);
-}
-
-// Converts a short to a byte
-public f<byte> toByte(short input) {
-    return cast<byte>(cast<int>(input));
-}
-
-// Converts a short to a char
-public f<char> toChar(short input) {
-    return cast<char>(input);
-}
-
-// Converts a short to a string
-public f<String> toString(short input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hd", input);
-}
-
-// Converts a short to a boolean
-public f<bool> toBool(short input) {
-    return input >= 1;
-}
-
-// Check if the input is a power of two
+/**
+ * Check if a short is a power of two
+ *
+ * @param input Input number
+ * @return Is power of two
+ */
 public f<bool> isPowerOfTwo(short input) {
     return (input & (input - 1s)) == 0s;
 }

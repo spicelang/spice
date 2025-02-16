@@ -1,50 +1,9 @@
-public const unsigned int SIZE = 64;
-public const long MIN_VALUE = -9223372036854775808l;
-public const long MAX_VALUE = 9223372036854775807l;
-public const unsigned long ULONG_MIN_VALUE = 0ul;
-public const unsigned long ULONG_MAX_VALUE = 18446744073709551615ul;
-
-// External functions
-ext f<unsigned int> snprintf(char*, unsigned long, string, long);
-
-// Converts a long to a double
-public f<double> toDouble(long input) {
-    return 0.0 + input;
-}
-
-// Converts a long to an int
-public f<int> toInt(long input) {
-    return cast<int>(input);
-}
-
-// Converts a long to a short
-public f<short> toShort(long input) {
-    return cast<short>(input);
-}
-
-// Converts a long to a byte
-public f<byte> toByte(long input) {
-    return cast<byte>(cast<int>(input));
-}
-
-// Converts a long to a char
-public f<char> toChar(long input) {
-    return cast<char>(input);
-}
-
-// Converts a long to a string
-public f<String> toString(long input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%ld", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%ld", input);
-}
-
-// Converts a long to a boolean
-public f<bool> toBool(long input) {
-    return input >= 1;
-}
-
-// Check if the input is a power of two
+/**
+ * Check if a long is a power of two
+ *
+ * @param input Input number
+ * @return Is power of two
+ */
 public f<bool> isPowerOfTwo(long input) {
     return (input & (input - 1l)) == 0l;
 }
