@@ -1,35 +1,18 @@
+// Imports
 import "std/text/analysis";
+import "std/math/fct";
+import "std/type/double" as doubleTy;
+import "std/type/int" as intTy;
 
 // Constants
-const int ASCII_SHIFT_OFFSET = 32;
-const int MIN_LOWER_CHAR = 97;
-const int MAX_LOWER_CHAR = 122;
-const int MIN_UPPER_CHAR = 65;
-const int MAX_UPPER_CHAR = 90;
+const unsigned int ASCII_SHIFT_OFFSET = 32;
+const char MIN_LOWER_CHAR = 'a';
+const char MAX_LOWER_CHAR = 'z';
+const char MIN_UPPER_CHAR = 'A';
+const char MAX_UPPER_CHAR = 'Z';
 
-/**
- * Returns a formatted storage string (e.g. 1.4 MB for 1,500,000)
- *
- * @return Formatted size string
- */
-public f<String> formatStorageSize(long bytes) {
-    // ToDo when string concatenation works
-    return String("");
-}
-
-/**
- * Returns the given text in caps
- *
- * @return Text in caps
- */
-/*public p toUpper(String& text) {
-    foreach char& c : text {
-        if c >= (char) MIN_LOWER_CHAR && c <= (char) MAX_LOWER_CHAR {
-            c += (char) ASCII_SHIFT_OFFSET;
-        }
-    }
-    return text;
-}*/
+// Generic type defs
+type IntLongShort int|long|short;
 
 /**
  * Returns the given char as upper case version
@@ -37,7 +20,31 @@ public f<String> formatStorageSize(long bytes) {
  * @return Char in upper case
  */
 public f<char> toUpper(char c) {
-    if c >= cast<char>(MIN_LOWER_CHAR) && c <= cast<char>(MAX_LOWER_CHAR) {
+    if c >= MIN_LOWER_CHAR && c <= MAX_LOWER_CHAR {
+        c -= cast<char>(ASCII_SHIFT_OFFSET);
+    }
+    return c;
+}
+
+/**
+ * Returns the given text in caps
+ *
+ * @return Text in caps
+ */
+public f<String> toUpper(const String& text) {
+    result = text;
+    for unsigned long i = 0l; i < result.getLength(); i++ {
+        result[i] = toUpper(result[i]);
+    }
+}
+
+/**
+ * Returns the given char as lower case version
+ *
+ * @return Char in lower case
+ */
+public f<char> toLower(char c) {
+    if c >= MIN_UPPER_CHAR && c <= MAX_UPPER_CHAR {
         c += cast<char>(ASCII_SHIFT_OFFSET);
     }
     return c;
@@ -48,25 +55,11 @@ public f<char> toUpper(char c) {
  *
  * @return Text in all-lower letters
  */
-/*public p toLower(String& text) {
-    foreach char& c : text {
-        if c >= cast<char>(MIN_UPPER_CHAR) && c <= cast<char>(MAX_UPPER_CHAR) {
-            c -= cast<char>(ASCII_SHIFT_OFFSET);
-        }
+public f<String> toLower(const String& text) {
+    result = text;
+    for unsigned long i = 0l; i < result.getLength(); i++ {
+        result[i] = toLower(result[i]);
     }
-    return text;
-}*/
-
-/**
- * Returns the given char as lower case version
- *
- * @return Char in lower case
- */
-public f<char> toLower(char c) {
-    if c >= cast<char>(MIN_UPPER_CHAR) && c <= cast<char>(MAX_UPPER_CHAR) {
-        c -= cast<char>(ASCII_SHIFT_OFFSET);
-    }
-    return c;
 }
 
 /**
@@ -74,9 +67,55 @@ public f<char> toLower(char c) {
  *
  * @return Capitalized text
  */
-/*public p capitalize(String& text) {
-    if text[0] >= cast<char>(MIN_LOWER_CHAR) && text[0] <= cast<char>(MAX_LOWER_CHAR) {
-        text[0] += cast<char>(ASCII_SHIFT_OFFSET);
+public f<String> capitalize(const String& text) {
+    result = text;
+    if result.getLength() >= 1 {
+        result[0] = toUpper(result[0]);
     }
-    return text;
-}*/
+}
+
+/**
+ * Format the given number with thousands delimiter
+ *
+ * @param input Number
+ * @param delimiter Custom thousands delimiter
+ * @return Formatted string
+ */
+public f<String> formatThousandsDelimiter(int input, char delimiter = ',') {
+    result = intTy::toString(input);
+    const unsigned long n = result.getLength();
+    const bool isNegative = input < 0;
+
+    long insertPosition = n - 3;
+    long stopPosition = isNegative ? 1l : 0l;
+    while insertPosition > stopPosition {
+        result.insert(insertPosition, delimiter);
+        insertPosition -= 3;
+    }
+}
+
+/**
+ * Returns a formatted storage string (e.g. 1.4 MB for 1,500,000)
+ *
+ * @param bytes Number of bytes
+ * @param useFactor1024 Use factor 1024 instead the default factor of 1000
+ * @return Formatted string
+ */
+public f<String> formatStorageSize(unsigned long bytes, bool useFactor1024 = false) {
+    const string[7] storageUnits1000 = ["B", "KB",  "MB",  "GB",  "TB",  "PB",  "EB"];
+    const string[7] storageUnits1024 = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
+    assert len(storageUnits1000) == len(storageUnits1024); // Sanity check
+
+    const string[7]& storageUnits = useFactor1024 ? storageUnits1024 : storageUnits1000;
+    const unsigned int factor = useFactor1024 ? 1024 : 1000;
+
+    double size = cast<double>(bytes);
+    unsigned int unitIndex = 0u;
+    while size >= factor && unitIndex < len(storageUnits1000) {
+        size /= cast<double>(factor);
+        unitIndex++;
+    }
+
+    const double sizeRounded = round(size, 2);
+    return doubleTy::toString(sizeRounded) + ' ' + storageUnits[unitIndex];
+}
