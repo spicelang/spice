@@ -291,7 +291,7 @@ public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, bool& targe
 }
 
 #[ignoreUnusedReturnValue]
-public f<CliOption<bool>&> CliSubcommand.addFlag(const string name, p(bool&) callback, string description) {
+public f<CliOption<bool>&> CliSubcommand.addFlag(string name, p(bool&) callback, string description) {
     this.boolOptions.pushBack(CliOption<bool>(String(name), callback, String(description)));
     return this.boolOptions.back();
 }
@@ -334,7 +334,7 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
 
     // Print options
     printf("\nOptions:\n");
-    if !this.stringOptions.isEmpty() && !this.intOptions.isEmpty() {
+    if this.stringOptions.getSize() + this.stringObjOptions.getSize() + this.intOptions.getSize() + this.filePathOptions.getSize() > 0 {
         foreach const CliOption<string>& option : this.stringOptions {
             option.printHelpItem();
         }
@@ -348,8 +348,12 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     foreach const CliOption<bool>& flag : this.boolOptions {
         flag.printHelpItem();
     }
-    printHelpItem("--help,-h", "Print this help message");
-    printHelpItem("--version,-v", "Print the version of the application");
+
+    // Print help and version flags
+    bool target;
+    const dyn helpFlag = CliOption<bool>(String("--help,-h"), target, String("Print this help message"));
+    helpFlag.printHelpItem();
+    const dyn versionFlag = CliOption<bool>(String("--version,-v"), target, String("Print the version of the application"));
 
     // Print footer
     if !this.footerString.isEmpty() {

@@ -78,7 +78,7 @@ public p CliOption.printHelpItem() {
     }
     // For all options, that are not bool flags, print an additional placeholder
     if sizeof<T>() > 1 {
-        ss << "<value>";
+        ss << " <value>";
     }
     printFixedWidth(ss.str(), 25, true);
     // Description
