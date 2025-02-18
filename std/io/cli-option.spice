@@ -80,7 +80,7 @@ public p CliOption.printHelpItem() {
     if sizeof<T>() > 1 {
         ss << " <value>";
     }
-    printFixedWidth(ss.str(), 25, true);
+    printFixedWidth(ss.str(), 35, true);
     // Description
     printFixedWidth(this.description, 85, true);
     lineBreak();

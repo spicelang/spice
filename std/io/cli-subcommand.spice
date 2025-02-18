@@ -307,7 +307,7 @@ public p CliSubcommand.printHelpItem() {
     StringStream ss;
     ss << "  " << this.name;
     foreach const String& subcommandAlias : this.aliases {
-        ss << ',' << subcommandAlias;
+        ss << ", " << subcommandAlias;
     }
     printFixedWidth(ss.str(), 25, true);
     // Description
@@ -354,6 +354,7 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     const dyn helpFlag = CliOption<bool>(String("--help,-h"), target, String("Print this help message"));
     helpFlag.printHelpItem();
     const dyn versionFlag = CliOption<bool>(String("--version,-v"), target, String("Print the version of the application"));
+    versionFlag.printHelpItem();
 
     // Print footer
     if !this.footerString.isEmpty() {
