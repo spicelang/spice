@@ -342,7 +342,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback("-O1", [&] { cliOptions.optLevel = O1; }, "Only basic optimization is executed.");
+  subCmd->add_flag_callback("-O1", [&] { cliOptions.optLevel = O1; }, "Only basic optimization is applied.");
   subCmd->add_flag_callback("-O2", [&] { cliOptions.optLevel = O2; }, "More advanced optimization is applied.");
   subCmd->add_flag_callback("-O3", [&] { cliOptions.optLevel = O3; }, "Aggressive optimization for best performance.");
   subCmd->add_flag_callback("-Os", [&] { cliOptions.optLevel = Os; }, "Size optimization for output executable.");

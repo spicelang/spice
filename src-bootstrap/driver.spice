@@ -345,7 +345,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
 
     // Opt levels
     subCmd.addOption("-O0", p(string& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-    subCmd.addOption("-O1", p(string& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
+    subCmd.addOption("-O1", p(string& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is applied.");
     subCmd.addOption("-O2", p(string& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
     subCmd.addOption("-O3", p(string& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
     subCmd.addOption("-Os", p(string& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");

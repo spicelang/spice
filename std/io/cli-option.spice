@@ -1,12 +1,17 @@
 import "std/os/os";
 import "std/data/vector";
 import "std/io/filepath";
+import "std/text/print";
+import "std/text/stringstream";
 
 // Generic types
 type T bool|string|String|int|long|short|FilePath;
 
 // Enums
-type CliOptionMode enum { SET_VALUE, CALL_CALLBACK }
+type CliOptionMode enum {
+    SET_VALUE,
+    CALL_CALLBACK
+}
 
 public type CliOption<T> struct {
     String name
@@ -62,4 +67,21 @@ public p CliOption.callCallback(T& value) {
         p(T&) cb = this.callback;
         cb(value);
     }
+}
+
+public p CliOption.printHelpItem() {
+    // Print name and aliases
+    StringStream ss;
+    ss << "  " << this.name;
+    foreach const String& optionAlias : this.aliases {
+        ss << ',' << optionAlias;
+    }
+    // For all options, that are not bool flags, print an additional placeholder
+    if sizeof<T>() > 1 {
+        ss << "<value>";
+    }
+    printFixedWidth(ss.str(), 25, true);
+    // Description
+    printFixedWidth(this.description, 85, true);
+    lineBreak();
 }

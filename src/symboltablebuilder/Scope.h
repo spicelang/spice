@@ -89,7 +89,7 @@ public:
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
-  ALWAYS_INLINE [[nodiscard]] bool isRootScope() const { return parent == nullptr; }
+  [[nodiscard]] ALWAYS_INLINE bool isRootScope() const { return parent == nullptr; }
 
   // Wrapper methods for symbol table
   ALWAYS_INLINE SymbolTableEntry *insert(const std::string &name, ASTNode *declNode) {

@@ -43,13 +43,13 @@
     }                                                                                                                            \
   }
 
-#define HANDLE_UNRESOLVED_TYPE_QT(qualType)                                                                                      \
-  if ((qualType).is(TY_UNRESOLVED)) {                                                                                            \
+#define HANDLE_UNRESOLVED_TYPE_QT(type)                                                                                          \
+  if ((type).is(TY_UNRESOLVED)) {                                                                                                \
     if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
       const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
-      return exprNode->setEvaluatedSymbolType(qualType, manIdx);                                                                 \
+      return exprNode->setEvaluatedSymbolType(type, manIdx);                                                                     \
     } else {                                                                                                                     \
-      return qualType;                                                                                                           \
+      return type;                                                                                                               \
     }                                                                                                                            \
   }
 
