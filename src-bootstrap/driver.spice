@@ -310,10 +310,8 @@ p Driver.addInstallSubcommand() {
  */
 p Driver.addUninstallSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.addSubcommand("uninstall", "Builds your Spice program and runs it immediately");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("uninstall", "Uninstalls a Spice program from the system");
     subCmd.addAlias("u");
-
-    this.addCompileSubcommandOptions(subCmd);
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {

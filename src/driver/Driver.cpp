@@ -297,7 +297,7 @@ void Driver::addInstallSubcommand() {
  */
 void Driver::addUninstallSubcommand() {
   // Create sub-command itself
-  CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
+  CLI::App *subCmd = app.add_subcommand("uninstall", "Uninstalls a Spice program from the system");
   subCmd->alias("u");
   subCmd->ignore_case();
   subCmd->callback([&] {
