@@ -279,8 +279,7 @@ void Driver::addTestSubcommand() {
  */
 void Driver::addInstallSubcommand() {
   // Create sub-command itself
-  CLI::App *subCmd =
-      app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
+  CLI::App *subCmd = app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH");
   subCmd->alias("i");
   subCmd->ignore_case();
   subCmd->callback([&] {
@@ -360,7 +359,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --dump-types
   subCmd->add_flag<bool>("--dump-types,-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
   // --dump-cache-stats
-  subCmd->add_flag<bool>("--dump-cache-stats,-cache-stats", cliOptions.dumpSettings.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
+  subCmd->add_flag<bool>("--dump-cache-stats,-cache-stats", cliOptions.dumpSettings.dumpCacheStats,
+                         "Dump stats for compiler-internal lookup caches");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
   // --dump-assembly

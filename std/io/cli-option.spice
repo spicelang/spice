@@ -69,6 +69,18 @@ public p CliOption.callCallback(T& value) {
     }
 }
 
+public f<bool> CliOption.isPositional() {
+    if this.name.startsWith("-") {
+        return false;
+    }
+    foreach const String& optionAlias : this.aliases {
+        if optionAlias.startsWith("-") {
+            return false;
+        }
+    }
+    return true;
+}
+
 public p CliOption.printHelpItem() {
     // Print name and aliases
     StringStream ss;

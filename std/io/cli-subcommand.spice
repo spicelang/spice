@@ -76,7 +76,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
 
         // Check for options
         foreach const CliOption<bool>& boolOption : this.boolOptions {
-            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
+            if !boolOption.isPositional() && this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
                 bool value = true;
                 boolOption.setTargetValue(value);
                 boolOption.callCallback(value);
@@ -84,63 +84,59 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
-            if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
+            if !stringOption.isPositional() && this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
-                    printf("Option %s requires a value.", arg);
+                    printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
                 arg = argv[argNo];
-
                 stringOption.setTargetValue(arg);
                 stringOption.callCallback(arg);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
-            if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
+            if !stringObjOption.isPositional() && this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
-                    printf("Option %s requires a value.", arg);
+                    printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
                 arg = argv[argNo];
                 String parsedArg = String(arg);
-
                 stringObjOption.setTargetValue(parsedArg);
                 stringObjOption.callCallback(parsedArg);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<int>& intOption : this.intOptions {
-            if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
+            if !intOption.isPositional() && this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
-                    printf("Option %s requires a value.", arg);
+                    printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
                 arg = argv[argNo];
                 int parsedArg = toInt(arg);
-
                 intOption.setTargetValue(parsedArg);
                 intOption.callCallback(parsedArg);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
-            if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
+            if !filePathOption.isPositional() && this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
-                    printf("Option %s requires a value.", arg);
+                    printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
                 arg = argv[argNo];
                 FilePath parsedArg = FilePath(arg);
-
                 filePathOption.setTargetValue(parsedArg);
                 filePathOption.callCallback(parsedArg);
                 continue 2; // Continue with next argument
@@ -210,8 +206,7 @@ public f<CliOption<string>&> CliSubcommand.addOption(string name, string& target
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(const String& name, string& targetVariable, const String& description) {
-    this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
-    return this.stringOptions.back();
+    return this.addOption(name.getRaw(), targetVariable, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -222,8 +217,7 @@ public f<CliOption<string>&> CliSubcommand.addOption(string name, p(string&) cal
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption(const String& name, p(string&) callback, const String& description) {
-    this.stringOptions.pushBack(CliOption<string>(name, callback, description));
-    return this.stringOptions.back();
+    return this.addOption(name.getRaw(), callback, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -234,8 +228,7 @@ public f<CliOption<String>&> CliSubcommand.addOption(string name, String& target
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(const String& name, String& targetVariable, const String& description) {
-    this.stringObjOptions.pushBack(CliOption<String>(name, targetVariable, description));
-    return this.stringObjOptions.back();
+    return this.addOption(name.getRaw(), targetVariable, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -246,8 +239,7 @@ public f<CliOption<String>&> CliSubcommand.addOption(string name, p(String&) cal
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption(const String& name, p(String&) callback, const String& description) {
-    this.stringObjOptions.pushBack(CliOption<String>(name, callback, description));
-    return this.stringObjOptions.back();
+    return this.addOption(name.getRaw(), callback, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -258,8 +250,7 @@ public f<CliOption<int>&> CliSubcommand.addOption(string name, int& targetVariab
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(const String& name, int& targetVariable, const String& description) {
-    this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
-    return this.intOptions.back();
+    return this.addOption(name.getRaw(), targetVariable, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -270,8 +261,7 @@ public f<CliOption<int>&> CliSubcommand.addOption(string name, p(int&) callback,
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption(const String& name, p(int&) callback, const String& description) {
-    this.intOptions.pushBack(CliOption<int>(name, callback, description));
-    return this.intOptions.back();
+    return this.addOption(name.getRaw(), callback, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -282,8 +272,7 @@ public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, FilePath& ta
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, FilePath& targetVariable, const String& description) {
-    this.filePathOptions.pushBack(CliOption<FilePath>(name, targetVariable, description));
-    return this.filePathOptions.back();
+    return this.addOption(name.getRaw(), targetVariable, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -294,8 +283,7 @@ public f<CliOption<FilePath>&> CliSubcommand.addOption(string name, p(FilePath&)
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption(const String& name, p(FilePath&) callback, const String& description) {
-    this.filePathOptions.pushBack(CliOption<FilePath>(name, callback, description));
-    return this.filePathOptions.back();
+    return this.addOption(name.getRaw(), callback, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -306,8 +294,7 @@ public f<CliOption<bool>&> CliSubcommand.addFlag(string name, bool& targetVariab
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, bool& targetVariable, const String& description) {
-    this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
-    return this.boolOptions.back();
+    return this.addFlag(name.getRaw(), targetVariable, description.getRaw());
 }
 
 #[ignoreUnusedReturnValue]
@@ -318,8 +305,7 @@ public f<CliOption<bool>&> CliSubcommand.addFlag(string name, p(bool&) callback,
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag(const String& name, p(bool&) callback, const String& description) {
-    this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
-    return this.boolOptions.back();
+    return this.addFlag(name.getRaw(), callback, description.getRaw());
 }
 
 public p CliSubcommand.printHelpItem() {
