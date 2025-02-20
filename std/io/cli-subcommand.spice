@@ -76,7 +76,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
 
         // Check for options
         foreach const CliOption<bool>& boolOption : this.boolOptions {
-            if !boolOption.isPositional() && this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
                 bool value = true;
                 boolOption.setTargetValue(value);
                 boolOption.callCallback(value);
@@ -84,7 +84,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
-            if !stringOption.isPositional() && this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
+            if  this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
@@ -98,7 +98,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
-            if !stringObjOption.isPositional() && this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
@@ -113,7 +113,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<int>& intOption : this.intOptions {
-            if !intOption.isPositional() && this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
@@ -128,7 +128,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
-            if !filePathOption.isPositional() && this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
