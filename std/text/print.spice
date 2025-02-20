@@ -48,6 +48,10 @@ public p printColumn(string text, unsigned int width) {
     }
 }
 
+public p printColumn(const String& text, unsigned int width) {
+    printColumn(text.getRaw(), width);
+}
+
 public p printFixedWidth(string text, unsigned int width, bool ellipsis = false) {
     unsigned long length = len(text);
     const bool printEllipsis = ellipsis & length > width;
@@ -62,4 +66,8 @@ public p printFixedWidth(string text, unsigned int width, bool ellipsis = false)
             printf(" ");
         }
     }
+}
+
+public p printFixedWidth(const String& text, unsigned int width, bool ellipsis = false) {
+    printFixedWidth(text.getRaw(), width, ellipsis);
 }
