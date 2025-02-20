@@ -86,7 +86,12 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<string>& stringOption : this.stringOptions {
             if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
-                arg = argv[++argNo];
+                argNo++;
+                if argNo >= argc {
+                    printf("Option %s requires a value.", arg);
+                    return EXIT_CODE_ERROR;
+                }
+                arg = argv[argNo];
 
                 stringOption.setTargetValue(arg);
                 stringOption.callCallback(arg);
@@ -96,7 +101,12 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
             if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
                 // get the argument value
-                arg = argv[++argNo];
+                argNo++;
+                if argNo >= argc {
+                    printf("Option %s requires a value.", arg);
+                    return EXIT_CODE_ERROR;
+                }
+                arg = argv[argNo];
                 String parsedArg = String(arg);
 
                 stringObjOption.setTargetValue(parsedArg);
@@ -107,7 +117,12 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<int>& intOption : this.intOptions {
             if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
                 // get the argument value
-                arg = argv[++argNo];
+                argNo++;
+                if argNo >= argc {
+                    printf("Option %s requires a value.", arg);
+                    return EXIT_CODE_ERROR;
+                }
+                arg = argv[argNo];
                 int parsedArg = toInt(arg);
 
                 intOption.setTargetValue(parsedArg);
@@ -118,7 +133,12 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
             if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
                 // get the argument value
-                arg = argv[++argNo];
+                argNo++;
+                if argNo >= argc {
+                    printf("Option %s requires a value.", arg);
+                    return EXIT_CODE_ERROR;
+                }
+                arg = argv[argNo];
                 FilePath parsedArg = FilePath(arg);
 
                 filePathOption.setTargetValue(parsedArg);
