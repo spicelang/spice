@@ -2,7 +2,7 @@
 title: Builtin data types
 ---
 
-In extension to the [primitive data types](primitive-types.md), Spice offers builtin data types.
+In extension to the [primitive data types](primitive-types.md), Spice offers several builtin data types.
 
 ## The `String` data type
 In opposite to the [string primitive type](primitive-types.md#the-string-data-type), the `String` builtin type is
@@ -11,7 +11,7 @@ mutable and offers several ways to modify the contained value.
 !!! tip "Tip"
     Use the `string` primitive type over the `String` builtin type as much as possible, due to its advantages in runtime
     performance. The usage of the `String` builtin type is only recommended, when you need to modify the value of the
-    string at runtime. `string` variables are always immutable.
+    string at runtime. `string` values are always immutable.
 
 ### Constructors
 The `String` builtin type offers the following constructors:
@@ -29,10 +29,16 @@ The `String` builtin type offers the following methods:
 - `void append(string)`: Appends a raw string
 - `void append(const String&)`: Appends a string
 - `void append(char)`: Appends a single char
+- `void insert(unsigned int, string)`: Insert a substring at a given position
+- `void insert(unsigned long, string)`: Insert a substring at a given position
+- `void insert(unsigned int, const String&)`: Insert a substring at a given position
+- `void insert(unsigned long, const String&)`: Insert a substring at a given position
+- `void insert(unsigned int, char)`: Insert a character at a given position
+- `void insert(unsigned long, char)`: Insert a character at a given position
 - `string getRaw()`: Returns a char* to the heap allocated value
 - `unsigned long getLength()`: Returns the length of the string in chars
-- `bool isEmpty()`: Checks if the string has a length of 0
 - `unsigned long getCapacity()`: Returns the allocated space in bytes
+- `bool isEmpty()`: Checks if the string has a length of 0
 - `bool isFull()`: Checks if the length is equal with the capacity
 - `void clear()`: Clear the value of the string
 - `long find(string, unsigned int)`: Returns the index, where a substring was found, starting from a start index
@@ -51,6 +57,7 @@ The `String` builtin type offers the following methods:
 - `String getSubstring(unsigned int, long)`: Returns the substring from start index `x` and length `y`
 - `String getSubstring(unsigned long, long)`: Returns the substring from start index `x` and length `y`
 - `String getSubstring(unsigned short, long)`: Returns the substring from start index `x` and length `y`
+- `String trim()`: Remove whitespace from the front and back
 - `void reserve(unsigned int)`: Increase the capacity to the given number
 - `void reserve(unsigned long)`: Increase the capacity to the given number
 - `void reserve(unsigned short)`: Increase the capacity to the given number
