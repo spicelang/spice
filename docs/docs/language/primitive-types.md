@@ -70,7 +70,7 @@ Examples:
 0D6
 0b101
 0xf6a9
-0o71039u
+0o71037u
 ```
 
 ## The `short` data type

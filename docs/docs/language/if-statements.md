@@ -15,7 +15,7 @@ if counter <= 10 {
 	counter += 3;
 }
 ```
-The block between the curly braces only gets executed when the variable `counter` is less or equal 10, otherwise it is going to be ignored.
+The block between the curly braces only gets executed when the variable `counter` is less or equal 10.
 
 !!! note "Optional parentheses"
     As with the for, foreach and while loops, the parentheses around the head of the `if` statement are optional.
