@@ -2,10 +2,10 @@
 title: Main Function
 ---
 
-The `main` function is the entry point to any Spice program. When the operating system runs your compiled executable, the `main` function is
-the first function, which is called. Therefore, it is mandatory and must have the signature `int main()` or
-`int main(int argc, string[] argv)` for retrieving command line arguments. The main function has a return value of type `int`,
-which represents the return / exit / status code of the executable.
+The `main` function is the entry point to any Spice program. When the operating system runs your compiled executable,
+the `main` function is called. Therefore, it is mandatory and must have the signature `int main()` or
+`int main(int argc, string[] argv)` for retrieving command line arguments. The main function has a return value of type
+`int`, which represents the return / exit / status code of the executable.
 
 ## Usage
 
@@ -32,10 +32,10 @@ Spice programs can accept command line arguments similar you would write it in C
 
 ```spice
 f<int> main(int argc, string[] argv) {
-    printf("Argc: %d\n", argc);
-    printf("Argv no. 0: %s\n", argv[0]);
+    printf("Number of arguments: %d\n", argc);
+    printf("Argument no. 0: %s\n", argv[0]);
     if (argc > 1) {
-        printf("Argv no. 1: %s\n", argv[1]);
+        printf("Argument no. 1: %s\n", argv[1]);
     }
 }
 ```

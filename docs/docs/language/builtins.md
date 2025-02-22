@@ -48,7 +48,7 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 Sizeof returns the internal size of a variable, constant or type in bytes. To get the size in bits, simply multiply the result by 8.
 
 ### Signature
-`int sizeof(<any variable>)` or `int sizeof<any type>()`
+`int sizeof(<any variable or constant>)` or `int sizeof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
@@ -67,7 +67,7 @@ sizeof("Hello World!"); // 8 (Strings are Char pointers internally)
 Alignof returns the alignment of a variable, constant or type in bytes. To get the alignment in bits, simply multiply the result by 8.
 
 ### Signature
-`int alignof(<any variable>)` or `int alignof<any type>()`
+`int alignof(<any variable or constant>)` or `int alignof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
@@ -86,7 +86,7 @@ alignof("Hello World!"); // 8 (Strings are Char pointers internally)
 Len returns the length of a Spice array in items.
 
 ### Signature
-`int len(any[] variable)`
+`int len(dyn[] variable)`
 
 `variable`: Variable of any  array type.
 
@@ -99,7 +99,7 @@ len(stringArray); // 5
 ```
 
 ## The `panic` builtin
-Panic is used to terminate the program with an error message. The error message will be printed to stanard error (stderr)
+Panic is used to terminate the program with an error message. The error message will be printed to standard error (stderr)
 and the program will terminate with exit code `1`.
 
 ### Signature

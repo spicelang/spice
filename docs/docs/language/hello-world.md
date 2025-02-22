@@ -26,7 +26,7 @@ Save the file and open a terminal in the directory, where the `hello-world.spice
 
 This is what you should see:
 ```shell
-$ ./hello-world
+$ spice run hello-world.spice
 Hello World!
 ```
 
