@@ -663,7 +663,8 @@ std::any ASTBuilder::visitQualifierLst(SpiceParser::QualifierLstContext *ctx) {
   bool seenSignedOrUnsigned = false;
   for (const QualifierNode *qualifier : qualifierLstNode->qualifiers) {
     // Check if we have both, signed and unsigned qualifier
-    if (qualifier->type != QualifierNode::QualifierType::TY_SIGNED && qualifier->type != QualifierNode::QualifierType::TY_UNSIGNED)
+    if (qualifier->type != QualifierNode::QualifierType::TY_SIGNED &&
+        qualifier->type != QualifierNode::QualifierType::TY_UNSIGNED)
       continue;
     if (seenSignedOrUnsigned)
       throw ParserError(qualifier->codeLoc, INVALID_QUALIFIER_COMBINATION, "A variable can not be signed and unsigned");
@@ -1729,18 +1730,21 @@ template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const N
       if (input[0] == '0') {
         const std::string subStr = input.substr(2);
         switch (input[1]) {
-        case 'b':
+        case 'd': // fall-through
+        case 'D':
+          return cb(subStr, 10, !isUnsigned);
+        case 'b': // fall-through
         case 'B':
           return cb(subStr, 2, !isUnsigned);
-        case 'h':
-        case 'H':
-        case 'x':
+        case 'h': // fall-through
+        case 'H': // fall-through
+        case 'x': // fall-through
         case 'X':
           return cb(subStr, 16, !isUnsigned);
-        case 'o':
+        case 'o': // fall-through
         case 'O':
           return cb(subStr, 8, !isUnsigned);
-        default:
+        default: // default is decimal
           return cb(input, 10, !isUnsigned);
         }
       }
