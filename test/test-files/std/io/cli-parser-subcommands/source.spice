@@ -5,7 +5,7 @@ type CliOptions struct {
     string greetName = ""
 }
 
-p callback(bool& value) {
+p callback(const bool& value) {
     printf("Callback called with value %d\n", value);
 }
 
