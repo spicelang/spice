@@ -19,7 +19,7 @@ public type CliOption<T> struct {
     Vector<String> aliases
     CliOptionMode mode
     T& targetVariable
-    p(T&) callback
+    p(const T&) callback
 }
 
 public p CliOption.ctor(string name, T& targetVariable, string description) {
@@ -33,14 +33,14 @@ public p CliOption.ctor(const String& name, T& targetVariable, const String& des
     this.ctor(name.getRaw(), targetVariable, description.getRaw());
 }
 
-public p CliOption.ctor(string name, p(T&) callback, string description) {
+public p CliOption.ctor(string name, p(const T&) callback, string description) {
     this.name = String(name);
     this.description = String(description);
     this.mode = CliOptionMode::CALL_CALLBACK;
     this.callback = callback;
 }
 
-public p CliOption.ctor(const String& name, p(T&) callback, const String& description) {
+public p CliOption.ctor(const String& name, p(const T&) callback, const String& description) {
     this.ctor(name.getRaw(), callback, description.getRaw());
 }
 
@@ -70,9 +70,9 @@ public p CliOption.setTargetValue(T value) {
     }
 }
 
-public p CliOption.callCallback(T& value) {
+public p CliOption.callCallback(const T& value) {
     if this.mode == CliOptionMode::CALL_CALLBACK {
-        p(T&) cb = this.callback;
+        p(const T&) cb = this.callback;
         cb(value);
     }
 }
