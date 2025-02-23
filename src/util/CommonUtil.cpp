@@ -2,6 +2,8 @@
 
 #include "CommonUtil.h"
 
+#include <SourceFile.h> // Must be included before windows.h due to symbol name ambiguities
+
 #include <cxxabi.h>
 #if OS_UNIX
 #include <unistd.h>
@@ -10,8 +12,6 @@
 #else
 #error "Unsupported platform"
 #endif
-
-#include <SourceFile.h>
 
 namespace spice::compiler {
 
