@@ -22,18 +22,26 @@ public type CliOption<T> struct {
     p(T&) callback
 }
 
-public p CliOption.ctor(const String& name, T& targetVariable, const String& description) {
-    this.name = name;
-    this.description = description;
+public p CliOption.ctor(string name, T& targetVariable, string description) {
+    this.name = String(name);
+    this.description = String(description);
     this.mode = CliOptionMode::SET_VALUE;
     this.targetVariable = targetVariable;
 }
 
-public p CliOption.ctor(const String& name, p(T&) callback, const String& description) {
-    this.name = name;
-    this.description = description;
+public p CliOption.ctor(const String& name, T& targetVariable, const String& description) {
+    this.ctor(name.getRaw(), targetVariable, description.getRaw());
+}
+
+public p CliOption.ctor(string name, p(T&) callback, string description) {
+    this.name = String(name);
+    this.description = String(description);
     this.mode = CliOptionMode::CALL_CALLBACK;
     this.callback = callback;
+}
+
+public p CliOption.ctor(const String& name, p(T&) callback, const String& description) {
+    this.ctor(name.getRaw(), callback, description.getRaw());
 }
 
 public const f<const String&> CliOption.getName() {
