@@ -218,3 +218,79 @@ jobs:
         run: |
           cd ./bin/test
           ./spicetest --is-github-actions
+
+  build-windows:
+    name: C++ CI Windows
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - name: Setup latest GCC
+        shell: pwsh
+        run: |
+          choco uninstall mingw --all-versions
+          choco uninstall llvm --all-versions
+          Remove-Item -Recurse -Force C:/Strawberry
+          echo "Uninstalling done."
+          Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/14.2.0posix-12.0.0-ucrt-r3/winlibs-x86_64-posix-seh-gcc-14.2.0-llvm-19.1.7-mingw-w64ucrt-12.0.0-r3.7z -OutFile mingw64.7z
+          echo "Downloading done."
+          7z x mingw64.7z -oC:\mingw64
+          echo "Unpacking done."
+          Copy-Item -Path C:\mingw64\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\mingw64\bin\make.exe
+          echo "All done."
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: D:/a/spice/spice/llvm
+          key: llvm-21.1.0-rc2-win-x64
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch llvmorg-21.1.0-rc2  https://github.com/llvm/llvm-project.git llvm
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake --build .
+      - name: Download Libs
+        run: .\setup-libs.bat
+
+      - name: Build test target
+        env:
+          LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
+        run: |
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
+          mkdir ./bin
+          cd ./bin
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
+          cmake --build . --target spicetest
+      - name: Run Test target
+        env:
+          LLVM_LIB_DIR: C:\actions-runner\_work\spice\llvm\build\lib
+          LLVM_INCLUDE_DIR: C:\actions-runner\_work\spice\llvm\llvm\include
+          LLVM_BUILD_INCLUDE_DIR: C:\actions-runner\_work\spice\llvm\build\include
+          SPICE_STD_DIR: C:\actions-runner\_work\spice\spice\std
+          SPICE_BOOTSTRAP_DIR: C:\actions-runner\_work\spice\spice\src-bootstrap
+        run: |
+          cd ./bin/test
+          ./spicetest --skip-github-tests
