@@ -1,8 +1,10 @@
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
+import "std/io/filepath";
 
 // Generic types
-type T bool|string|int;
+type T bool|string|String|int|FilePath;
+type StrOrConstStrObjRef string|const String&;
 
 public type CliParser struct {
     CliSubcommand rootSubcommand
@@ -40,51 +42,27 @@ public p CliParser.allowUnknownOptions() {
     this.rootSubcommand.allowUnknownOptions();
 }
 
-public f<CliSubcommand&> CliParser.addSubcommand(string name, string description) {
-    return this.rootSubcommand.addSubcommand(String(name), String(description));
-}
-
-public f<CliSubcommand&> CliParser.addSubcommand(const String& name, const String& description) {
+public f<CliSubcommand&> CliParser.addSubcommand<StrOrConstStrObjRef>(StrOrConstStrObjRef name, StrOrConstStrObjRef description) {
     return this.rootSubcommand.addSubcommand(name, description);
 }
 
 #[ignoreUnusedReturnValue]
-public f<CliOption<T>&> CliParser.addOption<T>(string name, T& targetVariable, string description) {
-    return this.rootSubcommand.addOption(targetVariable, String(description));
+public f<CliOption<T>&> CliParser.addOption<T, StrOrConstStrObjRef>(StrOrConstStrObjRef name, T& targetVariable, StrOrConstStrObjRef description) {
+    return this.rootSubcommand.addOption(name, targetVariable, description);
 }
 
 #[ignoreUnusedReturnValue]
-public f<CliOption<T>&> CliParser.addOption<T>(const String& name, T& targetVariable, const String& description) {
-    return this.rootSubcommand.addOption(targetVariable, description);
+public f<CliOption<T>&> CliParser.addOption<T, StrOrConstStrObjRef>(StrOrConstStrObjRef name, p(const T&) callback, StrOrConstStrObjRef description) {
+    return this.rootSubcommand.addOption(name, callback, description);
 }
 
 #[ignoreUnusedReturnValue]
-public f<CliOption<T>&> CliParser.addOption<T>(string name, p(T&) callback, string description) {
-    return this.rootSubcommand.addOption(callback, String(description));
-}
-
-#[ignoreUnusedReturnValue]
-public f<CliOption<T>&> CliParser.addOption<T>(const String& name, p(T&) callback, const String& description) {
-    return this.rootSubcommand.addOption(callback, description);
-}
-
-#[ignoreUnusedReturnValue]
-public f<CliOption<bool>&> CliParser.addFlag(string name, bool& targetVariable, string description) {
-   return  this.rootSubcommand.addFlag(String(name), targetVariable, String(description));
-}
-
-#[ignoreUnusedReturnValue]
-public f<CliOption<bool>&> CliParser.addFlag(const String& name, bool& targetVariable, const String& description) {
+public f<CliOption<bool>&> CliParser.addFlag<StrOrConstStrObjRef>(StrOrConstStrObjRef name, bool& targetVariable, StrOrConstStrObjRef description) {
    return  this.rootSubcommand.addFlag(name, targetVariable, description);
 }
 
 #[ignoreUnusedReturnValue]
-public f<CliOption<bool>&> CliParser.addFlag(string name, p(bool&) callback, string description) {
-    return this.rootSubcommand.addFlag(String(name), callback, String(description));
-}
-
-#[ignoreUnusedReturnValue]
-public f<CliOption<bool>&> CliParser.addFlag(const String& name, p(bool&) callback, const String& description) {
+public f<CliOption<bool>&> CliParser.addFlag<StrOrConstStrObjRef>(StrOrConstStrObjRef name, p(const bool&) callback, StrOrConstStrObjRef description) {
     return this.rootSubcommand.addFlag(name, callback, description);
 }
 

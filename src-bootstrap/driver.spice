@@ -315,7 +315,7 @@ p Driver.addUninstallSubcommand() {
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
-    const p(string&) buildModeCallback = p(string& buildMode) {
+    const p(const string&) buildModeCallback = p(const string& buildMode) {
         if buildMode == BUILD_MODE_DEBUG {
             this.cliOptions.buildMode = BuildMode::DEBUG;
         } else if buildMode == BUILD_MODE_RELEASE {
@@ -342,12 +342,12 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
 
     // Opt levels
-    subCmd.addFlag("-O0", p(bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-    subCmd.addFlag("-O1", p(bool& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is applied.");
-    subCmd.addFlag("-O2", p(bool& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
-    subCmd.addFlag("-O3", p(bool& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    subCmd.addFlag("-Os", p(bool& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
-    subCmd.addFlag("-Oz", p(bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
+    subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
+    subCmd.addFlag("-O1", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is applied.");
+    subCmd.addFlag("-O2", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
+    subCmd.addFlag("-O3", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    subCmd.addFlag("-Os", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
+    subCmd.addFlag("-Oz", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
     subCmd.addFlag("-lto", this.cliOptions.useLTO, "Enable link time optimization (LTO)");
 
     // --debug-output
