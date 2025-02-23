@@ -64,7 +64,7 @@ public const f<const Vector<String>&> CliOption.getAliases() {
     return this.aliases;
 }
 
-public p CliOption.setTargetValue(T value) {
+public p CliOption.setTargetValue(T& value) {
     if this.mode == CliOptionMode::SET_VALUE {
         this.targetVariable = value;
     }
