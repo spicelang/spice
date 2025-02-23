@@ -21,7 +21,7 @@ TEST(DriverTest, TestBuildSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(O0, driver.cliOptions.optLevel);
   ASSERT_EQ(DEBUG, driver.cliOptions.buildMode);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
@@ -42,7 +42,7 @@ TEST(DriverTest, TestBuildSubcommandComplex) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(Os, driver.cliOptions.optLevel);        // -Os
   ASSERT_EQ(RELEASE, driver.cliOptions.buildMode); // -m release
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
@@ -67,7 +67,7 @@ TEST(DriverTest, TestRunSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(O0, driver.cliOptions.optLevel);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
@@ -87,7 +87,7 @@ TEST(DriverTest, TestRunSubcommandComplex) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(O2, driver.cliOptions.optLevel); // -O2
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
@@ -109,7 +109,7 @@ TEST(DriverTest, TestTestSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
   ASSERT_TRUE(driver.cliOptions.generateTestMain);
   ASSERT_TRUE(driver.cliOptions.testMode);
@@ -129,7 +129,7 @@ TEST(DriverTest, TestTestSubcommandComplex) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
   ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
   ASSERT_TRUE(driver.cliOptions.generateTestMain);
   ASSERT_TRUE(driver.cliOptions.testMode);
@@ -151,7 +151,7 @@ TEST(DriverTest, TestInstallSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
@@ -171,7 +171,7 @@ TEST(DriverTest, TestUninstallSubcommandMinimal) {
   ASSERT_TRUE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
   ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().string());
+  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(O0, driver.cliOptions.optLevel);
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);

@@ -1,11 +1,8 @@
-type T int|dyn|double;
-
-f<int> foo<T>(T t) {
-    return 1;
-}
+ext f<unsigned int> snprintf(string, unsigned long, string, ...);
 
 f<int> main() {
-    foo(1);
-    foo(1.0);
-    foo("test");
+    double input = 3.141590;
+    char[100] str;
+    snprintf(cast<string>(str), sizeof(str), "%f", input);
+    printf("%s", str);
 }
