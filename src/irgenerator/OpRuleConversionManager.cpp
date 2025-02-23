@@ -1608,6 +1608,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
 LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs,
                                                     QualType rhsSTy) const {
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
@@ -1661,6 +1662,18 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   case COMB(TY_STRING, TY_PTR): // fallthrough
   case COMB(TY_PTR, TY_STRING):
     return {.value = rhsV()};
+  case COMB(TY_ARRAY, TY_PTR): // fallthrough
+  case COMB(TY_ARRAY, TY_STRING):
+    assert(lhsSTy.isArrayOf(TY_CHAR));
+    assert(rhsSTy.isPtrTo(TY_CHAR) || rhsSTy.is(TY_STRING));
+    return {.value = builder.CreateBitCast(rhsV(), rhsSTy.toLLVMType(irGenerator->sourceFile))};
+  case COMB(TY_PTR, TY_ARRAY): // fallthrough
+  case COMB(TY_STRING, TY_ARRAY): {
+    assert(lhsSTy.isPtrTo(TY_CHAR) || lhsSTy.is(TY_STRING));
+    assert(rhsSTy.isArrayOf(TY_CHAR));
+    llvm::Value *indices[1] = {builder.getInt32(0)};
+    return {.value = builder.CreateInBoundsGEP(builder.getInt8Ty(), rhsP(), indices)};
+  }
   default:                                                                 // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
   }

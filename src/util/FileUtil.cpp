@@ -155,7 +155,7 @@ ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
  *
  * @return Name of path to the linker executable
  */
-ExternalBinaryFinderResult FileUtil::findLinker(const CliOptions &cliOptions) {
+ExternalBinaryFinderResult FileUtil::findLinker([[maybe_unused]] const CliOptions &cliOptions) {
 #if OS_UNIX
   std::vector<const char *> linkerList;
   linkerList.reserve(5);

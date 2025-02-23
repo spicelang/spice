@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <global/GlobalResourceManager.h>
 #include <llvm/IR/InlineAsm.h>
 
 #include <llvm/IR/Module.h>
@@ -120,15 +121,22 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
 }
 
 std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
-  // Get value for stderr
   llvm::PointerType *ptrTy = builder.getPtrTy();
-  constexpr auto globalName = "stderr";
-  module->getOrInsertGlobal(globalName, ptrTy);
-  llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
-  stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
-  stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
-  stdErrPtr->setAlignment(llvm::MaybeAlign(8));
-  llvm::Value *stdErr = insertLoad(ptrTy, stdErrPtr);
+
+  // Get value for stderr
+  llvm::Value *stdErr;
+  if (cliOptions.targetOs == "windows") {
+    llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
+    stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
+  } else {
+    constexpr auto globalName = "stderr";
+    module->getOrInsertGlobal(globalName, ptrTy);
+    llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
+    stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
+    stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
+    stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+    stdErr = insertLoad(ptrTy, stdErrPtr);
+  }
 
   // Create constant for error message
   const std::string codeLoc = node->codeLoc.toPrettyString();

@@ -141,6 +141,12 @@ llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc
   return getProcedure(functionName.c_str(), builder.getPtrTy());
 }
 
+llvm::Function *StdFunctionManager::getAcrtIOFuncFct() const {
+  llvm::Function *stdErrPFct = getFunction("__acrt_iob_func", builder.getPtrTy(), builder.getInt32Ty());
+  stdErrPFct->setDSOLocal(true);
+  return stdErrPFct;
+}
+
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                                                 bool varArg /*=false*/) const {
   // Check if function already exists in the current module
