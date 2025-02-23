@@ -2,7 +2,6 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'src/**/*'
-          - 'test/**/*'
           - 'CMakeLists.txt'
           - 'Options.cmake'
 
@@ -15,6 +14,11 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'std/**/*'
+
+'tests':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'test/**/*'
 
 'documentation':
   - changed-files:
