@@ -17,6 +17,7 @@ const char *IRGenerator::getSysCallAsmString() const {
            "movq $6, %r9\n"
            "syscall\n";
 
+  // LCOV_EXCL_START - We only run coverage on Linux/x86_64
   if (cliOptions.targetArch == "x86" || cliOptions.targetArch == "i386") // ToDo: Test this on an actual 32 bit x86 CPU
     return "movq $0, %eax\n"
            "movq $1, %ebx\n"
@@ -27,15 +28,16 @@ const char *IRGenerator::getSysCallAsmString() const {
            "movq $6, %ebp\n"
            "syscall\n";
 
-  if (cliOptions.targetArch == "aarch64" || cliOptions.targetArch == "arm64") // ToDo: Test this on an actual AArch64 CPU
-    return "movq $0, %rax\n"
-           "movq $1, %rdi\n"
-           "movq $2, %rsi\n"
-           "movq $3, %rdx\n"
-           "movq $4, %r10\n"
-           "movq $5, %r8\n"
-           "movq $6, %r9\n"
+  if (cliOptions.targetArch == "aarch64" || cliOptions.targetArch == "arm64")
+    return "mov x8, $0\n"
+           "mov x0, $1\n"
+           "mov x1, $2\n"
+           "mov x2, $3\n"
+           "mov x3, $4\n"
+           "mov x4, $5\n"
+           "mov x5, $6\n"
            "syscall\n";
+  // LCOV_EXCL_END
 
   assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
   return nullptr;                                        // LCOV_EXCL_LINE

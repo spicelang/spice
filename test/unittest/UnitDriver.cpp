@@ -111,8 +111,9 @@ TEST(DriverTest, TestTestSubcommandMinimal) {
   ASSERT_TRUE(driver.cliOptions.execute);
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
+  ASSERT_EQ(TEST, driver.cliOptions.buildMode); // -m test
   ASSERT_TRUE(driver.cliOptions.generateTestMain);
-  ASSERT_TRUE(driver.cliOptions.testMode);
+  ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_TRUE(driver.cliOptions.noEntryFct);
 }
 
@@ -132,7 +133,6 @@ TEST(DriverTest, TestTestSubcommandComplex) {
   ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
   ASSERT_TRUE(driver.cliOptions.generateTestMain);
-  ASSERT_TRUE(driver.cliOptions.testMode);
   ASSERT_TRUE(driver.cliOptions.noEntryFct);
   ASSERT_TRUE(driver.cliOptions.dumpSettings.dumpCST);      // -cst
   ASSERT_TRUE(driver.cliOptions.dumpSettings.dumpAssembly); // -s

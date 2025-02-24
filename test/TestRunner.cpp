@@ -9,7 +9,6 @@
 
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
-
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
@@ -22,6 +21,7 @@
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
+#include "driver/Driver.h"
 #include "util/TestUtil.h"
 
 using namespace spice::compiler;
@@ -30,7 +30,7 @@ namespace spice::testing {
 
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
-  if (TestUtil::isDisabled(testCase, isGitHubActions))
+  if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
 
   // Create fake cli options
@@ -76,6 +76,7 @@ void execTestCase(const TestCase &testCase) {
       /* debugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
       /* disableVerifier= */ false,
       /* testMode= */ true,
+      /* comparableOutput= */ true,
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
@@ -166,7 +167,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check assembly code (only when not running test on GitHub Actions)
     bool objectFilesEmitted = false;
-    if (!isGitHubActions) {
+    if (!testDriverCliOptions.isGitHubActions) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] {
         mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
@@ -226,7 +227,7 @@ void execTestCase(const TestCase &testCase) {
       const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
       // Execute binary
       std::stringstream cmd;
-      if (enableLeakDetection)
+      if (testDriverCliOptions.enableLeakDetection)
         cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
       cmd << TestUtil::getDefaultExecutableName();
       if (exists(cliFlagsFile))
@@ -247,7 +248,7 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the debugger output matches the expected output
-    if (!isGitHubActions) { // GDB tests are currently not support on GH actions
+    if (!testDriverCliOptions.isGitHubActions) { // GDB tests are currently not support on GH actions
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_GDB_OUTPUT,
           [&] {

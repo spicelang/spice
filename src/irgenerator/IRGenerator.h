@@ -130,7 +130,7 @@ public:
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
-  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, bool withoutTargetInfo);
+  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, bool comparableOutput);
 
 private:
   // Private methods
@@ -202,7 +202,7 @@ private:
   std::vector<llvm::BasicBlock *> continueBlocks;
   std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
-  llvm::Instruction *allocaInsertInst = nullptr;
+  llvm::AllocaInst *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
   bool isInCtorBody = false;
   std::vector<DeferredLogic> deferredVTableInitializations;

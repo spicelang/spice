@@ -500,7 +500,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Save alloca insert markers
   llvm::BasicBlock *allocaInsertBlockOrig = allocaInsertBlock;
-  llvm::Instruction *allocaInsertInstOrig = allocaInsertInst;
+  llvm::AllocaInst *allocaInsertInstOrig = allocaInsertInst;
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();
 
   // Create entry block
@@ -653,7 +653,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Save alloca insert markers
   llvm::BasicBlock *allocaInsertBlockOrig = allocaInsertBlock;
-  llvm::Instruction *allocaInsertInstOrig = allocaInsertInst;
+  llvm::AllocaInst *allocaInsertInstOrig = allocaInsertInst;
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();
 
   // Create entry block
@@ -800,7 +800,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Save alloca insert markers
   llvm::BasicBlock *allocaInsertBlockOrig = allocaInsertBlock;
-  llvm::Instruction *allocaInsertInstOrig = allocaInsertInst;
+  llvm::AllocaInst *allocaInsertInstOrig = allocaInsertInst;
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();
 
   // Create entry block

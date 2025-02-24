@@ -11,8 +11,10 @@
 
 #include <gtest/gtest.h>
 
-#include "util/CommonUtil.h"
-#include "util/FileUtil.h"
+#include <util/CommonUtil.h>
+#include <util/FileUtil.h>
+
+#include "../driver/Driver.h"
 
 namespace spice::testing {
 
@@ -59,33 +61,34 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 /**
  * Check if the expected output matches the actual output
  *
- * @param refPath Path to the reference file
+ * @param originalRefPath Path to the reference file
  * @param getActualOutput Callback to execute the required steps to get the actual test output
  * @param modifyOutputFct Callback to modify the output before comparing it with the reference
  *
  * @return True, if the ref file was found
  */
-bool TestUtil::checkRefMatch(const std::filesystem::path &refPath, GetOutputFct getActualOutput,
+bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
                              ModifyOutputFct modifyOutputFct) {
-  // Cancel if the ref file does not exist
-  if (!std::filesystem::exists(refPath))
-    return false;
+  for (const std::filesystem::path &refPath : expandRefPaths(originalRefPath)) {
+    if (!exists(refPath))
+      continue;
 
-  // Get actual output
-  std::string actualOutput = getActualOutput();
-  if (updateRefs) { // Update refs
-    FileUtil::writeToFile(refPath, actualOutput);
-  } else { // Check refs
-    std::string expectedOutput = FileUtil::getFileContent(refPath);
-    modifyOutputFct(expectedOutput, actualOutput);
-    EXPECT_EQ(expectedOutput, actualOutput) << "Output does not match the reference file: " << refPath;
+    // Get actual output
+    std::string actualOutput = getActualOutput();
+    if (testDriverCliOptions.updateRefs) { // Update refs
+      FileUtil::writeToFile(refPath, actualOutput);
+    } else { // Check refs
+      std::string expectedOutput = FileUtil::getFileContent(refPath);
+      modifyOutputFct(expectedOutput, actualOutput);
+      EXPECT_EQ(expectedOutput, actualOutput) << "Output does not match the reference file: " << refPath;
+    }
+    return true;
   }
-
-  return true;
+  return false;
 }
 
 /**
- * Handle an test error
+ * Handle a test error
  *
  * @param testCase Testcase which has produced the error
  * @param error Exception with error message
@@ -159,13 +162,12 @@ std::string TestUtil::toCamelCase(std::string input) {
  * Check if the provided test case is disabled
  *
  * @param testCase Test case to check
- * @param isGHActions Running tests with GitHub Actions
  * @return Disabled or not
  */
-bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
+bool TestUtil::isDisabled(const TestCase &testCase) {
   if (exists(testCase.testPath / CTL_SKIP_DISABLED))
     return true;
-  if (isGHActions && exists(testCase.testPath / CTL_SKIP_GH))
+  if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
   return false;
 }
@@ -179,8 +181,7 @@ void TestUtil::eraseGDBHeader(std::string &gdbOutput) {
   // Remove header
   size_t pos = gdbOutput.find(GDB_READING_SYMBOLS_MESSAGE);
   if (pos != std::string::npos) {
-    const size_t lineStart = gdbOutput.rfind('\n', pos);
-    if (lineStart != std::string::npos)
+    if (const size_t lineStart = gdbOutput.rfind('\n', pos); lineStart != std::string::npos)
       gdbOutput.erase(0, lineStart + 1);
   }
 
@@ -214,6 +215,16 @@ void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const need
     // Erase the line
     irCode.erase(lineStart, lineEnd - lineStart);
   }
+}
+
+std::array<std::filesystem::path, 3> TestUtil::expandRefPaths(const std::filesystem::path &refPath) {
+  const std::filesystem::path parent = refPath.parent_path();
+  const std::string stem = refPath.stem().string();
+  const std::string ext = refPath.extension().string();
+  // Construct array of files to search for
+  const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
+  const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
+  return {parent / osArchFileName, parent / osFileName, refPath};
 }
 
 } // namespace spice::testing

@@ -164,10 +164,8 @@ void Driver::enrich() {
 
   // Enable test mode when test mode was selected
   if (cliOptions.buildMode == TEST) {
-    cliOptions.testMode = true;
     cliOptions.noEntryFct = true;
     cliOptions.generateTestMain = true;
-    cliOptions.buildMode = DEBUG;
   }
 }
 
@@ -261,7 +259,7 @@ void Driver::addTestSubcommand() {
   subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
-    cliOptions.testMode = true;           // Always enable assertions for tests, also in higher opt levels
+    cliOptions.buildMode = TEST;          // Set build mode to test
     cliOptions.generateTestMain = true;   // An alternative entry function is generated
     cliOptions.noEntryFct = true;         // To not have two main functions, disable normal main
   });

@@ -5,6 +5,7 @@
 #include "util/CommonUtil.h"
 
 // GCOV_EXCL_START
+namespace spice::testing {
 
 void Driver::createInterface() {
   // Allow positional args
@@ -20,15 +21,15 @@ void Driver::createInterface() {
   app.set_version_flag("--version,-v", spice::compiler::CommonUtil::buildVersionInfo());
 }
 
-void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &isGitHubActions) {
+void Driver::addOptions() {
   // --update-refs
-  app.add_flag<bool>("--update-refs,-u", updateRefs, "Update test reference files");
+  app.add_flag<bool>("--update-refs,-u", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
-  app.add_flag<bool>("--run-benchmarks,-b", runBenchmarks, "Also run benchmarks and check baseline values");
+  app.add_flag<bool>("--run-benchmarks,-b", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
   // --leak-detection
-  app.add_flag<bool>("--leak-detection,-l", enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
+  app.add_flag<bool>("--leak-detection,-l", testDriverCliOptions.enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
   // --is-github-actions
-  app.add_flag<bool>("--is-github-actions,-gh", isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
+  app.add_flag<bool>("--is-github-actions,-gh", testDriverCliOptions.isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
 }
 
 /**
@@ -46,5 +47,7 @@ int Driver::parse(int argc, char **argv) {
   }
   return 0;
 }
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP
