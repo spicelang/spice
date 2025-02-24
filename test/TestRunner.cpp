@@ -30,7 +30,7 @@ namespace spice::testing {
 
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
-  if (TestUtil::isDisabled(testCase, skipNonGitHubTests))
+  if (TestUtil::isDisabled(testCase, isGitHubActions))
     GTEST_SKIP();
 
   // Create fake cli options
@@ -164,9 +164,9 @@ void execTestCase(const TestCase &testCase) {
     if (cliOptions.useLTO && cliOptions.optLevel == O0)
       mainSourceFile->runBitcodeLinker();
 
-    // Check assembly code
+    // Check assembly code (only when not running test on GitHub Actions)
     bool objectFilesEmitted = false;
-    if (!skipNonGitHubTests) {
+    if (!isGitHubActions) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] {
         mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
@@ -247,7 +247,7 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the debugger output matches the expected output
-    if (!skipNonGitHubTests) { // GDB tests are currently not support on GH actions
+    if (!isGitHubActions) { // GDB tests are currently not support on GH actions
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_GDB_OUTPUT,
           [&] {

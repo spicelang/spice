@@ -20,15 +20,15 @@ void Driver::createInterface() {
   app.set_version_flag("--version,-v", spice::compiler::CommonUtil::buildVersionInfo());
 }
 
-void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {
+void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &isGitHubActions) {
   // --update-refs
   app.add_flag<bool>("--update-refs,-u", updateRefs, "Update test reference files");
   // --run-benchmarks
   app.add_flag<bool>("--run-benchmarks,-b", runBenchmarks, "Also run benchmarks and check baseline values");
   // --leak-detection
   app.add_flag<bool>("--leak-detection,-l", enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
-  // --skip-github-tests
-  app.add_flag<bool>("--skip-github-tests,-gh", skipNonGitHubTests, "Skip non-working tests on GitHub Actions");
+  // --is-github-actions
+  app.add_flag<bool>("--is-github-actions,-gh", isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
 }
 
 /**
