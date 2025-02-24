@@ -11,7 +11,7 @@ namespace spice::testing {
 bool updateRefs = false;
 bool runBenchmarks = false;
 bool enableLeakDetection = false;
-bool skipNonGitHubTests = false;
+bool isGitHubActions = false;
 
 } // namespace spice::testing
 
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   // Initialize command line parser
   Driver driver;
   driver.createInterface();
-  driver.addOptions(updateRefs, runBenchmarks, enableLeakDetection, skipNonGitHubTests);
+  driver.addOptions(updateRefs, runBenchmarks, enableLeakDetection, isGitHubActions);
   // Parse command line args
   driver.parse(argc, argv);
   // Run tests

@@ -20,7 +20,7 @@ const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 extern bool updateRefs;
 extern bool runBenchmarks;
 extern bool enableLeakDetection;
-extern bool skipNonGitHubTests;
+extern bool isGitHubActions;
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
