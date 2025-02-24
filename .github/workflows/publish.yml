@@ -166,7 +166,7 @@ jobs:
           path: ./bin/spice**
 
   build-compiler-windows-x86:
-    name: Build compiler binaries - Windows/x86_64
+    name: Build compiler - Windows/x86_64
     runs-on: windows-2025
     steps:
       - name: Checkout

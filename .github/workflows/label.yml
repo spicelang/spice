@@ -5,10 +5,16 @@ on:
   pull_request:
     branches:
       - main
+  pull_request_target:
+    branches:
+      - main
 
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/labeler@v5
         with:
