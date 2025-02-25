@@ -36,7 +36,7 @@ const char *IRGenerator::getSysCallAsmString() const {
            "mov x3, $4\n"
            "mov x4, $5\n"
            "mov x5, $6\n"
-           "syscall\n";
+           "svc #0\n";
   // LCOV_EXCL_END
 
   assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
