@@ -20,6 +20,8 @@ namespace spice::testing {
 
 using namespace spice::compiler;
 
+extern TestDriverCliOptions testDriverCliOptions;
+
 /**
  * Collect the test cases in a particular test suite
  *

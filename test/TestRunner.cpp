@@ -28,6 +28,8 @@ using namespace spice::compiler;
 
 namespace spice::testing {
 
+extern TestDriverCliOptions testDriverCliOptions;
+
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
   if (TestUtil::isDisabled(testCase))

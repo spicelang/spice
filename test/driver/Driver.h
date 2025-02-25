@@ -14,8 +14,6 @@ struct TestDriverCliOptions {
   bool isGitHubActions = false;
 };
 
-static TestDriverCliOptions testDriverCliOptions;
-
 /**
  * Helper class to set up the cli interface and command line parser
  */

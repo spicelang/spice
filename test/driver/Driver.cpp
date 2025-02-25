@@ -7,6 +7,8 @@
 // GCOV_EXCL_START
 namespace spice::testing {
 
+TestDriverCliOptions testDriverCliOptions;
+
 void Driver::createInterface() {
   // Allow positional args
   app.allow_non_standard_option_names();
@@ -16,9 +18,7 @@ void Driver::createInterface() {
   app.footer("(c) Marc Auberer 2021-2025");
 
   // Add version flag
-  const std::string versionName(SPICE_VERSION);
-  const std::string builtBy(SPICE_BUILT_BY);
-  app.set_version_flag("--version,-v", spice::compiler::CommonUtil::buildVersionInfo());
+  app.set_version_flag("--version,-v", compiler::CommonUtil::buildVersionInfo());
 }
 
 void Driver::addOptions() {
