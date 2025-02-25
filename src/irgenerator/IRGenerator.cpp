@@ -76,9 +76,6 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
     builder.SetInsertPoint(currentBlock);
   }
 
-  if (cliOptions.comparableOutput && llvmType->isIntegerTy(16))
-    allocaInsertInst->setAlignment(llvm::Align(2));
-
   // Insert lifetime start marker
   if (cliOptions.useLifetimeMarkers) {
     const uint64_t sizeInBytes = module->getDataLayout().getTypeAllocSize(llvmType);
