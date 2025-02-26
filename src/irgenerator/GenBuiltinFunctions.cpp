@@ -165,34 +165,35 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
 }
 
 std::any IRGenerator::visitSysCall(const SysCallNode *node) {
-  // Create assembly string
-  static constexpr uint8_t NUM_REGS = 7;
-  const char *asmString = getSysCallAsmString();
-  const char *constraints = getSysCallConstraintString();
+  // Determine the required number of operands.
+  // (We assume at least one argument is provided: the syscall number.)
+  const auto requiredRegs = static_cast<uint8_t>(node->args.size());
+  assert(requiredRegs >= 1 && requiredRegs <= 6);
 
-  // Create inline assembly
+  // Create the asm and constraint strings based on the required number of registers.
+  const std::string asmString = getSysCallAsmString(requiredRegs);
+  const std::string constraints = getSysCallConstraintString(requiredRegs);
+
+  // Create the LLVM function type for the inline asm with only the needed operands.
   llvm::Type *int64Ty = builder.getInt64Ty();
-  llvm::Type *argTypes[NUM_REGS] = {int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty, int64Ty};
+  const std::vector argTypes(requiredRegs, int64Ty);
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
   llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
 
-  // Fill arguments array (first argument is syscall number)
-  llvm::Value *argValues[NUM_REGS];
-  for (unsigned short i = 0; i < NUM_REGS; i++) {
-    if (i < node->args.size()) {
-      const AssignExprNode *argNode = node->args.at(i);
-      const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
-      assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
-      if (argType.isOneOf({TY_PTR, TY_STRING}))
-        argValues[i] = builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty());
-      else
-        argValues[i] = builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty());
-    } else {
-      argValues[i] = builder.getInt64(0);
-    }
+  // Build the argument list (each provided argument is converted to i64).
+  std::vector<llvm::Value *> argValues;
+  argValues.reserve(requiredRegs);
+  for (uint8_t i = 0; i < requiredRegs; i++) {
+    const AssignExprNode *argNode = node->args.at(i);
+    const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
+    assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
+    if (argType.isOneOf({TY_PTR, TY_STRING}))
+      argValues.push_back(builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty()));
+    else
+      argValues.push_back(builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty()));
   }
 
-  // Generate call
+  // Generate the call using only the required number of arguments.
   llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
 
   return LLVMExprResult{.value = result};

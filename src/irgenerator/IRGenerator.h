@@ -179,8 +179,8 @@ private:
   void generateTestMain();
 
   // Generate target dependent
-  const char *getSysCallAsmString() const;
-  const char *getSysCallConstraintString() const;
+  std::string getSysCallAsmString(uint8_t numRegs) const;
+  std::string getSysCallConstraintString(uint8_t numRegs) const;
 
   // Generate VTable
   llvm::Constant *generateTypeInfoName(StructBase *spiceStruct) const;
