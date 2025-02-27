@@ -36,7 +36,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
-    #dbg_declare(ptr %result, !22, !DIExpression(), !23)
   %result = alloca i32, align 4
   %_argc = alloca i32, align 4
   %_argv = alloca ptr, align 8
@@ -58,13 +57,14 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   %item2 = alloca ptr, align 8
   %pair.addr = alloca %struct.Pair, align 8
   %12 = alloca ptr, align 8
+    #dbg_declare(ptr %result, !22, !DIExpression(), !23)
   store i32 0, ptr %result, align 4, !dbg !23
-    #dbg_declare(ptr %_argc, !24, !DIExpression(), !23)
   store i32 %0, ptr %_argc, align 4, !dbg !23
-    #dbg_declare(ptr %_argv, !25, !DIExpression(), !23)
+    #dbg_declare(ptr %_argc, !24, !DIExpression(), !23)
   store ptr %1, ptr %_argv, align 8, !dbg !23
-    #dbg_declare(ptr %vi, !26, !DIExpression(), !34)
-  call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !35
+    #dbg_declare(ptr %_argv, !25, !DIExpression(), !23)
+  call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !26
+    #dbg_declare(ptr %vi, !27, !DIExpression(), !35)
   store i32 123, ptr %3, align 4, !dbg !36
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %3), !dbg !36
   store i32 4321, ptr %4, align 4, !dbg !37
@@ -82,8 +82,8 @@ assert.then.L10:                                  ; preds = %2
 
 assert.exit.L10:                                  ; preds = %2
   %16 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !42
-    #dbg_declare(ptr %it, !43, !DIExpression(), !49)
   store %struct.VectorIterator %16, ptr %it, align 8, !dbg !42
+    #dbg_declare(ptr %it, !43, !DIExpression(), !49)
   %17 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !50
   br i1 %17, label %assert.exit.L14, label %assert.then.L14, !dbg !50, !prof !41
 
@@ -138,8 +138,8 @@ assert.then.L19:                                  ; preds = %assert.exit.L18
 assert.exit.L19:                                  ; preds = %assert.exit.L18
   call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !59
   %33 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !60
-    #dbg_declare(ptr %pair, !61, !DIExpression(), !67)
   store %struct.Pair %33, ptr %pair, align 8, !dbg !60
+    #dbg_declare(ptr %pair, !61, !DIExpression(), !67)
   %34 = call ptr @_ZN4PairImRiE8getFirstEv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !68
   %35 = load i64, ptr %34, align 8, !dbg !69
   %36 = icmp eq i64 %35, 2, !dbg !69
@@ -257,8 +257,8 @@ assert.then.L43:                                  ; preds = %assert.exit.L41
 
 assert.exit.L43:                                  ; preds = %assert.exit.L41
   %70 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !92
-    #dbg_declare(ptr %item, !94, !DIExpression(), !95)
   store %struct.VectorIterator %70, ptr %8, align 8, !dbg !92
+    #dbg_declare(ptr %item, !94, !DIExpression(), !95)
   br label %foreach.head.L46, !dbg !95
 
 foreach.head.L46:                                 ; preds = %foreach.tail.L46, %assert.exit.L43
@@ -313,8 +313,8 @@ assert.then.L51:                                  ; preds = %assert.exit.L50
 
 assert.exit.L51:                                  ; preds = %assert.exit.L50
   %88 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !104
-    #dbg_declare(ptr %item1, !106, !DIExpression(), !107)
   store %struct.VectorIterator %88, ptr %9, align 8, !dbg !104
+    #dbg_declare(ptr %item1, !106, !DIExpression(), !107)
   br label %foreach.head.L54, !dbg !107
 
 foreach.head.L54:                                 ; preds = %foreach.tail.L54, %assert.exit.L51
@@ -370,9 +370,9 @@ assert.then.L59:                                  ; preds = %assert.exit.L58
 assert.exit.L59:                                  ; preds = %assert.exit.L58
   %106 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !116
   store %struct.VectorIterator %106, ptr %11, align 8, !dbg !116
-    #dbg_declare(ptr %idx, !118, !DIExpression(), !120)
+  store i64 0, ptr %idx, align 8, !dbg !118
+    #dbg_declare(ptr %idx, !119, !DIExpression(), !118)
     #dbg_declare(ptr %item2, !121, !DIExpression(), !122)
-  store i64 0, ptr %idx, align 8, !dbg !120
   br label %foreach.head.L61, !dbg !122
 
 foreach.head.L61:                                 ; preds = %foreach.tail.L61, %assert.exit.L59
@@ -511,16 +511,16 @@ attributes #2 = { cold noreturn nounwind }
 !23 = !DILocation(line: 4, column: 1, scope: !14)
 !24 = !DILocalVariable(name: "_argc", arg: 1, scope: !14, file: !5, line: 4, type: !17)
 !25 = !DILocalVariable(name: "_argv", arg: 2, scope: !14, file: !5, line: 4, type: !18)
-!26 = !DILocalVariable(name: "vi", scope: !14, file: !5, line: 6, type: !27)
-!27 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !5, file: !5, line: 25, size: 256, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !28, identifier: "struct.Vector")
-!28 = !{!29, !31, !33}
-!29 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !27, file: !5, line: 26, baseType: !30, size: 64, offset: 64)
-!30 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !17, size: 64)
-!31 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !27, file: !5, line: 27, baseType: !32, size: 64, offset: 128)
-!32 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
-!33 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !27, file: !5, line: 28, baseType: !32, size: 64, offset: 192)
-!34 = !DILocation(line: 6, column: 5, scope: !14)
-!35 = !DILocation(line: 6, column: 22, scope: !14)
+!26 = !DILocation(line: 6, column: 22, scope: !14)
+!27 = !DILocalVariable(name: "vi", scope: !14, file: !5, line: 6, type: !28)
+!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !5, file: !5, line: 25, size: 256, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !29, identifier: "struct.Vector")
+!29 = !{!30, !32, !34}
+!30 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !5, line: 26, baseType: !31, size: 64, offset: 64)
+!31 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !17, size: 64)
+!32 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !28, file: !5, line: 27, baseType: !33, size: 64, offset: 128)
+!33 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
+!34 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !28, file: !5, line: 28, baseType: !33, size: 64, offset: 192)
+!35 = !DILocation(line: 6, column: 5, scope: !14)
 !36 = !DILocation(line: 7, column: 17, scope: !14)
 !37 = !DILocation(line: 8, column: 17, scope: !14)
 !38 = !DILocation(line: 9, column: 17, scope: !14)
@@ -532,8 +532,8 @@ attributes #2 = { cold noreturn nounwind }
 !44 = !DICompositeType(tag: DW_TAG_structure_type, name: "VectorIterator", scope: !5, file: !5, line: 280, size: 192, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !45, identifier: "struct.VectorIterator")
 !45 = !{!46, !48}
 !46 = !DIDerivedType(tag: DW_TAG_member, name: "vector", scope: !44, file: !5, line: 281, baseType: !47, size: 64, offset: 64)
-!47 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !27, size: 64)
-!48 = !DIDerivedType(tag: DW_TAG_member, name: "cursor", scope: !44, file: !5, line: 282, baseType: !32, size: 64, offset: 128)
+!47 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !28, size: 64)
+!48 = !DIDerivedType(tag: DW_TAG_member, name: "cursor", scope: !44, file: !5, line: 282, baseType: !33, size: 64, offset: 128)
 !49 = !DILocation(line: 13, column: 5, scope: !14)
 !50 = !DILocation(line: 14, column: 12, scope: !14)
 !51 = !DILocation(line: 15, column: 12, scope: !14)
@@ -549,7 +549,7 @@ attributes #2 = { cold noreturn nounwind }
 !61 = !DILocalVariable(name: "pair", scope: !14, file: !5, line: 21, type: !62)
 !62 = !DICompositeType(tag: DW_TAG_structure_type, name: "Pair", scope: !5, file: !5, line: 8, size: 128, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !63, identifier: "struct.Pair")
 !63 = !{!64, !65}
-!64 = !DIDerivedType(tag: DW_TAG_member, name: "first", scope: !62, file: !5, line: 9, baseType: !32, size: 64)
+!64 = !DIDerivedType(tag: DW_TAG_member, name: "first", scope: !62, file: !5, line: 9, baseType: !33, size: 64)
 !65 = !DIDerivedType(tag: DW_TAG_member, name: "second", scope: !62, file: !5, line: 10, baseType: !66, size: 64, offset: 64)
 !66 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !17, size: 64)
 !67 = !DILocation(line: 21, column: 5, scope: !14)
@@ -603,9 +603,9 @@ attributes #2 = { cold noreturn nounwind }
 !115 = !DILocation(line: 59, column: 25, scope: !14)
 !116 = !DILocation(line: 61, column: 35, scope: !117)
 !117 = distinct !DILexicalBlock(scope: !14, file: !5, line: 61, column: 5)
-!118 = !DILocalVariable(name: "idx", scope: !117, file: !5, line: 61, type: !119)
-!119 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!120 = !DILocation(line: 61, column: 13, scope: !117)
+!118 = !DILocation(line: 61, column: 13, scope: !117)
+!119 = !DILocalVariable(name: "idx", scope: !117, file: !5, line: 61, type: !120)
+!120 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
 !121 = !DILocalVariable(name: "item", scope: !117, file: !5, line: 61, type: !66)
 !122 = !DILocation(line: 61, column: 23, scope: !117)
 !123 = !DILocation(line: 62, column: 9, scope: !117)
