@@ -8,6 +8,7 @@
 
 void Driver::createInterface() {
   // Allow positional args
+  app.allow_non_standard_option_names();
   app.positionals_at_end();
   app.require_subcommand(0);
   app.allow_extras(false);

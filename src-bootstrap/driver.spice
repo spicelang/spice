@@ -361,10 +361,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
     CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
-    dumpSymtabFlag.addAlias("-symtab");
     // --dump-types
     CliOption<bool>& dumpTypesFlag = subCmd.addFlag("--dump-types", this.cliOptions.dumpSettings.dumpTypes, "Dump all used types");
-    dumpTypesFlag.addAlias("-types");
     // --dump-ir
     CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
@@ -374,10 +372,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     dumpAsmFlag.addAlias("-s");
     // --dump-object-file
     CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
-    dumpObjFlag.addAlias("-obj");
     // --dump-dependency-graph
     CliOption<bool>& dumpDepGraphFlag = subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dumpSettings.dumpDependencyGraph, "Dump compile unit dependency graph");
-    dumpObjFlag.addAlias("-dep");
 
     CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
     //fileOption.setRequired();
