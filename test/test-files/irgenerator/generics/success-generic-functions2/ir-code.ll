@@ -84,12 +84,12 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private void @_Z9printDataIPiEvlPi(i64 %0, [2 x i32] %1) {
+define private void @_Z9printDataIPiEvlPi(i64 %0, ptr %1) {
   %arrayLength = alloca i64, align 8
-  %list = alloca [2 x i32], align 4
+  %list = alloca ptr, align 8
   %i = alloca i64, align 8
   store i64 %0, ptr %arrayLength, align 8
-  store [2 x i32] %1, ptr %list, align 4
+  store ptr %1, ptr %list, align 8
   store i64 0, ptr %i, align 8
   br label %for.head.L12
 
@@ -101,15 +101,16 @@ for.head.L12:                                     ; preds = %for.tail.L12, %2
 
 for.body.L12:                                     ; preds = %for.head.L12
   %6 = load i64, ptr %i, align 8
-  %7 = getelementptr inbounds [2 x i32], ptr %list, i64 0, i64 %6
-  %8 = load i32, ptr %7, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
+  %7 = load ptr, ptr %list, align 8
+  %8 = getelementptr inbounds i32, ptr %7, i64 %6
+  %9 = load i32, ptr %8, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9)
   br label %for.tail.L12
 
 for.tail.L12:                                     ; preds = %for.body.L12
-  %10 = load i64, ptr %i, align 8
-  %11 = add nsw i64 %10, 1
-  store i64 %11, ptr %i, align 8
+  %11 = load i64, ptr %i, align 8
+  %12 = add nsw i64 %11, 1
+  store i64 %12, ptr %i, align 8
   br label %for.head.L12
 
 for.exit.L12:                                     ; preds = %for.head.L12
@@ -145,8 +146,8 @@ define dso_local i32 @main() #1 {
   store i32 %8, ptr %9, align 4
   %10 = load [2 x i32], ptr %1, align 4
   store [2 x i32] %10, ptr %resultList, align 4
-  %11 = load [2 x i32], ptr %resultList, align 4
-  call void @_Z9printDataIPiEvlPi(i64 2, [2 x i32] %11)
+  %11 = getelementptr inbounds [2 x i32], ptr %resultList, i64 0, i32 0
+  call void @_Z9printDataIPiEvlPi(i64 2, ptr %11)
   %12 = load i32, ptr %result1, align 4
   %13 = load i32, ptr %result2, align 4
   %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12, i32 %13)

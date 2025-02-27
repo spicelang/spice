@@ -1,8 +1,56 @@
-ext f<unsigned int> snprintf(string, unsigned long, string, ...);
+type T int|double|short|long;
+type U bool[]|int[];
+
+f<int> sumNumbers<T>(T[] numberArray, long arrayLength) {
+    result = 0;
+    for long i = 0l; i < arrayLength; i++ {
+        result += numberArray[i];
+    }
+}
+
+p printData<U>(long arrayLength, U list) {
+    for long i = 0l; i < arrayLength; i++ {
+        printf("Data: %d\n", list[i]);
+    }
+}
 
 f<int> main() {
-    double input = 3.141590;
-    char[100] str;
-    snprintf(cast<string>(str), sizeof(str), "%f", input);
-    printf("%s", str);
+    short[7] numberList1 = [ 1s, 2s, 3s, 4s, 5s, 6s, 7s ];
+    int result1 = sumNumbers(numberList1, len(numberList1));
+
+    long[4] numberList2 = [ 10l, 12l, 14l, 16l ];
+    int result2 = sumNumbers(numberList2, len(numberList2));
+
+    dyn resultList = [result1, result2];
+    printData(len(resultList), resultList);
+
+    printf("Results: %d, %d\n", result1, result2);
 }
+
+/*import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+
+type CliOptions struct {
+    string greetName = ""
+}
+
+p callback(const bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2025");
+
+    CliOptions options;
+    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
+    greet.addOption("--name", options.greetName, "Name of the person to greet");
+
+    parser.parse(argc, argv);
+
+    // Greet persion if requested
+    if options.greetName != "" {
+        printf("Hello %s!\n", options.greetName);
+    }
+}*/

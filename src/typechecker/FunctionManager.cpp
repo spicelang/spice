@@ -446,20 +446,20 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
-    QualType &candidateParamType = candidateParamList.at(i).qualType;
+    QualType &candidateType = candidateParamList.at(i).qualType;
     const auto &[requestedType, isArgTemporary] = reqArgs.at(i);
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedType, typeMapping, genericTypeResolver,
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver,
                                                     strictQualifierMatching))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateParamType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping, callNode);
+    if (candidateType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping, callNode);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
-    if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
+    if (!candidateType.canBind(requestedType, isArgTemporary)) {
       if (callNode)
         throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
       return false;
@@ -467,7 +467,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
     if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType = candidateParamType.getWithLambdaCaptures();
+      candidateType = candidateType.getWithLambdaCaptures();
       needsSubstantiation = true;
     }
   }
