@@ -248,8 +248,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   llvm::DIExpression *expr = diBuilder->createExpression();
   const llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
   assert(debugLocation != nullptr);
-  llvm::Instruction *prevInst = irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction();
-  diBuilder->insertDeclare(address, varInfo, expr, debugLocation, prevInst);
+  diBuilder->insertDeclare(address, varInfo, expr, debugLocation, irGenerator->builder.GetInsertPoint());
 }
 
 void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
