@@ -25,7 +25,7 @@ public:
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] bool checkConditionsOf(const QualType &qualType, bool ignoreArraySize = false,
+  [[nodiscard]] bool checkConditionsOf(const QualType &requestedType, QualType &substantiation, bool ignoreArraySize = false,
                                        bool ignoreQualifiers = false) const;
 
   // Public members
@@ -36,7 +36,8 @@ private:
   QualTypeList typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const QualType &requestedType, bool ignoreArraySize, bool ignoreQualifiers) const;
+  [[nodiscard]] bool checkTypeConditionOf(const QualType &requestedType, QualType &substantiation, bool ignoreArraySize,
+                                          bool ignoreQualifiers) const;
 };
 
 } // namespace spice::compiler

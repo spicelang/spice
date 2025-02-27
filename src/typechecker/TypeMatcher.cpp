@@ -63,7 +63,8 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictQualifierMatching))
+      QualType substantiation;
+      if (!genericCandidateType->checkConditionsOf(requestedType, substantiation, true, !strictQualifierMatching))
         return false;
 
       // Zero out all qualifiers in the requested type, that are present in the candidate type
@@ -71,7 +72,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       requestedType.getQualifiers().eraseWithMask(candidateType.getQualifiers());
 
       // Add to type mapping
-      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
+      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : substantiation;
       assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});

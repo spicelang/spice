@@ -1,0 +1,17 @@
+type T int&;
+
+p foo<T>(T t) {
+    t += 2;
+}
+p bar(int& t) {
+    t += 3;
+}
+
+f<int> main() {
+    int t = 1;
+    foo(t);
+    assert t == 3;
+    bar(t);
+    assert t == 6;
+    printf("All assertions passed!\n");
+}
