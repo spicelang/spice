@@ -17,6 +17,6 @@ curl -SsL "https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp" 
 
 # Download CLI11
 mkdir cli11
-curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.4.2-spice/CLI11.hpp" --output cli11/CLI11.hpp
+curl -SsL "https://github.com/CLIUtils/CLI11/releases/download/v2.5.0/CLI11.hpp" --output cli11/CLI11.hpp
 
 cd ..

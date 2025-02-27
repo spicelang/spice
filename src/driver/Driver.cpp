@@ -194,7 +194,7 @@ void Driver::addBuildSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("build", "Builds your Spice program and emits an executable");
   subCmd->alias("b");
-  subCmd->ignore_case();
+  subCmd->allow_non_standard_option_names();
   subCmd->configurable();
   subCmd->callback([&] {
     shouldCompile = true; // Requires the source file to be compiled
@@ -203,7 +203,7 @@ void Driver::addBuildSubcommand() {
   addCompileSubcommandOptions(subCmd);
 
   // --target-triple
-  subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
+  subCmd->add_option<std::string>("--target,--target-triple,-t", cliOptions.targetTriple,
                                   "Target triple for the emitted executable (for cross-compiling)");
   // --target-arch
   subCmd->add_option<std::string>("--target-arch", cliOptions.targetArch,
@@ -238,7 +238,7 @@ void Driver::addRunSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("run", "Builds your Spice program and runs it immediately");
   subCmd->alias("r");
-  subCmd->ignore_case();
+  subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
   });
@@ -258,7 +258,7 @@ void Driver::addTestSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("test", "Builds your Spice program and runs all enclosed tests");
   subCmd->alias("t");
-  subCmd->ignore_case();
+  subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
     cliOptions.testMode = true;           // Always enable assertions for tests, also in higher opt levels
@@ -281,7 +281,7 @@ void Driver::addInstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH");
   subCmd->alias("i");
-  subCmd->ignore_case();
+  subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
     shouldCompile = true;
     shouldInstall = true;
@@ -298,7 +298,7 @@ void Driver::addUninstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("uninstall", "Uninstalls a Spice program from the system");
   subCmd->alias("u");
-  subCmd->ignore_case();
+  subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
     shouldUninstall = true;
     ensureNotDockerized();
@@ -355,20 +355,20 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
+  subCmd->add_flag<bool>("--dump-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
   // --dump-types
-  subCmd->add_flag<bool>("--dump-types,-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
+  subCmd->add_flag<bool>("--dump-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
   // --dump-cache-stats
-  subCmd->add_flag<bool>("--dump-cache-stats,-cache-stats", cliOptions.dumpSettings.dumpCacheStats,
+  subCmd->add_flag<bool>("--dump-cache-stats", cliOptions.dumpSettings.dumpCacheStats,
                          "Dump stats for compiler-internal lookup caches");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
   // --dump-assembly
   subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
   // --dump-object-file
-  subCmd->add_flag<bool>("--dump-object-file,-obj", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+  subCmd->add_flag<bool>("--dump-object-file", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
   // --dump-dependency-graph
-  subCmd->add_flag<bool>("--dump-dependency-graph,-dep", cliOptions.dumpSettings.dumpDependencyGraph,
+  subCmd->add_flag<bool>("--dump-dependency-graph", cliOptions.dumpSettings.dumpDependencyGraph,
                          "Dump compile unit dependency graph");
 
   // Source file
