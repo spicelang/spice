@@ -40,11 +40,11 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
   store i32 %3, ptr %age, align 4
   %5 = load ptr, ptr %this, align 8
   store ptr getelementptr inbounds ({ [3 x ptr] }, ptr @_ZTV6Person, i64 0, i32 0, i32 2), ptr %5, align 8
-  %6 = getelementptr inbounds %struct.Person, ptr %5, i64 0, i32 1
+  %6 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 1
   store ptr @0, ptr %6, align 8
-  %7 = getelementptr inbounds %struct.Person, ptr %5, i64 0, i32 2
+  %7 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 2
   store ptr @1, ptr %7, align 8
-  %8 = getelementptr inbounds %struct.Person, ptr %5, i64 0, i32 3
+  %8 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 3
   store i32 0, ptr %8, align 4
   %9 = load ptr, ptr %this, align 8
   %firstName.addr = getelementptr inbounds %struct.Person, ptr %9, i64 0, i32 1

@@ -15,7 +15,7 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
   store ptr %0, ptr %this, align 8, !dbg !43
     #dbg_declare(ptr %this, !44, !DIExpression(), !43)
   %2 = load ptr, ptr %this, align 8, !dbg !43
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 1, !dbg !43
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !43
   call void @_ZN6String4dtorEv(ptr %3), !dbg !43
   ret void, !dbg !43
 }

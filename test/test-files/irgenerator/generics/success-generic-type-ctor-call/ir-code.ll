@@ -10,8 +10,7 @@ define private void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Nested, ptr %2, i64 0, i32 0
-  store i32 1, ptr %3, align 4
+  store i32 1, ptr %2, align 4
   ret void
 }
 

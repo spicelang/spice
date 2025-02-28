@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.Inner = type { ptr }
-%struct.Middle = type { %struct.Inner }
 %struct.Outer = type { %struct.Middle }
+%struct.Middle = type { %struct.Inner }
+%struct.Inner = type { ptr }
 
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
@@ -13,8 +13,7 @@ define void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 0
-  store ptr @anon.string.0, ptr %3, align 8
+  store ptr @anon.string.0, ptr %2, align 8
   ret void
 }
 
@@ -23,8 +22,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %2, i64 0, i32 0
-  call void @_ZN5Inner4ctorEv(ptr %3)
+  call void @_ZN5Inner4ctorEv(ptr %2)
   ret void
 }
 
@@ -33,8 +31,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Outer, ptr %2, i64 0, i32 0
-  call void @_ZN6Middle4ctorEv(ptr %3)
+  call void @_ZN6Middle4ctorEv(ptr %2)
   ret void
 }
 

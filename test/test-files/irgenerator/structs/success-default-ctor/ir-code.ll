@@ -14,14 +14,13 @@ define void @_ZN10TestStruct4ctorEv(ptr noundef nonnull align 8 dereferenceable(
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 0
-  store i32 123, ptr %3, align 4
-  %4 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 1
-  store ptr @anon.string.0, ptr %4, align 8
-  %5 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 2
-  store double 1.230000e+00, ptr %5, align 8
-  %6 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 3
-  store i1 true, ptr %6, align 1
+  store i32 123, ptr %2, align 4
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1
+  store ptr @anon.string.0, ptr %3, align 8
+  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 2
+  store double 1.230000e+00, ptr %4, align 8
+  %5 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 3
+  store i1 true, ptr %5, align 1
   ret void
 }
 
