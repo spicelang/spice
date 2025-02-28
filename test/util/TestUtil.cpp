@@ -224,8 +224,10 @@ std::array<std::filesystem::path, 3> TestUtil::expandRefPaths(const std::filesys
   const std::string stem = refPath.stem().string();
   const std::string ext = refPath.extension().string();
   // Construct array of files to search for
-  const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
-  const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
+  const std::string lowerTargetOs = CommonUtil::toLower(SPICE_TARGET_OS);
+  const std::string lowerTargetArch = CommonUtil::toLower(SPICE_TARGET_ARCH);
+  const std::string osFileName = stem + "-" + lowerTargetOs + ext;
+  const std::string osArchFileName = stem + "-" + lowerTargetOs + "-" + lowerTargetArch + ext;
   return {parent / osArchFileName, parent / osFileName, refPath};
 }
 

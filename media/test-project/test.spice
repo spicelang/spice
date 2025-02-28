@@ -16,7 +16,7 @@ f<int> main(int argc, string[] argv) {
 
     CliOptions options;
     CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
-    greet.addOption("--name", options.greetName, "Name of the person to greet");
+    CliOption<string>& option = greet.addOption("--name", options.greetName, "Name of the person to greet");
 
     parser.parse(argc, argv);
 
