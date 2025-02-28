@@ -61,7 +61,7 @@ define dso_local i32 @main() #1 !dbg !60 {
   %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !71
   %2 = load i64, ptr %lng.addr, align 8, !dbg !71
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !71
-  %4 = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 1, !dbg !72
+  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
   %5 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !72
   %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !73
