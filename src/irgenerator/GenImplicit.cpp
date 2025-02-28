@@ -133,8 +133,7 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
     llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
-    llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(entry->orderIndex)};
-    structAddr = insertInBoundsGEP(thisType, thisPtr, indices);
+    structAddr = insertStructGEP(thisType, thisPtr, entry->orderIndex);
   } else {
     structAddr = entry->getAddress();
     // For optional parameter initializers we need this exception
@@ -408,8 +407,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue != nullptr) {
@@ -458,8 +456,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       continue;
 
     // Retrieve the address of the original field (copy source)
-    llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-    llvm::Value *originalFieldAddress = insertInBoundsGEP(structType, originalThisPtr, indices);
+    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, i);
 
     const QualType &fieldType = fieldSymbol->getQualType();
 
@@ -477,7 +474,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     // Retrieve the address of the new field (copy dest)
     if (!thisPtr)
       thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-    llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
+    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
 
     // For owning heap fields, copy the underlying heap storage
     if (fieldType.isHeap()) {
@@ -559,8 +556,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisPtr, indices);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
       // Call dealloc function
       generateDeallocCall(fieldAddress);
     }

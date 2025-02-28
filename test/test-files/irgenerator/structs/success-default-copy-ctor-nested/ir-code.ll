@@ -2,8 +2,8 @@
 source_filename = "source.spice"
 
 %struct.Inner = type { i16 }
-%struct.Middle = type { %struct.Inner }
 %struct.Outer = type { %struct.Middle }
+%struct.Middle = type { %struct.Inner }
 
 @printf.str.0 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 1
@@ -14,15 +14,14 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %other, align 8
   %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %struct.Inner, ptr %3, i64 0, i32 0
-  store i16 -43, ptr %4, align 2
-  %5 = load ptr, ptr %this, align 8
-  %x.addr = getelementptr inbounds %struct.Inner, ptr %5, i64 0, i32 0
-  %6 = load ptr, ptr %other, align 8
-  %x.addr1 = getelementptr inbounds %struct.Inner, ptr %6, i64 0, i32 0
-  %7 = load i16, ptr %x.addr1, align 2
-  %8 = add nsw i16 %7, 5
-  store i16 %8, ptr %x.addr, align 2
+  store i16 -43, ptr %3, align 2
+  %4 = load ptr, ptr %this, align 8
+  %x.addr = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 0
+  %5 = load ptr, ptr %other, align 8
+  %x.addr1 = getelementptr inbounds %struct.Inner, ptr %5, i64 0, i32 0
+  %6 = load i16, ptr %x.addr1, align 2
+  %7 = add nsw i16 %6, 5
+  store i16 %7, ptr %x.addr, align 2
   ret void
 }
 
@@ -30,10 +29,8 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %1, i64 0, i32 0
-  %4 = load ptr, ptr %this, align 8
-  %5 = getelementptr inbounds %struct.Middle, ptr %4, i64 0, i32 0
-  call void @_ZN5Inner4ctorERK5Inner(ptr %5, ptr %3)
+  %3 = load ptr, ptr %this, align 8
+  call void @_ZN5Inner4ctorERK5Inner(ptr %3, ptr %1)
   ret void
 }
 
@@ -41,10 +38,8 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceab
 define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Outer, ptr %1, i64 0, i32 0
-  %4 = load ptr, ptr %this, align 8
-  %5 = getelementptr inbounds %struct.Outer, ptr %4, i64 0, i32 0
-  call void @_ZN6Middle4ctorERK6Middle(ptr %5, ptr %3)
+  %3 = load ptr, ptr %this, align 8
+  call void @_ZN6Middle4ctorERK6Middle(ptr %3, ptr %1)
   ret void
 }
 

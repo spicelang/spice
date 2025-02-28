@@ -18,17 +18,16 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
   store ptr %0, ptr %this, align 8
   store ptr @anon.string.0, ptr %msg, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Vector, ptr %2, i64 0, i32 0
-  store i1 false, ptr %3, align 1
-  %4 = getelementptr inbounds %struct.Vector, ptr %2, i64 0, i32 1
-  store ptr @0, ptr %4, align 8
-  %5 = load ptr, ptr %this, align 8
-  %field1.addr = getelementptr inbounds %struct.Vector, ptr %5, i64 0, i32 0
+  store i1 false, ptr %2, align 1
+  %3 = getelementptr inbounds nuw %struct.Vector, ptr %2, i32 0, i32 1
+  store ptr @0, ptr %3, align 8
+  %4 = load ptr, ptr %this, align 8
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %4, i64 0, i32 0
   store i1 false, ptr %field1.addr, align 1
-  %6 = load ptr, ptr %this, align 8
-  %field2.addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 1
-  %7 = load ptr, ptr %msg, align 8
-  store ptr %7, ptr %field2.addr, align 8
+  %5 = load ptr, ptr %this, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %5, i64 0, i32 1
+  %6 = load ptr, ptr %msg, align 8
+  store ptr %6, ptr %field2.addr, align 8
   ret void
 }
 
@@ -38,17 +37,16 @@ define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereference
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %msg, align 8
   %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %struct.Vector, ptr %3, i64 0, i32 0
-  store i1 false, ptr %4, align 1
-  %5 = getelementptr inbounds %struct.Vector, ptr %3, i64 0, i32 1
-  store ptr @1, ptr %5, align 8
-  %6 = load ptr, ptr %this, align 8
-  %field1.addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 0
+  store i1 false, ptr %3, align 1
+  %4 = getelementptr inbounds nuw %struct.Vector, ptr %3, i32 0, i32 1
+  store ptr @1, ptr %4, align 8
+  %5 = load ptr, ptr %this, align 8
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %5, i64 0, i32 0
   store i1 false, ptr %field1.addr, align 1
-  %7 = load ptr, ptr %this, align 8
-  %field2.addr = getelementptr inbounds %struct.Vector, ptr %7, i64 0, i32 1
-  %8 = load ptr, ptr %msg, align 8
-  store ptr %8, ptr %field2.addr, align 8
+  %6 = load ptr, ptr %this, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %6, i64 0, i32 1
+  %7 = load ptr, ptr %msg, align 8
+  store ptr %7, ptr %field2.addr, align 8
   ret void
 }
 

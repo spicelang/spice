@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.StructWithHeapFields = type { ptr }
 %struct.Result = type { ptr, %struct.Error }
 %struct.Error = type { i32, ptr }
+%struct.StructWithHeapFields = type { ptr }
 
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 1
@@ -13,8 +13,7 @@ define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 derefe
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i64 0, i32 0
-  call void @_Z8sDeallocRPh(ptr %3)
+  call void @_Z8sDeallocRPh(ptr %2)
   ret void
 }
 
@@ -25,15 +24,14 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   %res = alloca %struct.Result, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i64 0, i32 0
-  store ptr null, ptr %3, align 8
-  %4 = call %struct.Result @_Z6sAllocm(i64 10)
-  store %struct.Result %4, ptr %res, align 8
-  %5 = load ptr, ptr %this, align 8
-  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
-  %6 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
-  %7 = load ptr, ptr %6, align 8
-  store ptr %7, ptr %data.addr, align 8
+  store ptr null, ptr %2, align 8
+  %3 = call %struct.Result @_Z6sAllocm(i64 10)
+  store %struct.Result %3, ptr %res, align 8
+  %4 = load ptr, ptr %this, align 8
+  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %4, i64 0, i32 0
+  %5 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  %6 = load ptr, ptr %5, align 8
+  store ptr %6, ptr %data.addr, align 8
   ret void
 }
 

@@ -31,7 +31,7 @@ define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenc
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   store ptr getelementptr inbounds ({ [3 x ptr] }, ptr @_ZTV9InnerTest, i64 0, i32 0, i32 2), ptr %2, align 8
-  %3 = getelementptr inbounds %struct.InnerTest, ptr %2, i64 0, i32 1
+  %3 = getelementptr inbounds nuw %struct.InnerTest, ptr %2, i32 0, i32 1
   store i32 0, ptr %3, align 4
   %4 = load ptr, ptr %this, align 8
   %a.addr = getelementptr inbounds %struct.InnerTest, ptr %4, i64 0, i32 1
@@ -64,14 +64,13 @@ define dso_local i32 @main() #1 {
   %vfct.addr = getelementptr inbounds ptr, ptr %vtable.addr, i64 0
   %fct = load ptr, ptr %vfct.addr, align 8
   call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %1)
-  %2 = getelementptr inbounds %struct.Test, ptr %test, i64 0, i32 0
-  %3 = load ptr, ptr %2, align 8
-  %vtable.addr1 = load ptr, ptr %3, align 8
+  %2 = load ptr, ptr %test, align 8
+  %vtable.addr1 = load ptr, ptr %2, align 8
   %vfct.addr2 = getelementptr inbounds ptr, ptr %vtable.addr1, i64 0
   %fct3 = load ptr, ptr %vfct.addr2, align 8
-  call void %fct3(ptr noundef nonnull align 8 dereferenceable(8) %3)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  call void %fct3(ptr noundef nonnull align 8 dereferenceable(8) %2)
+  %3 = load i32, ptr %result, align 4
+  ret i32 %3
 }
 
 attributes #0 = { nofree nounwind }

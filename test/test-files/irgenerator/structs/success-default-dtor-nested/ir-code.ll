@@ -2,8 +2,8 @@
 source_filename = "source.spice"
 
 %struct.Inner = type { ptr, ptr }
-%struct.Middle = type { %struct.Inner }
 %struct.Outer = type { %struct.Middle }
+%struct.Middle = type { %struct.Inner }
 
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 1
@@ -16,20 +16,18 @@ declare void @free(ptr noundef)
 define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Inner, ptr %1, i64 0, i32 0
-  %4 = load ptr, ptr %this, align 8
-  %5 = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 0
-  call void @llvm.memcpy.p0.p0.i64(ptr %5, ptr %3, i64 8, i1 false)
-  %6 = getelementptr inbounds %struct.Inner, ptr %1, i64 0, i32 1
-  %7 = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 1
-  %8 = load ptr, ptr %6, align 8
-  %9 = icmp ne ptr %8, null
-  br i1 %9, label %nullptrcheck.then, label %nullptrcheck.exit
+  %3 = load ptr, ptr %this, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %3, ptr %1, i64 8, i1 false)
+  %4 = getelementptr inbounds nuw %struct.Inner, ptr %1, i32 0, i32 1
+  %5 = getelementptr inbounds nuw %struct.Inner, ptr %3, i32 0, i32 1
+  %6 = load ptr, ptr %4, align 8
+  %7 = icmp ne ptr %6, null
+  br i1 %7, label %nullptrcheck.then, label %nullptrcheck.exit
 
 nullptrcheck.then:                                ; preds = %2
-  %10 = call ptr @_Z12sAllocUnsafem(i64 1)
-  store ptr %10, ptr %7, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr %10, ptr %8, i64 1, i1 false)
+  %8 = call ptr @_Z12sAllocUnsafem(i64 1)
+  store ptr %8, ptr %5, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %8, ptr %6, i64 1, i1 false)
   br label %nullptrcheck.exit
 
 nullptrcheck.exit:                                ; preds = %nullptrcheck.then, %2
@@ -45,14 +43,13 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceabl
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 0
-  store ptr @anon.string.0, ptr %3, align 8
-  %4 = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 1
-  store ptr null, ptr %4, align 8
-  %5 = load ptr, ptr %this, align 8
-  %data.addr = getelementptr inbounds %struct.Inner, ptr %5, i64 0, i32 1
-  %6 = call ptr @malloc(i64 10)
-  store ptr %6, ptr %data.addr, align 8
+  store ptr @anon.string.0, ptr %2, align 8
+  %3 = getelementptr inbounds nuw %struct.Inner, ptr %2, i32 0, i32 1
+  store ptr null, ptr %3, align 8
+  %4 = load ptr, ptr %this, align 8
+  %data.addr = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 1
+  %5 = call ptr @malloc(i64 10)
+  store ptr %5, ptr %data.addr, align 8
   ret void
 }
 
@@ -75,8 +72,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %2, i64 0, i32 0
-  call void @_ZN5Inner4ctorEv(ptr %3)
+  call void @_ZN5Inner4ctorEv(ptr %2)
   ret void
 }
 
@@ -84,10 +80,8 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %1, i64 0, i32 0
-  %4 = load ptr, ptr %this, align 8
-  %5 = getelementptr inbounds %struct.Middle, ptr %4, i64 0, i32 0
-  call void @_ZN5Inner4ctorERK5Inner(ptr %5, ptr %3)
+  %3 = load ptr, ptr %this, align 8
+  call void @_ZN5Inner4ctorERK5Inner(ptr %3, ptr %1)
   ret void
 }
 
@@ -96,8 +90,7 @@ define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %2, i64 0, i32 0
-  call void @_ZN5Inner4dtorEv(ptr %3)
+  call void @_ZN5Inner4dtorEv(ptr %2)
   ret void
 }
 
@@ -106,8 +99,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Outer, ptr %2, i64 0, i32 0
-  call void @_ZN6Middle4ctorEv(ptr %3)
+  call void @_ZN6Middle4ctorEv(ptr %2)
   ret void
 }
 
@@ -116,8 +108,7 @@ define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Outer, ptr %2, i64 0, i32 0
-  call void @_ZN6Middle4dtorEv(ptr %3)
+  call void @_ZN6Middle4dtorEv(ptr %2)
   ret void
 }
 

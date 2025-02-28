@@ -97,8 +97,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       structScope = fieldEntryType.getBase().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
-      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(fieldEntry->orderIndex)};
-      thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
+      thisPtr = insertStructGEP(structTy, thisPtr, fieldEntry->orderIndex);
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType);
       structTy = fieldEntryType.getBase().toLLVMType(sourceFile);

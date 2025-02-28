@@ -15,7 +15,7 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
   store ptr %0, ptr %this, align 8, !dbg !43
     #dbg_declare(ptr %this, !44, !DIExpression(), !43)
   %2 = load ptr, ptr %this, align 8, !dbg !43
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 1, !dbg !43
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !43
   call void @_ZN6String4dtorEv(ptr %3), !dbg !43
   ret void, !dbg !43
 }
@@ -61,7 +61,7 @@ define dso_local i32 @main() #1 !dbg !60 {
   %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !71
   %2 = load i64, ptr %lng.addr, align 8, !dbg !71
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !71
-  %4 = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 1, !dbg !72
+  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
   %5 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !72
   %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !73

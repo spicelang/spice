@@ -34,9 +34,8 @@ define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %0)
   %5 = alloca i32, align 4
   store ptr %0, ptr %this, align 8
   %6 = load ptr, ptr %this, align 8
-  %7 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 0
-  store i32 2, ptr %7, align 4
-  %8 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 1
+  store i32 2, ptr %6, align 4
+  %7 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 1
   br i1 false, label %lor.exit.L14C15, label %lor.1.L14C15
 
 lor.1.L14C15:                                     ; preds = %1
@@ -47,8 +46,8 @@ lor.2.L14C15:                                     ; preds = %lor.1.L14C15
 
 lor.exit.L14C15:                                  ; preds = %lor.2.L14C15, %lor.1.L14C15, %1
   %lor_phi = phi i1 [ false, %1 ], [ false, %lor.1.L14C15 ], [ true, %lor.2.L14C15 ]
-  store i1 %lor_phi, ptr %8, align 1
-  %9 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 2
+  store i1 %lor_phi, ptr %7, align 1
+  %8 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 2
   br i1 true, label %land.1.L15C15, label %land.exit.L15C15
 
 land.1.L15C15:                                    ; preds = %lor.exit.L14C15
@@ -59,45 +58,45 @@ land.2.L15C15:                                    ; preds = %land.1.L15C15
 
 land.exit.L15C15:                                 ; preds = %land.2.L15C15, %land.1.L15C15, %lor.exit.L14C15
   %land_phi = phi i1 [ true, %lor.exit.L14C15 ], [ false, %land.1.L15C15 ], [ true, %land.2.L15C15 ]
-  store i1 %land_phi, ptr %9, align 1
-  %10 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 3
-  store i32 11, ptr %10, align 4
-  %11 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 4
-  store i16 10, ptr %11, align 2
-  %12 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 5
-  store i64 2, ptr %12, align 8
-  %13 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 6
+  store i1 %land_phi, ptr %8, align 1
+  %9 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 3
+  store i32 11, ptr %9, align 4
+  %10 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 4
+  store i16 10, ptr %10, align 2
+  %11 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 5
+  store i64 2, ptr %11, align 8
+  %12 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 6
+  store i1 true, ptr %12, align 1
+  %13 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 7
   store i1 true, ptr %13, align 1
-  %14 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 7
+  %14 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 8
   store i1 true, ptr %14, align 1
-  %15 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 8
-  store i1 true, ptr %15, align 1
-  %16 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 9
-  store i1 false, ptr %16, align 1
-  %17 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 10
-  store i1 true, ptr %17, align 1
-  %18 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 11
-  store i1 false, ptr %18, align 1
-  %19 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 12
-  store i32 333, ptr %19, align 4
-  %20 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 13
-  store i64 11, ptr %20, align 8
-  %21 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 14
-  store i8 63, ptr %21, align 1
-  %22 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 15
+  %15 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 9
+  store i1 false, ptr %15, align 1
+  %16 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 10
+  store i1 true, ptr %16, align 1
+  %17 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 11
+  store i1 false, ptr %17, align 1
+  %18 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 12
+  store i32 333, ptr %18, align 4
+  %19 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 13
+  store i64 11, ptr %19, align 8
+  %20 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 14
+  store i8 63, ptr %20, align 1
+  %21 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 15
   store i32 14, ptr %2, align 4
-  store i32 13, ptr %22, align 4
-  %23 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 16
+  store i32 13, ptr %21, align 4
+  %22 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 16
   store i32 12, ptr %3, align 4
-  store i32 13, ptr %23, align 4
-  %24 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 17
+  store i32 13, ptr %22, align 4
+  %23 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 17
   store i32 14, ptr %4, align 4
-  store i32 14, ptr %24, align 4
-  %25 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 18
+  store i32 14, ptr %23, align 4
+  %24 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 18
   store i32 12, ptr %5, align 4
-  store i32 12, ptr %25, align 4
-  %26 = getelementptr inbounds %struct.Test, ptr %6, i64 0, i32 19
-  store i32 7, ptr %26, align 4
+  store i32 12, ptr %24, align 4
+  %25 = getelementptr inbounds nuw %struct.Test, ptr %6, i32 0, i32 19
+  store i32 7, ptr %25, align 4
   ret void
 }
 
