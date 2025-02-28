@@ -396,9 +396,12 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
-      if (const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false))
-        generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
-
+      if (const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false)) {
+        if (!thisPtr)
+          thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
+        llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
+        generateCtorOrDtorCall(fieldAddress, ctorFunction, {});
+      }
       continue;
     }
 

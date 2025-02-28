@@ -191,7 +191,10 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     }
     case ScopeType::STRUCT: // fall-through
     case ScopeType::INTERFACE: {
-      if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+      if (entry.isField()) {
+        warningType = UNUSED_FIELD;
+        warningMessage = "The field '" + entry.name + "' is unused";
+      } else if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
         // Skip implicit method entries and generic templates
         const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         if (fctManifestations->empty() || fctManifestations->front()->implicitDefault)
@@ -199,9 +202,6 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
         warningType = UNUSED_METHOD;
         warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
-      } else {
-        warningType = UNUSED_FIELD;
-        warningMessage = "The field '" + entry.name + "' is unused";
       }
       break;
     }
