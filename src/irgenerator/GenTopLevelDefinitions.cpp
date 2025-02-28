@@ -432,11 +432,16 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
-    if (node->isCtor)
+    if (node->isCtor) {
+      isInCtorBody = true;
       generateCtorBodyPreamble(currentScope);
+    }
 
     // Visit procedure body
     visit(node->body);
+
+    if (node->isCtor)
+      isInCtorBody = false;
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated)
