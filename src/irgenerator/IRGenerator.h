@@ -204,6 +204,7 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
+  bool isInCtorBody = false;
   std::vector<DeferredLogic> deferredVTableInitializations;
 };
 

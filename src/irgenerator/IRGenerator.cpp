@@ -422,10 +422,11 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     }
 
     // Reference to reference assignment (only for struct fields that are not initialized yet)
-    const bool isFieldRefAssign = rhsSType.isRef() && rhs.entry && lhsEntry->isField();
+    // These are only allowed inside a ctor body. In other cases, the value of the reference gets assigned, not the ref itself.
+    const bool isInitialFieldRefAssign = isInCtorBody && rhsSType.isRef() && rhs.entry && lhsEntry->isField();
     // Assigning the result variable
     const bool isReturnValAssign = lhsEntry->name == RETURN_VARIABLE_NAME;
-    if (isFieldRefAssign || isReturnValAssign) {
+    if (isInitialFieldRefAssign || isReturnValAssign) {
       // Get address of right side
       llvm::Value *referencedAddress = resolveAddress(rhs);
       assert(referencedAddress != nullptr);
