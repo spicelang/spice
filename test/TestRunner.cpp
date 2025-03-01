@@ -135,7 +135,6 @@ void execTestCase(const TestCase &testCase) {
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
-#if ARCH_X86_64
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
         testCase.testPath / REF_NAME_IR, [&] { return mainSourceFile->compilerOutput.irString; },
@@ -163,7 +162,6 @@ void execTestCase(const TestCase &testCase) {
         return mainSourceFile->compilerOutput.irOptString;
       });
     }
-#endif
 
     // Link the bitcode if not happened yet
     if (cliOptions.useLTO && cliOptions.optLevel == O0)
