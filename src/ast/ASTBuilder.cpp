@@ -1292,34 +1292,33 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   const auto constantNode = createNode<ConstantNode>(ctx);
 
   // Enrich
-  auto &[doubleValue, intValue, shortValue, longValue, charValue, boolValue, stringValueOffset] = constantNode->compileTimeValue;
   if (ctx->DOUBLE_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_DOUBLE;
-    doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+    constantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_INT;
-    intValue = parseInt(ctx->INT_LIT());
+    constantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_SHORT;
-    shortValue = parseShort(ctx->SHORT_LIT());
+    constantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_LONG;
-    longValue = parseLong(ctx->LONG_LIT());
+    constantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_CHAR;
-    charValue = parseChar(ctx->CHAR_LIT());
+    constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
   } else if (ctx->STRING_LIT()) {
     // Save a pointer to the string in the compile time value
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_STRING;
-    stringValueOffset = resourceManager.compileTimeStringValues.size();
+    constantNode->compileTimeValue.stringValueOffset = resourceManager.compileTimeStringValues.size();
     // Add the string to the global compile time string list
     resourceManager.compileTimeStringValues.push_back(parseString(ctx->STRING_LIT()->toString()));
   } else if (ctx->TRUE()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
-    boolValue = true;
+    constantNode->compileTimeValue.boolValue = true;
   } else if (ctx->FALSE()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
-    boolValue = false;
+    constantNode->compileTimeValue.boolValue = false;
   } else {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
