@@ -5,16 +5,6 @@
 #include <gtest/gtest.h>
 
 // GCOV_EXCL_START
-
-namespace spice::testing {
-
-bool updateRefs = false;
-bool runBenchmarks = false;
-bool enableLeakDetection = false;
-bool skipNonGitHubTests = false;
-
-} // namespace spice::testing
-
 using namespace spice::testing;
 
 /**
@@ -29,7 +19,7 @@ int main(int argc, char **argv) {
   // Initialize command line parser
   Driver driver;
   driver.createInterface();
-  driver.addOptions(updateRefs, runBenchmarks, enableLeakDetection, skipNonGitHubTests);
+  driver.addOptions();
   // Parse command line args
   driver.parse(argc, argv);
   // Run tests

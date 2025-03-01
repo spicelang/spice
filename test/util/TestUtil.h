@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 #include <gtest/gtest.h>
 
@@ -17,10 +17,6 @@ const char *const PATH_TEST_FILES = "./test-files/";
 static constexpr unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
-extern bool updateRefs;
-extern bool runBenchmarks;
-extern bool enableLeakDetection;
-extern bool skipNonGitHubTests;
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
@@ -34,7 +30,9 @@ const char *const REF_NAME_TYPE_REGISTRY = "type-registry.out";
 const char *const REF_NAME_CACHE_STATS = "cache-stats.out";
 const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
-static constexpr const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
+static constexpr const char *const REF_NAME_OPT_IR[5] = {
+    "ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll",
+};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
 const char *const REF_NAME_GDB_OUTPUT = "debug.out";
 const char *const REF_NAME_ERROR_OUTPUT = "exception.out";
@@ -71,22 +69,27 @@ public:
   // Public static methods
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
-      const std::filesystem::path &refPath, GetOutputFct getActualOutput,
+      const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {});
+  static bool doesRefExist(const std::filesystem::path &originalRefPath);
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
   static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);
   static std::string toCamelCase(std::string input);
-  static constexpr const char *getDefaultExecutableName() {
+  static consteval const char *getDefaultExecutableName() {
 #if OS_WINDOWS
     return ".\\source.exe";
 #else
     return "./source";
 #endif
   }
-  static bool isDisabled(const TestCase &testCase, bool isGHActions);
+  static bool isDisabled(const TestCase &testCase);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
+
+private:
+  // Private methods
+  static std::array<std::filesystem::path, 3> expandRefPaths(const std::filesystem::path &refPath);
 };
 
 } // namespace spice::testing

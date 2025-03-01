@@ -11,14 +11,14 @@ on:
     branches:
       - main
       - feature/**
-    paths:
+    paths-ignore:
       - 'docs/**'
       - 'media/**'
       - '**.md'
 
 jobs:
-  build-linux:
-    name: C++ CI
+  build-linux-x86:
+    name: C++ CI - Linux/x86_64
     runs-on: ubuntu-24.04
 
     steps:
@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-20.1.0-rc3
+          key: llvm-20.1.0-rc3-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -79,7 +79,7 @@ jobs:
           chmod +x setup-libs.sh
           ./setup-libs.sh
 
-      - name: Build Test target
+      - name: Build test target
 #        if: github.event_name != 'pull_request'
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
@@ -111,7 +111,7 @@ jobs:
           SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
         run: |
           cd ./bin/test
-          ./spicetest --skip-github-tests
+          ./spicetest --is-github-actions
 
 #      - name: Run Test target with Valgrind
 #        if: github.event_name == 'pull_request'
@@ -123,7 +123,7 @@ jobs:
 #          SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
 #        run: |
 #          cd ./bin/test
-#          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
+#          valgrind -q --leak-check=full ./spicetest --is-github-actions --leak-detection
 
       - name: Generate coverage report
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -141,3 +141,78 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           localDir: ./bin/coverage
           remoteDir: chillibits.com/spice/coverage
+
+  build-linux-aarch64:
+    name: C++ CI - Linux/AArch64
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - name: Configure GCC 14 as default
+        run: |
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
+
+      - name: Setup Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build graphviz uuid-dev
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/work/spice/llvm
+          key: llvm-20.1.0-rc3-linux-aarch64
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd ..
+          rm -rf llvm
+          git clone --depth 1 --branch llvmorg-20.1.0-rc3 https://github.com/llvm/llvm-project llvm
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: |
+          chmod +x setup-libs.sh
+          ./setup-libs.sh
+
+      - name: Build test target
+        env:
+          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+        run: |
+          echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
+          mkdir ./bin
+          cd ./bin
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -GNinja -Wattributes ..
+          cmake --build . --target spicetest
+
+      - name: Run Test target
+        env:
+          LLVM_LIB_DIR: /home/runner/work/spice/llvm/build/lib
+          LLVM_INCLUDE_DIR: /home/runner/work/spice/llvm/llvm/include
+          LLVM_BUILD_INCLUDE_DIR: /home/runner/work/spice/llvm/build/include
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+          SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
+        run: |
+          cd ./bin/test
+          ./spicetest --is-github-actions

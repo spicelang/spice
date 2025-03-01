@@ -5,9 +5,18 @@
 #include "../../lib/cli11/CLI11.hpp"
 
 // GCOV_EXCL_START
+namespace spice::testing {
+
+struct TestDriverCliOptions {
+  bool updateRefs = false;
+  bool runBenchmarks = false;
+  bool enableLeakDetection = false;
+  bool isGitHubActions = false;
+  bool isVerbose = false;
+};
 
 /**
- * Helper class to setup the cli interface and command line parser
+ * Helper class to set up the cli interface and command line parser
  */
 class Driver {
 public:
@@ -16,7 +25,7 @@ public:
 
   // Public methods
   void createInterface();
-  void addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests);
+  void addOptions();
   int parse(int argc, char **argv);
 
 private:
@@ -24,4 +33,5 @@ private:
   CLI::App app = CLI::App{"Spice Test Runner", "spice"};
 };
 
+} // namespace spice::testing
 // GCOV_EXCL_STOP

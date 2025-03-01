@@ -5,6 +5,9 @@
 #include "util/CommonUtil.h"
 
 // GCOV_EXCL_START
+namespace spice::testing {
+
+TestDriverCliOptions testDriverCliOptions;
 
 void Driver::createInterface() {
   // Allow positional args
@@ -15,20 +18,20 @@ void Driver::createInterface() {
   app.footer("(c) Marc Auberer 2021-2025");
 
   // Add version flag
-  const std::string versionName(SPICE_VERSION);
-  const std::string builtBy(SPICE_BUILT_BY);
-  app.set_version_flag("--version,-v", spice::compiler::CommonUtil::buildVersionInfo());
+  app.set_version_flag("--version,-v", compiler::CommonUtil::buildVersionInfo());
 }
 
-void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {
+void Driver::addOptions() {
   // --update-refs
-  app.add_flag<bool>("--update-refs,-u", updateRefs, "Update test reference files");
+  app.add_flag<bool>("--update-refs,-u", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
-  app.add_flag<bool>("--run-benchmarks,-b", runBenchmarks, "Also run benchmarks and check baseline values");
+  app.add_flag<bool>("--run-benchmarks,-b", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
   // --leak-detection
-  app.add_flag<bool>("--leak-detection,-l", enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
-  // --skip-github-tests
-  app.add_flag<bool>("--skip-github-tests,-gh", skipNonGitHubTests, "Skip non-working tests on GitHub Actions");
+  app.add_flag<bool>("--leak-detection,-l", testDriverCliOptions.enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
+  // --is-github-actions
+  app.add_flag<bool>("--is-github-actions,-gh", testDriverCliOptions.isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
+  // --verbose
+  app.add_flag<bool>("--verbose", testDriverCliOptions.isVerbose, "Print debug output for the test runner");
 }
 
 /**
@@ -46,5 +49,7 @@ int Driver::parse(int argc, char **argv) {
   }
   return 0;
 }
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP

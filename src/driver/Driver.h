@@ -72,6 +72,7 @@ struct CliOptions {
   bool generateDebugInfo = false;
   bool disableVerifier = false;
   bool testMode = false;
+  bool comparableOutput = false;
 };
 
 /**

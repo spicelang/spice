@@ -580,14 +580,14 @@ void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   exprResult.value = exprResult.constant;
 }
 
-std::string IRGenerator::getIRString(llvm::Module *llvmModule, bool withoutTargetData) {
+std::string IRGenerator::getIRString(llvm::Module *llvmModule, bool comparableOutput) {
   assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
 
   // Backup target triple and data layout
   const std::string targetTriple = llvmModule->getTargetTriple();
   const std::string targetDataLayout = llvmModule->getDataLayoutStr();
   // Remove target triple and data layout
-  if (withoutTargetData) {
+  if (comparableOutput) {
     llvmModule->setTargetTriple("");
     llvmModule->setDataLayout("");
   }
@@ -598,7 +598,7 @@ std::string IRGenerator::getIRString(llvm::Module *llvmModule, bool withoutTarge
   llvmModule->print(oss, nullptr);
 
   // Restore target triple and data layout
-  if (withoutTargetData) {
+  if (comparableOutput) {
     llvmModule->setTargetTriple(targetTriple);
     llvmModule->setDataLayout(targetDataLayout);
   }

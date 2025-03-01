@@ -9,7 +9,6 @@
 
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
-
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
@@ -22,15 +21,18 @@
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
+#include "driver/Driver.h"
 #include "util/TestUtil.h"
 
 using namespace spice::compiler;
 
 namespace spice::testing {
 
+extern TestDriverCliOptions testDriverCliOptions;
+
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
-  if (TestUtil::isDisabled(testCase, skipNonGitHubTests))
+  if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
 
   // Create fake cli options
@@ -76,6 +78,7 @@ void execTestCase(const TestCase &testCase) {
       /* debugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
       /* disableVerifier= */ false,
       /* testMode= */ true,
+      /* comparableOutput= */ true,
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
@@ -164,9 +167,9 @@ void execTestCase(const TestCase &testCase) {
     if (cliOptions.useLTO && cliOptions.optLevel == O0)
       mainSourceFile->runBitcodeLinker();
 
-    // Check assembly code
+    // Check assembly code (only when not running test on GitHub Actions)
     bool objectFilesEmitted = false;
-    if (!skipNonGitHubTests) {
+    if (!testDriverCliOptions.isGitHubActions) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] {
         mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
@@ -185,8 +188,8 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Do linking and conclude compilation
-    const bool needsNormalRun = exists(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-    const bool needsDebuggerRun = exists(testCase.testPath / REF_NAME_GDB_OUTPUT);
+    const bool needsNormalRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsDebuggerRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
     if (needsNormalRun || needsDebuggerRun) {
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
@@ -226,7 +229,7 @@ void execTestCase(const TestCase &testCase) {
       const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
       // Execute binary
       std::stringstream cmd;
-      if (enableLeakDetection)
+      if (testDriverCliOptions.enableLeakDetection)
         cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
       cmd << TestUtil::getDefaultExecutableName();
       if (exists(cliFlagsFile))
@@ -247,7 +250,7 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the debugger output matches the expected output
-    if (!skipNonGitHubTests) { // GDB tests are currently not support on GH actions
+    if (!testDriverCliOptions.isGitHubActions) { // GDB tests are currently not support on GH actions
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_GDB_OUTPUT,
           [&] {

@@ -69,8 +69,9 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     if (node->calledInitCtor) {
       // Call no-args constructor
       generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
-    } else if (!node->isForEachItem && cliOptions.buildMode == DEBUG) {
+    } else if (!node->isForEachItem && cliOptions.buildMode != RELEASE) {
       assert(!node->isCtorCallRequired);
+      assert(cliOptions.buildMode == DEBUG || cliOptions.buildMode == TEST);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
       insertStore(defaultValue, varAddress);
@@ -178,8 +179,8 @@ std::any IRGenerator::visitFallthroughStmt(const FallthroughStmtNode *node) {
 }
 
 std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
-  // Only generate assertions in debug build mode or in test mode
-  if (cliOptions.buildMode != DEBUG && !cliOptions.testMode)
+  // Do not generate assertions in release mode
+  if (cliOptions.buildMode == RELEASE)
     return nullptr;
 
   diGenerator.setSourceLocation(node);
