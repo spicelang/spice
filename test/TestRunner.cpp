@@ -188,8 +188,8 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Do linking and conclude compilation
-    const bool needsNormalRun = exists(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-    const bool needsDebuggerRun = exists(testCase.testPath / REF_NAME_GDB_OUTPUT);
+    const bool needsNormalRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsDebuggerRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
     if (needsNormalRun || needsDebuggerRun) {
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();

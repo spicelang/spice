@@ -97,6 +97,17 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 }
 
 /**
+ * Check if a variant of the requested ref file was found
+ *
+ * @param originalRefPath Path to the reference file
+ * @return True, if the ref file was found
+ */
+bool TestUtil::doesRefExist(const std::filesystem::path &originalRefPath) {
+  const std::array<std::filesystem::path, 3> refPaths = expandRefPaths(originalRefPath);
+  return std::ranges::any_of(refPaths, [](const std::filesystem::path &refPath) { return exists(refPath); });
+}
+
+/**
  * Handle a test error
  *
  * @param testCase Testcase which has produced the error

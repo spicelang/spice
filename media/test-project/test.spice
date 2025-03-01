@@ -1,27 +1,11 @@
-import "std/io/cli-parser";
-import "std/io/cli-subcommand";
+import "std/io/dir" as dir;
 
-type CliOptions struct {
-    string greetName = ""
-}
-
-p callback(const bool& value) {
-    printf("Callback called with value %d\n", value);
-}
-
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2025");
-
-    CliOptions options;
-    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
-    CliOption<string>& option = greet.addOption("--name", options.greetName, "Name of the person to greet");
-
-    parser.parse(argc, argv);
-
-    // Greet persion if requested
-    if options.greetName != "" {
-        printf("Hello %s!\n", options.greetName);
-    }
+f<int> main() {
+    printf("Existing before create: %d\n", dirExists("./test"));
+    dyn mkReturnCode = mkDir("./test", dir::MODE_ALL_RWX);
+    printf("mkDir return code: %d\n", mkReturnCode);
+    printf("Existing after create: %d\n", dirExists("./test"));
+    dyn rmReturnCode = rmDir("./test");
+    printf("rmDir return code: %d\n", rmReturnCode);
+    printf("Existing after delete: %d\n", dirExists("./test"));
 }

@@ -71,6 +71,7 @@ public:
   static bool checkRefMatch(
       const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {});
+  static bool doesRefExist(const std::filesystem::path &originalRefPath);
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
   static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);
