@@ -215,4 +215,4 @@ jobs:
           SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
         run: |
           cd ./bin/test
-          ./spicetest --is-github-actions --verbose
+          ./spicetest --is-github-actions
