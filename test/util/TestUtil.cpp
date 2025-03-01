@@ -72,8 +72,15 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
                              ModifyOutputFct modifyOutputFct) {
   for (const std::filesystem::path &refPath : expandRefPaths(originalRefPath)) {
-    if (!exists(refPath))
+    if (testDriverCliOptions.isVerbose)
+      std::cout << "Checking for ref file: " << refPath << " - ";
+    if (!exists(refPath)) {
+      if (testDriverCliOptions.isVerbose)
+        std::cout << "not found" << std::endl;
       continue;
+    }
+    if (testDriverCliOptions.isVerbose)
+      std::cout << "ok" << std::endl;
 
     // Get actual output
     std::string actualOutput = getActualOutput();
@@ -224,10 +231,8 @@ std::array<std::filesystem::path, 3> TestUtil::expandRefPaths(const std::filesys
   const std::string stem = refPath.stem().string();
   const std::string ext = refPath.extension().string();
   // Construct array of files to search for
-  const std::string lowerTargetOs = CommonUtil::toLower(SPICE_TARGET_OS);
-  const std::string lowerTargetArch = CommonUtil::toLower(SPICE_TARGET_ARCH);
-  const std::string osFileName = stem + "-" + lowerTargetOs + ext;
-  const std::string osArchFileName = stem + "-" + lowerTargetOs + "-" + lowerTargetArch + ext;
+  const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
+  const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
   return {parent / osArchFileName, parent / osFileName, refPath};
 }
 

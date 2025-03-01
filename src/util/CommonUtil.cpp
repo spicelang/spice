@@ -74,12 +74,6 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
   return result;
 }
 
-std::string CommonUtil::toLower(const std::string &input) {
-  std::string result;
-  std::ranges::transform(input, std::back_inserter(result), [](char c) { return std::tolower(c); });
-  return result;
-}
-
 /**
  * Get the memory page size of the current system
  *

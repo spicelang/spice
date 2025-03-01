@@ -30,6 +30,8 @@ void Driver::addOptions() {
   app.add_flag<bool>("--leak-detection,-l", testDriverCliOptions.enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
   // --is-github-actions
   app.add_flag<bool>("--is-github-actions,-gh", testDriverCliOptions.isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
+  // --verbose
+  app.add_flag<bool>("--verbose", testDriverCliOptions.isVerbose, "Print debug output for the test runner");
 }
 
 /**
