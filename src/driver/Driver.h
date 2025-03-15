@@ -4,6 +4,11 @@
 
 #include "../../lib/cli11/CLI11.hpp"
 
+// Undef conflicting macros (only problematic on Windows)
+#undef TRUE
+#undef FALSE
+#undef CONST
+
 namespace spice::compiler {
 
 const char *const TARGET_UNKNOWN = "unknown";

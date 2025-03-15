@@ -4,6 +4,11 @@
 
 #include "../../lib/cli11/CLI11.hpp"
 
+// Undef conflicting macros (only problematic on Windows)
+#undef TRUE
+#undef FALSE
+#undef CONST
+
 // GCOV_EXCL_START
 namespace spice::testing {
 
