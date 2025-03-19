@@ -61,14 +61,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-20.1.0-linux-x64
+          key: llvm-20.1.1-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
           rm -rf llvm
-          git clone --depth 1 --branch llvmorg-20.1.0 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-20.1.1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
@@ -178,14 +178,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-20.1.0-linux-aarch64
+          key: llvm-20.1.1-linux-aarch64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
           rm -rf llvm
-          git clone --depth 1 --branch llvmorg-20.1.0 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-20.1.1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
