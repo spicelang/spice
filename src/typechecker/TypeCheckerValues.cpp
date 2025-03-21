@@ -493,7 +493,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Get the struct instance
   Struct *spiceStruct = node->instantiatedStructs.at(manIdx) = structType.getStructAndAdjustType(node, concreteTemplateTypes);
   if (!spiceStruct)
-    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + spiceStruct->getSignature() + "' could not be found")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT,
+                  "Struct '" + Struct::getSignature(structName, concreteTemplateTypes) + "' could not be found")
 
   // Struct instantiation for an inheriting struct is forbidden, because the vtable needs to be initialized and this is done in
   // the ctor of the struct, which is never called in case of struct instantiation

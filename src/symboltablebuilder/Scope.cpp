@@ -143,8 +143,6 @@ GenericType *Scope::lookupGenericTypeStrict(const std::string &typeName) {
  */
 void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // NOLINT(misc-no-recursion)
   // Visit own symbols
-  CompilerWarningType warningType;
-  std::string warningMessage;
   for (const auto &entry : symbolTable.symbols | std::views::values) {
     // Do not produce a warning if the symbol is used or has a special name
     const std::string &name = entry.name;
@@ -154,6 +152,8 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     const QualType entryType = entry.getQualType();
 
     // Determine warning type and message by the scope type and the symbol type
+    CompilerWarningType warningType = UNUSED_VARIABLE;
+    std::string warningMessage;
     switch (type) {
     case ScopeType::GLOBAL: {
       // Skip generic function/procedure/struct/interface entries
