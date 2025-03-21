@@ -1,15 +1,15 @@
-import "std/data/queue";
+import "std/data/vector";
 
-f<Queue<String>> getStringQueue() {
-    Queue<String> queue;
-    queue.push(String("Hello"));
-    queue.push(String("World"));
+f<Vector<string>> getStringVec() {
+    Vector<string> queue;
+    queue.pushBack("Hello");
+    queue.pushBack("World");
     return queue;
 }
 
 f<int> main() {
-    const Queue<String> args = getStringQueue();
-    foreach unsigned long i, const String& arg : args {
+    const Vector<string> args = getStringVec();
+    foreach unsigned long i, const string& arg : args {
         printf("Arg %d: %s\n", i, arg);
     }
 }
