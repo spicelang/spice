@@ -88,7 +88,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (!iteratorType.isIterator(node)) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
-        iteratorType.getName(false);
+        iteratorType.getName(false, true);
     softError(node->iteratorAssign, OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }

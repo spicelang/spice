@@ -86,8 +86,8 @@ size_t TypeRegistry::getTypeCount() { return types.size(); }
 std::string TypeRegistry::dump() {
   std::vector<std::string> typeStrings;
   typeStrings.reserve(types.size());
-  for (const std::unique_ptr<Type>& type : types | std::views::values)
-    typeStrings.push_back(type->getName(false));
+  for (const std::unique_ptr<Type> &type : types | std::views::values)
+    typeStrings.push_back(type->getName(false, true));
   // Sort to ensure deterministic output
   std::ranges::sort(typeStrings);
   // Serialize type registry
