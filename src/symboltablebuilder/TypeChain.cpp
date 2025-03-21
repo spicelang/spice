@@ -40,7 +40,7 @@ bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
 
 bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
 
-void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
+void TypeChainElement::getName(std::stringstream &name, bool withSize, bool ignorePublic) const {
   switch (superType) {
   case TY_PTR:
     name << "*";
@@ -83,7 +83,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
       for (size_t i = 0; i < templateTypes.size(); i++) {
         if (i > 0)
           name << ",";
-        templateTypes.at(i).getName(name, withSize);
+        templateTypes.at(i).getName(name, withSize, ignorePublic);
       }
       name << ">";
     }
@@ -102,13 +102,16 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
     name << "f";
     if (data.hasCaptures)
       name << "[]";
-    if (!paramTypes.empty())
-      name << "<" << paramTypes.front().getName(true) << ">";
+    if (!paramTypes.empty()) {
+      name << "<";
+      paramTypes.front().getName(name, true, ignorePublic);
+      name << ">";
+    }
     name << "(";
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         name << ",";
-      paramTypes.at(i).getName(name, true);
+      paramTypes.at(i).getName(name, true, ignorePublic);
     }
     name << ")";
     break;
@@ -121,7 +124,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         name << ",";
-      paramTypes.at(i).getName(name, true);
+      paramTypes.at(i).getName(name, true, ignorePublic);
     }
     name << ")";
     break;
@@ -141,11 +144,12 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
  * Return the type name as string
  *
  * @param withSize Also encode array sizes
+ * @param ignorePublic Ignore public qualifier
  * @return Name as string
  */
-std::string TypeChainElement::getName(bool withSize) const {
+std::string TypeChainElement::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
-  getName(name, withSize);
+  getName(name, withSize, ignorePublic);
   return name.str();
 }
 

@@ -273,7 +273,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     return llvm::StructType::get(context, {ptrTy, ptrTy});
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true)); // GCOVR_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true, true)); // GCOVR_EXCL_LINE
 }
 
 /**
@@ -303,9 +303,7 @@ bool Type::isPrimitive() const { return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY
  *
  * @return Extended primitive or not
  */
-bool Type::isExtendedPrimitive() const {
-  return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE});
-}
+bool Type::isExtendedPrimitive() const { return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}); }
 
 /**
  * Check if the current type is a pointer type
@@ -486,23 +484,25 @@ bool Type::isOneOf(const std::initializer_list<SuperType> &superTypes) const {
  *
  * @param name Get name of type
  * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
  * @return Symbol type name
  */
-void Type::getName(std::stringstream &name, bool withSize) const { // NOLINT(misc-no-recursion)
+void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
-    name << chainElement.getName(withSize);
+    name << chainElement.getName(withSize, ignorePublic);
 }
 
 /**
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize) const {
+std::string Type::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
-  getName(name, withSize);
+  getName(name, withSize, ignorePublic);
   return name.str();
 }
 

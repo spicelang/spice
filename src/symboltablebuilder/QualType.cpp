@@ -377,13 +377,14 @@ bool QualType::isTriviallyDestructible(const ASTNode *node) const {
       return false;
 
     // Check if all member types are trivially destructible
-    const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyDestructible(node); }; // NOLINT(*-no-recursion)
+    const auto pred = [&](const QualType &fieldType) {
+      return fieldType.isTriviallyDestructible(node);
+    }; // NOLINT(*-no-recursion)
     return std::ranges::all_of(spiceStruct->fieldTypes, pred);
   }
 
   return true;
 }
-
 
 /**
  * Check if the current type implements the given interface type
@@ -565,7 +566,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
     name << "unsigned ";
 
   // Loop through all chain elements
-  type->getName(name, withSize);
+  type->getName(name, withSize, ignorePublic);
 }
 
 /**

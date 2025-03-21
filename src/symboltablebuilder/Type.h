@@ -60,8 +60,8 @@ public:
   [[nodiscard]] bool matches(const Type *otherType, bool ignoreArraySize) const;
 
   // Serialization
-  void getName(std::stringstream &name, bool withSize) const;
-  [[nodiscard]] std::string getName(bool withSize) const;
+  void getName(std::stringstream &name, bool withSize, bool ignorePublic) const;
+  [[nodiscard]] std::string getName(bool withSize, bool ignorePublic) const;
 
   // Get new type, based on this one
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
