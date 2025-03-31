@@ -1,5 +1,5 @@
 mkdocs-material==9.6.10
-mkdocs-material[imaging]==9.6.9
+mkdocs-material[imaging]==9.6.10
 mkdocs-minify-plugin==0.8.0
 mkdocs-git-revision-date-localized-plugin==1.4.5
 mkdocs-git-committers-plugin-2==2.5.0
