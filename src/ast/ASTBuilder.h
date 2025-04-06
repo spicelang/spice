@@ -93,6 +93,7 @@ public:
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override;
+  std::any visitTypeIdCall(SpiceParser::TypeIdCallContext *ctx) override;
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override;
   std::any visitPanicCall(SpiceParser::PanicCallContext *ctx) override;
   std::any visitSysCall(SpiceParser::SysCallContext *ctx) override;

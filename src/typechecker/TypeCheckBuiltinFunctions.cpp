@@ -16,6 +16,8 @@ std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
     return visitSizeofCall(node->sizeofCall);
   if (node->alignofCall)
     return visitAlignofCall(node->alignofCall);
+  if (node->typeidCall)
+    return visitTypeidCall(node->typeidCall);
   if (node->lenCall)
     return visitLenCall(node->lenCall);
   if (node->panicCall)
@@ -113,6 +115,16 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 }
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
+  if (node->isType) { // Align of type
+    visit(node->dataType);
+  } else { // Align of value
+    visit(node->assignExpr);
+  }
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitTypeidCall(TypeidCallNode *node) {
   if (node->isType) { // Align of type
     visit(node->dataType);
   } else { // Align of value

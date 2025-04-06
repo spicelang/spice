@@ -93,6 +93,7 @@ public:
   std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitAlignofCall(AlignofCallNode *node) override;
+  std::any visitTypeidCall(TypeidCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;
   std::any visitSysCall(SysCallNode *node) override;

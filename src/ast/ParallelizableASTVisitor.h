@@ -60,6 +60,7 @@ class BuiltinCallNode;
 class PrintfCallNode;
 class SizeofCallNode;
 class AlignofCallNode;
+class TypeidCallNode;
 class LenCallNode;
 class PanicCallNode;
 class SysCallNode;
@@ -154,6 +155,7 @@ public:
   virtual std::any visitPrintfCall(const PrintfCallNode *node);
   virtual std::any visitSizeofCall(const SizeofCallNode *node);
   virtual std::any visitAlignofCall(const AlignofCallNode *node);
+  virtual std::any visitTypeidCall(const TypeidCallNode *node);
   virtual std::any visitLenCall(const LenCallNode *node);
   virtual std::any visitPanicCall(const PanicCallNode *node);
   virtual std::any visitSysCall(const SysCallNode *node);

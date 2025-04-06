@@ -877,6 +877,8 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
     builtinCallNode->sizeofCall = std::any_cast<SizeofCallNode *>(visit(ctx->sizeOfCall()));
   } else if (ctx->alignOfCall()) {
     builtinCallNode->alignofCall = std::any_cast<AlignofCallNode *>(visit(ctx->alignOfCall()));
+  } else if (ctx->typeIdCall()) {
+    builtinCallNode->typeidCall = std::any_cast<TypeidCallNode *>(visit(ctx->typeIdCall()));
   } else if (ctx->lenCall()) {
     builtinCallNode->lenCall = std::any_cast<LenCallNode *>(visit(ctx->lenCall()));
   } else if (ctx->panicCall()) {
@@ -931,6 +933,20 @@ std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
   }
 
   return concludeNode(alignofCallNode);
+}
+
+std::any ASTBuilder::visitTypeIdCall(SpiceParser::TypeIdCallContext *ctx) {
+  const auto typeidCallNode = createNode<TypeidCallNode>(ctx);
+
+  // Visit children
+  if (ctx->assignExpr()) {
+    typeidCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    typeidCallNode->isType = true;
+    typeidCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
+
+  return concludeNode(typeidCallNode);
 }
 
 std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
