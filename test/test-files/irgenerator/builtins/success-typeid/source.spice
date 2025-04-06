@@ -1,0 +1,4 @@
+f<int> main() {
+    printf("%d\n", typeid(4));
+    printf("%d\n", typeid<int>());
+}
