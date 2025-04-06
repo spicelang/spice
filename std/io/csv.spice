@@ -1,0 +1,66 @@
+import "std/data/vector";
+import "std/io/filepath";
+import "std/io/file";
+
+type T int|double|string;
+
+type ICSVColumn interface {
+
+}
+
+public type CSVColumn<T> struct {
+    public string header
+    public Vector<T> data
+}
+
+public p CSVColumn.ctor(string header) {
+    this.header = header;
+}
+
+public f<Result<T>> CSVColumn.get(unsigned long index) {
+    return index < this.data.getSize() ? ok<T>(this.data.get(index)) : err<T>("Index out of bounds");
+}
+
+public f<Result<T>> operator[]<T>(CSVColumn<T>& column, unsigned long index) {
+    return column.get(index);
+}
+
+public type CSVTable struct {
+    Vector<ICSVColumn> columns
+}
+
+public f<Result<ICSVColumn<T>>> CSVTable.getColumn<T>(unsigned long index) {
+    return index < this.columns.getSize() ? ok<ICSVColumn<T>>(this.columns.get(index)) : err<ICSVColumn<T>>("Index out of bounds");
+}
+
+/**
+ * Parser for CSV files/strings.
+ *
+ * Usage:
+ * ```spice
+ * import "std/io/csv";
+ * FilePath filePath = FilePath("path/to/file.csv");
+ * CSVParser parser = CSVParser(filePath);
+ * CSVTable table = parser.parse();
+ * ```
+ */
+public type CSVParser struct {
+    CSVTable table
+    String input
+    char separator
+}
+
+public p CSVParser.ctor(FilePath& csvFile, char separator = ',') {
+    Result<String> fileContentOrError = readFile(csvFile.toString());
+    this.input = fileContentOrError.unwrap();
+    this.separator = separator;
+}
+
+public p CSVParser.ctor(const String& csvString, char separator = ',') {
+    this.input = csvString;
+    this.separator = separator;
+}
+
+public f<CSVTable&> CSVParser.parse() {
+    return this.table;
+}
