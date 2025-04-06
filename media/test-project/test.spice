@@ -1,22 +1,18 @@
-import "std/io/logging";
-import "std/io/file";
+import "std/io/csv";
 import "std/io/filepath";
 
 f<int> main() {
-    {
-        LogFile logFile = LogFile(FilePath("log.txt"), false);
-        logFile.logDebug("This is a debug message");
-        logFile.logInfo("This is a info message");
-        logFile.logWarning("This is a warning message");
-        logFile.logError("This is a error message");
+    FilePath filePath = FilePath("/home/marc/Documents/Dev/spice/test/test-files/std/io/csv-parser/input.csv");
+    CSVParser parser = CSVParser(filePath, ',');
+    CSVTable table = parser.parse();
+    Result<CSVColumn<string>> columnOrErr = table.getColumn<string>(0l);
+    CSVColumn<string> column = columnOrErr.unwrap();
+    Result<string> res = column.get(0l);
+    if res.isOk() {
+        string value = res.unwrap();
+        printf("Value: %s\n", value);
+    } else {
+        Error error = res.getErr();
+        printf("Error: %s\n", error.message);
     }
-
-    assert fileExists("log.txt");
-    Result<String> fileContent = readFile("log.txt");
-    String fileText = fileContent.unwrap();
-    assert fileText.contains("[debug] This is a debug message");
-    assert fileText.contains("[info] This is a info message");
-    assert fileText.contains("[warning] This is a warning message");
-    assert fileText.contains("[error] This is a error message");
-    deleteFile("log.txt");
 }
