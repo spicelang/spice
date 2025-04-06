@@ -686,6 +686,17 @@ public p ASTAlignofCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
+// ========================================================= TypeidCallNode ======================================================
+
+public type ASTTypeidCallNode struct/*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
+public p ASTTypeidCallNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+
 // ========================================================== LenCallNode ========================================================
 
 public type ASTLenCallNode struct/*: IVisitable*/ {

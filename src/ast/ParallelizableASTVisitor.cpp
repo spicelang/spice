@@ -121,6 +121,8 @@ std::any ParallelizableASTVisitor::visitSizeofCall(const SizeofCallNode *node) {
 
 std::any ParallelizableASTVisitor::visitAlignofCall(const AlignofCallNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitTypeidCall(const TypeidCallNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitLenCall(const LenCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitPanicCall(const PanicCallNode *node) { return visitChildren(node); }

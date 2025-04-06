@@ -1,15 +1,15 @@
-import "std/data/vector";
-
-f<Vector<string>> getStringVec() {
-    Vector<string> queue;
-    queue.pushBack("Hello");
-    queue.pushBack("World");
-    return queue;
+type DemoStruct struct {
+    int i
+    long l
+    short s
+    string str
 }
 
 f<int> main() {
-    const Vector<string> args = getStringVec();
-    foreach unsigned long i, const string& arg : args {
-        printf("Arg %d: %s\n", i, arg);
-    }
+    printf("%d\n", typeid(4));
+    printf("%d\n", typeid<int>());
+
+    DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
+    printf("%d\n", typeid<DemoStruct>());
+    printf("%d\n", typeid(s));
 }

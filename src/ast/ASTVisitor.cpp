@@ -110,6 +110,8 @@ std::any ASTVisitor::visitSizeofCall(SizeofCallNode *node) { return visitChildre
 
 std::any ASTVisitor::visitAlignofCall(AlignofCallNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitTypeidCall(TypeidCallNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitPanicCall(PanicCallNode *node) { return visitChildren(node); }

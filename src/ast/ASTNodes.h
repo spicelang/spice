@@ -13,7 +13,6 @@
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/TypeQualifiers.h>
-#include <typechecker/ExprResult.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
 
@@ -1387,12 +1386,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
 
   // Other methods
-  GET_CHILDREN(printfCall, sizeofCall, alignofCall, lenCall, panicCall, sysCall);
+  GET_CHILDREN(printfCall, sizeofCall, alignofCall, typeidCall, lenCall, panicCall, sysCall);
 
   // Public members
   PrintfCallNode *printfCall = nullptr;
   SizeofCallNode *sizeofCall = nullptr;
   AlignofCallNode *alignofCall = nullptr;
+  TypeidCallNode *typeidCall = nullptr;
   LenCallNode *lenCall = nullptr;
   PanicCallNode *panicCall = nullptr;
   SysCallNode *sysCall = nullptr;
@@ -1451,6 +1451,29 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAlignofCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAlignofCall(this); }
+
+  // Other methods
+  GET_CHILDREN(assignExpr, dataType);
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+
+  // Public members
+  union {
+    AssignExprNode *assignExpr = nullptr;
+    DataTypeNode *dataType;
+  };
+  bool isType = false;
+};
+
+// ======================================================== TypeidCallNode ======================================================
+
+class TypeidCallNode final : public ExprNode {
+public:
+  // Constructors
+  using ExprNode::ExprNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeidCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTypeidCall(this); }
 
   // Other methods
   GET_CHILDREN(assignExpr, dataType);

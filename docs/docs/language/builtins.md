@@ -48,7 +48,7 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 Sizeof returns the internal size of a variable, constant or type in bytes. To get the size in bits, simply multiply the result by 8.
 
 ### Signature
-`int sizeof(<any variable or constant>)` or `int sizeof<any type>()`
+`unsigned long sizeof(<any variable or constant>)` or `unsigned long sizeof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
@@ -67,7 +67,7 @@ sizeof("Hello World!"); // 8 (Strings are Char pointers internally)
 Alignof returns the alignment of a variable, constant or type in bytes. To get the alignment in bits, simply multiply the result by 8.
 
 ### Signature
-`int alignof(<any variable or constant>)` or `int alignof<any type>()`
+`unsigned long alignof(<any variable or constant>)` or `unsigned long alignof<any type>()`
 
 `any variable`: Variable or constant of any type, `any type`: Any data type
 
@@ -77,9 +77,29 @@ alignof(12); // 4
 alignof<int>() // 4
 
 DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
-alignof(intArray); // 8 (the long value is the widest type in the struct)
+alignof(s); // 8 (the long value is the widest type in the struct)
 
 alignof("Hello World!"); // 8 (Strings are Char pointers internally)
+```
+
+## The `typeid` builtin
+Typeid returns the type id of a variable, constant or type as unsigned long.
+The type id is not guaranteed to be the same on each program run, but it is guaranteed to be the same for the same type
+within the same program run.
+
+### Signature
+`unsigned long typeid(<any variable or constant>)` or `unsigned long typeid<any type>()`
+
+`any variable`: Variable or constant of any type, `any type`: Any data type
+
+### Usage example
+```spice
+typeid(12); // 1015829715
+typeid<int>() // 1015829715
+
+DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
+typeid(s); // 1502876624
+typeid<DemoStruct>(); // 1502876624
 ```
 
 ## The `len` builtin

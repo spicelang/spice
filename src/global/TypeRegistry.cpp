@@ -13,13 +13,23 @@ namespace spice::compiler {
 std::unordered_map<uint64_t, std::unique_ptr<Type>> TypeRegistry::types = {};
 
 /**
+ * Compute the hash for a type (aka type id)
+ *
+ * @param type Input type
+ * @return type hash / type id
+ */
+uint64_t TypeRegistry::getTypeHash(const Type &type) {
+  return std::hash<Type>{}(type);
+}
+
+/**
  * Get or insert a type into the type registry
  *
  * @param type The type to insert
  * @return The inserted type
  */
 const Type *TypeRegistry::getOrInsert(const Type &&type) {
-  const uint64_t hash = std::hash<Type>{}(type);
+  const uint64_t hash = getTypeHash(type);
 
   // Check if type already exists
   const auto it = types.find(hash);

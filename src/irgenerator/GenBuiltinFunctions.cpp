@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "global/TypeRegistry.h"
 
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
@@ -17,6 +18,8 @@ std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
     return visit(node->sizeofCall);
   if (node->alignofCall)
     return visit(node->alignofCall);
+  if (node->typeidCall)
+    return visit(node->typeidCall);
   if (node->lenCall)
     return visit(node->lenCall);
   if (node->panicCall)
@@ -101,6 +104,14 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
   // Return align value
   llvm::Value *alignValue = builder.getInt64(alignmentInBytes.value());
   return LLVMExprResult{.value = alignValue};
+}
+
+std::any IRGenerator::visitTypeidCall(const TypeidCallNode *node) {
+  // Return type id value
+  const QualType qualType = node->assignExpr->getEvaluatedSymbolType(manIdx);
+  const uint64_t typeId = TypeRegistry::getTypeHash(*qualType.getType());
+  llvm::Value *typeIdValue = builder.getInt64(typeId);
+  return LLVMExprResult{.value = typeIdValue};
 }
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {

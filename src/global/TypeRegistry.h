@@ -17,6 +17,7 @@ public:
   TypeRegistry(const TypeRegistry &) = delete;
 
   // Public methods
+  static uint64_t getTypeHash(const Type& type);
   static const Type *getOrInsert(SuperType superType);
   static const Type *getOrInsert(SuperType superType, const std::string &subType);
   static const Type *getOrInsert(SuperType superType, const std::string &subType, uint64_t typeId,
