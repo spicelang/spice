@@ -13,7 +13,7 @@ git clone --quiet --depth 1 --branch v1.16.0 https://github.com/google/googletes
 
 # Download JSON for Modern C++
 mkdir json
-curl -SsL "https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp" --output json/json.hpp
+curl -SsL "https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp" --output json/json.hpp
 
 # Download CLI11
 mkdir cli11
