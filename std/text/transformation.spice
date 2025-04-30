@@ -1,0 +1,39 @@
+import "std/data/vector";
+
+/**
+ * Splits a string into an array of strings based on a delimiter.
+ *
+ * @param str The string to split.
+ * @param delimiter The delimiter to split the string by.
+ * @return An array of strings.
+ */
+public f<Vector<String>> split(const String& str, char delimiter) {
+    result = Vector<String>();
+    String current = String();
+    for unsigned long i = 0l; i < str.getLength(); i++ {
+        if (str[i] == delimiter) {
+            result.pushBack(current);
+            current = String();
+        } else {
+            current += str[i];
+        }
+    }
+}
+
+/**
+ * Joins an array of strings into a single string with a delimiter.
+ *
+ * @param arr The array of strings to join.
+ * @param delimiter The delimiter to join the strings with.
+ * @return A single string.
+ */
+public f<String> join(const Vector<String>& vec, const String& delimiter) {
+    result = String();
+    const unsigned long size = vec.getSize();
+    for unsigned long i = 0l; i < size; i++ {
+        result += vec[i];
+        if i < size - 1l {
+            result += delimiter;
+        }
+    }
+}

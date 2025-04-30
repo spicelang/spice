@@ -1,36 +1,18 @@
 import "std/data/vector";
 import "std/io/filepath";
 import "std/io/file";
+import "std/text/transformation";
+
+public type CSVRow interface {
+
+}
 
 type T int|double|string;
+type RowType dyn;
 
-type ICSVColumn interface {
-
-}
-
-public type CSVColumn<T> struct {
-    public string header
-    public Vector<T> data
-}
-
-public p CSVColumn.ctor(string header) {
-    this.header = header;
-}
-
-public f<Result<T>> CSVColumn.get(unsigned long index) {
-    return index < this.data.getSize() ? ok<T>(this.data.get(index)) : err<T>("Index out of bounds");
-}
-
-public f<Result<T>> operator[]<T>(CSVColumn<T>& column, unsigned long index) {
-    return column.get(index);
-}
-
-public type CSVTable struct {
-    Vector<ICSVColumn> columns
-}
-
-public f<Result<ICSVColumn<T>>> CSVTable.getColumn<T>(unsigned long index) {
-    return index < this.columns.getSize() ? ok<ICSVColumn<T>>(this.columns.get(index)) : err<ICSVColumn<T>>("Index out of bounds");
+public type CSVTable<RowType> struct {
+    Vector<String> headers
+    Vector<CSVRow> rows
 }
 
 /**
@@ -44,8 +26,8 @@ public f<Result<ICSVColumn<T>>> CSVTable.getColumn<T>(unsigned long index) {
  * CSVTable table = parser.parse();
  * ```
  */
-public type CSVParser struct {
-    CSVTable table
+public type CSVParser<RowType> struct {
+    CSVTable<RowType> table
     String input
     char separator
 }
@@ -61,6 +43,18 @@ public p CSVParser.ctor(const String& csvString, char separator = ',') {
     this.separator = separator;
 }
 
-public f<CSVTable&> CSVParser.parse() {
+public f<CSVTable<RowType>&> CSVParser.parse() {
+    // Read the CSV file line by line
+    Vector<String> lines = split(this.input, '\n');
+    if (lines.isEmpty()) {
+        return this.table;
+    }
+    // Parse the header line
+    String headerLine = lines[0];
+    Vector<String> headers = split(headerLine, this.separator);
+    this.table.headers = headers;
+    // Parse the data lines
+
+
     return this.table;
 }

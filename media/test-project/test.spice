@@ -1,18 +1,20 @@
 import "std/io/csv";
 import "std/io/filepath";
 
+type Row struct : CSVRow {
+    string name
+    int age
+    string city
+    double salary
+}
+
 f<int> main() {
     FilePath filePath = FilePath("/home/marc/Documents/Dev/spice/test/test-files/std/io/csv-parser/input.csv");
-    CSVParser parser = CSVParser(filePath, ',');
-    CSVTable table = parser.parse();
-    Result<CSVColumn<string>> columnOrErr = table.getColumn<string>(0l);
-    CSVColumn<string> column = columnOrErr.unwrap();
-    Result<string> res = column.get(0l);
-    if res.isOk() {
-        string value = res.unwrap();
-        printf("Value: %s\n", value);
-    } else {
-        Error error = res.getErr();
-        printf("Error: %s\n", error.message);
+    CSVParser<Row> parser = CSVParser<Row>(filePath, ',');
+    CSVTable<Row> table = parser.parse();
+    // Print the headers
+    printf("Headers: ");
+    for unsigned long i = 0l; i < table.headers.getSize(); i++ {
+        printf("%s, ", table.headers[i]);
     }
 }
