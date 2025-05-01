@@ -13,7 +13,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Target/TargetMachine.h>
 
-// Ignore some warnings in ANTLR generated code
+// Ignore some warnings in ANTLR-generated code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <SpiceLexer.h>
@@ -198,6 +198,8 @@ private:
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
+  void dumpCacheStats();
+  void dumpAllocatorStats() const;
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
