@@ -38,13 +38,13 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
 
-  // Search after selected target
+  // Search after the selected target
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
   if (!target)
     throw CompilerError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
-  // Create target machine
+  // Create the target machine
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
   opt.MCOptions.PreserveAsmComments = true;
@@ -66,7 +66,7 @@ void SourceFile::runLexer() {
   Timer timer(&compilerOutput.times.lexer);
   timer.start();
 
-  // Read from file
+  // Read from the input source file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)
     throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath.string() + "' does not exist.");
@@ -94,7 +94,7 @@ void SourceFile::runLexer() {
 }
 
 void SourceFile::runParser() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= PARSER)
     return;
 
@@ -144,7 +144,7 @@ void SourceFile::runCSTVisualizer() {
 }
 
 void SourceFile::runASTBuilder() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= AST_BUILDER)
     return;
 
@@ -166,7 +166,9 @@ void SourceFile::runASTBuilder() {
 
 void SourceFile::runASTVisualizer() {
   // Only execute if enabled
-  if (restoredFromCache || (!cliOptions.dumpSettings.dumpAST && !cliOptions.testMode))
+  if (restoredFromCache)
+    return;
+  if (!cliOptions.dumpSettings.dumpAST && !cliOptions.testMode)
     return;
   // Check if this stage has already been done
   if (previousStage >= AST_VISUALIZER)
@@ -182,8 +184,7 @@ void SourceFile::runASTVisualizer() {
   dotCode << " " << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
   // Dump the serialized AST string and the SVG file
-  if (cliOptions.dumpSettings.dumpAST || cliOptions.testMode)
-    compilerOutput.astString = dotCode.str();
+  compilerOutput.astString = dotCode.str();
 
   if (cliOptions.dumpSettings.dumpAST)
     visualizerOutput("AST", compilerOutput.astString);
@@ -194,7 +195,7 @@ void SourceFile::runASTVisualizer() {
 }
 
 void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IMPORT_COLLECTOR)
     return;
 
@@ -216,7 +217,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runSymbolTableBuilder() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= SYMBOL_TABLE_BUILDER)
     return;
 
@@ -237,7 +238,7 @@ void SourceFile::runSymbolTableBuilder() {
 }
 
 void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
     return;
 
@@ -258,7 +259,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
+  // Skip if restored from cache, this stage has already been done, or not all dependants finished type checking
   if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
     return;
 
@@ -303,7 +304,9 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
 void SourceFile::runDependencyGraphVisualizer() {
   // Only execute if enabled
-  if (restoredFromCache || (!cliOptions.dumpSettings.dumpDependencyGraph && !cliOptions.testMode))
+  if (restoredFromCache)
+    return;
+  if (!cliOptions.dumpSettings.dumpDependencyGraph && !cliOptions.testMode)
     return;
   // Check if this stage has already been done
   if (previousStage >= DEP_GRAPH_VISUALIZER)
@@ -320,8 +323,7 @@ void SourceFile::runDependencyGraphVisualizer() {
   dotCode << "}";
 
   // Dump the serialized AST string and the SVG file
-  if (cliOptions.dumpSettings.dumpDependencyGraph || cliOptions.testMode)
-    compilerOutput.depGraphString = dotCode.str();
+  compilerOutput.depGraphString = dotCode.str();
 
   if (cliOptions.dumpSettings.dumpDependencyGraph)
     visualizerOutput("Dependency Graph", compilerOutput.depGraphString);
@@ -332,14 +334,14 @@ void SourceFile::runDependencyGraphVisualizer() {
 }
 
 void SourceFile::runIRGenerator() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_GENERATOR)
     return;
 
   Timer timer(&compilerOutput.times.irGenerator);
   timer.start();
 
-  // Create LLVM module for this source file
+  // Create the LLVM module for this source file
   llvm::LLVMContext &llvmContext = cliOptions.useLTO ? resourceManager.ltoContext : context;
   llvmModule = std::make_unique<llvm::Module>(fileName, llvmContext);
 
@@ -363,7 +365,7 @@ void SourceFile::runIRGenerator() {
 void SourceFile::runDefaultIROptimizer() {
   assert(!cliOptions.useLTO);
 
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || (previousStage >= IR_OPTIMIZER && !cliOptions.testMode))
     return;
 
@@ -396,7 +398,7 @@ void SourceFile::runDefaultIROptimizer() {
 void SourceFile::runPreLinkIROptimizer() {
   assert(cliOptions.useLTO);
 
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
 
@@ -430,7 +432,7 @@ void SourceFile::runBitcodeLinker() {
   if (!isMainFile)
     return;
 
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
 
@@ -451,7 +453,7 @@ void SourceFile::runPostLinkIROptimizer() {
   if (!isMainFile)
     return;
 
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
 
@@ -483,7 +485,7 @@ void SourceFile::runPostLinkIROptimizer() {
 }
 
 void SourceFile::runObjectEmitter() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= OBJECT_EMITTER)
     return;
 
@@ -494,7 +496,7 @@ void SourceFile::runObjectEmitter() {
   Timer timer(&compilerOutput.times.objectEmitter);
   timer.start();
 
-  // Deduce object file path
+  // Deduce an object file path
   std::filesystem::path objectFilePath = cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
@@ -510,7 +512,7 @@ void SourceFile::runObjectEmitter() {
   if (cliOptions.dumpSettings.dumpAssembly)
     dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
-  // Add object file to linker objects
+  // Add the object file to the linker objects
   resourceManager.linker.addObjectFilePath(objectFilePath.string());
 
   previousStage = OBJECT_EMITTER;
@@ -519,7 +521,7 @@ void SourceFile::runObjectEmitter() {
 }
 
 void SourceFile::concludeCompilation() {
-  // Skip if restored from cache or this stage has already been done
+  // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= FINISHED)
     return;
 
@@ -536,19 +538,14 @@ void SourceFile::concludeCompilation() {
     dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
 
   // Save cache statistics as string in the compiler output
-  if (isMainFile && (cliOptions.dumpSettings.dumpCacheStats || cliOptions.testMode)) {
-    std::stringstream cacheStats;
-    cacheStats << FunctionManager::dumpLookupCacheStatistics() << std::endl;
-    cacheStats << StructManager::dumpLookupCacheStatistics() << std::endl;
-    cacheStats << InterfaceManager::dumpLookupCacheStatistics() << std::endl;
-    compilerOutput.cacheStats = cacheStats.str();
-  }
+  if (isMainFile && (cliOptions.dumpSettings.dumpCacheStats || cliOptions.testMode))
+    dumpCacheStats();
 
   // Dump lookup cache statistics
   if (isMainFile && cliOptions.dumpSettings.dumpCacheStats)
     dumpOutput(compilerOutput.cacheStats, "Cache Statistics", "cache-stats.out");
 
-  // Print warning if verifier is disabled
+  // Print warning if the verifier is disabled
   if (isMainFile && cliOptions.disableVerifier) {
     const std::string warningMessage =
         CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
@@ -582,10 +579,10 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 void SourceFile::runMiddleEnd() {
   // We need two runs here due to generics.
   // The first run to determine all concrete function/struct/interface substantiations
-  runTypeCheckerPre(); // Visit dependency tree from bottom to top
+  runTypeCheckerPre(); // Visit the dependency tree from bottom to top
   CHECK_ABORT_FLAG_V()
   // The second run to ensure, also generic scopes are type-checked properly
-  runTypeCheckerPost(); // Visit dependency tree from top to bottom in topological order
+  runTypeCheckerPost(); // Visit the dependency tree from top to bottom in topological order
   CHECK_ABORT_FLAG_V()
   // Visualize dependency graph
   runDependencyGraphVisualizer();
@@ -616,24 +613,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
 
   if (isMainFile) {
     resourceManager.totalTimer.stop();
-    if (cliOptions.printDebugOutput) {
-      CHECK_ABORT_FLAG_V()
-      const size_t sourceFileCount = resourceManager.sourceFiles.size();
-      const size_t totalLineCount = resourceManager.getTotalLineCount();
-      const size_t totalTypeCount = TypeRegistry::getTypeCount();
-      const size_t allocatedBytes = resourceManager.astNodeAlloc.getTotalAllocatedSize();
-      const size_t allocationCount = resourceManager.astNodeAlloc.getAllocationCount();
-      const size_t totalDuration = resourceManager.totalTimer.getDurationMilliseconds();
-      std::cout << "\nSuccessfully compiled " << std::to_string(sourceFileCount) << " source file(s)";
-      std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
-      std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
-      std::cout << " in " << std::to_string(allocationCount) << " allocations.\n";
-#ifndef NDEBUG
-      resourceManager.astNodeAlloc.printAllocatedClassStatistic();
-#endif
-      std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
-      std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
-    }
+    if (cliOptions.printDebugOutput)
+      dumpCompilationStats();
   }
 }
 
@@ -642,7 +623,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   // Check if this would cause a circular dependency
   std::stack<const SourceFile *> dependencyCircle;
   if (isAlreadyImported(path, dependencyCircle)) {
-    // Build error message
+    // Build the error message
     std::stringstream errorMessage;
     errorMessage << "Circular import detected while importing '" << sourceFile->fileName << "':\n\n";
     errorMessage << CommonUtil::getCircularImportMessage(dependencyCircle);
@@ -766,11 +747,11 @@ bool SourceFile::haveAllDependantsBeenTypeChecked() const {
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
  * But only do that for the symbols that are actually defined in the imported source file. Do not allow transitive dependencies.
- * Here, we also register privately visible symbols, to know that the symbol exist. The error handling regarding the visibility
+ * Here, we also register privately visible symbols to know that the symbol exist. The error handling regarding the visibility
  * is issued later in the pipeline.
  *
  * @param importedSourceFile Imported source file
- * @param importName First fragment of all fully-qualified symbol names from that import
+ * @param importName First fragment of all fully qualified symbol names from that import
  */
 void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName) {
   // Retrieve import entry
@@ -778,10 +759,10 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
   assert(importEntry != nullptr || importName.starts_with("__")); // Runtime imports start with two underscores
 
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
-    // Skip if we would introduce a transitive dependency
+    // Skip if we introduce a transitive dependency
     if (entry.targetScope->sourceFile->globalScope != importedSourceFile.globalScope)
       continue;
-    // Add fully qualified name
+    // Add the fully qualified name
     std::string newName = importName;
     newName += SCOPE_ACCESS_TOKEN;
     newName += originalName;
@@ -790,6 +771,32 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
     addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
   }
+}
+
+void SourceFile::dumpCacheStats() {
+  std::stringstream cacheStats;
+  cacheStats << FunctionManager::dumpLookupCacheStatistics() << std::endl;
+  cacheStats << StructManager::dumpLookupCacheStatistics() << std::endl;
+  cacheStats << InterfaceManager::dumpLookupCacheStatistics() << std::endl;
+  compilerOutput.cacheStats = cacheStats.str();
+}
+
+void SourceFile::dumpCompilationStats() const {
+  const size_t sourceFileCount = resourceManager.sourceFiles.size();
+  const size_t totalLineCount = resourceManager.getTotalLineCount();
+  const size_t totalTypeCount = TypeRegistry::getTypeCount();
+  const size_t allocatedBytes = resourceManager.astNodeAlloc.getTotalAllocatedSize();
+  const size_t allocationCount = resourceManager.astNodeAlloc.getAllocationCount();
+  const size_t totalDuration = resourceManager.totalTimer.getDurationMilliseconds();
+  std::cout << "\nSuccessfully compiled " << std::to_string(sourceFileCount) << " source file(s)";
+  std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
+  std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
+  std::cout << " in " << std::to_string(allocationCount) << " allocations.\n";
+#ifndef NDEBUG
+  resourceManager.astNodeAlloc.printAllocatedClassStatistic();
+#endif
+  std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
+  std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
 }
 
 void SourceFile::dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const {
@@ -832,7 +839,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
       throw CompilerError(IO_ERROR, "Please check if you have installed Graphviz and added it to the PATH variable");
     // GCOV_EXCL_STOP
 
-    // Write to dot file
+    // Write to a dot file
     std::ranges::transform(outputName, outputName.begin(), ::tolower);
     dumpOutput(output, outputName, outputName + ".dot");
 

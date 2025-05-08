@@ -1,15 +1,11 @@
-type DemoStruct struct {
-    int i
-    long l
-    short s
-    string str
-}
+import "std/data/vector";
+import "std/data/pair";
 
 f<int> main() {
-    printf("%d\n", typeid(4));
-    printf("%d\n", typeid<int>());
+    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
+    pairVector.pushBack(Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(Pair<int, string>(1, "World"));
 
-    DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
-    printf("%d\n", typeid<DemoStruct>());
-    printf("%d\n", typeid(s));
+    Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());
 }
