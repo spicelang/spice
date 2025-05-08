@@ -45,7 +45,7 @@ std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
 }
 
 /**
- * Retrieve the number of lines of a file
+ * Retrieve the number of lines in a file
  *
  * @param filePath File path
  * @return Number of lines
@@ -130,7 +130,7 @@ bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
  * Search for a supported linker invoker on the system and return the executable name or path.
  * This function may throw a LinkerError if no linker invoker is found.
  *
- * @return Name of path to the linker invoker executable
+ * @return Name and path to the linker invoker executable
  */
 ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
 #if OS_UNIX
@@ -153,7 +153,7 @@ ExternalBinaryFinderResult FileUtil::findLinkerInvoker() {
  * Search for a supported linker on the system and return the executable name or path.
  * This function may throw a LinkerError if no linker is found.
  *
- * @return Name of path to the linker executable
+ * @return Name and path to the linker executable
  */
 ExternalBinaryFinderResult FileUtil::findLinker([[maybe_unused]] const CliOptions &cliOptions) {
 #if OS_UNIX

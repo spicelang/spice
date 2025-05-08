@@ -1,5 +1,7 @@
 // Std imports
 import "std/text/print";
+import "std/text/stringstream";
+import "std/text/format";
 import "std/data/pair";
 import "std/data/map";
 import "std/data/unordered-map";
@@ -61,10 +63,12 @@ type TimerOutput struct {
 type CompilerOutput struct {
     String astString
     String symbolTableString
+    String depGraphString
     String irString
     String irOptString
     String asmString
     String typesString
+    String cacheStats
     Vector<CompilerWarning> warnings
     TimerOutput times
 }
@@ -637,4 +641,49 @@ f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
         }
     }
     return true;
+}
+
+p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, const String& importName) {
+    // Retrieve import entry
+    SymbolTableEntry* importEntry = this.globalScope.lookupStrict(importName);
+    assert importEntry != nil<SymbolTableEntry*> || importName.startsWith("__"); // Runtime imports start with two underscores
+
+    foreach const Pair<const String&, NameRegistryEntry&> item : importedSourceFile.exportedNameRegistry {
+        const String& originalName = item.getFirst();
+        const NameRegistryEntry& entry = item.getSecond();
+        // Skip if we introduce a transitive dependency
+        if entry.targetScope.sourceFile.globalScope != importedSourceFile.globalScoppe {
+            continue;
+        }
+        // Add the fully qualified name
+        String newName = importName;
+        newName += SCOPE_ACCESS_TOKEN;
+        newName += originalName;
+        this.exportedNameRegistry.insert(newName, NameRegistryEntry(newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry));
+        // Add the shortened name, considering the name collision
+        const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
+        this.addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
+    }
+}
+
+p SourceFile.dumpCacheStats() {
+    StringStream cacheStats;
+    //cacheStats << FunctionManager.dumpLookupCacheStatistics() << endl();
+    //cacheStats << StructManager.dumpLookupCacheStatistics() << endl();
+    //cacheStats << InterfaceManager.dumpLookupCacheStatistics() << endl();
+    this.compilerOutput.cacheStats = cacheStats.getString();
+}
+
+p SourceFile.dumpCompilationStats() {
+    const unsigned long sourceFileCount = this.resourceManager.sourceFiles.getSize();
+    const unsigned long totalLineCount = this.resourceManager.getTotalLineCount();
+    const unsigned long totalTypeCount = /*TypeRegistry.getTypeCount()*/ 0;
+    const unsigned long allocatedBytes = this.resourceManager.astNodeAlloc.getTotalAllocatedSize();
+    const unsigned long allocationCount = this.resourceManager.astNodeAlloc.getAllocationCount();
+    const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationMilliseconds();
+    lineBreak();
+    printf("Successfully compiled %d source file(s) or %d lines in total.\n", sourceFileCount, totalLineCount);
+    printf("Total number of blocks allocated via BlockAllocator: %d in %d allocations.\n", formatStorageSize(allocatedBytes), allocationCount);
+    printf("Total number of types: %d\n", totalTypeCount);
+    printf("Total compile time: %d ms\n", totalDuration);
 }

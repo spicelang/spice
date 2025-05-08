@@ -199,7 +199,7 @@ private:
   bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void dumpCacheStats();
-  void dumpAllocatorStats() const;
+  void dumpCompilationStats() const;
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;

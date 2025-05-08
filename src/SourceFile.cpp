@@ -614,7 +614,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   if (isMainFile) {
     resourceManager.totalTimer.stop();
     if (cliOptions.printDebugOutput)
-      dumpAllocatorStats();
+      dumpCompilationStats();
   }
 }
 
@@ -781,7 +781,7 @@ void SourceFile::dumpCacheStats() {
   compilerOutput.cacheStats = cacheStats.str();
 }
 
-void SourceFile::dumpAllocatorStats() const {
+void SourceFile::dumpCompilationStats() const {
   const size_t sourceFileCount = resourceManager.sourceFiles.size();
   const size_t totalLineCount = resourceManager.getTotalLineCount();
   const size_t totalTypeCount = TypeRegistry::getTypeCount();

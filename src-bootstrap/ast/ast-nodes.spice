@@ -456,17 +456,6 @@ public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ============================================================ StmtNode =========================================================
-
-public type ASTStmtNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
 // ========================================================== DeclStmtNode =======================================================
 
 public type ASTDeclStmtNode struct/*: IVisitable*/ {
