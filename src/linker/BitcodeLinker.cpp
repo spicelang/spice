@@ -4,13 +4,13 @@
 
 #include <SourceFile.h>
 
-#include <llvm/IR/Module.h>
+#include <llvm/IR/Module.h> // IWYU pragma: keep
 
 namespace spice::compiler {
 
 void BitcodeLinker::link() {
   // Link all source file modules in
-  for (const auto &[name, sourceFile] : resourceManager.sourceFiles)
+  for (const auto &sourceFile : resourceManager.sourceFiles | std::views::values)
     linker.linkInModule(std::move(sourceFile->llvmModule), llvm::Linker::None);
 }
 

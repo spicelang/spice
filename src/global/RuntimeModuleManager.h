@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include <unordered_map>
 
-#include <symboltablebuilder/Type.h>
+#include <symboltablebuilder/QualType.h>
 
 namespace spice::compiler {
 

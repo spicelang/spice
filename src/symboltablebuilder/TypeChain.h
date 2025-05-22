@@ -48,7 +48,6 @@ union TypeChainElementData {
 
 // Structs
 struct TypeChainElement {
-public:
   // Constructors
   TypeChainElement() = default;
   explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType) {}

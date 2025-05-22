@@ -106,28 +106,32 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
   // If there is an anonymous symbol attached to left or right, remove it,
   // since the result takes over the ownership of any destructible object.
-  const bool removeAnonymousSymbolTrueSide = trueEntry && trueEntry->anonymous;
-  if (removeAnonymousSymbolTrueSide) {
-    currentScope->symbolTable.deleteAnonymous(trueEntry->name);
-  } else if (trueEntry && !trueEntry->anonymous && !trueType.isRef() && !trueType.isTriviallyCopyable(node)) {
-    node->trueSideCallsCopyCtor = true;
+  bool removedAnonymousSymbols = false;
+  if (trueEntry) {
+    if (trueEntry->anonymous) {
+      currentScope->symbolTable.deleteAnonymous(trueEntry->name);
+      removedAnonymousSymbols = true;
+    } else if (!trueType.isRef() && !trueType.isTriviallyCopyable(node)) {
+      node->trueSideCallsCopyCtor = true;
+    }
   }
-  const bool removeAnonymousSymbolFalseSide = falseEntry && falseEntry->anonymous;
-  if (removeAnonymousSymbolFalseSide) {
-    currentScope->symbolTable.deleteAnonymous(falseEntry->name);
-  } else if (falseEntry && !falseEntry->anonymous && !falseType.isRef() && !falseType.isTriviallyCopyable(node)) {
-    node->falseSideCallsCopyCtor = true;
+  if (falseEntry) {
+    if (falseEntry->anonymous) {
+      currentScope->symbolTable.deleteAnonymous(falseEntry->name);
+      removedAnonymousSymbols = true;
+    } else if (!falseType.isRef() && !falseType.isTriviallyCopyable(node)) {
+      node->falseSideCallsCopyCtor = true;
+    }
   }
 
   // Create a new anonymous symbol for the result if required
   const QualType &resultType = trueType;
   SymbolTableEntry *anonymousSymbol = nullptr;
-  const bool removedAnonymousSymbols = removeAnonymousSymbolTrueSide || removeAnonymousSymbolFalseSide;
   const bool calledCopyCtor = node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor;
   if (removedAnonymousSymbols || calledCopyCtor || resultType.isRef())
     anonymousSymbol = currentScope->symbolTable.insertAnonymous(resultType, node);
 
-  // Lookup copy ctor, if at least one side needs it
+  // Look up the copy ctor if at least one side needs it
   if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor)
     node->calledCopyCtor = matchCopyCtor(trueTypeModified, node);
 
