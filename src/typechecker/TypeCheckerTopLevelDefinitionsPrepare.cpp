@@ -85,7 +85,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Retrieve 'this' type
   QualType thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
-  QualType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -94,7 +93,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     structEntry->used = true;
     // Get type and ptr type
     thisType = structEntry->getQualType();
-    thisPtrType = thisType.toPtr(node);
+    const QualType thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
     for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
@@ -224,7 +223,6 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Retrieve 'this' type
   QualType thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
-  QualType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -233,7 +231,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     structEntry->used = true;
     // Get type and ptr type
     thisType = structEntry->getQualType();
-    thisPtrType = thisType.toPtr(node);
+    const QualType thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
     for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };

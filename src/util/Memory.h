@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <cstdlib>
-
 namespace spice::compiler {
 
 // Typedefs

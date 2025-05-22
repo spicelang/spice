@@ -3,7 +3,6 @@
 #pragma once
 
 #include <filesystem>
-#include <string>
 
 namespace spice::compiler {
 

@@ -4,9 +4,11 @@
 
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
-#include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {
+
+// Forward declarations
+class GlobalResourceManager;
 
 /**
  * Jobs:

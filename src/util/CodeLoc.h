@@ -13,7 +13,6 @@ namespace spice::compiler {
 class SourceFile;
 
 struct CodeLoc {
-public:
   // Constructors
   explicit CodeLoc(const antlr4::Token *token, SourceFile *sourceFile = nullptr)
       : sourceFile(sourceFile), sourceInterval(token->getStartIndex(), token->getStopIndex()), line(token->getLine()),

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <irgenerator/LLVMExprResult.h>
-#include <symboltablebuilder/Type.h>
+#include <symboltablebuilder/QualType.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
@@ -73,7 +73,8 @@ public:
                             size_t opIdx);
   LLVMExprResult getDivInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
                             size_t opIdx);
-  LLVMExprResult getRemInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) const;
+  LLVMExprResult getRemInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
+                            QualType rhsSTy) const;
   LLVMExprResult getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;

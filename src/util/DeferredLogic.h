@@ -8,7 +8,6 @@
 namespace spice::compiler {
 
 struct DeferredLogic {
-public:
   // Constructors
   explicit DeferredLogic(std::function<void()> deferredFunc, bool triggerOnDestruct = true)
       : deferredFunc(std::move(deferredFunc)), triggerOnDestruct(triggerOnDestruct) {}

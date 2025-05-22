@@ -210,6 +210,7 @@ bool TernaryExprNode::hasCompileTimeValue() const {
 }
 
 CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
+  assert(condition != nullptr);
   if (!trueExpr && !falseExpr)
     return condition->getCompileTimeValue();
 
@@ -217,11 +218,14 @@ CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (!condition->hasCompileTimeValue())
     return {};
 
-  // Check if condition always evaluates to 'true'
+  // Check if the condition always evaluates to 'true'
   if (condition->getCompileTimeValue().boolValue) {
     const LogicalOrExprNode *trueValue = isShortened ? condition : trueExpr;
+    assert(trueValue != nullptr);
     return trueValue->getCompileTimeValue();
   }
+
+  assert(falseExpr != nullptr);
   return falseExpr->getCompileTimeValue();
 }
 

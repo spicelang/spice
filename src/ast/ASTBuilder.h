@@ -27,7 +27,6 @@ const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
 class ASTBuilder final : CompilerPass, public SpiceVisitor {
-private:
   // Private type defs
   using TerminalNode = antlr4::tree::TerminalNode;
   using ParserRuleContext = antlr4::ParserRuleContext;

@@ -228,7 +228,7 @@ void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *glo
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, stringType, true));
 }
 
-void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber) {
+void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 

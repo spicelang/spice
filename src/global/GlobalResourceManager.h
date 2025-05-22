@@ -7,7 +7,6 @@
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
 #include <util/BlockAllocator.h>
-#include <util/CodeLoc.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/LLVMContext.h>
