@@ -1495,7 +1495,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
         i++; // Consume INT_LIT
       } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
         hasSize = true;
-        sizeVarName = getIdentifier(terminal);
+        sizeVarName = getIdentifier(terminal, true);
         i++; // Consume TYPE_IDENTIFIER
       }
       dataTypeNode->tmQueue.push({DataTypeNode::TypeModifierType::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
@@ -1803,14 +1803,16 @@ void ASTBuilder::replaceEscapeChars(std::string &input) {
   input.resize(writeIndex);
 }
 
-std::string ASTBuilder::getIdentifier(TerminalNode *terminal) const {
-  std::string identifier = terminal->getText();
+std::string ASTBuilder::getIdentifier(TerminalNode *terminal, bool isTypeIdentifier) const {
+  const std::string identifier = terminal->getText();
 
-  // Check if the identifier is 'String' and this is no std source file
-  bool isReserved = !sourceFile->isStdFile && (identifier == STROBJ_NAME || identifier == RESULTOBJ_NAME);
   // Check if the list of reserved keywords contains the given identifier
-  isReserved |= std::ranges::find(RESERVED_KEYWORDS, identifier) != std::end(RESERVED_KEYWORDS);
-  // Print error message
+  bool isReserved = std::ranges::find(RESERVED_KEYWORDS, identifier) != std::end(RESERVED_KEYWORDS);
+  // Check if the identifier is a type identifier and is reserved
+  if (isTypeIdentifier)
+    isReserved |= !sourceFile->isStdFile && std::ranges::find(RESERVED_TYPE_NAMES, identifier) != std::end(RESERVED_TYPE_NAMES);
+
+  // If we got a reserved keyword/typename print error message
   if (isReserved) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead");
