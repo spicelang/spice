@@ -1780,27 +1780,26 @@ void ASTBuilder::replaceEscapeChars(std::string &input) {
       {'v', '\v'}, {'\\', '\\'}, {'?', '\?'}, {'\'', '\''}, {'"', '\"'},
   };
 
-  size_t writeIndex = 0; // Index where the next character should be written
-  for (size_t readIndex = 0; readIndex < input.length(); ++readIndex, ++writeIndex) {
-    if (input[readIndex] == '\\' && readIndex + 1 < input.length()) {
-      const char nextChar = input[readIndex + 1];
-      if (escapeMap.contains(nextChar)) {
-        // If the next character forms a valid escape sequence, replace it
-        input[writeIndex] = escapeMap.at(nextChar);
-        readIndex++; // Skip the next character as it's part of the escape sequence
-      } else {
-        // If it's not a valid escape sequence, just copy the backslash
-        input[writeIndex] = input[readIndex];
+  size_t writeIndex = 0;
+  size_t readIndex = 0;
+  const size_t len = input.length();
+
+  while (readIndex < len) {
+    const char c = input[readIndex];
+    if (c == '\\' && readIndex + 1 < len) {
+      char next = input[readIndex + 1];
+      auto it = escapeMap.find(next);
+      if (it != escapeMap.end()) {
+        input[writeIndex++] = it->second;
+        readIndex += 2;
+        continue;
       }
-    } else {
-      if (writeIndex != readIndex) {
-        // If we've made replacements, shift the current character to the write position
-        input[writeIndex] = input[readIndex];
-      }
-      // If no replacements were needed, writeIndex and readIndex are the same, and this does nothing
     }
+    // Copy current character
+    input[writeIndex++] = c;
+    readIndex++;
   }
-  // Resize the string to remove the unused portion
+
   input.resize(writeIndex);
 }
 
