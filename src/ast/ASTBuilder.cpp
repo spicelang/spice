@@ -129,13 +129,13 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
 
   // Extract function name
   if (ctx->TYPE_IDENTIFIER()) {
-    const std::string typeIdentifier = getIdentifier(ctx->TYPE_IDENTIFIER());
+    const std::string typeIdentifier = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
     fctNameNode->structName = typeIdentifier;
     fctNameNode->fqName = typeIdentifier + MEMBER_ACCESS_TOKEN;
     fctNameNode->nameFragments.push_back(typeIdentifier);
   }
   if (ctx->IDENTIFIER()) {
-    const std::string fctIdentifier = getIdentifier(ctx->IDENTIFIER());
+    const std::string fctIdentifier = getIdentifier(ctx->IDENTIFIER(), false);
     fctNameNode->name = fctIdentifier;
     fctNameNode->fqName += fctIdentifier;
     fctNameNode->nameFragments.push_back(fctIdentifier);
@@ -152,7 +152,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   const auto structDefNode = createNode<StructDefNode>(ctx);
 
   // Enrich
-  structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
   structDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
@@ -187,7 +187,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   const auto interfaceDefNode = createNode<InterfaceDefNode>(ctx);
 
   // Enrich
-  interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
   interfaceDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
@@ -218,7 +218,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   const auto enumDefNode = createNode<EnumDefNode>(ctx);
 
   // Enrich
-  enumDefNode->enumName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  enumDefNode->enumName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
   enumDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
@@ -237,7 +237,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
   const auto genericTypeDefNode = createNode<GenericTypeDefNode>(ctx);
 
   // Enrich
-  genericTypeDefNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  genericTypeDefNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
 
   // Visit children
   genericTypeDefNode->typeAltsLst = std::any_cast<TypeAltsLstNode *>(visit(ctx->typeAltsLst()));
@@ -249,7 +249,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   const auto aliasDefNode = createNode<AliasDefNode>(ctx);
 
   // Enrich
-  aliasDefNode->aliasName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  aliasDefNode->aliasName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
   aliasDefNode->dataTypeString = ctx->dataType()->getText();
   aliasDefNode->typeId = resourceManager.getNextCustomTypeId();
 
@@ -265,7 +265,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   const auto globalVarDefNode = createNode<GlobalVarDefNode>(ctx);
 
   // Enrich
-  globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
 
   // Visit children
   globalVarDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
@@ -282,7 +282,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   const auto extDeclNode = createNode<ExtDeclNode>(ctx);
 
   // Enrich
-  extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER());
+  extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER(), false);
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
@@ -313,7 +313,7 @@ std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
   importDefNode->importPath = pathStr.substr(1, pathStr.size() - 2);
 
   // If no name is given, use the path as name
-  importDefNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importDefNode->importPath;
+  importDefNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER(), false) : importDefNode->importPath;
 
   return concludeNode(importDefNode);
 }
@@ -556,7 +556,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   const auto enumItemNode = createNode<EnumItemNode>(ctx);
 
   // Enrich
-  enumItemNode->itemName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  enumItemNode->itemName = getIdentifier(ctx->TYPE_IDENTIFIER(), false);
   if (ctx->ASSIGN()) {
     enumItemNode->itemValue = parseInt(ctx->INT_LIT());
     enumItemNode->hasValue = true;
@@ -569,7 +569,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   const auto fieldNode = createNode<FieldNode>(ctx);
 
   // Enrich
-  fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER());
+  fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER(), false);
 
   // Visit children
   fieldNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
@@ -584,7 +584,7 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   const auto signatureNode = createNode<SignatureNode>(ctx);
 
   // Extract method name
-  signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
+  signatureNode->methodName = getIdentifier(ctx->IDENTIFIER(), false);
 
   // Visit children
   if (ctx->qualifierLst()) {
@@ -632,7 +632,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   const auto declStmtNode = createNode<DeclStmtNode>(ctx);
 
   // Enrich
-  declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
+  declStmtNode->varName = getIdentifier(ctx->IDENTIFIER(), false);
 
   // Visit children
   declStmtNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
@@ -788,13 +788,13 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
         continue;
 
       if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-        const std::string fragment = getIdentifier(terminal);
+        const std::string fragment = getIdentifier(terminal, false);
         caseConstantNode->identifierFragments.push_back(fragment);
         if (!caseConstantNode->fqIdentifier.empty())
           caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
         caseConstantNode->fqIdentifier += fragment;
       } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-        const std::string fragment = getIdentifier(terminal);
+        const std::string fragment = getIdentifier(terminal, false);
         caseConstantNode->identifierFragments.push_back(fragment);
         if (!caseConstantNode->fqIdentifier.empty())
           caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
@@ -1226,7 +1226,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
       postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
     } else if (ctx->IDENTIFIER()) {
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS;
-      postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
+      postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER(), false);
     } else if (ctx->PLUS_PLUS()) {
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS;
     } else if (ctx->MINUS_MINUS()) {
@@ -1254,13 +1254,13 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
         continue;
 
       if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-        std::string fragment = getIdentifier(terminal);
+        std::string fragment = getIdentifier(terminal, false);
         atomicExprNode->identifierFragments.push_back(fragment);
         if (!atomicExprNode->fqIdentifier.empty())
           atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
         atomicExprNode->fqIdentifier += fragment;
       } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-        std::string fragment = getIdentifier(terminal);
+        std::string fragment = getIdentifier(terminal, false);
         atomicExprNode->identifierFragments.push_back(fragment);
         if (!atomicExprNode->fqIdentifier.empty())
           atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
@@ -1807,15 +1807,16 @@ std::string ASTBuilder::getIdentifier(TerminalNode *terminal, bool isTypeIdentif
   const std::string identifier = terminal->getText();
 
   // Check if the list of reserved keywords contains the given identifier
-  bool isReserved = std::ranges::find(RESERVED_KEYWORDS, identifier) != std::end(RESERVED_KEYWORDS);
-  // Check if the identifier is a type identifier and is reserved
-  if (isTypeIdentifier)
-    isReserved |= !sourceFile->isStdFile && std::ranges::find(RESERVED_TYPE_NAMES, identifier) != std::end(RESERVED_TYPE_NAMES);
-
-  // If we got a reserved keyword/typename print error message
-  if (isReserved) {
+  if (std::ranges::find(RESERVED_KEYWORDS, identifier) != std::end(RESERVED_KEYWORDS)) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead");
+  }
+
+  // Check if the identifier is a type identifier and is reserved
+  if (isTypeIdentifier && !sourceFile->isStdFile &&
+      std::ranges::find(RESERVED_TYPE_NAMES, identifier) != std::end(RESERVED_TYPE_NAMES)) {
+    const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
+    throw ParserError(codeLoc, RESERVED_TYPENAME, "'" + identifier + "' is a reserved type name. Please use another one instead");
   }
 
   return identifier;
