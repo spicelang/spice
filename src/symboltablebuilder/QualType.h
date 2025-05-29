@@ -24,12 +24,15 @@ class SymbolTableEntry;
 enum SuperType : uint8_t;
 
 // Constants
-const char *const STROBJ_NAME = "String";
-const char *const RESULTOBJ_NAME = "Result";
-const char *const ERROBJ_NAME = "Error";
-const char *const TIOBJ_NAME = "TypeInfo";
-const char *const IITERATOR_NAME = "IIterator";
-const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
+constexpr const char *const STROBJ_NAME = "String";
+constexpr const char *const RESULTOBJ_NAME = "Result";
+constexpr const char *const ERROBJ_NAME = "Error";
+constexpr const char *const TIOBJ_NAME = "TypeInfo";
+constexpr const char *const IITERATOR_NAME = "IIterator";
+constexpr const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
+static constexpr const char *const RESERVED_TYPE_NAMES[] = {
+    STROBJ_NAME, RESULTOBJ_NAME, ERROBJ_NAME, TIOBJ_NAME, IITERATOR_NAME, ARRAY_ITERATOR_NAME,
+};
 static constexpr uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
 static constexpr uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 

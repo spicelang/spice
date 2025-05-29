@@ -1,0 +1,1 @@
+[Error|Parser] ./source.spice:1:6: Usage of reserved typename: 'Result' is a reserved type name. Please use another one instead

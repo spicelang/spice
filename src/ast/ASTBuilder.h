@@ -185,7 +185,7 @@ private:
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb);
   static void replaceEscapeChars(std::string &input);
-  std::string getIdentifier(TerminalNode *terminal) const;
+  std::string getIdentifier(TerminalNode *terminal, bool isTypeIdentifier) const;
 };
 
 } // namespace spice::compiler

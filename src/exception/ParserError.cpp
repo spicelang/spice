@@ -44,6 +44,8 @@ std::string ParserError::getMessagePrefix(ParserErrorType errorType) {
     return "Invalid attribute value type";
   case RESERVED_KEYWORD:
     return "Usage of reserved keyword";
+  case RESERVED_TYPENAME:
+    return "Usage of reserved typename";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE
