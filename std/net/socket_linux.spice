@@ -64,10 +64,6 @@ public type Socket struct {
     int connFd // Current connection
 }
 
-public p Socket.dtor() {
-    this.close();
-}
-
 /**
  * Accept an incoming connection to the socket and save the connection file desceiptor
  * to the socket object.
@@ -146,14 +142,11 @@ public f<bool> Socket.close() {
 public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     // Create socket file descriptor
     const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if sockFd == 0 { return err<Socket>(Error("Error creating socket")); }
+    if sockFd == -1 { return err<Socket>(Error("Error creating socket")); }
 
     // Construct socket object
     const Socket s = Socket { sockFd, /*connFd*/ 0 };
     const SockAddrIn servAddr = SockAddrIn { AF_INET, InAddr { INADDR_ANY }, htons(port), 0ul};
-    printf("%d\n", servAddr.sinFamily);
-    printf("%d\n", servAddr.sinPort);
-    printf("%d\n", servAddr.sinAddr.addr);
 
     // Bind to target address
     const int bindResult = bind(sockFd, &servAddr, 16u /* hardcoded sizeof(servaddr) */);
@@ -163,10 +156,6 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
     const int listenResult = listen(sockFd, maxWaitingConnections);
     if listenResult < 0 { return err<Socket>(Error("Error listening on address")); }
 
-    //s.acceptConnection();
-
-    // ToDo: In the Result.ctor() the Socket object is copied and the dtor of the original
-    // object is called. This closes the socket. Continue implementing when move ctors work.
     return ok(s);
 }
 
