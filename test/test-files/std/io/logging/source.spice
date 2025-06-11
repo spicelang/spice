@@ -3,7 +3,7 @@ import "std/io/file";
 import "std/io/filepath";
 
 f<int> main() {
-    {
+     {
         LogFile logFile = LogFile(FilePath("log.txt"), false);
         logFile.logDebug("This is a debug message");
         logFile.logInfo("This is a info message");
