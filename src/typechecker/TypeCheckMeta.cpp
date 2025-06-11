@@ -17,7 +17,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
     // Visit param
     const auto paramType = std::any_cast<QualType>(visit(param));
     if (paramType.is(TY_UNRESOLVED))
-      continue;
+      throw SemanticError(param, UNKNOWN_DATATYPE, "Unknown data type for parameter '" + param->varName + "'");
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
     if (paramType.is(TY_DYN)) {
