@@ -1,0 +1,4 @@
+[debug] This is a debug message
+[0;34m[info] This is a info message[0m
+[38;5;208m[warning] This is a warning message[0m
+[0;31m[error] This is a error message[0m

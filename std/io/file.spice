@@ -89,6 +89,27 @@ public f<bool> File.close() {
 }
 
 /**
+ * Retrieves the current position of the file pointer.
+ *
+ * @return Current position in the file in bytes
+ */
+public inline f<unsigned long> File.getCursorPos() {
+    assert !this.isEOF;
+    return ftell(this.filePtr);
+}
+
+/**
+ * Sets the position of the file pointer to a specific position.
+ *
+ * @param offset Position in the file in bytes
+ * @param origin Origin from which to set the position, can be SEEK_SET, SEEK_CUR, or SEEK_END
+ */
+public inline p File.setCursorPos(long offset, int origin = SEEK_SET) {
+    assert !this.isEOF;
+    fseek(this.filePtr, offset, origin);
+}
+
+/**
  * Reads a singe char from the file.
  *
  * @return Char in form of an int, because of EOF = -1.
@@ -143,7 +164,7 @@ public f<bool> File.write(string value) {
  * @param value String to write
  * @return True if successful, false if not
  */
-public f<bool> File.write(String value) {
+public f<bool> File.write(const String& value) {
     return this.write(value.getRaw());
 }
 
@@ -154,14 +175,13 @@ public f<bool> File.write(String value) {
  */
 public f<unsigned long> File.getSize() {
     // Remember current cursor position
-    unsigned long curPos = ftell(this.filePtr);
+    unsigned long curPos = this.getCursorPos();
     // Move the cursor to the end of the file
-    fseek(this.filePtr, 0l, SEEK_END);
+    this.setCursorPos(0l, SEEK_END);
     // Get the cursor position
-    unsigned long size = ftell(this.filePtr);
+    result = this.getCursorPos();
     // Move cursor back to the remembered position
-    fseek(this.filePtr, curPos, SEEK_SET);
-    return size;
+    this.setCursorPos(cast<long>(curPos));
 }
 
 /**
@@ -221,6 +241,10 @@ public f<Result<File>> openFile(string path, string mode = MODE_READ) {
     FilePtr fp = fopen(path, mode);
     File file = File{fp, false};
     return fp != nil<FilePtr> ? ok(file) : err<File>(Error("Failed to open file"));
+}
+
+public f<Result<File>> openFile(String path, string mode = MODE_READ) {
+    return openFile(path.getRaw(), mode);
 }
 
 /**

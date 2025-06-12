@@ -1,0 +1,63 @@
+import "std/io/file";
+import "std/io/filepath";
+
+public type LogFile struct {
+    File fileHandle
+    bool onlyToFile
+}
+
+public p LogFile.ctor(const FilePath& filePath, bool onlyToFile = false) {
+    Result<File> fileResult = openFile(filePath.toNativeString(), "a");
+    this.fileHandle = fileResult.unwrap();
+    this.onlyToFile = onlyToFile;
+}
+
+public p LogFile.dtor() {
+    this.fileHandle.close();
+}
+
+public p LogFile.logDebug(string message) {
+    if !this.onlyToFile {
+        logDebug(message);
+    }
+    this.fileHandle.write("[debug] " + message + "\n");
+}
+
+public p LogFile.logInfo(string message) {
+    if !this.onlyToFile {
+        logInfo(message);
+    }
+    this.fileHandle.write("[info] " + message + "\n");
+}
+
+public p LogFile.logWarning(string message) {
+    if !this.onlyToFile {
+        logWarning(message);
+    }
+    this.fileHandle.write("[warning] " + message + "\n");
+}
+
+public p LogFile.logError(string message) {
+    if !this.onlyToFile {
+        logError(message);
+    }
+    this.fileHandle.write("[error] " + message + "\n");
+}
+
+// Standalone function to log messages to console
+
+public p logDebug(string message) {
+    printf("[debug] %s\n", message);
+}
+
+public p logInfo(string message) {
+    printf("\033[0;34m[info] %s\033[0m\n", message);
+}
+
+public p logWarning(string message) {
+    printf("\033[38;5;208m[warning] %s\033[0m\n", message);
+}
+
+public p logError(string message) {
+    printf("\033[0;31m[error] %s\033[0m\n", message);
+}

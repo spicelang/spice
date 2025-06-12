@@ -1794,7 +1794,31 @@ void ASTBuilder::replaceEscapeChars(std::string &input) {
         readIndex += 2;
         continue;
       }
+
+      // Handle octal escape sequences (up to 3 digits)
+      if (next >= '0' && next <= '7') {
+        int value = 0;
+        size_t octalDigits = 0;
+
+        // Look ahead up to 3 digits
+        for (size_t i = 1; i <= 3 && readIndex + i < len; ++i) {
+          const char oc = input[readIndex + i];
+          if (oc >= '0' && oc <= '7') {
+            value = value << 3 | oc - '0'; // multiply by 8 and add digit
+            octalDigits++;
+          } else {
+            break;
+          }
+        }
+
+        if (octalDigits > 0) {
+          input[writeIndex++] = static_cast<char>(value);
+          readIndex += 1 + octalDigits; // backslash + octal digits
+          continue;
+        }
+      }
     }
+
     // Copy current character
     input[writeIndex++] = c;
     readIndex++;
