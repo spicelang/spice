@@ -117,6 +117,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       paramNames.push_back(name);
+      HANDLE_UNRESOLVED_TYPE_PTR(qualType);
       paramTypes.push_back(qualType);
       paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
@@ -256,6 +257,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const auto &[name, qualType, isOptional] : namedParamList) {
       paramNames.push_back(name);
       paramTypes.push_back(qualType);
+      HANDLE_UNRESOLVED_TYPE_PTR(qualType);
       paramList.push_back({qualType, isOptional});
       // Check if the type is present in the template for generic types
       if (!qualType.isCoveredByGenericTypeList(usedGenericTypes))
