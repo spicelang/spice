@@ -181,9 +181,14 @@ void NameMangling::mangleType(std::stringstream &out, QualType qualType) { // NO
  */
 void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness) {
   switch (chainElement.superType) {
-  case TY_PTR: // fall-through
-  case TY_ARRAY:
+  case TY_PTR:
     out << "P";
+    break;
+  case TY_ARRAY:
+    if (chainElement.data.arraySize == ARRAY_SIZE_UNKNOWN)
+      out << "P";
+    else
+      out << "A" << chainElement.data.arraySize << "_";
     break;
   case TY_REF:
     out << "R";

@@ -15,7 +15,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   call void @_Z11printFormatIdEvd(double 1.123000e+00)
   call void @_Z11printFormatIiEvi(i32 543)
-  call void @_Z11printFormatIPPKcEvPPKc([2 x ptr] [ptr @anon.string.0, ptr @anon.string.1])
+  call void @_Z11printFormatIA2_PKcEvA2_PKc([2 x ptr] [ptr @anon.string.0, ptr @anon.string.1])
   store i32 1234, ptr %test, align 4
   call void @_Z11printFormatIPiEvPi(ptr %test)
   store i32 12, ptr %i, align 4
@@ -40,7 +40,7 @@ declare void @_Z11printFormatIdEvd(double)
 
 declare void @_Z11printFormatIiEvi(i32)
 
-declare void @_Z11printFormatIPPKcEvPPKc([2 x ptr])
+declare void @_Z11printFormatIA2_PKcEvA2_PKc([2 x ptr])
 
 declare void @_Z11printFormatIPiEvPi(ptr)
 
