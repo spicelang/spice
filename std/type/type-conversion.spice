@@ -1,9 +1,5 @@
 // External functions
-ext f<unsigned int> snprintf(char*, unsigned long, string, double);
-ext f<unsigned int> snprintf(char*, unsigned long, string, int);
-ext f<unsigned int> snprintf(char*, unsigned long, string, short);
-ext f<unsigned int> snprintf(char*, unsigned long, string, long);
-ext f<unsigned int> snprintf(char*, unsigned long, string, byte);
+ext f<unsigned int> snprintf(char*, unsigned long, string, ...);
 ext f<long> strtol(string, char**, int);
 ext f<int> atoi(string, char**, int);
 ext f<double> strtod(string, char**);
