@@ -296,11 +296,10 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     extDeclNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
     extDeclNode->returnType->isReturnType = true;
   }
-  if (ctx->typeLst()) {
+  if (ctx->typeLstWithEllipsis()) {
     extDeclNode->hasArgs = true;
-    extDeclNode->argTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+    extDeclNode->argTypeLst = std::any_cast<TypeLstWithEllipsisNode *>(visit(ctx->typeLstWithEllipsis()));
   }
-  extDeclNode->isVarArg = ctx->ELLIPSIS();
 
   return concludeNode(extDeclNode);
 }
@@ -507,6 +506,18 @@ std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   fetchChildrenIntoVector(typeLstNode->dataTypes, ctx->dataType());
 
   return concludeNode(typeLstNode);
+}
+
+std::any ASTBuilder::visitTypeLstWithEllipsis(SpiceParser::TypeLstWithEllipsisContext *ctx) {
+  const auto typeLstWithEllipsisNode = createNode<TypeLstWithEllipsisNode>(ctx);
+
+  // Visit children
+  typeLstWithEllipsisNode->typeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+
+  // Set some flags
+  typeLstWithEllipsisNode->hasEllipsis = ctx->ELLIPSIS() != nullptr;
+
+  return concludeNode(typeLstWithEllipsisNode);
 }
 
 std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {

@@ -51,6 +51,7 @@ public:
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeLst(TypeLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitTypeLstWithEllipsis(TypeLstWithEllipsisNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
   std::any visitParamLst(ParamLstNode *ctx) override { return buildNode(ctx); }
   std::any visitArgLst(ArgLstNode *ctx) override { return buildNode(ctx); }

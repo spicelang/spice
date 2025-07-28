@@ -67,6 +67,8 @@ std::any ParallelizableASTVisitor::visitStmtLst(const StmtLstNode *node) { retur
 
 std::any ParallelizableASTVisitor::visitTypeLst(const TypeLstNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitTypeLstWithEllipsis(const TypeLstWithEllipsisNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitTypeAltsLst(const TypeAltsLstNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitParamLst(const ParamLstNode *node) { return visitChildren(node); }

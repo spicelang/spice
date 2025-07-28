@@ -34,6 +34,7 @@ class DefaultBranchNode;
 class AnonymousBlockStmtNode;
 class StmtLstNode;
 class TypeLstNode;
+class TypeLstWithEllipsisNode;
 class TypeAltsLstNode;
 class ParamLstNode;
 class ArgLstNode;
@@ -129,6 +130,7 @@ public:
   virtual std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) = 0;
   virtual std::any visitStmtLst(StmtLstNode *node) = 0;
   virtual std::any visitTypeLst(TypeLstNode *node) = 0;
+  virtual std::any visitTypeLstWithEllipsis(TypeLstWithEllipsisNode *node) = 0;
   virtual std::any visitTypeAltsLst(TypeAltsLstNode *node) = 0;
   virtual std::any visitParamLst(ParamLstNode *node) = 0;
   virtual std::any visitArgLst(ArgLstNode *node) = 0;
