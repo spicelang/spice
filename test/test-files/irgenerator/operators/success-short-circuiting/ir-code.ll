@@ -13,7 +13,7 @@ define private i1 @_Z12functionTruev() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private i1 @_Z13functionFalsev() {
   %result = alloca i1, align 1

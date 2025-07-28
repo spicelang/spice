@@ -13,7 +13,7 @@ namespace spice::compiler {
 
 void ExternalLinkerInterface::prepare() {
   // Set target to linker
-  addLinkerFlag("--target=" + cliOptions.targetTriple);
+  addLinkerFlag("--target=" + cliOptions.targetTriple.str());
 
   // Static linking
   if (cliOptions.staticLinking)

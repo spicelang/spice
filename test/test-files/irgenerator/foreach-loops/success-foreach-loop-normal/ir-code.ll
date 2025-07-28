@@ -74,7 +74,7 @@ declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 declare ptr @_ZN14VectorIteratorIiE3getEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 

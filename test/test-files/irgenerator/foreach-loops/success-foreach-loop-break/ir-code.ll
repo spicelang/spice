@@ -83,7 +83,7 @@ declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr)
 declare ptr @_ZN14NumberIteratorIsE3getEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64)
 

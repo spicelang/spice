@@ -44,7 +44,7 @@ assert.exit.L9:                                   ; preds = %assert.exit.L8
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: nounwind
 declare i32 @memcmp(ptr, ptr, i64) #1

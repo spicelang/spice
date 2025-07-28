@@ -584,11 +584,11 @@ std::string IRGenerator::getIRString(llvm::Module *llvmModule, bool comparableOu
   assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
 
   // Backup target triple and data layout
-  const std::string targetTriple = llvmModule->getTargetTriple();
+  const llvm::Triple& targetTriple = llvmModule->getTargetTriple();
   const std::string targetDataLayout = llvmModule->getDataLayoutStr();
   // Remove target triple and data layout
   if (comparableOutput) {
-    llvmModule->setTargetTriple("");
+    llvmModule->setTargetTriple(llvm::Triple());
     llvmModule->setDataLayout("");
   }
 

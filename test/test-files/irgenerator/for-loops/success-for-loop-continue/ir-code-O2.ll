@@ -18,7 +18,7 @@ for.body.L5.3:                                    ; preds = %for.body.L5.3, %for
   %subCounter.07.3 = phi i32 [ %5, %for.body.L5.3 ], [ 100, %for.body.L5.preheader.3 ]
   %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %subCounter.07.3)
   %5 = add nsw i32 %subCounter.07.3, -1
-  %or.cond.3 = icmp ugt i32 %subCounter.07.3, 11
+  %or.cond.3 = icmp samesign ugt i32 %subCounter.07.3, 11
   br i1 %or.cond.3, label %for.body.L5.3, label %for.body.L5.preheader.4
 
 for.body.L5.preheader.4:                          ; preds = %for.body.L5.3
@@ -29,7 +29,7 @@ for.body.L5.4:                                    ; preds = %for.body.L5.4, %for
   %subCounter.07.4 = phi i32 [ %8, %for.body.L5.4 ], [ 100, %for.body.L5.preheader.4 ]
   %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %subCounter.07.4)
   %8 = add nsw i32 %subCounter.07.4, -1
-  %or.cond.4 = icmp ugt i32 %subCounter.07.4, 11
+  %or.cond.4 = icmp samesign ugt i32 %subCounter.07.4, 11
   br i1 %or.cond.4, label %for.body.L5.4, label %for.tail.L2.4
 
 for.tail.L2.4:                                    ; preds = %for.body.L5.4
@@ -38,7 +38,7 @@ for.tail.L2.4:                                    ; preds = %for.body.L5.4
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

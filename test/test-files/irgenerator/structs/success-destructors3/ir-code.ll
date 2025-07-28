@@ -23,7 +23,7 @@ define private void @_Z4testv() {
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 declare void @_ZN6String4dtorEv(ptr)
 

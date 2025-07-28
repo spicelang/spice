@@ -446,7 +446,7 @@ declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

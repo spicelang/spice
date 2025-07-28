@@ -63,6 +63,7 @@
     core.linker.flag = "-lLLVMDebugInfoCodeView",
     core.linker.flag = "-lLLVMDebuginfod",
     core.linker.flag = "-lLLVMDebugInfoDWARF",
+    core.linker.flag = "-lLLVMDebugInfoDWARFLowLevel",
     core.linker.flag = "-lLLVMDebugInfoGSYM",
     core.linker.flag = "-lLLVMDebugInfoLogicalView",
     core.linker.flag = "-lLLVMDebugInfoMSF",

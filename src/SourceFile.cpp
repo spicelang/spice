@@ -50,7 +50,7 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   opt.MCOptions.PreserveAsmComments = true;
   const std::string &cpuName = resourceManager.cpuName;
   const std::string &features = resourceManager.cpuFeatures;
-  const std::string &targetTriple = cliOptions.targetTriple;
+  const llvm::Triple &targetTriple = cliOptions.targetTriple;
   llvm::TargetMachine *targetMachineRaw = target->createTargetMachine(targetTriple, cpuName, features, opt, llvm::Reloc::PIC_);
   targetMachine = std::unique_ptr<llvm::TargetMachine>(targetMachineRaw);
 }

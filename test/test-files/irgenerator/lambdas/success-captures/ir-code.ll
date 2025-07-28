@@ -119,7 +119,7 @@ define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

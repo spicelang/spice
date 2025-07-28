@@ -47,7 +47,7 @@ declare void @_Z11printFormatIPiEvPi(ptr)
 declare ptr @_Z7getAIncIiEPiPi(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

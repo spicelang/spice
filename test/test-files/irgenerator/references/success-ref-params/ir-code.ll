@@ -27,7 +27,7 @@ define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private i32 @_Z4funcRdRK6Struct(ptr %0, ptr %1) {
   %result = alloca i32, align 4

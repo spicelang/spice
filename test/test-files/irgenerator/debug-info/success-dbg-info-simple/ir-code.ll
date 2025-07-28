@@ -73,7 +73,7 @@ define dso_local i32 @main() #1 !dbg !60 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 declare ptr @_ZN6String6getRawEv(ptr)
 

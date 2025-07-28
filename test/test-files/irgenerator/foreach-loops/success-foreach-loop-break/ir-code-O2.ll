@@ -79,7 +79,7 @@ declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr) local_unnamed_addr
 declare ptr @_ZN14NumberIteratorIsE3getEv(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 declare %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64) local_unnamed_addr
 

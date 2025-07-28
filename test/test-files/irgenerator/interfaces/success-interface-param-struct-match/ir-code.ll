@@ -41,7 +41,7 @@ define private void @_ZN4Test4testEv(ptr noundef nonnull align 8 dereferenceable
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private void @_Z7testFctR5ITest(ptr %0) {
   %test = alloca ptr, align 8

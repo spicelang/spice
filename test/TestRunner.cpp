@@ -40,7 +40,7 @@ void execTestCase(const TestCase &testCase) {
   const llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {
       /* mainSourceFile= */ sourceFilePath,
-      /* targetTriple= */ targetTriple.getTriple(),
+      /* targetTriple= */ targetTriple,
       /* targetArch= */ std::string(targetTriple.getArchName()),
       /* targetVendor= */ std::string(targetTriple.getVendorName()),
       /* targetOs= */ std::string(targetTriple.getOSName()),
@@ -81,7 +81,7 @@ void execTestCase(const TestCase &testCase) {
       /* comparableOutput= */ true,
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
-  static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 384, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);

@@ -20,7 +20,7 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
   // Set attributes
   printfFct->addFnAttr(llvm::Attribute::NoFree);
   printfFct->addFnAttr(llvm::Attribute::NoUnwind);
-  printfFct->addParamAttr(0, llvm::Attribute::NoCapture);
+  printfFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
   printfFct->addParamAttr(0, llvm::Attribute::NoUndef);
   printfFct->addParamAttr(0, llvm::Attribute::ReadOnly);
   printfFct->addRetAttr(llvm::Attribute::NoUndef);
@@ -31,9 +31,9 @@ llvm::Function *StdFunctionManager::getFPrintfFct() const {
   llvm::Function *fprintfFct = getFunction("fprintf", builder.getInt32Ty(), {builder.getPtrTy(), builder.getPtrTy()}, true);
   // Set attributes
   fprintfFct->addFnAttr(llvm::Attribute::NoFree);
-  fprintfFct->addParamAttr(0, llvm::Attribute::NoCapture);
+  fprintfFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
   fprintfFct->addParamAttr(0, llvm::Attribute::NoUndef);
-  fprintfFct->addParamAttr(1, llvm::Attribute::NoCapture);
+  fprintfFct->addParamAttr(1, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
   fprintfFct->addParamAttr(1, llvm::Attribute::NoUndef);
   fprintfFct->addParamAttr(1, llvm::Attribute::ReadOnly);
   fprintfFct->addRetAttr(llvm::Attribute::NoUndef);
@@ -53,7 +53,7 @@ llvm::Function *StdFunctionManager::getFreeFct() const {
   llvm::Function *freeFct = getProcedure("free", builder.getPtrTy());
   // Set attributes
   freeFct->addFnAttr(llvm::Attribute::NoUnwind);
-  freeFct->addParamAttr(0, llvm::Attribute::NoCapture);
+  freeFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
   freeFct->addParamAttr(0, llvm::Attribute::NoUndef);
   freeFct->addParamAttr(0, llvm::Attribute::ReadOnly);
   return freeFct;

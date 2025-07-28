@@ -60,7 +60,7 @@ define private void @_Z14lambda.L2C31.0v() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8

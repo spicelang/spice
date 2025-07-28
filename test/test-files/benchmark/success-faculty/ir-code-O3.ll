@@ -12,22 +12,22 @@ vector.ph:                                        ; preds = %1
   %n.rnd.up = add nuw nsw i32 %0, 2
   %n.vec = and i32 %n.rnd.up, 28
   %trip.count.minus.1 = add nsw i32 %0, -2
-  %.splatinsert = insertelement <4 x i32> poison, i32 %0, i64 0
-  %.splat = shufflevector <4 x i32> %.splatinsert, <4 x i32> poison, <4 x i32> zeroinitializer
-  %induction = add nsw <4 x i32> %.splat, <i32 0, i32 -1, i32 -2, i32 -3>
-  %broadcast.splatinsert5 = insertelement <4 x i32> poison, i32 %trip.count.minus.1, i64 0
+  %broadcast.splatinsert = insertelement <4 x i32> poison, i32 %trip.count.minus.1, i64 0
+  %broadcast.splat = shufflevector <4 x i32> %broadcast.splatinsert, <4 x i32> poison, <4 x i32> zeroinitializer
+  %broadcast.splatinsert5 = insertelement <4 x i32> poison, i32 %0, i64 0
   %broadcast.splat6 = shufflevector <4 x i32> %broadcast.splatinsert5, <4 x i32> poison, <4 x i32> zeroinitializer
+  %induction = add nsw <4 x i32> %broadcast.splat6, <i32 0, i32 -1, i32 -2, i32 -3>
   %3 = icmp eq i32 %n.vec, 4
   br i1 %3, label %middle.block, label %vector.body.1, !llvm.loop !5
 
 vector.body.1:                                    ; preds = %vector.ph
-  %vec.ind.next = add nsw <4 x i32> %.splat, <i32 -4, i32 -5, i32 -6, i32 -7>
+  %vec.ind.next = add nsw <4 x i32> %broadcast.splat6, <i32 -4, i32 -5, i32 -6, i32 -7>
   %4 = mul nsw <4 x i32> %vec.ind.next, %induction
   %5 = icmp eq i32 %n.vec, 8
   br i1 %5, label %middle.block, label %vector.body.2, !llvm.loop !5
 
 vector.body.2:                                    ; preds = %vector.body.1
-  %vec.ind.next.1 = add nsw <4 x i32> %.splat, <i32 -8, i32 -9, i32 -10, i32 -11>
+  %vec.ind.next.1 = add nsw <4 x i32> %broadcast.splat6, <i32 -8, i32 -9, i32 -10, i32 -11>
   %6 = mul nsw <4 x i32> %vec.ind.next.1, %4
   br label %middle.block
 
@@ -35,10 +35,10 @@ middle.block:                                     ; preds = %vector.body.2, %vec
   %index.lcssa = phi i32 [ 0, %vector.ph ], [ 4, %vector.body.1 ], [ 8, %vector.body.2 ]
   %vec.phi.lcssa = phi <4 x i32> [ splat (i32 1), %vector.ph ], [ %induction, %vector.body.1 ], [ %4, %vector.body.2 ]
   %.lcssa = phi <4 x i32> [ %induction, %vector.ph ], [ %4, %vector.body.1 ], [ %6, %vector.body.2 ]
-  %broadcast.splatinsert = insertelement <4 x i32> poison, i32 %index.lcssa, i64 0
-  %broadcast.splat = shufflevector <4 x i32> %broadcast.splatinsert, <4 x i32> poison, <4 x i32> zeroinitializer
-  %vec.iv = or disjoint <4 x i32> %broadcast.splat, <i32 0, i32 1, i32 2, i32 3>
-  %.not = icmp ugt <4 x i32> %vec.iv, %broadcast.splat6
+  %broadcast.splatinsert7 = insertelement <4 x i32> poison, i32 %index.lcssa, i64 0
+  %broadcast.splat8 = shufflevector <4 x i32> %broadcast.splatinsert7, <4 x i32> poison, <4 x i32> zeroinitializer
+  %vec.iv = or disjoint <4 x i32> %broadcast.splat8, <i32 0, i32 1, i32 2, i32 3>
+  %.not = icmp ugt <4 x i32> %vec.iv, %broadcast.splat
   %7 = select <4 x i1> %.not, <4 x i32> %vec.phi.lcssa, <4 x i32> %.lcssa
   %8 = tail call i32 @llvm.vector.reduce.mul.v4i32(<4 x i32> %7)
   br label %common.ret
@@ -56,7 +56,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare i32 @llvm.vector.reduce.mul.v4i32(<4 x i32>) #3

@@ -56,7 +56,7 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 declare %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare void @_ZN13ArrayIteratorIiE4nextEv(ptr)
 

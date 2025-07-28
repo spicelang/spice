@@ -22,7 +22,7 @@ define private fastcc void @_Z3foov() unnamed_addr #0 {
 declare void @_ZN5Error4ctorEPKc(ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @fprintf(ptr nocapture noundef, ptr nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold nofree noreturn nounwind
 declare void @exit(i32) local_unnamed_addr #2

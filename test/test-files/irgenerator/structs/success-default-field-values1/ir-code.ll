@@ -35,7 +35,7 @@ define dso_local i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 attributes #0 = { norecurse }
 attributes #1 = { noinline nounwind optnone uwtable }

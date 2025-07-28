@@ -13,7 +13,7 @@ define private i32 @_Z8testFuncv() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private i32 @_Z8testFuncPKc(ptr %0) {
   %result = alloca i32, align 4
