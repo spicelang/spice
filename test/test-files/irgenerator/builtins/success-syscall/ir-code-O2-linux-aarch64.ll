@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [15 x i8] c"Hello syscall!\00", align 1
+@anon.string.0 = private unnamed_addr constant [15 x i8] c"Hello syscall!\00", align 4
 @SYSCALL_WRITE = external local_unnamed_addr global i16
 
 ; Function Attrs: noinline nounwind optnone uwtable

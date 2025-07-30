@@ -3,17 +3,17 @@ source_filename = "source.spice"
 
 %struct.NestedStruct = type { i32, ptr }
 
-@printf.str.0 = private unnamed_addr constant [18 x i8] c"Double value: %f\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [15 x i8] c"Int value: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [17 x i8] c"Short value: %d\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [16 x i8] c"Long value: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [18 x i8] c"Double value: %f\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [15 x i8] c"Int value: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [17 x i8] c"Short value: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [16 x i8] c"Long value: %d\0A\00", align 4
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@printf.str.4 = private unnamed_addr constant [18 x i8] c"String value: %s\0A\00", align 1
-@printf.str.5 = private unnamed_addr constant [16 x i8] c"Byte value: %d\0A\00", align 1
-@printf.str.6 = private unnamed_addr constant [16 x i8] c"Char value: %c\0A\00", align 1
-@printf.str.7 = private unnamed_addr constant [16 x i8] c"Bool value: %d\0A\00", align 1
+@printf.str.4 = private unnamed_addr constant [18 x i8] c"String value: %s\0A\00", align 4
+@printf.str.5 = private unnamed_addr constant [16 x i8] c"Byte value: %d\0A\00", align 4
+@printf.str.6 = private unnamed_addr constant [16 x i8] c"Char value: %c\0A\00", align 4
+@printf.str.7 = private unnamed_addr constant [16 x i8] c"Bool value: %d\0A\00", align 4
 @1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@printf.str.8 = private unnamed_addr constant [24 x i8] c"Struct array value: %s\0A\00", align 1
+@printf.str.8 = private unnamed_addr constant [24 x i8] c"Struct array value: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -25,9 +25,9 @@ $_ZTV6Person = comdat any
 @_ZTV6Person = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat, align 8
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
-@anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 4
+@anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 4
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr %1, ptr %2, i32 %3) {
   %this = alloca ptr, align 8
