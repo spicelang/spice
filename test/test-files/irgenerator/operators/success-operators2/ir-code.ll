@@ -1,12 +1,12 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 1
-@anon.string.4 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'i == 127' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
+@anon.string.4 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'i == 127' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Global var: %s\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [16 x i8] c"Global var: %s\0A\00", align 4
 @GLOBAL = external global ptr
 
 ; Function Attrs: noinline nounwind optnone uwtable

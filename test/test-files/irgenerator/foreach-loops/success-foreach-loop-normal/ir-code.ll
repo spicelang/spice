@@ -6,7 +6,7 @@ source_filename = "source.spice"
 %struct.VectorIterator = type { %interface.IIterator, ptr, i64 }
 %interface.IIterator = type { ptr }
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Item: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Item: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -1,11 +1,11 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [6 x i8] c"Pizza\00", align 1
-@printf.str.0 = private unnamed_addr constant [32 x i8] c"Pointer address: %p, value: %s\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [7 x i8] c"Burger\00", align 1
-@printf.str.1 = private unnamed_addr constant [20 x i8] c"Restored value: %s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [27 x i8] c"Restored value address: %p\00", align 1
+@anon.string.0 = private unnamed_addr constant [6 x i8] c"Pizza\00", align 4
+@printf.str.0 = private unnamed_addr constant [32 x i8] c"Pointer address: %p, value: %s\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [7 x i8] c"Burger\00", align 4
+@printf.str.1 = private unnamed_addr constant [20 x i8] c"Restored value: %s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [27 x i8] c"Restored value address: %p\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

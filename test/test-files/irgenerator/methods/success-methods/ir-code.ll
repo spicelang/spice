@@ -3,9 +3,9 @@ source_filename = "source.spice"
 
 %struct.Letter = type { ptr }
 
-@anon.string.0 = private unnamed_addr constant [11 x i8] c"No content\00", align 1
-@anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
-@printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [11 x i8] c"No content\00", align 4
+@anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
+@printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 4
 
 define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
   %result = alloca ptr, align 8

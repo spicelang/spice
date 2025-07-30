@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 %struct.TreeNode = type { ptr, i32 }
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

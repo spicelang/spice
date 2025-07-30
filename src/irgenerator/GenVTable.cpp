@@ -5,6 +5,7 @@
 #include <llvm/IR/Module.h>
 
 #include <SourceFile.h>
+#include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 
 namespace spice::compiler {
@@ -14,8 +15,12 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
 
   // Generate global string constant
-  builder.CreateGlobalString(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
-  llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
+  llvm::GlobalVariable *global =
+      builder.CreateGlobalString(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
+
+  // If the output should be comparable, fix alignment to 4 bytes
+  if (cliOptions.comparableOutput)
+    global->setAlignment(llvm::Align(4));
 
   // Set global attributes
   global->setConstant(true);

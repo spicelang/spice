@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 4
 
 define private i32 @_Z6getAgev() {
   %result = alloca i32, align 4

@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Param: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Param: %d\0A\00", align 4
 
 define private void @_Z4testi(i32 %0) {
   %param = alloca i32, align 4

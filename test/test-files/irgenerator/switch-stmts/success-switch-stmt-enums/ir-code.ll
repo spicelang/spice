@@ -1,12 +1,12 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [6 x i8] c"Apple\00", align 1
-@anon.string.1 = private unnamed_addr constant [7 x i8] c"Banana\00", align 1
-@anon.string.2 = private unnamed_addr constant [7 x i8] c"Orange\00", align 1
-@printf.str.0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [6 x i8] c"Apple\00", align 4
+@anon.string.1 = private unnamed_addr constant [7 x i8] c"Banana\00", align 4
+@anon.string.2 = private unnamed_addr constant [7 x i8] c"Orange\00", align 4
+@printf.str.0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 
 define private ptr @_Z7getNamei(i32 %0) {
   %result = alloca ptr, align 8

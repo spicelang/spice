@@ -3,12 +3,12 @@ source_filename = "source.spice"
 
 %struct.Vector = type { i1, ptr }
 
-@printf.str.0 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 1
-@anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'this.field1 == true' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
-@anon.string.2 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
-@printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 4
+@anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'this.field1 == true' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
+@anon.string.2 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 
 define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8

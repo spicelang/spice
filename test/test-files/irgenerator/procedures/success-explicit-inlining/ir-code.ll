@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"This is a value: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [14 x i8] c"Before value\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"This is a value: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [14 x i8] c"Before value\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 4
 
 ; Function Attrs: alwaysinline
 define private void @_Z11printAValuev() #0 {

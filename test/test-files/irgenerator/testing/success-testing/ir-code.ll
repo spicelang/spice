@@ -1,31 +1,31 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(1, 2) == 3' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(2, 2) == 4' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(3, 2) == 5' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(5, -4) == 1' evaluated to false.\0A\00", align 1
-@anon.string.4 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(2, 8) == 10' evaluated to false.\0A\00", align 1
-@anon.string.5 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(-3, 5) == 2' evaluated to false.\0A\00", align 1
-@anon.string.6 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(1, 2) == -1' evaluated to false.\0A\00", align 1
-@anon.string.7 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(2, 2) == 0' evaluated to false.\0A\00", align 1
-@anon.string.8 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(3, 2) == 1' evaluated to false.\0A\00", align 1
-@anon.string.9 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(5, -4) == 9' evaluated to false.\0A\00", align 1
-@anon.string.10 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(2, 8) == -6' evaluated to false.\0A\00", align 1
-@anon.string.11 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sub(-3, 5) == -8' evaluated to false.\0A\00", align 1
-@allStartMsg0 = private unnamed_addr constant [56 x i8] c"[==========] Running %d test(s) from %d source file(s)\0A\00", align 1
-@allEndMsg0 = private unnamed_addr constant [52 x i8] c"[==========] Ran %d test(s) from %d source file(s)\0A\00", align 1
-@fileStartMsg0 = private unnamed_addr constant [41 x i8] c"[----------] Running %d test(s) from %s\0A\00", align 1
-@fileEndMsg0 = private unnamed_addr constant [38 x i8] c"[----------] Ran %d test(s) from %s\0A\0A\00", align 1
-@runMsg0 = private unnamed_addr constant [17 x i8] c"[ RUN      ] %s\0A\00", align 1
-@successMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[32m[ PASSED   ]\1B[0m\1B[22m %s\0A\00", align 1
-@errorMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[31m[ FAILED   ]\1B[0m\1B[22m %s\0A\00", align 1
-@skippedMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[33m[ SKIPPED  ]\1B[0m\1B[22m %s\0A\00", align 1
-@fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 1
-@testName0 = private unnamed_addr constant [53 x i8] c"testAdd1 (Simple 'happy-path' test for add function)\00", align 1
-@testName1 = private unnamed_addr constant [9 x i8] c"testAdd2\00", align 1
-@testName2 = private unnamed_addr constant [9 x i8] c"testSub1\00", align 1
-@testName3 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 1
+@anon.string.0 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(1, 2) == 3' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(2, 2) == 4' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'add(3, 2) == 5' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(5, -4) == 1' evaluated to false.\0A\00", align 4
+@anon.string.4 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(2, 8) == 10' evaluated to false.\0A\00", align 4
+@anon.string.5 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'add(-3, 5) == 2' evaluated to false.\0A\00", align 4
+@anon.string.6 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(1, 2) == -1' evaluated to false.\0A\00", align 4
+@anon.string.7 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(2, 2) == 0' evaluated to false.\0A\00", align 4
+@anon.string.8 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'sub(3, 2) == 1' evaluated to false.\0A\00", align 4
+@anon.string.9 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(5, -4) == 9' evaluated to false.\0A\00", align 4
+@anon.string.10 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sub(2, 8) == -6' evaluated to false.\0A\00", align 4
+@anon.string.11 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sub(-3, 5) == -8' evaluated to false.\0A\00", align 4
+@allStartMsg0 = private unnamed_addr constant [56 x i8] c"[==========] Running %d test(s) from %d source file(s)\0A\00", align 4
+@allEndMsg0 = private unnamed_addr constant [52 x i8] c"[==========] Ran %d test(s) from %d source file(s)\0A\00", align 4
+@fileStartMsg0 = private unnamed_addr constant [41 x i8] c"[----------] Running %d test(s) from %s\0A\00", align 4
+@fileEndMsg0 = private unnamed_addr constant [38 x i8] c"[----------] Ran %d test(s) from %s\0A\0A\00", align 4
+@runMsg0 = private unnamed_addr constant [17 x i8] c"[ RUN      ] %s\0A\00", align 4
+@successMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[32m[ PASSED   ]\1B[0m\1B[22m %s\0A\00", align 4
+@errorMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[31m[ FAILED   ]\1B[0m\1B[22m %s\0A\00", align 4
+@skippedMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[33m[ SKIPPED  ]\1B[0m\1B[22m %s\0A\00", align 4
+@fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
+@testName0 = private unnamed_addr constant [53 x i8] c"testAdd1 (Simple 'happy-path' test for add function)\00", align 4
+@testName1 = private unnamed_addr constant [9 x i8] c"testAdd2\00", align 4
+@testName2 = private unnamed_addr constant [9 x i8] c"testSub1\00", align 4
+@testName3 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 4
 
 define private i32 @_Z3addii(i32 %0, i32 %1) {
   %result = alloca i32, align 4

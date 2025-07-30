@@ -4,9 +4,9 @@ source_filename = "source.spice"
 %struct.Stamp = type { double, i1 }
 %struct.Letter = type { ptr, %struct.Stamp }
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"Value: %f, glued: %d\00", align 1
-@anon.string.0 = private unnamed_addr constant [17 x i8] c"This is a letter\00", align 1
-@printf.str.1 = private unnamed_addr constant [17 x i8] c"Stamp glued: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Value: %f, glued: %d\00", align 4
+@anon.string.0 = private unnamed_addr constant [17 x i8] c"This is a letter\00", align 4
+@printf.str.1 = private unnamed_addr constant [17 x i8] c"Stamp glued: %d\0A\00", align 4
 
 define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8

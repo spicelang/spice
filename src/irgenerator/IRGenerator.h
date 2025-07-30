@@ -152,7 +152,8 @@ private:
   void generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress, bool isVolatile) const;
   void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;
-  llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc) const;
+  llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value) const;
+  llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc) const;
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;

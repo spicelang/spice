@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
 define private double @_Z15genericFunctionIidEdid(i32 %0, double %1) {
   %result = alloca double, align 8

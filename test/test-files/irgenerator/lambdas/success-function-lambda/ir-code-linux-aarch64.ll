@@ -72,7 +72,7 @@ define private ptr @_Z14lambda.L2C39.0v() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %result = alloca i1, align 1

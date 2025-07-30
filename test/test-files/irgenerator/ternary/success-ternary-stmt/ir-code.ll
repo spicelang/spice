@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 define private i32 @_Z3getv() {
   %result = alloca i32, align 4

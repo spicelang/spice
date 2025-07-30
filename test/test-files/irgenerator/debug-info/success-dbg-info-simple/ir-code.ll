@@ -4,10 +4,10 @@ source_filename = "source.spice"
 %struct.TestStruct = type { i64, %struct.String, i32 }
 %struct.String = type { ptr, i64, i64 }
 
-@anon.string.0 = private unnamed_addr constant [12 x i8] c"test string\00", align 1, !dbg !0
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Long: %d\0A\00", align 1, !dbg !5
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1, !dbg !9
-@printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1, !dbg !12
+@anon.string.0 = private unnamed_addr constant [12 x i8] c"test string\00", align 4, !dbg !0
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Long: %d\0A\00", align 4, !dbg !5
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 4, !dbg !9
+@printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 4, !dbg !12
 
 ; Function Attrs: norecurse
 define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !23 {

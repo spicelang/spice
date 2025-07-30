@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [12 x i8] c"F1 called.\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [12 x i8] c"F1 called.\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 define private i1 @_Z2f1v() {
   %result = alloca i1, align 1

@@ -3,8 +3,8 @@ source_filename = "source.spice"
 
 %struct.Thread = type { { ptr, ptr }, i64 }
 
-@printf.str.0 = private unnamed_addr constant [33 x i8] c"Thread returned with result: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [17 x i8] c"Program finished\00", align 1
+@printf.str.0 = private unnamed_addr constant [33 x i8] c"Thread returned with result: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [17 x i8] c"Program finished\00", align 4
 @str = private unnamed_addr constant [45 x i8] c"Started all threads. Waiting for results ...\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)

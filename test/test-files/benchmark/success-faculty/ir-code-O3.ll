@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 4
 
 ; Function Attrs: nofree norecurse nosync nounwind memory(none)
 define private fastcc i32 @_Z7facultyi(i32 range(i32 1, 11) %0) unnamed_addr #0 {

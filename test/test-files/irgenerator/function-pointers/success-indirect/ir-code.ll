@@ -1,8 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [7 x i8] c"string\00", align 1
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@anon.string.0 = private unnamed_addr constant [7 x i8] c"string\00", align 4
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 define private i32 @_Z4testPKc(ptr %0) {
   %result = alloca i32, align 4

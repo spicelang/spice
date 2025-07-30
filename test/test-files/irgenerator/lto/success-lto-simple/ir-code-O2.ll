@@ -1,7 +1,7 @@
 ; ModuleID = 'lto-module'
 source_filename = "lto-module"
 
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 @str = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition '(functionInModuleB(1, 2) == 3)' evaluated to false.\00", align 1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)

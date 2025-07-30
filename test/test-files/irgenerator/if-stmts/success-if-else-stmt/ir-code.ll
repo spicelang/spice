@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"If branch\00", align 1
-@printf.str.1 = private unnamed_addr constant [10 x i8] c"Else if 1\00", align 1
-@printf.str.2 = private unnamed_addr constant [10 x i8] c"Else if 2\00", align 1
-@printf.str.3 = private unnamed_addr constant [5 x i8] c"Else\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"If branch\00", align 4
+@printf.str.1 = private unnamed_addr constant [10 x i8] c"Else if 1\00", align 4
+@printf.str.2 = private unnamed_addr constant [10 x i8] c"Else if 2\00", align 4
+@printf.str.3 = private unnamed_addr constant [5 x i8] c"Else\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -5,8 +5,8 @@ source_filename = "source.spice"
 %struct.Outer = type { %struct.Middle }
 %struct.Middle = type { %struct.Inner }
 
-@anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
-@printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 4
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 4
 
 declare ptr @malloc(i64 noundef)
 

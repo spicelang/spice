@@ -132,7 +132,8 @@ main:                                   # @main
 	.cfi_endproc
                                         # -- End function
 	.type	.Lprintf.str.0,@object          # @printf.str.0
-	.section	.rodata.str1.1,"aMS",@progbits,1
+	.section	.rodata.str1.4,"aMS",@progbits,1
+	.p2align	2, 0x0
 .Lprintf.str.0:
 	.asciz	"%d"
 	.size	.Lprintf.str.0, 3

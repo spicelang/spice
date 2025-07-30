@@ -3,10 +3,10 @@ source_filename = "source.spice"
 
 %struct.String = type { ptr, i64, i64 }
 
-@anon.string.0 = private unnamed_addr constant [8 x i8] c"default\00", align 1
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@printf.str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@anon.string.1 = private unnamed_addr constant [5 x i8] c"test\00", align 1
+@anon.string.0 = private unnamed_addr constant [8 x i8] c"default\00", align 4
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%s\00", align 4
+@printf.str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 4
+@anon.string.1 = private unnamed_addr constant [5 x i8] c"test\00", align 4
 
 define private void @_Z4testv() {
   %1 = alloca %struct.String, align 8

@@ -2,7 +2,7 @@
 source_filename = "source.spice"
 
 @anon.array.0 = private unnamed_addr constant [2 x i32] [i32 1, i32 2]
-@printf.str.0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

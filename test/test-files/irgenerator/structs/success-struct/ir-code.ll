@@ -4,9 +4,9 @@ source_filename = "source.spice"
 %struct.Nested = type { ptr, ptr }
 %struct.TestStruct = type { ptr, double, ptr }
 
-@anon.string.0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
-@printf.str.0 = private unnamed_addr constant [24 x i8] c"Field1: %d, field2: %f\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"Output: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"Field1: %d, field2: %f\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"Output: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -1,8 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
 
 define private void @_Z4testv() {
   %t = alloca i32, align 4

@@ -4,7 +4,7 @@ source_filename = "source.spice"
 %struct.Nested = type { i32 }
 %struct.Test = type {}
 
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 define private void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
   %this = alloca ptr, align 8

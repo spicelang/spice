@@ -3,9 +3,9 @@ source_filename = "source.spice"
 
 %struct.Test = type { i32, ptr }
 
-@anon.string.0 = private unnamed_addr constant [5 x i8] c"test\00", align 1
-@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [5 x i8] c"test\00", align 4
+@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 4
 
 ; Function Attrs: norecurse
 define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {

@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'x == 6' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'l2(x)' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'x == 6' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'l2(x)' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
 
 define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %0, { ptr, ptr } %1) {
   %l1 = alloca { ptr, ptr }, align 8

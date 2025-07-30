@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Argc: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [16 x i8] c"Argv no. 0: %s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [16 x i8] c"Argv no. 1: %s\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Argc: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Argv no. 0: %s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [16 x i8] c"Argv no. 1: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main(i32 %0, ptr %1) #0 {

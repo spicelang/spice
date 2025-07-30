@@ -3,11 +3,11 @@ source_filename = "source.spice"
 
 %struct.Person = type { ptr, ptr, i32 }
 
-@anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
-@anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Person: %s, %s\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 4
+@anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 4
+@printf.str.0 = private unnamed_addr constant [16 x i8] c"Person: %s, %s\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 4
 
 define private void @_Z8birthdayP6Person(ptr %0) {
   %person = alloca ptr, align 8

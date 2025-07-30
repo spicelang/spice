@@ -6,7 +6,7 @@ source_filename = "source.spice"
 %struct.C = type { %struct.A, %struct.B, i32 }
 %struct.B = type { i32 }
 
-@printf.str.0 = private unnamed_addr constant [12 x i8] c"%d, %d, %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [12 x i8] c"%d, %d, %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

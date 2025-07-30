@@ -5,8 +5,8 @@ source_filename = "source.spice"
 %struct.Error = type { i32, ptr }
 %struct.StructWithHeapFields = type { ptr }
 
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Is nullptr: %d\0A\00", align 4
 
 ; Function Attrs: norecurse
 define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {

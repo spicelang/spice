@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 1
+@printf.str.0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 4
 
 define private void @_Z13executeActionb(i1 %0) {
   %input = alloca i1, align 1

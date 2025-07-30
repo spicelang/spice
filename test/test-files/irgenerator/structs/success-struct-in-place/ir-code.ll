@@ -4,31 +4,31 @@ source_filename = "source.spice"
 %struct.ShoppingItem = type { ptr, double, ptr }
 %struct.ShoppingCart = type { ptr, [3 x %struct.ShoppingItem] }
 
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@anon.string.0 = private unnamed_addr constant [10 x i8] c"Spaghetti\00", align 1
-@anon.string.1 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@anon.string.2 = private unnamed_addr constant [5 x i8] c"Rice\00", align 1
-@anon.string.3 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@anon.string.4 = private unnamed_addr constant [9 x i8] c"Doughnut\00", align 1
-@anon.string.5 = private unnamed_addr constant [4 x i8] c"pcs\00", align 1
-@anon.string.6 = private unnamed_addr constant [14 x i8] c"Shopping Cart\00", align 1
-@anon.string.7 = private unnamed_addr constant [10 x i8] c"Spaghetti\00", align 1
-@anon.string.8 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@anon.string.9 = private unnamed_addr constant [5 x i8] c"Rice\00", align 1
-@anon.string.10 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@anon.string.11 = private unnamed_addr constant [9 x i8] c"Doughnut\00", align 1
-@anon.string.12 = private unnamed_addr constant [4 x i8] c"pcs\00", align 1
+@"0" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@"1" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@anon.string.0 = private unnamed_addr constant [10 x i8] c"Spaghetti\00", align 4
+@anon.string.1 = private unnamed_addr constant [2 x i8] c"g\00", align 4
+@anon.string.2 = private unnamed_addr constant [5 x i8] c"Rice\00", align 4
+@anon.string.3 = private unnamed_addr constant [2 x i8] c"g\00", align 4
+@anon.string.4 = private unnamed_addr constant [9 x i8] c"Doughnut\00", align 4
+@anon.string.5 = private unnamed_addr constant [4 x i8] c"pcs\00", align 4
+@anon.string.6 = private unnamed_addr constant [14 x i8] c"Shopping Cart\00", align 4
+@anon.string.7 = private unnamed_addr constant [10 x i8] c"Spaghetti\00", align 4
+@anon.string.8 = private unnamed_addr constant [2 x i8] c"g\00", align 4
+@anon.string.9 = private unnamed_addr constant [5 x i8] c"Rice\00", align 4
+@anon.string.10 = private unnamed_addr constant [2 x i8] c"g\00", align 4
+@anon.string.11 = private unnamed_addr constant [9 x i8] c"Doughnut\00", align 4
+@anon.string.12 = private unnamed_addr constant [4 x i8] c"pcs\00", align 4
 @anon.array.0 = private unnamed_addr constant [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @anon.string.7, double 1.000000e+02, ptr @anon.string.8 }, %struct.ShoppingItem { ptr @anon.string.9, double 1.255000e+02, ptr @anon.string.10 }, %struct.ShoppingItem { ptr @anon.string.11, double 6.000000e+00, ptr @anon.string.12 }]
-@anon.string.13 = private unnamed_addr constant [13 x i8] c"Another Cart\00", align 1
-@printf.str.0 = private unnamed_addr constant [26 x i8] c"Shopping cart item 1: %s\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [30 x i8] c"Another cart item 2 unit: %s\0A\00", align 1
+@anon.string.13 = private unnamed_addr constant [13 x i8] c"Another Cart\00", align 4
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"Shopping cart item 1: %s\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [30 x i8] c"Another cart item 2 unit: %s\0A\00", align 4
 
 define private %struct.ShoppingCart @_Z15newShoppingCartv() {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
-  store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }], ptr %items, align 8
+  store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }, %struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }, %struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }], ptr %items, align 8
   %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 0
   store %struct.ShoppingItem { ptr @anon.string.0, double 1.000000e+02, ptr @anon.string.1 }, ptr %2, align 8
   %3 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 1

@@ -1,8 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
-@printf.str.0 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
+@printf.str.0 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 4
 
 define private ptr @_Z13getTestStringidb(i32 %0, double %1, i1 %2) {
   %result = alloca ptr, align 8

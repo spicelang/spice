@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %f\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %f\0A\00", align 4
 
 define private double @_Z6getArgv() {
   %result = alloca double, align 8

@@ -5,8 +5,8 @@ source_filename = "source.spice"
 %struct.Outer = type { %struct.Middle }
 %struct.Middle = type { %struct.Inner }
 
-@printf.str.0 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 
 define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) {
   %this = alloca ptr, align 8

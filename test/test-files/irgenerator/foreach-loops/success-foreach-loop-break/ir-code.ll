@@ -5,9 +5,9 @@ source_filename = "source.spice"
 %interface.IIterator = type { ptr }
 %struct.NumberIterator.0 = type { %interface.IIterator, i64, i64, i64 }
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Short %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [5 x i8] c"End.\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Short %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [5 x i8] c"End.\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

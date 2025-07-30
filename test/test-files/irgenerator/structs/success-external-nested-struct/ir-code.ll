@@ -4,8 +4,8 @@ source_filename = "source.spice"
 %struct.Socket = type { i32, i16, %struct.NestedSocket }
 %struct.NestedSocket = type { ptr, i64 }
 
-@printf.str.0 = private unnamed_addr constant [17 x i8] c"Test string: %s\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"Socket: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [17 x i8] c"Test string: %s\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"Socket: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 4
 
 define private i32 @_Z7facultyi(i32 %0) {
   %result = alloca i32, align 4

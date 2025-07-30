@@ -3,11 +3,11 @@ source_filename = "source.spice"
 
 %struct.Struct = type { ptr, i1 }
 
-@printf.str.0 = private unnamed_addr constant [20 x i8] c"From procedure: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [19 x i8] c"From function: %d\0A\00", align 1
-@anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 'i == -4309' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@printf.str.0 = private unnamed_addr constant [20 x i8] c"From procedure: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [19 x i8] c"From function: %d\0A\00", align 4
+@anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 'i == -4309' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
   %intRef = alloca ptr, align 8

@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
+@printf.str.0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {

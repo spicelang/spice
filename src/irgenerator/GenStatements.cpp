@@ -2,9 +2,10 @@
 
 #include "IRGenerator.h"
 
+#include <llvm/IR/Module.h>
+
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
-#include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -114,12 +115,12 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
-    const AssignExprNode* returnExpr = node->assignExpr;
+    const AssignExprNode *returnExpr = node->assignExpr;
     if (node->calledCopyCtor) {
       // Perform a copy
-      llvm::Value* originalAddress = resolveAddress(returnExpr);
-      llvm::Type* returnTy = node->returnType.toLLVMType(sourceFile);
-      llvm::Value* newAddress = insertAlloca(returnTy);
+      llvm::Value *originalAddress = resolveAddress(returnExpr);
+      llvm::Type *returnTy = node->returnType.toLLVMType(sourceFile);
+      llvm::Value *newAddress = insertAlloca(returnTy);
       generateCtorOrDtorCall(newAddress, node->calledCopyCtor, {originalAddress});
       returnValue = insertLoad(returnTy, newAddress);
     } else {
@@ -200,7 +201,10 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   switchToBlock(bThen);
   // Create constant for error message
   const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.\n";
-  llvm::Constant *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+  llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+  // If the output should be comparable, fix alignment to 4 bytes
+  if (cliOptions.comparableOutput)
+    globalString->setAlignment(llvm::Align(4));
   // Print the error message
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
   builder.CreateCall(printfFct, globalString);

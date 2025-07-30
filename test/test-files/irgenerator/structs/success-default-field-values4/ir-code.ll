@@ -3,9 +3,9 @@ source_filename = "source.spice"
 
 %struct.Test = type { i32, ptr }
 
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1
+@"0" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 4
 
 define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
@@ -13,7 +13,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable
   %2 = load ptr, ptr %this, align 8
   store i32 12, ptr %2, align 4
   %3 = getelementptr inbounds nuw %struct.Test, ptr %2, i32 0, i32 1
-  store ptr @0, ptr %3, align 8
+  store ptr @"0", ptr %3, align 8
   %4 = load ptr, ptr %this, align 8
   %i.addr = getelementptr inbounds %struct.Test, ptr %4, i64 0, i32 0
   store i32 14, ptr %i.addr, align 4
