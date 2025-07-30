@@ -208,8 +208,12 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     return builder.getInt8(0);
 
   // String
-  if (symbolType.is(TY_STRING))
-    return createGlobalStringConst("", "");
+  if (symbolType.is(TY_STRING)) {
+    llvm::GlobalVariable *globalString = builder.CreateGlobalString("", "");
+    if (cliOptions.comparableOutput)
+      globalString->setAlignment(llvm::Align(4));
+    return globalString;
+  }
 
   // Bool
   if (symbolType.is(TY_BOOL))
@@ -232,7 +236,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
-    const std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
+    const std::vector itemConstants(arraySize, defaultItemValue);
     return llvm::ConstantArray::get(arrayType, itemConstants);
   }
 
@@ -560,7 +564,7 @@ llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &ba
 }
 
 llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value,
-                                                     const CodeLoc &codeLoc) const {
+                                                           const CodeLoc &codeLoc) const {
   llvm::GlobalVariable *global = createGlobalStringConst(baseName, value);
   // Create debug info
   if (cliOptions.generateDebugInfo)

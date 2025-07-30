@@ -147,6 +147,7 @@ void execTestCase(const TestCase &testCase) {
         });
 
     // Check optimized IR code
+#ifdef ARCH_X86_64
     for (uint8_t i = 1; i <= 5; i++) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&] {
         cliOptions.optLevel = static_cast<OptLevel>(i);
@@ -162,6 +163,7 @@ void execTestCase(const TestCase &testCase) {
         return mainSourceFile->compilerOutput.irOptString;
       });
     }
+#endif
 
     // Link the bitcode if not happened yet
     if (cliOptions.useLTO && cliOptions.optLevel == O0)

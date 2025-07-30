@@ -7,12 +7,12 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [15 x i8] c"Int value: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [17 x i8] c"Short value: %d\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [16 x i8] c"Long value: %d\0A\00", align 4
-@"0" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @printf.str.4 = private unnamed_addr constant [18 x i8] c"String value: %s\0A\00", align 4
 @printf.str.5 = private unnamed_addr constant [16 x i8] c"Byte value: %d\0A\00", align 4
 @printf.str.6 = private unnamed_addr constant [16 x i8] c"Char value: %c\0A\00", align 4
 @printf.str.7 = private unnamed_addr constant [16 x i8] c"Bool value: %d\0A\00", align 4
-@"1" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @printf.str.8 = private unnamed_addr constant [24 x i8] c"Struct array value: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -41,7 +41,7 @@ define dso_local i32 @main() #0 {
   store i64 0, ptr %longVar, align 8
   %8 = load i64, ptr %longVar, align 8
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i64 %8)
-  store ptr @"0", ptr %stringVar, align 8
+  store ptr @0, ptr %stringVar, align 8
   %10 = load ptr, ptr %stringVar, align 8
   %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, ptr %10)
   store i8 0, ptr %byteVar, align 1
@@ -56,7 +56,7 @@ define dso_local i32 @main() #0 {
   %18 = load i1, ptr %boolVar, align 1
   %19 = zext i1 %18 to i32
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 %19)
-  store [4 x %struct.NestedStruct] [%struct.NestedStruct { i32 0, ptr @"1" }, %struct.NestedStruct { i32 0, ptr @"1" }, %struct.NestedStruct { i32 0, ptr @"1" }, %struct.NestedStruct { i32 0, ptr @"1" }], ptr %structArrayVar, align 8
+  store [4 x %struct.NestedStruct] [%struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }], ptr %structArrayVar, align 8
   %21 = getelementptr inbounds [4 x %struct.NestedStruct], ptr %structArrayVar, i64 0, i32 2
   %field2.addr = getelementptr inbounds %struct.NestedStruct, ptr %21, i64 0, i32 1
   %22 = load ptr, ptr %field2.addr, align 8

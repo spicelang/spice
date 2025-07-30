@@ -23,8 +23,8 @@ $_ZTV6Person = comdat any
 @_ZTS6Person = dso_local constant [8 x i8] c"6Person\00", comdat, align 4
 @_ZTI6Person = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS6Person, ptr @_ZTI11CompareableIlE }, comdat, align 8
 @_ZTV6Person = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat, align 8
-@"0" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
-@"1" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 4
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 4
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
@@ -41,9 +41,9 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
   %5 = load ptr, ptr %this, align 8
   store ptr getelementptr inbounds ({ [3 x ptr] }, ptr @_ZTV6Person, i64 0, i32 0, i32 2), ptr %5, align 8
   %6 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 1
-  store ptr @"0", ptr %6, align 8
+  store ptr @0, ptr %6, align 8
   %7 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 2
-  store ptr @"1", ptr %7, align 8
+  store ptr @1, ptr %7, align 8
   %8 = getelementptr inbounds nuw %struct.Person, ptr %5, i32 0, i32 3
   store i32 0, ptr %8, align 4
   %9 = load ptr, ptr %this, align 8

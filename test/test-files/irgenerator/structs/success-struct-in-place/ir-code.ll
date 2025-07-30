@@ -4,8 +4,8 @@ source_filename = "source.spice"
 %struct.ShoppingItem = type { ptr, double, ptr }
 %struct.ShoppingCart = type { ptr, [3 x %struct.ShoppingItem] }
 
-@"0" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
-@"1" = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @anon.string.0 = private unnamed_addr constant [10 x i8] c"Spaghetti\00", align 4
 @anon.string.1 = private unnamed_addr constant [2 x i8] c"g\00", align 4
 @anon.string.2 = private unnamed_addr constant [5 x i8] c"Rice\00", align 4
@@ -28,7 +28,7 @@ define private %struct.ShoppingCart @_Z15newShoppingCartv() {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
-  store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }, %struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }, %struct.ShoppingItem { ptr @"0", double 0.000000e+00, ptr @"1" }], ptr %items, align 8
+  store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }], ptr %items, align 8
   %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 0
   store %struct.ShoppingItem { ptr @anon.string.0, double 1.000000e+02, ptr @anon.string.1 }, ptr %2, align 8
   %3 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 1
