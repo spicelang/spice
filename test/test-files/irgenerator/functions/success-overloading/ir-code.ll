@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [13 x i8] c"Test func 1\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [17 x i8] c"Test func 2: %s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 1
-@anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 1
+@printf.str.0 = private unnamed_addr constant [13 x i8] c"Test func 1\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [17 x i8] c"Test func 2: %s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 4
+@anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 4
 
 define private i32 @_Z8testFuncv() {
   %result = alloca i32, align 4
@@ -13,7 +13,7 @@ define private i32 @_Z8testFuncv() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private i32 @_Z8testFuncPKc(ptr %0) {
   %result = alloca i32, align 4

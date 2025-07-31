@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 'true' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 'true' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -31,7 +31,7 @@ assert.exit.L5:                                   ; preds = %assert.exit.L2
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

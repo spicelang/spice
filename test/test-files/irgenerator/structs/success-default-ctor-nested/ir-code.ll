@@ -5,8 +5,8 @@ source_filename = "source.spice"
 %struct.Middle = type { %struct.Inner }
 %struct.Inner = type { ptr }
 
-@anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
-@printf.str.0 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 4
+@printf.str.0 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 4
 
 ; Function Attrs: norecurse
 define void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
@@ -51,7 +51,7 @@ define dso_local i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 attributes #0 = { norecurse }
 attributes #1 = { noinline nounwind optnone uwtable }

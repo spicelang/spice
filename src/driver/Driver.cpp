@@ -140,18 +140,17 @@ void Driver::enrich() {
   const llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   if (cliOptions.targetTriple.empty()) {
     if (cliOptions.targetArch == TARGET_UNKNOWN) { // We have nothing -> obtain native triplet
-      cliOptions.targetTriple = defaultTriple.getTriple();
+      cliOptions.targetTriple = defaultTriple;
       cliOptions.targetArch = defaultTriple.getArchName();
       cliOptions.targetVendor = defaultTriple.getVendorName();
       cliOptions.targetOs = defaultTriple.getOSName();
       cliOptions.isNativeTarget = true;
     } else { // We have arch, vendor and os -> obtain triplet
-      const llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
-      cliOptions.targetTriple = triple.getTriple();
-      cliOptions.isNativeTarget = triple == defaultTriple;
+      cliOptions.targetTriple = llvm::Triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
+      cliOptions.isNativeTarget = cliOptions.targetTriple == defaultTriple;
     }
   } else { // Obtain arch, vendor and os by the triplet
-    const llvm::Triple triple(llvm::Triple::normalize(cliOptions.targetTriple));
+    const llvm::Triple triple(cliOptions.targetTriple.normalize());
     cliOptions.targetArch = triple.getArchName();
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
@@ -201,8 +200,8 @@ void Driver::addBuildSubcommand() {
   addCompileSubcommandOptions(subCmd);
 
   // --target-triple
-  subCmd->add_option<std::string>("--target,--target-triple,-t", cliOptions.targetTriple,
-                                  "Target triple for the emitted executable (for cross-compiling)");
+  subCmd->add_option<llvm::Triple>("--target,--target-triple,-t", cliOptions.targetTriple,
+                                   "Target triple for the emitted executable (for cross-compiling)");
   // --target-arch
   subCmd->add_option<std::string>("--target-arch", cliOptions.targetArch,
                                   "Target arch for emitted executable (for cross-compiling)");

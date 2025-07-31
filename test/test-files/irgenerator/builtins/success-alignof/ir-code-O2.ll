@@ -1,17 +1,17 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [25 x i8] c"Alignment of double: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [22 x i8] c"Alignment of int: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [24 x i8] c"Alignment of short: %d\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [23 x i8] c"Alignment of long: %d\0A\00", align 1
-@printf.str.4 = private unnamed_addr constant [23 x i8] c"Alignment of byte: %d\0A\00", align 1
-@printf.str.5 = private unnamed_addr constant [23 x i8] c"Alignment of char: %d\0A\00", align 1
-@printf.str.6 = private unnamed_addr constant [25 x i8] c"Alignment of string: %d\0A\00", align 1
-@printf.str.7 = private unnamed_addr constant [23 x i8] c"Alignment of bool: %d\0A\00", align 1
-@printf.str.8 = private unnamed_addr constant [24 x i8] c"Alignment of int[]: %d\0A\00", align 1
-@printf.str.9 = private unnamed_addr constant [23 x i8] c"Alignment of int*: %d\0A\00", align 1
-@printf.str.10 = private unnamed_addr constant [34 x i8] c"Alignment of struct instance: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [25 x i8] c"Alignment of double: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [22 x i8] c"Alignment of int: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [24 x i8] c"Alignment of short: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [23 x i8] c"Alignment of long: %d\0A\00", align 4
+@printf.str.4 = private unnamed_addr constant [23 x i8] c"Alignment of byte: %d\0A\00", align 4
+@printf.str.5 = private unnamed_addr constant [23 x i8] c"Alignment of char: %d\0A\00", align 4
+@printf.str.6 = private unnamed_addr constant [25 x i8] c"Alignment of string: %d\0A\00", align 4
+@printf.str.7 = private unnamed_addr constant [23 x i8] c"Alignment of bool: %d\0A\00", align 4
+@printf.str.8 = private unnamed_addr constant [24 x i8] c"Alignment of int[]: %d\0A\00", align 4
+@printf.str.9 = private unnamed_addr constant [23 x i8] c"Alignment of int*: %d\0A\00", align 4
+@printf.str.10 = private unnamed_addr constant [34 x i8] c"Alignment of struct instance: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
@@ -30,7 +30,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

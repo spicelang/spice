@@ -4,15 +4,15 @@ source_filename = "source.spice"
 %struct.Test = type { i32, i64 }
 %struct.TestPacked = type <{ i32, i64 }>
 
-@anon.string.0 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'sizeof<Test>() == 16' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sizeof(t) == 16' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 't.f1 == -2147483647' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [80 x i8] c"Assertion failed: Condition 't.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 1
-@anon.string.4 = private unnamed_addr constant [78 x i8] c"Assertion failed: Condition 'sizeof<TestPacked>() == 12' evaluated to false.\0A\00", align 1
-@anon.string.5 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sizeof(tp) == 12' evaluated to false.\0A\00", align 1
-@anon.string.6 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'tp.f1 == -2147483647' evaluated to false.\0A\00", align 1
-@anon.string.7 = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition 'tp.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@anon.string.0 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'sizeof<Test>() == 16' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'sizeof(t) == 16' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 't.f1 == -2147483647' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [80 x i8] c"Assertion failed: Condition 't.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 4
+@anon.string.4 = private unnamed_addr constant [78 x i8] c"Assertion failed: Condition 'sizeof<TestPacked>() == 12' evaluated to false.\0A\00", align 4
+@anon.string.5 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sizeof(tp) == 12' evaluated to false.\0A\00", align 4
+@anon.string.6 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'tp.f1 == -2147483647' evaluated to false.\0A\00", align 4
+@anon.string.7 = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition 'tp.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -112,7 +112,7 @@ assert.exit.L28:                                  ; preds = %assert.exit.L27
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

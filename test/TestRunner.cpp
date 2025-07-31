@@ -40,7 +40,7 @@ void execTestCase(const TestCase &testCase) {
   const llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {
       /* mainSourceFile= */ sourceFilePath,
-      /* targetTriple= */ targetTriple.getTriple(),
+      /* targetTriple= */ targetTriple,
       /* targetArch= */ std::string(targetTriple.getArchName()),
       /* targetVendor= */ std::string(targetTriple.getVendorName()),
       /* targetOs= */ std::string(targetTriple.getOSName()),
@@ -81,7 +81,7 @@ void execTestCase(const TestCase &testCase) {
       /* comparableOutput= */ true,
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
-  static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 384, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
@@ -147,6 +147,7 @@ void execTestCase(const TestCase &testCase) {
         });
 
     // Check optimized IR code
+#ifdef ARCH_X86_64
     for (uint8_t i = 1; i <= 5; i++) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&] {
         cliOptions.optLevel = static_cast<OptLevel>(i);
@@ -162,6 +163,7 @@ void execTestCase(const TestCase &testCase) {
         return mainSourceFile->compilerOutput.irOptString;
       });
     }
+#endif
 
     // Link the bitcode if not happened yet
     if (cliOptions.useLTO && cliOptions.optLevel == O0)

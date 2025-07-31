@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 4
 
 ; Function Attrs: nofree nosync nounwind memory(none)
 define private fastcc range(i32 -2147483647, -2147483648) i32 @_Z3ackii(i32 range(i32 0, 4) %0, i32 %1) unnamed_addr #0 {
@@ -61,7 +61,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { nofree nosync nounwind memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }

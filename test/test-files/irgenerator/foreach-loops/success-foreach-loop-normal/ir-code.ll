@@ -6,7 +6,7 @@ source_filename = "source.spice"
 %struct.VectorIterator = type { %interface.IIterator, ptr, i64 }
 %interface.IIterator = type { ptr }
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Item: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Item: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -74,7 +74,7 @@ declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 declare ptr @_ZN14VectorIteratorIiE3getEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 

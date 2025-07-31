@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <llvm/TargetParser/Triple.h>
+
 #include "../../lib/cli11/CLI11.hpp"
 
 // Undef conflicting macros (only problematic on Windows)
@@ -39,7 +41,7 @@ const char *const BUILD_MODE_TEST = "test";
  */
 struct CliOptions {
   std::filesystem::path mainSourceFile; // e.g. ./main.spice
-  std::string targetTriple;             // In format: <arch><sub>-<vendor>-<sys>-<abi>
+  llvm::Triple targetTriple;             // In format: <arch><sub>-<vendor>-<sys>-<abi>
   std::string targetArch = TARGET_UNKNOWN;
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;

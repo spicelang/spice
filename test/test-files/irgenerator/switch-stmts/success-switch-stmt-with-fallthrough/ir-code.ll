@@ -1,11 +1,11 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [22 x i8] c"Input is at least 5.\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [22 x i8] c"Input is at least 4.\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [22 x i8] c"Input is at least 3.\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [22 x i8] c"Input is at least 2.\0A\00", align 1
-@printf.str.4 = private unnamed_addr constant [22 x i8] c"Input is at least 1.\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [22 x i8] c"Input is at least 5.\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [22 x i8] c"Input is at least 4.\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [22 x i8] c"Input is at least 3.\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [22 x i8] c"Input is at least 2.\0A\00", align 4
+@printf.str.4 = private unnamed_addr constant [22 x i8] c"Input is at least 1.\0A\00", align 4
 
 define private void @_Z12isBiggerThani(i32 %0) {
   %input = alloca i32, align 4
@@ -44,7 +44,7 @@ switch.exit.L2:                                   ; preds = %switch.case.L19, %1
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {

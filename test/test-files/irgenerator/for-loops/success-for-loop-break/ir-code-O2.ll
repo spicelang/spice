@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [13 x i8] c"Loop run %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [19 x i8] c"Inner loop run %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [5 x i8] c"End.\00", align 1
+@printf.str.0 = private unnamed_addr constant [13 x i8] c"Loop run %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [19 x i8] c"Inner loop run %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [5 x i8] c"End.\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
@@ -29,7 +29,7 @@ for.exit.L2:                                      ; preds = %for.body.L5
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [21 x i8] c"Hello from thread 1\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [21 x i8] c"Hello from thread 2\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Hello from thread 1\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [21 x i8] c"Hello from thread 2\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
 declare i32 @pthread_create(ptr noundef, ptr noundef, { ptr, ptr } noundef, ptr noundef)
 
@@ -59,7 +59,7 @@ define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8)
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) {
   %captures = alloca ptr, align 8

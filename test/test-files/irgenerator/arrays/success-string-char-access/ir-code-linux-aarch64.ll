@@ -1,8 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [5 x i8] c"test\00", align 1
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Char: %c\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [5 x i8] c"test\00", align 4
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Char: %c\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -23,7 +23,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

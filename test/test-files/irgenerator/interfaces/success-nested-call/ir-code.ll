@@ -17,14 +17,14 @@ $_ZTI9InnerTest = comdat any
 
 $_ZTV9InnerTest = comdat any
 
-@_ZTS5ITest = dso_local constant [7 x i8] c"5ITest\00", comdat, align 1
+@_ZTS5ITest = dso_local constant [7 x i8] c"5ITest\00", comdat, align 4
 @_ZTV8TypeInfo = external global ptr
 @_ZTI5ITest = dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS5ITest }, comdat, align 8
 @_ZTV5ITest = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI5ITest, ptr null] }, comdat, align 8
-@_ZTS9InnerTest = dso_local constant [11 x i8] c"9InnerTest\00", comdat, align 1
+@_ZTS9InnerTest = dso_local constant [11 x i8] c"9InnerTest\00", comdat, align 4
 @_ZTI9InnerTest = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS9InnerTest, ptr @_ZTI5ITest }, comdat, align 8
 @_ZTV9InnerTest = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI9InnerTest, ptr @_ZN9InnerTest4testEv] }, comdat, align 8
-@printf.str.0 = private unnamed_addr constant [18 x i8] c"InnerTest.test()\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [18 x i8] c"InnerTest.test()\0A\00", align 4
 
 define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
@@ -47,7 +47,7 @@ define private void @_ZN9InnerTest4testEv(ptr noundef nonnull align 8 dereferenc
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {

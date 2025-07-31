@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Data: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Data: %d\0A\00", align 4
 @anon.array.0 = private unnamed_addr constant [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7]
 @anon.array.1 = private unnamed_addr constant [4 x i64] [i64 10, i64 12, i64 14, i64 16]
-@printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 1
+@printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 4
 
 define private i32 @_Z10sumNumbersIsEiPsl(ptr %0, i64 %1) {
   %result = alloca i32, align 4
@@ -118,7 +118,7 @@ for.exit.L12:                                     ; preds = %for.head.L12
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {

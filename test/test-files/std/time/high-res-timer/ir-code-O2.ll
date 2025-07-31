@@ -3,8 +3,8 @@ source_filename = "source.spice"
 
 %struct.Timer = type { i64, i64, i32, ptr }
 
-@printf.str.0 = private unnamed_addr constant [28 x i8] c"Check for %d +/-%d, got %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [22 x i8] c"All assertions passed\00", align 1
+@printf.str.0 = private unnamed_addr constant [28 x i8] c"Check for %d +/-%d, got %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [22 x i8] c"All assertions passed\00", align 4
 @str.1 = private unnamed_addr constant [85 x i8] c"Assertion failed: Condition 'isInRange(t.getDuration(), 10l, 3)' evaluated to false.\00", align 1
 @str.2 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 't.getDuration() == 0l' evaluated to false.\00", align 1
 @str.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 'duration == 0l' evaluated to false.\00", align 1
@@ -24,7 +24,7 @@ land.exit.L6C12:
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
@@ -132,7 +132,7 @@ declare void @_ZN5Timer5pauseEv(ptr) local_unnamed_addr
 declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
+declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }

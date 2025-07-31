@@ -3,14 +3,14 @@ source_filename = "source.spice"
 
 %struct.Vector = type { i1, ptr }
 
-@anon.string.0 = private unnamed_addr constant [12 x i8] c"Test string\00", align 1
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [16 x i8] c"Another message\00", align 1
-@printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [12 x i8] c"Test string\00", align 4
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
+@printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [16 x i8] c"Another message\00", align 4
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 4
 
 define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
@@ -86,7 +86,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

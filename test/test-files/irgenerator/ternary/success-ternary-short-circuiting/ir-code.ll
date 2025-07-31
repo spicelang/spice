@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'false' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 1
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 1
+@anon.string.0 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'false' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 4
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 4
 
 define private i1 @_Z7condFctv() {
   %result = alloca i1, align 1
@@ -25,7 +25,7 @@ assert.exit.L6:                                   ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1

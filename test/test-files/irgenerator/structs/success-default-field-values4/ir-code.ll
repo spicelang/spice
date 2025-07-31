@@ -3,9 +3,9 @@ source_filename = "source.spice"
 
 %struct.Test = type { i32, ptr }
 
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
-@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
+@printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 4
 
 define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
@@ -37,7 +37,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

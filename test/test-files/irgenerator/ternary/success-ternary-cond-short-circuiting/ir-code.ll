@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 define private i1 @_Z10condition1v() {
   %result = alloca i1, align 1
@@ -33,7 +33,7 @@ land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

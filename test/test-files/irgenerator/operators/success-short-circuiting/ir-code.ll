@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [15 x i8] c"Function True\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [16 x i8] c"Function False\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [30 x i8] c"Logical and evaluated to: %d\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [15 x i8] c"Function True\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Function False\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [30 x i8] c"Logical and evaluated to: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 4
 
 define private i1 @_Z12functionTruev() {
   %result = alloca i1, align 1
@@ -13,7 +13,7 @@ define private i1 @_Z12functionTruev() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private i1 @_Z13functionFalsev() {
   %result = alloca i1, align 1

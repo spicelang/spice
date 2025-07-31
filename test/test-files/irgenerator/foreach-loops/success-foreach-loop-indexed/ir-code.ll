@@ -6,7 +6,7 @@ source_filename = "source.spice"
 %struct.Pair = type { i64, ptr }
 
 @anon.array.0 = private unnamed_addr constant [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9]
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -56,7 +56,7 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 declare %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare void @_ZN13ArrayIteratorIiE4nextEv(ptr)
 

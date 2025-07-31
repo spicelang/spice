@@ -3,11 +3,11 @@ source_filename = "source.spice"
 
 %struct.TestStruct = type { i32, ptr, double, i1 }
 
-@anon.string.0 = private unnamed_addr constant [4 x i8] c"abc\00", align 1
-@printf.str.0 = private unnamed_addr constant [26 x i8] c"Default value of int: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [29 x i8] c"Default value of string: %s\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [29 x i8] c"Default value of double: %f\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [27 x i8] c"Default value of bool: %d\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [4 x i8] c"abc\00", align 4
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"Default value of int: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [29 x i8] c"Default value of string: %s\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [29 x i8] c"Default value of double: %f\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [27 x i8] c"Default value of bool: %d\0A\00", align 4
 
 ; Function Attrs: norecurse
 define void @_ZN10TestStruct4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
@@ -48,7 +48,7 @@ define dso_local i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 attributes #0 = { norecurse }
 attributes #1 = { noinline nounwind optnone uwtable }

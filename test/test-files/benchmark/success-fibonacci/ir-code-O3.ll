@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 ; Function Attrs: nofree nosync nounwind memory(none)
 define private fastcc i32 @_Z4fiboi(i32 %0) unnamed_addr #0 {
@@ -33,7 +33,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { nofree nosync nounwind memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }

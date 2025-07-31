@@ -230,17 +230,20 @@ main:                                   # @main
 	.size	.L_Z15lambda.L12C29.0v, .Lfunc_end2-.L_Z15lambda.L12C29.0v
                                         # -- End function
 	.type	.Lprintf.str.0,@object          # @printf.str.0
-	.section	.rodata.str1.1,"aMS",@progbits,1
+	.section	.rodata.str1.4,"aMS",@progbits,1
+	.p2align	2, 0x0
 .Lprintf.str.0:
 	.asciz	"Thread returned with result: %d\n"
 	.size	.Lprintf.str.0, 33
 
 	.type	.Lprintf.str.2,@object          # @printf.str.2
+	.p2align	2, 0x0
 .Lprintf.str.2:
 	.asciz	"Program finished"
 	.size	.Lprintf.str.2, 17
 
 	.type	.Lstr,@object                   # @str
+	.section	.rodata.str1.1,"aMS",@progbits,1
 .Lstr:
 	.asciz	"Started all threads. Waiting for results ..."
 	.size	.Lstr, 45

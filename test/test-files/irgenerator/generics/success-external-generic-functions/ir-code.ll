@@ -1,10 +1,10 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
-@anon.string.1 = private unnamed_addr constant [6 x i8] c"World\00", align 1
+@anon.string.0 = private unnamed_addr constant [6 x i8] c"Hello\00", align 4
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"World\00", align 4
 @anon.array.0 = private unnamed_addr constant [2 x ptr] [ptr @anon.string.0, ptr @anon.string.1]
-@anon.string.2 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition '*iPtr == 13' evaluated to false.\0A\00", align 1
+@anon.string.2 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition '*iPtr == 13' evaluated to false.\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -47,7 +47,7 @@ declare void @_Z11printFormatIPiEvPi(ptr)
 declare ptr @_Z7getAIncIiEPiPi(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

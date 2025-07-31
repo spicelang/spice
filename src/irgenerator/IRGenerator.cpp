@@ -208,8 +208,12 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     return builder.getInt8(0);
 
   // String
-  if (symbolType.is(TY_STRING))
-    return builder.CreateGlobalString("", "", 0, module);
+  if (symbolType.is(TY_STRING)) {
+    llvm::GlobalVariable *globalString = builder.CreateGlobalString("", "");
+    if (cliOptions.comparableOutput)
+      globalString->setAlignment(llvm::Align(4));
+    return globalString;
+  }
 
   // Bool
   if (symbolType.is(TY_BOOL))
@@ -232,7 +236,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
-    const std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
+    const std::vector itemConstants(arraySize, defaultItemValue);
     return llvm::ConstantArray::get(arrayType, itemConstants);
   }
 
@@ -547,17 +551,25 @@ llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName
   return global;
 }
 
-llvm::Constant *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value,
-                                                     const CodeLoc &codeLoc) const {
+llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value) const {
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
   // Create global
-  llvm::Constant *globalAddr = builder.CreateGlobalString(value, globalName, 0, module);
+  builder.CreateGlobalString(value, globalName, 0, module);
   llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
+  // If the output should be comparable, fix alignment to 4 bytes
+  if (cliOptions.comparableOutput)
+    global->setAlignment(llvm::Align(4));
+  return global;
+}
+
+llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value,
+                                                           const CodeLoc &codeLoc) const {
+  llvm::GlobalVariable *global = createGlobalStringConst(baseName, value);
   // Create debug info
   if (cliOptions.generateDebugInfo)
-    diGenerator.generateGlobalStringDebugInfo(global, globalName, value.length(), codeLoc);
-  return globalAddr;
+    diGenerator.generateGlobalStringDebugInfo(global, global->getName().str(), value.length(), codeLoc);
+  return global;
 }
 
 std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const {
@@ -584,11 +596,11 @@ std::string IRGenerator::getIRString(llvm::Module *llvmModule, bool comparableOu
   assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
 
   // Backup target triple and data layout
-  const std::string targetTriple = llvmModule->getTargetTriple();
+  const llvm::Triple &targetTriple = llvmModule->getTargetTriple();
   const std::string targetDataLayout = llvmModule->getDataLayoutStr();
   // Remove target triple and data layout
   if (comparableOutput) {
-    llvmModule->setTargetTriple("");
+    llvmModule->setTargetTriple(llvm::Triple());
     llvmModule->setDataLayout("");
   }
 

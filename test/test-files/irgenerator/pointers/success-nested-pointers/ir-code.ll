@@ -1,12 +1,12 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [7 x i8] c"2: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [7 x i8] c"3: %d\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [7 x i8] c"4: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [7 x i8] c"2: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [7 x i8] c"3: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [7 x i8] c"4: %d\0A\00", align 4
 @anon.array.0 = private unnamed_addr constant [4 x i32] [i32 1, i32 2, i32 3, i32 4]
-@printf.str.4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
+@printf.str.4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 4
 
 define private void @_Z8testProcPPPA4_i(ptr %0) {
   %nums = alloca ptr, align 8
@@ -38,7 +38,7 @@ define private void @_Z8testProcPPPA4_i(ptr %0) {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {

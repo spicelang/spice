@@ -3,15 +3,15 @@ source_filename = "source.spice"
 
 %struct.String = type { ptr, i64, i64 }
 
-@anon.string.0 = private unnamed_addr constant [18 x i8] c"Callback called!\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@printf.str.1 = private unnamed_addr constant [35 x i8] c"Callback called with args: %s, %f\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
-@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
-@printf.str.3 = private unnamed_addr constant [35 x i8] c"Callback called with args: %s, %d\0A\00", align 1
-@printf.str.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
+@anon.string.0 = private unnamed_addr constant [18 x i8] c"Callback called!\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%s\00", align 4
+@printf.str.1 = private unnamed_addr constant [35 x i8] c"Callback called with args: %s, %f\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"Hello\00", align 4
+@printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [6 x i8] c"Hello\00", align 4
+@printf.str.3 = private unnamed_addr constant [35 x i8] c"Callback called with args: %s, %d\0A\00", align 4
+@printf.str.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -72,7 +72,7 @@ define private ptr @_Z14lambda.L2C39.0v() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %result = alloca i1, align 1

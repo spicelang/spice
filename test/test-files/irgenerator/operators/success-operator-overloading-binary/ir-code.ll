@@ -3,20 +3,20 @@ source_filename = "source.spice"
 
 %struct.Counter = type { i64 }
 
-@printf.str.0 = private unnamed_addr constant [20 x i8] c"Counter1 value: %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [20 x i8] c"Counter2 value: %d\0A\00", align 1
-@printf.str.2 = private unnamed_addr constant [20 x i8] c"Counter3 value: %d\0A\00", align 1
-@printf.str.3 = private unnamed_addr constant [20 x i8] c"Counter4 value: %d\0A\00", align 1
-@printf.str.4 = private unnamed_addr constant [20 x i8] c"Counter5 value: %d\0A\00", align 1
-@printf.str.5 = private unnamed_addr constant [20 x i8] c"Counter6 value: %d\0A\00", align 1
-@printf.str.6 = private unnamed_addr constant [20 x i8] c"Counter7 value: %d\0A\00", align 1
-@printf.str.7 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@printf.str.8 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@printf.str.9 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
-@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 1
-@printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [20 x i8] c"Counter1 value: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [20 x i8] c"Counter2 value: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [20 x i8] c"Counter3 value: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [20 x i8] c"Counter4 value: %d\0A\00", align 4
+@printf.str.4 = private unnamed_addr constant [20 x i8] c"Counter5 value: %d\0A\00", align 4
+@printf.str.5 = private unnamed_addr constant [20 x i8] c"Counter6 value: %d\0A\00", align 4
+@printf.str.6 = private unnamed_addr constant [20 x i8] c"Counter7 value: %d\0A\00", align 4
+@printf.str.7 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
+@printf.str.8 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
+@printf.str.9 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
+@printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
+@printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
+@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 4
+@printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 
 define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 %1) {
   %this = alloca ptr, align 8
@@ -313,7 +313,7 @@ assert.exit.L86:                                  ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

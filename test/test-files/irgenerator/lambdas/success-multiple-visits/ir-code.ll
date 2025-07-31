@@ -1,8 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 1
-@printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
 
 define private void @_Z4testv() {
   %t = alloca i32, align 4
@@ -41,7 +41,7 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
 define private void @_Z4testi(i32 %0) {
   %t = alloca i32, align 4

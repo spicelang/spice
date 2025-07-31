@@ -4,8 +4,8 @@ source_filename = "source.spice"
 %struct.Error = type { i32, ptr }
 
 @stderr = external local_unnamed_addr global ptr, align 8
-@anon.string.0 = private unnamed_addr constant [117 x i8] c"Program panicked at ./source.spice:2:5: %s\0A2  panic(Error(\22This is an error\22));\0A   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [17 x i8] c"This is an error\00", align 1
+@anon.string.0 = private unnamed_addr constant [117 x i8] c"Program panicked at ./source.spice:2:5: %s\0A2  panic(Error(\22This is an error\22));\0A   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [17 x i8] c"This is an error\00", align 4
 
 define private void @_Z3foov() {
   %1 = alloca %struct.Error, align 8
@@ -21,7 +21,7 @@ define private void @_Z3foov() {
 declare void @_ZN5Error4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: nofree
-declare noundef i32 @fprintf(ptr nocapture noundef, ptr nocapture noundef readonly, ...) #0
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1

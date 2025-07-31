@@ -1,9 +1,9 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 3' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 6' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 3' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 6' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 define private void @_Z3fooIRiEvRi(ptr %0) {
   %t = alloca ptr, align 8
@@ -59,7 +59,7 @@ assert.exit.L15:                                  ; preds = %assert.exit.L13
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

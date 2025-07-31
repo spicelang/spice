@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 define private i32 @_Z4testv() {
   %result = alloca i32, align 4
@@ -30,7 +30,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

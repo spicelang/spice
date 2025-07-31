@@ -1,7 +1,7 @@
 ; ModuleID = 'lto-module'
 source_filename = "lto-module"
 
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 @str = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition '(functionInModuleB(1, 2) == 3)' evaluated to false.\00", align 1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
@@ -27,13 +27,13 @@ assert.exit.L4:                                   ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #2
+declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #2
 
 ; Function Attrs: cold nofree noreturn nounwind
 declare void @exit(i32) local_unnamed_addr #3
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }

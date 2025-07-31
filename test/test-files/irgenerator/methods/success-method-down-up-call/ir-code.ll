@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 %struct.TestStruct = type { i8, i32 }
 
-@printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -26,7 +26,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 define private i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4

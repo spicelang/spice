@@ -3,11 +3,11 @@ source_filename = "source.spice"
 
 %struct.TestStruct = type { i64 }
 
-@anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 125l' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 125l' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 123l' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 123l' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
+@anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 125l' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 125l' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 123l' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 123l' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 define private ptr @_Z16op.plusplus.postR10TestStruct(ptr %0) {
   %result = alloca ptr, align 8
@@ -107,7 +107,7 @@ assert.exit.L24:                                  ; preds = %assert.exit.L23
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

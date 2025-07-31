@@ -3,27 +3,27 @@ source_filename = "source.spice"
 
 %struct.Test = type { i32, i1, i1, i32, i16, i64, i1, i1, i1, i1, i1, i1, i32, i64, i8, i32, i32, i32, i32, i32 }
 
-@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 't.f1 == 2' evaluated to false.\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f2' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '!t.f3' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f4 == 11' evaluated to false.\0A\00", align 1
-@anon.string.4 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f5 == 10s' evaluated to false.\0A\00", align 1
-@anon.string.5 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f6 == 2l' evaluated to false.\0A\00", align 1
-@anon.string.6 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f7' evaluated to false.\0A\00", align 1
-@anon.string.7 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f8' evaluated to false.\0A\00", align 1
-@anon.string.8 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f9' evaluated to false.\0A\00", align 1
-@anon.string.9 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '!t.f10' evaluated to false.\0A\00", align 1
-@anon.string.10 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 't.f11' evaluated to false.\0A\00", align 1
-@anon.string.11 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '!t.f12' evaluated to false.\0A\00", align 1
-@anon.string.12 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f13 == 333' evaluated to false.\0A\00", align 1
-@anon.string.13 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f14 == 11l' evaluated to false.\0A\00", align 1
-@anon.string.14 = private unnamed_addr constant [75 x i8] c"Assertion failed: Condition 't.f15 == cast<byte>(63)' evaluated to false.\0A\00", align 1
-@anon.string.15 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f16 == 13' evaluated to false.\0A\00", align 1
-@anon.string.16 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f17 == 13' evaluated to false.\0A\00", align 1
-@anon.string.17 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f18 == 14' evaluated to false.\0A\00", align 1
-@anon.string.18 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f19 == 12' evaluated to false.\0A\00", align 1
-@anon.string.19 = private unnamed_addr constant [83 x i8] c"Assertion failed: Condition 't.f20 == QualifierType::COMPOSE' evaluated to false.\0A\00", align 1
-@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 't.f1 == 2' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f2' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '!t.f3' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f4 == 11' evaluated to false.\0A\00", align 4
+@anon.string.4 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f5 == 10s' evaluated to false.\0A\00", align 4
+@anon.string.5 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f6 == 2l' evaluated to false.\0A\00", align 4
+@anon.string.6 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f7' evaluated to false.\0A\00", align 4
+@anon.string.7 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f8' evaluated to false.\0A\00", align 4
+@anon.string.8 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 't.f9' evaluated to false.\0A\00", align 4
+@anon.string.9 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '!t.f10' evaluated to false.\0A\00", align 4
+@anon.string.10 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 't.f11' evaluated to false.\0A\00", align 4
+@anon.string.11 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '!t.f12' evaluated to false.\0A\00", align 4
+@anon.string.12 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f13 == 333' evaluated to false.\0A\00", align 4
+@anon.string.13 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 't.f14 == 11l' evaluated to false.\0A\00", align 4
+@anon.string.14 = private unnamed_addr constant [75 x i8] c"Assertion failed: Condition 't.f15 == cast<byte>(63)' evaluated to false.\0A\00", align 4
+@anon.string.15 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f16 == 13' evaluated to false.\0A\00", align 4
+@anon.string.16 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f17 == 13' evaluated to false.\0A\00", align 4
+@anon.string.17 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f18 == 14' evaluated to false.\0A\00", align 4
+@anon.string.18 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 't.f19 == 12' evaluated to false.\0A\00", align 4
+@anon.string.19 = private unnamed_addr constant [83 x i8] c"Assertion failed: Condition 't.f20 == QualifierType::COMPOSE' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: norecurse
 define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %0) #0 {
@@ -327,7 +327,7 @@ assert.exit.L56:                                  ; preds = %assert.exit.L55
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3

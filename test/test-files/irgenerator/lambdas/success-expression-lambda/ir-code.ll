@@ -2,8 +2,8 @@
 source_filename = "source.spice"
 
 @anon.array.0 = private unnamed_addr constant [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1]
-@printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 1
-@printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 4
+@printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 4
 
 define private void @_Z4swapRiRi(ptr %0, ptr %1) {
   %a = alloca ptr, align 8
@@ -162,7 +162,7 @@ for.exit.L24:                                     ; preds = %for.head.L24
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

@@ -6,7 +6,7 @@ source_filename = "source.spice"
 %struct.C = type { %struct.A, %struct.B, i32 }
 %struct.B = type { i32 }
 
-@printf.str.0 = private unnamed_addr constant [12 x i8] c"%d, %d, %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [12 x i8] c"%d, %d, %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -32,7 +32,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [19 x i8] c"Inlined value: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"Inlined value: %d\0A\00", align 4
 
 ; Function Attrs: alwaysinline
 define private i64 @_Z15getInlinedValuev() #0 {
@@ -20,7 +20,7 @@ define dso_local i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
 
 attributes #0 = { alwaysinline }
 attributes #1 = { noinline nounwind optnone uwtable }
