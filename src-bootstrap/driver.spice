@@ -9,7 +9,7 @@ import "std/io/cli-option";
 import "std/io/filepath";
 import "std/io/file";
 import "std/time/time";
-import "std/type/long";
+import "std/type/type-conversion";
 
 // Own imports
 import "util/common-util";

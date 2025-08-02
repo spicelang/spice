@@ -1,5 +1,5 @@
 // Imports
-import "std/type/long";
+import "std/type/type-conversion";
 
 public type CodeLoc struct {
     public unsigned long line

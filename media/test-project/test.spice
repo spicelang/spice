@@ -1,10 +1,4 @@
-import "std/type/type-conversion";
-
-f<int> main() {
-
-}
-
-/*import "std/text/format";
+import "std/text/format";
 
 f<int> main() {
     printf("toUpper: %c\n", toUpper('j'));
@@ -30,4 +24,4 @@ f<int> main() {
     printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456l, true));
     printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456789l));
     printf("formatStorageSize: %s\n", formatStorageSize(1234567890123456789l, true));
-}*/
+}

@@ -1,6 +1,6 @@
 import "std/io/cli-option";
 import "std/text/print";
-import "std/type/string";
+import "std/type/type-conversion";
 import "std/data/vector";
 import "std/os/os";
 import "std/io/filepath";

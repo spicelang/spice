@@ -1,7 +1,7 @@
 // Std imports
 import "std/data/vector";
 import "std/text/stringstream";
-import "std/type/int";
+import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/symboltablebuilder/super-type";

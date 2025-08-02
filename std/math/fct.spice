@@ -1,6 +1,6 @@
 // Imports
 import "std/math/const";
-import "std/type/double";
+import "std/type/type-conversion";
 
 // Generic type defs
 type Numeric double|int|short|long;
