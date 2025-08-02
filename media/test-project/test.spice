@@ -1,5 +1,9 @@
 ext f<unsigned int> snprintf(char*, unsigned long, string, ...);
 
 f<int> main() {
-
+    short input = 12345s;
+    const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
+    String res = String(length);
+    snprintf(cast<char*>(res.getRaw()), length + 1l, "%hd", input);
+    printf("%s\n", res);
 }

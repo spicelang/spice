@@ -425,7 +425,7 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
  * @param reqArgs Requested argument types
  * @param typeMapping Concrete template type mapping
  * @param strictQualifierMatching Match qualifiers strictly
- * @param needsSubstantiation Do we want to create a substantiation after successfully matching
+ * @param needsSubstantiation We want to create a substantiation after successfully matching
  * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
@@ -434,7 +434,10 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   std::vector<Param> &candidateParamList = candidate.paramList;
 
   // If the number of arguments does not match with the number of params, the matching fails
-  if (reqArgs.size() != candidateParamList.size())
+  if (!candidate.isVararg && reqArgs.size() != candidateParamList.size())
+    return false;
+  // In the case of a vararg function, we only disallow fewer arguments than parameters
+  if (candidate.isVararg && reqArgs.size() < candidateParamList.size())
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
@@ -444,6 +447,14 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
   // Loop over all parameters
   for (size_t i = 0; i < reqArgs.size(); i++) {
+    // In the case of a vararg function candidate, we can accept additional arguments, that are not defined in the candidate,
+    // but we need to modify the candidate param list to accept them
+    if (candidate.isVararg && i >= candidateParamList.size()) {
+      candidateParamList.push_back(Param(reqArgs.at(i).first, false));
+      needsSubstantiation = true; // We need to modify the candidate param types
+      continue;
+    }
+
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
     QualType &candidateType = candidateParamList.at(i).qualType;
