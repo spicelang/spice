@@ -54,6 +54,7 @@ public:
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); }
   std::any visitSignature(SpiceParser::SignatureContext *ctx) override { return buildRule(ctx); }
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); }
+  std::any visitTypeLstWithEllipsis(SpiceParser::TypeLstWithEllipsisContext *ctx) override { return buildRule(ctx); }
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override { return buildRule(ctx); }
   std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override { return buildRule(ctx); }
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override { return buildRule(ctx); }

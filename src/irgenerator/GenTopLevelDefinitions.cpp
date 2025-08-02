@@ -610,7 +610,8 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
     argTypes.push_back(paramType.toLLVMType(sourceFile));
 
   // Declare function
-  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);
+  const bool isVarArg = node->argTypeLst && node->argTypeLst->hasEllipsis;
+  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, isVarArg);
   const std::string mangledName = spiceFunc->getMangledName();
   module->getOrInsertFunction(mangledName, functionType);
   llvm::Function *fct = module->getFunction(mangledName);

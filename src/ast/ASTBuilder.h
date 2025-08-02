@@ -65,6 +65,7 @@ public:
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
+  std::any visitTypeLstWithEllipsis(SpiceParser::TypeLstWithEllipsisContext *ctx) override;
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
   std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override;
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;

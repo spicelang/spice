@@ -37,6 +37,7 @@ public:
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitTypeLst(TypeLstNode *node) override;
+  std::any visitTypeLstWithEllipsis(TypeLstWithEllipsisNode *node) override;
   std::any visitTypeAltsLst(TypeAltsLstNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
   std::any visitArgLst(ArgLstNode *node) override;

@@ -624,8 +624,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   QualTypeList argTypes;
   ParamList argList;
   if (node->hasArgs) {
-    argList.reserve(node->argTypeLst->dataTypes.size());
-    for (DataTypeNode *arg : node->argTypeLst->dataTypes) {
+    argList.reserve(node->argTypeLst->typeLst->dataTypes.size());
+    for (DataTypeNode *arg : node->argTypeLst->typeLst->dataTypes) {
       // Visit argument
       auto argType = std::any_cast<QualType>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_PTR(argType)
@@ -656,6 +656,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   node->extFunction = FunctionManager::insert(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
   node->extFunction->alreadyTypeChecked = true;
+  node->extFunction->isVararg = node->argTypeLst && node->argTypeLst->hasEllipsis;
 
   // Check procedure attributes
   if (node->attrs) {

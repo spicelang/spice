@@ -58,6 +58,8 @@ std::any ASTVisitor::visitStmtLst(StmtLstNode *node) { return visitChildren(node
 
 std::any ASTVisitor::visitTypeLst(TypeLstNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitTypeLstWithEllipsis(TypeLstWithEllipsisNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitTypeAltsLst(TypeAltsLstNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitParamLst(ParamLstNode *node) { return visitChildren(node); }

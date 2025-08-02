@@ -34,6 +34,7 @@ class AssertStmtNode;
 class AnonymousBlockStmtNode;
 class StmtLstNode;
 class TypeLstNode;
+class TypeLstWithEllipsisNode;
 class TypeAltsLstNode;
 class ParamLstNode;
 class ArgLstNode;
@@ -129,6 +130,7 @@ public:
   virtual std::any visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node);
   virtual std::any visitStmtLst(const StmtLstNode *node);
   virtual std::any visitTypeLst(const TypeLstNode *node);
+  virtual std::any visitTypeLstWithEllipsis(const TypeLstWithEllipsisNode *node);
   virtual std::any visitTypeAltsLst(const TypeAltsLstNode *node);
   virtual std::any visitParamLst(const ParamLstNode *node);
   virtual std::any visitArgLst(const ArgLstNode *node);

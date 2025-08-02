@@ -76,6 +76,7 @@ public:
   std::string predefinedMangledName;
   std::string mangleSuffix;
   Function *genericPreset = nullptr;
+  bool isVararg = false;
   bool mangleFunctionName = true;
   bool alreadyTypeChecked = false;
   bool used = false;

@@ -564,9 +564,8 @@ public:
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
   DataTypeNode *returnType = nullptr;
-  TypeLstNode *argTypeLst = nullptr;
+  TypeLstWithEllipsisNode *argTypeLst = nullptr;
   bool hasArgs = false;
-  bool isVarArg = false;
   bool hasReturnType = false;
   std::string extFunctionName;
   SymbolTableEntry *entry = nullptr;
@@ -887,6 +886,25 @@ public:
 
   // Public members
   std::vector<DataTypeNode *> dataTypes;
+};
+
+// =================================================== TypeLstWithEllipsisNode ===================================================
+
+class TypeLstWithEllipsisNode final : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeLstWithEllipsis(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTypeLstWithEllipsis(this); }
+
+  // Other methods
+  GET_CHILDREN(typeLst);
+
+  // Public members
+  TypeLstNode *typeLst;
+  bool hasEllipsis = false;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================
