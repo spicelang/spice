@@ -1,0 +1,566 @@
+// External functions
+ext f<unsigned int> snprintf(char*, unsigned long, string, ...);
+ext f<long> strtol(string, char**, int);
+ext f<int> atoi(string, char**, int);
+ext f<double> strtod(string, char**);
+
+// ----------------------------------------------- Conversions to double -----------------------------------------------
+
+/**
+ * Convert an int to a double
+ *
+ * @param input Int value
+ * @return Double value
+ */
+public f<double> toDouble(int input) {
+    return 0.0 + input;
+}
+
+/**
+ * Convert a short to a double
+ *
+ * @param input Short value
+ * @return Double value
+ */
+public f<double> toDouble(short input) {
+    return 0.0 + input;
+}
+
+/**
+ * Convert a long to a double
+ *
+ * @param input Long value
+ * @return Double value
+ */
+public f<double> toDouble(long input) {
+    return 0.0 + input;
+}
+
+/**
+ * Convert a byte to a double
+ *
+ * @param input Byte value
+ * @return Double value
+ */
+public f<double> toDouble(byte input) {
+    return 0.0 + cast<int>(input);
+}
+
+/**
+ * Convert a char to a double
+ *
+ * @param input Char value
+ * @return Double value
+ */
+public f<double> toDouble(char input) {
+    return 0.0 + cast<int>(input);
+}
+
+/**
+ * Convert a string to a double
+ *
+ * @param input String value
+ * @return Double value
+ */
+public f<double> toDouble(string input) {
+    return strtod(input, nil<char**>);
+}
+
+/**
+ * Convert a bool to a double
+ *
+ * @param input Bool value
+ * @return Double value
+ */
+public f<double> toDouble(bool input) {
+    return input ? 1.0 : 0.0;
+}
+
+// ------------------------------------------------ Conversions to int -------------------------------------------------
+
+/**
+ * Convert a double to an int
+ *
+ * @param input Double value
+ * @return Int value
+ */
+public f<int> toInt(double input) {
+    return cast<int>(input);
+}
+
+/**
+ * Convert a short to an int
+ *
+ * @param input Short value
+ * @return Int value
+ */
+public f<int> toInt(short input) {
+    return cast<int>(input);
+}
+
+/**
+ * Convert a long to an int
+ *
+ * @param input Long value
+ * @return Int value
+ */
+public f<int> toInt(long input) {
+    return cast<int>(input);
+}
+
+/**
+ * Convert a byte to an int
+ *
+ * @param input Byte value
+ * @return Int value
+ */
+public f<int> toInt(byte input) {
+    return cast<int>(input);
+}
+
+/**
+ * Convert a char to an int
+ *
+ * @param input Char value
+ * @return Int value
+ */
+public f<int> toInt(char input) {
+    return cast<int>(input);
+}
+
+/**
+ * Convert a string to an int
+ *
+ * @param input String value
+ * @return Int value
+ */
+public f<int> toInt(string input, int base = 10) {
+    return atoi(input, nil<char**>, base);
+}
+
+/**
+ * Convert a bool to an int
+ *
+ * @param input Bool value
+ * @return Int value
+ */
+public f<int> toInt(bool input) {
+    return input ? 1 : 0;
+}
+
+// ----------------------------------------------- Conversions to short ------------------------------------------------
+
+/**
+ * Convert a double to a short
+ *
+ * @param input Double value
+ * @return Short value
+ */
+public f<short> toShort(double input) {
+    return cast<short>(input);
+}
+
+/**
+ * Convert an int to a short
+ *
+ * @param input Int value
+ * @return Short value
+ */
+public f<short> toShort(int input) {
+    return cast<short>(input);
+}
+
+/**
+ * Convert a long to a short
+ *
+ * @param input Long value
+ * @return Short value
+ */
+public f<short> toShort(long input) {
+    return cast<short>(input);
+}
+
+/**
+ * Convert a byte to a short
+ *
+ * @param input Byte value
+ * @return Short value
+ */
+public f<short> toShort(byte input) {
+    return cast<short>(cast<int>(input));
+}
+
+/**
+ * Convert a short to a short
+ *
+ * @param input Short value
+ * @return Short value
+ */
+public f<short> toShort(char input) {
+    return cast<short>(cast<int>(input));
+}
+
+/**
+ * Convert a string to a short
+ *
+ * @param input String value
+ * @return Short value
+ */
+public f<short> toShort(string input, int base = 10) {
+    return cast<short>(atoi(input, nil<char**>, base));
+}
+
+/**
+ * Convert a bool to a short
+ *
+ * @param input Bool value
+ * @return Short value
+ */
+public f<short> toShort(bool input) {
+    return input ? 1s : 0s;
+}
+
+// ------------------------------------------------ Conversions to long ------------------------------------------------
+
+/**
+ * Convert a double to a long
+ *
+ * @param input Double value
+ * @return Long value
+ */
+public f<long> toLong(double input) {
+    return cast<long>(input);
+}
+
+/**
+ * Convert an int to a long
+ *
+ * @param input Int value
+ * @return Long value
+ */
+public f<long> toLong(int input) {
+    return cast<long>(input);
+}
+
+/**
+ * Convert an short to a long
+ *
+ * @param input Short value
+ * @return Long value
+ */
+public f<long> toLong(short input) {
+    return cast<long>(input);
+}
+
+/**
+ * Convert a byte to a long
+ *
+ * @param input Byte value
+ * @return Long value
+ */
+public f<long> toLong(byte input) {
+    return cast<long>(cast<int>(input));
+}
+
+/**
+ * Convert a char to a long
+ *
+ * @param input Char value
+ * @return Long value
+ */
+public f<long> toLong(char input) {
+    return cast<long>(cast<int>(input));
+}
+
+/**
+ * Convert a string to a long
+ *
+ * @param input String value
+ * @return Long value
+ */
+public f<long> toLong(string input, int base = 10) {
+    return strtol(input, nil<char**>, base);
+}
+
+/**
+ * Convert a bool to a long
+ *
+ * @param input Bool value
+ * @return Long value
+ */
+public f<long> toLong(bool input) {
+    return input ? 1l : 0l;
+}
+
+// ------------------------------------------------ Conversions to byte ------------------------------------------------
+
+/**
+ * Convert an int to a byte
+ *
+ * @param input Int value
+ * @return Byte value
+ */
+public f<byte> toByte(int input) {
+    return cast<byte>(input);
+}
+
+/**
+ * Convert a short to a byte
+ *
+ * @param input Short value
+ * @return Byte value
+ */
+public f<byte> toByte(short input) {
+    return cast<byte>(cast<int>(input));
+}
+
+/**
+ * Convert a long to a byte
+ *
+ * @param input Long value
+ * @return Byte value
+ */
+public f<byte> toByte(long input) {
+    return cast<byte>(cast<int>(input));
+}
+
+/**
+ * Convert a char to a byte
+ *
+ * @param input Char value
+ * @return Byte value
+ */
+public f<byte> toByte(char input) {
+    return cast<byte>(input);
+}
+
+/**
+ * Convert a string to a byte
+ *
+ * @param input String value
+ * @return Byte value
+ */
+public f<byte> toByte(string input, int base = 10) {
+    return cast<byte>(atoi(input, nil<char**>, base));
+}
+
+/**
+ * Convert a bool to a byte
+ *
+ * @param input Bool value
+ * @return Byte value
+ */
+public f<byte> toByte(bool input) {
+    return cast<byte>(input ? 1 : 0);
+}
+
+// ------------------------------------------------ Conversions to char ------------------------------------------------
+
+/**
+ * Convert an int to a char
+ *
+ * @param input Int value
+ * @return Char value
+ */
+public f<char> toChar(int input) {
+    return cast<char>(input);
+}
+
+/**
+ * Convert a short to a char
+ *
+ * @param input Short value
+ * @return Char value
+ */
+public f<char> toChar(short input) {
+    return cast<char>(input);
+}
+
+/**
+ * Convert a long to a char
+ *
+ * @param input Long value
+ * @return Char value
+ */
+public f<char> toChar(long input) {
+    return cast<char>(input);
+}
+
+/**
+ * Convert a byte to a char
+ *
+ * @param input Byte value
+ * @return Char value
+ */
+public f<char> toChar(byte input) {
+    return cast<char>(input);
+}
+
+/**
+ * Convert a string to a char
+ *
+ * @param input String value
+ * @return Char value
+ */
+public f<char> toChar(string input) {
+    return input[0];
+}
+
+// ----------------------------------------------- Conversions to string -----------------------------------------------
+
+/**
+ * Convert a double to a string
+ *
+ * @param input Double value
+ * @return String value
+ */
+public f<String> toString(double input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%f", input);
+    result = String(length); // Assuming this length is enough
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%f", input);
+}
+
+/**
+ * Convert an int to a string
+ *
+ * @param input Int value
+ * @return String value
+ */
+public f<String> toString(int input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%d", input);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%d", input);
+}
+
+/**
+ * Convert a short to a string
+ *
+ * @param input Short value
+ * @return String value
+ */
+public f<String> toString(short input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hd", input);
+}
+
+/**
+ * Convert a long to a string
+ *
+ * @param input Long value
+ * @return String value
+ */
+public f<String> toString(long input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%ld", input);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%ld", input);
+}
+
+/**
+ * Convert a byte to a string
+ *
+ * @param input Byte value
+ * @return String value
+ */
+public f<String> toString(byte input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%hhu", input);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hhu", input);
+}
+
+/**
+ * Convert a char to a string
+ *
+ * @param input Char value
+ * @return String value
+ */
+public f<String> toString(char input) {
+    return String(input);
+}
+
+/**
+ * Convert a bool to a string
+ *
+ * @param input Bool value
+ * @return String value
+ */
+public f<string> toString(bool input) {
+    return input ? "true" : "false";
+}
+
+// ------------------------------------------------ Conversions to bool ------------------------------------------------
+
+/**
+ * Convert a double to a bool
+ *
+ * @param input Double value
+ * @return Bool value
+ */
+public f<bool> toBool(double input) {
+    return input >= 0.5;
+}
+
+/**
+ * Convert an int to a bool
+ *
+ * @param input Int value
+ * @return Bool value
+ */
+public f<bool> toBool(int input) {
+    return input >= 1;
+}
+
+/**
+ * Convert an short to a bool
+ *
+ * @param input Short value
+ * @return Bool value
+ */
+public f<bool> toBool(short input) {
+    return input >= 1;
+}
+
+/**
+ * Convert an long to a bool
+ *
+ * @param input Long value
+ * @return Bool value
+ */
+public f<bool> toBool(long input) {
+    return input >= 1;
+}
+
+/**
+ * Convert a byte to a bool
+ *
+ * @param input Byte value
+ * @return Bool value
+ */
+public f<bool> toBool(byte input) {
+    return input == cast<byte>(1);
+}
+
+/**
+ * Convert a char to a bool
+ *
+ * @param input Char value
+ * @return Bool value
+ */
+public f<bool> toBool(char input) {
+    return input == '1';
+}
+
+/**
+ * Convert a string to a bool
+ *
+ * @param input String value
+ * @return Bool value
+ */
+public f<bool> toBool(string input) {
+    return input == "true";
+}
+
+
+
+
+

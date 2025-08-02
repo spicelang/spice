@@ -1,4 +1,4 @@
-import "std/type/byte";
+import "std/type/type-conversion";
 
 f<int> main() {
     // toDouble()

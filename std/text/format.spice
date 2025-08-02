@@ -1,8 +1,7 @@
 // Imports
 import "std/text/analysis";
 import "std/math/fct";
-import "std/type/double" as doubleTy;
-import "std/type/int" as intTy;
+import "std/type/type-conversion";
 
 // Constants
 const unsigned int ASCII_SHIFT_OFFSET = 32;
@@ -82,7 +81,7 @@ public f<String> capitalize(const String& text) {
  * @return Formatted string
  */
 public f<String> formatThousandsDelimiter(int input, char delimiter = ',') {
-    result = intTy::toString(input);
+    result = toString(input);
     const unsigned long n = result.getLength();
     const bool isNegative = input < 0;
 
@@ -117,5 +116,5 @@ public f<String> formatStorageSize(unsigned long bytes, bool useFactor1024 = fal
     }
 
     const double sizeRounded = round(size, 2);
-    return doubleTy::toString(sizeRounded) + ' ' + storageUnits[unitIndex];
+    return toString(sizeRounded) + ' ' + storageUnits[unitIndex];
 }

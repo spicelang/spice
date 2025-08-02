@@ -1,3 +1,4 @@
+import "std/type/type-conversion";
 import "std/type/short";
 
 f<int> main() {

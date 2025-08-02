@@ -1,4 +1,4 @@
-import "std/type/int";
+import "std/type/types";
 
 const int VERTEX_COUNT = 9;
 

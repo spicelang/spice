@@ -1,5 +1,5 @@
 // Std imports
-import "std/type/byte";
+import "std/type/types";
 import "std/data/vector";
 import "std/data/unordered-map";
 import "std/time/timer";

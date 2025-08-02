@@ -1,3 +1,4 @@
+import "std/type/type-conversion";
 import "std/type/long";
 
 f<int> main() {
