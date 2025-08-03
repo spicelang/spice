@@ -225,7 +225,7 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: D:/a/spice/spice/llvm
+          path: ${{ github.workspace }}/llvm
           key: llvm-21.1.0-rc2-win-x64
 
       - name: Setup LLVM
@@ -245,7 +245,7 @@ jobs:
 
       - name: Configure & compile project
         env:
-          LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
