@@ -275,6 +275,12 @@ jobs:
       - name: Download Libs
         run: .\setup-libs.bat
 
+      - name: Install Graphviz
+        run: |
+          choco install graphviz -y
+          echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
+          dot -V
+
       - name: Build test target
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
