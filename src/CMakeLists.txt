@@ -1,5 +1,5 @@
 # Set ANTLR grammar
-antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/Spice.g4 VISITOR)
+antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
 
 set(SOURCES
         # Global source files
@@ -176,8 +176,10 @@ add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 target_compile_options(spice PRIVATE -Wpedantic -Wall -Wno-unknown-pragmas)
 
 # Include Antlr components
-include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
-include_directories(${ANTLR_Spice_OUTPUT_DIR})
+include_directories(
+        ${ANTLR_Spice_OUTPUT_DIR}
+        ../lib/antlr4/runtime/Cpp/runtime/src
+)
 
 target_link_libraries(spice antlr4_static ${LLVM_LIBS})
 add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

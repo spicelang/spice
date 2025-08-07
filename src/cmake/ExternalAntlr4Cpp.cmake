@@ -1,176 +1,133 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(SET CMP0114 NEW)
+if(POLICY CMP0114)
+    cmake_policy(SET CMP0114 NEW)
+endif()
 
 include(ExternalProject)
 
 set(ANTLR4_ROOT ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime/src/antlr4_runtime)
 set(ANTLR4_INCLUDE_DIRS ${ANTLR4_ROOT}/runtime/Cpp/runtime/src)
-set(ANTLR4_GIT_REPOSITORY https://github.com/antlr/antlr4.git)
-if (NOT DEFINED ANTLR4_TAG)
+set(ANTLR4_GIT_REPOSITORY https://github.com/spicelang/antlr4.git)
+if(NOT DEFINED ANTLR4_TAG)
     # Set to branch name to keep library updated at the cost of needing to rebuild after 'clean'
     # Set to commit hash to keep the build stable and does not need to rebuild after 'clean'
-    set(ANTLR4_TAG 4.10)
-endif ()
+    set(ANTLR4_TAG dev)
+endif()
 
-if (${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
-    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist/$(Configuration))
-elseif (${CMAKE_GENERATOR} MATCHES "Xcode.*")
-    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist/$(CONFIGURATION))
-else ()
-    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist)
-endif ()
+# Ensure that the include dir already exists at configure time (to avoid cmake erroring
+# on non-existent include dirs)
+file(MAKE_DIRECTORY "${ANTLR4_INCLUDE_DIRS}")
 
-if (MSVC)
+if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
+    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/runtime/$(Configuration))
+elseif(${CMAKE_GENERATOR} MATCHES "Xcode.*")
+    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/runtime/$(CONFIGURATION))
+else()
+    set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/runtime)
+endif()
+
+if(MSVC)
     set(ANTLR4_STATIC_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime-static.lib)
     set(ANTLR4_SHARED_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime.lib)
     set(ANTLR4_RUNTIME_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime.dll)
-else ()
+else()
     set(ANTLR4_STATIC_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.a)
-    if (MINGW)
+    if(MINGW)
         set(ANTLR4_SHARED_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll.a)
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll)
-    elseif (CYGWIN)
+    elseif(CYGWIN)
         set(ANTLR4_SHARED_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll.a)
         set(ANTLR4_RUNTIME_LIBRARIES
-                ${ANTLR4_OUTPUT_DIR}/cygantlr4-runtime-4.10.dll)
-    elseif (APPLE)
+                ${ANTLR4_OUTPUT_DIR}/cygantlr4-runtime-4.13.2.dll)
+    elseif(APPLE)
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dylib)
-    else ()
+    else()
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.so)
-    endif ()
-endif ()
+    endif()
+endif()
 
-if (${CMAKE_GENERATOR} MATCHES ".* Makefiles")
+if(${CMAKE_GENERATOR} MATCHES ".* Makefiles")
     # This avoids
     # 'warning: jobserver unavailable: using -j1. Add '+' to parent make rule.'
     set(ANTLR4_BUILD_COMMAND $(MAKE))
-elseif (${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
+elseif(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --config $(Configuration)
             --target)
-elseif (${CMAKE_GENERATOR} MATCHES "Xcode.*")
+elseif(${CMAKE_GENERATOR} MATCHES "Xcode.*")
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --config $(CONFIGURATION)
             --target)
-else ()
+else()
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --target)
-endif ()
+endif()
 
-if (NOT DEFINED ANTLR4_WITH_STATIC_CRT)
+if(NOT DEFINED ANTLR4_WITH_STATIC_CRT)
     set(ANTLR4_WITH_STATIC_CRT ON)
-endif ()
+endif()
 
-if (ANTLR4_ZIP_REPOSITORY)
-    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        ExternalProject_Add(
-                antlr4_runtime
-                PREFIX antlr4_runtime
-                URL ${ANTLR4_ZIP_REPOSITORY}
-                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                BUILD_COMMAND ""
-                BUILD_IN_SOURCE 1
-                SOURCE_DIR ${ANTLR4_ROOT}
-                SOURCE_SUBDIR runtime/Cpp
-                CMAKE_CACHE_ARGS
-                -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
-                -DCMAKE_SYSTEM_PROCESSOR:STRING=${CMAKE_SYSTEM_PROCESSOR}
-                -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
-                -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
-                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-                INSTALL_COMMAND ""
-                EXCLUDE_FROM_ALL 1
-                DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    else ()
-        ExternalProject_Add(
-                antlr4_runtime
-                PREFIX antlr4_runtime
-                URL ${ANTLR4_ZIP_REPOSITORY}
-                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                BUILD_COMMAND ""
-                BUILD_IN_SOURCE 1
-                SOURCE_DIR ${ANTLR4_ROOT}
-                SOURCE_SUBDIR runtime/Cpp
-                CMAKE_CACHE_ARGS
-                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-                INSTALL_COMMAND ""
-                EXCLUDE_FROM_ALL 1
-                DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    endif ()
-else ()
-    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        ExternalProject_Add(
-                antlr4_runtime
-                PREFIX antlr4_runtime
-                GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
-                GIT_TAG ${ANTLR4_TAG}
-                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                BUILD_COMMAND ""
-                BUILD_IN_SOURCE 1
-                SOURCE_DIR ${ANTLR4_ROOT}
-                SOURCE_SUBDIR runtime/Cpp
-                CMAKE_CACHE_ARGS
-                -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
-                -DCMAKE_SYSTEM_PROCESSOR:STRING=${CMAKE_SYSTEM_PROCESSOR}
-                -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
-                -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
-                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-                INSTALL_COMMAND ""
-                EXCLUDE_FROM_ALL 1
-                DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    else ()
-        ExternalProject_Add(
-                antlr4_runtime
-                PREFIX antlr4_runtime
-                GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
-                GIT_TAG ${ANTLR4_TAG}
-                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                BUILD_COMMAND ""
-                BUILD_IN_SOURCE 1
-                SOURCE_DIR ${ANTLR4_ROOT}
-                SOURCE_SUBDIR runtime/Cpp
-                CMAKE_CACHE_ARGS
-                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-                INSTALL_COMMAND ""
-                EXCLUDE_FROM_ALL 1
-                DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    endif ()
-endif ()
+if(ANTLR4_ZIP_REPOSITORY)
+    ExternalProject_Add(
+            antlr4_runtime
+            PREFIX antlr4_runtime
+            URL ${ANTLR4_ZIP_REPOSITORY}
+            DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+            BUILD_COMMAND ""
+            BUILD_IN_SOURCE 1
+            SOURCE_DIR ${ANTLR4_ROOT}
+            SOURCE_SUBDIR runtime/Cpp
+            CMAKE_CACHE_ARGS
+            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+            -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+            -DDISABLE_WARNINGS:BOOL=ON
+            # -DCMAKE_CXX_STANDARD:STRING=23 # if desired, compile the runtime with a different C++ standard
+            # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+            INSTALL_COMMAND ""
+            EXCLUDE_FROM_ALL 1)
+else()
+    ExternalProject_Add(
+            antlr4_runtime
+            PREFIX antlr4_runtime
+            GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
+            GIT_TAG ${ANTLR4_TAG}
+            DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+            BUILD_COMMAND ""
+            BUILD_IN_SOURCE 1
+            SOURCE_DIR ${ANTLR4_ROOT}
+            SOURCE_SUBDIR runtime/Cpp
+            CMAKE_CACHE_ARGS
+            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+            -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+            -DDISABLE_WARNINGS:BOOL=ON
+            # -DCMAKE_CXX_STANDARD:STRING=23 # if desired, compile the runtime with a different C++ standard
+            # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+            INSTALL_COMMAND ""
+            EXCLUDE_FROM_ALL 1)
+endif()
 
 # Separate build step as rarely people want both
 set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT})
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
     # CMake 3.14 builds in above's SOURCE_SUBDIR when BUILD_IN_SOURCE is true
     set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT}/runtime/Cpp)
-endif ()
+endif()
 
 ExternalProject_Add_Step(
         antlr4_runtime
@@ -188,6 +145,10 @@ add_library(antlr4_static STATIC IMPORTED)
 add_dependencies(antlr4_static antlr4_runtime-build_static)
 set_target_properties(antlr4_static PROPERTIES
         IMPORTED_LOCATION ${ANTLR4_STATIC_LIBRARIES})
+target_include_directories(antlr4_static
+        INTERFACE
+        ${ANTLR4_INCLUDE_DIRS}
+)
 
 ExternalProject_Add_Step(
         antlr4_runtime
@@ -205,7 +166,12 @@ add_library(antlr4_shared SHARED IMPORTED)
 add_dependencies(antlr4_shared antlr4_runtime-build_shared)
 set_target_properties(antlr4_shared PROPERTIES
         IMPORTED_LOCATION ${ANTLR4_RUNTIME_LIBRARIES})
-if (ANTLR4_SHARED_LIBRARIES)
+target_include_directories(antlr4_shared
+        INTERFACE
+        ${ANTLR4_INCLUDE_DIRS}
+)
+
+if(ANTLR4_SHARED_LIBRARIES)
     set_target_properties(antlr4_shared PROPERTIES
             IMPORTED_IMPLIB ${ANTLR4_SHARED_LIBRARIES})
-endif ()
+endif()

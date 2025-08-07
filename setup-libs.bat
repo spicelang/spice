@@ -7,7 +7,7 @@ if not exist lib (
 pushd lib
 
 :: Download ANTLR4
-git clone --quiet --depth 1 --branch 4.13.2 https://github.com/antlr/antlr4.git
+git clone --quiet --depth 1 --branch dev https://github.com/spicelang/antlr4.git
 
 :: Download Google Test
 git clone --quiet --depth 1 --branch v1.17.0 https://github.com/google/googletest.git
