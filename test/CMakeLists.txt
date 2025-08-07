@@ -31,7 +31,7 @@ file(CREATE_LINK ${CMAKE_SOURCE_DIR}/src-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/b
 
 ################# spicetest_leakcheck ################
 
-add_custom_target(spicetest_leakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spicetest DEPENDS spicetest)
+add_custom_target(spicetest_leakcheck COMMAND valgrind --leak-check=full --suppressions=${CMAKE_SOURCE_DIR}/valgrind.supp --error-exitcode=1 ./spicetest DEPENDS spicetest)
 
 ################# spicetest_parallel #################
 

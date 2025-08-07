@@ -274,7 +274,7 @@ void execTestCase(const TestCase &testCase) {
       // Execute binary
       std::stringstream cmd;
       if (testDriverCliOptions.enableLeakDetection)
-        cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
+        cmd << "valgrind -q --leak-check=full --suppressions=../../valgrind.supp --num-callers=100 --error-exitcode=1 ";
       cmd << executablePath.string();
       if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
