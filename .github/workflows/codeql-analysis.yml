@@ -35,20 +35,6 @@ jobs:
       - name: Setup Dependencies
         run: sudo apt-get install ninja-build graphviz pipx uuid-dev
 
-      # Temporary necessary until ANTLR supports CMake 4.0.0
-      - name: Downgrade CMake
-        run: |
-          CMAKE_VERSION=3.31.6
-          CMAKE_FOLDER=cmake-$CMAKE_VERSION-linux-x86_64
-          wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/$CMAKE_FOLDER.tar.gz
-          tar -xzvf $CMAKE_FOLDER.tar.gz
-          sudo mv $CMAKE_FOLDER /opt/cmake
-          sudo ln -f -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-          sudo ln -f -s /opt/cmake/bin/ctest /usr/local/bin/ctest
-          sudo ln -f -s /opt/cmake/bin/cpack /usr/local/bin/cpack
-          sudo ln -f -s /opt/cmake/bin/ccmake /usr/local/bin/ccmake || true
-          cmake --version
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
