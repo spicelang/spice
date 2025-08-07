@@ -1,11 +1,11 @@
 find_package(Java QUIET COMPONENTS Runtime)
 
-if (NOT ANTLR_EXECUTABLE)
+if(NOT ANTLR_EXECUTABLE)
     find_program(ANTLR_EXECUTABLE
             NAMES antlr.jar antlr4.jar antlr-4.jar antlr-4.13.2-complete.jar)
-endif ()
+endif()
 
-if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
+if(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
     execute_process(
             COMMAND ${Java_JAVA_EXECUTABLE} -jar ${ANTLR_EXECUTABLE}
             OUTPUT_VARIABLE ANTLR_COMMAND_OUTPUT
@@ -13,15 +13,15 @@ if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
             RESULT_VARIABLE ANTLR_COMMAND_RESULT
             OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    if (ANTLR_COMMAND_RESULT EQUAL 0)
-        string(REGEX MATCH "Version [0-9]+(\\.[0-9])*" ANTLR_VERSION ${ANTLR_COMMAND_OUTPUT})
+    if(ANTLR_COMMAND_RESULT EQUAL 0)
+        string(REGEX MATCH "Version [0-9]+(\\.[0-9]+)*" ANTLR_VERSION ${ANTLR_COMMAND_OUTPUT})
         string(REPLACE "Version " "" ANTLR_VERSION ${ANTLR_VERSION})
-    else ()
+    else()
         message(
                 SEND_ERROR
                 "Command '${Java_JAVA_EXECUTABLE} -jar ${ANTLR_EXECUTABLE}' "
                 "failed with the output '${ANTLR_COMMAND_ERROR}'")
-    endif ()
+    endif()
 
     macro(ANTLR_TARGET Name InputFile)
         set(ANTLR_OPTIONS LEXER PARSER LISTENER VISITOR)
@@ -37,16 +37,16 @@ if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
 
         get_filename_component(ANTLR_INPUT ${InputFile} NAME_WE)
 
-        if (ANTLR_TARGET_OUTPUT_DIRECTORY)
+        if(ANTLR_TARGET_OUTPUT_DIRECTORY)
             set(ANTLR_${Name}_OUTPUT_DIR ${ANTLR_TARGET_OUTPUT_DIRECTORY})
-        else ()
+        else()
             set(ANTLR_${Name}_OUTPUT_DIR
                     ${CMAKE_CURRENT_BINARY_DIR}/antlr4cpp_generated_src/${ANTLR_INPUT})
-        endif ()
+        endif()
 
         unset(ANTLR_${Name}_CXX_OUTPUTS)
 
-        if ((ANTLR_TARGET_LEXER AND NOT ANTLR_TARGET_PARSER) OR
+        if((ANTLR_TARGET_LEXER AND NOT ANTLR_TARGET_PARSER) OR
         (ANTLR_TARGET_PARSER AND NOT ANTLR_TARGET_LEXER))
             list(APPEND ANTLR_${Name}_CXX_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}.h
@@ -54,7 +54,7 @@ if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
             set(ANTLR_${Name}_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}.interp
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}.tokens)
-        else ()
+        else()
             list(APPEND ANTLR_${Name}_CXX_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Lexer.h
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Lexer.cpp
@@ -63,43 +63,43 @@ if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
             list(APPEND ANTLR_${Name}_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Lexer.interp
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Lexer.tokens)
-        endif ()
+        endif()
 
-        if (ANTLR_TARGET_LISTENER)
+        if(ANTLR_TARGET_LISTENER)
             list(APPEND ANTLR_${Name}_CXX_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}BaseListener.h
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}BaseListener.cpp
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Listener.h
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Listener.cpp)
             list(APPEND ANTLR_TARGET_COMPILE_FLAGS -listener)
-        endif ()
+        endif()
 
-        if (ANTLR_TARGET_VISITOR)
+        if(ANTLR_TARGET_VISITOR)
             list(APPEND ANTLR_${Name}_CXX_OUTPUTS
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}BaseVisitor.h
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}BaseVisitor.cpp
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Visitor.h
                     ${ANTLR_${Name}_OUTPUT_DIR}/${ANTLR_INPUT}Visitor.cpp)
             list(APPEND ANTLR_TARGET_COMPILE_FLAGS -visitor)
-        endif ()
+        endif()
 
-        if (ANTLR_TARGET_PACKAGE)
+        if(ANTLR_TARGET_PACKAGE)
             list(APPEND ANTLR_TARGET_COMPILE_FLAGS -package ${ANTLR_TARGET_PACKAGE})
-        endif ()
+        endif()
 
         list(APPEND ANTLR_${Name}_OUTPUTS ${ANTLR_${Name}_CXX_OUTPUTS})
 
-        if (ANTLR_TARGET_DEPENDS_ANTLR)
-            if (ANTLR_${ANTLR_TARGET_DEPENDS_ANTLR}_INPUT)
+        if(ANTLR_TARGET_DEPENDS_ANTLR)
+            if(ANTLR_${ANTLR_TARGET_DEPENDS_ANTLR}_INPUT)
                 list(APPEND ANTLR_TARGET_DEPENDS
                         ${ANTLR_${ANTLR_TARGET_DEPENDS_ANTLR}_INPUT})
                 list(APPEND ANTLR_TARGET_DEPENDS
                         ${ANTLR_${ANTLR_TARGET_DEPENDS_ANTLR}_OUTPUTS})
-            else ()
+            else()
                 message(SEND_ERROR
                         "ANTLR target '${ANTLR_TARGET_DEPENDS_ANTLR}' not found")
-            endif ()
-        endif ()
+            endif()
+        endif()
 
         add_custom_command(
                 OUTPUT ${ANTLR_${Name}_OUTPUTS}
@@ -115,7 +115,7 @@ if (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
                 COMMENT "Building ${Name} with ANTLR ${ANTLR_VERSION}")
     endmacro(ANTLR_TARGET)
 
-endif (ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
+endif(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
