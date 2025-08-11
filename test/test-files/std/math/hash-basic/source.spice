@@ -5,7 +5,7 @@ type HashableType struct : IHashable {
 }
 
 f<Hash> HashableType.hash() {
-    return this.content;
+    return hash(this.content);
 }
 
 f<int> main() {

@@ -1,7 +1,7 @@
 // Generic type defs
-type TT int|long|short|bool; // Trivially hashable types
-type TC byte|char; // Trivially hashable types with one additional cast
-type T dyn; // Any type
+type TriviallyHashableT int|short;         // Trivially hashable types
+type TriviallyHashableWithCastT byte|char; // Trivially hashable types with one additional cast
+type T dyn;                                // Any type
 
 // Aliases
 public type Hash alias unsigned long;
@@ -11,24 +11,64 @@ public type IHashable interface {
 }
 
 /**
- * Hash primitive numeric type
+ * Combine two hash values to form a new one.
  *
- * @param input Primitieve numeric to hash
- * @return Hash of primitive numeric
+ * @param h1 Hash value 1
+ * @param h2 Hash value 2
+ * @return Resulting hash value, that combines h1 and h2
  */
-public f<Hash> hash<TT>(TT input) {
-    return cast<Hash>(input);
+public f<Hash> combineHashes(Hash h1, Hash h2) {
+    // A common mixing step from Boost
+    return h1 ^ (h2 + 0x9e3779b97f4a7c15ul + (h1 << 6ul) + (h1 >> 2ul));
 }
 
 /**
  * Hash primitive numeric type
  *
- * @param input Primitieve numeric to hash
+ * @param input Primitive numeric to hash
  * @return Hash of primitive numeric
  */
-public f<Hash> hash<TC>(TC input) {
-    return cast<Hash>(cast<unsigned int>(input));
+public f<Hash> hash<TriviallyHashableT>(TriviallyHashableT input) {
+    // Mix bits with Knuth's multiplicative method
+    return cast<Hash>(input) * 2654435761ul;
 }
+
+/**
+ * Hash primitive numeric type
+ *
+ * @param input Primitive numeric to hash
+ * @return Hash of primitive numeric
+ */
+public f<Hash> hash<TriviallyHashableWithCastT>(TriviallyHashableWithCastT input) {
+    return hash(cast<unsigned int>(input));
+}
+
+/**
+ * Hash primitive numeric type
+ *
+ * @param input Primitive numeric to hash
+ * @return Hash of primitive numeric
+ */
+public f<Hash> hash(long input) {
+    // MurmurHash3
+    result = cast<Hash>(input);
+    result ^= (result >> 33ul);
+    result *= 0xff51afd7ed558ccdul;
+    result ^= (result >> 33ul);
+    result ^= 0xc4ceb9fe1a85ec53ul;
+    result ^= (result >> 33ul);
+}
+
+/**
+ * Hash bool type
+ *
+ * @param input Bool to hash
+ * @return Hash of bool
+ */
+public f<Hash> hash(bool input) {
+    return input ? 1231ul : 1237ul; // two distinct primes
+}
+
 
 /**
  * Hash a double value
@@ -37,9 +77,19 @@ public f<Hash> hash<TC>(TC input) {
  * @return Hash of double
  */
 public f<Hash> hash(double input) {
+    // Normalize +0.0 and -0.0 to +0.0
+    if input == 0.0 { input = 0.0; }
+
     unsafe {
-        return *(cast<Hash*>(&input));
+        sCopyUnsafe(cast<byte*>(&input), cast<byte*>(&result), sizeof(input));
     }
+
+    // MurmurHash3-style finalization for good distribution
+    result ^= result >> 33ul;
+    result *= 0xff51afd7ed558ccdul;
+    result ^= result >> 33ul;
+    result ^= 0xc4ceb9fe1a85ec53ul;
+    result ^= result >> 33ul;
 }
 
 /**
@@ -49,13 +99,17 @@ public f<Hash> hash(double input) {
  * @return Hash of string
  */
 public f<Hash> hash(string input) {
-    // Hash using djb2 algorithm
-    Hash hash = 5381l;
-    for unsigned long i = 0l; i < len(input); i++ {
-        Hash c = cast<Hash>(cast<unsigned int>(input[i]));
-        hash = ((hash << 5l) + hash) + c; // hash * 33 + c
+    // In case of a nil pointer, return 0 as hash
+    if input == nil<string> { return 0ul; }
+    // Otherwise use FNV-1a
+    result = 1469598103934665603ul;
+    const char* c = cast<const char*>(input);
+    unsafe {
+        while (c != nil<string>) {
+            result ^= cast<unsigned long>(cast<unsigned int>(*c++));
+            result *= 1099511628211ul; // FNV prime
+        }
     }
-    return hash;
 }
 
 /**
