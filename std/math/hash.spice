@@ -3,8 +3,6 @@ type TriviallyHashableT int|short;         // Trivially hashable types
 type TriviallyHashableWithCastT byte|char; // Trivially hashable types with one additional cast
 type T dyn;                                // Any type
 
-//
-
 // Aliases
 public type Hash alias unsigned long;
 
