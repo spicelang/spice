@@ -189,6 +189,10 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
+#ifdef OS_WINDOWS
+  if (exists(testCase.testPath / CTL_SKIP_WINDOWS))
+    return true;
+#endif
   return false;
 }
 
