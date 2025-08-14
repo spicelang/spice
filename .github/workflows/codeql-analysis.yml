@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-21.1.0-rc3
+          key: llvm-21.1.0-rc3-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'

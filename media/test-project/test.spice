@@ -1,24 +1,7 @@
-import "std/math/hash";
-
-type HashableType struct : IHashable {
-    unsigned long content = 124l
-}
-
-f<Hash> HashableType.hash() {
-    return hash(this.content);
-}
+import "std/os/syscall";
 
 f<int> main() {
-    // Commonly used hash functions
-    printf("Hash (double): %lu\n", hash(123.0));
-    printf("Hash (int): %lu\n", hash(123));
-    printf("Hash (short): %lu\n", hash(123s));
-    printf("Hash (long): %lu\n", hash(123l));
-    printf("Hash (char): %lu\n", hash(cast<char>(123)));
-    printf("Hash (byte): %lu\n", hash(cast<byte>(123)));
-    printf("Hash (string): %lu\n", hash("Hello, World!"));
-    printf("Hash (String): %lu\n", hash(String("Hello, World!")));
-    // Custom hash implementation
-    const HashableType ht;
-    printf("Hash (HashableType): %lu\n", hash(ht));
+    // Use write syscall to print "Hello syscall!"
+    const string str = "Hello syscall!";
+    syscall(SYSCALL_WRITE, /*fd = stdout*/ 1, /* buffer */ str, len(str));
 }
