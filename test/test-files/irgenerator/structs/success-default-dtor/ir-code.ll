@@ -53,7 +53,7 @@ define dso_local i32 @main() #1 {
   %2 = icmp eq ptr %1, null
   %3 = zext i1 %2 to i32
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  call void @_ZN20StructWithHeapFields4dtorEv(ptr %s)
+  call void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   %5 = load ptr, ptr %sPtr, align 8
   %data.addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = load ptr, ptr %data.addr1, align 8

@@ -22,7 +22,7 @@ define dso_local i32 @main() #0 {
   %8 = alloca %struct.VectorIterator, align 8
   %item = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  call void @_ZN6VectorIiE4ctorEv(ptr %intVector)
+  call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %intVector)
   store i32 1, ptr %1, align 4
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %1)
   store i32 5, ptr %2, align 4
@@ -58,12 +58,12 @@ foreach.tail.L12:                                 ; preds = %foreach.body.L12
   br label %foreach.head.L12
 
 foreach.exit.L12:                                 ; preds = %foreach.head.L12
-  call void @_ZN6VectorIiE4dtorEv(ptr %intVector)
+  call void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %intVector)
   %15 = load i32, ptr %result, align 4
   ret i32 %15
 }
 
-declare void @_ZN6VectorIiE4ctorEv(ptr)
+declare void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
 declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 
@@ -78,7 +78,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
 
 declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 
-declare void @_ZN6VectorIiE4dtorEv(ptr)
+declare void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

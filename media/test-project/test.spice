@@ -1,7 +1,7 @@
-import "std/os/syscall";
-
 f<int> main() {
-    // Use write syscall to print "Hello syscall!"
-    const string str = "Hello syscall!";
-    syscall(SYSCALL_WRITE, /*fd = stdout*/ 1, /* buffer */ str, len(str));
+    String testString;
+    testString = String("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.");
+
+    printf("Length: %d\n", testString.getLength());
+    printf("Capacity: %d", testString.getCapacity());
 }

@@ -30,7 +30,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4ctorERK5Inner(ptr %3, ptr %1)
+  call void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %3, ptr %1)
   ret void
 }
 
@@ -39,7 +39,7 @@ define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
-  call void @_ZN6Middle4ctorERK6Middle(ptr %3, ptr %1)
+  call void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %3, ptr %1)
   ret void
 }
 
@@ -56,7 +56,7 @@ define dso_local i32 @main() #1 {
   %1 = load i16, ptr %x.addr, align 2
   %2 = sext i16 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
-  call void @_ZN5Outer4ctorERK5Outer(ptr %outer2, ptr %outer)
+  call void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %outer2, ptr %outer)
   %middle.addr1 = getelementptr inbounds %struct.Outer, ptr %outer2, i64 0, i32 0
   %inner.addr2 = getelementptr inbounds %struct.Middle, ptr %middle.addr1, i64 0, i32 0
   %x.addr3 = getelementptr inbounds %struct.Inner, ptr %inner.addr2, i64 0, i32 0

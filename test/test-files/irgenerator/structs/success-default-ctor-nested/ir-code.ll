@@ -22,7 +22,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4ctorEv(ptr %2)
+  call void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %2)
   ret void
 }
 
@@ -31,7 +31,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN6Middle4ctorEv(ptr %2)
+  call void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %2)
   ret void
 }
 
@@ -40,7 +40,7 @@ define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN5Outer4ctorEv(ptr %outer)
+  call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %outer)
   %middle.addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
   %inner.addr = getelementptr inbounds %struct.Middle, ptr %middle.addr, i64 0, i32 0
   %message.addr = getelementptr inbounds %struct.Inner, ptr %inner.addr, i64 0, i32 0

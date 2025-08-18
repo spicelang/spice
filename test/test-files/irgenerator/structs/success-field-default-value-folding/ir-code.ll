@@ -105,7 +105,7 @@ define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN4Test4ctorEv(ptr %t)
+  call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %t)
   %f1.addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %1 = load i32, ptr %f1.addr, align 4
   %2 = icmp eq i32 %1, 2

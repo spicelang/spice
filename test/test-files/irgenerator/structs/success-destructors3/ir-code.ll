@@ -16,7 +16,7 @@ define private void @_Z4testv() {
   %2 = load ptr, ptr %t, align 8
   %3 = load ptr, ptr %2, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
-  call void @_ZN6String4dtorEv(ptr %1)
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   ret void
 }
 
@@ -25,7 +25,7 @@ declare void @_ZN6String4ctorEPKc(ptr, ptr)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
 
-declare void @_ZN6String4dtorEv(ptr)
+declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 define private void @_Z4testRK6String(ptr %0) {
   %t = alloca ptr, align 8
@@ -44,7 +44,7 @@ define dso_local i32 @main() #1 {
   call void @_Z4testv()
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.1)
   call void @_Z4testRK6String(ptr %1)
-  call void @_ZN6String4dtorEv(ptr %1)
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   %2 = load i32, ptr %result, align 4
   ret i32 %2
 }
