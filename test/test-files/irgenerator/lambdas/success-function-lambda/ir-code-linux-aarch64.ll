@@ -50,7 +50,7 @@ define dso_local i32 @main() #0 {
   %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.3)
-  call void @_ZN6String4ctorERK6String(ptr %arg.copy, ptr %2)
+  call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
   %14 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
   %15 = call i16 %fct4(%struct.String %14, i16 321)
@@ -59,9 +59,9 @@ define dso_local i32 @main() #0 {
   %18 = icmp eq i32 %17, 1
   %19 = select i1 %18, i32 9, i32 12
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %19)
-  call void @_ZN6String4dtorEv(ptr %2)
-  call void @_ZN6String4dtorEv(ptr %arg.copy)
-  call void @_ZN6String4dtorEv(ptr %1)
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   %21 = load i32, ptr %result, align 4
   ret i32 %21
 }
@@ -120,9 +120,9 @@ define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   ret i16 %8
 }
 
-declare void @_ZN6String4ctorERK6String(ptr, ptr)
+declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24), ptr)
 
-declare void @_ZN6String4dtorEv(ptr)
+declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
