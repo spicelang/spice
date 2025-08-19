@@ -56,7 +56,7 @@ define dso_local i32 @main() #1 {
   %test = alloca %struct.Test, align 8
   %test2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN9InnerTest4ctorEv(ptr %innerTest)
+  call void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %innerTest)
   store ptr %innerTest, ptr %test, align 8
   store ptr %innerTest, ptr %test2, align 8
   %1 = load ptr, ptr %test2, align 8

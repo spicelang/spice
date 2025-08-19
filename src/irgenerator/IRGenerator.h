@@ -18,7 +18,8 @@ class ExprNode;
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const CAPTURES_PARAM_NAME = "captures";
-static const std::string PRODUCER_STRING = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
+static const std::string PRODUCER_STRING =
+    "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
 
 enum Likeliness : uint8_t {
   UNSPECIFIED,
@@ -153,7 +154,8 @@ private:
   void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;
   llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value) const;
-  llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc) const;
+  llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value,
+                                                const CodeLoc &codeLoc) const;
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
@@ -164,8 +166,10 @@ private:
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
-  llvm::Value *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
-  void generateProcCall(const Function *proc, std::vector<llvm::Value *> &args) const;
+  void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
+  llvm::CallInst*generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
+  llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
+  void generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
                               const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;

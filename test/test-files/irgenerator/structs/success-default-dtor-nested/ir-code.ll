@@ -72,7 +72,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4ctorEv(ptr %2)
+  call void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
   ret void
 }
 
@@ -81,7 +81,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4ctorERK5Inner(ptr %3, ptr %1)
+  call void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %3, ptr %1)
   ret void
 }
 
@@ -90,7 +90,7 @@ define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4dtorEv(ptr %2)
+  call void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
   ret void
 }
 
@@ -99,7 +99,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN6Middle4ctorEv(ptr %2)
+  call void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
   ret void
 }
 
@@ -108,7 +108,7 @@ define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_ZN6Middle4dtorEv(ptr %2)
+  call void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
   ret void
 }
 
@@ -117,8 +117,8 @@ define dso_local i32 @main() #3 {
   %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN5Outer4ctorEv(ptr %outer)
-  call void @_ZN5Outer4dtorEv(ptr %outer)
+  call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %outer)
+  call void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %outer)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

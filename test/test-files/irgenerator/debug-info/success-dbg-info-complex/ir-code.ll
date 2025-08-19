@@ -434,7 +434,7 @@ assert.then.L66:                                  ; preds = %assert.exit.L65
 
 assert.exit.L66:                                  ; preds = %assert.exit.L65
   %127 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
-  call void @_ZN6VectorIiE4dtorEv(ptr %vi), !dbg !132
+  call void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !132
   %128 = load i32, ptr %result, align 4, !dbg !132
   ret i32 %128, !dbg !132
 }
@@ -475,7 +475,7 @@ declare void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 
 declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 
-declare void @_ZN6VectorIiE4dtorEv(ptr)
+declare void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

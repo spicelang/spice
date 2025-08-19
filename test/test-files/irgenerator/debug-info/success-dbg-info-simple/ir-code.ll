@@ -16,11 +16,11 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
     #dbg_declare(ptr %this, !44, !DIExpression(), !43)
   %2 = load ptr, ptr %this, align 8, !dbg !43
   %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !43
-  call void @_ZN6String4dtorEv(ptr %3), !dbg !43
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !43
   ret void, !dbg !43
 }
 
-declare void @_ZN6String4dtorEv(ptr)
+declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !46 {
   %result = alloca %struct.TestStruct, align 8
@@ -67,7 +67,7 @@ define dso_local i32 @main() #1 !dbg !60 {
   %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !73
   %7 = load i32, ptr %i.addr, align 4, !dbg !73
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %7), !dbg !73
-  call void @_ZN10TestStruct4dtorEv(ptr %res), !dbg !74
+  call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !74
   %9 = load i32, ptr %result, align 4, !dbg !74
   ret i32 %9, !dbg !74
 }

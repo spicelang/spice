@@ -78,7 +78,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   }
 }
 
-llvm::Value *IRGenerator::generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
+void IRGenerator::generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const {
   // Retrieve metadata for the function
   const std::string mangledName = fct->getMangledName();
 
@@ -87,38 +87,64 @@ llvm::Value *IRGenerator::generateFctCall(const Function *fct, const std::vector
     std::vector<llvm::Type *> paramTypes;
     for (const llvm::Value *argValue : args)
       paramTypes.push_back(argValue->getType());
-    llvm::Type *returnType = fct->returnType.toLLVMType(sourceFile);
+    llvm::Type *returnType = fct->isFunction() ? fct->returnType.toLLVMType(sourceFile) : builder.getVoidTy();
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, fctType);
+
+    if (fct->isMethod()) {
+      // Get callee function
+      llvm::Function *callee = module->getFunction(mangledName);
+      assert(callee != nullptr);
+
+      // Set attributes to 'this' param
+      // Get 'this' entry
+      const SymbolTableEntry *thisEntry = fct->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+      assert(thisEntry != nullptr);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
+      assert(structType != nullptr);
+      callee->addParamAttr(0, llvm::Attribute::NoUndef);
+      callee->addParamAttr(0, llvm::Attribute::NonNull);
+      callee->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+      callee->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
+    }
   }
-
-  // Get callee function
-  llvm::Function *callee = module->getFunction(mangledName);
-  assert(callee != nullptr);
-
-  // Generate function call
-  return builder.CreateCall(callee, args);
 }
 
-void IRGenerator::generateProcCall(const Function *proc, std::vector<llvm::Value *> &args) const {
+llvm::CallInst *IRGenerator::generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
   // Retrieve metadata for the function
-  const std::string mangledName = proc->getMangledName();
-
-  // Function is not defined in the current module -> declare it
-  if (!module->getFunction(mangledName)) {
-    std::vector<llvm::Type *> paramTypes;
-    for (const llvm::Value *argValue : args)
-      paramTypes.push_back(argValue->getType());
-    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
-    module->getOrInsertFunction(mangledName, fctType);
-  }
+  const std::string mangledName = fct->getMangledName();
 
   // Get callee function
   llvm::Function *callee = module->getFunction(mangledName);
   assert(callee != nullptr);
 
   // Generate function call
-  builder.CreateCall(callee, args);
+  llvm::CallInst *callInst = builder.CreateCall(callee, args);
+
+  // Set attributes to 'this' param
+  if (fct->isMethod()) {
+    // Get 'this' entry
+    const SymbolTableEntry *thisEntry = fct->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisEntry != nullptr);
+    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
+    assert(structType != nullptr);
+    callInst->addParamAttr(0, llvm::Attribute::NoUndef);
+    callInst->addParamAttr(0, llvm::Attribute::NonNull);
+    callInst->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+    callInst->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
+  }
+
+  return callInst;
+}
+
+llvm::Value *IRGenerator::generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
+  generateFctDecl(fct, args);
+  return generateFctCall(fct, args);
+}
+
+void IRGenerator::generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const {
+  generateFctDecl(proc, args);
+  (void)generateFctCall(proc, args);
 }
 
 void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
@@ -151,7 +177,7 @@ void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function
   argValues.insert(argValues.end(), args.begin(), args.end());
 
   // Generate function call
-  generateProcCall(ctorOrDtor, argValues);
+  generateProcDeclAndCall(ctorOrDtor, argValues);
 }
 
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {

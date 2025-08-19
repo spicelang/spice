@@ -92,9 +92,8 @@ public p String.ctor<IntLong>(IntLong initialSize) {
 }
 
 public p String.dtor() {
-    unsafe {
-        free(this.contents);
-    }
+    free(this.contents);
+    this.contents = nil<heap char*>;
 }
 
 /**

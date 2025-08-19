@@ -22,7 +22,7 @@ define dso_local i32 @main() #0 {
   %field2.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %3 = load ptr, ptr %field2.addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2, ptr %3)
-  call void @_ZN6Vector4dtorEv(ptr %vec)
+  call void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

@@ -23,7 +23,7 @@ define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN4Test4ctorEv(ptr %t)
+  call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %t)
   %i.addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %1 = load i32, ptr %i.addr, align 4
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
