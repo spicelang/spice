@@ -214,7 +214,7 @@ TOPLEVEL_ATTR_PREAMBLE: '#';
 MOD_ATTR_PREAMBLE: '#!';
 
 // Regex tokens
-DOUBLE_LIT: [-]?[0-9]*[.][0-9]+([eE][+-]?[0-9]+)?;
+DOUBLE_LIT: [0-9]*[.][0-9]+([eE][+-]?[0-9]+)?;
 INT_LIT: NUM_LIT;
 SHORT_LIT: NUM_LIT 's';
 LONG_LIT: NUM_LIT 'l';
@@ -223,7 +223,7 @@ STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 IDENTIFIER: [a-z_][a-zA-Z0-9_]*;
 TYPE_IDENTIFIER: [A-Z][a-zA-Z0-9_]*;
 
-fragment NUM_LIT: [-]?(DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT)[u]?;
+fragment NUM_LIT: (DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT)[u]?;
 fragment DEC_LIT: ([0][dD])?[0-9]+;
 fragment BIN_LIT: [0][bB][01]+;
 fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;

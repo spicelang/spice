@@ -1,0 +1,3 @@
+f<int> main() {
+    return 1-2; // Attention: not 1 - 2 (with spaces)
+}
