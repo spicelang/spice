@@ -9,7 +9,7 @@ set(LLVM_DIR $ENV{LLVM_DIR})
 include(Options.cmake)
 
 # Set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O3 -fdata-sections -ffunction-sections -Wl,-gc-sections -fvisibility=hidden")
 
 # Find ANTLR
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
