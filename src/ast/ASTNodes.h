@@ -536,7 +536,7 @@ public:
 
   // Public members
   DataTypeNode *dataType = nullptr;
-  ConstantNode *constant = nullptr;
+  SignedConstantNode *constant = nullptr;
   bool hasValue = false;
   std::string varName;
   SymbolTableEntry *entry = nullptr;
@@ -1271,7 +1271,7 @@ public:
   [[nodiscard]] const CompileTimeValue *getValue() const;
 
   // Public members
-  ConstantNode *value = nullptr;
+  SignedConstantNode *value = nullptr;
   AttrType type = AttrType::ATTR_TYPE_INVALID;
   AttrTarget target = TARGET_INVALID;
   std::string key;
@@ -1292,7 +1292,7 @@ public:
   GET_CHILDREN(constant);
 
   // Public members
-  ConstantNode *constant = nullptr;
+  SignedConstantNode *constant = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   const SymbolTableEntry *entry = nullptr;
@@ -2016,7 +2016,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
-  ConstantNode *constant = nullptr;
+  UnsignedConstantNode *constant = nullptr;
   ValueNode *value = nullptr;
   AssignExprNode *assignExpr = nullptr;
   BuiltinCallNode *builtinCall = nullptr;
@@ -2053,7 +2053,7 @@ public:
 
 // ====================================================== ConstantNode ===========================================================
 
-class ConstantNode final : public ExprNode {
+class UnsignedConstantNode final : public ExprNode {
 public:
   // Enum
   enum class PrimitiveValueType : uint8_t {
@@ -2072,8 +2072,8 @@ public:
   using ExprNode::ExprNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstant(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstant(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsignedConstant(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitUnsignedConstant(this); }
 
   // Other methods
   GET_CHILDREN();
@@ -2083,6 +2083,26 @@ public:
   // Public members
   PrimitiveValueType type = PrimitiveValueType::TYPE_NONE;
   CompileTimeValue compileTimeValue;
+};
+
+// =================================================== SignedConstantNode ========================================================
+
+class SignedConstantNode final : public ExprNode {
+public:
+  // Constructors
+  using ExprNode::ExprNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSignedConstant(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSignedConstant(this); }
+
+  // Other methods
+  GET_CHILDREN(unsignedConstant);
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return unsignedConstant->compileTimeValue; }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
+
+  // Public members
+  UnsignedConstantNode *unsignedConstant = nullptr;
 };
 
 // ====================================================== FctCallNode ============================================================

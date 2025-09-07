@@ -49,7 +49,11 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
   throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
 }
 
-std::any IRGenerator::visitConstant(const ConstantNode *node) {
+std::any IRGenerator::visitUnsignedConstant(const UnsignedConstantNode *node) {
+  return getConst(node->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
+}
+
+std::any IRGenerator::visitSignedConstant(const SignedConstantNode *node) {
   return getConst(node->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
 }
 
@@ -158,13 +162,13 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         } else {
           if (copyCtor) {
             assert(!actualSTy.isTriviallyCopyable(node));
-            llvm::Value* originalPtr = resolveAddress(argNode);
+            llvm::Value *originalPtr = resolveAddress(argNode);
 
             // Generate copy ctor call
-            llvm::Type* valueType = actualSTy.toLLVMType(sourceFile);
-            llvm::Value* valueCopyPtr = insertAlloca(valueType, "arg.copy");
+            llvm::Type *valueType = actualSTy.toLLVMType(sourceFile);
+            llvm::Value *valueCopyPtr = insertAlloca(valueType, "arg.copy");
             generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
-            llvm::Value* newValue = insertLoad(valueType, valueCopyPtr);
+            llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
 
             // Attach address of copy to anonymous symbol (+1 because return value is 0)
             SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc, i + 1);

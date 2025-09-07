@@ -270,9 +270,9 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   // Visit children
   globalVarDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   globalVarDefNode->dataType->isGlobalType = true;
-  if (ctx->constant()) {
+  if (ctx->signedConstant()) {
     globalVarDefNode->hasValue = true;
-    globalVarDefNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+    globalVarDefNode->constant = std::any_cast<SignedConstantNode *>(visit(ctx->signedConstant()));
   }
 
   return concludeNode(globalVarDefNode);
@@ -767,14 +767,15 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   }
 
   // Visit children
-  if (ctx->constant()) {
-    attrNode->value = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  if (SpiceParser::SignedConstantContext *signedConstantNode = ctx->signedConstant()) {
+    attrNode->value = std::any_cast<SignedConstantNode *>(visit(signedConstantNode));
 
-    if (ctx->constant()->STRING_LIT())
+    SpiceParser::UnsignedConstantContext *unsignedConstantNode = signedConstantNode->unsignedConstant();
+    if (unsignedConstantNode->STRING_LIT())
       attrNode->type = AttrNode::AttrType::TYPE_STRING;
-    else if (ctx->constant()->INT_LIT())
+    else if (unsignedConstantNode->INT_LIT())
       attrNode->type = AttrNode::AttrType::TYPE_INT;
-    else if (ctx->constant()->TRUE() || ctx->constant()->FALSE())
+    else if (unsignedConstantNode->TRUE() || unsignedConstantNode->FALSE())
       attrNode->type = AttrNode::AttrType::TYPE_BOOL;
     else
       throw ParserError(attrNode->value->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
@@ -790,8 +791,8 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
   const auto caseConstantNode = createNode<CaseConstantNode>(ctx);
 
   // Visit children
-  if (ctx->constant()) {
-    caseConstantNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  if (ctx->signedConstant()) {
+    caseConstantNode->constant = std::any_cast<SignedConstantNode *>(visit(ctx->signedConstant()));
   } else if (!ctx->TYPE_IDENTIFIER().empty()) {
     for (ParserRuleContext::ParseTree *subTree : ctx->children) {
       const auto terminal = dynamic_cast<TerminalNode *>(subTree);
@@ -1254,8 +1255,8 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   const auto atomicExprNode = createNode<AtomicExprNode>(ctx);
 
   // Visit children
-  if (ctx->constant()) {
-    atomicExprNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  if (ctx->unsignedConstant()) {
+    atomicExprNode->constant = std::any_cast<UnsignedConstantNode *>(visit(ctx->unsignedConstant()));
   } else if (ctx->value()) {
     atomicExprNode->value = std::any_cast<ValueNode *>(visit(ctx->value()));
   } else if (!ctx->IDENTIFIER().empty() || !ctx->TYPE_IDENTIFIER().empty()) {
@@ -1315,42 +1316,53 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   return concludeNode(valueNode);
 }
 
-std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
-  const auto constantNode = createNode<ConstantNode>(ctx);
+std::any ASTBuilder::visitUnsignedConstant(SpiceParser::UnsignedConstantContext *ctx) {
+  const auto unsignedConstantNode = createNode<UnsignedConstantNode>(ctx);
 
   // Enrich
   if (ctx->DOUBLE_LIT()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_DOUBLE;
-    constantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_DOUBLE;
+    unsignedConstantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_INT;
-    constantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT());
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_INT;
+    unsignedConstantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_SHORT;
-    constantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT());
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_SHORT;
+    unsignedConstantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_LONG;
-    constantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT());
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_LONG;
+    unsignedConstantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_CHAR;
-    constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_CHAR;
+    unsignedConstantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
   } else if (ctx->STRING_LIT()) {
     // Save a pointer to the string in the compile time value
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_STRING;
-    constantNode->compileTimeValue.stringValueOffset = resourceManager.compileTimeStringValues.size();
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_STRING;
+    unsignedConstantNode->compileTimeValue.stringValueOffset = resourceManager.compileTimeStringValues.size();
     // Add the string to the global compile time string list
     resourceManager.compileTimeStringValues.push_back(parseString(ctx->STRING_LIT()->toString()));
   } else if (ctx->TRUE()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
-    constantNode->compileTimeValue.boolValue = true;
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_BOOL;
+    unsignedConstantNode->compileTimeValue.boolValue = true;
   } else if (ctx->FALSE()) {
-    constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
-    constantNode->compileTimeValue.boolValue = false;
+    unsignedConstantNode->type = UnsignedConstantNode::PrimitiveValueType::TYPE_BOOL;
+    unsignedConstantNode->compileTimeValue.boolValue = false;
   } else {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(constantNode);
+  return concludeNode(unsignedConstantNode);
+}
+
+std::any ASTBuilder::visitSignedConstant(SpiceParser::SignedConstantContext *ctx) {
+  const auto signedConstantNode = createNode<SignedConstantNode>(ctx);
+
+  // Enrich
+  signedConstantNode->unsignedConstant = std::any_cast<UnsignedConstantNode *>(visit(ctx->unsignedConstant()));
+  if (ctx->MINUS())
+    signedConstantNode->unsignedConstant->compileTimeValue.longValue *= -1;
+
+  return concludeNode(signedConstantNode);
 }
 
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
@@ -1752,27 +1764,25 @@ template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const N
   const bool isUnsigned = input.ends_with('u') || input.ends_with("us") || input.ends_with("ul");
 
   try {
-    if (input.length() >= 3) {
-      if (input[0] == '0') {
-        const std::string subStr = input.substr(2);
-        switch (input[1]) {
-        case 'd': // fall-through
-        case 'D':
-          return cb(subStr, 10, !isUnsigned);
-        case 'b': // fall-through
-        case 'B':
-          return cb(subStr, 2, !isUnsigned);
-        case 'h': // fall-through
-        case 'H': // fall-through
-        case 'x': // fall-through
-        case 'X':
-          return cb(subStr, 16, !isUnsigned);
-        case 'o': // fall-through
-        case 'O':
-          return cb(subStr, 8, !isUnsigned);
-        default: // default is decimal
-          return cb(input, 10, !isUnsigned);
-        }
+    if (input.length() >= 3 && input[0] == '0') {
+      const std::string subStr = input.substr(2);
+      switch (input[1]) {
+      case 'd': // fall-through
+      case 'D':
+        return cb(subStr, 10, !isUnsigned);
+      case 'b': // fall-through
+      case 'B':
+        return cb(subStr, 2, !isUnsigned);
+      case 'h': // fall-through
+      case 'H': // fall-through
+      case 'x': // fall-through
+      case 'X':
+        return cb(subStr, 16, !isUnsigned);
+      case 'o': // fall-through
+      case 'O':
+        return cb(subStr, 8, !isUnsigned);
+      default: // default is decimal
+        return cb(input, 10, !isUnsigned);
       }
     }
     return cb(input, 10, !isUnsigned);

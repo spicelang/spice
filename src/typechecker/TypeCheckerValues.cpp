@@ -50,37 +50,41 @@ std::any TypeChecker::visitValue(ValueNode *node) {
   throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
 }
 
-std::any TypeChecker::visitConstant(ConstantNode *node) {
+std::any TypeChecker::visitUnsignedConstant(UnsignedConstantNode *node) {
   SuperType superType;
   switch (node->type) {
-  case ConstantNode::PrimitiveValueType::TYPE_DOUBLE:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_DOUBLE:
     superType = TY_DOUBLE;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_INT:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_INT:
     superType = TY_INT;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_SHORT:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_SHORT:
     superType = TY_SHORT;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_LONG:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_LONG:
     superType = TY_LONG;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_BYTE:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_BYTE:
     superType = TY_BYTE;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_CHAR:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_CHAR:
     superType = TY_CHAR;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_STRING:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_STRING:
     superType = TY_STRING;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_BOOL:
+  case UnsignedConstantNode::PrimitiveValueType::TYPE_BOOL:
     superType = TY_BOOL;
     break;
   default:                                                          // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
   }
   return ExprResult{node->setEvaluatedSymbolType(QualType(superType), manIdx)};
+}
+
+std::any TypeChecker::visitSignedConstant(SignedConstantNode *node) {
+  return visit(node->unsignedConstant);
 }
 
 std::any TypeChecker::visitFctCall(FctCallNode *node) {

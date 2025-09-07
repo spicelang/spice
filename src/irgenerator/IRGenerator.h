@@ -110,7 +110,8 @@ public:
   std::any visitAtomicExpr(const AtomicExprNode *node) override;
   // Values and types
   std::any visitValue(const ValueNode *node) override;
-  std::any visitConstant(const ConstantNode *node) override;
+  std::any visitUnsignedConstant(const UnsignedConstantNode *node) override;
+  std::any visitSignedConstant(const SignedConstantNode *node) override;
   std::any visitFctCall(const FctCallNode *node) override;
   std::any visitArrayInitialization(const ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(const StructInstantiationNode *node) override;
@@ -167,7 +168,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
-  llvm::CallInst*generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
+  llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   void generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,

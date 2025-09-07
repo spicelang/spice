@@ -120,7 +120,8 @@ public:
   std::any visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) override;
   std::any visitLambdaProc(SpiceParser::LambdaProcContext *ctx) override;
   std::any visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) override;
-  std::any visitConstant(SpiceParser::ConstantContext *ctx) override;
+  std::any visitUnsignedConstant(SpiceParser::UnsignedConstantContext *ctx) override;
+  std::any visitSignedConstant(SpiceParser::SignedConstantContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;

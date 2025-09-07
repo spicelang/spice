@@ -1,3 +1,5 @@
+const int EOF = -1;
+
 f<int> main() {
     return 1-2;
 }

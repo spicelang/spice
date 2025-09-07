@@ -165,7 +165,9 @@ std::any ParallelizableASTVisitor::visitAtomicExpr(const AtomicExprNode *node) {
 
 std::any ParallelizableASTVisitor::visitValue(const ValueNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitConstant(const ConstantNode *node) { return visitChildren(node); }
+std::any ParallelizableASTVisitor::visitUnsignedConstant(const UnsignedConstantNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitSignedConstant(const SignedConstantNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitFctCall(const FctCallNode *node) { return visitChildren(node); }
 

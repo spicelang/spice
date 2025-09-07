@@ -154,7 +154,9 @@ std::any ASTVisitor::visitAtomicExpr(AtomicExprNode *node) { return visitChildre
 
 std::any ASTVisitor::visitValue(ValueNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitConstant(ConstantNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitUnsignedConstant(UnsignedConstantNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitSignedConstant(SignedConstantNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitFctCall(FctCallNode *node) { return visitChildren(node); }
 

@@ -85,7 +85,8 @@ public:
   std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) override;
   std::any visitAtomicExpr(AtomicExprNode *node) override;
   std::any visitValue(ValueNode *node) override;
-  std::any visitConstant(ConstantNode *node) override;
+  std::any visitUnsignedConstant(UnsignedConstantNode *node) override;
+  std::any visitSignedConstant(SignedConstantNode *node) override;
   std::any visitFctCall(FctCallNode *node) override;
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;

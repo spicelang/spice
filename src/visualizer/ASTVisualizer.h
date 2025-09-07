@@ -98,7 +98,8 @@ public:
   std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *ctx) override { return buildNode(ctx); }
   std::any visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
   std::any visitValue(ValueNode *ctx) override { return buildNode(ctx); }
-  std::any visitConstant(ConstantNode *ctx) override { return buildNode(ctx); }
+  std::any visitUnsignedConstant(UnsignedConstantNode *ctx) override { return buildNode(ctx); }
+  std::any visitSignedConstant(SignedConstantNode *ctx) override { return buildNode(ctx); }
   std::any visitFctCall(FctCallNode *ctx) override { return buildNode(ctx); }
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }

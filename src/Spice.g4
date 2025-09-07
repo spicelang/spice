@@ -13,7 +13,7 @@ interfaceDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst 
 enumDef: qualifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: qualifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
-globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
+globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN signedConstant)? SEMICOLON;
 extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN typeLstWithEllipsis? RPAREN SEMICOLON;
 importDef: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 
@@ -29,7 +29,7 @@ ifStmt: IF assignExpr stmtLst elseStmt?;
 elseStmt: ELSE ifStmt | ELSE stmtLst;
 switchStmt: SWITCH assignExpr LBRACE caseBranch* defaultBranch? RBRACE;
 caseBranch: CASE caseConstant (COMMA caseConstant)* COLON stmtLst;
-caseConstant: constant | (IDENTIFIER SCOPE_ACCESS)? TYPE_IDENTIFIER (SCOPE_ACCESS TYPE_IDENTIFIER)*;
+caseConstant: signedConstant | (IDENTIFIER SCOPE_ACCESS)? TYPE_IDENTIFIER (SCOPE_ACCESS TYPE_IDENTIFIER)*;
 defaultBranch: DEFAULT COLON stmtLst;
 anonymousBlockStmt: stmtLst;
 
@@ -53,7 +53,7 @@ modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 topLevelDefAttr: TOPLEVEL_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET;
 attrLst: attr (COMMA attr)*;
-attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
+attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN signedConstant)?;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;
@@ -86,11 +86,12 @@ multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | CAST LESS dataType GREATER LPAREN assignExpr RPAREN;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
 postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
-atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: unsignedConstant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
 value: fctCall | arrayInitialization | structInstantiation | lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
-constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
+signedConstant: MINUS? unsignedConstant;
+unsignedConstant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;

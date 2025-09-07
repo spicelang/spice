@@ -106,7 +106,8 @@ public:
   std::any visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) override { return buildRule(ctx); }
   std::any visitLambdaProc(SpiceParser::LambdaProcContext *ctx) override { return buildRule(ctx); }
   std::any visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) override { return buildRule(ctx); }
-  std::any visitConstant(SpiceParser::ConstantContext *ctx) override { return buildRule(ctx); }
+  std::any visitSignedConstant(SpiceParser::SignedConstantContext *ctx) override { return buildRule(ctx); }
+  std::any visitUnsignedConstant(SpiceParser::UnsignedConstantContext *ctx) override { return buildRule(ctx); }
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); }

@@ -179,7 +179,7 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
   return std::ranges::any_of(attributes, [&](const AttrNode *attr) { return attr->key == key; });
 }
 
-const CompileTimeValue *AttrNode::getValue() const { return value ? &value->compileTimeValue : nullptr; }
+const CompileTimeValue *AttrNode::getValue() const { return value ? &value->unsignedConstant->compileTimeValue : nullptr; }
 
 bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // If the expression, passed to the assert statement is always evaluated to false, the assert statement will never succeed
