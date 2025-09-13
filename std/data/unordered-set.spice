@@ -1,0 +1,88 @@
+import "std/data/hash-table";
+import "std/data/linked-list";
+
+// Add generic type definitions
+type V dyn;
+
+/**
+ * An unordered set in Spice is a commonly used data structure, which can be used to represent a list of unique values.
+ *
+ * Time complexity:
+ * Insert: O(1) (average case), O(n) (worst case)
+ * Delete: O(1) (average case), O(n) (worst case)
+ * Lookup: O(1) (average case), O(n) (worst case)
+ */
+public type UnorderedSet<V> struct {
+    HashTable<V, bool> hashTable
+}
+
+public p UnorderedSet.ctor(unsigned long bucketCount = 100l) {
+    this.hashTable = HashTable<V, bool>(bucketCount);
+}
+
+/**
+ * Insert a value into the set.
+ * If the value already exists, nothing happens.
+ *
+ * @param value The value to insert
+ */
+public p UnorderedSet.insert(const V& value) {
+    this.hashTable.upsert(value, true);
+}
+
+/**
+ * Check if the set contains the given value.
+ *
+ * @param value The value to check
+ * @return true if the value is in the set, false otherwise
+ */
+public f<bool> UnorderedSet.contains(const V& value) {
+    return this.hashTable.contains(value);
+}
+
+/**
+ * Remove a value from the set.
+ * If the value does not exist, nothing happens.
+ *
+ * @param value The value to remove
+ */
+public p UnorderedSet.remove(const V& value) {
+    this.hashTable.remove(value);
+}
+
+/**
+ * Clear all values from the set.
+ */
+public p UnorderedSet.clear() {
+    this.hashTable.clear();
+}
+
+/**
+ * Get the number of elements in the set.
+ *
+ * @return The number of elements in the set
+ */
+public f<unsigned long> UnorderedSet.getSize() {
+    return this.hashTable.getSize();
+}
+
+/**
+ * Check if the set is empty.
+ *
+ * @return true if the set is empty, false otherwise
+ */
+public f<bool> UnorderedSet.isEmpty() {
+    return this.hashTable.isEmpty();
+}
+
+/**
+ * Get all elements in the set as a list.
+ *
+ * @return A linked list of all elements in the set
+ */
+public f<LinkedList<V>> UnorderedSet.toLinkedList() {
+    result = LinkedList<V>();
+    foreach Pair<V, bool>& bucket : this.hashTable {
+        result.append(entry.key);
+    }
+}
