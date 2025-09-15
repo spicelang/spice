@@ -16,10 +16,6 @@ public type Set<V> struct {
     RedBlackTree<V, bool> tree
 }
 
-public p Set.ctor(unsigned long bucketCount = 100l) {
-    this.hashTable = RedBlackTree<V, bool>(bucketCount);
-}
-
 /**
  * Insert a value into the set.
  * If the value already exists, nothing happens.
@@ -27,7 +23,7 @@ public p Set.ctor(unsigned long bucketCount = 100l) {
  * @param value The value to insert
  */
 public p Set.insert(const V& value) {
-    this.tree.insert(value, true);
+    this.tree.upsert(value, true);
 }
 
 /**

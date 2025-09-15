@@ -104,6 +104,25 @@ public p RedBlackTree.insert(const K& key, const V& value) {
 }
 
 /**
+ * Upsert a key-value pair into the tree.
+ * If the key already exists, update its value.
+ * Otherwise, insert a new key-value pair.
+ *
+ * @param key The key of the element
+ * @param value The value of the element
+ */
+public p RedBlackTree.upsert(const K& key, const V& value) {
+    Node<K, V>* node = this.search(key);
+    if node != nil<Node<K, V>*> {
+        // Key already exists, update value
+        node.value = value;
+    } else {
+        // Key not found, insert new node
+        this.insert(key, value);
+    }
+}
+
+/**
  * Remove an element from the tree.
  *
  * @param key The key of the element to remove
@@ -129,7 +148,9 @@ public p RedBlackTree.remove(const K& key) {
         wasYBlack = y.isBlack();
         x = y.childRight;
         if y.parent == z {
-            x.parent = y;
+            if x != nil<Node<K, V>*> {
+                x.parent = y;
+            }
         } else {
             this.transplant(y, y.childRight);
             y.childRight = z.childRight;
@@ -203,9 +224,20 @@ public f<unsigned long> RedBlackTree.getSize() {
     return this.size;
 }
 
+/**
+ * Check if the tree is empty.
+ *
+ * @return True if the tree is empty, false otherwise
+ */
+public f<bool> RedBlackTree.isEmpty() {
+    return this.size == 0l;
+}
+
+/**
+ * Clear all elements from the tree.
+ */
 public p RedBlackTree.clear() {
-    this.clearRecursive(this.rootNode);
-    this.rootNode = nil<heap Node<K, V>*>;
+    sDelete(this.rootNode);
     this.size = 0l;
 }
 
@@ -409,18 +441,6 @@ f<Node<K, V>*> RedBlackTree.minimum(Node<K, V>* x) {
         x = x.childLeft;
     }
     return x;
-}
-
-/**
- * Clear the subtree rooted at the input node recursively.
- */
-p RedBlackTree.clearRecursive(Node<K, V>* node) {
-    // Skip if node is nil
-    if node == nil<Node<K, V>*> { return; }
-    // Otherwise, clear children and delete node
-    this.clearRecursive(node.childLeft);
-    this.clearRecursive(node.childRight);
-    sDelete(node);
 }
 
 /**
