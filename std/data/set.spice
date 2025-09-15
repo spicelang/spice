@@ -1,0 +1,88 @@
+import "std/data/red-black-tree";
+import "std/data/linked-list";
+
+// Add generic type definitions
+type V dyn;
+
+/**
+ * An set in Spice is a commonly used data structure, which can be used to represent a list of unique values.
+ *
+ * Time complexity:
+ * Insert: O(log n)
+ * Delete: O(log n)
+ * Lookup: O(log n)
+ */
+public type Set<V> struct {
+    RedBlackTree<V, bool> tree
+}
+
+public p Set.ctor(unsigned long bucketCount = 100l) {
+    this.hashTable = RedBlackTree<V, bool>(bucketCount);
+}
+
+/**
+ * Insert a value into the set.
+ * If the value already exists, nothing happens.
+ *
+ * @param value The value to insert
+ */
+public p Set.insert(const V& value) {
+    this.tree.insert(value, true);
+}
+
+/**
+ * Check if the set contains the given value.
+ *
+ * @param value The value to check
+ * @return true if the value is in the set, false otherwise
+ */
+public f<bool> Set.contains(const V& value) {
+    return this.tree.contains(value);
+}
+
+/**
+ * Remove a value from the set.
+ * If the value does not exist, nothing happens.
+ *
+ * @param value The value to remove
+ */
+public p Set.remove(const V& value) {
+    this.tree.remove(value);
+}
+
+/**
+ * Clear all values from the set.
+ */
+public p Set.clear() {
+    this.tree.clear();
+}
+
+/**
+ * Get the number of elements in the set.
+ *
+ * @return The number of elements in the set
+ */
+public f<unsigned long> Set.getSize() {
+    return this.tree.getSize();
+}
+
+/**
+ * Check if the set is empty.
+ *
+ * @return true if the set is empty, false otherwise
+ */
+public f<bool> Set.isEmpty() {
+    return this.tree.isEmpty();
+}
+
+/**
+ * Get all elements in the set as a list.
+ *
+ * @return A linked list of all elements in the set
+ */
+public f<LinkedList<V>> Set.toLinkedList() {
+    result = LinkedList<V>();
+    foreach Pair<V, bool>& bucket : this.tree {
+        result.append(entry.key);
+    }
+}

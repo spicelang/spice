@@ -1,7 +1,7 @@
-import "std/data/unordered-set";
+import "std/data/set";
 
 f<int> main() {
-    UnorderedSet<int> set;
+    Set<int> set;
     set.insert(1);
     set.insert(2);
     set.insert(3);
