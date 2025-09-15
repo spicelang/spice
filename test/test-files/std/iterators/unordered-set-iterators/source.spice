@@ -1,0 +1,28 @@
+import "std/data/unordered-set";
+
+f<int> main() {
+    UnorderedSet<int> unorderedSet;
+
+    // Iterate over empty container
+    {
+        foreach int& item : unorderedSet {
+            printf("%d\n", item);
+        }
+    }
+
+    unorderedSet.upsert(1);
+    unorderedSet.upsert(2);
+    unorderedSet.upsert(3);
+    unorderedSet.upsert(4);
+    unorderedSet.upsert(5);
+    unorderedSet.upsert(99);
+    unorderedSet.upsert(100);
+    unorderedSet.upsert(1265);
+    unorderedSet.upsert(101);
+    unorderedSet.upsert(102);
+
+    // Iterate over filled container
+    foreach int& item : unorderedSet {
+        printf("%d\n", item);
+    }
+}

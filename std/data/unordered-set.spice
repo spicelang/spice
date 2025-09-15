@@ -86,3 +86,66 @@ public f<LinkedList<V>> UnorderedSet.toLinkedList() {
         result.append(entry.key);
     }
 }
+
+/**
+ * Iterator to iterate over an unordered set data structure
+ */
+public type UnorderedSetIterator<KV> struct : IIterator<Pair<const V&, bool&>> {
+    HashTableIterator<V, bool> htIterator
+}
+
+public p UnorderedSetInterator.ctor<KV>(UnorderedSet<V>& unorderedSet) {
+    this.htIterator = unorderedSet.hashTable.getIterator();
+}
+/**
+ * Returns the current value of the unordered set
+ *
+ * @return Current value
+ */
+public inline f<const V&> UnorderedSetInterator.get() {
+    const Pair<const V&, bool&> pair = this.htIterator.get();
+    return pair.getFirst();
+}
+
+/**
+ * Returns the current index and the current item of the unordered set
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, V&>> UnorderedSetInterator.getIdx() {
+    Pair<unsigned long, Pair<const V&, bool&>&> pair = this.htIterator.getIdx();
+    Pair<const V&, bool&>& valuePair = pair.getSecond();
+    return Pair<unsigned long, V&>(pair.getFirst(), valuePair.getFirst());
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> UnorderedSetInterator.isValid() {
+    return this.htIterator.isValid();
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p UnorderedSetInterator.next() {
+    this.htIterator.next();
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it UnorderedSetInterator
+ */
+public inline p operator++<K, V>(UnorderedSetInterator<K, V>& it) {
+    this.htIterator.next();
+}
+
+/**
+ * Retrieve a forward iterator for the unordered set
+ */
+public f<UnorderedSetInterator<K, V>> UnorderedSet.getIterator() {
+    return UnorderedSetInterator<K, V>(*this);
+}
