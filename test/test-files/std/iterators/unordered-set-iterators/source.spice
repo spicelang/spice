@@ -5,24 +5,24 @@ f<int> main() {
 
     // Iterate over empty container
     {
-        foreach int& item : unorderedSet {
+        foreach const int& item : unorderedSet {
             printf("%d\n", item);
         }
     }
 
-    unorderedSet.upsert(1);
-    unorderedSet.upsert(2);
-    unorderedSet.upsert(3);
-    unorderedSet.upsert(4);
-    unorderedSet.upsert(5);
-    unorderedSet.upsert(99);
-    unorderedSet.upsert(100);
-    unorderedSet.upsert(1265);
-    unorderedSet.upsert(101);
-    unorderedSet.upsert(102);
+    unorderedSet.insert(1);
+    unorderedSet.insert(2);
+    unorderedSet.insert(3);
+    unorderedSet.insert(4);
+    unorderedSet.insert(5);
+    unorderedSet.insert(99);
+    unorderedSet.insert(100);
+    unorderedSet.insert(1265);
+    unorderedSet.insert(101);
+    unorderedSet.insert(102);
 
     // Iterate over filled container
-    foreach int& item : unorderedSet {
+    foreach const int& item : unorderedSet {
         printf("%d\n", item);
     }
 }

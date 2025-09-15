@@ -1,5 +1,8 @@
 import "std/data/hash-table";
 import "std/data/linked-list";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type V dyn;
@@ -12,7 +15,7 @@ type V dyn;
  * Delete: O(1) (average case), O(n) (worst case)
  * Lookup: O(1) (average case), O(n) (worst case)
  */
-public type UnorderedSet<V> struct {
+public type UnorderedSet<V> struct : IIterable<V> {
     HashTable<V, bool> hashTable
 }
 
@@ -90,11 +93,11 @@ public f<LinkedList<V>> UnorderedSet.toLinkedList() {
 /**
  * Iterator to iterate over an unordered set data structure
  */
-public type UnorderedSetIterator<KV> struct : IIterator<Pair<const V&, bool&>> {
+public type UnorderedSetIterator<V> struct : IIterator<const V&> {
     HashTableIterator<V, bool> htIterator
 }
 
-public p UnorderedSetInterator.ctor<KV>(UnorderedSet<V>& unorderedSet) {
+public p UnorderedSetIterator.ctor<V>(UnorderedSet<V>& unorderedSet) {
     this.htIterator = unorderedSet.hashTable.getIterator();
 }
 /**
@@ -102,7 +105,7 @@ public p UnorderedSetInterator.ctor<KV>(UnorderedSet<V>& unorderedSet) {
  *
  * @return Current value
  */
-public inline f<const V&> UnorderedSetInterator.get() {
+public inline f<const V&> UnorderedSetIterator.get() {
     const Pair<const V&, bool&> pair = this.htIterator.get();
     return pair.getFirst();
 }
@@ -112,10 +115,10 @@ public inline f<const V&> UnorderedSetInterator.get() {
  *
  * @return Pair of current index and current key/value pair
  */
-public inline f<Pair<unsigned long, V&>> UnorderedSetInterator.getIdx() {
+public inline f<Pair<unsigned long, const V&>> UnorderedSetIterator.getIdx() {
     Pair<unsigned long, Pair<const V&, bool&>&> pair = this.htIterator.getIdx();
     Pair<const V&, bool&>& valuePair = pair.getSecond();
-    return Pair<unsigned long, V&>(pair.getFirst(), valuePair.getFirst());
+    return Pair<unsigned long, const V&>(pair.getFirst(), valuePair.getFirst());
 }
 
 /**
@@ -123,29 +126,29 @@ public inline f<Pair<unsigned long, V&>> UnorderedSetInterator.getIdx() {
  *
  * @return true or false
  */
-public inline f<bool> UnorderedSetInterator.isValid() {
+public inline f<bool> UnorderedSetIterator.isValid() {
     return this.htIterator.isValid();
 }
 
 /**
  * Moves the cursor to the next key/value pair
  */
-public inline p UnorderedSetInterator.next() {
+public inline p UnorderedSetIterator.next() {
     this.htIterator.next();
 }
 
 /**
  * Advances the cursor by one
  *
- * @param it UnorderedSetInterator
+ * @param it UnorderedSetIterator
  */
-public inline p operator++<K, V>(UnorderedSetInterator<K, V>& it) {
+public inline p operator++<V>(UnorderedSetIterator<V>& it) {
     this.htIterator.next();
 }
 
 /**
  * Retrieve a forward iterator for the unordered set
  */
-public f<UnorderedSetInterator<K, V>> UnorderedSet.getIterator() {
-    return UnorderedSetInterator<K, V>(*this);
+public f<UnorderedSetIterator<V>> UnorderedSet.getIterator() {
+    return UnorderedSetIterator<V>(*this);
 }
