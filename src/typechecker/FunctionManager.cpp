@@ -110,7 +110,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const Qual
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string signature = newManifestation.getSignature();
+  const std::string signature = newManifestation.getSignature(true, false);
 
   // Check if the function exists already
   for (const auto &manifestations : insertScope->functions | std::views::values) {
@@ -209,7 +209,7 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName,
+Function *FunctionManager::match(const TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName,
                                  const QualType &reqThisType, const ArgList &reqArgs, const QualTypeList &templateTypeHints,
                                  bool strictQualifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
@@ -270,7 +270,7 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      const std::string nonGenericSignature = candidate.getSignature();
+      const std::string nonGenericSignature = candidate.getSignature(true, false);
       if (matchScope->functions.at(fctId).contains(nonGenericSignature)) {
         matches.push_back(&matchScope->functions.at(fctId).at(nonGenericSignature));
         break; // Leave the whole manifestation list to not double-match the manifestation
@@ -317,23 +317,17 @@ Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, co
   if (matches.empty())
     return nullptr;
 
-  // Check if more than one function matches the requirements
-  if (matches.size() > 1) {
-    std::stringstream errorMessage;
-    errorMessage << "The function/procedure '" << reqName << "' is ambiguous. All of the following match the requested criteria:";
-    for (const Function *match : matches)
-      errorMessage << "\n  " << match->getSignature();
-    throw SemanticError(callNode, FUNCTION_AMBIGUITY, errorMessage.str());
-  }
+  assert(matches.size() == 1);
+  Function *matchedFunction = matches.front();
 
   // Insert into cache
-  lookupCache[cacheKey] = matches.front();
+  lookupCache[cacheKey] = matchedFunction;
 
   // Trigger revisit in type checker if required
-  typeChecker->requestRevisitIfRequired(matches.front());
+  TypeChecker::requestRevisitIfRequired(matchedFunction);
 
   // Return the very match
-  return matches.front();
+  return matchedFunction;
 }
 
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,

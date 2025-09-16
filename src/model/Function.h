@@ -40,7 +40,7 @@ public:
 
   // Public methods
   [[nodiscard]] QualTypeList getParamTypes() const;
-  [[nodiscard]] std::string getSignature(bool withThisType = true) const;
+  [[nodiscard]] std::string getSignature(bool withThisType = true, bool withTemplateTypes = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
                                                 const ParamList &paramList, const QualTypeList &concreteTemplateTypes,
                                                 bool withReturnType = true, bool withThisType = true, bool ignorePublic = true);
