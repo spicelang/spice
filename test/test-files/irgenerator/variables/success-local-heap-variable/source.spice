@@ -1,0 +1,5 @@
+f<int> main() {
+    heap int* i = sNew(123);
+    heap int* j = i;
+    printf("%d, %d", *i, *j);
+}

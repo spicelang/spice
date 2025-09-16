@@ -8,8 +8,8 @@
 - [x] Generate default dtor for structs with heap fields where free is called on those fields
 - [x] Make copy ctor mandatory for structs with heap fields
 - [x] Allow assignment from heap to non-heap pointers to create non-owning pointers
-- [ ] Perform an ownership transfer when assigning from heap to heap pointers
-- [ ] Deallocate local heap variables with sDealloc when they go out of scope
+- [x] Perform an ownership transfer when assigning from heap to heap pointers
+- [x] Deallocate local heap variables with sDealloc when they go out of scope
 
 ## Syntax
 

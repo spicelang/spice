@@ -124,6 +124,7 @@ public p RedBlackTree.upsert(const K& key, const V& value) {
 
 /**
  * Remove an element from the tree.
+ * If the key is not found, this method is a noop.
  *
  * @param key The key of the element to remove
  */
@@ -436,7 +437,7 @@ f<Node<K, V>*> RedBlackTree.search(const K& key) {
 /**
  * Find the node with the minimum key in the subtree rooted at x.
  */
-f<Node<K, V>*> RedBlackTree.minimum(Node<K, V>* x) {
+f<heap Node<K, V>*> RedBlackTree.minimum(heap Node<K, V>* x) {
     while x.hasLeftChild() {
         x = x.childLeft;
     }

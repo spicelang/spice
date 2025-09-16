@@ -28,7 +28,7 @@ public p BlockAllocator.ctor(IMemoryManager& memoryManager, unsigned long blockS
 public p BlockAllocator.dtor() {
     // Destruct all objects
     foreach Base* ptr : this.allocatedObjects {
-        sDestroy(ptr);
+        sDestruct(ptr);
     }
     this.allocatedObjects.clear();
 
