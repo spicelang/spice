@@ -4,7 +4,75 @@
     {
       "captures": [],
       "children": [],
-      "name": "calledFunction(string)",
+      "name": "f<double> calledFunction(int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "bool"
+        },
+        {
+          "codeLoc": "L1C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "mandatoryArg",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "f<double> calledFunction(int,bool)",
+      "symbols": [
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "bool"
+        },
+        {
+          "codeLoc": "L1C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "mandatoryArg",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "f<double> calledFunction(string)",
       "symbols": [
         {
           "codeLoc": "L7C26",
@@ -17,74 +85,6 @@
         },
         {
           "codeLoc": "L7C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "calledFunction(int,bool)",
-      "symbols": [
-        {
-          "codeLoc": "L1C44",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
-          "codeLoc": "L1C26",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "mandatoryArg",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "codeLoc": "L1C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "calledFunction(int)",
-      "symbols": [
-        {
-          "codeLoc": "L1C44",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
-          "codeLoc": "L1C26",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "mandatoryArg",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "codeLoc": "L1C1",
           "isGlobal": false,
           "isVolatile": false,
           "name": "result",

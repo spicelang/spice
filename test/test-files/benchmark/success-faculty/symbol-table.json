@@ -11,7 +11,7 @@
           "symbols": []
         }
       ],
-      "name": "faculty(int)",
+      "name": "f<int> faculty(int)",
       "symbols": [
         {
           "codeLoc": "L1C16",

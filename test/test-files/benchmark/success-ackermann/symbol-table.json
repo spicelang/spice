@@ -17,7 +17,7 @@
           "symbols": []
         }
       ],
-      "name": "ack(int,int)",
+      "name": "f<int> ack(int,int)",
       "symbols": [
         {
           "codeLoc": "L1C19",

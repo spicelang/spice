@@ -7,7 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<long>.ctor<long>(unsigned long)",
+          "name": "p ctor<long>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -32,7 +32,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<long>.printLength<long>()",
+          "name": "p printLength<long>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -48,7 +48,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.printLength<T>()",
+          "name": "p printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -64,7 +64,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.ctor<T>(unsigned long)",
+          "name": "p ctor<T>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -185,7 +185,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.printLength<T>()",
+          "name": "p printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -201,7 +201,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.ctor<T>(unsigned long)",
+          "name": "p ctor<T>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
