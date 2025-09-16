@@ -140,10 +140,10 @@ public p RedBlackTree.remove(const K& key) {
     bool wasYBlack = y.isBlack();
     if !z.hasLeftChild() {
         x = z.childRight;
-        this.transplant(z, sMove(z.childRight));
+        this.transplant(z, z.childRight);
     } else if !z.hasRightChild() {
         x = z.childLeft;
-        this.transplant(z, sMove(z.childLeft));
+        this.transplant(z, z.childLeft);
     } else {
         y = this.minimum(z.childRight);
         wasYBlack = y.isBlack();
@@ -154,17 +154,20 @@ public p RedBlackTree.remove(const K& key) {
             }
         } else {
             this.transplant(y, y.childRight);
-            y.childRight = sMove(z.childRight);
+            y.childRight = z.childRight;
             y.childRight.parent = y;
         }
         this.transplant(z, y);
-        y.childLeft = sMove(z.childLeft);
+        y.childLeft = z.childLeft;
         y.childLeft.parent = y;
         y.color = z.color;
     }
 
-    // Delete the node
-    sDelete(z);
+    // Use dealloc, because we don't want to call the destructor.
+    // The destructor would delete children and parent.
+    unsafe {
+        sDealloc(cast<byte*>(z));
+    }
 
     // Do a fixup if required
     if wasYBlack && x != nil<Node<K, V>*> {
@@ -434,7 +437,7 @@ f<Node<K, V>*> RedBlackTree.search(const K& key) {
 /**
  * Find the node with the minimum key in the subtree rooted at x.
  */
-f<Node<K, V>*> RedBlackTree.minimum(Node<K, V>* x) {
+f<heap Node<K, V>*> RedBlackTree.minimum(heap Node<K, V>* x) {
     while x.hasLeftChild() {
         x = x.childLeft;
     }
