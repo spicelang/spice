@@ -2,10 +2,6 @@
 name: Misspell
 
 on:
-  push:
-    branches:
-      - main
-      - docs/**
   pull_request:
 
 jobs:
