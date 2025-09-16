@@ -101,6 +101,18 @@ public f<heap byte*> sCopyUnsafe(heap byte* oldPtr, heap byte* newPtr, unsigned 
 }
 
 /**
+  * Moves the ownership of a heap pointer from oldPtr to the return value.
+  * After this operation, oldPtr is set to nil to prevent double frees.
+  *
+  * @param oldPtr The pointer to move ownership from
+  * @return The moved pointer
+  */
+public f<heap T*> sMove<T>(heap T*& oldPtr) {
+    result = oldPtr;
+    oldPtr = nil<heap T*>;
+}
+
+/**
  * Allocates memory for a new instance of the given type on the heap.
  * Note: This function panics if the allocation fails.
  *
@@ -151,7 +163,7 @@ public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
  *
  * @param obj The object to destroy
  */
-public p sDestroy<T>(T& obj) {
+public p sDestruct<T>(T& obj) {
     obj.dtor();
 }
 
@@ -173,8 +185,8 @@ public p sDealloc(heap byte*& ptr) {
  * @param ptr The pointer to the heap-allocated instance
  */
 public p sDelete<T>(heap T*& ptr) {
+    sDestruct(*ptr);
     unsafe {
-        sDestroy(*ptr);
         sDealloc(cast<heap byte*&>(ptr));
     }
 }

@@ -125,10 +125,8 @@ public p LinkedList.remove(const T& valueToRemove) {
 
     if this.tail.value == valueToRemove {
         Node<T>* temp = this.tail;
-        this.tail = this.tail.next;
-        unsafe {
-            sDealloc(cast<heap byte*>(temp));
-        }
+        this.tail = sMove(this.tail.next);
+        sDelete(temp);
         this.size--;
         return;
     }
@@ -140,10 +138,8 @@ public p LinkedList.remove(const T& valueToRemove) {
     if curr.next == nil<heap Node<T>*> { return; }
 
     Node<T>* temp = curr.next;
-    curr.next = curr.next.next;
-    unsafe {
-        sDealloc(cast<heap byte*>(temp));
-    }
+    curr.next = sMove(curr.next.next);
+    sDelete(temp);
 
     this.size--;
 }
@@ -159,10 +155,8 @@ public p LinkedList.removeAt(unsigned long idx) {
 
     if idx == 0l {
         Node<T>* temp = this.tail;
-        this.tail = this.tail.next;
-        unsafe {
-            sDealloc(cast<heap byte*>(temp));
-        }
+        this.tail = sMove(this.tail.next);
+        sDelete(temp);
         this.size--;
         return;
     }
@@ -173,10 +167,8 @@ public p LinkedList.removeAt(unsigned long idx) {
     }
 
     Node<T>* temp = curr.next;
-    curr.next = curr.next.next;
-    unsafe {
-        sDealloc(cast<heap byte*>(temp));
-    }
+    curr.next = sMove(curr.next.next);
+    sDelete(temp);
 
     if idx == this.size - 1l {
         this.head = curr;
