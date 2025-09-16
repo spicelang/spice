@@ -29,10 +29,9 @@ QualTypeList Function::getParamTypes() const {
  * string Vector<double>.setData<double>(double)
  *
  * @param withThisType Include 'this' type in signature
- * @param ignorePublic Not include public modifiers in signature
  * @return String representation as function signature
  */
-std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
+std::string Function::getSignature(bool withThisType /*=true*/) const {
   QualTypeList concreteTemplateTypes;
   concreteTemplateTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
@@ -44,7 +43,7 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePubli
     }
   }
 
-  return Function::getSignature(name, thisType, returnType, paramList, concreteTemplateTypes, withThisType, ignorePublic);
+  return getSignature(name, thisType, returnType, paramList, concreteTemplateTypes, true, withThisType, true);
 }
 
 /**
