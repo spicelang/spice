@@ -45,7 +45,7 @@ public:
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
   [[nodiscard]] static const Function *lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                               const ArgList &reqArgs, bool strictQualifierMatching);
-  static Function *match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+  static Function *match(const TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                          const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictQualifierMatching,
                          const ASTNode *callNode);
   static void cleanup();

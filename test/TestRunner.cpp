@@ -242,7 +242,7 @@ void execTestCase(const TestCase &testCase) {
       // Check if the exit code matches the expected one
       // If no exit code ref file exists, check against 0
       if (TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&] { return std::to_string(exitCode); })) {
-        EXPECT_NE(0, exitCode) << "Program exited with zero exit code, but expected erronous exit code";
+        EXPECT_NE(0, exitCode) << "Program exited with zero exit code, but expected erroneous exit code";
       } else {
         EXPECT_EQ(0, exitCode) << "Program exited with non-zero exit code";
       }

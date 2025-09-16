@@ -29,17 +29,20 @@ QualTypeList Function::getParamTypes() const {
  * string Vector<double>.setData<double>(double)
  *
  * @param withThisType Include 'this' type in signature
+ * @param withTemplateTypes Include concrete template types in the signature
  * @return String representation as function signature
  */
-std::string Function::getSignature(bool withThisType /*=true*/) const {
+std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplateTypes /*=true*/) const {
   QualTypeList concreteTemplateTypes;
-  concreteTemplateTypes.reserve(templateTypes.size());
-  for (const GenericType &genericType : templateTypes) {
-    if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
-      assert(typeMapping.contains(genericType.getSubType()));
-      concreteTemplateTypes.push_back(typeMapping.at(genericType.getSubType()));
-    } else {
-      concreteTemplateTypes.push_back(genericType);
+  if (withTemplateTypes) {
+    concreteTemplateTypes.reserve(templateTypes.size());
+    for (const GenericType &genericType : templateTypes) {
+      if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
+        assert(typeMapping.contains(genericType.getSubType()));
+        concreteTemplateTypes.push_back(typeMapping.at(genericType.getSubType()));
+      } else {
+        concreteTemplateTypes.push_back(genericType);
+      }
     }
   }
 
