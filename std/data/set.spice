@@ -1,18 +1,21 @@
 import "std/data/red-black-tree";
 import "std/data/linked-list";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type V dyn;
 
 /**
- * An set in Spice is a commonly used data structure, which can be used to represent a list of unique values.
+ * A set in Spice is a commonly used data structure, which can be used to represent a list of unique values.
  *
  * Time complexity:
  * Insert: O(log n)
  * Delete: O(log n)
  * Lookup: O(log n)
  */
-public type Set<V> struct {
+public type Set<V> struct : IIterable<V> {
     RedBlackTree<V, bool> tree
 }
 
@@ -81,4 +84,69 @@ public f<LinkedList<V>> Set.toLinkedList() {
     foreach Pair<V, bool>& bucket : this.tree {
         result.append(entry.key);
     }
+}
+
+/**
+ * Iterator to iterate over an set data structure
+ */
+public type SetIterator<V> struct : IIterator<const V&> {
+    RedBlackTreeIterator<V, bool> rbtIterator
+}
+
+public p SetIterator.ctor<V>(Set<V>& set) {
+    this.rbtIterator = set.tree.getIterator();
+}
+/**
+ * Returns the current value of the set
+ *
+ * @return Current value
+ */
+public inline f<const V&> SetIterator.get() {
+    const Pair<const V&, bool&> pair = this.rbtIterator.get();
+    return pair.getFirst();
+}
+
+/**
+ * Returns the current index and the current item of the set
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, const V&>> SetIterator.getIdx() {
+    Pair<unsigned long, Pair<const V&, bool&>&> pair = this.rbtIterator.getIdx();
+    Pair<const V&, bool&>& valuePair = pair.getSecond();
+    const unsigned long idx = pair.getFirst();
+    const V& value = valuePair.getFirst();
+    return Pair<unsigned long, const V&>(idx, value);
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> SetIterator.isValid() {
+    return this.rbtIterator.isValid();
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p SetIterator.next() {
+    this.rbtIterator.next();
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it SetIterator
+ */
+public inline p operator++<V>(SetIterator<V>& it) {
+    this.rbtIterator.next();
+}
+
+/**
+ * Retrieve a forward iterator for the set
+ */
+public f<SetIterator<V>> Set.getIterator() {
+    return SetIterator<V>(*this);
 }
