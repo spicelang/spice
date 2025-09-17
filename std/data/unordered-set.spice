@@ -1,5 +1,8 @@
 import "std/data/hash-table";
 import "std/data/linked-list";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type V dyn;
@@ -12,7 +15,7 @@ type V dyn;
  * Delete: O(1) (average case), O(n) (worst case)
  * Lookup: O(1) (average case), O(n) (worst case)
  */
-public type UnorderedSet<V> struct {
+public type UnorderedSet<V> struct : IIterable<V> {
     HashTable<V, bool> hashTable
 }
 
@@ -85,4 +88,69 @@ public f<LinkedList<V>> UnorderedSet.toLinkedList() {
     foreach Pair<V, bool>& bucket : this.hashTable {
         result.append(entry.key);
     }
+}
+
+/**
+ * Iterator to iterate over an unordered set data structure
+ */
+public type UnorderedSetIterator<V> struct : IIterator<const V&> {
+    HashTableIterator<V, bool> htIterator
+}
+
+public p UnorderedSetIterator.ctor<V>(UnorderedSet<V>& unorderedSet) {
+    this.htIterator = unorderedSet.hashTable.getIterator();
+}
+/**
+ * Returns the current value of the unordered set
+ *
+ * @return Current value
+ */
+public inline f<const V&> UnorderedSetIterator.get() {
+    const Pair<const V&, bool&> pair = this.htIterator.get();
+    return pair.getFirst();
+}
+
+/**
+ * Returns the current index and the current item of the unordered set
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, const V&>> UnorderedSetIterator.getIdx() {
+    Pair<unsigned long, Pair<const V&, bool&>&> pair = this.htIterator.getIdx();
+    Pair<const V&, bool&>& valuePair = pair.getSecond();
+    const unsigned long idx = pair.getFirst();
+    const V& value = valuePair.getFirst();
+    return Pair<unsigned long, const V&>(idx, value);
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> UnorderedSetIterator.isValid() {
+    return this.htIterator.isValid();
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p UnorderedSetIterator.next() {
+    this.htIterator.next();
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it UnorderedSetIterator
+ */
+public inline p operator++<V>(UnorderedSetIterator<V>& it) {
+    this.htIterator.next();
+}
+
+/**
+ * Retrieve a forward iterator for the unordered set
+ */
+public f<UnorderedSetIterator<V>> UnorderedSet.getIterator() {
+    return UnorderedSetIterator<V>(*this);
 }
