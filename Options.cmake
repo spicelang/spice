@@ -150,14 +150,14 @@ else ()
 endif ()
 
 # UBSAN
-option(SPICE_UBSAN "Instrument executable with undefined behaviour sanitizer" OFF)
+option(SPICE_UBSAN "Instrument executable with undefined behavior sanitizer" OFF)
 if (SPICE_UBSAN)
-    message(STATUS "Spice: Undefined behaviour sanitizer enabled.")
+    message(STATUS "Spice: Undefined behavior sanitizer enabled.")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined -fno-sanitize-recover=all")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=undefined -fno-sanitize-recover=all")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fsanitize=undefined -fno-sanitize-recover=all")
 else ()
-    message(STATUS "Spice: Undefined behaviour sanitizer disabled.")
+    message(STATUS "Spice: Undefined behavior sanitizer disabled.")
 endif ()
 
 # Overload of new and delete operators
