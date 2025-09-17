@@ -118,7 +118,9 @@ public inline f<const V&> UnorderedSetIterator.get() {
 public inline f<Pair<unsigned long, const V&>> UnorderedSetIterator.getIdx() {
     Pair<unsigned long, Pair<const V&, bool&>&> pair = this.htIterator.getIdx();
     Pair<const V&, bool&>& valuePair = pair.getSecond();
-    return Pair<unsigned long, const V&>(pair.getFirst(), valuePair.getFirst());
+    const unsigned long idx = pair.getFirst();
+    const V& value = valuePair.getFirst();
+    return Pair<unsigned long, const V&>(idx, value);
 }
 
 /**
