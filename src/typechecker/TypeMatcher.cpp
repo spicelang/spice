@@ -41,7 +41,8 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
   // Check if the candidate type itself is generic
   if (candidateType.isBase(TY_GENERIC)) { // The candidate type itself is generic
-    const std::string genericTypeName = candidateType.getBase().getSubType();
+    const QualType candidateBaseType = candidateType.getBase();
+    const std::string &genericTypeName = candidateBaseType.getSubType();
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) { // This is a known generic type
@@ -59,12 +60,12 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
     } else { // This is an unknown generic type
       // Retrieve generic candidate type by its name
-      const GenericType *genericCandidateType = resolverFct(genericTypeName);
-      assert(genericCandidateType != nullptr);
+      const GenericType *genericCandidateBaseType = resolverFct(genericTypeName);
+      assert(genericCandidateBaseType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
       QualType newBaseType;
-      if (!genericCandidateType->checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching))
+      if (!genericCandidateBaseType->checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching))
         return false;
 
       const QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
@@ -77,7 +78,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       requestedType.getQualifiers().eraseWithMask(substantiatedCandidateType.getQualifiers());
 
       // Add to type mapping
-      const QualType newMappingType = requestedType.hasAnyGenericParts() ? substantiatedCandidateType : newBaseType;
+      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateBaseType : newBaseType;
       assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
