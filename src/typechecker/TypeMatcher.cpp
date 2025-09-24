@@ -63,16 +63,21 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      QualType substantiation;
-      if (!genericCandidateType->checkConditionsOf(requestedType, substantiation, true, !strictQualifierMatching))
+      QualType newBaseType;
+      if (!genericCandidateType->checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching))
+        return false;
+
+      const QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
+
+      if (!substantiatedCandidateType.matches(requestedType, true, !strictQualifierMatching, true))
         return false;
 
       // Zero out all qualifiers in the requested type, that are present in the candidate type
       // This is to set all qualifiers that are not present in the candidate type to the generic type replacement
-      requestedType.getQualifiers().eraseWithMask(candidateType.getQualifiers());
+      requestedType.getQualifiers().eraseWithMask(substantiatedCandidateType.getQualifiers());
 
       // Add to type mapping
-      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : substantiation;
+      const QualType newMappingType = requestedType.hasAnyGenericParts() ? substantiatedCandidateType : newBaseType;
       assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
