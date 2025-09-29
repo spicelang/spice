@@ -1,0 +1,80 @@
+import "std/data/unordered-map";
+import "std/data/vector";
+import "std/math/hash";
+import "std/text/stringstream";
+
+// Generic types
+type T dyn;
+
+public type Vertex<T> struct : IHashable {
+    T value
+}
+
+public p Vertex.ctor(const T& value) {
+    this.value = value;
+}
+
+public f<T&> Vertex.getValue() {
+    return this.value;
+}
+
+public f<bool> operator==<T>(const Vertex<T>& v1, const Vertex<T>& v2) {
+    return v1.value == v2.value;
+}
+
+public f<Hash> Vertex.hash() {
+    return hash(this.value);
+}
+
+/**
+ * Graph data structure
+ *
+ * ToDo: Add time complexities for common operations
+ */
+public type Graph<T> struct {
+    Vector<Vertex<T>> vertices
+    UnorderedMap<Vertex<T>, Vector<Vertex<T>*>> adjList
+    bool directed
+}
+
+public p Graph.ctor(bool directed = true) {
+    this.directed = directed;
+}
+
+public f<Vertex<T>&> Graph.addVertex(const T& value) {
+    this.vertices.pushBack(Vertex<T>(value));
+    Vertex<T>& vertex = this.vertices.back();
+    this.adjList.upsert(vertex, Vector<Vertex<T>*>());
+    return vertex;
+}
+
+public p Graph.addEdge(Vertex<T>& v1, Vertex<T>& v2) {
+    if !this.adjList.contains(v1) || !this.adjList.contains(v2) {
+        panic(Error("Graph must already contain both given vertices"));
+    }
+
+    Vector<Vertex<T>*>& adjListV1 = this.adjList.get(v1);
+    adjListV1.pushBack(&v2);
+    if !this.directed {
+        Vector<Vertex<T>*>& adjListV2 = this.adjList.get(v2);
+        adjListV2.pushBack(&v1);
+    }
+}
+
+public const f<bool> Graph.hasCycles() {
+    return false; // ToDo: Implement
+}
+
+public const f<bool> Graph.isDirected() {
+    return this.directed;
+}
+
+public const f<bool> Graph.isDAG() {
+    return this.directed && !this.hasCycles();
+}
+
+public const p Graph.toGraphviz(StringStream& ss) {
+    ss << (this.directed ? "digraph" : "graph") << " G {\n";
+
+    ss << "}";
+}
