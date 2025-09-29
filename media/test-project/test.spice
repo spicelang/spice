@@ -1,28 +1,24 @@
-import "std/data/set";
+type T dyn;
+
+p foo<T>(T& test) {}
 
 f<int> main() {
-    Set<int> set;
-
-    // Iterate over empty container
-    {
-        foreach const int& item : set {
-            printf("%d\n", item);
-        }
-    }
-
-    set.insert(1);
-    set.insert(2);
-    set.insert(3);
-    set.insert(4);
-    set.insert(5);
-    set.insert(99);
-    set.insert(100);
-    set.insert(1265);
-    set.insert(101);
-    set.insert(102);
-
-    // Iterate over filled container
-    foreach const int& item : set {
-        printf("%d\n", item);
-    }
+    int i = 123;
+    foo(i);
 }
+
+/*import "std/data/graph";
+import "std/text/stringstream";
+
+f<int> main() {
+    Graph<int> g;
+    Vertex<int>& v1 = g.addVertex(1);
+    Vertex<int>& v2 = g.addVertex(2);
+    Vertex<int>& v3 = g.addVertex(3);
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
+
+    StringStream ss;
+    g.toGraphviz(ss);
+    printf("%s", ss.str());
+}*/
