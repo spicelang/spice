@@ -2,7 +2,7 @@
 title: Builtin Functions
 ---
 
-Spice offers six builtin functions out of the box. Those can be used anywhere without having to be imported manually and
+Spice offers seven builtin functions out of the box. Those can be used anywhere without having to be imported manually and
 can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin

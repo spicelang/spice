@@ -1,52 +1,15 @@
-import "std/iterator/iterable";
-import "std/iterator/iterator";
-import "std/data/pair";
-
-type T dyn;
-
-type ExampleContainedType struct {
-    bool copied = false
-}
-
-p ExampleContainedType.ctor() {}
-
-p ExampleContainedType.ctor(const ExampleContainedType& _) {
-    this.copied = true;
-}
-
-type ExampleIterableType struct : IIterable<ExampleContainedType> {}
-
-type ExampleTypeIterator<T> struct: IIterator<T> {
-    T item
-    bool isValid = true
-}
-
-f<T&> ExampleTypeIterator.get() {
-    return this.item;
-}
-
-f<Pair<unsigned long, T&>> ExampleTypeIterator.getIdx() {
-    return Pair<unsigned long, T&>(0ul, this.item);
-}
-
-f<bool> ExampleTypeIterator.isValid() {
-    result = this.isValid;
-    this.isValid = false;
-}
-
-p ExampleTypeIterator.next() {}
-
-f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
-    return ExampleTypeIterator<ExampleContainedType>();
-}
+import "std/data/graph";
+import "std/text/stringstream";
 
 f<int> main() {
-    ExampleIterableType eit;
-    int i = 0;
-    foreach ExampleContainedType ct : eit {
-        assert ct.copied;
-        i++;
-    }
-    assert i == 1;
-    printf("All assertions passed!");
+    Graph<int> g;
+    Vertex<int>& v1 = g.addVertex(1);
+    Vertex<int>& v2 = g.addVertex(2);
+    Vertex<int>& v3 = g.addVertex(3);
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
+
+    StringStream ss;
+    g.toGraphviz(ss);
+    printf("%s\n", ss.str());
 }
