@@ -1,11 +1,15 @@
-import "std/data/vector" as vec;
-import "std/data/pair" as pair;
+import "std/data/graph";
+import "std/text/stringstream";
 
 f<int> main() {
-    vec::Vector<pair::Pair<int, string>> pairVector = vec::Vector<pair::Pair<int, string>>();
-    pairVector.pushBack(pair::Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair::Pair<int, string>(1, "World"));
+    Graph<int> g;
+    Vertex<int>& v1 = g.addVertex(1);
+    Vertex<int>& v2 = g.addVertex(2);
+    Vertex<int>& v3 = g.addVertex(3);
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
 
-    pair::Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    StringStream ss;
+    g.toGraphviz(ss);
+    printf("%s\n", ss.str());
 }
