@@ -1,13 +1,4 @@
-type T dyn;
-
-p foo<T>(T& test) {}
-
-f<int> main() {
-    int i = 123;
-    foo(i);
-}
-
-/*import "std/data/graph";
+import "std/data/graph";
 import "std/text/stringstream";
 
 f<int> main() {
@@ -21,4 +12,4 @@ f<int> main() {
     StringStream ss;
     g.toGraphviz(ss);
     printf("%s", ss.str());
-}*/
+}

@@ -56,6 +56,9 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       if (!requestedType.isRef())
         knownConcreteType = knownConcreteType.removeReferenceWrapper();
 
+      if (requestedType.isRef() && !knownConcreteType.isRef())
+        requestedType = requestedType.getContained().toNonConst();
+
       // Check if the known concrete type matches the requested type
       return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
     } else { // This is an unknown generic type
@@ -68,7 +71,14 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       if (!genericCandidateBaseType->checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching))
         return false;
 
-      const QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
+      QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
+
+      // Remove reference wrapper of candidate type if required
+      if (!requestedType.isRef())
+        substantiatedCandidateType = substantiatedCandidateType.removeReferenceWrapper();
+
+      if (requestedType.isRef() && !substantiatedCandidateType.isRef())
+        requestedType = requestedType.getContained().toNonConst();
 
       if (!substantiatedCandidateType.matches(requestedType, true, !strictQualifierMatching, true))
         return false;
@@ -92,7 +102,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
     // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
     if (candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      // Check param  and return types
+      // Check param and return types
       const QualTypeList &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
       const QualTypeList &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
       if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictQualifierMatching))
