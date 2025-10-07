@@ -72,7 +72,7 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const
   return false; // Violated
 }
 
-Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *node) {
+Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *node) const {
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toConstRef(node), false}};

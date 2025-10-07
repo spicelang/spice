@@ -40,7 +40,7 @@ public p HashTable.ctor(unsigned long bucketCount = 100l) {
 public p HashTable.upsert(const K& key, const V& value) {
     const LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     foreach const HashEntry<K, V>& entry : bucket {
-        if (entry.key == key) {
+        if entry.key == key {
             entry.value = value;
             return;
         }
@@ -57,7 +57,7 @@ public p HashTable.upsert(const K& key, const V& value) {
  */
 public f<V&> HashTable.get(const K& key) {
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if (entry.key == key) {
+        if entry.key == key {
             return entry.value;
         }
     }
@@ -73,7 +73,7 @@ public f<V&> HashTable.get(const K& key) {
  */
 public f<Result<V>> HashTable.getSafe(const K& key) {
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if (entry.key == key) {
+        if entry.key == key {
             return ok(entry.value);
         }
     }
@@ -89,7 +89,7 @@ public f<Result<V>> HashTable.getSafe(const K& key) {
 public p HashTable.remove(const K& key) {
     LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     for unsigned long i = 0l; i < bucket.getSize(); i++ {
-        if (bucket.get(i).key == key) {
+        if bucket.get(i).key == key {
             bucket.removeAt(i);
             return;
         }
@@ -104,7 +104,7 @@ public p HashTable.remove(const K& key) {
  */
 public f<bool> HashTable.contains(const K& key) {
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if (entry.key == key) {
+        if entry.key == key {
             return true;
         }
     }

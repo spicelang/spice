@@ -41,7 +41,8 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
   // Check if the candidate type itself is generic
   if (candidateType.isBase(TY_GENERIC)) { // The candidate type itself is generic
-    const std::string genericTypeName = candidateType.getBase().getSubType();
+    const QualType candidateBaseType = candidateType.getBase();
+    const std::string &genericTypeName = candidateBaseType.getSubType();
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) { // This is a known generic type
@@ -55,24 +56,39 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       if (!requestedType.isRef())
         knownConcreteType = knownConcreteType.removeReferenceWrapper();
 
+      if (requestedType.isRef() && !knownConcreteType.isRef())
+        requestedType = requestedType.getContained().toNonConst();
+
       // Check if the known concrete type matches the requested type
       return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
     } else { // This is an unknown generic type
       // Retrieve generic candidate type by its name
-      const GenericType *genericCandidateType = resolverFct(genericTypeName);
-      assert(genericCandidateType != nullptr);
+      const GenericType *genericCandidateBaseType = resolverFct(genericTypeName);
+      assert(genericCandidateBaseType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      QualType substantiation;
-      if (!genericCandidateType->checkConditionsOf(requestedType, substantiation, true, !strictQualifierMatching))
+      QualType newBaseType;
+      if (!genericCandidateBaseType->checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching))
+        return false;
+
+      QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
+
+      // Remove reference wrapper of candidate type if required
+      if (!requestedType.isRef())
+        substantiatedCandidateType = substantiatedCandidateType.removeReferenceWrapper();
+
+      if (requestedType.isRef() && !substantiatedCandidateType.isRef())
+        requestedType = requestedType.getContained().toNonConst();
+
+      if (!substantiatedCandidateType.matches(requestedType, true, !strictQualifierMatching, true))
         return false;
 
       // Zero out all qualifiers in the requested type, that are present in the candidate type
       // This is to set all qualifiers that are not present in the candidate type to the generic type replacement
-      requestedType.getQualifiers().eraseWithMask(candidateType.getQualifiers());
+      requestedType.getQualifiers().eraseWithMask(substantiatedCandidateType.getQualifiers());
 
       // Add to type mapping
-      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : substantiation;
+      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateBaseType : newBaseType;
       assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
@@ -86,7 +102,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
     // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
     if (candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      // Check param  and return types
+      // Check param and return types
       const QualTypeList &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
       const QualTypeList &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
       if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictQualifierMatching))
