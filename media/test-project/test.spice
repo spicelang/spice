@@ -1,7 +1,35 @@
-f<int> main() {
-    long l = 100l;
-    unsafe {
-       double* ptr = cast<double*>(&l);
-       *ptr += 2.0;
-    }
+type ITest interface {
+    p bar();
 }
+
+type Test struct : ITest {}
+
+p Test.bar() {
+    printf("Bar");
+}
+
+p foo(ITest& test) {
+    test.bar();
+}
+
+f<int> main() {
+    Test t;
+    Test& tRef = t;
+    foo(tRef);
+}
+
+/*import "std/data/graph";
+import "std/text/stringstream";
+
+f<int> main() {
+    Graph<int> g;
+    Vertex<int>& v1 = g.addVertex(1);
+    Vertex<int>& v2 = g.addVertex(2);
+    Vertex<int>& v3 = g.addVertex(3);
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
+
+    StringStream ss;
+    g.toGraphviz(ss);
+    printf("%s", ss.str());
+}*/

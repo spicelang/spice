@@ -149,8 +149,13 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       const QualType &expectedSTy = paramSTypes.at(i);
       const QualType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
-      const auto matchFct = [](const QualType &lhsTy, const QualType &rhsTy) {
-        return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
+      const auto matchFct = [](QualType expectedTy, QualType actualTy) {
+        if (expectedTy.matches(actualTy, false, true, true))
+          return true;
+
+        // Unwrap as far as possible and remove reference wrappers if possible
+        QualType::unwrapBoth(expectedTy, actualTy);
+        return expectedTy.matchesInterfaceImplementedByStruct(actualTy);
       };
 
       if (matchFct(expectedSTy, actualSTy)) {
