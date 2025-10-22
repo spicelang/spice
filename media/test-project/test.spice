@@ -1,15 +1,8 @@
-import "std/data/graph";
-import "std/text/stringstream";
+import "std/iterator/array-iterator";
 
 f<int> main() {
-    Graph<int> g;
-    Vertex<int>& v1 = g.addVertex(1);
-    Vertex<int>& v2 = g.addVertex(2);
-    Vertex<int>& v3 = g.addVertex(3);
-    g.addEdge(v1, v2);
-    g.addEdge(v2, v3);
-
-    StringStream ss;
-    g.toGraphviz(ss);
-    printf("%s", ss.str());
+    int[7] intArray = [ 1, 5, 4, 0, 12, 12345, 9 ];
+    foreach long index, int item : iterate(intArray, len(intArray)) {
+        printf("Item for index %d, %d\n", index, item);
+    }
 }

@@ -215,6 +215,8 @@ void Driver::addBuildSubcommand() {
   subCmd->add_option<std::filesystem::path>("--output,-o", cliOptions.outputPath, "Set the output file path");
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --address-sanitizer
+  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
   // --no-entry
@@ -244,6 +246,8 @@ void Driver::addRunSubcommand() {
 
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --address-sanitizer
+  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
@@ -267,6 +271,8 @@ void Driver::addTestSubcommand() {
 
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --address-sanitizer
+  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }

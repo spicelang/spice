@@ -23,6 +23,10 @@ void ExternalLinkerInterface::prepare() {
   if (!cliOptions.generateDebugInfo)
     addLinkerFlag("-Wl,-s");
 
+  // Address sanitizer
+  if (cliOptions.generateASANInstrumentation)
+    addLinkerFlag("-lasan");
+
   // Web Assembly
   if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
     addLinkerFlag("-nostdlib");

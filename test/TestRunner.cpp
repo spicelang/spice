@@ -7,8 +7,6 @@
 
 #include <gtest/gtest.h>
 
-#include <llvm/TargetParser/Host.h>
-#include <llvm/TargetParser/Triple.h>
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
@@ -18,6 +16,8 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
@@ -75,7 +75,8 @@ void execTestCase(const TestCase &testCase) {
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
-      /* debugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* generateASANInstrumentation= */ false,
       /* disableVerifier= */ false,
       /* testMode= */ true,
       /* comparableOutput= */ true,
@@ -193,6 +194,10 @@ void execTestCase(const TestCase &testCase) {
     const bool needsNormalRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
     const bool needsDebuggerRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
     if (needsNormalRun || needsDebuggerRun) {
+      // Emit main source file object if not done already
+      if (!objectFilesEmitted)
+        mainSourceFile->runObjectEmitter();
+
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
@@ -201,10 +206,6 @@ void execTestCase(const TestCase &testCase) {
       if (exists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
-
-      // Emit main source file object if not done already
-      if (!objectFilesEmitted)
-        mainSourceFile->runObjectEmitter();
 
       // Conclude the compilation
       mainSourceFile->concludeCompilation();

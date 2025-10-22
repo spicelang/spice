@@ -41,7 +41,7 @@ const char *const BUILD_MODE_TEST = "test";
  */
 struct CliOptions {
   std::filesystem::path mainSourceFile; // e.g. ./main.spice
-  llvm::Triple targetTriple;             // In format: <arch><sub>-<vendor>-<sys>-<abi>
+  llvm::Triple targetTriple;            // In format: <arch><sub>-<vendor>-<sys>-<abi>
   std::string targetArch = TARGET_UNKNOWN;
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
@@ -77,6 +77,7 @@ struct CliOptions {
   bool generateTestMain = false;
   bool staticLinking = false;
   bool generateDebugInfo = false;
+  bool generateASANInstrumentation = false;
   bool disableVerifier = false;
   bool testMode = false;
   bool comparableOutput = false;
