@@ -14,12 +14,12 @@ Find the GDB manual and other documentation resources online at:
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
 Reading symbols from ./source...
-Breakpoint 1: file ./test-files/irgenerator/debug-info/success-dbg-info-complex/source.spice, line 42.
+Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-dbg-info-complex/source.spice, line 42.
 [Thread debugging using libthread_db enabled]
 Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 Breakpoint 1, main (_argc=1, _argv=...)
-    at ./test-files/irgenerator/debug-info/success-dbg-info-complex/source.spice:42
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-complex/source.spice:42
 42	    it.next();
 result = 0
 vi = {contents = , capacity = 5, size = 5}
@@ -28,4 +28,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 98178) exited normally]
+[Inferior 1 (process 216480) exited normally]

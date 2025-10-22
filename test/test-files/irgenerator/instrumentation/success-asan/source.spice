@@ -1,0 +1,4 @@
+f<int> main() {
+    int* iPtr = nil<int*>;
+    *iPtr = 123;
+}
