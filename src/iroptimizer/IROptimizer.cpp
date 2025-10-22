@@ -3,7 +3,7 @@
 #include "IROptimizer.h"
 
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
-#include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
 
 #include <driver/Driver.h>
 
@@ -28,10 +28,15 @@ void IROptimizer::optimizeDefault() {
   if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles)
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
-  // Run passes
+  // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildPerModuleDefaultPipeline(llvmOptLevel);
-  modulePassMgr.addPass(llvm::AlwaysInlinerPass());
+
+  // Add optional passes
+  if (cliOptions.generateASANInstrumentation)
+    modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
+
+  // Run pipeline
   modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 }
 
@@ -39,10 +44,11 @@ void IROptimizer::optimizePreLink() {
   if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
 
-  // Run passes
+  // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTOPreLinkDefaultPipeline(llvmOptLevel);
-  modulePassMgr.addPass(llvm::AlwaysInlinerPass());
+
+  // Run pipeline
   modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 
   // Generate module summary index
@@ -60,10 +66,15 @@ void IROptimizer::optimizePostLink() {
   llvm::ModuleSummaryIndex moduleSummaryIndex = moduleSummaryIndexAnalysis.run(ltoModule, moduleAnalysisMgr);
   moduleSummaryIndex.setWithWholeProgramVisibility();
 
-  // Run passes
+  // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTODefaultPipeline(llvmOptLevel, &moduleSummaryIndex);
-  modulePassMgr.addPass(llvm::AlwaysInlinerPass());
+
+  // Add optional passes
+  if (cliOptions.generateASANInstrumentation)
+    modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
+
+  // Run pipeline
   modulePassMgr.run(ltoModule, moduleAnalysisMgr);
 }
 

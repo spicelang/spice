@@ -66,11 +66,12 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
  * @param originalRefPath Path to the reference file
  * @param getActualOutput Callback to execute the required steps to get the actual test output
  * @param modifyOutputFct Callback to modify the output before comparing it with the reference
+ * @param x86Only Only compare/update ref file on x86_64
  *
  * @return True, if the ref file was found
  */
 bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
-                             ModifyOutputFct modifyOutputFct) {
+                             ModifyOutputFct modifyOutputFct, [[maybe_unused]] bool x86Only) {
   for (const std::filesystem::path &refPath : expandRefPaths(originalRefPath)) {
     if (testDriverCliOptions.isVerbose)
       std::cout << "Checking for ref file: " << refPath << " - ";
@@ -84,6 +85,13 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 
     // Get actual output
     std::string actualOutput = getActualOutput();
+
+#ifndef ARCH_X86_64
+    // Cancel early, before comparing or updating the refs
+    if (x86Only && refPath == originalRefPath)
+      return true;
+#endif
+
     if (testDriverCliOptions.updateRefs) { // Update refs
       FileUtil::writeToFile(refPath, actualOutput);
     } else { // Check refs

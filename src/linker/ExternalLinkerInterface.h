@@ -29,9 +29,7 @@ private:
   // Members
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
-  std::vector<std::string> linkerFlags = {
-      // "-flto", // Enable LTO
-  };
+  std::vector<std::string> linkerFlags;
 };
 
 } // namespace spice::compiler

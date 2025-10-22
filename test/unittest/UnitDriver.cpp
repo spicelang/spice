@@ -30,7 +30,7 @@ TEST(DriverTest, TestBuildSubcommandMinimal) {
 }
 
 TEST(DriverTest, TestBuildSubcommandComplex) {
-  const char *argv[] = {"spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "-asan", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
   driver.init();
@@ -49,6 +49,7 @@ TEST(DriverTest, TestBuildSubcommandComplex) {
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
   ASSERT_TRUE(driver.cliOptions.generateDebugInfo);   // -g
+  ASSERT_TRUE(driver.cliOptions.generateASANInstrumentation);   // -asan
   ASSERT_TRUE(driver.cliOptions.useLTO);              // -lto
   ASSERT_TRUE(driver.cliOptions.printDebugOutput);    // -d
   ASSERT_TRUE(driver.cliOptions.dumpSettings.dumpIR); // -ir

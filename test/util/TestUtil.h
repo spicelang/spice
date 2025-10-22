@@ -30,8 +30,8 @@ const char *const REF_NAME_TYPE_REGISTRY = "type-registry.out";
 const char *const REF_NAME_CACHE_STATS = "cache-stats.out";
 const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
-static constexpr const char *const REF_NAME_OPT_IR[5] = {
-    "ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll",
+static constexpr const char *const REF_NAME_OPT_IR[6] = {
+    "ir-code.ll", "ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll",
 };
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
 const char *const REF_NAME_GDB_OUTPUT = "debug.out";
@@ -43,6 +43,7 @@ const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_SKIP_WINDOWS = "skip-windows";
 const char *const CTL_DEBUG_INFO = "with-debug-info";
+const char *const CTL_ASAN = "with-asan";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
 const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
 const char *const CTL_LTO = "with-lto";
@@ -71,7 +72,8 @@ public:
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
       const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
-      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {});
+      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {},
+      bool x86Only = false);
   static bool doesRefExist(const std::filesystem::path &originalRefPath);
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);

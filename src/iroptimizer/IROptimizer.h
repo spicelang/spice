@@ -12,6 +12,7 @@
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
+#include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
 
 namespace spice::compiler {
 
@@ -37,6 +38,7 @@ private:
   llvm::ModuleAnalysisManager moduleAnalysisMgr;
   llvm::StandardInstrumentations si;
   llvm::PassInstrumentationCallbacks pic;
+  llvm::AddressSanitizerOptions asanOptions;
   std::unique_ptr<llvm::PassBuilder> passBuilder;
 
   // Private methods

@@ -366,12 +366,7 @@ void SourceFile::runDefaultIROptimizer() {
   assert(!cliOptions.useLTO);
 
   // Skip if restored from the cache or this stage has already been done
-  if (restoredFromCache || (previousStage >= IR_OPTIMIZER && !cliOptions.testMode))
-    return;
-
-  // Skip this stage if optimization is disabled
-  const OptLevel optLevel = cliOptions.optLevel;
-  if (optLevel < O1 || optLevel > Oz)
+  if (restoredFromCache || previousStage > IR_OPTIMIZER || (previousStage == IR_OPTIMIZER && !cliOptions.testMode))
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -388,7 +383,7 @@ void SourceFile::runDefaultIROptimizer() {
 
   // Dump optimized IR code
   if (cliOptions.dumpSettings.dumpIR)
-    dumpOutput(compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + std::to_string(optLevel) + ".ll");
+    dumpOutput(compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + std::to_string(cliOptions.optLevel) + ".ll");
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
@@ -400,10 +395,6 @@ void SourceFile::runPreLinkIROptimizer() {
 
   // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
-    return;
-
-  // Skip this stage if optimization is disabled
-  if (cliOptions.optLevel < O1 || cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -455,10 +446,6 @@ void SourceFile::runPostLinkIROptimizer() {
 
   // Skip if restored from the cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
-    return;
-
-  // Skip this stage if optimization is disabled
-  if (cliOptions.optLevel < O1 || cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);

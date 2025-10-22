@@ -7,8 +7,6 @@
 
 #include <gtest/gtest.h>
 
-#include <llvm/TargetParser/Host.h>
-#include <llvm/TargetParser/Triple.h>
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
@@ -18,6 +16,8 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
@@ -75,7 +75,8 @@ void execTestCase(const TestCase &testCase) {
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
-      /* debugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* generateASANInstrumentation= */ exists(testCase.testPath / CTL_ASAN),
       /* disableVerifier= */ false,
       /* testMode= */ true,
       /* comparableOutput= */ true,
@@ -135,35 +136,31 @@ void execTestCase(const TestCase &testCase) {
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
-    // Check unoptimized IR code
-    TestUtil::checkRefMatch(
-        testCase.testPath / REF_NAME_IR, [&] { return mainSourceFile->compilerOutput.irString; },
-        [&](std::string &expectedOutput, std::string &actualOutput) {
-          if (cliOptions.generateDebugInfo) {
-            // Remove the lines, containing paths on the local file system
-            TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
-            TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
-          }
-        });
+    // Check IR code
+    for (uint8_t i = 0; i <= 5; i++) {
+      TestUtil::checkRefMatch(
+          testCase.testPath / REF_NAME_OPT_IR[i],
+          [&] {
+            cliOptions.optLevel = static_cast<OptLevel>(i);
 
-    // Check optimized IR code
-#ifdef ARCH_X86_64
-    for (uint8_t i = 1; i <= 5; i++) {
-      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&] {
-        cliOptions.optLevel = static_cast<OptLevel>(i);
+            if (cliOptions.useLTO) {
+              mainSourceFile->runPreLinkIROptimizer();
+              mainSourceFile->runBitcodeLinker();
+              mainSourceFile->runPostLinkIROptimizer();
+            } else {
+              mainSourceFile->runDefaultIROptimizer();
+            }
 
-        if (cliOptions.useLTO) {
-          mainSourceFile->runPreLinkIROptimizer();
-          mainSourceFile->runBitcodeLinker();
-          mainSourceFile->runPostLinkIROptimizer();
-        } else {
-          mainSourceFile->runDefaultIROptimizer();
-        }
-
-        return mainSourceFile->compilerOutput.irOptString;
-      });
+            return mainSourceFile->compilerOutput.irOptString;
+          },
+          [&](std::string &expectedOutput, std::string &actualOutput) {
+            if (cliOptions.generateDebugInfo) {
+              // Remove the lines, containing paths on the local file system
+              TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
+              TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
+            }
+          }, true);
     }
-#endif
 
     // Link the bitcode if not happened yet
     if (cliOptions.useLTO && cliOptions.optLevel == O0)
@@ -193,6 +190,10 @@ void execTestCase(const TestCase &testCase) {
     const bool needsNormalRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
     const bool needsDebuggerRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
     if (needsNormalRun || needsDebuggerRun) {
+      // Emit main source file object if not done already
+      if (!objectFilesEmitted)
+        mainSourceFile->runObjectEmitter();
+
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
@@ -201,10 +202,6 @@ void execTestCase(const TestCase &testCase) {
       if (exists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
-
-      // Emit main source file object if not done already
-      if (!objectFilesEmitted)
-        mainSourceFile->runObjectEmitter();
 
       // Conclude the compilation
       mainSourceFile->concludeCompilation();
