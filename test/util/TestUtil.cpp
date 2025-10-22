@@ -89,7 +89,7 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 #ifndef ARCH_X86_64
     // Cancel early, before comparing or updating the refs
     if (x86Only && refPath == originalRefPath)
-      return;
+      return true;
 #endif
 
     if (testDriverCliOptions.updateRefs) { // Update refs
