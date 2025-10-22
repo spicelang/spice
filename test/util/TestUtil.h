@@ -72,7 +72,8 @@ public:
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
       const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
-      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {});
+      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {},
+      bool x86Only = false);
   static bool doesRefExist(const std::filesystem::path &originalRefPath);
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);

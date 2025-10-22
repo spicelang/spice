@@ -137,13 +137,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runIRGenerator();
 
     // Check IR code
-    // Only check refs for optimization on X86_64 as also the middle end passes are somewhat target dependent
-#ifdef ARCH_X86_64
-    constexpr uint8_t maxOptLevel = 5;
-#else
-    constexpr uint8_t maxOptLevel = 0;
-#endif
-    for (uint8_t i = 0; i <= maxOptLevel; i++) {
+    for (uint8_t i = 0; i <= 5; i++) {
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_OPT_IR[i],
           [&] {
@@ -165,7 +159,7 @@ void execTestCase(const TestCase &testCase) {
               TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
               TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
             }
-          });
+          }, true);
     }
 
     // Link the bitcode if not happened yet
