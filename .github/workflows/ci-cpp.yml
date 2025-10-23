@@ -93,7 +93,6 @@ jobs:
 
       - name: Run Test target with Valgrind
 #        if: github.event_name == 'pull_request'
-        working-directory: build/test
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIR: ${{ github.workspace }}/llvm/llvm/include
