@@ -18,7 +18,7 @@ const char *const TARGET_WASM32 = "wasm32";
 const char *const TARGET_WASM64 = "wasm64";
 const char *const ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
 
-enum OptLevel : uint8_t {
+enum class OptLevel : uint8_t {
   O0 = 0, // No optimization
   O1 = 1, // Only basic optimizations
   O2 = 2, // Default optimization level
@@ -27,7 +27,15 @@ enum OptLevel : uint8_t {
   Oz = 5, // Aggressively optimize for code size
 };
 
-enum BuildMode : uint8_t {
+enum class Sanitizer : uint8_t {
+  NONE = 0, // No sanitizer
+  ADDRESS = 1, // Sanitize address
+  THREAD = 2, // Sanitize threads
+};
+const char *const SANITIZER_ADDRESS = "address";
+const char *const SANITIZER_THREAD = "thread";
+
+enum class BuildMode : uint8_t {
   DEBUG = 0,   // Default build mode, uses -O0 per default
   RELEASE = 1, // Build without debug information and with -O2 per default
   TEST = 2,    // Build with test main function and always emit assertions
@@ -51,7 +59,7 @@ struct CliOptions {
   std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
   std::filesystem::path outputPath;       // Where the output binary goes.
-  BuildMode buildMode = DEBUG;            // Default build mode is debug
+  BuildMode buildMode = BuildMode::DEBUG; // Default build mode is debug
   unsigned short compileJobCount = 0;     // 0 for auto
   bool ignoreCache = false;
   std::string llvmArgs;
@@ -68,16 +76,18 @@ struct CliOptions {
     bool dumpObjectFile = false;
     bool dumpToFiles = false;
     bool abortAfterDump = false;
-  } dumpSettings;
+  } dump;
   bool namesForIRValues = false;
   bool useLifetimeMarkers = false;
-  OptLevel optLevel = O0; // The default optimization level for debug build mode is O0
+  OptLevel optLevel = OptLevel::O0; // The default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
   bool generateTestMain = false;
   bool staticLinking = false;
-  bool generateDebugInfo = false;
-  bool generateASANInstrumentation = false;
+  struct InstrumentationSettings {
+    bool generateDebugInfo = false;
+    Sanitizer sanitizer = Sanitizer::NONE;
+  } instrumentation;
   bool disableVerifier = false;
   bool testMode = false;
   bool comparableOutput = false;
@@ -100,7 +110,7 @@ public:
   void runBinary() const;
 
   // Public members
-  CliOptions cliOptions;
+  CliOptions cliOptions = {};
   bool shouldCompile = false;
   bool shouldInstall = false;
   bool shouldUninstall = false;
@@ -115,6 +125,7 @@ private:
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd);
+  void addInstrumentationOptions(CLI::App *subCmd);
   static void ensureNotDockerized();
 
   // Members

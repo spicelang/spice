@@ -64,7 +64,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
 
   // Add debug info
-  if (cliOptions.generateDebugInfo) {
+  if (cliOptions.instrumentation.generateDebugInfo) {
     const auto nonConstNode = const_cast<MainFctDefNode *>(node);
     const Function spiceFunc = FunctionManager::createMainFunction(node->entry, paramSymbolTypes, nonConstNode);
     diGenerator.generateFunctionDebugInfo(fct, &spiceFunc);
@@ -213,6 +213,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     func->setLinkage(linkage);
     if (explicitlyInlined)
       func->addFnAttr(llvm::Attribute::AlwaysInline);
+    if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+      func->addFnAttr(llvm::Attribute::SanitizeThread);
 
     // Set attributes to 'this' param
     if (manifestation->isMethod()) {
@@ -381,6 +383,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     proc->setLinkage(linkage);
     if (explicitlyInlined)
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
+    if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+      proc->addFnAttr(llvm::Attribute::SanitizeThread);
 
     // Set attributes to 'this' param
     if (manifestation->isMethod()) {
@@ -576,13 +580,14 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   // Set some attributes, based on the given information
   var->setLinkage(linkage);
   var->setConstant(isConst);
+  var->setDSOLocal(true);
 
   // Set initializer
   if (node->hasValue) { // Set the constant value as variable initializer
     const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
     var->setInitializer(constantValue);
-  } else if (cliOptions.buildMode != RELEASE) { // Set the default value as variable initializer
-    assert(cliOptions.buildMode == DEBUG || cliOptions.buildMode == TEST);
+  } else if (cliOptions.buildMode != BuildMode::RELEASE) { // Set the default value as variable initializer
+    assert(cliOptions.buildMode == BuildMode::DEBUG || cliOptions.buildMode == BuildMode::TEST);
     llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
     var->setInitializer(constantValue);
   }

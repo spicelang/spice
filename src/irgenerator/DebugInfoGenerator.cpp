@@ -28,9 +28,9 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING,
-                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
-                                             false, false, llvm::DICompileUnit::DebugNameTableKind::None);
+  compileUnit = diBuilder->createCompileUnit(
+      llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING, irGenerator->cliOptions.optLevel > OptLevel::O0, "", 0, "",
+      llvm::DICompileUnit::FullDebug, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", 5);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
@@ -77,7 +77,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
 }
 
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   const ASTNode *node = spiceFunc->declNode;
@@ -137,7 +137,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
 }
 
 void DebugInfoGenerator::concludeFunctionDebugInfo() {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   assert(!lexicalBlocks.empty());
@@ -145,7 +145,7 @@ void DebugInfoGenerator::concludeFunctionDebugInfo() {
 }
 
 void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   const uint32_t line = node->codeLoc.line;
@@ -155,7 +155,7 @@ void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
 }
 
 void DebugInfoGenerator::popLexicalBlock() {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   assert(!lexicalBlocks.empty());
@@ -208,7 +208,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
 }
 
 void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   const uint32_t lineNo = globalEntry->getDeclCodeLoc().line;
@@ -229,7 +229,7 @@ void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *glo
 }
 
 void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber) {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   // Get symbol table entry
@@ -252,7 +252,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
 }
 
 void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
-  if (!irGenerator->cliOptions.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
 
   assert(!lexicalBlocks.empty());
@@ -264,7 +264,7 @@ void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
 void DebugInfoGenerator::setSourceLocation(const ASTNode *node) { setSourceLocation(node->codeLoc); }
 
 void DebugInfoGenerator::finalize() const {
-  if (irGenerator->cliOptions.generateDebugInfo)
+  if (irGenerator->cliOptions.instrumentation.generateDebugInfo)
     diBuilder->finalize();
 }
 
