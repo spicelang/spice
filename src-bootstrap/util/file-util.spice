@@ -117,9 +117,9 @@ public f<FilePath> getStdDir() {
         result = FilePath("/usr/lib/spice/std/");
         if result.exists() { return; }
     }
-    string value = getEnv("SPICE_STD_DIR");
-    if value != "" {
-        result = FilePath(value);
+    Result<string> value = getEnv("SPICE_STD_DIR");
+    if value.isOk() {
+        result = FilePath(value.unwrap());
         if result.exists() { return; }
     }
     return FilePath();
@@ -132,9 +132,9 @@ public f<FilePath> getStdDir() {
  * @return
  */
 public f<FilePath> getBootstrapCompilerDir() {
-    string value = getEnv("SPICE_BOOTSTRAP_DIR");
-    if value != "" {
-        result = FilePath(value);
+    Result<string> value = getEnv("SPICE_BOOTSTRAP_DIR");
+    if value.isOk() {
+        result = FilePath(value.unwrap());
         if result.exists() { return; }
     }
     return FilePath();
@@ -147,9 +147,8 @@ public f<FilePath> getBootstrapCompilerDir() {
  */
 public f<FilePath> getSpiceBinDir() {
     if isWindows() {
-        string userprofile = getEnv("USERPROFILE");
-        assert userprofile != "";
-        return FilePath(userprofile) / "spice" / "bin";
+        Result<string> userprofile = getEnv("USERPROFILE");
+        return FilePath(userprofile.unwrap()) / "spice" / "bin";
     } else if isLinux() {
         return FilePath("/usr/local/bin");
     } else {
