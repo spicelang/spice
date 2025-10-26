@@ -432,7 +432,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     }
 
     // Store default field values
-    if (fieldNode->defaultValue != nullptr || cliOptions.buildMode != RELEASE) {
+    if (fieldNode->defaultValue != nullptr || cliOptions.buildMode != BuildMode::RELEASE) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
@@ -446,7 +446,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
         value = resolveValue(fieldNode->defaultValue);
         manIdx = oldManIdx; // Restore manifestation index
       } else {
-        assert(cliOptions.buildMode == DEBUG || cliOptions.buildMode == TEST);
+        assert(cliOptions.buildMode == BuildMode::DEBUG || cliOptions.buildMode == BuildMode::TEST);
         value = getDefaultValueForSymbolType(fieldType);
       }
       // Store default value

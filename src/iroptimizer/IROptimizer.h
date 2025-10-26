@@ -13,10 +13,11 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
 #include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
+#include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
 
 namespace spice::compiler {
 
-class IROptimizer : CompilerPass {
+class IROptimizer final : CompilerPass {
 public:
   // Constructors
   IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)

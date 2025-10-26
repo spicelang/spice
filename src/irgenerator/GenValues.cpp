@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -158,13 +159,13 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         } else {
           if (copyCtor) {
             assert(!actualSTy.isTriviallyCopyable(node));
-            llvm::Value* originalPtr = resolveAddress(argNode);
+            llvm::Value *originalPtr = resolveAddress(argNode);
 
             // Generate copy ctor call
-            llvm::Type* valueType = actualSTy.toLLVMType(sourceFile);
-            llvm::Value* valueCopyPtr = insertAlloca(valueType, "arg.copy");
+            llvm::Type *valueType = actualSTy.toLLVMType(sourceFile);
+            llvm::Value *valueCopyPtr = insertAlloca(valueType, "arg.copy");
             generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
-            llvm::Value* newValue = insertLoad(valueType, valueCopyPtr);
+            llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
 
             // Attach address of copy to anonymous symbol (+1 because return value is 0)
             SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc, i + 1);
@@ -487,6 +488,9 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
+
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
     lambda->addParamAttr(0, llvm::Attribute::NoUndef);
@@ -640,6 +644,9 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
+
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
     lambda->addParamAttr(0, llvm::Attribute::NoUndef);
@@ -786,6 +793,9 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Set attributes to function
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
+
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {

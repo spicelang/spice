@@ -20,12 +20,16 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
 
   // Stripping symbols
-  if (!cliOptions.generateDebugInfo)
+  if (!cliOptions.instrumentation.generateDebugInfo)
     addLinkerFlag("-Wl,-s");
 
   // Address sanitizer
-  if (cliOptions.generateASANInstrumentation)
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
     addLinkerFlag("-lasan");
+
+  // Thread sanitizer
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+    addLinkerFlag("-ltsan");
 
   // Web Assembly
   if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {

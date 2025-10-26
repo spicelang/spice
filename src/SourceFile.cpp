@@ -115,7 +115,7 @@ void SourceFile::runParser() {
 
 void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
-  if (restoredFromCache || (!cliOptions.dumpSettings.dumpCST && !cliOptions.testMode))
+  if (restoredFromCache || (!cliOptions.dump.dumpCST && !cliOptions.testMode))
     return;
   // Check if this stage has already been done
   if (previousStage >= CST_VISUALIZER)
@@ -132,10 +132,10 @@ void SourceFile::runCSTVisualizer() {
   antlrCtx.parser->reset();
 
   // Dump the serialized CST string and the SVG file
-  if (cliOptions.dumpSettings.dumpCST || cliOptions.testMode)
+  if (cliOptions.dump.dumpCST || cliOptions.testMode)
     compilerOutput.cstString = dotCode.str();
 
-  if (cliOptions.dumpSettings.dumpCST)
+  if (cliOptions.dump.dumpCST)
     visualizerOutput("CST", compilerOutput.cstString);
 
   previousStage = CST_VISUALIZER;
@@ -168,7 +168,7 @@ void SourceFile::runASTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache)
     return;
-  if (!cliOptions.dumpSettings.dumpAST && !cliOptions.testMode)
+  if (!cliOptions.dump.dumpAST && !cliOptions.testMode)
     return;
   // Check if this stage has already been done
   if (previousStage >= AST_VISUALIZER)
@@ -186,7 +186,7 @@ void SourceFile::runASTVisualizer() {
   // Dump the serialized AST string and the SVG file
   compilerOutput.astString = dotCode.str();
 
-  if (cliOptions.dumpSettings.dumpAST)
+  if (cliOptions.dump.dumpAST)
     visualizerOutput("AST", compilerOutput.astString);
 
   previousStage = AST_VISUALIZER;
@@ -294,11 +294,11 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, typeCheckerRuns);
 
   // Save the JSON version in the compiler output
-  if (cliOptions.dumpSettings.dumpSymbolTable || cliOptions.testMode)
+  if (cliOptions.dump.dumpSymbolTable || cliOptions.testMode)
     compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
 
   // Dump symbol table
-  if (cliOptions.dumpSettings.dumpSymbolTable)
+  if (cliOptions.dump.dumpSymbolTable)
     dumpOutput(compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
 }
 
@@ -306,7 +306,7 @@ void SourceFile::runDependencyGraphVisualizer() {
   // Only execute if enabled
   if (restoredFromCache)
     return;
-  if (!cliOptions.dumpSettings.dumpDependencyGraph && !cliOptions.testMode)
+  if (!cliOptions.dump.dumpDependencyGraph && !cliOptions.testMode)
     return;
   // Check if this stage has already been done
   if (previousStage >= DEP_GRAPH_VISUALIZER)
@@ -325,7 +325,7 @@ void SourceFile::runDependencyGraphVisualizer() {
   // Dump the serialized AST string and the SVG file
   compilerOutput.depGraphString = dotCode.str();
 
-  if (cliOptions.dumpSettings.dumpDependencyGraph)
+  if (cliOptions.dump.dumpDependencyGraph)
     visualizerOutput("Dependency Graph", compilerOutput.depGraphString);
 
   previousStage = DEP_GRAPH_VISUALIZER;
@@ -350,11 +350,11 @@ void SourceFile::runIRGenerator() {
   irGenerator.visit(ast);
 
   // Save the ir string in the compiler output
-  if (cliOptions.dumpSettings.dumpIR || cliOptions.testMode)
+  if (cliOptions.dump.dumpIR || cliOptions.testMode)
     compilerOutput.irString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
 
   // Dump unoptimized IR code
-  if (cliOptions.dumpSettings.dumpIR)
+  if (cliOptions.dump.dumpIR)
     dumpOutput(compilerOutput.irString, "Unoptimized IR Code", "ir-code.ll");
 
   previousStage = IR_GENERATOR;
@@ -378,12 +378,13 @@ void SourceFile::runDefaultIROptimizer() {
   irOptimizer.optimizeDefault();
 
   // Save the optimized ir string in the compiler output
-  if (cliOptions.dumpSettings.dumpIR || cliOptions.testMode)
+  if (cliOptions.dump.dumpIR || cliOptions.testMode)
     compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
 
   // Dump optimized IR code
-  if (cliOptions.dumpSettings.dumpIR)
-    dumpOutput(compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + std::to_string(cliOptions.optLevel) + ".ll");
+  if (cliOptions.dump.dumpIR)
+    dumpOutput(compilerOutput.irOptString, "Optimized IR Code",
+               "ir-code-O" + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) + ".ll");
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
@@ -406,11 +407,11 @@ void SourceFile::runPreLinkIROptimizer() {
   irOptimizer.optimizePreLink();
 
   // Save the optimized ir string in the compiler output
-  if (cliOptions.dumpSettings.dumpIR || cliOptions.testMode)
+  if (cliOptions.dump.dumpIR || cliOptions.testMode)
     compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
 
   // Dump optimized IR code
-  if (cliOptions.dumpSettings.dumpIR)
+  if (cliOptions.dump.dumpIR)
     dumpOutput(compilerOutput.irOptString, "Optimized IR Code (pre-link)", "ir-code-lto-pre-link.ll");
 
   timer.pause();
@@ -457,13 +458,13 @@ void SourceFile::runPostLinkIROptimizer() {
   irOptimizer.optimizePostLink();
 
   // Save the optimized ir string in the compiler output
-  if (cliOptions.dumpSettings.dumpIR || cliOptions.testMode) {
+  if (cliOptions.dump.dumpIR || cliOptions.testMode) {
     llvm::Module *module = resourceManager.ltoModule.get();
     compilerOutput.irOptString = IRGenerator::getIRString(module, cliOptions.comparableOutput);
   }
 
   // Dump optimized IR code
-  if (cliOptions.dumpSettings.dumpIR)
+  if (cliOptions.dump.dumpIR)
     dumpOutput(compilerOutput.irOptString, "Optimized IR Code (post-Link)", "ir-code-lto-post-link.ll");
 
   previousStage = IR_OPTIMIZER;
@@ -492,11 +493,11 @@ void SourceFile::runObjectEmitter() {
   objectEmitter.emit(objectFilePath);
 
   // Save assembly string in the compiler output
-  if (cliOptions.isNativeTarget && (cliOptions.dumpSettings.dumpAssembly || cliOptions.testMode))
+  if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
     objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code
-  if (cliOptions.dumpSettings.dumpAssembly)
+  if (cliOptions.dump.dumpAssembly)
     dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
   // Add the object file to the linker objects
@@ -517,19 +518,19 @@ void SourceFile::concludeCompilation() {
     resourceManager.cacheManager.cacheSourceFile(this);
 
   // Save type registry as string in the compiler output
-  if (isMainFile && (cliOptions.dumpSettings.dumpTypes || cliOptions.testMode))
+  if (isMainFile && (cliOptions.dump.dumpTypes || cliOptions.testMode))
     compilerOutput.typesString = TypeRegistry::dump();
 
   // Dump type registry
-  if (isMainFile && cliOptions.dumpSettings.dumpTypes)
+  if (isMainFile && cliOptions.dump.dumpTypes)
     dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
 
   // Save cache statistics as string in the compiler output
-  if (isMainFile && (cliOptions.dumpSettings.dumpCacheStats || cliOptions.testMode))
+  if (isMainFile && (cliOptions.dump.dumpCacheStats || cliOptions.testMode))
     dumpCacheStats();
 
   // Dump lookup cache statistics
-  if (isMainFile && cliOptions.dumpSettings.dumpCacheStats)
+  if (isMainFile && cliOptions.dump.dumpCacheStats)
     dumpOutput(compilerOutput.cacheStats, "Cache Statistics", "cache-stats.out");
 
   // Print warning if the verifier is disabled
@@ -787,7 +788,7 @@ void SourceFile::dumpCompilationStats() const {
 }
 
 void SourceFile::dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const {
-  if (cliOptions.dumpSettings.dumpToFiles) {
+  if (cliOptions.dump.dumpToFiles) {
     // Dump to file
     const std::string dumpFileName = filePath.stem().string() + "-" + fileSuffix;
     std::filesystem::path dumpFilePath = cliOptions.outputDir / dumpFileName;
@@ -799,11 +800,11 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
   }
 
   // If the abort after dump is requested, set the abort compilation flag
-  if (cliOptions.dumpSettings.abortAfterDump) {
+  if (cliOptions.dump.abortAfterDump) {
     // If this is an IR dump whilst having optimization enabled, we may not abort when dumping unoptimized IR,
     // because we also have to dump the optimized IR
-    if (cliOptions.dumpSettings.dumpIR && fileSuffix == "ir-code.ll") {
-      resourceManager.abortCompilation = cliOptions.optLevel == O0;
+    if (cliOptions.dump.dumpIR && fileSuffix == "ir-code.ll") {
+      resourceManager.abortCompilation = cliOptions.optLevel == OptLevel::O0;
     } else {
       resourceManager.abortCompilation = true;
     }
@@ -819,7 +820,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
-  if (cliOptions.dumpSettings.dumpToFiles) {
+  if (cliOptions.dump.dumpToFiles) {
     // Check if graphviz is installed
     // GCOV_EXCL_START
     if (!FileUtil::isGraphvizInstalled())
@@ -846,7 +847,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   }
 
   // If the abort after dump is requested, set the abort compilation flag
-  if (cliOptions.dumpSettings.abortAfterDump)
+  if (cliOptions.dump.abortAfterDump)
     resourceManager.abortCompilation = true;
 }
 

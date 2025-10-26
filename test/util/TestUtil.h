@@ -20,6 +20,7 @@ const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
+const char *const INPUT_NAME_SANITIZER = "sanitizer.txt";
 
 const char *const REF_NAME_SOURCE = "source.spice";
 const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
@@ -43,10 +44,10 @@ const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_SKIP_WINDOWS = "skip-windows";
 const char *const CTL_DEBUG_INFO = "with-debug-info";
-const char *const CTL_ASAN = "with-asan";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
 const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
 const char *const CTL_LTO = "with-lto";
+
 
 struct TestCase {
   const std::string testSuite;

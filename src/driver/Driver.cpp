@@ -158,11 +158,11 @@ void Driver::enrich() {
   }
 
   // Always preserve IR value names when dumping IR
-  if (cliOptions.dumpSettings.dumpIR)
+  if (cliOptions.dump.dumpIR)
     cliOptions.namesForIRValues = true;
 
   // Enable test mode when test mode was selected
-  if (cliOptions.buildMode == TEST) {
+  if (cliOptions.buildMode == BuildMode::TEST) {
     cliOptions.noEntryFct = true;
     cliOptions.generateTestMain = true;
   }
@@ -198,6 +198,7 @@ void Driver::addBuildSubcommand() {
   });
 
   addCompileSubcommandOptions(subCmd);
+  addInstrumentationOptions(subCmd);
 
   // --target-triple
   subCmd->add_option<llvm::Triple>("--target,--target-triple,-t", cliOptions.targetTriple,
@@ -210,13 +211,8 @@ void Driver::addBuildSubcommand() {
                                   "Target vendor for emitted executable (for cross-compiling)");
   // --target-os
   subCmd->add_option<std::string>("--target-os", cliOptions.targetOs, "Target os for emitted executable (for cross-compiling)");
-
   // --output
   subCmd->add_option<std::filesystem::path>("--output,-o", cliOptions.outputPath, "Set the output file path");
-  // --debug-info
-  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
-  // --address-sanitizer
-  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
   // --no-entry
@@ -224,9 +220,9 @@ void Driver::addBuildSubcommand() {
   // --static
   subCmd->add_flag<bool>("--static", cliOptions.staticLinking, "Link statically");
   // --dump-to-files
-  subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
+  subCmd->add_flag<bool>("--dump-to-files", cliOptions.dump.dumpToFiles, "Redirect dumps to files instead of printing");
   // --abort-after-dump
-  subCmd->add_flag<bool>("--abort-after-dump", cliOptions.dumpSettings.abortAfterDump,
+  subCmd->add_flag<bool>("--abort-after-dump", cliOptions.dump.abortAfterDump,
                          "Abort the compilation process after dumping the first requested resource");
 }
 
@@ -243,11 +239,8 @@ void Driver::addRunSubcommand() {
   });
 
   addCompileSubcommandOptions(subCmd);
+  addInstrumentationOptions(subCmd);
 
-  // --debug-info
-  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
-  // --address-sanitizer
-  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
@@ -261,18 +254,15 @@ void Driver::addTestSubcommand() {
   subCmd->alias("t");
   subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
-    shouldCompile = shouldExecute = true; // Requires the source file to be compiled
-    cliOptions.buildMode = TEST;          // Set build mode to test
-    cliOptions.generateTestMain = true;   // An alternative entry function is generated
-    cliOptions.noEntryFct = true;         // To not have two main functions, disable normal main
+    shouldCompile = shouldExecute = true;   // Requires the source file to be compiled
+    cliOptions.buildMode = BuildMode::TEST; // Set build mode to test
+    cliOptions.generateTestMain = true;     // An alternative entry function is generated
+    cliOptions.noEntryFct = true;           // To not have two main functions, disable normal main
   });
 
   addCompileSubcommandOptions(subCmd);
+  addInstrumentationOptions(subCmd);
 
-  // --debug-info
-  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
-  // --address-sanitizer
-  subCmd->add_flag<bool>("--address-sanitizer,-asan", cliOptions.generateASANInstrumentation, "Generate ASAN instrumentation");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
@@ -319,11 +309,11 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
     std::ranges::transform(inputString, inputString.begin(), tolower);
 
     if (inputString == BUILD_MODE_DEBUG)
-      cliOptions.buildMode = DEBUG;
+      cliOptions.buildMode = BuildMode::DEBUG;
     else if (inputString == BUILD_MODE_RELEASE)
-      cliOptions.buildMode = RELEASE;
+      cliOptions.buildMode = BuildMode::RELEASE;
     else if (inputString == BUILD_MODE_TEST)
-      cliOptions.buildMode = TEST;
+      cliOptions.buildMode = BuildMode::TEST;
     else
       throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
 
@@ -343,41 +333,60 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
                          "Generate lifetime markers to enhance optimizations");
 
   // Opt levels
-  subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback("-O1", [&] { cliOptions.optLevel = O1; }, "Only basic optimization is applied.");
-  subCmd->add_flag_callback("-O2", [&] { cliOptions.optLevel = O2; }, "More advanced optimization is applied.");
-  subCmd->add_flag_callback("-O3", [&] { cliOptions.optLevel = O3; }, "Aggressive optimization for best performance.");
-  subCmd->add_flag_callback("-Os", [&] { cliOptions.optLevel = Os; }, "Size optimization for output executable.");
-  subCmd->add_flag_callback("-Oz", [&] { cliOptions.optLevel = Oz; }, "Aggressive optimization for best size.");
+  subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
+  subCmd->add_flag_callback("-O1", [&] { cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is applied.");
+  subCmd->add_flag_callback("-O2", [&] { cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
+  subCmd->add_flag_callback("-O3", [&] { cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
+  subCmd->add_flag_callback("-Os", [&] { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
+  subCmd->add_flag_callback("-Oz", [&] { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
   subCmd->add_flag<bool>("-lto", cliOptions.useLTO, "Enable link time optimization (LTO)");
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpSettings.dumpCST, "Dump CST as serialized string and SVG image");
+  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dump.dumpCST, "Dump CST as serialized string and SVG image");
   // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
+  subCmd->add_flag<bool>("--dump-symtab", cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
   // --dump-types
-  subCmd->add_flag<bool>("--dump-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
+  subCmd->add_flag<bool>("--dump-types", cliOptions.dump.dumpTypes, "Dump all used types");
   // --dump-cache-stats
-  subCmd->add_flag<bool>("--dump-cache-stats", cliOptions.dumpSettings.dumpCacheStats,
-                         "Dump stats for compiler-internal lookup caches");
+  subCmd->add_flag<bool>("--dump-cache-stats", cliOptions.dump.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
   // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dump.dumpIR, "Dump LLVM-IR");
   // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dump.dumpAssembly, "Dump Assembly code");
   // --dump-object-file
-  subCmd->add_flag<bool>("--dump-object-file", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+  subCmd->add_flag<bool>("--dump-object-file", cliOptions.dump.dumpObjectFile, "Dump object file");
   // --dump-dependency-graph
-  subCmd->add_flag<bool>("--dump-dependency-graph", cliOptions.dumpSettings.dumpDependencyGraph,
-                         "Dump compile unit dependency graph");
+  subCmd->add_flag<bool>("--dump-dependency-graph", cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
       ->required();
+}
+
+void Driver::addInstrumentationOptions(CLI::App *subCmd) {
+  const auto sanitizerCallback = [&](const CLI::results_t &results) {
+    std::string inputString = results.front();
+    std::ranges::transform(inputString, inputString.begin(), tolower);
+
+    if (inputString == SANITIZER_ADDRESS)
+      cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
+    else if (inputString == SANITIZER_THREAD)
+      cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+    else
+      throw CliError(INVALID_BUILD_MODE, "Invalid sanitizer: " + inputString);
+
+    return true;
+  };
+
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
+  // --sanitizer
+  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread");
 }
 
 /**

@@ -36,10 +36,9 @@ void execTestCase(const TestCase &testCase) {
     GTEST_SKIP();
 
   // Create fake cli options
-  const std::filesystem::path sourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   const llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {
-      /* mainSourceFile= */ sourceFilePath,
+      /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
       /* targetTriple= */ targetTriple,
       /* targetArch= */ std::string(targetTriple.getArchName()),
       /* targetVendor= */ std::string(targetTriple.getVendorName()),
@@ -50,7 +49,7 @@ void execTestCase(const TestCase &testCase) {
       /* cacheDir= */ "./cache",
       /* outputDir= */ "./",
       /* outputPath= */ "",
-      /* buildMode= */ DEBUG,
+      /* buildMode= */ BuildMode::DEBUG,
       /* compileJobCount= */ 0,
       /* ignoreCache */ true,
       /* llvmArgs= */ "",
@@ -70,18 +69,21 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
-      /* optLevel= */ O0,
+      /* optLevel= */ OptLevel::O0,
       /* useLTO= */ exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
-      /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
-      /* generateASANInstrumentation= */ exists(testCase.testPath / CTL_ASAN),
+      CliOptions::InstrumentationSettings{
+          /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+          /* sanitizer= */ Sanitizer::NONE,
+      },
       /* disableVerifier= */ false,
       /* testMode= */ true,
       /* comparableOutput= */ true,
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
+  static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
   static_assert(sizeof(CliOptions) == 384, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
@@ -136,6 +138,19 @@ void execTestCase(const TestCase &testCase) {
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
+    // Enable sanitizers
+    const std::filesystem::path sanitizerFile = testCase.testPath / INPUT_NAME_SANITIZER;
+    if (exists(sanitizerFile)) {
+      std::ifstream file(sanitizerFile, std::ios::binary);
+      std::ostringstream buffer;
+      buffer << file.rdbuf();
+      const std::string sanitizerString = buffer.str();
+      if (sanitizerString == SANITIZER_ADDRESS)
+        cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
+      else if (sanitizerString == SANITIZER_THREAD)
+        cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+    }
+
     // Check IR code
     for (uint8_t i = 0; i <= 5; i++) {
       TestUtil::checkRefMatch(
@@ -154,16 +169,17 @@ void execTestCase(const TestCase &testCase) {
             return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
-            if (cliOptions.generateDebugInfo) {
+            if (cliOptions.instrumentation.generateDebugInfo) {
               // Remove the lines, containing paths on the local file system
               TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
               TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
             }
-          }, true);
+          },
+          true);
     }
 
     // Link the bitcode if not happened yet
-    if (cliOptions.useLTO && cliOptions.optLevel == O0)
+    if (cliOptions.useLTO && cliOptions.optLevel == OptLevel::O0)
       mainSourceFile->runBitcodeLinker();
 
     // Check assembly code (only when not running test on GitHub Actions)

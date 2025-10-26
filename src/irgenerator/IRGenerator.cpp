@@ -29,7 +29,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, PRODUCER_STRING)));
 
   // Initialize debug info generator
-  if (cliOptions.generateDebugInfo)
+  if (cliOptions.instrumentation.generateDebugInfo)
     diGenerator.initialize(sourceFile->fileName, sourceFile->fileDir);
 }
 
@@ -367,7 +367,7 @@ void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueB
 
 void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const {
   // Skip the verifying step if the verifier was disabled manually or debug info is emitted
-  if (cliOptions.disableVerifier || cliOptions.generateDebugInfo)
+  if (cliOptions.disableVerifier || cliOptions.instrumentation.generateDebugInfo)
     return;
 
   // Verify function
@@ -379,7 +379,7 @@ void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeL
 
 void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
   // Skip the verifying step if the verifier was disabled manually or debug info is emitted
-  if (cliOptions.disableVerifier || cliOptions.generateDebugInfo)
+  if (cliOptions.disableVerifier || cliOptions.instrumentation.generateDebugInfo)
     return;
 
   // Verify module
@@ -567,7 +567,7 @@ llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &ba
                                                            const CodeLoc &codeLoc) const {
   llvm::GlobalVariable *global = createGlobalStringConst(baseName, value);
   // Create debug info
-  if (cliOptions.generateDebugInfo)
+  if (cliOptions.instrumentation.generateDebugInfo)
     diGenerator.generateGlobalStringDebugInfo(global, global->getName().str(), value.length(), codeLoc);
   return global;
 }

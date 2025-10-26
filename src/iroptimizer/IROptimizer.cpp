@@ -3,7 +3,6 @@
 #include "IROptimizer.h"
 
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
-#include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
 
 #include <driver/Driver.h>
 
@@ -25,24 +24,28 @@ void IROptimizer::prepare() {
 }
 
 void IROptimizer::optimizeDefault() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles)
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " ...\n"; // GCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildPerModuleDefaultPipeline(llvmOptLevel);
 
   // Add optional passes
-  if (cliOptions.generateASANInstrumentation)
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
     modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD) {
+    modulePassMgr.addPass(llvm::ModuleThreadSanitizerPass());
+    modulePassMgr.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::ThreadSanitizerPass()));
+  }
 
   // Run pipeline
   modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 }
 
 void IROptimizer::optimizePreLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles) // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
@@ -57,8 +60,8 @@ void IROptimizer::optimizePreLink() {
 }
 
 void IROptimizer::optimizePostLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (post-link) ...\n";     // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles) // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " (post-link) ...\n";     // GCOV_EXCL_LINE
   llvm::Module &ltoModule = *resourceManager.ltoModule;
 
   // Compute module summary index
@@ -71,8 +74,12 @@ void IROptimizer::optimizePostLink() {
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTODefaultPipeline(llvmOptLevel, &moduleSummaryIndex);
 
   // Add optional passes
-  if (cliOptions.generateASANInstrumentation)
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
     modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
+  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD) {
+    modulePassMgr.addPass(llvm::ModuleThreadSanitizerPass());
+    modulePassMgr.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::ThreadSanitizerPass()));
+  }
 
   // Run pipeline
   modulePassMgr.run(ltoModule, moduleAnalysisMgr);
@@ -80,15 +87,15 @@ void IROptimizer::optimizePostLink() {
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
   switch (cliOptions.optLevel) {
-  case O1:
+  case OptLevel::O1:
     return llvm::OptimizationLevel::O1;
-  case O2:
+  case OptLevel::O2:
     return llvm::OptimizationLevel::O2;
-  case O3:
+  case OptLevel::O3:
     return llvm::OptimizationLevel::O3;
-  case Os:
+  case OptLevel::Os:
     return llvm::OptimizationLevel::Os;
-  case Oz:
+  case OptLevel::Oz:
     return llvm::OptimizationLevel::Oz;
   default:
     return llvm::OptimizationLevel::O0;
