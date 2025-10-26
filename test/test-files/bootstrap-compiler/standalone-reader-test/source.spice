@@ -3,7 +3,8 @@ import "std/io/filepath";
 import "bootstrap/reader/reader";
 
 f<int> main() {
-    String filePathString = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";
     FilePath filePath = FilePath(filePathString);
     Reader reader = Reader(filePath);
     assert !reader.isEOF();
