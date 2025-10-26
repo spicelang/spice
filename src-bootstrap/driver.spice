@@ -1,6 +1,7 @@
 // Std imports
 import "std/text/print";
 import "std/os/cmd";
+import "std/os/env";
 import "std/os/os";
 import "std/os/filesystem";
 import "std/io/cli-parser";
@@ -31,6 +32,14 @@ public type OptLevel enum {
     Oz = 5  // Aggressively optimize for code size
 }
 
+public type Sanitizer enum {
+    NONE = 0,    // No sanitizer
+    ADDRESS = 1, // Sanitize memory accesses
+    THREAD = 2   // Sanitize threads for data race prevention
+}
+const string SANITIZER_ADDRESS = "address";
+const string SANITIZER_THREAD = "thread";
+
 public type BuildMode enum {
     DEBUG = 0,   // Default build mode, uses -O0 per default
     RELEASE = 1, // Build without debug information and with -O2 per default
@@ -53,6 +62,11 @@ public type DumpSettings struct {
     public bool abortAfterDump = false
 }
 
+public type InstrumentationSettings struct {
+    public bool generateDebugInfo = false
+    public Sanitizer sanitizer = Sanitizer::NONE
+}
+
 /**
  * Representation of the various cli options
  */
@@ -73,7 +87,7 @@ public type CliOptions struct {
     public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
-    public DumpSettings dumpSettings
+    public DumpSettings dump
     public bool namesForIRValues = false
     public bool useLifetimeMarkers = false
     public OptLevel optLevel = OptLevel::O0 // Default optimization level for debug build mode is O0
@@ -81,9 +95,10 @@ public type CliOptions struct {
     public bool noEntryFct = false
     public bool generateTestMain = false
     public bool staticLinking = false
-    public bool generateDebugInfo = false
+    public InstrumentationSettings instrumentation
     public bool disableVerifier = false
     public bool testMode = false
+    public bool comparableOutput = false
 }
 
 /**
@@ -202,9 +217,9 @@ public p Driver.enrich() {
 
     // Dump AST, IR and symbol table if all debug output is enabled
     if this.cliOptions.printDebugOutput {
-        this.cliOptions.dumpSettings.dumpAST = true;
-        this.cliOptions.dumpSettings.dumpIR = true;
-        this.cliOptions.dumpSettings.dumpSymbolTable = true;
+        this.cliOptions.dump.dumpAST = true;
+        this.cliOptions.dump.dumpIR = true;
+        this.cliOptions.dump.dumpSymbolTable = true;
     }
 }
 
@@ -235,6 +250,7 @@ p Driver.addBuildSubcommand() {
     subCmd.addAlias("b");
 
     this.addCompileSubcommandOptions(subCmd);
+    this.addInstrumentationOptions(subCmd);
 
     // --target-triple
     CliOption<String>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
@@ -266,6 +282,7 @@ p Driver.addRunSubcommand() {
     subCmd.addAlias("r");
 
     this.addCompileSubcommandOptions(subCmd);
+    this.addInstrumentationOptions(subCmd);
 
     // --output
     CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
@@ -286,6 +303,7 @@ p Driver.addTestSubcommand() {
     subCmd.addAlias("t");
 
     this.addCompileSubcommandOptions(subCmd);
+    this.addInstrumentationOptions(subCmd);
 
     // --debug-info
     CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
@@ -354,28 +372,50 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
     // --dump-cst
-    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpSettings.dumpCST, "Dump CSTs as serialized string and SVG image");
+    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dump.dumpCST, "Dump CSTs as serialized string and SVG image");
     dumpCstFlag.addAlias("-cst");
     // --dump-ast
-    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpSettings.dumpAST, "Dump ASTs as serialized string and SVG image");
+    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump ASTs as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
-    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
+    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
     // --dump-types
-    CliOption<bool>& dumpTypesFlag = subCmd.addFlag("--dump-types", this.cliOptions.dumpSettings.dumpTypes, "Dump all used types");
+    CliOption<bool>& dumpTypesFlag = subCmd.addFlag("--dump-types", this.cliOptions.dump.dumpTypes, "Dump all used types");
     // --dump-ir
-    CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
+    CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dump.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
     // --dump-assembly
-    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
+    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dump.dumpAssembly, "Dump Assembly code");
     dumpAsmFlag.addAlias("-asm");
     dumpAsmFlag.addAlias("-s");
     // --dump-object-file
-    CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+    CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dump.dumpObjectFile, "Dump object file");
     // --dump-dependency-graph
-    CliOption<bool>& dumpDepGraphFlag = subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dumpSettings.dumpDependencyGraph, "Dump compile unit dependency graph");
+    CliOption<bool>& dumpDepGraphFlag = subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
     CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
     //fileOption.setRequired();
     //fileOption.check(CliOption::EXISTING_FILE);
+}
+
+p Driver.addInstumentationOptions(CliSubcommand& subCmd) {
+    const p(const string&) sanitizerCallback = p(const string& sanitizer) {
+        if sanitizer == SANITIZER_ADDRESS {
+            this.cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
+        } else if sanitizer == SANITIZER_THREAD {
+            this.cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+        } else {
+            panic(Error("Invalid sanitizer"));
+        }
+    };
+}
+
+/**
+ * Ensure that the compiler is not running in a Docker container
+ */
+p Driver.ensureNotDockerized() {
+    const Result<string> envValue = getEnv(ENV_VAR_DOCKERIZED);
+    if envValue.isOk() && envValue.unpack() == "true" {
+        panic(Error("This feature is not supported in a containerized environment. Please use the standalone version of Spice."));
+    }
 }

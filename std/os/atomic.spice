@@ -21,23 +21,22 @@ public p Atomic.store(const T& value) {
     this.value = value;
 }
 
-public const f<T> Atomic.load() {
+public const f<const T&> Atomic.load() {
     LockGuard _ = LockGuard(this.mutex);
     return this.value;
 }
 
-public p Atomic.exchange(const T& value) {
+public f<T> Atomic.exchange(const T& value) {
     LockGuard _ = LockGuard(this.mutex);
     T old = this.value;
     this.value = value;
     return old;
 }
 
-public p Atomic.compareExchange(const T& expected, const T& desired) {
+public f<bool> Atomic.compareExchange(const T& expected, const T& desired) {
     LockGuard _ = LockGuard(this.mutex);
-    if this.value == expected {
+    result = this.value == expected;
+    if result {
         this.value = desired;
-        return true;
     }
-    return false;
 }

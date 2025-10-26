@@ -174,7 +174,7 @@ public p SourceFile.runParser() {
 
 public p SourceFile.runASTVisualizer(string* output) {
     // Only execute if enabled
-    if this.resotredFromCache || (!this.cliOptions.dumpSettings.dumpAST && !this.cliOptions.testMode) {
+    if this.resotredFromCache || (!this.cliOptions.dump.dumpAST && !this.cliOptions.testMode) {
         return;
     }
     // Check if this stage has already been done
@@ -193,11 +193,11 @@ public p SourceFile.runASTVisualizer(string* output) {
     dotCode += "}";
 
     // Dump the serialized AST string and the SVG file
-    if this.cliOptions.dumpSettings.dumpAST || this.cliOptions.testMode {
+    if this.cliOptions.dump.dumpAST || this.cliOptions.testMode {
         this.compilerOutput.astString = dotCode;
     }
 
-    if this.cliOptions.dumpSettings.dumpAST {
+    if this.cliOptions.dump.dumpAST {
         this.visualizerOutput("AST", this.compilerOutput.astString);
     }
 
@@ -324,12 +324,12 @@ p SourceFile.runTypeCheckerPost() {
     this.printStatusMessage("Type Checker Post", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPost);
 
     // Save the JSON version in the compiler output
-    if this.cliOptions.dumpSettings.dumpSymbolTable || this.cliOptions.testMode {
+    if this.cliOptions.dump.dumpSymbolTable || this.cliOptions.testMode {
         this.compilerOutput.symbolTableString = this.globalScope.getSymbolTableJSON();
     }
 
     // Dump symbol table
-    if this.cliOptions.dumpSettings.dumpSymbolTable {
+    if this.cliOptions.dump.dumpSymbolTable {
         this.dumpOutput(this.compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
     }
 }
@@ -352,12 +352,12 @@ public p SourceFile.runIRGenerator() {
     irGenerator.visit(this.ast);
 
     // Save the ir string in the compiler output
-    if this.cliOptions.dumpSettings.dumpIR || this.cliOptions.testMode {
+    if this.cliOptions.dump.dumpIR || this.cliOptions.testMode {
         this.compilerOutput.irString = getIRString(this.llvmModule, this.cliOptions.testMode);
     }
 
     // Dump unoptimized IR code
-    if this.cliOptions.dumpSettings.dumpIR {
+    if this.cliOptions.dump.dumpIR {
         this.dumpOutput(this.compilerOutput.irString, "Unoptimized IR Code", "ir-code.ll");
     }
 
@@ -388,12 +388,12 @@ public p SourceFile.runDefaultIROptimizer() {
     irOptimizer.optimizeDefault();
 
     // Save the optimized ir string in the compiler output
-    if this.cliOptions.dumpSettings.dumpIROpt || this.cliOptions.testMode {
+    if this.cliOptions.dump.dumpIROpt || this.cliOptions.testMode {
         this.compilerOutput.irOptString = getIRString(this.llvmModule, this.cliOptions.testMode);
     }
 
     // Dump optimized IR code
-    if this.cliOptions.dumpSettings.dumpIROpt {
+    if this.cliOptions.dump.dumpIROpt {
         this.dumpOutput(this.compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + toString(optLevel) + ".ll");
     }
 
@@ -452,12 +452,12 @@ public p SourceFile.concludeCompilation() {
     }
 
     // Save type registry as string in the compiler output
-    if this.isMainFile && this.cliOptions.dumpSettings.dumpTypes || this.cliOptions.testMode {
+    if this.isMainFile && this.cliOptions.dump.dumpTypes || this.cliOptions.testMode {
         this.compilerOutput.typesString = dumpTypeRegistry();
     }
 
     // Dump type registry
-    if this.isMainFile && this.cliOptions.dumpSettings.dumpTypes {
+    if this.isMainFile && this.cliOptions.dump.dumpTypes {
         this.dumpOutput(this.compilerOutput.typesString, "Type Registry", "type-registry.out");
     }
 
