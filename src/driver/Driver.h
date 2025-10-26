@@ -28,9 +28,9 @@ enum class OptLevel : uint8_t {
 };
 
 enum class Sanitizer : uint8_t {
-  NONE = 0, // No sanitizer
-  ADDRESS = 1, // Sanitize address
-  THREAD = 2, // Sanitize threads
+  NONE = 0,    // No sanitizer
+  ADDRESS = 1, // Sanitize memory accesses
+  THREAD = 2,  // Sanitize threads for data race prevention
 };
 const char *const SANITIZER_ADDRESS = "address";
 const char *const SANITIZER_THREAD = "thread";

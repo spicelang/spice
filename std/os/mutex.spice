@@ -5,7 +5,7 @@ import "std/os/cpu";
  * Mutex for reserving a resource for exclusive access. This is useful for improving thread-safety
  */
 public type Mutex struct {
-	bool occupied
+	bool occupied = false
 }
 
 /**
