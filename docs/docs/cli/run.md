@@ -36,6 +36,7 @@ You can apply following options to the `run` subcommand:
 | `-O<x>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`        |
 | `-m`         | `--build-mode`            | Controls the build mode. Valid values are `debug` and `release`                             |
 | `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc.                                    |
+| -            | `--sanitize`              | Enable instrumentation for sanitizer. Valid values are `address` and `thread`.              |
 | -            | `--disable-verifier`      | Disable LLVM module and function verification (only recommended for debugging the compiler) |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                 |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                          |
