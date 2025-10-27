@@ -358,7 +358,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --dump-assembly
   subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dump.dumpAssembly, "Dump Assembly code");
   // --dump-object-file
-  subCmd->add_flag<bool>("--dump-object-file", cliOptions.dump.dumpObjectFile, "Dump object file");
+  subCmd->add_flag<bool>("--dump-object-file", cliOptions.dump.dumpObjectFiles, "Dump object files");
   // --dump-dependency-graph
   subCmd->add_flag<bool>("--dump-dependency-graph", cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
@@ -373,7 +373,9 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);
 
-    if (inputString == SANITIZER_ADDRESS)
+    if (inputString == SANITIZER_NONE)
+      cliOptions.instrumentation.sanitizer = Sanitizer::NONE;
+    else if (inputString == SANITIZER_ADDRESS)
       cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
     else if (inputString == SANITIZER_THREAD)
       cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;

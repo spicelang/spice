@@ -32,6 +32,7 @@ enum class Sanitizer : uint8_t {
   ADDRESS = 1, // Sanitize memory accesses
   THREAD = 2,  // Sanitize threads for data race prevention
 };
+const char *const SANITIZER_NONE = "none";
 const char *const SANITIZER_ADDRESS = "address";
 const char *const SANITIZER_THREAD = "thread";
 
@@ -73,7 +74,7 @@ struct CliOptions {
     bool dumpDependencyGraph = false;
     bool dumpIR = false;
     bool dumpAssembly = false;
-    bool dumpObjectFile = false;
+    bool dumpObjectFiles = false;
     bool dumpToFiles = false;
     bool abortAfterDump = false;
   } dump;

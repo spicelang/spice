@@ -266,8 +266,8 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     }
 
     // Print options
-    printf("\nOptions:\n");
     if this.stringOptions.getSize() + this.stringObjOptions.getSize() + this.intOptions.getSize() + this.filePathOptions.getSize() > 0 {
+        printf("\nOptions:\n");
         foreach const CliOption<string>& option : this.stringOptions {
             option.printHelpItem();
         }

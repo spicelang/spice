@@ -1,0 +1,23 @@
+// Imports
+import "std/data/vector";
+
+/**
+ * Split the given input string by the given delimiter
+ *
+ * @param input Input string
+ * @param delimiter Delimiter character
+ * @return Vector of fragments
+ */
+public f<Vector<String>> split(const String& input, char delimiter) {
+    result = Vector<String>();
+    unsigned long start = 0l;
+    while true {
+        const unsigned long delimIndex = input.find(delimiter, start);
+        if delimIndex == -1l {
+            result.pushBack(input.getSubstring(start));
+            break;
+        }
+        result.pushBack(input.getSubstring(start, delimIndex - start));
+        start = delimIndex + 1;
+    }
+}

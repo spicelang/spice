@@ -2,20 +2,15 @@
 import "std/text/print";
 import "std/os/cmd";
 import "std/os/env";
-import "std/os/os";
-import "std/os/filesystem";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
 import "std/io/filepath";
-import "std/io/file";
-import "std/time/time";
-import "std/type/type-conversion";
+import "std/text/string-ext";
 
 // Own imports
 import "util/common-util";
-import "util/file-util";
-import "util/compiler-warning";
+import "bindings/llvm/llvm" as llvm;
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
@@ -37,6 +32,7 @@ public type Sanitizer enum {
     ADDRESS = 1, // Sanitize memory accesses
     THREAD = 2   // Sanitize threads for data race prevention
 }
+const string SANITIZER_NONE = "none";
 const string SANITIZER_ADDRESS = "address";
 const string SANITIZER_THREAD = "thread";
 
@@ -54,10 +50,11 @@ public type DumpSettings struct {
     public bool dumpAST = false
     public bool dumpSymbolTable = false
     public bool dumpTypes = false
+    public bool dumpCacheStats = false
     public bool dumpDependencyGraph = false
     public bool dumpIR = false
     public bool dumpAssembly = false
-    public bool dumpObjectFile = false
+    public bool dumpObjectFiles = false
     public bool dumpToFiles = false
     public bool abortAfterDump = false
 }
@@ -71,8 +68,8 @@ public type InstrumentationSettings struct {
  * Representation of the various cli options
  */
 public type CliOptions struct {
-    public FilePath mainSourceFile // e.g. main.spice
-    public String targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
+    public FilePath mainSourceFile   // e.g. main.spice
+    public llvm::Triple targetTriple // In format: <arch><sub>-<vendor>-<sys>-<abi>
     public String targetArch = String(TARGET_UNKNOWN)
     public String targetVendor = String(TARGET_UNKNOWN)
     public String targetOs = String(TARGET_UNKNOWN)
@@ -210,16 +207,50 @@ public f<int> Driver.parse(int argc, string[] argv) {
  * Initialize the cli options based on the input of the user
  */
 public p Driver.enrich() {
-    // Propagate target information
-    if this.cliOptions.targetTriple.isEmpty() && this.cliOptions.targetArch.isEmpty() {
-        // ToDo: Extend
+    // Make path of given main source file canonical and relative
+    this.cliOptions.mainSourceFile.makeGeneric();
+    // ToDo: Make path relative
+
+    // Propagate llvm args to llvm
+    if !this.cliOptions.llvmArgs.isEmpty() {
+        const Vector<String> llvmArgs = split("llvm " + this.cliOptions.llvmArgs, ' ');
+        Vector<string> resultCStr = Vector<string>(llvmArgs.getSize());
+        foreach const String& arg : llvmArgs {
+            resultCStr.pushBack(arg.getRaw());
+        }
+        llvm::parseCommandLineOptions(cast<int>(resultCStr.getSize()), resultCStr);
     }
 
-    // Dump AST, IR and symbol table if all debug output is enabled
-    if this.cliOptions.printDebugOutput {
-        this.cliOptions.dump.dumpAST = true;
-        this.cliOptions.dump.dumpIR = true;
-        this.cliOptions.dump.dumpSymbolTable = true;
+    // Propagate target information
+    const llvm::Triple defaultTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+    if this.cliOptions.targetTriple.empty() {
+        if this.cliOptions.targetArch == TARGET_UNKNOWN { // We have nothing -> obtain native triplet
+            this.cliOptions.targetTriple = defaultTriple;
+            this.cliOptions.targetArch = defaultTriple.getArchName();
+            this.cliOptions.targetVendor = defaultTriple.getVendorName();
+            this.cliOptions.targetOs = defaultTriple.getOSName();
+            this.cliOptions.isNativeTarget = true;
+        } else { // We have arch, vendor and os -> obtain triplet
+            this.cliOptions.targetTriple = llvm::Triple(this.cliOptions.targetArch, this.cliOptions.targetVendor, this.cliOptions.targetOs);
+            this.cliOptions.isNativeTarget = this.cliOptions.targetTriple == defaultTriple;
+        }
+    } else { // Obtain arch, vendor and os by the triplet
+        const llvm::Triple triple = this.cliOptions.targetTriple.normalize();
+        this.cliOptions.targetArch = triple.getArchName();
+        this.cliOptions.targetVendor = triple.getVendorName();
+        this.cliOptions.targetOs = triple.getOSName();
+        this.cliOptions.isNativeTarget = triple == defaultTriple;
+    }
+
+    // Always preserve IR values names when dumping IR
+    if this.cliOptions.dump.dumpIR {
+        this.cliOptions.namesForIRValues = true;
+    }
+
+    // Enable test mode when test mode was selected
+    if this.cliOptions.buildMode == BuildMode::TEST {
+        this.cliOptions.noEntryFct = true;
+        this.cliOptions.generateTestMain = true;
     }
 }
 
@@ -253,24 +284,28 @@ p Driver.addBuildSubcommand() {
     this.addInstrumentationOptions(subCmd);
 
     // --target-triple
-    CliOption<String>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
+    CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple.value, "Target triple for the emitted executable (for cross-compiling)");
     targetOption.addAlias("--target-triple");
     targetOption.addAlias("-t");
     // --target-arch
-    CliOption<String>& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
+    subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
     // --target-vendor
-    CliOption<String>& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
+    subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
     // --target-os
-    CliOption<String>& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
-
+    subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
     // --output
     CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
-    // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
-    debugInfoOption.addAlias("-g");
     // --disable-verifier
     subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+    // --no-entry
+    subCmd.addFlag("--no-entry", this.cliOptions.noEntryFct, "Do not generate main function");
+    // --static
+    subCmd.addFlag("--static", this.cliOptions.staticLinking, "Link statically");
+    // --dump-to-files
+    subCmd.addFlag("--dump-to-files", this.cliOptions.dump.dumpToFiles, "Redirect dumps to files instead of printing");
+    // --abort-after-dump
+    subCmd.addFlag("--abort-after-dump", this.cliOptions.dump.abortAfterDump, "Abort the compilation process after dumping the first requested resource");
 }
 
 /**
@@ -284,12 +319,6 @@ p Driver.addRunSubcommand() {
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
 
-    // --output
-    CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
-    outputOption.addAlias("-o");
-    // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
-    debugInfoOption.addAlias("-g");
     // --disable-verifier
     subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
@@ -305,9 +334,6 @@ p Driver.addTestSubcommand() {
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
 
-    // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
-    debugInfoOption.addAlias("-g");
     // --disable-verifier
     subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
@@ -378,9 +404,11 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump ASTs as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
-    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
+    subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
     // --dump-types
-    CliOption<bool>& dumpTypesFlag = subCmd.addFlag("--dump-types", this.cliOptions.dump.dumpTypes, "Dump all used types");
+    subCmd.addFlag("--dump-types", this.cliOptions.dump.dumpTypes, "Dump all used types");
+    // --dump-cache-stats
+    subCmd.addFlag("--dump-cache-stats", this.cliOptions.dump.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
     // --dump-ir
     CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dump.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
@@ -389,18 +417,20 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     dumpAsmFlag.addAlias("-asm");
     dumpAsmFlag.addAlias("-s");
     // --dump-object-file
-    CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dump.dumpObjectFile, "Dump object file");
+    subCmd.addFlag("--dump-object-file", this.cliOptions.dump.dumpObjectFiles, "Dump object files");
     // --dump-dependency-graph
-    CliOption<bool>& dumpDepGraphFlag = subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
+    subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
     CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
     //fileOption.setRequired();
     //fileOption.check(CliOption::EXISTING_FILE);
 }
 
-p Driver.addInstumentationOptions(CliSubcommand& subCmd) {
+p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
     const p(const string&) sanitizerCallback = p(const string& sanitizer) {
-        if sanitizer == SANITIZER_ADDRESS {
+        if sanitizer == SANITIZER_NONE {
+            this.cliOptions.instrumentation.sanitizer = Sanitizer::NONE;
+        } else if sanitizer == SANITIZER_ADDRESS {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
         } else if sanitizer == SANITIZER_THREAD {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
@@ -408,14 +438,20 @@ p Driver.addInstumentationOptions(CliSubcommand& subCmd) {
             panic(Error("Invalid sanitizer"));
         }
     };
+
+    // --debug-info
+    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
+    debugInfoOption.addAlias("-g");
+    // --sanitizer
+    subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread");
 }
 
 /**
  * Ensure that the compiler is not running in a Docker container
  */
-p Driver.ensureNotDockerized() {
+const p Driver.ensureNotDockerized() {
     const Result<string> envValue = getEnv(ENV_VAR_DOCKERIZED);
-    if envValue.isOk() && envValue.unpack() == "true" {
+    if envValue.isOk() && envValue.unwrap() == "true" {
         panic(Error("This feature is not supported in a containerized environment. Please use the standalone version of Spice."));
     }
 }

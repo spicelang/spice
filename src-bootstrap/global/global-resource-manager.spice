@@ -29,10 +29,10 @@ public const string LTO_FILE_NAME = "lto-module";
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
 public type GlobalResourceManager struct : IGlobalResourceManager {
-    public llvm::LLVMContext context
-    public llvm::IRBuilder builder
+    public String cpuName
+    public String cpuFeatures
+    public llvm::LLVMContext ltoContext
     public llvm::Module ltoModule
-    public llvm::TargetMachine targetMachine
     public DefaultMemoryManager memoryManager
     public Vector<String> compileTimeStringValues
     public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
@@ -49,25 +49,29 @@ public type GlobalResourceManager struct : IGlobalResourceManager {
 
 public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
-    this.builder = llvm::IRBuilder(this.context);
+    this.linker = ExternalLinkerInterface(cliOptions);
+    this.cacheManacer = CacheManager(cliOptions.cacheDir);
+    this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {
         llvm::initializeNativeTarget();
         llvm::initializeNativeAsmPrinter();
+        llvm::initializeNativeAsmParser();
     } else {
         llvm::initializeAllTargets();
         llvm::initializeAllTargetMCs();
         llvm::initializeAllAsmPrinters();
+        llvm::initializeAllAsmParsers();
     }
 
     // Create target machine for LLVM
-    String cpuName = String("generic");
+    this.cpuName = String("generic");
     if cliOptions.isNativeTarget & cliOptions.useCPUFeatures {
         // Retrieve native CPU name and the supported CPU features
         cpuName = String(llvm::getHostCPUName());
-
+        cpuFeatures = String(llvm::getHostCPUFeatures());
     }
 
     // Create lto module
@@ -77,7 +81,7 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
 }
 
 public p GlobalResourceManager.dtor() {
-    // Cleanup all statics
+    // Notify all global components to prepare to destroy
     // ToDo: Implement
     // Cleanup all LLVM statics
     llvm::llvm_shutdown();

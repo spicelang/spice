@@ -47,6 +47,7 @@ const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPP
     {"sDestruct", MEMORY_RT},
     {"sDealloc", MEMORY_RT},
     {"sDelete", MEMORY_RT},
+    {"sYieldOwnership", MEMORY_RT},
     {"sCompare", MEMORY_RT},
     // Result RT
     {"ok", RESULT_RT},

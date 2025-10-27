@@ -196,9 +196,6 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         // Check return type
         if (spiceFunction->returnType != returnType &&
             !returnType.matchesInterfaceImplementedByStruct(spiceFunction->returnType)) {
-          std::cout << "Expected: " << returnType.getName() << std::endl;
-          std::cout << "Actual: " << spiceFunction->returnType.getName() << std::endl;
-          std::cout << "Signature: " << spiceFunction->getSignature(true, true) << std::endl;
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
                         "'. The return type does not match.");
