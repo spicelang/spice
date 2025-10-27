@@ -285,7 +285,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_SECRET }}
 
       - name: Download all artifacts of compiler build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: bin
 
@@ -321,7 +321,7 @@ jobs:
           - arm64
     steps:
       - name: Download dist output
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: dist-output
 
