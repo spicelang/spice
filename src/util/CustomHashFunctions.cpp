@@ -50,3 +50,9 @@ size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualTy
 }
 
 } // namespace std
+
+namespace spice::compiler {
+
+uint64_t hash_combine64(uint64_t seed, uint64_t v) { return seed ^ (v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2)); }
+
+} // namespace spice::compiler

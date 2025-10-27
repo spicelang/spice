@@ -29,3 +29,9 @@ template <> struct hash<spice::compiler::QualType> {
 };
 
 } // namespace std
+
+namespace spice::compiler {
+
+uint64_t hash_combine64(uint64_t seed, uint64_t v);
+
+} // namespace spice::compiler
