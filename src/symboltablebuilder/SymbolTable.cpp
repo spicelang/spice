@@ -57,7 +57,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode
   std::stringstream name;
   name << "anon." << declNode->codeLoc.toString();
   if (numericSuffix > 0)
-    name << "." << std::to_string(numericSuffix);
+    name << '.' << std::to_string(numericSuffix);
   SymbolTableEntry *anonSymbol = insert(name.str(), declNode, true);
   anonSymbol->updateType(qualType, false);
   anonSymbol->updateState(DECLARED, declNode);
@@ -139,18 +139,18 @@ std::pair<SymbolTableEntry *, bool> SymbolTable::lookupWithAliasResolution(const
 /**
  * Check if a symbol exists in the current scope and return it if possible
  *
- * @param name Name of the desired symbol
+ * @param symbolName Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
-  if (name.empty())
+SymbolTableEntry *SymbolTable::lookupStrict(const std::string &symbolName) {
+  if (symbolName.empty())
     return nullptr;
   // Check if a symbol with this name exists in this scope
-  if (symbols.contains(name))
-    return &symbols.at(name);
+  if (symbols.contains(symbolName))
+    return &symbols.at(symbolName);
   // Check if a capture with this name exists in this scope
-  if (captures.contains(name))
-    return captures.at(name).capturedSymbol;
+  if (captures.contains(symbolName))
+    return captures.at(symbolName).capturedSymbol;
   // Otherwise, return a nullptr
   return nullptr;
 }
@@ -291,13 +291,13 @@ nlohmann::json SymbolTable::toJSON() const {
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());
-  for (const auto &symbol : symbols | std::views::values)
+  for (const SymbolTableEntry &symbol : symbols | std::views::values)
     jsonSymbols.emplace_back(symbol.toJSON());
 
   // Collect all captures
   std::vector<nlohmann::json> jsonCaptures;
   jsonCaptures.reserve(captures.size());
-  for (const auto &capture : captures | std::views::values)
+  for (const Capture &capture : captures | std::views::values)
     jsonCaptures.emplace_back(capture.toJSON());
 
   // Generate json

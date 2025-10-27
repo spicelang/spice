@@ -7,15 +7,6 @@
       "name": "f<double> calledFunction(int)",
       "symbols": [
         {
-          "codeLoc": "L1C44",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
           "codeLoc": "L1C26",
           "isGlobal": false,
           "isVolatile": false,
@@ -23,6 +14,15 @@
           "orderIndex": 1,
           "state": "initialized",
           "type": "int"
+        },
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "bool"
         },
         {
           "codeLoc": "L1C1",
@@ -41,15 +41,6 @@
       "name": "f<double> calledFunction(int,bool)",
       "symbols": [
         {
-          "codeLoc": "L1C44",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
           "codeLoc": "L1C26",
           "isGlobal": false,
           "isVolatile": false,
@@ -57,6 +48,15 @@
           "orderIndex": 1,
           "state": "initialized",
           "type": "int"
+        },
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "bool"
         },
         {
           "codeLoc": "L1C1",
@@ -75,15 +75,6 @@
       "name": "f<double> calledFunction(string)",
       "symbols": [
         {
-          "codeLoc": "L7C26",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "testString",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "string"
-        },
-        {
           "codeLoc": "L7C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -91,6 +82,15 @@
           "orderIndex": 0,
           "state": "declared",
           "type": "double"
+        },
+        {
+          "codeLoc": "L7C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "testString",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "string"
         }
       ]
     },
@@ -122,13 +122,13 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L12C1",
+      "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main",
-      "orderIndex": 2,
+      "name": "calledFunction:L1C1",
+      "orderIndex": 0,
       "state": "declared",
-      "type": "f<int>()"
+      "type": "f<double>(int,bool)"
     },
     {
       "codeLoc": "L7C1",
@@ -140,13 +140,13 @@
       "type": "f<double>(string)"
     },
     {
-      "codeLoc": "L1C1",
+      "codeLoc": "L12C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction:L1C1",
-      "orderIndex": 0,
+      "name": "main",
+      "orderIndex": 2,
       "state": "declared",
-      "type": "f<double>(int,bool)"
+      "type": "f<int>()"
     }
   ]
 }

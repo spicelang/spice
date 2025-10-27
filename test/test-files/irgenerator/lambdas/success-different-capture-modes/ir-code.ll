@@ -10,16 +10,16 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %j = alloca i32, align 4
-  %captures = alloca { i32, ptr }, align 8
+  %captures = alloca { ptr, i32 }, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
   %lambda = alloca { ptr, ptr }, align 8
   store i32 0, ptr %result, align 4
   store i32 123, ptr %i, align 4
   store i32 321, ptr %j, align 4
+  store ptr %i, ptr %captures, align 8
   %1 = load i32, ptr %j, align 4
-  store i32 %1, ptr %captures, align 4
-  %2 = getelementptr inbounds nuw { i32, ptr }, ptr %captures, i32 0, i32 1
-  store ptr %i, ptr %2, align 8
+  %2 = getelementptr inbounds nuw { ptr, i32 }, ptr %captures, i32 0, i32 1
+  store i32 %1, ptr %2, align 4
   store ptr @_Z14lambda.L4C18.0v, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %3, align 8
@@ -39,20 +39,20 @@ define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) 
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %i.addr = getelementptr inbounds nuw { i32, ptr }, ptr %2, i32 0, i32 1
-  %3 = load ptr, ptr %i.addr, align 8
+  %j = getelementptr inbounds nuw { ptr, i32 }, ptr %2, i32 0, i32 1
+  %3 = load ptr, ptr %2, align 8
   %4 = load i32, ptr %3, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
-  %6 = load ptr, ptr %i.addr, align 8
+  %6 = load ptr, ptr %2, align 8
   %7 = load i32, ptr %6, align 4
   %8 = add nsw i32 %7, 1
   store i32 %8, ptr %6, align 4
-  %9 = load i32, ptr %2, align 4
-  %10 = load ptr, ptr %i.addr, align 8
+  %9 = load i32, ptr %j, align 4
+  %10 = load ptr, ptr %2, align 8
   %11 = load i32, ptr %10, align 4
   %12 = add nsw i32 %11, %9
   store i32 %12, ptr %10, align 4
-  %13 = load ptr, ptr %i.addr, align 8
+  %13 = load ptr, ptr %2, align 8
   %14 = load i32, ptr %13, align 4
   %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %14)
   ret void

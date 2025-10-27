@@ -90,31 +90,13 @@
       "name": "struct:TestStruct<long>",
       "symbols": [
         {
-          "codeLoc": "L8C1",
+          "codeLoc": "L4C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8C1",
-          "orderIndex": 2,
+          "name": "_f1",
+          "orderIndex": 0,
           "state": "declared",
-          "type": "p(unsigned long)"
-        },
-        {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
-        },
-        {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
+          "type": "long"
         },
         {
           "codeLoc": "L8C1",
@@ -135,13 +117,31 @@
           "type": "unsigned long"
         },
         {
-          "codeLoc": "L4C5",
+          "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "_f1",
-          "orderIndex": 0,
+          "name": "ctor:L8C1",
+          "orderIndex": 2,
           "state": "declared",
-          "type": "long"
+          "type": "p(unsigned long)"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "p()"
         }
       ]
     },
@@ -151,20 +151,20 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L21C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "b",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "TestStruct<long>"
-        },
-        {
           "codeLoc": "L19C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "a",
           "orderIndex": 1,
+          "state": "initialized",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L21C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "b",
+          "orderIndex": 2,
           "state": "initialized",
           "type": "TestStruct<long>"
         },
@@ -227,13 +227,13 @@
       "name": "struct:TestStruct",
       "symbols": [
         {
-          "codeLoc": "L12C1",
+          "codeLoc": "L4C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
+          "name": "_f1",
+          "orderIndex": 0,
           "state": "declared",
-          "type": "p()"
+          "type": "T"
         },
         {
           "codeLoc": "L8C1",
@@ -254,18 +254,54 @@
           "type": "unsigned long"
         },
         {
-          "codeLoc": "L4C5",
+          "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "_f1",
-          "orderIndex": 0,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
           "state": "declared",
-          "type": "T"
+          "type": "p()"
         }
       ]
     }
   ],
   "symbols": [
+    {
+      "codeLoc": "L16C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "Alias",
+      "orderIndex": 2,
+      "state": "declared",
+      "type": "Alias"
+    },
+    {
+      "codeLoc": "L16C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "Alias.container",
+      "orderIndex": 3,
+      "state": "declared",
+      "type": "TestStruct<long>"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "T",
+      "orderIndex": 0,
+      "state": "declared",
+      "type": "invalid"
+    },
+    {
+      "codeLoc": "L3C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "TestStruct",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "TestStruct<long>"
+    },
     {
       "codeLoc": "L3C1",
       "isGlobal": true,
@@ -283,42 +319,6 @@
       "orderIndex": 4,
       "state": "declared",
       "type": "f<int>()"
-    },
-    {
-      "codeLoc": "L16C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "Alias.container",
-      "orderIndex": 3,
-      "state": "declared",
-      "type": "TestStruct<long>"
-    },
-    {
-      "codeLoc": "L16C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "Alias",
-      "orderIndex": 2,
-      "state": "declared",
-      "type": "Alias"
-    },
-    {
-      "codeLoc": "L3C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "TestStruct",
-      "orderIndex": 1,
-      "state": "declared",
-      "type": "TestStruct<long>"
-    },
-    {
-      "codeLoc": "L1C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "T",
-      "orderIndex": 0,
-      "state": "declared",
-      "type": "invalid"
     }
   ]
 }

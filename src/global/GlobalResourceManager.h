@@ -49,7 +49,7 @@ public:
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
-  CacheManager cacheManager;
+  CacheManager  cacheManager;
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
   ErrorManager errorManager;

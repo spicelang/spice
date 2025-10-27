@@ -69,7 +69,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
   const auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -107,7 +107,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
       // Lookup ctor function
-      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
+      const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
       if (!ctorFct && isCtorCallRequired)
         return;
@@ -134,7 +134,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -164,7 +164,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
       // Lookup copy ctor function
       const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
-      const Function *ctorFct = FunctionManager::match(this, bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
+      const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
       if (!ctorFct && isCtorCallRequired)
         return;
@@ -197,7 +197,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
   const ASTNode *node = spiceStruct.declNode;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -219,7 +219,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
       Scope *fieldScope = fieldSymbol->getQualType().getBodyScope();
       // Lookup dtor function
       const QualType &thisType = fieldSymbol->getQualType();
-      const Function *dtorFct = FunctionManager::match(this, fieldScope, DTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
+      const Function *dtorFct = FunctionManager::match(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
       requestRevisitIfRequired(dtorFct);
     }
@@ -244,7 +244,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
     bytePtrRefType.makeHeap();
     const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
-    Function *deallocFct = FunctionManager::match(this, matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+    Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
     assert(deallocFct != nullptr);
     deallocFct->used = true;
   }
@@ -254,7 +254,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
  * Prepare the generation of the ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
  * fields.
  */
-void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) {
+void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) const {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
@@ -274,7 +274,7 @@ void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) {
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       const Function *spiceFunc =
-          FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+          FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
       if (spiceFunc != nullptr)
         fieldSymbol->updateType(fieldType.getWithBodyScope(spiceFunc->thisType.getBodyScope()), true);
     }
@@ -285,7 +285,7 @@ void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) {
  * Prepare the generation of the copy ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
  * fields.
  */
-void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
+void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) const {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
@@ -307,7 +307,7 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(fieldNode), false /* we always have the field as storage */}};
       const Function *copyCtorFct =
-          FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
+          FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
       if (copyCtorFct != nullptr)
         fieldSymbol->updateType(fieldType.getWithBodyScope(copyCtorFct->thisType.getBodyScope()), true);
     }
@@ -317,7 +317,7 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) {
 /**
  * Prepare the generation of the dtor body preamble. This preamble is used to destruct all fields and to free all heap fields.
  */
-void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
+void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
@@ -336,7 +336,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) {
       const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
-      FunctionManager::match(this, matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+      FunctionManager::match(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
     }
   }
 }
@@ -364,7 +364,7 @@ Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry,
  * @param node AST node
  */
 Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
-                                                  const ASTNode *node) {
+                                                  const ASTNode *node) const {
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
@@ -372,7 +372,7 @@ Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::
   // Search for dtor
   if (matchScope->isImportedBy(rootScope))
     thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
-  return FunctionManager::match(this, matchScope, methodName, thisType, args, {}, true, node);
+  return FunctionManager::match(matchScope, methodName, thisType, args, {}, true, node);
 }
 
 /**
@@ -381,7 +381,7 @@ Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::
  * @param entry Symbol entry to use as 'this' pointer for the copy ctor call
  * @param node Current AST node
  */
-Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) {
+Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) const {
   assert(entry != nullptr && entry->getQualType().is(TY_STRUCT));
   return implicitlyCallStructCopyCtor(entry->getQualType(), node);
 }
@@ -392,7 +392,7 @@ Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entr
  * @param thisType Struct type to call the copy ctor on
  * @param node Current AST node
  */
-Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) {
+Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const {
   const QualType argType = thisType.removeReferenceWrapper().toConstRef(node);
   const ArgList args = {{argType, false /* we always have an entry here */}};
   return implicitlyCallStructMethod(thisType, CTOR_FUNCTION_NAME, args, node);
@@ -415,7 +415,7 @@ void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode 
  *
  * @param node Current AST node for error messages
  */
-void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) {
+void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) const {
   const SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
   assert(memoryRT != nullptr);
   Scope *matchScope = memoryRT->globalScope.get();
@@ -424,7 +424,7 @@ void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) {
   QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
   bytePtrRefType.makeHeap();
   const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
-  Function *deallocFct = FunctionManager::match(this, matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+  Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
   assert(deallocFct != nullptr);
   deallocFct->used = true;
 }
@@ -440,7 +440,7 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   // Sort by reverse declaration order
   auto comp = [](const SymbolTableEntry *a, const SymbolTableEntry *b) { return a->declNode->codeLoc > b->declNode->codeLoc; };
   std::ranges::sort(vars, comp);
-  // Call dtor for each variable. We call the dtor in reverse declaration order
+  // Call the dtor of each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
     // Check if we have a heap-allocated pointer
     if (var->getQualType().isHeap() && var->getQualType().isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE})) {

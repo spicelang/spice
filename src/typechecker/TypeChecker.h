@@ -137,9 +137,9 @@ private:
   bool typeCheckedMainFct = false;
 
   // Private methods
-  bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName);
+  bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const;
   bool visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const;
-  bool visitMethodCall(FctCallNode *node, Scope *structScope);
+  bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   bool checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node) const;
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
@@ -153,20 +153,20 @@ private:
   // Implicit code generation
   void createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
                                  const ParamList &params) const;
-  void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
-  void createCtorBodyPreamble(const Scope *bodyScope);
-  void createCopyCtorBodyPreamble(const Scope *bodyScope);
-  void createDtorBodyPreamble(const Scope *bodyScope);
+  void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
+  void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
+  void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
+  void createCtorBodyPreamble(const Scope *bodyScope) const;
+  void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
+  void createDtorBodyPreamble(const Scope *bodyScope) const;
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node);
   Function *implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
-                                       const ASTNode *node);
-  Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node);
-  Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node);
+                                       const ASTNode *node) const;
+  Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) const;
+  Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const;
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
-  void implicitlyCallDeallocate(const ASTNode *node);
+  void implicitlyCallDeallocate(const ASTNode *node) const;
   void doScopeCleanup(StmtLstNode *node);
 };
 

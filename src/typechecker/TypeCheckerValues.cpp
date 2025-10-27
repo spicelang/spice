@@ -234,7 +234,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
         copyCtor = matchCopyCtor(actualType, node);
         // Insert anonymous symbol to track the dtor call of the copy
-        currentScope->symbolTable.insertAnonymous(actualType, node, argIdx + 1); // +1 because 0 is reserved for return value
+        AssignExprNode *argNode = node->argLst->args.at(argIdx);
+        currentScope->symbolTable.insertAnonymous(actualType, argNode, SIZE_MAX);
       }
 
       node->argLst->argInfos.push_back(ArgLstNode::ArgInfo{copyCtor});
@@ -285,7 +286,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
   auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
@@ -348,7 +349,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunction
 
   // Retrieve function object
   Scope *matchScope = calleeParentScope;
-  callee = FunctionManager::match(this, matchScope, functionName, data.thisType, data.args, templateTypes, false, node);
+  callee = FunctionManager::match(matchScope, functionName, data.thisType, data.args, templateTypes, false, node);
 
   return true;
 }
@@ -375,7 +376,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
   auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
 
@@ -421,7 +422,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) {
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  callee = FunctionManager::match(this, matchScope, functionName, thisType, args, templateTypes, false, node);
+  callee = FunctionManager::match(matchScope, functionName, thisType, args, templateTypes, false, node);
 
   return true;
 }

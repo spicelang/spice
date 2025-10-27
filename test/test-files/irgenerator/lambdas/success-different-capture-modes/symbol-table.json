@@ -7,14 +7,14 @@
         {
           "captures": [
             {
-              "accessType": "READ_ONLY",
-              "mode": "BY_VALUE",
-              "name": "j"
-            },
-            {
               "accessType": "READ_WRITE",
               "mode": "BY_REFERENCE",
               "name": "i"
+            },
+            {
+              "accessType": "READ_ONLY",
+              "mode": "BY_VALUE",
+              "name": "j"
             }
           ],
           "children": [],
@@ -25,13 +25,13 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L4C5",
+          "codeLoc": "L2C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "lambda",
-          "orderIndex": 3,
+          "name": "i",
+          "orderIndex": 1,
           "state": "initialized",
-          "type": "p[]()"
+          "type": "int"
         },
         {
           "codeLoc": "L3C5",
@@ -43,13 +43,13 @@
           "type": "int"
         },
         {
-          "codeLoc": "L2C5",
+          "codeLoc": "L4C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "i",
-          "orderIndex": 1,
+          "name": "lambda",
+          "orderIndex": 3,
           "state": "initialized",
-          "type": "int"
+          "type": "p[]()"
         },
         {
           "codeLoc": "L1C1",

@@ -15,10 +15,8 @@ void ErrorManager::addSoftError(const ASTNode *astNode, SemanticErrorType errorT
 
 void ErrorManager::addSoftError(const CodeLoc &codeLoc, const std::string &message) {
   // Avoid duplicate errors
-  for (const auto &[errorLoc, message] : softErrors)
-    if (errorLoc == codeLoc)
-      return;
-  softErrors.emplace_back(SoftError{codeLoc, message});
+  if (std::ranges::none_of(softErrors, [&](const SoftError &err) { return err.codeLoc == codeLoc; }))
+    softErrors.emplace_back(SoftError{codeLoc, message});
 }
 
 } // namespace spice::compiler

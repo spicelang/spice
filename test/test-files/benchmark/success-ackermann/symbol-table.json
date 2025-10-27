@@ -20,20 +20,20 @@
       "name": "f<int> ack(int,int)",
       "symbols": [
         {
-          "codeLoc": "L1C19",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "n",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
           "codeLoc": "L1C12",
           "isGlobal": false,
           "isVolatile": false,
           "name": "m",
           "orderIndex": 1,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C19",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "n",
+          "orderIndex": 2,
           "state": "initialized",
           "type": "int"
         },
@@ -54,20 +54,20 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L9C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "baseN",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
           "codeLoc": "L8C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "baseM",
           "orderIndex": 1,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L9C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "baseN",
+          "orderIndex": 2,
           "state": "initialized",
           "type": "int"
         },
@@ -85,15 +85,6 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L7C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main",
-      "orderIndex": 1,
-      "state": "declared",
-      "type": "f<int>()"
-    },
-    {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -101,6 +92,15 @@
       "orderIndex": 0,
       "state": "declared",
       "type": "f<int>(int,int)"
+    },
+    {
+      "codeLoc": "L7C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "f<int>()"
     }
   ]
 }
