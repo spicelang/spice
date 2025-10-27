@@ -12,6 +12,7 @@
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/SubtargetFeature.h>
 
 namespace spice::compiler {
 
@@ -31,17 +32,14 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
   // Create cpu name and features strings
   cpuName = "generic";
-  std::stringstream featureString;
   if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
     // Retrieve native CPU name and the supported CPU features
     cpuName = llvm::sys::getHostCPUName();
-    for (const auto &[name, enabled] : llvm::sys::getHostCPUFeatures()) {
-      if (featureString.rdbuf()->in_avail() > 0)
-        featureString << ',';
-      featureString << (enabled ? '+' : '-') << name.str();
-    }
+    llvm::SubtargetFeatures features;
+    for (const auto &[feature, isEnabled] : llvm::sys::getHostCPUFeatures())
+      features.AddFeature(feature, isEnabled);
+    cpuFeatures = features.getString();
   }
-  cpuFeatures = featureString.str();
 
   // Create lto module
   if (cliOptions.useLTO)
