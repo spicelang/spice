@@ -125,7 +125,7 @@ public p Driver.init() {
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
 
-    // ToDo: Here we have a problem with passing the cautres. Curently the capture struct is stack-allocated. This stack
+    // ToDo: Here we have a problem with passing the captures. Curently the capture struct is stack-allocated. This stack
     // allocation goes out of scope at the end of the function, but used afterwards.
     /*this.cliParser.setRootCallback(p() {
         if this.shouldInstall || this.shouldUninstall {

@@ -518,24 +518,17 @@ const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Functi
  */
 uint64_t FunctionManager::getCacheKey(Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
                                       const QualTypeList &templateTypes) {
-  const auto pred1 = [](size_t acc, const Arg &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    const uint64_t typeHash = std::hash<QualType>{}(val.first);
-    const uint64_t temporaryHash = std::hash<bool>{}(val.second);
-    const uint64_t newHash = typeHash ^ (temporaryHash << 1);
-    return acc * 31 + newHash;
-  };
-  const auto pred2 = [](size_t acc, const QualType &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<QualType>{}(val);
-  };
-  // Calculate the cache key
-  const uint64_t scopeHash = std::hash<Scope *>{}(scope);
-  const uint64_t hashName = std::hash<std::string>{}(name);
-  const uint64_t hashThisType = std::hash<QualType>{}(thisType);
-  const uint64_t hashArgs = std::accumulate(args.begin(), args.end(), 0u, pred1);
-  const uint64_t hashTemplateTypes = std::accumulate(templateTypes.begin(), templateTypes.end(), 0u, pred2);
-  return scopeHash ^ (hashName << 1) ^ (hashThisType << 2) ^ (hashArgs << 3) ^ (hashTemplateTypes << 4);
+  uint64_t acc = 1469598103934665603ull;
+  acc = hash_combine64(acc, std::hash<Scope *>{}(scope));
+  acc = hash_combine64(acc, std::hash<std::string>{}(name));
+  acc = hash_combine64(acc, std::hash<QualType>{}(thisType));
+  for (const auto &[first, second] : args) {
+    acc = hash_combine64(acc, std::hash<QualType>{}(first));
+    acc = hash_combine64(acc, std::hash<bool>{}(second));
+  }
+  for (const QualType &qt : templateTypes)
+    acc = hash_combine64(acc, std::hash<QualType>{}(qt));
+  return acc;
 }
 
 /**

@@ -254,15 +254,12 @@ const GenericType *InterfaceManager::getGenericTypeOfCandidateByName(const Inter
  * @return Cache key
  */
 uint64_t InterfaceManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
-  const auto pred = [](size_t acc, const QualType &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<QualType>{}(val);
-  };
-  // Calculate the cache key
-  const uint64_t scopeHash = std::hash<Scope *>{}(scope);
-  const uint64_t hashName = std::hash<std::string>{}(name);
-  const uint64_t hashTemplateTypes = std::accumulate(templateTypes.begin(), templateTypes.end(), 0u, pred);
-  return scopeHash ^ (hashName << 1) ^ (hashTemplateTypes << 2);
+  uint64_t acc = 1469598103934665603ull;
+  acc = hash_combine64(acc, std::hash<Scope *>{}(scope));
+  acc = hash_combine64(acc, std::hash<std::string>{}(name));
+  for (const QualType &qt : templateTypes)
+    acc = hash_combine64(acc, std::hash<QualType>{}(qt));
+  return acc;
 }
 
 /**
