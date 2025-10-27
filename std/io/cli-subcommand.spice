@@ -73,11 +73,11 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
 
         // Check all commonly used flags
-        if (arg == "-h" || arg == "--help") { // Help
+        if arg == "-h" || arg == "--help" { // Help
             this.printHelp(argv, layer);
             return EXIT_CODE_SUCCESS;
         }
-        if (arg == "-v" || arg == "--version") { // Version
+        if layer == 1 && (arg == "-v" || arg == "--version") { // Version
             printf("%s\n", this.versionString);
             return EXIT_CODE_SUCCESS;
         }
@@ -92,7 +92,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
-            if  this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
                 if argNo >= argc {
@@ -286,8 +286,10 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     bool target;
     const dyn helpFlag = CliOption<bool>(String("--help,-h"), target, String("Print this help message"));
     helpFlag.printHelpItem();
-    const dyn versionFlag = CliOption<bool>(String("--version,-v"), target, String("Print the version of the application"));
-    versionFlag.printHelpItem();
+    if layer == 1 {
+        const dyn versionFlag = CliOption<bool>(String("--version,-v"), target, String("Print the version of the application"));
+        versionFlag.printHelpItem();
+    }
 
     // Print footer
     if !this.footerString.isEmpty() {
