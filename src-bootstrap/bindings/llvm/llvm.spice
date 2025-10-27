@@ -2,6 +2,7 @@
 
 // Std imports
 import "std/data/vector";
+import "std/text/string-ext";
 
 // Own imports
 import "bootstrap/bindings/llvm/linker-flags";
@@ -432,6 +433,8 @@ ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/,
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
 ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
 ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
+ext p LLVMViewFunctionCFG(LLVMValueRef /*Fn*/);
+ext p LLVMViewFunctionCFGOnly(LLVMValueRef /*Fn*/);
 ext f<LLVMValueRef> LLVMAddFunction(LLVMModuleRef /*M*/, string /*Name*/, LLVMTypeRef /*FunctionTy*/);
 ext p LLVMSetLinkage(LLVMValueRef /*Global*/, LLVMLinkage /*Linkage*/);
 ext f<LLVMBasicBlockRef> LLVMCreateBasicBlockInContext(LLVMContextRef /*C*/, string /*Name*/);
@@ -503,12 +506,12 @@ ext p LLVM_InitializeAllTargetMCs();
 ext p LLVM_InitializeAllAsmParsers();
 ext p LLVM_InitializeAllAsmPrinters();
 ext p LLVM_InitializeAllDisassemblers();
-ext f<heap string> LLVMGetDefaultTargetTriple();
-ext f<heap string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
-ext f<heap string> LLVMGetHostCPUName();
-ext f<heap string> LLVMGetHostCPUFeatures();
+ext f<string> LLVMGetDefaultTargetTriple();
+ext f<string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
+ext f<string> LLVMGetHostCPUName();
+ext f<string> LLVMGetHostCPUFeatures();
 ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
-ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, heap string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
+ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
 ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
 ext f<LLVMBool> LLVMTargetMachineEmitToFile(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, string /*Filename*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/);
 ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
@@ -519,9 +522,12 @@ ext f<unsigned int> LLVMPointerSize(LLVMTargetDataRef /*TD*/);
 ext f<unsigned long> LLVMSizeOfTypeInBits(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned long> LLVMABISizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned int> LLVMPreferredAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext p LLVMParseCommandLineOptions(int /*argc*/, const string* /*argv*/, string /*Overview*/);
 ext f<LLVMErrorRef> LLVMCreateStringError(string /*ErrMsg*/);
 ext f<string> LLVMGetErrorMessage(LLVMErrorRef /*Err*/);
 ext p LLVMDisposeErrorMessage(string /*ErrMsg*/);
+ext f<string> LLVMCreateMessage(string /*Message*/);
+ext p LLVMDisposeMessage(string /*Message*/);
 ext p LLVMGetVersion(unsigned int* /*Major*/, unsigned int* /*Minor*/, unsigned int* /*Patch*/);
 ext p LLVMShutdown();
 
@@ -643,6 +649,55 @@ public f<unsigned int> DataLayout.getTypeAlignment(Type ty) {
     return LLVMPreferredAlignmentOfType(this.self, ty.self);
 }
 
+// ===== Triple =====
+public type Triple struct {
+    public string value
+}
+
+public p Triple.ctor(const String& archStr, const String& vendorStr, const String& osStr) {
+    const String newString = archStr + '-' + vendorStr + '-' + osStr;
+    this.value = LLVMCreateMessage(newString.getRaw());
+}
+
+public p Triple.dtor() {
+    LLVMDisposeMessage(this.value);
+}
+
+public f<Triple> Triple.normalize() {
+    return Triple{ LLVMNormalizeTargetTriple(this.value) };
+}
+
+f<Vector<String>> Triple.getTripleFragments() {
+    return split(String(this.value), '-');
+}
+
+public f<String> Triple.getArchName() {
+    const Vector<String> fragments = this.getTripleFragments();
+    return fragments.get(0);
+}
+
+public f<String> Triple.getVendorName() {
+    const Vector<String> fragments = this.getTripleFragments();
+    return fragments.get(1);
+}
+
+public f<String> Triple.getOSName() {
+    const Vector<String> fragments = this.getTripleFragments();
+    return fragments.get(2);
+}
+
+public f<bool> Triple.empty() {
+    return this.value == nil<string> || len(this.value) == 0;
+}
+
+public f<bool> operator==(const Triple& a, const Triple& b) {
+    return a.value == b.value;
+}
+
+public f<bool> operator!=(const Triple& a, const Triple& b) {
+    return !(a.value == b.value);
+}
+
 // ===== LLVMModule =====
 public type Module struct {
     LLVMModuleRef self
@@ -676,8 +731,8 @@ public f<string> Module.printToFile(string filename) {
     return "";
 }
 
-public p Module.setTargetTriple(string triple) {
-    LLVMSetTarget(this.self, triple);
+public p Module.setTargetTriple(Triple triple) {
+    LLVMSetTarget(this.self, triple.value);
 }
 
 public p Module.setDataLayout(DataLayout dataLayout) {
@@ -1015,8 +1070,8 @@ public type TargetMachine struct {
     LLVMTargetMachineRef self = nil<LLVMTargetMachineRef>
 }
 
-p TargetMachine.ctor(LLVMTargetRef targetRef, heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
-    this.self = LLVMCreateTargetMachine(targetRef, triple, cpu, features, optLevel, relocMode, codeModel);
+p TargetMachine.ctor(LLVMTargetRef targetRef, Triple triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    this.self = LLVMCreateTargetMachine(targetRef, triple.value, cpu, features, optLevel, relocMode, codeModel);
 }
 
 public p TargetMachine.dtor() {
@@ -1039,8 +1094,8 @@ public type Target struct {
     LLVMTargetRef self
 }
 
-public f<TargetMachine> Target.createTargetMachine(heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
-    return TargetMachine{ LLVMCreateTargetMachine(this.self, triple, cpu, features, optLevel, relocMode, codeModel) };
+public f<TargetMachine> Target.createTargetMachine(Triple triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    return TargetMachine{ LLVMCreateTargetMachine(this.self, triple.value, cpu, features, optLevel, relocMode, codeModel) };
 }
 
 // ===== PassBuilderOptions =====
@@ -1171,6 +1226,14 @@ public f<bool> verifyFunction(Function function, LLVMVerifierFailureAction actio
     return LLVMVerifyFunction(function.self, action);
 }
 
+public p viewFunctionCFG(Function function) {
+    LLVMViewFunctionCFG(function.self);
+}
+
+public p viewFunctionCFGOnly(Function function) {
+    LLVMViewFunctionCFGOnly(function.self);
+}
+
 public p initializeNativeTarget() {
     LLVM_InitializeNativeTarget();
 }
@@ -1211,12 +1274,12 @@ public p initializeAllDisassemblers() {
     LLVM_InitializeAllDisassemblers();
 }
 
-public f<heap string> getDefaultTargetTriple() {
-    return LLVMGetDefaultTargetTriple();
+public f<Triple> getDefaultTargetTriple() {
+    return Triple{ LLVMGetDefaultTargetTriple() };
 }
 
-public f<heap string> normalizeTargetTriple(string tripleIn) {
-    return LLVMNormalizeTargetTriple(tripleIn);
+public f<Triple> normalizeTargetTriple(Triple triple) {
+    return Triple{ LLVMNormalizeTargetTriple(triple.value) };
 }
 
 public f<heap string> getHostCPUName() {
@@ -1227,9 +1290,9 @@ public f<heap string> getHostCPUFeatures() {
     return LLVMGetHostCPUFeatures();
 }
 
-public f<Target> getTargetFromTriple(string triple, string* outError) {
+public f<Target> getTargetFromTriple(Triple triple, string* outError) {
     Target target;
-    const bool errorOccurred = LLVMGetTargetFromTriple(triple, &target.self, outError);
+    const bool errorOccurred = LLVMGetTargetFromTriple(triple.value, &target.self, outError);
     assert !errorOccurred;
     return target;
 }
@@ -1243,7 +1306,13 @@ public f<string> getOptLevelNameFromOptLevel(OptimizationLevel optLevel) {
         case OptimizationLevel::Os: { return "Os"; }
         case OptimizationLevel::Oz: { return "Oz"; }
     }
-    return "Invalid optimization level";
+}
+
+public p parseCommandLineOptions(int argc, const Vector<string>& argv, string overview = "") {
+    unsafe {
+        const string* argvRef = argv.getDataPtr();
+        LLVMParseCommandLineOptions(argc, argvRef, overview);
+    }
 }
 
 public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patch) {

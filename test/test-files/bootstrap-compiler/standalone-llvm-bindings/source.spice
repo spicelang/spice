@@ -5,7 +5,7 @@ f<int> main() {
     llvm::initializeNativeTarget();
     llvm::initializeNativeAsmPrinter();
 
-    heap string targetTriple = llvm::getDefaultTargetTriple();
+    const llvm::Triple targetTriple = llvm::getDefaultTargetTriple();
     string error;
     llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
     llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::Default, llvm::LLVMRelocMode::Default, llvm::LLVMCodeModel::Default);

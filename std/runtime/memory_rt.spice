@@ -192,6 +192,18 @@ public p sDelete<T>(heap T*& ptr) {
 }
 
 /**
+ * Yields the ownership of the given heap pointer.
+ * After this operation, the original pointer is set to nil to prevent double frees.
+ *
+ * @param ptr The pointer to yield ownership from
+ * @return The yielded pointer
+ */
+public f<T*> sYieldOwnership<T>(heap T*& ptr) {
+    result = ptr;
+    ptr = nil<heap T*>;
+}
+
+/**
  * Compares the memory behind pointer A and pointer B for equality.
  *
  * @param a Pointer A

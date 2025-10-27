@@ -635,7 +635,7 @@ public f<unsigned long> String.replaceAll(char needle, char replacement) {
 public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIdx >= this.length {
-        return String("");
+        return String();
     }
 
     // Get everything after startIndex if length is -1
