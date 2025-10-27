@@ -118,7 +118,7 @@ private:
   FunctionRegistry functions;
   StructRegistry structs;
   InterfaceRegistry interfaces;
-  std::unordered_map<std::string, GenericType> genericTypes;
+  std::map<std::string, GenericType> genericTypes;
 };
 
 } // namespace spice::compiler

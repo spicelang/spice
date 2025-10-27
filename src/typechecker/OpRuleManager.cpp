@@ -697,7 +697,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
     args[0] = {typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0].type), op[0].isTemporary()};
     if constexpr (N == 2)
       args[1] = {typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1].type), op[1].isTemporary()};
-    callee = FunctionManager::match(typeChecker, calleeParentScope, fctName, thisType, args, {}, false, node);
+    callee = FunctionManager::match(calleeParentScope, fctName, thisType, args, {}, false, node);
     if (callee)
       break;
   }

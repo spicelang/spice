@@ -1,13 +1,13 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
 #include "FunctionManager.h"
-#include "TypeChecker.h"
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <model/GenericType.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeChecker.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
 #include <util/CustomHashFunctions.h>
@@ -156,7 +156,7 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
 
   // Copy the registry to prevent iterating over items, that are created within the loop
-  FunctionRegistry functionRegistry = matchScope->functions;
+  const FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<const Function *> matches;
   for (const auto &[defCodeLocStr, m] : functionRegistry) {
@@ -199,7 +199,6 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown.
  *
- * @param typeChecker Type Checker
  * @param matchScope Scope to match against
  * @param reqName Function name requirement
  * @param reqThisType This type requirement
@@ -209,11 +208,10 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::match(const TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName,
-                                 const QualType &reqThisType, const ArgList &reqArgs, const QualTypeList &templateTypeHints,
-                                 bool strictQualifierMatching, const ASTNode *callNode) {
+Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+                                 const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictQualifierMatching,
+                                 const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
-  assert(typeChecker != nullptr && "The match() function must be called from the TypeChecker");
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
@@ -250,8 +248,8 @@ Function *FunctionManager::match(const TypeChecker *typeChecker, Scope *matchSco
       }
 
       bool forceSubstantiation = false;
-      MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
-                                                   strictQualifierMatching, forceSubstantiation, callNode);
+      const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
+                                                         strictQualifierMatching, forceSubstantiation, callNode);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)

@@ -84,7 +84,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
       const QualType &thisType = localVarType;
-      node->calledInitCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
+      node->calledInitCtor = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_QT(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }

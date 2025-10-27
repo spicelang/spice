@@ -23,7 +23,7 @@ class GenericType;
 class TypeChecker;
 
 // Typedefs
-using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
+using FunctionManifestationList = std::map</*mangledName=*/std::string, Function>;
 using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
 using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
@@ -45,9 +45,8 @@ public:
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
   [[nodiscard]] static const Function *lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                               const ArgList &reqArgs, bool strictQualifierMatching);
-  static Function *match(const TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                         const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictQualifierMatching,
-                         const ASTNode *callNode);
+  static Function *match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
+                         const QualTypeList &templateTypeHints, bool strictQualifierMatching, const ASTNode *callNode);
   static void cleanup();
   [[nodiscard]] static std::string dumpLookupCacheStatistics();
 

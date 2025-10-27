@@ -143,7 +143,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (Struct *manifestation : node->structManifestations) {
+  for (const Struct *manifestation : node->structManifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated()) {
       manIdx++; // Increase the manifestation index
@@ -185,7 +185,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
           args.emplace_back(param, nullptr);
 
         // Search for method that has the required signature
-        Function *spiceFunction = FunctionManager::match(this, currentScope, methodName, structType, args, {}, true, node);
+        Function *spiceFunction = FunctionManager::match(currentScope, methodName, structType, args, {}, true, node);
         if (spiceFunction == nullptr) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
@@ -196,6 +196,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         // Check return type
         if (spiceFunction->returnType != returnType &&
             !returnType.matchesInterfaceImplementedByStruct(spiceFunction->returnType)) {
+          std::cout << "Expected: " << returnType.getName() << std::endl;
+          std::cout << "Actual: " << spiceFunction->returnType.getName() << std::endl;
+          std::cout << "Signature: " << spiceFunction->getSignature(true, true) << std::endl;
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
                         "'. The return type does not match.");

@@ -67,10 +67,10 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
-      node->getIteratorFct = FunctionManager::match(this, matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::match(this, matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
     if (node->getIteratorFct == nullptr)
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
@@ -112,17 +112,17 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   Scope *matchScope = iteratorType.getBodyScope();
   QualType iteratorItemType;
   if (hasIdx) {
-    node->getIdxFct = FunctionManager::match(this, matchScope, "getIdx", iteratorType, {}, {}, false, node);
+    node->getIdxFct = FunctionManager::match(matchScope, "getIdx", iteratorType, {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
-    node->getFct = FunctionManager::match(this, matchScope, "get", iteratorType, {}, {}, false, node);
+    node->getFct = FunctionManager::match(matchScope, "get", iteratorType, {}, {}, false, node);
     assert(node->getFct != nullptr);
     iteratorItemType = node->getFct->returnType;
   }
-  node->isValidFct = FunctionManager::match(this, matchScope, "isValid", iteratorType, {}, {}, false, node);
+  node->isValidFct = FunctionManager::match(matchScope, "isValid", iteratorType, {}, {}, false, node);
   assert(node->isValidFct != nullptr);
-  node->nextFct = FunctionManager::match(this, matchScope, "next", iteratorType, {}, {}, false, node);
+  node->nextFct = FunctionManager::match(matchScope, "next", iteratorType, {}, {}, false, node);
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry

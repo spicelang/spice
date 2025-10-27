@@ -184,7 +184,7 @@ public:
   std::unique_ptr<llvm::Module> llvmModule;
   std::map<std::string, SourceFile *> dependencies; // Has to be an ordered map to keep the compilation order deterministic
   std::vector<const SourceFile *> dependants;
-  std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
+  std::map<std::string, NameRegistryEntry> exportedNameRegistry;
   std::vector<const Function *> testFunctions;
 
 private:

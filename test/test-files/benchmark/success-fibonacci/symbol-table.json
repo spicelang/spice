@@ -52,15 +52,6 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L6C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main",
-      "orderIndex": 1,
-      "state": "declared",
-      "type": "f<int>()"
-    },
-    {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -68,6 +59,15 @@
       "orderIndex": 0,
       "state": "declared",
       "type": "f<int>(int)"
+    },
+    {
+      "codeLoc": "L6C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "f<int>()"
     }
   ]
 }

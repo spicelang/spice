@@ -44,31 +44,13 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L13C5",
+          "codeLoc": "L16C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "m",
-          "orderIndex": 9,
+          "name": "iterations",
+          "orderIndex": 11,
           "state": "initialized",
-          "type": "long"
-        },
-        {
-          "codeLoc": "L14C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "x",
-          "orderIndex": 10,
-          "state": "initialized",
-          "type": "long"
-        },
-        {
-          "codeLoc": "L10C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "t_new",
-          "orderIndex": 6,
-          "state": "initialized",
-          "type": "long"
+          "type": "int"
         },
         {
           "codeLoc": "L11C5",
@@ -80,38 +62,20 @@
           "type": "long"
         },
         {
-          "codeLoc": "L9C5",
+          "codeLoc": "L12C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "t",
-          "orderIndex": 5,
+          "name": "k_new",
+          "orderIndex": 8,
           "state": "initialized",
           "type": "long"
         },
         {
-          "codeLoc": "L8C5",
+          "codeLoc": "L13C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "r_new",
-          "orderIndex": 4,
-          "state": "initialized",
-          "type": "long"
-        },
-        {
-          "codeLoc": "L16C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "iterations",
-          "orderIndex": 11,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "codeLoc": "L7C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "r",
-          "orderIndex": 3,
+          "name": "m",
+          "orderIndex": 9,
           "state": "initialized",
           "type": "long"
         },
@@ -125,11 +89,11 @@
           "type": "int"
         },
         {
-          "codeLoc": "L12C5",
+          "codeLoc": "L5C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "k_new",
-          "orderIndex": 8,
+          "name": "q",
+          "orderIndex": 1,
           "state": "initialized",
           "type": "long"
         },
@@ -143,11 +107,20 @@
           "type": "long"
         },
         {
-          "codeLoc": "L5C5",
+          "codeLoc": "L7C5",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "q",
-          "orderIndex": 1,
+          "name": "r",
+          "orderIndex": 3,
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "codeLoc": "L8C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "r_new",
+          "orderIndex": 4,
           "state": "initialized",
           "type": "long"
         },
@@ -159,6 +132,33 @@
           "orderIndex": 0,
           "state": "declared",
           "type": "int"
+        },
+        {
+          "codeLoc": "L9C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "t",
+          "orderIndex": 5,
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "codeLoc": "L10C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "t_new",
+          "orderIndex": 6,
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "codeLoc": "L14C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "x",
+          "orderIndex": 10,
+          "state": "initialized",
+          "type": "long"
         }
       ]
     }

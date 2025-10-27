@@ -39,20 +39,20 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L9C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "input",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "int"
-        },
-        {
           "codeLoc": "L10C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "faculty",
           "orderIndex": 2,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L9C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "input",
+          "orderIndex": 1,
           "state": "initialized",
           "type": "int"
         },
@@ -70,15 +70,6 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L8C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main",
-      "orderIndex": 1,
-      "state": "declared",
-      "type": "f<int>()"
-    },
-    {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -86,6 +77,15 @@
       "orderIndex": 0,
       "state": "declared",
       "type": "f<int>(int)"
+    },
+    {
+      "codeLoc": "L8C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "f<int>()"
     }
   ]
 }

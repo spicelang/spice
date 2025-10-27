@@ -167,8 +167,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
             generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
             llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
 
-            // Attach address of copy to anonymous symbol (+1 because return value is 0)
-            SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc, i + 1);
+            // Attach address of copy to anonymous symbol
+            SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode->codeLoc, SIZE_MAX);
             anonymousSymbol->updateAddress(valueCopyPtr);
 
             argValues.push_back(newValue);

@@ -76,7 +76,7 @@ Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *no
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toConstRef(node), false}};
-  return FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
 }
 
 QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const {
