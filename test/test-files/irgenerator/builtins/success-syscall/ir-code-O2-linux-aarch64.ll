@@ -15,7 +15,7 @@ define dso_local noundef i32 @main() local_unnamed_addr #0 {
 
 declare i64 @_Z12getRawLengthPKc(ptr) local_unnamed_addr
 
-attributes #0 = { nmustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
