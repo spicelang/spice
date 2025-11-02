@@ -173,7 +173,7 @@ set(SOURCES
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Enable pedantic warnings
-target_compile_options(spice PRIVATE -Wpedantic -Wall -Wno-unknown-pragmas)
+target_compile_options(spice PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
 
 # Include Antlr components
 include_directories(
