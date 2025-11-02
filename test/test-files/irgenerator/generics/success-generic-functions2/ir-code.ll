@@ -118,10 +118,10 @@ for.exit.L12:                                     ; preds = %for.head.L12
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %numberList1 = alloca [7 x i16], align 2
   %result1 = alloca i32, align 4
@@ -156,7 +156,7 @@ define dso_local i32 @main() #1 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

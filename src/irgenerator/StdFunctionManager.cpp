@@ -18,6 +18,7 @@ StdFunctionManager::StdFunctionManager(SourceFile *sourceFile, GlobalResourceMan
 llvm::Function *StdFunctionManager::getPrintfFct() const {
   llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getPtrTy(), true);
   // Set attributes
+  printfFct->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
   printfFct->addFnAttr(llvm::Attribute::NoFree);
   printfFct->addFnAttr(llvm::Attribute::NoUnwind);
   printfFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
@@ -30,6 +31,7 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
 llvm::Function *StdFunctionManager::getFPrintfFct() const {
   llvm::Function *fprintfFct = getFunction("fprintf", builder.getInt32Ty(), {builder.getPtrTy(), builder.getPtrTy()}, true);
   // Set attributes
+  fprintfFct->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
   fprintfFct->addFnAttr(llvm::Attribute::NoFree);
   fprintfFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
   fprintfFct->addParamAttr(0, llvm::Attribute::NoUndef);

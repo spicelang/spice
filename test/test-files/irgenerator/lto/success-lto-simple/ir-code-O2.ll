@@ -10,8 +10,8 @@ define dso_local i32 @_Z17functionInModuleBii(i32 %0, i32 %1) local_unnamed_addr
   ret i32 %3
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #4
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L4, label %assert.then.L4, !prof !5
@@ -36,7 +36,7 @@ declare void @exit(i32) local_unnamed_addr #3
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { cold nofree noreturn nounwind }
 attributes #4 = { nounwind }

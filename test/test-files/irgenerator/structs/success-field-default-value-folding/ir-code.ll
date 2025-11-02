@@ -100,8 +100,8 @@ land.exit.L15C15:                                 ; preds = %land.2.L15C15, %lan
   ret void
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   store i32 0, ptr %result, align 4
@@ -327,13 +327,13 @@ assert.exit.L56:                                  ; preds = %assert.exit.L55
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
 attributes #0 = { norecurse }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { cold noreturn nounwind }
 

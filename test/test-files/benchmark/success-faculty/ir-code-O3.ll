@@ -48,8 +48,8 @@ common.ret:                                       ; preds = %middle.block, %1
   ret i32 %accumulator.tr.lcssa
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #4
   %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 10, i32 %1)
   ret i32 0
@@ -62,7 +62,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 declare i32 @llvm.vector.reduce.mul.v4i32(<4 x i32>) #3
 
 attributes #0 = { nofree norecurse nosync nounwind memory(none) }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #4 = { nounwind }

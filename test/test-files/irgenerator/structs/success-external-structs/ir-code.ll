@@ -3,8 +3,8 @@ source_filename = "source.spice"
 
 %struct.Vec = type { i32, i1 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %v = alloca %struct.Vec, align 8
   %v1 = alloca %struct.Vec, align 8
@@ -19,7 +19,7 @@ define dso_local i32 @main() #0 {
 
 declare void @_ZN3Vec5printEv(ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

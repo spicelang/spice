@@ -25,7 +25,7 @@ assert.exit.L6:                                   ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
@@ -35,8 +35,8 @@ define private ptr @_Z8falseFctv() {
   ret ptr @anon.string.1
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #2 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i1 @_Z7condFctv()
@@ -59,7 +59,7 @@ cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, 
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { cold noreturn nounwind }
-attributes #2 = { noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

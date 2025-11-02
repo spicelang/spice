@@ -3,8 +3,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [7 x i8] c"%d, %d\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %1 = alloca i32, align 4
   %i = alloca ptr, align 8
@@ -28,11 +28,11 @@ define dso_local i32 @main() #0 {
 declare ptr @_Z4sNewIiEPiRKi(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 declare void @_Z8sDeallocRPh(ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

@@ -4,8 +4,8 @@ source_filename = "source.spice"
 @anon.array.0 = private unnamed_addr constant [2 x i32] [i32 1, i32 2]
 @printf.str.0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %intArray = alloca [2 x i32], align 4
   store i32 0, ptr %result, align 4
@@ -19,9 +19,9 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

@@ -9,8 +9,8 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [5 x i8] c"End.\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #0 {
   %shortIterator = alloca %struct.NumberIterator, align 8
   %1 = alloca %struct.NumberIterator.0, align 8
   %2 = tail call %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 3, i16 8) #2
@@ -89,7 +89,7 @@ declare ptr @_ZN14NumberIteratorIlE3getEv(ptr) local_unnamed_addr
 
 declare void @_ZN14NumberIteratorIsE4nextEv(ptr) local_unnamed_addr
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
 

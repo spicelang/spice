@@ -13,7 +13,7 @@ define private i1 @_Z12functionTruev() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 define private i1 @_Z13functionFalsev() {
   %result = alloca i1, align 1
@@ -21,8 +21,8 @@ define private i1 @_Z13functionFalsev() {
   ret i1 false
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i1 @_Z13functionFalsev()
@@ -52,7 +52,7 @@ lor.exit.L16C45:                                  ; preds = %lor.1.L16C45, %land
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

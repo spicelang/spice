@@ -28,8 +28,8 @@ declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly ca
 ; Function Attrs: cold nofree noreturn nounwind
 declare void @exit(i32) local_unnamed_addr #2
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #3 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #3 {
   tail call fastcc void @_Z3foov() #4
   unreachable
 }
@@ -37,7 +37,7 @@ define dso_local i32 @main() local_unnamed_addr #3 {
 attributes #0 = { cold noreturn }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold nofree noreturn nounwind }
-attributes #3 = { noinline nounwind optnone uwtable }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #4 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

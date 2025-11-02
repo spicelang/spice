@@ -70,7 +70,7 @@ assert.exit.L11:                                  ; preds = %assert.exit.L10
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1

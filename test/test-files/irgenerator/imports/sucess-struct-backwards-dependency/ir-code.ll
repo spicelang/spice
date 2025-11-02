@@ -4,8 +4,8 @@ source_filename = "source.spice"
 %struct.TestStruct = type { %struct.Outer }
 %struct.Outer = type { i32 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %ts = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
@@ -16,7 +16,7 @@ define dso_local i32 @main() #0 {
 
 declare void @_ZN10TestStructI5OuterE4ctorEv(ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

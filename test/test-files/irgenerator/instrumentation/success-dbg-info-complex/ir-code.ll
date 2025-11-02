@@ -34,8 +34,8 @@ source_filename = "source.spice"
 @anon.string.24 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'vi.get(2) == 9879' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4, !dbg !0
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   %result = alloca i32, align 4
   %_argc = alloca i32, align 4
   %_argv = alloca ptr, align 8
@@ -446,7 +446,7 @@ declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
@@ -477,7 +477,7 @@ declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 
 declare void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 

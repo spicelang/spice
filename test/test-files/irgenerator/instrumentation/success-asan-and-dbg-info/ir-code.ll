@@ -4,8 +4,8 @@ source_filename = "source.spice"
 @llvm.used = appending global [1 x ptr] [ptr @asan.module_ctor], section "llvm.metadata"
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr null }]
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 !dbg !10 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 !dbg !10 {
   %result = alloca i32, align 4
   %iPtr = alloca ptr, align 8
     #dbg_declare(ptr %result, !16, !DIExpression(), !17)
@@ -54,7 +54,7 @@ define internal void @asan.module_ctor() #1 {
 
 declare void @__asan_version_mismatch_check_v8()
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nounwind uwtable "frame-pointer"="all" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6}

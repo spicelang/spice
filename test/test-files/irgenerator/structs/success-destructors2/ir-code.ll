@@ -10,8 +10,8 @@ source_filename = "source.spice"
 @anon.string.2 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @anon.string.3 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
@@ -28,7 +28,7 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
@@ -71,7 +71,7 @@ declare void @exit(i32) #3
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
 attributes #3 = { cold noreturn nounwind }
