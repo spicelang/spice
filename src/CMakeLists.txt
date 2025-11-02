@@ -103,6 +103,7 @@ set(SOURCES
         irgenerator/GenImplicit.cpp
         irgenerator/GenTargetDependent.cpp
         irgenerator/GenVTable.cpp
+        irgenerator/GenInstrumentation.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
         irgenerator/OpRuleConversionManager.cpp

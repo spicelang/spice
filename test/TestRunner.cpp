@@ -93,6 +93,23 @@ void execTestCase(const TestCase &testCase) {
     // Create source file instance for main source file
     SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
 
+    // Change build mode
+    const std::filesystem::path buildModeFile = testCase.testPath / INPUT_NAME_BUILD_MODE;
+    if (exists(buildModeFile)) {
+      std::ifstream file(buildModeFile, std::ios::binary);
+      std::ostringstream buffer;
+      buffer << file.rdbuf();
+      const std::string buildMode = buffer.str();
+      if (buildMode == BUILD_MODE_DEBUG)
+        cliOptions.buildMode = BuildMode::DEBUG;
+      else if (buildMode == BUILD_MODE_RELEASE)
+        cliOptions.buildMode = BuildMode::RELEASE;
+      else if (buildMode == BUILD_MODE_TEST)
+        cliOptions.buildMode = BuildMode::TEST;
+      else
+        FAIL() << "Unexpected build mode was requested: '" << buildMode << "'";
+    }
+
     // Run Lexer and Parser
     mainSourceFile->runLexer();
     mainSourceFile->runParser();
@@ -149,6 +166,10 @@ void execTestCase(const TestCase &testCase) {
         cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
       else if (sanitizerString == SANITIZER_THREAD)
         cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+      else if (sanitizerString == SANITIZER_MEMORY)
+        cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
+      else
+        FAIL() << "Unexpected sanitizer was requested: '" << sanitizerString << "'";
     }
 
     // Check IR code

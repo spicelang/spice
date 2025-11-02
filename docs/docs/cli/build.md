@@ -40,7 +40,7 @@ You can apply following options to the `build` subcommand:
 | `-m`         | `--build-mode`            | Controls the build mode. Valid values are `debug`, `release` and `test`.                                        |
 | `-lto`       | -                         | Enable link-time-optimization                                                                                   |
 | `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc.                                                        |
-| -            | `--sanitize`              | Enable instrumentation for sanitizer. Valid values are `none`, `address` and `thread`.                          |
+| -            | `--sanitize`              | Enable instrumentation for sanitizer. Valid values are `none`, `address`, `thread` and `memory`.                |
 | -            | `--static`                | Produce stand-alone executable by linking statically                                                            |
 | -            | `--no-entry`              | Do not require or generate main function (useful for web assembly target)                                       |
 | -            | `--disable-verifier`      | Disable LLVM module and function verification (only recommended for debugging the compiler)                     |

@@ -351,7 +351,7 @@ void SourceFile::runIRGenerator() {
 
   // Save the ir string in the compiler output
   if (cliOptions.dump.dumpIR || cliOptions.testMode)
-    compilerOutput.irString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
+    compilerOutput.irString = IRGenerator::getIRString(llvmModule.get(), cliOptions);
 
   // Dump unoptimized IR code
   if (cliOptions.dump.dumpIR)
@@ -379,7 +379,7 @@ void SourceFile::runDefaultIROptimizer() {
 
   // Save the optimized ir string in the compiler output
   if (cliOptions.dump.dumpIR || cliOptions.testMode)
-    compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
+    compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions);
 
   // Dump optimized IR code
   if (cliOptions.dump.dumpIR)
@@ -408,7 +408,7 @@ void SourceFile::runPreLinkIROptimizer() {
 
   // Save the optimized ir string in the compiler output
   if (cliOptions.dump.dumpIR || cliOptions.testMode)
-    compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions.comparableOutput);
+    compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get(), cliOptions);
 
   // Dump optimized IR code
   if (cliOptions.dump.dumpIR)
@@ -460,7 +460,7 @@ void SourceFile::runPostLinkIROptimizer() {
   // Save the optimized ir string in the compiler output
   if (cliOptions.dump.dumpIR || cliOptions.testMode) {
     llvm::Module *module = resourceManager.ltoModule.get();
-    compilerOutput.irOptString = IRGenerator::getIRString(module, cliOptions.comparableOutput);
+    compilerOutput.irOptString = IRGenerator::getIRString(module, cliOptions);
   }
 
   // Dump optimized IR code

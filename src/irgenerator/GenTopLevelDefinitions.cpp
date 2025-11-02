@@ -64,6 +64,10 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   else if (cliOptions.optLevel >= OptLevel::Os)
     fct->addFnAttr(llvm::Attribute::OptimizeForSize);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+  enableFunctionInstrumentation(fct);
+
+  // Add return value attributes
+  fct->addRetAttr(llvm::Attribute::NoUndef);
 
   // Add return value attributes
   fct->addRetAttr(llvm::Attribute::NoUndef);
@@ -217,8 +221,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     func->setLinkage(linkage);
     if (manifestation->entry->getQualType().isInline())
       func->addFnAttr(llvm::Attribute::AlwaysInline);
-    if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
-      func->addFnAttr(llvm::Attribute::SanitizeThread);
+    enableFunctionInstrumentation(func);
 
     // Set attributes to 'this' param
     if (manifestation->isMethod()) {
@@ -385,8 +388,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     proc->setLinkage(linkage);
     if (manifestation->entry->getQualType().isInline())
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
-    if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
-      proc->addFnAttr(llvm::Attribute::SanitizeThread);
+    enableFunctionInstrumentation(proc);
 
     // Set attributes to 'this' param
     if (manifestation->isMethod()) {

@@ -23,13 +23,22 @@ void ExternalLinkerInterface::prepare() {
   if (!cliOptions.instrumentation.generateDebugInfo)
     addLinkerFlag("-Wl,-s");
 
-  // Address sanitizer
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
+  // Sanitizers
+  switch (cliOptions.instrumentation.sanitizer) {
+  case Sanitizer::NONE:
+    break;
+  case Sanitizer::ADDRESS:
     addLinkerFlag("-lasan");
-
-  // Thread sanitizer
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
+    break;
+  case Sanitizer::THREAD:
     addLinkerFlag("-ltsan");
+    break;
+  case Sanitizer::MEMORY:
+    addLinkerFlag("-L/usr/local/lib/clang/21/lib/x86_64-unknown-linux-gnu");
+    addLinkerFlag("-lclang_rt.msan");
+    addLinkerFlag("-lm");
+    break;
+  }
 
   // Web Assembly
   if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
