@@ -8,7 +8,7 @@ source_filename = "source.spice"
 
 define private i32 @_Z8testFuncv() {
   %result = alloca i32, align 4
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 1
 }
 
@@ -20,7 +20,7 @@ define private i32 @_Z8testFuncPKc(ptr %0) {
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8
   %2 = load ptr, ptr %param, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %2)
   ret i32 2
 }
 
@@ -32,7 +32,7 @@ define dso_local noundef i32 @main() #1 {
   %1 = call i32 @_Z8testFuncv()
   store i32 %1, ptr %res, align 4
   %2 = load i32, ptr %res, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %2)
   %4 = call i32 @_Z8testFuncPKc(ptr @anon.string.0)
   store i32 %4, ptr %res, align 4
   %5 = load i32, ptr %result, align 4

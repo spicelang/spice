@@ -18,7 +18,7 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceab
   %glued.addr = getelementptr inbounds %struct.Stamp, ptr %4, i64 0, i32 1
   %5 = load i1, ptr %glued.addr, align 1
   %6 = zext i1 %5 to i32
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %3, i32 %6)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double noundef %3, i32 noundef %6)
   ret void
 }
 
@@ -46,7 +46,7 @@ define dso_local noundef i32 @main() #1 {
   %glued.addr = getelementptr inbounds %struct.Stamp, ptr %stamp.addr, i64 0, i32 1
   %1 = load i1, ptr %glued.addr, align 1
   %2 = zext i1 %1 to i32
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %2)
   %4 = call %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
   store %struct.Stamp %4, ptr %stamp, align 8
   call void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %stamp)

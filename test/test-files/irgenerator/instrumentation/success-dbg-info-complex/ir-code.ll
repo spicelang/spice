@@ -433,7 +433,7 @@ assert.then.L66:                                  ; preds = %assert.exit.L65
   unreachable, !dbg !130
 
 assert.exit.L66:                                  ; preds = %assert.exit.L65
-  %127 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
+  %127 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
   call void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !132
   %128 = load i32, ptr %result, align 4, !dbg !132
   ret i32 %128, !dbg !132

@@ -52,7 +52,7 @@ cond.exit.L6C14:                                  ; preds = %cond.false.L6C14, %
   %cond.result2 = phi i32 [ %cond.result1, %cond.exit.L6C23 ], [ 1, %cond.false.L6C14 ]
   store i32 %cond.result2, ptr %result, align 4
   %6 = load i32, ptr %result, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %6)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
   %8 = load i32, ptr %result, align 4
   ret i32 %8
 }

@@ -33,7 +33,7 @@ define dso_local noundef i32 @main() #0 {
   store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
   %fct = load ptr, ptr %callbackWithoutArgs, align 8
   %5 = call ptr %fct()
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %5)
   store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %fat.ptr1, align 8
   %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
   store ptr poison, ptr %7, align 8
@@ -43,7 +43,7 @@ define dso_local noundef i32 @main() #0 {
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
   %9 = call i1 %fct2(ptr %1, double 3.140000e+00)
   %10 = zext i1 %9 to i32
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %10)
+  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %10)
   store ptr @_Z15lambda.L13C49.06Strings, ptr %fat.ptr3, align 8
   %12 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
   store ptr poison, ptr %12, align 8
@@ -58,7 +58,7 @@ define dso_local noundef i32 @main() #0 {
   %17 = sext i16 %16 to i32
   %18 = icmp eq i32 %17, 1
   %19 = select i1 %18, i32 9, i32 12
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %19)
+  %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %19)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
@@ -83,7 +83,7 @@ define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %3 = load ptr, ptr %str, align 8
   %4 = load ptr, ptr %3, align 8
   %5 = load double, ptr %d, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %4, double %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4, double noundef %5)
   %7 = load ptr, ptr %str, align 8
   %8 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %7)
   %9 = call i1 @_Z10isRawEqualPKcPKc(ptr %8, ptr @anon.string.1)
@@ -114,7 +114,7 @@ define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   %3 = load ptr, ptr %str, align 8
   %4 = load i16, ptr %b, align 2
   %5 = sext i16 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %3, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr noundef %3, i32 noundef %5)
   %7 = load i16, ptr %b, align 2
   %8 = xor i16 %7, -1
   ret i16 %8

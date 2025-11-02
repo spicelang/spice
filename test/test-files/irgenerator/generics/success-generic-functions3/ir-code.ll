@@ -53,7 +53,7 @@ assert.then.L15:                                  ; preds = %assert.exit.L13
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L13
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   %8 = load i32, ptr %result, align 4
   ret i32 %8
 }

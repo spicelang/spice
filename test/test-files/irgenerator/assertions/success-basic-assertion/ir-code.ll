@@ -17,7 +17,7 @@ assert.then.L2:                                   ; preds = %0
   unreachable
 
 assert.exit.L2:                                   ; preds = %0
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   br i1 false, label %assert.exit.L5, label %assert.then.L5, !prof !5
 
 assert.then.L5:                                   ; preds = %assert.exit.L2

@@ -52,7 +52,7 @@ cond.false.L15C26:                                ; preds = %0
 
 cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, %cond.true.L15C26
   %cond.result = phi ptr [ %2, %cond.true.L15C26 ], [ %3, %cond.false.L15C26 ]
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %cond.result)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %cond.result)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

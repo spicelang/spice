@@ -55,14 +55,14 @@ define dso_local noundef i32 @main() #1 {
   %x.addr = getelementptr inbounds %struct.Inner, ptr %inner.addr, i64 0, i32 0
   %1 = load i16, ptr %x.addr, align 2
   %2 = sext i16 %1 to i32
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
   call void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %outer2, ptr %outer)
   %middle.addr1 = getelementptr inbounds %struct.Outer, ptr %outer2, i64 0, i32 0
   %inner.addr2 = getelementptr inbounds %struct.Middle, ptr %middle.addr1, i64 0, i32 0
   %x.addr3 = getelementptr inbounds %struct.Inner, ptr %inner.addr2, i64 0, i32 0
   %4 = load i16, ptr %x.addr3, align 2
   %5 = sext i16 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7
 }

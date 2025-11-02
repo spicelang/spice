@@ -136,14 +136,14 @@ for.body.L11:
   call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #4
   call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #4
   call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep) #4
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
 define private void @_Z15lambda.L12C29.0v() #2 {
   %1 = tail call fastcc i32 @_Z3fibi(i32 30)
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %1)
+  %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %1)
   ret void
 }
 

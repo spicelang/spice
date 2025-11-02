@@ -42,7 +42,7 @@ define dso_local noundef i32 @main() #0 {
   %10 = load i64, ptr %tid2, align 8
   %11 = call i32 @pthread_join(i64 %10, ptr null)
   %12 = load volatile i32, ptr %i, align 4
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %12)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %12)
   %14 = load i32, ptr %result, align 4
   ret i32 %14
 }
@@ -54,7 +54,7 @@ define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8)
   %3 = load volatile i32, ptr %2, align 4
   %4 = add nsw i32 %3, 1
   store volatile i32 %4, ptr %2, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 
@@ -74,7 +74,7 @@ define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8)
   %7 = load volatile double, ptr %6, align 8
   %8 = fadd double %7, 1.230000e+00
   store volatile double %8, ptr %6, align 8
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret void
 }
 

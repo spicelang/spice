@@ -31,7 +31,7 @@ foreach.body.L4:                                  ; preds = %foreach.head.L4
   %6 = load i32, ptr %5, align 4
   store i32 %6, ptr %item, align 4
   %7 = load i32, ptr %item, align 4
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %7)
   br label %foreach.tail.L4
 
 foreach.tail.L4:                                  ; preds = %foreach.body.L4
@@ -53,7 +53,7 @@ foreach.body.L8:                                  ; preds = %foreach.head.L8
   %12 = load i32, ptr %11, align 4
   store i32 %12, ptr %item1, align 4
   %13 = load i32, ptr %item1, align 4
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %13)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %13)
   br label %foreach.tail.L8
 
 foreach.tail.L8:                                  ; preds = %foreach.body.L8

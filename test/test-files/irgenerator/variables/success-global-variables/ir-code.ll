@@ -22,7 +22,7 @@ define dso_local noundef i32 @main() #0 {
   %3 = load double, ptr @TEST3, align 8
   %4 = load i1, ptr @TEST4, align 1
   %5 = zext i1 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, ptr %2, double %3, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1, ptr noundef %2, double noundef %3, i32 noundef %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7
 }

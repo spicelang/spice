@@ -21,7 +21,7 @@ while.body.L3:                                    ; preds = %while.head.L3
   %4 = add nsw i32 %3, 1
   store i32 %4, ptr %i, align 4
   %5 = load i32, ptr %i, align 4
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5)
   br label %while.head.L3
 
 while.exit.L3:                                    ; preds = %while.head.L3

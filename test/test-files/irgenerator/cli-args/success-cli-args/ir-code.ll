@@ -14,11 +14,11 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 {
   store i32 %0, ptr %argc, align 4
   store ptr %1, ptr %argv, align 8
   %3 = load i32, ptr %argc, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %5 = load ptr, ptr %argv, align 8
   %6 = getelementptr inbounds ptr, ptr %5, i32 0
   %7 = load ptr, ptr %6, align 8
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %7)
   %9 = load i32, ptr %argc, align 4
   %10 = icmp sgt i32 %9, 1
   br i1 %10, label %if.then.L4, label %if.exit.L4
@@ -27,7 +27,7 @@ if.then.L4:                                       ; preds = %2
   %11 = load ptr, ptr %argv, align 8
   %12 = getelementptr inbounds ptr, ptr %11, i32 1
   %13 = load ptr, ptr %12, align 8
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %13)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %13)
   br label %if.exit.L4
 
 if.exit.L4:                                       ; preds = %if.then.L4, %2

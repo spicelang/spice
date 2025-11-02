@@ -7,7 +7,7 @@ source_filename = "source.spice"
 
 define private i1 @_Z2f1v() {
   %result = alloca i1, align 1
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 false
 }
 
@@ -16,7 +16,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 define private i1 @_Z2f2v() {
   %result = alloca i1, align 1
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 true
 }
 
@@ -38,7 +38,7 @@ cond.false.L12C26:                                ; preds = %0
 cond.exit.L12C26:                                 ; preds = %cond.false.L12C26, %cond.true.L12C26
   %cond.result = phi i1 [ %2, %cond.true.L12C26 ], [ %3, %cond.false.L12C26 ]
   %4 = zext i1 %cond.result to i32
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %4)
   %6 = load i32, ptr %result, align 4
   ret i32 %6
 }

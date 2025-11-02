@@ -238,61 +238,61 @@ define dso_local noundef i32 @main() #0 {
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter1, i64 2)
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter2, i64 3)
   %1 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter1)
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %1)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %1)
   %3 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter2)
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef %3)
   %5 = load %struct.Counter, ptr %counter1, align 8
   %6 = load %struct.Counter, ptr %counter2, align 8
   %7 = call %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter %5, %struct.Counter %6)
   store %struct.Counter %7, ptr %counter3, align 8
   %8 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter3)
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 noundef %8)
   %10 = load %struct.Counter, ptr %counter3, align 8
   %11 = load %struct.Counter, ptr %counter2, align 8
   %12 = call %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Counter %10, %struct.Counter %11)
   store %struct.Counter %12, ptr %counter4, align 8
   %13 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter4)
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i64 %13)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i64 noundef %13)
   %15 = load %struct.Counter, ptr %counter4, align 8
   %16 = load %struct.Counter, ptr %counter2, align 8
   %17 = call %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counter %15, %struct.Counter %16)
   store %struct.Counter %17, ptr %counter5, align 8
   %18 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter5)
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 %18)
+  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 noundef %18)
   %20 = load %struct.Counter, ptr %counter5, align 8
   %21 = load %struct.Counter, ptr %counter2, align 8
   %22 = call %struct.Counter @_Z6op.div7Counter7Counter(%struct.Counter %20, %struct.Counter %21)
   store %struct.Counter %22, ptr %counter6, align 8
   %23 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter6)
-  %24 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i64 %23)
+  %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i64 noundef %23)
   %25 = load %struct.Counter, ptr %counter6, align 8
   %26 = load %struct.Counter, ptr %counter2, align 8
   %27 = call %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Counter %25, %struct.Counter %26)
   store %struct.Counter %27, ptr %counter7, align 8
   %28 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter7)
-  %29 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 %28)
+  %29 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 noundef %28)
   %30 = load %struct.Counter, ptr %counter7, align 8
   %31 = load %struct.Counter, ptr %counter2, align 8
   %32 = call %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counter %30, %struct.Counter %31)
   store %struct.Counter %32, ptr %counter8, align 8
   %33 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %34 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i64 %33)
+  %34 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i64 noundef %33)
   %35 = load %struct.Counter, ptr %counter2, align 8
   call void @_Z12op.plusequalR7Counter7Counter(ptr %counter8, %struct.Counter %35)
   %36 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %37 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, i64 %36)
+  %37 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, i64 noundef %36)
   %38 = load %struct.Counter, ptr %counter2, align 8
   call void @_Z13op.minusequalR7Counter7Counter(ptr %counter8, %struct.Counter %38)
   %39 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %40 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.9, i64 %39)
+  %40 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.9, i64 noundef %39)
   %41 = load %struct.Counter, ptr %counter2, align 8
   call void @_Z11op.mulequalR7Counter7Counter(ptr %counter8, %struct.Counter %41)
   %42 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %43 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i64 %42)
+  %43 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i64 noundef %42)
   %44 = load %struct.Counter, ptr %counter2, align 8
   call void @_Z11op.divequalR7Counter7Counter(ptr %counter8, %struct.Counter %44)
   %45 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %46 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i64 %45)
+  %46 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i64 noundef %45)
   %47 = call ptr @_Z12op.subscriptR7Counterj(ptr %counter8, i32 12)
   %48 = load i64, ptr %47, align 8
   store i64 %48, ptr %res, align 8
@@ -307,7 +307,7 @@ assert.then.L86:                                  ; preds = %0
 
 assert.exit.L86:                                  ; preds = %0
   %52 = call i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %53 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 %52)
+  %53 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 noundef %52)
   %54 = load i32, ptr %result, align 4
   ret i32 %54
 }

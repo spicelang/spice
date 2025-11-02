@@ -50,7 +50,7 @@ foreach.body.L12:                                 ; preds = %foreach.head.L12
   %12 = load i32, ptr %11, align 4
   store i32 %12, ptr %item, align 4
   %13 = load i32, ptr %item, align 4
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %13)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %13)
   br label %foreach.tail.L12
 
 foreach.tail.L12:                                 ; preds = %foreach.body.L12

@@ -42,7 +42,7 @@ define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenc
 define private void @_ZN9InnerTest4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 

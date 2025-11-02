@@ -95,7 +95,7 @@ define dso_local noundef i32 @main() #2 {
   %11 = load { ptr, ptr }, ptr %foo1, align 8
   %12 = load { ptr, ptr }, ptr %foo2, align 8
   call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %11, { ptr, ptr } %12)
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   %14 = load i32, ptr %result, align 4
   ret i32 %14
 }

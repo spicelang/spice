@@ -14,11 +14,11 @@ define dso_local noundef i32 @main() #0 {
   br i1 %1, label %if.then.L3, label %if.exit.L3
 
 if.then.L3:                                       ; preds = %0
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 0
 
 if.exit.L3:                                       ; preds = %0
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }

@@ -67,14 +67,14 @@ define dso_local noundef i32 @main() #0 {
   %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items.addr, i64 0, i32 1
   %name.addr = getelementptr inbounds %struct.ShoppingItem, ptr %2, i64 0, i32 0
   %3 = load ptr, ptr %name.addr, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %3)
   %5 = call %struct.ShoppingCart @_Z19anotherShoppingCartv()
   store %struct.ShoppingCart %5, ptr %shoppingCart, align 8
   %items.addr1 = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
   %6 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items.addr1, i64 0, i32 2
   %unit.addr = getelementptr inbounds %struct.ShoppingItem, ptr %6, i64 0, i32 2
   %7 = load ptr, ptr %unit.addr, align 8
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %7)
   %9 = load i32, ptr %result, align 4
   ret i32 %9
 }

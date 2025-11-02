@@ -52,14 +52,14 @@ define dso_local noundef i32 @main() #1 {
   %1 = load ptr, ptr %data.addr, align 8
   %2 = icmp eq ptr %1, null
   %3 = zext i1 %2 to i32
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   call void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   %5 = load ptr, ptr %sPtr, align 8
   %data.addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = load ptr, ptr %data.addr1, align 8
   %7 = icmp eq ptr %6, null
   %8 = zext i1 %7 to i32
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
   %10 = load i32, ptr %result, align 4
   ret i32 %10
 }

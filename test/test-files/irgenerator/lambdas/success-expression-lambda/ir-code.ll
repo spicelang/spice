@@ -147,7 +147,7 @@ for.body.L24:                                     ; preds = %for.head.L24
   %6 = load ptr, ptr %array, align 8
   %7 = getelementptr inbounds [10 x i32], ptr %6, i64 0, i32 %5
   %8 = load i32, ptr %7, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %8)
   br label %for.tail.L24
 
 for.tail.L24:                                     ; preds = %for.body.L24
@@ -157,7 +157,7 @@ for.tail.L24:                                     ; preds = %for.body.L24
   br label %for.head.L24
 
 for.exit.L24:                                     ; preds = %for.head.L24
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret void
 }
 

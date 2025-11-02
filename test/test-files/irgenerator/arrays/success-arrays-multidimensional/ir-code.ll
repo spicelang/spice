@@ -58,7 +58,7 @@ for.exit.L3:                                      ; preds = %for.head.L3
   %16 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i32 1
   %17 = getelementptr inbounds [10 x i32], ptr %16, i64 0, i32 3
   %18 = load i32, ptr %17, align 4
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %18)
+  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %18)
   %20 = load i32, ptr %result, align 4
   ret i32 %20
 }

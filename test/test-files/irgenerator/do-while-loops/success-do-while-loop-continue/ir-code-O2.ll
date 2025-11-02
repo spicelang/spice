@@ -14,11 +14,11 @@ dowhile.body.L3:                                  ; preds = %dowhile.foot.L3, %0
   br i1 %2, label %dowhile.body.L7.preheader, label %dowhile.foot.L3
 
 dowhile.body.L7.preheader:                        ; preds = %dowhile.body.L3
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 10)
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 9)
-  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 8)
-  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 7)
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 6)
+  %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double noundef %1, i32 noundef 10)
+  %4 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double noundef %1, i32 noundef 9)
+  %5 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double noundef %1, i32 noundef 8)
+  %6 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double noundef %1, i32 noundef 7)
+  %7 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double noundef %1, i32 noundef 6)
   br label %dowhile.foot.L3
 
 dowhile.foot.L3:                                  ; preds = %dowhile.body.L7.preheader, %dowhile.body.L3

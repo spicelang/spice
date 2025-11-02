@@ -110,7 +110,7 @@ define dso_local noundef i32 @main() #0 {
   store i1 %4, ptr %isEqual, align 1
   %5 = load i1, ptr %isEqual, align 1
   %6 = zext i1 %5 to i32
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %6)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
   %8 = load i32, ptr %result, align 4
   ret i32 %8
 }

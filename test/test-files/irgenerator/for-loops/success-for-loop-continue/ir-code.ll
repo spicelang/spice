@@ -21,7 +21,7 @@ for.head.L2:                                      ; preds = %for.tail.L2, %0
 
 for.body.L2:                                      ; preds = %for.head.L2
   %3 = load i32, ptr %counter, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %5 = load i32, ptr %counter, align 4
   %6 = icmp sge i32 %5, 5
   br i1 %6, label %if.then.L4, label %if.exit.L4
@@ -37,7 +37,7 @@ for.head.L5:                                      ; preds = %for.tail.L5, %if.th
 
 for.body.L5:                                      ; preds = %for.head.L5
   %9 = load i32, ptr %subCounter, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %9)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %9)
   %11 = load i32, ptr %subCounter, align 4
   %12 = icmp eq i32 %11, 11
   br i1 %12, label %if.then.L7, label %if.exit.L7
@@ -67,7 +67,7 @@ for.tail.L2:                                      ; preds = %if.exit.L4, %if.the
   br label %for.head.L2
 
 for.exit.L2:                                      ; preds = %for.head.L2
-  %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %17 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   %18 = load i32, ptr %result, align 4
   ret i32 %18
 }

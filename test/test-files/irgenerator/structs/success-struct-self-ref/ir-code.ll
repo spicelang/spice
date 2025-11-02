@@ -45,7 +45,7 @@ while.exit.L21:                                   ; preds = %while.head.L21
   %9 = load ptr, ptr %curNode, align 8
   %value.addr = getelementptr inbounds %struct.TreeNode, ptr %9, i64 0, i32 1
   %10 = load i32, ptr %value.addr, align 4
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %10)
+  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %10)
   %12 = load i32, ptr %result, align 4
   ret i32 %12
 }

@@ -19,10 +19,10 @@ define dso_local noundef i32 @main() #0 {
   call void @llvm.memcpy.p0.p0.i64(ptr %n, ptr %nested.addr, i64 16, i1 false)
   %testString.addr = getelementptr inbounds %struct.NestedSocket, ptr %n, i64 0, i32 0
   %2 = load ptr, ptr %testString.addr, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %2)
   %sock.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 0
   %4 = load i32, ptr %sock.addr, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %4)
   %6 = load i32, ptr %result, align 4
   ret i32 %6
 }

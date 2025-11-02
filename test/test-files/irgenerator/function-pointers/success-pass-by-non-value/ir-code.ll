@@ -48,9 +48,9 @@ define dso_local noundef i32 @main() #0 {
   store { ptr, ptr } %2, ptr %testFct, align 8
   store ptr %testFct, ptr %testFctPtr, align 8
   %3 = call i32 @_Z6invokePPPFiPKcE(ptr %testFctPtr)
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %5 = call i32 @_Z6invokeRPFiPKcE(ptr %testFct)
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7
 }

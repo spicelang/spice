@@ -68,12 +68,14 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   }
 
   // Call printf function
-  llvm::CallInst *returnValue = builder.CreateCall(printfFct, printfArgs);
+  llvm::CallInst *callInst = builder.CreateCall(printfFct, printfArgs);
 
-  // Add noundef attribute to template string
-  returnValue->addParamAttr(0, llvm::Attribute::NoUndef);
+  // Add noundef attribute to return value and all arguments
+  callInst->addRetAttr(llvm::Attribute::NoUndef);
+  for (size_t i = 0; i < printfArgs.size(); i++)
+    callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
-  return LLVMExprResult{.value = returnValue};
+  return LLVMExprResult{.value = callInst};
 }
 
 std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {

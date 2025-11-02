@@ -53,7 +53,7 @@ define dso_local noundef i32 @main() #0 {
   %3 = load i32, ptr %baseM, align 4
   %4 = load i32, ptr %baseN, align 4
   %5 = call i32 @_Z3ackii(i32 %3, i32 %4)
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, i32 %2, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1, i32 noundef %2, i32 noundef %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7
 }

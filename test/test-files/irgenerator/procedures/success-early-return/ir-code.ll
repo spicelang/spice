@@ -13,7 +13,7 @@ if.then.L2:                                       ; preds = %1
   ret void
 
 if.exit.L2:                                       ; preds = %1
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 

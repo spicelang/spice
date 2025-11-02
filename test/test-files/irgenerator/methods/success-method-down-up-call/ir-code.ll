@@ -21,7 +21,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   %3 = call i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %2)
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   ret void
 }
 

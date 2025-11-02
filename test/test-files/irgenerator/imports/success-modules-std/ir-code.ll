@@ -8,7 +8,7 @@ define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i32 @_Z5toIntb(i1 true)
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
 }
