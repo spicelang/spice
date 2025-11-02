@@ -31,8 +31,8 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
   br i1 %8, label %common.ret.loopexit, label %if.exit.L4
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #1 {
 for.body.L11:
   %threads = alloca [8 x %struct.Thread], align 8
   %0 = alloca %struct.Thread, align 8
@@ -163,7 +163,7 @@ declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_add
 declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immarg) #3
 
 attributes #0 = { nofree nosync nounwind memory(none) }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #4 = { nounwind }

@@ -53,13 +53,13 @@ assert.exit.L6:                                   ; preds = %assert.exit.L5
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #2 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %z = alloca i32, align 4
   %w = alloca i32, align 4
@@ -137,7 +137,7 @@ define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) 
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { cold noreturn nounwind }
-attributes #2 = { noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

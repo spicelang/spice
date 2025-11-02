@@ -4,8 +4,8 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [15 x i8] c"Hello syscall!\00", align 4
 @SYSCALL_WRITE = external global i16
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %str = alloca ptr, align 8
   store i32 0, ptr %result, align 4
@@ -23,7 +23,7 @@ define dso_local i32 @main() #0 {
 
 declare i64 @_Z12getRawLengthPKc(ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

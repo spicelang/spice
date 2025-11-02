@@ -6,10 +6,10 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 4
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
@@ -20,7 +20,7 @@ define dso_local i32 @main() #1 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -5,8 +5,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %d\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %s = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
@@ -26,7 +26,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 define private i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4
@@ -55,7 +55,7 @@ if.exit.L18:                                      ; preds = %if.then.L18, %1
   ret i32 %10
 }
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

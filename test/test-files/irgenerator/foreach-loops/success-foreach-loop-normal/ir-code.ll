@@ -8,8 +8,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Item: %d\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %intVector = alloca %struct.Vector, align 8
   %1 = alloca i32, align 4
@@ -74,13 +74,13 @@ declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 declare ptr @_ZN14VectorIteratorIiE3getEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 
 declare void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

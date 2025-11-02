@@ -33,8 +33,8 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret void
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %1 = call ptr @llvm.returnaddress(i32 0)
   call void @__tsan_func_entry(ptr %1)
   %result = alloca i32, align 4
@@ -412,7 +412,7 @@ declare ptr @__tsan_memset(ptr, i32, i64) #2
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
 declare ptr @llvm.returnaddress(i32 immarg) #3
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nounwind uwtable "frame-pointer"="all" }
 attributes #2 = { nounwind }
 attributes #3 = { nocallback nofree nosync nounwind willreturn memory(none) }

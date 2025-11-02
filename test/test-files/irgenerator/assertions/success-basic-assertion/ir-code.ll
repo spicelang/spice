@@ -5,8 +5,8 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 4
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   br i1 true, label %assert.exit.L2, label %assert.then.L2, !prof !5
@@ -31,12 +31,12 @@ assert.exit.L5:                                   ; preds = %assert.exit.L2
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold noreturn nounwind }
 

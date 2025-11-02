@@ -26,8 +26,8 @@ land.exit.L6C12:
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %t = alloca %struct.Timer, align 8
   %duration = alloca i64, align 8
   %1 = alloca %struct.Timer, align 8
@@ -135,7 +135,7 @@ declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
 declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { cold nofree noreturn nounwind }
 attributes #3 = { nounwind }
 

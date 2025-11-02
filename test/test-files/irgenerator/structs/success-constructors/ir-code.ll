@@ -57,8 +57,8 @@ define private ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceabl
   ret ptr @anon.string.1
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   %1 = alloca %struct.Vector, align 8
@@ -86,9 +86,9 @@ define dso_local i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

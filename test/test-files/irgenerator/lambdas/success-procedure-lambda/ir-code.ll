@@ -9,8 +9,8 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [35 x i8] c"Callback called with args: %s, %d\0A\00", align 4
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr }, align 8
   %callbackWithoutArgs = alloca { ptr, ptr }, align 8
@@ -60,7 +60,7 @@ define private void @_Z14lambda.L2C31.0v() {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8
@@ -92,7 +92,7 @@ declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferencea
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

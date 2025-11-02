@@ -23,7 +23,7 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
 define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) {
   %result = alloca %struct.Stamp, align 8
@@ -35,8 +35,8 @@ define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 
   ret %struct.Stamp %3
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %letter = alloca %struct.Letter, align 8
   %stamp = alloca %struct.Stamp, align 8
@@ -55,7 +55,7 @@ define dso_local i32 @main() #1 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

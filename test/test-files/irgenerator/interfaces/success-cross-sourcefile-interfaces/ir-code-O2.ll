@@ -39,8 +39,8 @@ define private i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull readonly align 8 capt
   ret i1 %2
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #2 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() local_unnamed_addr #2 {
   %car = alloca %struct.Car, align 8
   call fastcc void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %car) #4
   %vtable.addr = load ptr, ptr %car, align 8
@@ -60,7 +60,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write) }
 attributes #1 = { mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read) }
-attributes #2 = { noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #3 = { nofree nounwind }
 attributes #4 = { nounwind }
 

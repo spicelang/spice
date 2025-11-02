@@ -65,7 +65,7 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: norecurse
 define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
@@ -112,8 +112,8 @@ define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   ret void
 }
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #3 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
@@ -126,7 +126,7 @@ define dso_local i32 @main() #3 {
 attributes #0 = { norecurse }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
-attributes #3 = { noinline nounwind optnone uwtable }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

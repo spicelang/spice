@@ -55,13 +55,18 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   fct->setDSOLocal(true);
 
   // Add function attributes
+  fct->addFnAttr(llvm::Attribute::MustProgress);
   fct->addFnAttr(llvm::Attribute::NoInline);
+  fct->addFnAttr(llvm::Attribute::NoRecurse);
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   if (cliOptions.optLevel == OptLevel::O0)
     fct->addFnAttr(llvm::Attribute::OptimizeNone);
   else if (cliOptions.optLevel >= OptLevel::Os)
     fct->addFnAttr(llvm::Attribute::OptimizeForSize);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+
+  // Add return value attributes
+  fct->addRetAttr(llvm::Attribute::NoUndef);
 
   // Add debug info
   if (cliOptions.instrumentation.generateDebugInfo) {
@@ -191,13 +196,12 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Get return type
     llvm::Type *returnType = manifestation->returnType.toLLVMType(sourceFile);
 
-    // Check if function is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get function linkage
     bool externalLinkage = isPublic;
     if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
       externalLinkage |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
-    const llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+    const llvm::GlobalValue::LinkageTypes linkage =
+        externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
@@ -211,7 +215,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Set attributes to function
     func->setDSOLocal(true);
     func->setLinkage(linkage);
-    if (explicitlyInlined)
+    if (manifestation->entry->getQualType().isInline())
       func->addFnAttr(llvm::Attribute::AlwaysInline);
     if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
       func->addFnAttr(llvm::Attribute::SanitizeThread);
@@ -364,8 +368,6 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Get return type
     llvm::Type *returnType = builder.getVoidTy();
 
-    // Check if procedure is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get procedure linkage
     const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
@@ -381,7 +383,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Set attributes to procedure
     proc->setDSOLocal(true);
     proc->setLinkage(linkage);
-    if (explicitlyInlined)
+    if (manifestation->entry->getQualType().isInline())
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
     if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
       proc->addFnAttr(llvm::Attribute::SanitizeThread);

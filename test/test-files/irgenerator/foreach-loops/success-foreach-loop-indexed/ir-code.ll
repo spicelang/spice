@@ -8,8 +8,8 @@ source_filename = "source.spice"
 @anon.array.0 = private unnamed_addr constant [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9]
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 4
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %intArray = alloca [7 x i32], align 4
   %1 = alloca %struct.ArrayIterator, align 8
@@ -56,11 +56,11 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 declare %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 declare void @_ZN13ArrayIteratorIiE4nextEv(ptr)
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

@@ -39,8 +39,8 @@ declare %struct.Result @_Z6sAllocm(i64)
 
 declare ptr @_ZN6ResultIPhE6unwrapEv(ptr)
 
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %sPtr = alloca ptr, align 8
   %s = alloca %struct.StructWithHeapFields, align 8
@@ -65,10 +65,10 @@ define dso_local i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { norecurse }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
