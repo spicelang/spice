@@ -3,6 +3,9 @@
 #include "IROptimizer.h"
 
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
+#include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
+#include <llvm/Transforms/Instrumentation/MemorySanitizer.h>
+#include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
 
 #include <driver/Driver.h>
 
@@ -24,28 +27,25 @@ void IROptimizer::prepare() {
 }
 
 void IROptimizer::optimizeDefault() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " ...\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
+              << " ...\n";                                                                            // GCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildPerModuleDefaultPipeline(llvmOptLevel);
 
   // Add optional passes
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
-    modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD) {
-    modulePassMgr.addPass(llvm::ModuleThreadSanitizerPass());
-    modulePassMgr.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::ThreadSanitizerPass()));
-  }
+  addInstrumentationPassToPipeline(modulePassMgr);
 
   // Run pipeline
   modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 }
 
 void IROptimizer::optimizePreLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles) // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
+              << " (pre-link) ...\n";                                                                 // GCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
@@ -60,8 +60,9 @@ void IROptimizer::optimizePreLink() {
 }
 
 void IROptimizer::optimizePostLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles) // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) << " (post-link) ...\n";     // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
+              << " (post-link) ...\n";                                                                // GCOV_EXCL_LINE
   llvm::Module &ltoModule = *resourceManager.ltoModule;
 
   // Compute module summary index
@@ -74,15 +75,35 @@ void IROptimizer::optimizePostLink() {
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTODefaultPipeline(llvmOptLevel, &moduleSummaryIndex);
 
   // Add optional passes
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS)
-    modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD) {
-    modulePassMgr.addPass(llvm::ModuleThreadSanitizerPass());
-    modulePassMgr.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::ThreadSanitizerPass()));
-  }
+  addInstrumentationPassToPipeline(modulePassMgr);
 
   // Run pipeline
   modulePassMgr.run(ltoModule, moduleAnalysisMgr);
+}
+
+void IROptimizer::addInstrumentationPassToPipeline(llvm::ModulePassManager &modulePassMgr) const {
+  switch (cliOptions.instrumentation.sanitizer) {
+  case Sanitizer::NONE: {
+    return;
+  }
+  case Sanitizer::ADDRESS: {
+    llvm::AddressSanitizerOptions asanOptions;
+    asanOptions.UseAfterScope = true;
+    modulePassMgr.addPass(llvm::AddressSanitizerPass(asanOptions));
+    break;
+  }
+  case Sanitizer::THREAD: {
+    modulePassMgr.addPass(llvm::ModuleThreadSanitizerPass());
+    modulePassMgr.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::ThreadSanitizerPass()));
+    break;
+  }
+  case Sanitizer::MEMORY: {
+    llvm::MemorySanitizerOptions msanOptions;
+    msanOptions.EagerChecks = true;
+    modulePassMgr.addPass(llvm::MemorySanitizerPass(msanOptions));
+    break;
+  }
+  }
 }
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {

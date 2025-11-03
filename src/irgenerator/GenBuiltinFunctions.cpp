@@ -138,7 +138,7 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
 
   // Get value for stderr
   llvm::Value *stdErr;
-  if (cliOptions.targetOs == "windows") {
+  if (cliOptions.targetTriple.isOSWindows()) {
     llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
     stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
   } else {

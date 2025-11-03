@@ -20,6 +20,7 @@ const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
+const char *const INPUT_NAME_BUILD_MODE = "build-mode.txt";
 const char *const INPUT_NAME_SANITIZER = "sanitizer.txt";
 
 const char *const REF_NAME_SOURCE = "source.spice";
@@ -56,8 +57,8 @@ struct TestCase {
 };
 
 // Typedefs
-typedef const std::function<std::string()> &GetOutputFct;
-typedef const std::function<void(std::string &expectedOutput, std::string &actualOutput)> &ModifyOutputFct;
+using GetOutputFct = const std::function<std::string()>&;
+using ModifyOutputFct = const std::function<void(std::string& expectedOutput, std::string& actualOutput)>&;
 
 class TestUtil {
 public:

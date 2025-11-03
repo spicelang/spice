@@ -487,9 +487,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Set attributes to function
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
-
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
-    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
+  enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
@@ -643,9 +641,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Set attributes to function
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
-
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
-    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
+  enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
@@ -793,9 +789,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Set attributes to function
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
-
-  if (cliOptions.instrumentation.sanitizer == Sanitizer::THREAD)
-    lambda->addFnAttr(llvm::Attribute::SanitizeThread);
+  enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {

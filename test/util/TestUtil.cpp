@@ -57,6 +57,7 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
     }
   }
 
+  assert(testCases.size() <= EXPECTED_NUMBER_OF_TESTS);
   return testCases;
 }
 

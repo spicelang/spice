@@ -30,11 +30,13 @@ public type OptLevel enum {
 public type Sanitizer enum {
     NONE = 0,    // No sanitizer
     ADDRESS = 1, // Sanitize memory accesses
-    THREAD = 2   // Sanitize threads for data race prevention
+    THREAD = 2,  // Sanitize threads for data race prevention
+    MEMORY = 3   // Sanitize against uninitialized memory reads
 }
 const string SANITIZER_NONE = "none";
 const string SANITIZER_ADDRESS = "address";
 const string SANITIZER_THREAD = "thread";
+const string SANITIZER_MEMORY = "memory";
 
 public type BuildMode enum {
     DEBUG = 0,   // Default build mode, uses -O0 per default
@@ -434,6 +436,8 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
         } else if sanitizer == SANITIZER_THREAD {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+        } else if sanitizer == SANITIZER_MEMORY {
+            this.cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
         } else {
             panic(Error("Invalid sanitizer"));
         }
@@ -443,7 +447,7 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
     CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --sanitizer
-    subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread");
+    subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory");
 }
 
 /**

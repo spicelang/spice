@@ -12,8 +12,6 @@
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
-#include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
-#include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
 
 namespace spice::compiler {
 
@@ -39,10 +37,10 @@ private:
   llvm::ModuleAnalysisManager moduleAnalysisMgr;
   llvm::StandardInstrumentations si;
   llvm::PassInstrumentationCallbacks pic;
-  llvm::AddressSanitizerOptions asanOptions;
   std::unique_ptr<llvm::PassBuilder> passBuilder;
 
   // Private methods
+  void addInstrumentationPassToPipeline(llvm::ModulePassManager& modulePassMgr) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
 

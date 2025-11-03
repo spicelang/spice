@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "driver/Driver.h"
+
 #include <CompilerPass.h>
 #include <ast/ParallelizableASTVisitor.h>
 #include <irgenerator/DebugInfoGenerator.h>
@@ -132,7 +134,7 @@ public:
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
-  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, bool comparableOutput);
+  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions& cliOptions);
 
 private:
   // Private methods
@@ -193,6 +195,9 @@ private:
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct) const;
+
+  // Generate code instrumentation
+  void enableFunctionInstrumentation(llvm::Function* function) const;
 
   // Private members
   llvm::LLVMContext &context;

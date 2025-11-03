@@ -166,6 +166,14 @@ void Driver::enrich() {
     cliOptions.noEntryFct = true;
     cliOptions.generateTestMain = true;
   }
+
+  const Sanitizer sanitizer = cliOptions.instrumentation.sanitizer;
+  // Memory sanitizer is only supported on Linux
+  if (!cliOptions.targetTriple.isOSLinux() && sanitizer == Sanitizer::MEMORY)
+    throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets");
+  // Some sanitizers need lifetime markers to work properly
+  if (sanitizer == Sanitizer::ADDRESS || sanitizer == Sanitizer::MEMORY)
+    cliOptions.useLifetimeMarkers = true;
 }
 
 /**
@@ -379,6 +387,8 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) {
       cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
     else if (inputString == SANITIZER_THREAD)
       cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
+    else if (inputString == SANITIZER_MEMORY)
+      cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
     else
       throw CliError(INVALID_BUILD_MODE, "Invalid sanitizer: " + inputString);
 
@@ -388,7 +398,7 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) {
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
   // --sanitizer
-  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread");
+  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory");
 }
 
 /**

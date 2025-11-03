@@ -1,13 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-$asan.module_ctor = comdat any
-
 @llvm.used = appending global [1 x ptr] [ptr @asan.module_ctor], section "llvm.metadata"
-@___asan_globals_registered = common hidden global i64 0
-@__start_asan_globals = extern_weak hidden global i64
-@__stop_asan_globals = extern_weak hidden global i64
-@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr @asan.module_ctor }]
+@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr null }]
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 !dbg !10 {
@@ -51,10 +46,9 @@ declare void @__asan_unregister_elf_globals(i64, i64, i64)
 declare void @__asan_init()
 
 ; Function Attrs: nounwind uwtable
-define internal void @asan.module_ctor() #1 comdat {
+define internal void @asan.module_ctor() #1 {
   call void @__asan_init()
   call void @__asan_version_mismatch_check_v8()
-  call void @__asan_register_elf_globals(i64 ptrtoint (ptr @___asan_globals_registered to i64), i64 ptrtoint (ptr @__start_asan_globals to i64), i64 ptrtoint (ptr @__stop_asan_globals to i64))
   ret void
 }
 
