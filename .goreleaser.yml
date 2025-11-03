@@ -1,5 +1,8 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
+
 project_name: spice
+
 builds:
   - main: ./.github/media/dummy.go
     goos:
@@ -18,68 +21,22 @@ builds:
         goarch: arm64
     hooks:
       post:
-        - mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}
-dockers:
-  - image_templates:
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/spicelang/spice:latest-amd64
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - chillibits/spice:latest-amd64
-    dockerfile: Dockerfile
-    skip_push: auto
-    use: buildx
-    goarch: amd64
-    extra_files:
-      - bin
-      - std
-    build_flag_templates:
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.name={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --label=org.opencontainers.image.source={{.GitURL}}
-      - --platform=linux/amd64
-  - image_templates:
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-      - ghcr.io/spicelang/spice:latest-aarch64
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-      - chillibits/spice:latest-aarch64
-    dockerfile: Dockerfile
-    skip_push: auto
-    use: buildx
-    goarch: arm64
-    extra_files:
-      - bin
-      - std
-    build_flag_templates:
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.name={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --label=org.opencontainers.image.source={{.GitURL}}
-      - --platform=linux/arm64
-docker_manifests:
-  - name_template: chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
-    image_templates:
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-    skip_push: auto
-  - name_template: chillibits/spice:latest
-    image_templates:
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-    skip_push: auto
+        - mv ./bin/spice-{{.Os}}-{{.Arch}}/spice{{.Ext}} {{.Path}}
 
-  - name_template: ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
-    image_templates:
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-    skip_push: auto
-  - name_template: ghcr.io/spicelang/spice:latest
-    image_templates:
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
-    skip_push: auto
+dockers_v2:
+  - images:
+      - "chillibits/spice"
+      - "ghcr.io/spicelang/spice"
+    tags:
+      - {{.Major}}.{{.Minor}}.{{.Patch}}
+    labels:
+      "org.opencontainers.image.description": "Spice programming language."
+      "org.opencontainers.image.created": {{.Date}}
+      "org.opencontainers.image.name": {{.ProjectName}}
+      "org.opencontainers.image.revision": {{.FullCommit}}
+      "org.opencontainers.image.version": {{.Version}}
+      "org.opencontainers.image.source": {{.GitURL}}
+
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     files:
@@ -88,8 +45,10 @@ archives:
     format_overrides:
       - goos: windows
         formats: [ 'zip' ]
+
 checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
+
 nfpms:
   - id: publish
     file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
@@ -110,19 +69,22 @@ nfpms:
     contents:
       - src: std
         dst: /usr/lib/spice/std
+
 release:
-  name_template: v{{ .Tag }}
+  name_template: v{{.Tag}}
   prerelease: auto
   footer: |
     ## What to do next?
     - [Install Spice](https://www.spicelang.com/install/linux)
     - Visit [www.spicelang.com](https://www.spicelang.com) to test the new features
+
 changelog:
   use: github
   filters:
     exclude:
       - Merge pull request
       - Merge branch
+
 milestones:
   - close: true
     fail_on_error: false

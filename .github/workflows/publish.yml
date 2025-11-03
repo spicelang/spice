@@ -243,7 +243,7 @@ jobs:
   build-artifacts:
     name: Build artifacts
     needs: [ build-compiler-linux-x86, build-compiler-linux-aarch64, build-compiler-windows-x86 ]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: enabled
     steps:
@@ -312,7 +312,7 @@ jobs:
   deploy-nexus:
     name: Deploy to Nexus
     needs: build-artifacts
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     if: contains(github.ref, 'rc') == false
     strategy:
       matrix:
@@ -360,10 +360,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {
-            arch: amd64,
-            label: x64
-          }
+          - { arch: amd64, label: x64 }
     steps:
       - name: Checkout
         uses: actions/checkout@v5
