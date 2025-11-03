@@ -30,11 +30,13 @@ enum class Sanitizer : uint8_t {
   ADDRESS = 1, // Sanitize memory accesses
   THREAD = 2,  // Sanitize threads for data race prevention
   MEMORY = 3,  // Sanitize against uninitialized memory reads
+  TYPE = 4,    // Sanitize type casts and accesses
 };
 const char *const SANITIZER_NONE = "none";
 const char *const SANITIZER_ADDRESS = "address";
 const char *const SANITIZER_THREAD = "thread";
 const char *const SANITIZER_MEMORY = "memory";
+const char *const SANITIZER_TYPE = "type";
 
 enum class BuildMode : uint8_t {
   DEBUG = 0,   // Default build mode, uses -O0 per default

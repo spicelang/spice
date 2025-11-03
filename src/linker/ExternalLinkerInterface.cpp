@@ -38,6 +38,10 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-lclang_rt.msan");
     requestLibMathLinkage();
     break;
+  case Sanitizer::TYPE:
+    addLinkerFlag("-L/usr/local/lib/clang/21/lib/x86_64-unknown-linux-gnu");
+    addLinkerFlag("-lclang_rt.tysan");
+    break;
   }
 
   // Web Assembly

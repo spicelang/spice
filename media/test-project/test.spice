@@ -1,26 +1,22 @@
-type T dyn;
-type TRes dyn;
-
-// ------------------------------------------ ~ -------------------------------------------
-
-p bitwiseNotTestInner<T>(T lhs, const T expectedResult) {
-    const T actualResult = ~lhs;
-    printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
-    assert actualResult == expectedResult;
+type Base struct {
+    int x = 123
 }
 
-p bitwiseNotTest() {
-    // Lhs is int
-    bitwiseNotTestInner<int>(52572, -52573);
-    // Lhs is short
-    bitwiseNotTestInner<short>(10s, -11s);
-    // Lhs is long
-    bitwiseNotTestInner<long>(186008394l, -186008395l);
-    // Lhs is byte
-    bitwiseNotTestInner<byte>(cast<byte>(18), cast<byte>(-19));
+type A struct {
+    compose Base base
+    int a = 456
+}
+
+type B struct {
+    compose Base base
+    int b = 789
 }
 
 f<int> main() {
-    bitwiseNotTest();
-    printf("All assertions passed!");
+    unsafe {
+        A a;
+        Base* base = cast<Base*>(&a);
+        B* b = cast<B*>(base);
+        printf("b.b: %d\n", b.b);
+    }
 }
