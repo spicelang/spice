@@ -1,8 +1,22 @@
+type Base struct {
+    int x = 123
+}
+
+type A struct {
+    compose Base base
+    int a = 456
+}
+
+type B struct {
+    compose Base base
+    int b = 789
+}
+
 f<int> main() {
-    heap int* iPtr = sNew<int>();
-    *iPtr = 123;
     unsafe {
-        sDealloc(cast<heap byte*>(iPtr));
+        A a;
+        Base* base = cast<Base*>(&a);
+        B* b = cast<B*>(base);
+        printf("b.b: %d\n", b.b);
     }
-    *iPtr = 321;
 }

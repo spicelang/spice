@@ -393,6 +393,8 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
       cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
     else if (inputString == SANITIZER_MEMORY)
       cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
+    else if (inputString == SANITIZER_TYPE)
+      cliOptions.instrumentation.sanitizer = Sanitizer::TYPE;
     else
       throw CliError(INVALID_SANITIZER, inputString);
 
@@ -402,7 +404,7 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
   // --sanitizer
-  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory");
+  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory, type");
 }
 
 /**
