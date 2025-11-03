@@ -39,6 +39,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Cannot emit debug info with optimization enabled";
   case NON_ZERO_EXIT_CODE:
     return "Non-zero exit code";
+  case FEATURE_NOT_SUPPORTED_FOR_TARGET:
+    return "Feature is not supported for this target";
   case FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED:
     return "Feature not supported when dockerized";
   case INVALID_BUILD_MODE:

@@ -160,7 +160,7 @@ ExternalBinaryFinderResult FileUtil::findLinker([[maybe_unused]] const CliOption
   std::vector<const char *> linkerList;
   linkerList.reserve(5);
   // mold does only support linking for unix and darwin
-  if (cliOptions.targetOs != "windows")
+  if (!cliOptions.targetTriple.isOSWindows())
     linkerList.push_back("mold");
   linkerList.push_back("ld.lld");
   linkerList.push_back("ld64.ddl");

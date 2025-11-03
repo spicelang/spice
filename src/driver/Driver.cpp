@@ -167,8 +167,11 @@ void Driver::enrich() {
     cliOptions.generateTestMain = true;
   }
 
-  // Some sanitizers need lifetime markers to work properly
   const Sanitizer sanitizer = cliOptions.instrumentation.sanitizer;
+  // Memory sanitizer is only supported on Linux
+  if (!cliOptions.targetTriple.isOSLinux() && sanitizer == Sanitizer::MEMORY)
+    throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets");
+  // Some sanitizers need lifetime markers to work properly
   if (sanitizer == Sanitizer::ADDRESS || sanitizer == Sanitizer::MEMORY)
     cliOptions.useLifetimeMarkers = true;
 }
