@@ -6,6 +6,7 @@
 #include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
 #include <llvm/Transforms/Instrumentation/MemorySanitizer.h>
 #include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
+#include <llvm/Transforms/Instrumentation/TypeSanitizer.h>
 
 #include <driver/Driver.h>
 
@@ -101,6 +102,10 @@ void IROptimizer::addInstrumentationPassToPipeline(llvm::ModulePassManager &modu
     llvm::MemorySanitizerOptions msanOptions;
     msanOptions.EagerChecks = true;
     modulePassMgr.addPass(llvm::MemorySanitizerPass(msanOptions));
+    break;
+  }
+  case Sanitizer::TYPE: {
+    modulePassMgr.addPass(llvm::TypeSanitizerPass());
     break;
   }
   }
