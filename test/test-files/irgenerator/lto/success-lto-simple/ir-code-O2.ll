@@ -22,7 +22,7 @@ assert.then.L4:                                   ; preds = %0
   unreachable
 
 assert.exit.L4:                                   ; preds = %0
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+  %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 

@@ -104,7 +104,7 @@ for.body.L12:                                     ; preds = %for.head.L12
   %7 = load ptr, ptr %list, align 8
   %8 = getelementptr inbounds i32, ptr %7, i64 %6
   %9 = load i32, ptr %8, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %9)
   br label %for.tail.L12
 
 for.tail.L12:                                     ; preds = %for.body.L12
@@ -150,7 +150,7 @@ define dso_local noundef i32 @main() #1 {
   call void @_Z9printDataIPiEvlPi(i64 2, ptr %11)
   %12 = load i32, ptr %result1, align 4
   %13 = load i32, ptr %result2, align 4
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12, i32 %13)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %12, i32 noundef %13)
   %15 = load i32, ptr %result, align 4
   ret i32 %15
 }

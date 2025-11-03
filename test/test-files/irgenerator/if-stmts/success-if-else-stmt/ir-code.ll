@@ -13,25 +13,25 @@ define dso_local noundef i32 @main() #0 {
   br i1 false, label %if.then.L2, label %if.else.L2
 
 if.then.L2:                                       ; preds = %0
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   br label %if.exit.L2
 
 if.else.L2:                                       ; preds = %0
   br i1 false, label %if.then.L4, label %if.else.L4
 
 if.then.L4:                                       ; preds = %if.else.L2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   br label %if.exit.L4
 
 if.else.L4:                                       ; preds = %if.else.L2
   br i1 false, label %if.then.L6, label %if.else.L6
 
 if.then.L6:                                       ; preds = %if.else.L4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   br label %if.exit.L6
 
 if.else.L6:                                       ; preds = %if.else.L4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
   br label %if.exit.L6
 
 if.exit.L6:                                       ; preds = %if.else.L6, %if.then.L6

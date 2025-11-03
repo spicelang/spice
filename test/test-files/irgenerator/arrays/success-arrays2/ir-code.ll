@@ -14,13 +14,13 @@ define dso_local noundef i32 @main() #0 {
   store [10 x i32] [i32 1, i32 2, i32 4, i32 8, i32 16, i32 32, i32 64, i32 128, i32 256, i32 512], ptr %intArray, align 4
   %1 = getelementptr inbounds [10 x i32], ptr %intArray, i64 0, i32 3
   %2 = load i32, ptr %1, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
   %4 = getelementptr inbounds [10 x i32], ptr %intArray, i64 0, i32 7
   %5 = load i32, ptr %4, align 4
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %5)
   %7 = getelementptr inbounds [10 x i32], ptr %intArray, i64 0, i32 9
   %8 = load i32, ptr %7, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %8)
   %10 = load i32, ptr %result, align 4
   ret i32 %10
 }

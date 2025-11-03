@@ -28,7 +28,7 @@ dowhile.body.L7:                                  ; preds = %dowhile.foot.L7, %i
   %5 = load double, ptr %loopCounterOuter, align 8
   %6 = load i16, ptr %loopCounterInner, align 2
   %7 = sext i16 %6 to i32
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %5, i32 %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double noundef %5, i32 noundef %7)
   %9 = load i16, ptr %loopCounterInner, align 2
   %10 = sub nsw i16 %9, 1
   store i16 %10, ptr %loopCounterInner, align 2

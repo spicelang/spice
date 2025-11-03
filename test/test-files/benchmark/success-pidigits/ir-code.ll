@@ -57,13 +57,13 @@ for.body.L19:                                     ; preds = %for.head.L19
 
 if.then.L20:                                      ; preds = %for.body.L19
   %14 = load i64, ptr %m, align 8
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %14)
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %14)
   %16 = load i32, ptr %printedDigits, align 4
   %17 = icmp eq i32 %16, 0
   br i1 %17, label %if.then.L22, label %if.exit.L22
 
 if.then.L22:                                      ; preds = %if.then.L20
-  %18 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   br label %if.exit.L22
 
 if.exit.L22:                                      ; preds = %if.then.L22, %if.then.L20

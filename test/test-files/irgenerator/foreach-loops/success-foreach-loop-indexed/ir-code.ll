@@ -37,7 +37,7 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   %6 = load ptr, ptr %item.addr, align 8
   %7 = load i64, ptr %index, align 8
   %8 = load i32, ptr %6, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %7, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %7, i32 noundef %8)
   br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5

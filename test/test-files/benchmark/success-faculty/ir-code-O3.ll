@@ -51,7 +51,7 @@ common.ret:                                       ; preds = %middle.block, %1
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #4
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 10, i32 %1)
+  %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef 10, i32 noundef %1)
   ret i32 0
 }
 

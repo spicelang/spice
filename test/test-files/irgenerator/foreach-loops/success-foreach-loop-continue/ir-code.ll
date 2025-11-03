@@ -32,7 +32,7 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   store i16 %6, ptr %s, align 2
   %7 = load i16, ptr %s, align 2
   %8 = sext i16 %7 to i32
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %8)
   %10 = load i16, ptr %s, align 2
   %11 = and i16 %10, 1
   %12 = sext i16 %11 to i32
@@ -53,7 +53,7 @@ foreach.body.L8:                                  ; preds = %foreach.head.L8
   store ptr %16, ptr %2, align 8
   %17 = load ptr, ptr %2, align 8
   %18 = load i64, ptr %17, align 8
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %18)
+  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef %18)
   br label %foreach.tail.L5
 
 foreach.tail.L8:                                  ; No predecessors!
@@ -71,7 +71,7 @@ foreach.tail.L5:                                  ; preds = %if.exit.L7, %foreac
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.head.L5
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   %21 = load i32, ptr %result, align 4
   ret i32 %21
 }

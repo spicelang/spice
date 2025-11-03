@@ -22,7 +22,7 @@ define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
   %ref.addr = getelementptr inbounds %struct.Struct, ptr %6, i64 0, i32 0
   %7 = load ptr, ptr %ref.addr, align 8
   %8 = load i32, ptr %7, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %8)
   ret void
 }
 
@@ -43,7 +43,7 @@ define private i32 @_Z4funcRdRK6Struct(ptr %0, ptr %1) {
   %b.addr = getelementptr inbounds %struct.Struct, ptr %6, i64 0, i32 1
   %7 = load i1, ptr %b.addr, align 1
   %8 = zext i1 %7 to i32
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
   ret i32 0
 }
 
@@ -86,7 +86,7 @@ assert.then.L24:                                  ; preds = %assert.exit.L20
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   %13 = load i32, ptr %result, align 4
   ret i32 %13
 }

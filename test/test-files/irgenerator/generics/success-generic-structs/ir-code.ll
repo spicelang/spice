@@ -17,7 +17,7 @@ define dso_local noundef i32 @main() #0 {
   store i32 1, ptr %1, align 4
   %cap.addr = getelementptr inbounds %struct.Vector, ptr %doubleVec, i64 0, i32 1
   %2 = load i32, ptr %cap.addr, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }

@@ -15,7 +15,7 @@ define private void @_Z4testv() {
   store ptr %1, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
   %3 = load ptr, ptr %2, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %3)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   ret void
 }
@@ -32,7 +32,7 @@ define private void @_Z4testRK6String(ptr %0) {
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
   %3 = load ptr, ptr %2, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %3)
   ret void
 }
 

@@ -38,7 +38,7 @@ foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.
   %4 = call ptr @_ZN14NumberIteratorIsE3getEv(ptr nonnull %shortIterator) #2
   %5 = load i16, ptr %4, align 2
   %6 = sext i16 %5 to i32
-  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %6)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %6)
   %8 = and i16 %5, 1
   %.not = icmp eq i16 %8, 0
   br i1 %.not, label %foreach.tail.L5, label %if.then.L7
@@ -59,7 +59,7 @@ if.then.L7:                                       ; preds = %foreach.body.L5
 foreach.body.L8:                                  ; preds = %if.then.L7
   %11 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %1) #2
   %12 = load i64, ptr %11, align 8
-  %13 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %12)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 noundef %12)
   br label %foreach.exit.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5, %if.then.L7
@@ -68,7 +68,7 @@ foreach.tail.L5:                                  ; preds = %foreach.body.L5, %i
   br i1 %14, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.tail.L5, %0, %foreach.body.L8
-  %15 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }
 

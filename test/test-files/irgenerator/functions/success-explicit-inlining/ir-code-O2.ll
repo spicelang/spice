@@ -5,7 +5,7 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #0 {
-  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 12)
+  %1 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef 12)
   ret i32 0
 }
 

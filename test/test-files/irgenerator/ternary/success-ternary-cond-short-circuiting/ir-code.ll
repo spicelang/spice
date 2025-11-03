@@ -27,7 +27,7 @@ land.1.L10C26:                                    ; preds = %0
 land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0
   %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L10C26 ]
   %3 = select i1 %land_phi, i32 2, i32 3
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

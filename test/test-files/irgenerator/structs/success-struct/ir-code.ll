@@ -36,12 +36,12 @@ define dso_local noundef i32 @main() #0 {
   %7 = zext i1 %6 to i32
   %field2.addr = getelementptr inbounds %struct.TestStruct, ptr %instance1, i64 0, i32 1
   %8 = load double, ptr %field2.addr, align 8
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %7, double %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %7, double noundef %8)
   %nested.addr1 = getelementptr inbounds %struct.TestStruct, ptr %instance1, i64 0, i32 2
   %10 = load ptr, ptr %nested.addr1, align 8
   %nested1.addr = getelementptr inbounds %struct.Nested, ptr %10, i64 0, i32 0
   %11 = load ptr, ptr %nested1.addr, align 8
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %11)
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %11)
   %13 = load i32, ptr %result, align 4
   ret i32 %13
 }

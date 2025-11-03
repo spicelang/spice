@@ -24,7 +24,7 @@ for.body.L19:                                     ; preds = %0, %for.tail.L19
   br i1 %5, label %if.then.L20, label %if.else.L20
 
 if.then.L20:                                      ; preds = %for.body.L19
-  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %m.031)
+  %6 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef %m.031)
   %7 = icmp eq i32 %printedDigits.034, 0
   br i1 %7, label %if.then.L22, label %if.exit.L22
 

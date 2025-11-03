@@ -19,14 +19,14 @@ define dso_local noundef i32 @main() #0 {
   %f2.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
   %2 = load ptr, ptr %f2.addr, align 8
   %3 = load i32, ptr %2, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %f2.addr1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
   %5 = load ptr, ptr %f2.addr1, align 8
   %6 = load i32, ptr %5, align 4
   %7 = add nsw i32 %6, 1
   store i32 %7, ptr %5, align 4
   %8 = load i32, ptr %t, align 4
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
   %10 = load i32, ptr %result, align 4
   ret i32 %10
 }

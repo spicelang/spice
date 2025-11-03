@@ -30,7 +30,7 @@ define dso_local noundef i32 @main() #0 {
   %fct = load ptr, ptr %lambda, align 8
   call void %fct(ptr %captures1)
   %6 = load i32, ptr %i, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %6)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6)
   %8 = load i32, ptr %result, align 4
   ret i32 %8
 }
@@ -42,7 +42,7 @@ define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) 
   %j = getelementptr inbounds nuw { ptr, i32 }, ptr %2, i32 0, i32 1
   %3 = load ptr, ptr %2, align 8
   %4 = load i32, ptr %3, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
   %6 = load ptr, ptr %2, align 8
   %7 = load i32, ptr %6, align 4
   %8 = add nsw i32 %7, 1
@@ -54,7 +54,7 @@ define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) 
   store i32 %12, ptr %10, align 4
   %13 = load ptr, ptr %2, align 8
   %14 = load i32, ptr %13, align 4
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %14)
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %14)
   ret void
 }
 

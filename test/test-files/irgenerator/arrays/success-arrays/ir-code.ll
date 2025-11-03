@@ -30,7 +30,7 @@ define dso_local noundef i32 @main() #0 {
   %12 = load i32, ptr %11, align 4
   %13 = getelementptr inbounds [3 x i32], ptr %intArray, i64 0, i32 2
   %14 = load i32, ptr %13, align 4
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %12, i32 %14)
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12, i32 noundef %14)
   %16 = load i32, ptr %result, align 4
   ret i32 %16
 }

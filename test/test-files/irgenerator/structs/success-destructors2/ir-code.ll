@@ -21,7 +21,7 @@ define dso_local noundef i32 @main() #0 {
   %2 = zext i1 %1 to i32
   %field2.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %3 = load ptr, ptr %field2.addr, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2, ptr %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2, ptr noundef %3)
   call void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
@@ -34,7 +34,7 @@ define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceab
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   %4 = load ptr, ptr %this, align 8
   %field1.addr = getelementptr inbounds %struct.Vector, ptr %4, i64 0, i32 0
   store i1 true, ptr %2, align 1

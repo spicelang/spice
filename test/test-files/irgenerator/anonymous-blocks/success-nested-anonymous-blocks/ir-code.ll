@@ -7,7 +7,7 @@ define private void @_Z4testi(i32 %0) {
   %param = alloca i32, align 4
   store i32 %0, ptr %param, align 4
   %2 = load i32, ptr %param, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
   ret void
 }
 

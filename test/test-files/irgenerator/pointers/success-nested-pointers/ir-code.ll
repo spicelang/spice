@@ -24,16 +24,16 @@ define private void @_Z8testProcPPPA4_i(ptr %0) {
   store i32 10, ptr %7, align 4
   %8 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 0
   %9 = load i32, ptr %8, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %9)
   %11 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 1
   %12 = load i32, ptr %11, align 4
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %12)
   %14 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 2
   %15 = load i32, ptr %14, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %15)
+  %16 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %15)
   %17 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 3
   %18 = load i32, ptr %17, align 4
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %18)
+  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef %18)
   ret void
 }
 
@@ -50,7 +50,7 @@ define dso_local noundef i32 @main() #1 {
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
   %1 = getelementptr inbounds [4 x i32], ptr %intArray, i64 0, i32 1
   %2 = load i32, ptr %1, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %2)
   store ptr %intArray, ptr %intArray1, align 8
   store ptr %intArray1, ptr %intArray2, align 8
   call void @_Z8testProcPPPA4_i(ptr %intArray2)

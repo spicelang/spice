@@ -21,7 +21,7 @@ define private void @_ZN4TestI6NestedE8testFuncEv(ptr noundef nonnull align 1 %0
   call void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
   %i.addr = getelementptr inbounds %struct.Nested, ptr %t, i64 0, i32 0
   %2 = load i32, ptr %i.addr, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
   ret void
 }
 

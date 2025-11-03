@@ -60,7 +60,7 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
   %data.addr = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 1
   %3 = load ptr, ptr %data.addr, align 8
   call void @free(ptr %3)
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 

@@ -55,7 +55,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 define private void @_Z14lambda.L2C31.0v() {
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 
@@ -70,7 +70,7 @@ define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, double %1) {
   %3 = load ptr, ptr %str, align 8
   %4 = load ptr, ptr %3, align 8
   %5 = load double, ptr %d, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %4, double %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4, double noundef %5)
   ret void
 }
 
@@ -84,7 +84,7 @@ define private void @_Z15lambda.L12C41.06Stringb(%struct.String %0, i1 %1) {
   %3 = load ptr, ptr %str, align 8
   %4 = load i1, ptr %b, align 1
   %5 = zext i1 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %3, i32 %5)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %3, i32 noundef %5)
   ret void
 }
 

@@ -19,15 +19,15 @@ define dso_local noundef i32 @main() #0 {
   %1 = load ptr, ptr %ptr, align 8
   %2 = load ptr, ptr %ptr, align 8
   %3 = load ptr, ptr %2, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1, ptr %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1, ptr noundef %3)
   %5 = load ptr, ptr %ptr, align 8
   store ptr @anon.string.1, ptr %5, align 8
   %6 = load ptr, ptr %ptr, align 8
   %7 = load ptr, ptr %6, align 8
   store ptr %7, ptr %restoredFood, align 8
   %8 = load ptr, ptr %restoredFood, align 8
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %8)
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %restoredFood)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %8)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %restoredFood)
   %11 = load i32, ptr %result, align 4
   ret i32 %11
 }

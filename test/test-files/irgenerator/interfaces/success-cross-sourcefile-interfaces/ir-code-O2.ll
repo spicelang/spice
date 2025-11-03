@@ -51,7 +51,7 @@ define dso_local noundef i32 @main() local_unnamed_addr #2 {
   %fct3 = load ptr, ptr %vfct.addr2, align 8
   %1 = call i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %car) #4
   %2 = zext i1 %1 to i32
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %2)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %2)
   ret i32 0
 }
 

@@ -13,7 +13,7 @@ source_filename = "source.spice"
 ; Function Attrs: nofree nounwind
 define private fastcc i1 @_Z9isInRangemmj(i64 %0, i64 range(i64 10, 20001) %1, i32 range(i32 3, 5001) %2) unnamed_addr #0 {
 land.exit.L6C12:
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i32 %2, i64 %0)
+  %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef %1, i32 noundef %2, i64 noundef %0)
   %4 = zext nneg i32 %2 to i64
   %5 = sub nsw i64 %1, %4
   %.not = icmp uge i64 %0, %5
@@ -108,7 +108,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L22
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L22
-  %12 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
   ret i32 0
 }
 

@@ -24,7 +24,7 @@ define dso_local noundef i32 @main() #0 {
   %3 = call i32 %fct()
   store i32 %3, ptr %i, align 4
   %4 = load i32, ptr %i, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
   %6 = load i32, ptr %result, align 4
   ret i32 %6
 }

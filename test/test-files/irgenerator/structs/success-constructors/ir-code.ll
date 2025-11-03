@@ -69,7 +69,7 @@ define dso_local noundef i32 @main() #0 {
   %3 = zext i1 %2 to i32
   %field2.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %4 = load ptr, ptr %field2.addr, align 8
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3, ptr noundef %4)
   call void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.2)
   %6 = load %struct.Vector, ptr %1, align 8
   store %struct.Vector %6, ptr %vec, align 8
@@ -78,9 +78,9 @@ define dso_local noundef i32 @main() #0 {
   %8 = zext i1 %7 to i32
   %field2.addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %9 = load ptr, ptr %field2.addr2, align 8
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8, ptr %9)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8, ptr noundef %9)
   %11 = call ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %11)
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %11)
   %13 = load i32, ptr %result, align 4
   ret i32 %13
 }

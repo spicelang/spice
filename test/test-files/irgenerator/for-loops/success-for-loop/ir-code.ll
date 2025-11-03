@@ -18,7 +18,7 @@ for.head.L2:                                      ; preds = %for.tail.L2, %0
 
 for.body.L2:                                      ; preds = %for.head.L2
   %3 = load i32, ptr %i, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   br label %for.tail.L2
 
 for.tail.L2:                                      ; preds = %for.body.L2

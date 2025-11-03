@@ -8,7 +8,7 @@ source_filename = "source.spice"
 
 define private i1 @_Z12functionTruev() {
   %result = alloca i1, align 1
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 true
 }
 
@@ -17,7 +17,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 define private i1 @_Z13functionFalsev() {
   %result = alloca i1, align 1
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 false
 }
 
@@ -35,7 +35,7 @@ land.1.L13C46:                                    ; preds = %0
 land.exit.L13C46:                                 ; preds = %land.1.L13C46, %0
   %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L13C46 ]
   %3 = zext i1 %land_phi to i32
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %3)
   %5 = call i1 @_Z12functionTruev()
   br i1 %5, label %lor.exit.L16C45, label %lor.1.L16C45
 
@@ -46,7 +46,7 @@ lor.1.L16C45:                                     ; preds = %land.exit.L13C46
 lor.exit.L16C45:                                  ; preds = %lor.1.L16C45, %land.exit.L13C46
   %lor_phi = phi i1 [ %5, %land.exit.L13C46 ], [ %6, %lor.1.L16C45 ]
   %7 = zext i1 %lor_phi to i32
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef %7)
   %9 = load i32, ptr %result, align 4
   ret i32 %9
 }

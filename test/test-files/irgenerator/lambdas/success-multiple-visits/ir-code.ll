@@ -36,7 +36,7 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
   %x = getelementptr inbounds nuw { i32, i32 }, ptr %2, i32 0, i32 1
   %3 = load i32, ptr %x, align 4
   %4 = load i32, ptr %2, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3, i32 noundef %4)
   ret void
 }
 
@@ -75,7 +75,7 @@ define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) 
   %x = getelementptr inbounds nuw { i32, i32 }, ptr %2, i32 0, i32 1
   %3 = load i32, ptr %x, align 4
   %4 = load i32, ptr %2, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3, i32 %4)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %3, i32 noundef %4)
   ret void
 }
 

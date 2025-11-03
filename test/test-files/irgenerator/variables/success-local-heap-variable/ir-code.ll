@@ -19,7 +19,7 @@ define dso_local noundef i32 @main() #0 {
   %5 = load i32, ptr %4, align 4
   %6 = load ptr, ptr %j, align 8
   %7 = load i32, ptr %6, align 4
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5, i32 %7)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5, i32 noundef %7)
   call void @_Z8sDeallocRPh(ptr %j)
   %9 = load i32, ptr %result, align 4
   ret i32 %9

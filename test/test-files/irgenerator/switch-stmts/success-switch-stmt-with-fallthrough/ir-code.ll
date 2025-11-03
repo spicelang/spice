@@ -20,23 +20,23 @@ define private void @_Z12isBiggerThani(i32 %0) {
   ]
 
 switch.case.L3:                                   ; preds = %1
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   br label %switch.case.L7
 
 switch.case.L7:                                   ; preds = %1, %switch.case.L3
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   br label %switch.case.L11
 
 switch.case.L11:                                  ; preds = %1, %switch.case.L7
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   br label %switch.case.L15
 
 switch.case.L15:                                  ; preds = %1, %switch.case.L11
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
   br label %switch.case.L19
 
 switch.case.L19:                                  ; preds = %1, %switch.case.L15
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4)
   br label %switch.exit.L2
 
 switch.exit.L2:                                   ; preds = %switch.case.L19, %1

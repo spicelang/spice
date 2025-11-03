@@ -28,7 +28,7 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call fastcc i32 @_Z4fiboi(i32 30) #3
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %1)
+  %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %1)
   ret i32 0
 }
 

@@ -18,18 +18,18 @@ define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %intVariable = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 8)
-  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 4)
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 2)
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i64 8)
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 1)
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i64 1)
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 8)
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i64 1)
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, i64 4)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef 8)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef 4)
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 noundef 2)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i64 noundef 8)
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 noundef 1)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i64 noundef 1)
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 noundef 8)
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i64 noundef 1)
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, i64 noundef 4)
   store i32 123, ptr %intVariable, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.9, i64 8)
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i64 8)
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.9, i64 noundef 8)
+  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i64 noundef 8)
   %12 = load i32, ptr %result, align 4
   ret i32 %12
 }

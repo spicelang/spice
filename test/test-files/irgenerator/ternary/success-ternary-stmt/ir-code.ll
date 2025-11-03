@@ -29,7 +29,7 @@ cond.exit.L7C13:                                  ; preds = %cond.false.L7C13, %
   %cond.result = phi i32 [ %2, %cond.true.L7C13 ], [ 24, %cond.false.L7C13 ]
   store i32 %cond.result, ptr %r, align 4
   %3 = load i32, ptr %r, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }
