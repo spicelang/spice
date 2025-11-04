@@ -164,8 +164,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Get the current iterator values
   if (hasIdx) {
     // Allocate space to save pair
-    llvm::Type *pairTy = node->getIdxFct->returnType.toLLVMType(sourceFile);
-    llvm::Value *pairPtr = insertAlloca(pairTy, "pair.addr");
+    const QualType& pairSTy = node->getIdxFct->returnType;
+    llvm::Type *pairTy = pairSTy.toLLVMType(sourceFile);
+    llvm::Value *pairPtr = insertAlloca(pairSTy, "pair.addr");
     // Call .getIdx() on iterator
     assert(node->getIdxFct);
     llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct);

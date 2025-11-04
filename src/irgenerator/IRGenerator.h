@@ -124,15 +124,20 @@ public:
   std::any visitDataType(const DataTypeNode *node) override;
 
   // Public methods
-  llvm::Value *insertAlloca(llvm::Type *llvmType, std::string varName = "");
-  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false, const std::string &varName = "") const;
-  void insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
+  llvm::AllocaInst *insertAlloca(llvm::Type *llvmType, std::string varName = "");
+  llvm::AllocaInst *insertAlloca(const QualType &qualType, const std::string &varName = "");
+  llvm::LoadInst *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false,
+                             const std::string &varName = "") const;
+  llvm::LoadInst *insertLoad(const QualType &qualType, llvm::Value *ptr, bool isVolatile = false,
+                             const std::string &varName = "");
+  llvm::StoreInst *insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
+  void insertStore(llvm::Value *val, llvm::Value *ptr, const QualType &qualType, bool isVolatile = false);
   llvm::Value *insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
   llvm::Value *resolveValue(const ExprNode *node);
-  llvm::Value *resolveValue(const ExprNode *node, LLVMExprResult &exprResult) const;
-  llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult) const;
+  llvm::Value *resolveValue(const ExprNode *node, LLVMExprResult &exprResult);
+  llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult);
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
@@ -155,7 +160,7 @@ private:
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs, const QualType &rhsSType,
                               const ASTNode *node, bool isDecl);
   void generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress, bool isVolatile) const;
-  void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
+  void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType);
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;
   llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value) const;
   llvm::GlobalVariable *createGlobalStringConst(const std::string &baseName, const std::string &value,

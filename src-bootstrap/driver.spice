@@ -89,6 +89,7 @@ public type CliOptions struct {
     public DumpSettings dump
     public bool namesForIRValues = false
     public bool useLifetimeMarkers = false
+    public bool useTBAAMetadata = false
     public OptLevel optLevel = OptLevel::O0 // Default optimization level for debug build mode is O0
     public bool useLTO = false
     public bool noEntryFct = false
@@ -386,6 +387,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
     // --use-lifetime-markers
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
+    // --use-tbaa-metadata
+    subCmd.addFlag("--use-tbaa-metadata", this.cliOptions.useTBAAMetadata, "Generate metadata for type-based alias analysis to enhance optimizations");
 
     // Opt levels
     subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");

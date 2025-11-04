@@ -69,6 +69,7 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
+      /* useTBAAMetadata */ false,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
@@ -84,7 +85,7 @@ void execTestCase(const TestCase &testCase) {
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
-  static_assert(sizeof(CliOptions) == 384, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);

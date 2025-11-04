@@ -82,6 +82,7 @@ struct CliOptions {
   } dump;
   bool namesForIRValues = false;
   bool useLifetimeMarkers = false;
+  bool useTBAAMetadata = false;
   OptLevel optLevel = OptLevel::O0; // The default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;

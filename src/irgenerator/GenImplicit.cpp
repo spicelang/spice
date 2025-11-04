@@ -30,7 +30,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
-    src = insertLoad(srcSTy.toLLVMType(sourceFile), src);
+    src = insertLoad(srcSTy, src);
     srcSTy = srcSTy.getContained();
     dstSTy = dstSTy.getContained();
     loadCounter++;
@@ -40,12 +40,12 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
     llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(0)};
     src = insertInBoundsGEP(srcSTy.toLLVMType(sourceFile), src, indices);
   } else {
-    src = insertLoad(srcSTy.toLLVMType(sourceFile), src);
+    src = insertLoad(srcSTy, src);
     src = builder.CreateBitCast(src, dstSTy.toLLVMType(sourceFile));
   }
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
-    llvm::Value *newActualArg = insertAlloca(src->getType());
+    llvm::Value *newActualArg = insertAlloca(srcSTy);
     insertStore(src, newActualArg);
     src = newActualArg;
   }

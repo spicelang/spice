@@ -40,3 +40,4 @@ You can apply following options to the `run` subcommand:
 | -            | `--disable-verifier`      | Disable LLVM module and function verification (only recommended for debugging the compiler)      |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                      |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                               |
+| -            | `--use-tbaa-metadata`     | Generate metadata for type-based alias analysis to enhance optimizations                         |

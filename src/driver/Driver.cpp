@@ -339,6 +339,9 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --use-lifetime-markers
   subCmd->add_flag<bool>("--use-lifetime-markers", cliOptions.useLifetimeMarkers,
                          "Generate lifetime markers to enhance optimizations");
+  // --use-tbaa-metadata
+  subCmd->add_flag<bool>("--use-tbaa-metadata", cliOptions.useTBAAMetadata,
+                         "Generate metadata for type-based alias analysis to enhance optimizations");
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
