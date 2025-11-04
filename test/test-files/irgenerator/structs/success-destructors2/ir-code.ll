@@ -84,4 +84,4 @@ attributes #3 = { cold noreturn nounwind }
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!5 = !{!"branch_weights", i32 2000, i32 1}
+!5 = !{!"branch_weights", i32 1048575, i32 1}
