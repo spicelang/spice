@@ -62,14 +62,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-21.1.4-linux-x64
+          key: llvm-21.1.5-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
           rm -rf llvm
-          git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
@@ -180,14 +180,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-21.1.4-linux-aarch64
+          key: llvm-21.1.5-linux-aarch64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
           rm -rf llvm
-          git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
@@ -245,12 +245,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm
-          key: llvm-21.1.4-win-x64
+          key: llvm-21.1.5-win-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-21.1.4  https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-21.1.5  https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
