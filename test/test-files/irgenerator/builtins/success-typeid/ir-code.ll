@@ -8,8 +8,8 @@ source_filename = "source.spice"
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef 1015829715)
-  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef 1015829715)
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef 7968293711395124339)
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef 7968293711395124339)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
 }
