@@ -254,7 +254,7 @@ const GenericType *InterfaceManager::getGenericTypeOfCandidateByName(const Inter
  * @return Cache key
  */
 uint64_t InterfaceManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
-  uint64_t acc = 1469598103934665603ull;
+  uint64_t acc = HASH_INIT_VAL;
   acc = hash_combine64(acc, std::hash<Scope *>{}(scope));
   acc = hash_combine64(acc, std::hash<std::string>{}(name));
   for (const QualType &qt : templateTypes)

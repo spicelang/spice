@@ -4,55 +4,53 @@
 
 #include <numeric>
 
+namespace spice::compiler {
+
+uint64_t hash_combine64(uint64_t seed, uint64_t v) { return seed ^ v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2); }
+
+} // namespace spice::compiler
+
 namespace std {
 
 size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const noexcept {
-  // Hasher for QualTypeList
-  constexpr auto pred = [](const size_t acc, const spice::compiler::QualType &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<spice::compiler::QualType>{}(val);
-  };
-  // Hash all fields
-  const size_t hashSuperType = std::hash<spice::compiler::SuperType>{}(tce.superType);
-  const size_t hashSubType = std::hash<std::string>{}(tce.subType) << 1;
-  const size_t hashTypeId = std::hash<uint64_t>{}(tce.typeId) << 2;
-  const size_t hashData = std::hash<spice::compiler::Scope *>{}(tce.data.bodyScope) << 3;
-  const size_t hashTemplateTypes = accumulate(tce.templateTypes.begin(), tce.templateTypes.end(), 0u, pred) << 4;
-  const size_t hashParamTypes = accumulate(tce.paramTypes.begin(), tce.paramTypes.end(), 0u, pred) << 5;
-  return hashSuperType ^ hashSubType ^ hashTypeId ^ hashData ^ hashTemplateTypes ^ hashParamTypes;
+  uint64_t acc = spice::compiler::HASH_INIT_VAL;
+  acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::SuperType>{}(tce.superType));
+  acc = spice::compiler::hash_combine64(acc, std::hash<std::string>{}(tce.subType));
+  acc = spice::compiler::hash_combine64(acc, std::hash<uint64_t>{}(tce.typeId));
+  acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::Scope *>{}(tce.data.bodyScope));
+  for (const auto &templateType : tce.templateTypes)
+    acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::QualType>{}(templateType));
+  for (const auto &paramType : tce.paramTypes)
+    acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::QualType>{}(paramType));
+  return acc;
 }
 
 size_t hash<spice::compiler::Type>::operator()(const spice::compiler::Type &t) const noexcept {
-  const auto pred = [](const size_t acc, const spice::compiler::TypeChainElement &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<spice::compiler::TypeChainElement>{}(val);
-  };
-  return accumulate(t.typeChain.begin(), t.typeChain.end(), 0u, pred);
+  uint64_t acc = spice::compiler::HASH_INIT_VAL;
+  for (const auto &typeChainElement : t.typeChain)
+    acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::TypeChainElement>{}(typeChainElement));
+  return acc;
 }
 
 size_t hash<spice::compiler::TypeQualifiers>::operator()(const spice::compiler::TypeQualifiers &qualifiers) const noexcept {
-  const size_t hashConst = std::hash<bool>{}(qualifiers.isConst);
-  const size_t hashSigned = std::hash<bool>{}(qualifiers.isSigned) << 1;
-  const size_t hashUnsigned = std::hash<bool>{}(qualifiers.isUnsigned) << 2;
-  const size_t hashHeap = std::hash<bool>{}(qualifiers.isHeap) << 3;
-  const size_t hashPublic = std::hash<bool>{}(qualifiers.isPublic) << 4;
-  const size_t hashInline = std::hash<bool>{}(qualifiers.isInline) << 5;
-  const size_t hashComposition = std::hash<bool>{}(qualifiers.isComposition) << 6;
-  return hashConst ^ hashSigned ^ hashUnsigned ^ hashHeap ^ hashPublic ^ hashInline ^ hashComposition;
+  uint64_t acc = spice::compiler::HASH_INIT_VAL;
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isConst));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isSigned));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isUnsigned));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isHeap));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isPublic));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isInline));
+  acc = spice::compiler::hash_combine64(acc, std::hash<bool>{}(qualifiers.isComposition));
+  return acc;
 }
 
 size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const noexcept {
-  const size_t hashType = std::hash<const spice::compiler::Type *>{}(qualType.getType());
+  uint64_t acc = spice::compiler::HASH_INIT_VAL;
+  acc = spice::compiler::hash_combine64(acc, std::hash<const spice::compiler::Type *>{}(qualType.getType()));
   spice::compiler::TypeQualifiers qualifiers = qualType.getQualifiers();
   qualifiers.isPublic = false; // Ignore the public qualifier for hashing
-  const size_t hashQualifiers = std::hash<spice::compiler::TypeQualifiers>{}(qualifiers) << 1;
-  return hashType ^ hashQualifiers;
+  acc = spice::compiler::hash_combine64(acc, std::hash<spice::compiler::TypeQualifiers>{}(qualifiers));
+  return acc;
 }
 
 } // namespace std
-
-namespace spice::compiler {
-
-uint64_t hash_combine64(uint64_t seed, uint64_t v) { return seed ^ (v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2)); }
-
-} // namespace spice::compiler

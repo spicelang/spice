@@ -6,6 +6,14 @@
 #include <symboltablebuilder/Type.h>
 #include <symboltablebuilder/TypeChain.h>
 
+namespace spice::compiler {
+
+constexpr uint64_t HASH_INIT_VAL = 1469598103934665603ull;
+
+uint64_t hash_combine64(uint64_t seed, uint64_t v);
+
+} // namespace spice::compiler
+
 namespace std {
 
 // Implement hash functionality for the TypeChainElement struct
@@ -29,9 +37,3 @@ template <> struct hash<spice::compiler::QualType> {
 };
 
 } // namespace std
-
-namespace spice::compiler {
-
-uint64_t hash_combine64(uint64_t seed, uint64_t v);
-
-} // namespace spice::compiler
