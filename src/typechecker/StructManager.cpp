@@ -298,10 +298,10 @@ const GenericType *StructManager::getGenericTypeOfCandidateByName(const Struct &
  */
 uint64_t StructManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
   uint64_t acc = HASH_INIT_VAL;
-  acc = hash_combine64(acc, std::hash<Scope *>{}(scope));
-  acc = hash_combine64(acc, std::hash<std::string>{}(name));
+  acc = hashCombine64(acc, std::hash<Scope *>{}(scope));
+  acc = hashCombine64(acc, std::hash<std::string>{}(name));
   for (const QualType &qt : templateTypes)
-    acc = hash_combine64(acc, std::hash<QualType>{}(qt));
+    acc = hashCombine64(acc, std::hash<QualType>{}(qt));
   return acc;
 }
 

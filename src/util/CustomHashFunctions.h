@@ -8,9 +8,9 @@
 
 namespace spice::compiler {
 
-constexpr uint64_t HASH_INIT_VAL = 1469598103934665603ull;
+constexpr uint64_t HASH_INIT_VAL = 0x243F6A8885A308D3ull;
 
-uint64_t hash_combine64(uint64_t seed, uint64_t v);
+uint64_t hashCombine64(uint64_t seed, uint64_t v);
 
 } // namespace spice::compiler
 
