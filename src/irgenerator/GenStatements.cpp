@@ -195,7 +195,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   llvm::Value *condValue = resolveValue(node->assignExpr);
 
   // Create condition check
-  insertCondJump(condValue, bExit, bThen, LIKELY);
+  insertCondJump(condValue, bExit, bThen, Likelihood::LIKELY);
 
   // Switch to then block
   switchToBlock(bThen);

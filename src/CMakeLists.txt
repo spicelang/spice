@@ -104,6 +104,8 @@ set(SOURCES
         irgenerator/GenTargetDependent.cpp
         irgenerator/GenVTable.cpp
         irgenerator/GenInstrumentation.cpp
+        irgenerator/MetadataGenerator.cpp
+        irgenerator/MetadataGenerator.h
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
         irgenerator/OpRuleConversionManager.cpp

@@ -150,12 +150,13 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
 
   // De-reference if reference type
   const QualType referencedType = qualType.removeReferenceWrapper();
+  const bool isVolatile = exprResult.entry && exprResult.entry->isVolatile;
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
-    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, isVolatile);
 
   // Load the value from the pointer
   llvm::Type *valueTy = referencedType.toLLVMType(sourceFile);
-  exprResult.value = insertLoad(valueTy, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
+  exprResult.value = insertLoad(valueTy, exprResult.ptr, isVolatile);
 
   return exprResult.value;
 }
@@ -172,8 +173,9 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
     return exprResult.ptr;
 
   // Check if the reference address is already present
+  const bool isVolatile = exprResult.entry && exprResult.entry->isVolatile;
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr) {
-    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, isVolatile);
     return exprResult.ptr;
   }
 
@@ -181,7 +183,7 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   materializeConstant(exprResult);
   assert(exprResult.value != nullptr);
   exprResult.ptr = insertAlloca(exprResult.value->getType(), exprResult.entry ? exprResult.entry->name : "");
-  insertStore(exprResult.value, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
+  insertStore(exprResult.value, exprResult.ptr, isVolatile);
 
   return exprResult.ptr;
 }
@@ -349,20 +351,14 @@ void IRGenerator::insertJump(llvm::BasicBlock *targetBlock) {
 }
 
 void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
-                                 Likeliness likeliness /*=UNSPECIFIED*/) {
+                                 Likelihood likelihood /*=UNSPECIFIED*/) {
   if (blockAlreadyTerminated)
     return;
   llvm::BranchInst *jumpInst = builder.CreateCondBr(condition, trueBlock, falseBlock);
   blockAlreadyTerminated = true;
 
-  if (likeliness != UNSPECIFIED) {
-    const bool likely = likeliness == LIKELY;
-    llvm::Metadata *name = llvm::MDString::get(context, "branch_weights");
-    llvm::Metadata *trueBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 2000 : 1));
-    llvm::Metadata *falseBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 1 : 2000));
-    const auto profMetadata = llvm::MDNode::get(context, {name, trueBranchWeight, falseBranchWeight});
-    jumpInst->setMetadata("prof", profMetadata);
-  }
+  if (likelihood != Likelihood::UNSPECIFIED)
+    mdGenerator.generateBranchWeightsMetadata(jumpInst, likelihood);
 }
 
 void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const {
@@ -592,7 +588,7 @@ void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   exprResult.value = exprResult.constant;
 }
 
-std::string IRGenerator::getIRString(llvm::Module *llvmModule, const CliOptions& cliOptions) {
+std::string IRGenerator::getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions) {
   assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
 
   // Backup target triple and data layout

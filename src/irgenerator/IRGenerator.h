@@ -7,6 +7,7 @@
 #include <CompilerPass.h>
 #include <ast/ParallelizableASTVisitor.h>
 #include <irgenerator/DebugInfoGenerator.h>
+#include <irgenerator/MetadataGenerator.h>
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <symboltablebuilder/Scope.h>
@@ -23,7 +24,7 @@ const char *const CAPTURES_PARAM_NAME = "captures";
 static const std::string PRODUCER_STRING =
     "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
 
-enum Likeliness : uint8_t {
+enum class Likelihood : uint8_t {
   UNSPECIFIED,
   LIKELY,
   UNLIKELY,
@@ -44,6 +45,7 @@ public:
   friend class StdFunctionManager;
   friend class OpRuleConversionManager;
   friend class DebugInfoGenerator;
+  friend class MetadataGenerator;
   friend class ScopeHandle;
 
   // Visitor methods
@@ -134,7 +136,7 @@ public:
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
-  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions& cliOptions);
+  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions);
 
 private:
   // Private methods
@@ -144,7 +146,7 @@ private:
   void terminateBlock(const StmtLstNode *stmtLstNode);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
-                      Likeliness likeliness = UNSPECIFIED);
+                      Likelihood likelihood = Likelihood::UNSPECIFIED);
   void verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   LLVMExprResult doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node);
@@ -169,7 +171,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
-  llvm::CallInst*generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
+  llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   void generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
@@ -197,7 +199,7 @@ private:
   void generateVTableInitializer(const StructBase *spiceStruct) const;
 
   // Generate code instrumentation
-  void enableFunctionInstrumentation(llvm::Function* function) const;
+  void enableFunctionInstrumentation(llvm::Function *function) const;
 
   // Private members
   llvm::LLVMContext &context;
@@ -206,6 +208,7 @@ private:
   OpRuleConversionManager conversionManager;
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
+  MetadataGenerator mdGenerator = MetadataGenerator(this);
   struct CommonLLVMTypes {
     llvm::StructType *fatPtrType = nullptr;
   } llvmTypes;
