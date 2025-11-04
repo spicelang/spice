@@ -54,7 +54,7 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   return nullptr;
 }
 
-llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName) {
+llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName) {
   if (!cliOptions.namesForIRValues)
     varName = "";
 
@@ -85,14 +85,40 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
   return allocaInsertInst;
 }
 
-llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile, const std::string &varName) const {
+llvm::AllocaInst *IRGenerator::insertAlloca(const QualType &qualType, const std::string &varName) {
+  llvm::Type *llvmType = qualType.toLLVMType(sourceFile);
+  llvm::AllocaInst *alloca = insertAlloca(llvmType, varName);
+
+  // Insert type metadata
+  if (cliOptions.useTBAAMetadata)
+    mdGenerator.generateTypeMetadata(allocaInsertInst, qualType);
+
+  return alloca;
+}
+
+llvm::LoadInst *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile,
+                                        const std::string &varName) const {
   assert(ptr->getType()->isPointerTy());
   return builder.CreateLoad(llvmType, ptr, isVolatile, cliOptions.namesForIRValues ? varName : "");
 }
 
-void IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile) const {
+llvm::LoadInst *IRGenerator::insertLoad(const QualType &qualType, llvm::Value *ptr, bool isVolatile, const std::string &varName) {
+  llvm::Type *llvmType = qualType.toLLVMType(sourceFile);
+  llvm::LoadInst *load = insertLoad(llvmType, ptr, isVolatile, varName);
+  if (cliOptions.useTBAAMetadata)
+    mdGenerator.generateTBAAMetadata(load, qualType);
+  return load;
+}
+
+llvm::StoreInst *IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile) const {
   assert(ptr->getType()->isPointerTy());
-  builder.CreateStore(val, ptr, isVolatile);
+  return builder.CreateStore(val, ptr, isVolatile);
+}
+
+void IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, const QualType &qualType, bool isVolatile) {
+  llvm::StoreInst *store = insertStore(val, ptr, isVolatile);
+  if (cliOptions.useTBAAMetadata)
+    mdGenerator.generateTBAAMetadata(store, qualType);
 }
 
 llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
@@ -131,11 +157,11 @@ llvm::Value *IRGenerator::resolveValue(const ExprNode *node) {
   return resolveValue(node, exprResult);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ExprNode *node, LLVMExprResult &exprResult) const {
+llvm::Value *IRGenerator::resolveValue(const ExprNode *node, LLVMExprResult &exprResult) {
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult);
 }
 
-llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult) const {
+llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -149,14 +175,13 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
   assert(exprResult.ptr != nullptr || exprResult.refPtr != nullptr);
 
   // De-reference if reference type
-  const QualType referencedType = qualType.removeReferenceWrapper();
   const bool isVolatile = exprResult.entry && exprResult.entry->isVolatile;
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
     exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, isVolatile);
 
   // Load the value from the pointer
-  llvm::Type *valueTy = referencedType.toLLVMType(sourceFile);
-  exprResult.value = insertLoad(valueTy, exprResult.ptr, isVolatile);
+  const QualType referencedType = qualType.removeReferenceWrapper();
+  exprResult.value = insertLoad(referencedType, exprResult.ptr, isVolatile);
 
   return exprResult.value;
 }
@@ -450,7 +475,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     // Allocate new memory if the lhs address does not exist
     if (!lhsAddress) {
       assert(lhsEntry != nullptr);
-      lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(sourceFile));
+      lhsAddress = insertAlloca(lhsEntry->getQualType());
       lhsEntry->updateAddress(lhsAddress);
     }
 
@@ -487,7 +512,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
-    lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(sourceFile));
+    lhsAddress = insertAlloca(lhsEntry->getQualType());
     lhsEntry->updateAddress(lhsAddress);
   }
 
@@ -507,7 +532,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Retrieve value of the right side
   llvm::Value *rhsValue = resolveValue(rhsSType, rhs);
   // Store the value to the address
-  insertStore(rhsValue, lhsAddress);
+  insertStore(rhsValue, lhsAddress, rhsSType);
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
@@ -526,9 +551,9 @@ void IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varTy
   builder.CreateCall(memcpyFct, {targetAddress, oldAddress, structSize, copyVolatile});
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef()) {
-    ptr = insertLoad(symbolType.toLLVMType(sourceFile), ptr);
+    ptr = insertLoad(symbolType, ptr);
     symbolType = symbolType.getContained();
   }
 }

@@ -19,11 +19,15 @@ public:
 
   // Public methods
   void generateBranchWeightsMetadata(llvm::BranchInst *jumpInst, Likelihood likeliness);
+  void generateTypeMetadata(llvm::Instruction *inst, const QualType &type);
+  void generateTBAAMetadata(llvm::Instruction *inst, const QualType &type);
 
 private:
   // Private members
   IRGenerator *irGenerator;
   llvm::MDBuilder mdBuilder;
+  llvm::MDNode *tbaaRoot;
+  llvm::MDNode *omnipotentByte;
 };
 
 } // namespace spice::compiler

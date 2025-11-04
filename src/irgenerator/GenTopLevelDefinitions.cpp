@@ -89,7 +89,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   allocaInsertInst = nullptr;
 
   // Allocate result variable
-  llvm::Value *resultAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+  llvm::Value *resultAddress = insertAlloca(QualType(TY_INT), RETURN_VARIABLE_NAME);
   // Update the symbol table entry
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
@@ -97,7 +97,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Generate debug info
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress);
   // Store the default result value
-  insertStore(builder.getInt32(0), resultAddress);
+  insertStore(builder.getInt32(0), resultAddress, QualType(TY_INT));
 
   // Store function argument values
   for (auto &arg : fct->args()) {
@@ -106,8 +106,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     assert(paramSymbol != nullptr);
     // Allocate space for it
-    llvm::Type *paramType = fctType->getParamType(argNumber);
-    llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+    llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
     // Update the symbol table entry
     paramSymbol->updateAddress(paramAddress);
     // Store the value at the new address
@@ -247,7 +246,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     allocaInsertInst = nullptr;
 
     // Declare result variable
-    llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+    llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
     SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
     resultEntry->updateAddress(resultAddr);
@@ -261,8 +260,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
       // Allocate space for it
-      llvm::Type *paramType = funcType->getParamType(argNumber);
-      llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+      llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
       paramSymbol->updateAddress(paramAddress);
       // Set source location
@@ -420,8 +418,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
       // Allocate space for it
-      llvm::Type *paramType = procType->getParamType(argNumber);
-      llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+      llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
       paramSymbol->updateAddress(paramAddress);
       // Set source location
