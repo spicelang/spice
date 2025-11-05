@@ -58,37 +58,35 @@ cd spice
 There is a batch/shell script called `dev-setup` to help you with that. It will do the following things:
 
 - Make sure you have all dependencies
-- Clone and build the required LLVM version to the `llvm` subdirectory
+- Clone and build the required LLVM version with the required settings to the `llvm` subdirectory
 - Download all required third-party libs to the `lib` subdirectory
-- Build Spice for the first time into the `bin` subdirectory
+- Build Spice for the first time into the `build` subdirectory
 
 Use this command to run it:
 
 ```sh
-# Linux
-./dev-setup.sh
-# Windows
-.\dev-setup.bat
+./dev-setup.sh # Linux
+# or
+.\dev-setup.bat # Windows
 ```
 
 #### Re-build Spice
 There is also a batch/shell script to rebuild Spice. Use the following command to run it:
 
 ```sh
-# Linux
-./build.sh
-# Windows
-.\build.bat
+./build.sh # Linux
+# or
+.\build.bat # Windows
 ```
 
-You can find the build output in the `bin` subdirectory.
+You can find the build output in the `build` subdirectory.
 
 ## Available target platforms
-Currently, Spice only offers stable support for linux/x86_64, linux/aarch64 and windows/x86_64.
+Currently, Spice only offers stable support for linux/x86_64, linux/aarch64, windows/x86_64 and darwin/aarch64.
 But you can try to compile to the following architectures without any stability promises:
 
 `aarch64`, `amdgpu`, `armv5`, `armv6`, `armv7`, `avr`, `bpf`, `hexagon`, `lanai`, `loongarch`, `mips`, `msp430`, `nvptx`,
-`powerpc`, `riscv`, `sparc`, `systemz`, `ve`, `webassembly`, `x86`, `x86_64`, `xcore`
+`powerpc`, `riscv`, `sparc`, `spirv`, `systemz`, `ve`, `webassembly`, `x86`, `x86_64`, `xcore`
 
 ## Contribute to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).

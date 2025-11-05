@@ -8,17 +8,17 @@ builds:
     goos:
       - linux
       - windows
-#      - darwin
+      - darwin
     goarch:
       - amd64
       - arm64
     ignore:
+      # Only offer amd64 support on Windows
       - goos: windows
         goarch: arm64
-#      - goos: darwin
-#        goarch: amd64
-#      - goos: darwin
-#        goarch: arm64
+      # Only offer arm64 support on macOS
+      - goos: darwin
+        goarch: amd64
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
@@ -29,6 +29,8 @@ dockers_v2:
       - "ghcr.io/spicelang/spice"
     tags:
       - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "{{ if contains .Prerelease 'rc' }}dev{{ end }}"
+      - "{{ if not contains .Prerelease 'rc' }}latest{{ end }}"
     labels:
       "org.opencontainers.image.description": "Spice programming language."
       "org.opencontainers.image.created": "{{ .Date }}"
@@ -75,7 +77,7 @@ nfpms:
         dst: /usr/lib/spice/std
 
 release:
-  name_template: "v{{.Tag}}"
+  name_template: "v{{ .Tag }}"
   prerelease: auto
   footer: |
     ## What to do next?

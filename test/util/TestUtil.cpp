@@ -5,8 +5,8 @@
 #include "TestUtil.h"
 
 #include <dirent.h>
-#ifdef OS_UNIX
-#include <cstring> // Required by builds on Linux
+#if OS_UNIX
+#include <cstring> // Required by builds on Unix
 #endif
 
 #include <gtest/gtest.h>

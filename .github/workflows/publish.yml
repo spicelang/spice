@@ -64,26 +64,26 @@ jobs:
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
-          mkdir ./bin
-          cd ./bin
+          mkdir ./build
+          cd ./build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
           cmake --build . --target spice
 
       - name: Process build output
-        working-directory: bin
+        working-directory: build
         run: |
           mv ./src/spice spice
           chmod +x spice
 
       - name: Run Checksec
-        working-directory: bin
+        working-directory: build
         run: checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: spice-linux-x64
-          path: ./bin/spice**
+          path: ./build/spice**
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
@@ -142,26 +142,26 @@ jobs:
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
-          mkdir ./bin
-          cd ./bin
+          mkdir ./build
+          cd ./build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
           cmake --build . --target spice
 
       - name: Process build output
-        working-directory: bin
+        working-directory: build
         run: |
           mv ./src/spice spice
           chmod +x spice
 
       - name: Run Checksec
-        working-directory: bin
+        working-directory: build
         run: checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: spice-linux-arm64
-          path: ./bin/spice**
+          path: ./build/spice**
 
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
@@ -225,20 +225,20 @@ jobs:
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
-          mkdir ./bin
-          cd ./bin
+          mkdir ./build
+          cd ./build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
           cmake --build . --target spice
 
       - name: Process build output
-        working-directory: bin
+        working-directory: build
         run: mv ./src/spice.exe spice.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: spice-windows-static-x64
-          path: ./bin/spice**
+          path: ./build/spice**
 
   build-artifacts:
     name: Build artifacts

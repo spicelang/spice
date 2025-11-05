@@ -1,23 +1,23 @@
 # Build output
-/bin
-spice.exe
-spice
-
 /build
 /coverage
 /cmake-*
+spice.exe
+spice
 
 # Third party libs
 /lib
+
+# Generated output from ANTLR
 /gen
 
 # CLion
 /.idea
 
 # Spice build outputs
-media/test-project/*
-!media/test-project/*.*
-media/test-project/*.exe
+/media/test-project/*
+!/media/test-project/*.*
+/media/test-project/*.exe
 
 # LLVM
 /llvm

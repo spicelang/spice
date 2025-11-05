@@ -4,10 +4,10 @@
 set LLVM_DIR=".\llvm\build-release\lib\cmake\llvm"
 
 :: Prepare
-if not exist bin (
-    mkdir bin
+if not exist build (
+    mkdir build
 )
-pushd bin
+pushd build
 
 :: Build
 cmake -DCMAKE_BUILD_TYPE=Release -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
