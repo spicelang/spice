@@ -4,55 +4,82 @@
 
 #include <numeric>
 
+namespace spice::compiler {
+
+uint64_t hashMix(uint64_t hash) noexcept {
+  hash += 0x9e3779b97f4a7c15ull;
+  hash = (hash ^ (hash >> 30)) * 0xbf58476d1ce4e5b9ull;
+  hash = (hash ^ (hash >> 27)) * 0x94d049bb133111ebull;
+  hash ^= (hash >> 31);
+  return hash;
+}
+
+void hashCombine64(uint64_t &hash, uint64_t value) noexcept {
+  hash ^= hashMix(value + 0x9e3779b97f4a7c15ull + (hash << 6) + (hash >> 2));
+}
+
+} // namespace spice::compiler
+
 namespace std {
 
 size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const noexcept {
-  // Hasher for QualTypeList
-  constexpr auto pred = [](const size_t acc, const spice::compiler::QualType &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<spice::compiler::QualType>{}(val);
-  };
-  // Hash all fields
-  const size_t hashSuperType = std::hash<spice::compiler::SuperType>{}(tce.superType);
-  const size_t hashSubType = std::hash<std::string>{}(tce.subType) << 1;
-  const size_t hashTypeId = std::hash<uint64_t>{}(tce.typeId) << 2;
-  const size_t hashData = std::hash<spice::compiler::Scope *>{}(tce.data.bodyScope) << 3;
-  const size_t hashTemplateTypes = accumulate(tce.templateTypes.begin(), tce.templateTypes.end(), 0u, pred) << 4;
-  const size_t hashParamTypes = accumulate(tce.paramTypes.begin(), tce.paramTypes.end(), 0u, pred) << 5;
-  return hashSuperType ^ hashSubType ^ hashTypeId ^ hashData ^ hashTemplateTypes ^ hashParamTypes;
+  using namespace spice::compiler;
+  uint64_t hash = 0;
+
+  hashCombine64(hash, tce.superType);
+  hashCombine64(hash, std::hash<std::string>{}(tce.subType));
+  hashCombine64(hash, tce.typeId);
+
+  switch (tce.superType) {
+  case TY_ARRAY:
+    hashCombine64(hash, tce.data.arraySize);
+    break;
+  case TY_FUNCTION:
+  case TY_PROCEDURE:
+    hashCombine64(hash, tce.data.hasCaptures ? 0xF00D1234ULL : 0xBAD0C0DEULL);
+    break;
+  case TY_STRUCT:
+  case TY_INTERFACE:
+  case TY_ENUM:
+    // Stable hash based on pointer identity, but randomized for safety
+    hashCombine64(hash, hashPointer(tce.data.bodyScope));
+    break;
+  default:
+    break;
+  }
+
+  hashCombine64(hash, hashVector(tce.templateTypes));
+  hashCombine64(hash, hashVector(tce.paramTypes));
+
+  return hashMix(hash);
 }
 
 size_t hash<spice::compiler::Type>::operator()(const spice::compiler::Type &t) const noexcept {
-  const auto pred = [](const size_t acc, const spice::compiler::TypeChainElement &val) {
-    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
-    return acc * 31 + std::hash<spice::compiler::TypeChainElement>{}(val);
-  };
-  return accumulate(t.typeChain.begin(), t.typeChain.end(), 0u, pred);
+  using namespace spice::compiler;
+  uint64_t hash = 0;
+  hashCombine64(hash, hashVector(t.typeChain));
+  return hashMix(hash);
 }
 
 size_t hash<spice::compiler::TypeQualifiers>::operator()(const spice::compiler::TypeQualifiers &qualifiers) const noexcept {
-  const size_t hashConst = std::hash<bool>{}(qualifiers.isConst);
-  const size_t hashSigned = std::hash<bool>{}(qualifiers.isSigned) << 1;
-  const size_t hashUnsigned = std::hash<bool>{}(qualifiers.isUnsigned) << 2;
-  const size_t hashHeap = std::hash<bool>{}(qualifiers.isHeap) << 3;
-  const size_t hashPublic = std::hash<bool>{}(qualifiers.isPublic) << 4;
-  const size_t hashInline = std::hash<bool>{}(qualifiers.isInline) << 5;
-  const size_t hashComposition = std::hash<bool>{}(qualifiers.isComposition) << 6;
-  return hashConst ^ hashSigned ^ hashUnsigned ^ hashHeap ^ hashPublic ^ hashInline ^ hashComposition;
+  using namespace spice::compiler;
+  const uint8_t bits = (qualifiers.isConst << 0) | (qualifiers.isSigned << 1) | (qualifiers.isUnsigned << 2) |
+                       (qualifiers.isHeap << 3) | (qualifiers.isPublic << 4) | (qualifiers.isInline << 5) |
+                       (qualifiers.isComposition << 6);
+  return hashMix(bits);
 }
 
 size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const noexcept {
-  const size_t hashType = std::hash<const spice::compiler::Type *>{}(qualType.getType());
-  spice::compiler::TypeQualifiers qualifiers = qualType.getQualifiers();
+  using namespace spice::compiler;
+  uint64_t seed = 0;
+
+  // Hash type pointer content if possible
+  hashCombine64(seed, std::hash<Type>{}(*qualType.getType()));
+
+  TypeQualifiers qualifiers = qualType.getQualifiers();
   qualifiers.isPublic = false; // Ignore the public qualifier for hashing
-  const size_t hashQualifiers = std::hash<spice::compiler::TypeQualifiers>{}(qualifiers) << 1;
-  return hashType ^ hashQualifiers;
+  hashCombine64(seed, std::hash<TypeQualifiers>{}(qualifiers));
+  return hashMix(seed);
 }
 
 } // namespace std
-
-namespace spice::compiler {
-
-uint64_t hash_combine64(uint64_t seed, uint64_t v) { return seed ^ (v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2)); }
-
-} // namespace spice::compiler

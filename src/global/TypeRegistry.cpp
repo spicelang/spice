@@ -33,8 +33,12 @@ const Type *TypeRegistry::getOrInsert(const Type &&type) {
 
   // Check if type already exists
   const auto it = types.find(hash);
-  if (it != types.end())
-    return it->second.get();
+  if (it != types.end()) {
+    const Type *cachedType = it->second.get();
+    // This check should identify hash collisions
+    assert(cachedType->typeChain == type.typeChain);
+    return cachedType;
+  }
 
   // Create new type
   const auto [iter, inserted] = types.emplace(hash, std::make_unique<Type>(type));

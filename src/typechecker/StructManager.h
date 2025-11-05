@@ -46,7 +46,7 @@ private:
   static void substantiateFieldTypes(Struct &candidate, const TypeMapping &typeMapping, const ASTNode *node);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Struct &candidate,
                                                                           const std::string &templateTypeName);
-  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes);
+  [[nodiscard]] static uint64_t getCacheKey(const Scope *scope, const std::string &name, const QualTypeList &templateTypes);
 };
 
 } // namespace spice::compiler

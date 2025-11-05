@@ -6,6 +6,28 @@
 #include <symboltablebuilder/Type.h>
 #include <symboltablebuilder/TypeChain.h>
 
+namespace spice::compiler {
+
+uint64_t hashMix(uint64_t hash) noexcept;
+
+void hashCombine64(uint64_t &hash, uint64_t value) noexcept;
+
+template <typename T> uint64_t hashValue(const T &value) noexcept { return static_cast<uint64_t>(std::hash<T>{}(value)); }
+
+template <typename T>
+uint64_t hashPointer(const T *value) noexcept {
+  return reinterpret_cast<uint64_t>(value) >> 3;
+}
+
+template <typename T> uint64_t hashVector(const std::vector<T> &vec) noexcept {
+  uint64_t hash = 0;
+  for (const T &item : vec)
+    hashCombine64(hash, hashValue(item));
+  return hash;
+}
+
+} // namespace spice::compiler
+
 namespace std {
 
 // Implement hash functionality for the TypeChainElement struct
@@ -29,9 +51,3 @@ template <> struct hash<spice::compiler::QualType> {
 };
 
 } // namespace std
-
-namespace spice::compiler {
-
-uint64_t hash_combine64(uint64_t seed, uint64_t v);
-
-} // namespace spice::compiler

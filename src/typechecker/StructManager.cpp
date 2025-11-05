@@ -296,13 +296,12 @@ const GenericType *StructManager::getGenericTypeOfCandidateByName(const Struct &
  * @param templateTypes Template types to substantiate generic types
  * @return Cache key
  */
-uint64_t StructManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
-  uint64_t acc = 1469598103934665603ull;
-  acc = hash_combine64(acc, std::hash<Scope *>{}(scope));
-  acc = hash_combine64(acc, std::hash<std::string>{}(name));
-  for (const QualType &qt : templateTypes)
-    acc = hash_combine64(acc, std::hash<QualType>{}(qt));
-  return acc;
+uint64_t StructManager::getCacheKey(const Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
+  uint64_t hash = 0;
+  hashCombine64(hash, hashPointer(scope));
+  hashCombine64(hash, std::hash<std::string>{}(name));
+  hashCombine64(hash, hashVector(templateTypes));
+  return hash;
 }
 
 /**

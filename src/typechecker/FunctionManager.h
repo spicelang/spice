@@ -71,7 +71,7 @@ private:
   static void substantiateReturnType(Function &candidate, const TypeMapping &typeMapping, const ASTNode *callNode);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
-  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
+  [[nodiscard]] static uint64_t getCacheKey(const Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
                                             const QualTypeList &templateTypes);
 };
 
