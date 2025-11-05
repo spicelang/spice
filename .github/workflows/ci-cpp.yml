@@ -312,7 +312,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install ninja graphviz ossp-uuid
+          brew install graphviz ossp-uuid
 
       - name: Cache LLVM
         id: cache-llvm
