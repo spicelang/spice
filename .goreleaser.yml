@@ -8,50 +8,54 @@ builds:
     goos:
       - linux
       - windows
-      - darwin
+#      - darwin
     goarch:
       - amd64
       - arm64
     ignore:
       - goos: windows
         goarch: arm64
-      - goos: darwin
-        goarch: amd64
-      - goos: darwin
-        goarch: arm64
+#      - goos: darwin
+#        goarch: amd64
+#      - goos: darwin
+#        goarch: arm64
     hooks:
       post:
-        - mv ./bin/spice-{{.Os}}-{{.Arch}}/spice{{.Ext}} {{.Path}}
+        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
 
 dockers_v2:
   - images:
       - "chillibits/spice"
       - "ghcr.io/spicelang/spice"
     tags:
-      - {{.Major}}.{{.Minor}}.{{.Patch}}
+      - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
     labels:
       "org.opencontainers.image.description": "Spice programming language."
-      "org.opencontainers.image.created": {{.Date}}
-      "org.opencontainers.image.name": {{.ProjectName}}
-      "org.opencontainers.image.revision": {{.FullCommit}}
-      "org.opencontainers.image.version": {{.Version}}
-      "org.opencontainers.image.source": {{.GitURL}}
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.name": "{{ .ProjectName }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.source": "{{ .GitURL }}"
+    annotations:
+      "org.opencontainers.image.description": "Spice programming language."
+    extra_files:
+      - std
 
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     files:
       - LICENSE
       - std
     format_overrides:
       - goos: windows
-        formats: [ 'zip' ]
+        formats: [ "zip" ]
 
 checksum:
-  name_template: '{{ .ProjectName }}_checksums.txt'
+  name_template: "{{ .ProjectName }}_checksums.txt"
 
 nfpms:
   - id: publish
-    file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    file_name_template: "{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     maintainer: Marc Auberer <marc.auberer@chillibits.com>
     vendor: ChilliBits
     description: Spice programming language.
@@ -71,7 +75,7 @@ nfpms:
         dst: /usr/lib/spice/std
 
 release:
-  name_template: v{{.Tag}}
+  name_template: "v{{.Tag}}"
   prerelease: auto
   footer: |
     ## What to do next?
@@ -82,8 +86,8 @@ changelog:
   use: github
   filters:
     exclude:
-      - Merge pull request
-      - Merge branch
+      - "Merge pull request"
+      - "Merge branch"
 
 milestones:
   - close: true
