@@ -202,6 +202,7 @@ private:
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct) const;
+  bool doesTargetSupportComDat() const;
 
   // Generate code instrumentation
   void enableFunctionInstrumentation(llvm::Function *function) const;

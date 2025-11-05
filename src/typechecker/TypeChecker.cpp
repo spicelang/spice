@@ -90,7 +90,7 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of the target file
-  for (const auto &entry : targetSourceFile->exportedNameRegistry | std::views::values)
+  for (const NameRegistryEntry &entry : targetSourceFile->exportedNameRegistry | std::views::values)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->scope == symbolType.getBase().getBodyScope())
