@@ -43,7 +43,7 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: /home/runner/work/spice/spice/llvm
+          path: ${{ github.workspace }}/llvm
           key: llvm-21.1.5-linux-x64
 
       - name: Setup LLVM
@@ -62,7 +62,7 @@ jobs:
 
       - name: Configure & compile project
         env:
-          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./build
           cd ./build
@@ -121,7 +121,7 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: /home/runner/work/spice/spice/llvm
+          path: ${{ github.workspace }}/llvm
           key: llvm-21.1.5-linux-aarch64
 
       - name: Setup LLVM
@@ -140,7 +140,7 @@ jobs:
 
       - name: Configure & compile project
         env:
-          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./build
           cd ./build
