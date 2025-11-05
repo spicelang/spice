@@ -85,7 +85,12 @@ void execTestCase(const TestCase &testCase) {
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
+#if defined(__clang__) && defined(__apple_build_version__)
+  // some std types for Apple Clang are smaller than for GCC and Clang
+  static_assert(sizeof(CliOptions) == 288, "CliOptions struct size changed");
+#else
   static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
+#endif
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
