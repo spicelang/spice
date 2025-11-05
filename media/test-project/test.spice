@@ -1,4 +1,40 @@
+import "std/type/type-conversion";
+import "std/type/long";
+
 f<int> main() {
-    int i = 1;
-    printf("%d", i);
+    // toDouble()
+    double asDouble = toDouble(123l);
+    assert asDouble == 123.0;
+
+    // toInt()
+    int asInt = toInt(459873l);
+    assert asInt == 459873;
+
+    // toShort()
+    short asShort = toShort(-345l);
+    assert asShort == -345s;
+
+    // toByte()
+    byte asByte = toByte(12l);
+    assert asByte == cast<byte>(12);
+
+    // toChar()
+    char asChar = toChar(66l);
+    assert asChar == 'B';
+
+    // toString()
+    String asString = toString(12345l);
+    assert asString.getRaw() == "12345";
+
+    // toBool()
+    bool asBool1 = toBool(1l);
+    assert asBool1 == true;
+    bool asBool2 = toBool(0l);
+    assert asBool2 == false;
+
+    // isPowerOfTwo()
+    assert isPowerOfTwo(16l);
+    assert !isPowerOfTwo(31l);
+
+    printf("All assertions succeeded");
 }
