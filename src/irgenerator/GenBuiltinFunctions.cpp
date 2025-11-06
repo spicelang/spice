@@ -141,6 +141,9 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
   if (cliOptions.targetTriple.isOSWindows()) {
     llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
     stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
+  } else if (cliOptions.targetTriple.isOSDarwin()) {
+    llvm::Function *getStdErrPtrFct = stdFunctionManager.getStdErrPtrFct();
+    stdErr = builder.CreateCall(getStdErrPtrFct);
   } else {
     constexpr auto globalName = "stderr";
     module->getOrInsertGlobal(globalName, ptrTy);

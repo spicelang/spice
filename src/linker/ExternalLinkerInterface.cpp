@@ -20,7 +20,7 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
 
   // Stripping symbols
-  if (!cliOptions.instrumentation.generateDebugInfo)
+  if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin())
     addLinkerFlag("-Wl,-s");
 
   // Sanitizers
