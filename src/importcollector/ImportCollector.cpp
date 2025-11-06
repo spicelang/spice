@@ -71,18 +71,21 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
     // file.spice is third choice
     importPath = defaultPath;
   } else {
+    const std::string osArchPathRelative = osArchPath.relative_path().generic_string();
+    const std::string osPathRelative = osPath.relative_path().generic_string();
+    const std::string defaultPathRelative = defaultPath.relative_path().generic_string();
+
     std::stringstream errorMessage;
-    errorMessage << "The source file '" << node->importPath << ".spice' was not found" << std::endl << std::endl;
+    errorMessage << "The source file '" << basePath.stem().string() << ".spice' was not found" << std::endl << std::endl;
     errorMessage << "The following paths were checked with descending priority:" << std::endl;
-    errorMessage << "- " << osArchPath.generic_string() << std::endl;
-    errorMessage << "- " << osPath.generic_string() << std::endl;
-    errorMessage << "- " << defaultPath.generic_string() << std::endl;
+    errorMessage << "- " << (cliOptions.comparableOutput ? "[obfuscated]" : osArchPathRelative) << std::endl;
+    errorMessage << "- " << (cliOptions.comparableOutput ? "[obfuscated]" : osPathRelative) << std::endl;
+    errorMessage << "- " << defaultPathRelative;
     throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, errorMessage.str());
   }
 
   // Check if the import already exists
-  SymbolTableEntry *importEntry = rootScope->lookupStrict(node->importName);
-  if (importEntry != nullptr)
+  if (rootScope->lookupStrict(node->importName) != nullptr)
     throw SemanticError(node, DUPLICATE_IMPORT_NAME, "Duplicate import '" + node->importName + "'");
 
   // Create symbol for import
