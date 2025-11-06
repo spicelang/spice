@@ -61,14 +61,24 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
 
   // Check which source file to import
   std::filesystem::path importPath;
-  if (exists(osArchPath) && !equivalent(sourceFile->filePath, osArchPath)) // file_os_arch.spice is first choice
+  if (exists(osArchPath) && !equivalent(sourceFile->filePath, osArchPath)) {
+    // file_os_arch.spice is first choice
     importPath = osArchPath;
-  else if (exists(osPath) && !equivalent(sourceFile->filePath, osPath)) // file_os.spice is second choice
+  } else if (exists(osPath) && !equivalent(sourceFile->filePath, osPath)) {
+    // file_os.spice is second choice
     importPath = osPath;
-  else if (exists(defaultPath)) // file.spice is third choice
+  } else if (exists(defaultPath)) {
+    // file.spice is third choice
     importPath = defaultPath;
-  else
-    throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, "The source file '" + node->importPath + ".spice' does not exist");
+  } else {
+    std::stringstream errorMessage;
+    errorMessage << "The source file '" << node->importPath << ".spice' was not found" << std::endl << std::endl;
+    errorMessage << "The following paths were checked with descending priority:" << std::endl;
+    errorMessage << "- " << osArchPath.generic_string() << std::endl;
+    errorMessage << "- " << osPath.generic_string() << std::endl;
+    errorMessage << "- " << defaultPath.generic_string() << std::endl;
+    throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, errorMessage.str());
+  }
 
   // Check if the import already exists
   SymbolTableEntry *importEntry = rootScope->lookupStrict(node->importName);

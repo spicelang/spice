@@ -201,6 +201,9 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
 #ifdef OS_WINDOWS
   if (exists(testCase.testPath / CTL_SKIP_WINDOWS))
     return true;
+#elifdef OS_MACOS
+  if (exists(testCase.testPath / CTL_SKIP_MACOS))
+    return true;
 #endif
   return false;
 }

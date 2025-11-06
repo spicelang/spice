@@ -10,7 +10,7 @@ if not exist build (
 pushd build
 
 :: Build
-cmake -DCMAKE_BUILD_TYPE=Release -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
 cmake --build . --target spice spicetest
 
 :: Cleanup
