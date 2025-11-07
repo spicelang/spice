@@ -8,17 +8,22 @@ public const char PATH_SEPARATOR = '\\';
 public const int EXIT_CODE_SUCCESS = 0;
 public const int EXIT_CODE_ERROR = 1;
 
-// Returns if the current OS is Linux
+// Returns true if the current OS is Linux
 public f<bool> isLinux() {
     return false;
 }
 
-// Returns if the current OS is Windows
+// Returns true  if the current OS is Windows
 public f<bool> isWindows() {
     return true;
 }
 
-// Returns if the current OS is macOS
+// Returns true  if the current OS is macOS
 public f<bool> isMacOS() {
+    return false;
+}
+
+// Returns true if the current OS is Unix-based
+public f<bool> isUnixBased() {
     return false;
 }
