@@ -308,7 +308,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install graphviz ossp-uuid
+          brew install graphviz util-linux
 
       - name: Cache LLVM
         id: cache-llvm

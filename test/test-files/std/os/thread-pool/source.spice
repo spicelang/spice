@@ -4,43 +4,43 @@ import "std/time/delay";
 f<int> main() {
     ThreadPool tp = ThreadPool(3s);
     tp.enqueue(p() [[async]] {
-        delay(10);
+        delay(100);
         printf("Hello from task 1\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(20);
+        delay(200);
         printf("Hello from task 2\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(30);
+        delay(300);
         printf("Hello from task 3\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(40);
+        delay(400);
         printf("Hello from task 4\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(50);
+        delay(500);
         printf("Hello from task 5\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(60);
+        delay(600);
         printf("Hello from task 6\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(70);
+        delay(700);
         printf("Hello from task 7\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(80);
+        delay(800);
         printf("Hello from task 8\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(90);
+        delay(900);
         printf("Hello from task 9\n");
     });
     tp.enqueue(p() [[async]] {
-        delay(100);
+        delay(1000);
         printf("Hello from task 10\n");
     });
     tp.start();
