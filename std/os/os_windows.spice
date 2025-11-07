@@ -17,3 +17,8 @@ public f<bool> isLinux() {
 public f<bool> isWindows() {
     return true;
 }
+
+// Returns if the current OS is macOS
+public f<bool> isMacOS() {
+    return false;
+}

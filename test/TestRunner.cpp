@@ -40,9 +40,9 @@ void execTestCase(const TestCase &testCase) {
   CliOptions cliOptions = {
       /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
       /* targetTriple= */ targetTriple,
-      /* targetArch= */ std::string(targetTriple.getArchName()),
-      /* targetVendor= */ std::string(targetTriple.getVendorName()),
-      /* targetOs= */ std::string(targetTriple.getOSName()),
+      /* targetArch= */ targetTriple.getArchName().str(),
+      /* targetVendor= */ targetTriple.getVendorName().str(),
+      /* targetOs= */ targetTriple.getOSName().str(),
       /* isNativeTarget= */ true,
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files

@@ -1,0 +1,182 @@
+// Info taken from https://github.com/openbsd/src/blob/master/sys/sys/socket.h
+
+// Import common logic
+import "std/net/socket";
+
+// Type defs
+type SAFamilyT alias unsigned int;
+type SockLenT alias unsigned int;
+
+type SockAddr struct {
+    SAFamilyT saFamily // Address family
+    char[]    saData   // Socket address
+}
+
+type SockAddrStorage struct {
+    SAFamilyT ssFamily // Address family
+}
+
+// Represents an IPv4 address
+public type InAddr struct {
+    InAddrT addr
+}
+
+// Represents an IPv6 address
+public type In6Addr struct {
+    unsigned byte[16] addr
+}
+
+public type SockAddrIn struct {
+    SAFamilyT    sinFamily // AF_INET
+    InAddr       sinAddr   // IPv4 address
+    InPortT      sinPort   // Port number
+    unsigned long sinZero  // Padding (this is a byte[8] in the original implementation)
+}
+
+public type SockAddrIn6 struct {
+    SAFamilyT    sin6Family   // AF_INET6
+    InPortT      sin6Port     // Port number
+    unsigned int sin6FlowInfo // IPv6 flow info
+    In6Addr      sin6Addr     // IPv6 address
+    unsigned int sin6ScopeId  // Set of interfaces for a scope
+}
+
+public type SockAddrUn struct {
+    SAFamilyT sunFamily // Address family
+    char[]    sunPath   // Socket pathname
+}
+
+// External functions
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> bind(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT* /*address_len*/);
+ext f<long> read(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
+ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
+ext f<int> close(int /*fd*/);
+ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to re-implement in Spice
+ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
+ext f<InAddrT> inet_addr(string /*cp*/);
+ext f<int> connect(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+
+public type Socket struct {
+    int sockFd // Actual socket
+    int connFd // Current connection
+}
+
+/**
+ * Accept an incoming connection to the socket and save the connection file desceiptor
+ * to the socket object.
+ *
+ * @return Connection file descriptor
+ */
+public f<Result<int>> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn {};
+    SockLenT addrLen = 16u /* hardcoded sizeof(cliAddr) */;
+    this.connFd = accept(this.sockFd, &cliAddr, &addrLen);
+    if this.connFd < 0 { return err<int>(Error("Error while accepting connection")); }
+    return ok(this.connFd);
+}
+
+/**
+ * Write a raw string to the socket.
+ *
+ * @param message Content of the message
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(string message) {
+    const unsigned long messageLength = len(message);
+    if messageLength == 0l { return 0l; }
+    byte* messageBytes = nil<byte*>;
+    unsafe {
+        messageBytes = cast<byte*>(message);
+    }
+    return write(this.connFd, messageBytes, messageLength);
+}
+
+/**
+ * Write an array of bytes to the socket.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(byte* content, unsigned long size) {
+    if size == 0l { return 0l; }
+    return write(this.connFd, content, size);
+}
+
+/**
+ * Read n bytes from the socket to the given buffer.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param buffer Buffer to write the result into
+ * @param size Number of bytes to read
+ * @return Number of bytes written
+ */
+public f<long> Socket.read(byte* buffer, long size) {
+    return read(this.connFd, buffer, size);
+}
+
+/**
+ * Closes the socket. This method should always be called by the user before exiting the program.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> Socket.close() {
+    return close(this.sockFd) == 0;
+}
+
+/**
+ * Opens a TCP server socket and exposes it to the given port.
+ * The maxWaitingConnections defines the maximum length to which the queue of pending connections may grow. If a
+ * connection request arrives when the queue is full, the client may receive an error with an indication of
+ * ECONNREFUSED or, if the underlying protocol support retransmission, the request may be ignored so that a later
+ * reattempt at connection succeeds.
+ *
+ * @param port Port to open the socket on
+ * @param maxWaitingConnections Maximum size of the queue of pending client connections
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    // Create socket file descriptor
+    const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if sockFd == -1 { return err<Socket>(Error("Error creating socket")); }
+
+    // Construct socket object
+    const Socket s = Socket { sockFd, /*connFd*/ 0 };
+    const SockAddrIn servAddr = SockAddrIn { AF_INET, InAddr { INADDR_ANY }, htons(port), 0ul};
+
+    // Bind to target address
+    const int bindResult = bind(sockFd, &servAddr, 16u /* hardcoded sizeof(servaddr) */);
+    if bindResult < 0 { return err<Socket>(Error("Error binding to address")); }
+
+    // Start listening for incoming connections
+    const int listenResult = listen(sockFd, maxWaitingConnections);
+    if listenResult < 0 { return err<Socket>(Error("Error listening on address")); }
+
+    return ok(s);
+}
+
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket.
+ *
+ * @param host Host to connect to
+ * @param port Post to connect to
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
+    const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if sockFd == -1 { return err<Socket>(Error("Error opening socket client connection")); }
+
+    // Construct socket object
+    const Socket s = Socket { sockFd, /*connFd*/ 0 };
+    const SockAddrIn cliAddr = SockAddrIn { AF_INET, InAddr { inet_addr(host) }, htons(port), 0ul};
+
+    // Connect to server
+    const int connectResult = connect(sockFd, &cliAddr, 16u /* hardcoded sizeof(cliAddr) */);
+    if connectResult < 0 { return err<Socket>(Error("Error connecting to socket")); }
+
+    return ok(s);
+}

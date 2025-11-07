@@ -31,16 +31,11 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   if (isStd) { // Include source file from standard library
     // Find std library
     const std::filesystem::path stdPath = FileUtil::getStdDir();
-    if (stdPath.empty())
-      throw CompilerError(STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     // Format: /dir/to/path/file
     basePath = stdPath / node->importPath.substr(node->importPath.find("std/") + 4);
   } else if (isBootstrap) { // Include source file from bootstrap library
     // Find bootstrap library
     const std::filesystem::path bootstrapPath = FileUtil::getBootstrapDir();
-    if (bootstrapPath.empty())
-      throw CompilerError(BOOTSTRAP_NOT_FOUND,
-                          "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
     // Format: /dir/to/path/file
     basePath = bootstrapPath / node->importPath.substr(node->importPath.find("bootstrap/") + 10);
   } else { // Include own source file
@@ -49,15 +44,18 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   }
   basePath.make_preferred();
 
+  const std::string osName = cliOptions.targetTriple.getOSTypeName(cliOptions.targetTriple.getOS()).str();
+  const std::string archName = cliOptions.targetTriple.getArchTypeName(cliOptions.targetTriple.getArch()).str();
+
   // Format: /dir/to/path/file.spice
   std::filesystem::path defaultPath = basePath;
   defaultPath.replace_filename(basePath.stem().string() + ".spice");
   // Format: /dir/to/path/file_linux.spice
   std::filesystem::path osPath = basePath;
-  osPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + ".spice");
+  osPath.replace_filename(basePath.stem().string() + "_" + osName + ".spice");
   // Format: /dir/to/path/file_linux_x86_64.spice
   std::filesystem::path osArchPath = basePath;
-  osArchPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch + ".spice");
+  osArchPath.replace_filename(basePath.stem().string() + "_" + osName + "_" + archName + ".spice");
 
   // Check which source file to import
   std::filesystem::path importPath;

@@ -13,6 +13,8 @@
 #error "Unsupported platform"
 #endif
 
+#include <llvm/TargetParser/Triple.h>
+
 namespace spice::compiler {
 
 /**
@@ -138,6 +140,16 @@ bool CommonUtil::isValidMangledName(const std::string &mangledName) {
   char *demangled = abi::__cxa_demangle(mangledName.c_str(), nullptr, nullptr, &status);
   free(demangled);
   return status == 0;
+}
+
+/**
+ * Retrieve OS name without any version information from a LLVM target triple
+ *
+ * @param targetTriple LLVM target triple
+ * @return OS name
+ */
+std::string CommonUtil::getOSNameFromTargetTriple(const llvm::Triple *targetTriple) {
+  return targetTriple->getOSTypeName(targetTriple->getOS()).str();
 }
 
 /**
