@@ -128,11 +128,11 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
 
   // Fail if no ref file exists
   const std::filesystem::path refPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (!exists(refPath))
+  if (!doesRefExist(refPath))
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&] { return errorWhat; });
+  checkRefMatch(refPath, [&] { return errorWhat; });
 }
 
 /**

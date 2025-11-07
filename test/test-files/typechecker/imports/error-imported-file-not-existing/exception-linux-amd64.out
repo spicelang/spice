@@ -1,0 +1,10 @@
+[Error|Semantic] ./source.spice:1:1:
+Imported source file not existing: The source file 'source2.spice' was not found
+
+The following paths were checked with descending priority:
+- source2_linux_x86_64.spice
+- source2_linux.spice
+- source2.spice
+
+1  import "source2" as s2;
+   ^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,10 @@
+[Error|Semantic] ./source.spice:1:1:
+Imported source file not existing: The source file 'foo.spice' was not found
+
+The following paths were checked with descending priority:
+- foo_linux_x86_64.spice
+- foo_linux.spice
+- foo.spice
+
+1  import "std/non-existing/foo" as foo;
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

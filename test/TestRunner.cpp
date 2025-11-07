@@ -145,7 +145,7 @@ void execTestCase(const TestCase &testCase) {
                             [&] { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
-    if (exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
+    if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
     // Check dependency graph

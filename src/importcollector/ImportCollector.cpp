@@ -71,16 +71,17 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
     // file.spice is third choice
     importPath = defaultPath;
   } else {
-    const std::string osArchPathRelative = osArchPath.relative_path().generic_string();
-    const std::string osPathRelative = osPath.relative_path().generic_string();
-    const std::string defaultPathRelative = defaultPath.relative_path().generic_string();
+    const bool obfuscate = cliOptions.comparableOutput;
+    const std::string osArchPathObfuscated = obfuscate ? osArchPath.stem().string() + ".spice" : osArchPath.generic_string();
+    const std::string osPathObfuscated = obfuscate ? osPath.stem().string() + ".spice" : osPath.generic_string();
+    const std::string defaultPathObfuscated = obfuscate ? defaultPath.stem().string() + ".spice" : defaultPath.generic_string();
 
     std::stringstream errorMessage;
     errorMessage << "The source file '" << basePath.stem().string() << ".spice' was not found" << std::endl << std::endl;
     errorMessage << "The following paths were checked with descending priority:" << std::endl;
-    errorMessage << "- " << (cliOptions.comparableOutput ? "[obfuscated]" : osArchPathRelative) << std::endl;
-    errorMessage << "- " << (cliOptions.comparableOutput ? "[obfuscated]" : osPathRelative) << std::endl;
-    errorMessage << "- " << defaultPathRelative;
+    errorMessage << "- " << osArchPathObfuscated << std::endl;
+    errorMessage << "- " << osPathObfuscated << std::endl;
+    errorMessage << "- " << defaultPathObfuscated;
     throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, errorMessage.str());
   }
 
