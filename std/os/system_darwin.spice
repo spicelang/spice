@@ -1,0 +1,24 @@
+// External functions
+ext f<long> sysconf(int /*name*/);
+ext f<unsigned int> getpagesize();
+
+// Constants
+const int SC_NPROCESSORS_ONLN = 84;
+
+/**
+ * Returns the number of CPU cores of the host system.
+ *
+ * return Number of cores
+ */
+public f<long> getCPUCoreCount() {
+    return sysconf(SC_NPROCESSORS_ONLN);
+}
+
+/**
+ * Returns the system page size of the host system.
+ *
+ * return Page size
+ */
+public f<unsigned int> getPageSize() {
+    return getpagesize();
+}

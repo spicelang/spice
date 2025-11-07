@@ -2,8 +2,8 @@
 Imported source file not existing: The source file 'foo.spice' was not found
 
 The following paths were checked with descending priority:
-- foo_macos_aarch64.spice
-- foo_macos.spice
+- foo_darwin_aarch64.spice
+- foo_darwin.spice
 - foo.spice
 
 1  import "std/non-existing/foo" as foo;

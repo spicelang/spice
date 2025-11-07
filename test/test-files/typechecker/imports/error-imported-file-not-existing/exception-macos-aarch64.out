@@ -2,8 +2,8 @@
 Imported source file not existing: The source file 'source2.spice' was not found
 
 The following paths were checked with descending priority:
-- source2_macos_aarch64.spice
-- source2_macos.spice
+- source2_darwin_aarch64.spice
+- source2_darwin.spice
 - source2.spice
 
 1  import "source2" as s2;

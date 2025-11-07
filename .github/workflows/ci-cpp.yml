@@ -320,8 +320,6 @@ jobs:
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          cd ..
-          rm -rf llvm
           git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
@@ -335,7 +333,7 @@ jobs:
 
       - name: Build test target
         env:
-          LLVM_DIR: /Users/runner/work/spice/llvm/build/lib/cmake/llvm
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./build
           cd ./build
