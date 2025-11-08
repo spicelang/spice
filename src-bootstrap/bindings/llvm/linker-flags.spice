@@ -15,6 +15,7 @@
     core.darwin.linker.flag = "-lm", // math
     core.darwin.linker.flag = "-lz", // zlib
     core.darwin.linker.flag = "-lncurses", // ncurses
+    core.darwin.linker.flag = "-lzstd", // zstd
     // Paths - Windows
     core.windows.linker.flag = "-L%LLVM_LIB_DIR%",           // e.g.: D:/LLVM/build-release/lib
     core.windows.linker.flag = "-I%LLVM_INCLUDE_DIR%",       // e.g.: D:/LLVM/llvm/include
