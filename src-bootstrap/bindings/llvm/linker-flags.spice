@@ -12,6 +12,7 @@
     core.darwin.linker.flag = "-L$LLVM_LIB_DIR",
     core.darwin.linker.flag = "-I$LLVM_INCLUDE_DIR",
     core.darwin.linker.flag = "-I$LLVM_BUILD_INCLUDE_DIR",
+    core.darwin.linker.flag = "-L/opt/homebrew/lib",
     core.darwin.linker.flag = "-lm", // math
     core.darwin.linker.flag = "-lz", // zlib
     core.darwin.linker.flag = "-lncurses", // ncurses
