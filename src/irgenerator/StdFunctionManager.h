@@ -35,7 +35,6 @@ public:
   [[nodiscard]] llvm::Function *getIteratorIsValidFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorNextFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getAcrtIOFuncFct() const;
-  [[nodiscard]] llvm::Function *getStdErrPtrFct() const;
 
 private:
   // Members

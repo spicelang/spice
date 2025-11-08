@@ -308,7 +308,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install graphviz util-linux
+          brew install graphviz
 
       - name: Cache LLVM
         id: cache-llvm
@@ -348,6 +348,4 @@ jobs:
           LLVM_BUILD_INCLUDE_DIR: ${{ github.workspace }}/llvm/build/include
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
-          LDFLAGS: "-L/opt/homebrew/opt/util-linux/lib"
-          CPPFLAGS: "-I/opt/homebrew/opt/util-linux/include"
         run: ./spicetest --is-github-actions
