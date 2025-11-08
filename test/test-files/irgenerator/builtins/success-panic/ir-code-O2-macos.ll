@@ -14,7 +14,7 @@ define private fastcc void @_Z3foov() unnamed_addr #0 {
   call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr nonnull @anon.string.1)
   %3 = getelementptr inbounds nuw i8, ptr %1, i64 8
   %4 = load ptr, ptr %3, align 8
-  %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr nonnull @anon.string.0, ptr %4) #4
+  %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr nonnull @anon.string.0, ptr %4)
   call void @exit(i32 1)
   unreachable
 }
@@ -29,7 +29,7 @@ declare void @exit(i32) local_unnamed_addr #2
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #3 {
-  tail call fastcc void @_Z3foov() #5
+  tail call fastcc void @_Z3foov() #4
   unreachable
 }
 
@@ -37,8 +37,7 @@ attributes #0 = { cold noreturn }
 attributes #1 = { nofree nounwind }
 attributes #2 = { cold nofree noreturn nounwind }
 attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #4 = { cold }
-attributes #5 = { nounwind }
+attributes #4 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
