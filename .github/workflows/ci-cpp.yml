@@ -308,7 +308,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install graphviz
+          brew install graphviz zstd
 
       - name: Cache LLVM
         id: cache-llvm
