@@ -1,5 +1,0 @@
-[Error|Semantic] ./source.spice:1:1:
-Imported source file not existing: The source file 'std/non-existing/foo.spice' does not exist
-
-1  import "std/non-existing/foo" as foo;
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

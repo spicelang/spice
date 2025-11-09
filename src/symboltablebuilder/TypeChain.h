@@ -74,7 +74,12 @@ struct TypeChainElement {
 };
 
 // Make sure we have no unexpected increases in memory consumption
+#if defined(__clang__) && defined(__apple_build_version__)
+// std::string for Apple Clang is smaller than std::string for GCC and Clang
+static_assert(sizeof(TypeChainElement) == 96);
+#else
 static_assert(sizeof(TypeChainElement) == 104);
+#endif
 
 // Typedefs
 using TypeChain = std::vector<TypeChainElement>;

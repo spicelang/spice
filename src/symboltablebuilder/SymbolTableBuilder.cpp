@@ -403,8 +403,7 @@ std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -516,8 +515,7 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 
 std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
   // Create scope for the case branch
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body->codeLoc);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body->codeLoc);
 
   // Visit case body
   visit(node->body);
@@ -633,12 +631,18 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   std::vector<const CompileTimeValue *> values = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
   linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   // core.linux.linker.flag
-  if (sourceFile->targetMachine->getTargetTriple().isOSLinux()) {
+  const llvm::Triple &targetTriple = sourceFile->targetMachine->getTargetTriple();
+  if (targetTriple.isOSLinux()) {
     values = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
+  // core.darwin.linker.flag
+  if (targetTriple.isOSDarwin()) {
+    values = attrs->getAttrValuesByName(ATTR_CORE_DARWIN_LINKER_FLAG);
+    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
+  }
   // core.windows.linker.flag
-  if (sourceFile->targetMachine->getTargetTriple().isOSWindows()) {
+  if (targetTriple.isOSWindows()) {
     values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }

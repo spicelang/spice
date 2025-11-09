@@ -142,7 +142,7 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
     llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
     stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
   } else {
-    constexpr auto globalName = "stderr";
+    const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
     module->getOrInsertGlobal(globalName, ptrTy);
     llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
     stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);

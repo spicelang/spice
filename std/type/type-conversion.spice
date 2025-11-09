@@ -1,5 +1,5 @@
 // External functions
-ext f<unsigned int> snprintf(char*, unsigned long, string, ...);
+ext f<int> snprintf(char*, unsigned long, string, ...);
 ext f<long> strtol(string, char**, int);
 ext f<int> atoi(string, char**, int);
 ext f<double> strtod(string, char**);
@@ -415,7 +415,7 @@ public f<char> toChar(string input) {
  * @return String value
  */
 public f<String> toString(double input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%f", input);
+    const int length = snprintf(nil<char*>, 0l, "%f", input);
     result = String(length); // Assuming this length is enough
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%f", input);
 }
@@ -427,7 +427,7 @@ public f<String> toString(double input) {
  * @return String value
  */
 public f<String> toString(int input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%d", input);
+    const int length = snprintf(nil<char*>, 0l, "%d", input);
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%d", input);
 }
@@ -439,7 +439,7 @@ public f<String> toString(int input) {
  * @return String value
  */
 public f<String> toString(short input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
+    const int length = snprintf(nil<char*>, 0l, "%hd", input);
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%hd", input);
 }
@@ -451,7 +451,7 @@ public f<String> toString(short input) {
  * @return String value
  */
 public f<String> toString(long input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%ld", input);
+    const int length = snprintf(nil<char*>, 0l, "%ld", input);
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%ld", input);
 }
@@ -463,7 +463,7 @@ public f<String> toString(long input) {
  * @return String value
  */
 public f<String> toString(byte input) {
-    const unsigned int length = snprintf(nil<char*>, 0l, "%hhu", input);
+    const int length = snprintf(nil<char*>, 0l, "%hhu", input);
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%hhu", input);
 }

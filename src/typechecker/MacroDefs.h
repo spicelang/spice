@@ -7,12 +7,7 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
-      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
-      return ExprResult{exprNode->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                      \
-    } else {                                                                                                                     \
-      return ExprResult{QualType(TY_UNRESOLVED)};                                                                                \
-    }                                                                                                                            \
+    return ExprResult{QualType(TY_UNRESOLVED)};                                                                                  \
   }
 
 #define SOFT_ERROR_QT(node, type, message)                                                                                       \
@@ -34,24 +29,12 @@
   }
 
 #define HANDLE_UNRESOLVED_TYPE_ER(type)                                                                                          \
-  if ((type).is(TY_UNRESOLVED)) {                                                                                                \
-    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
-      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
-      return ExprResult{exprNode->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                      \
-    } else {                                                                                                                     \
-      return ExprResult{QualType(TY_UNRESOLVED)};                                                                                \
-    }                                                                                                                            \
-  }
+  if ((type).is(TY_UNRESOLVED))                                                                                                  \
+    return ExprResult{QualType(TY_UNRESOLVED)};
 
 #define HANDLE_UNRESOLVED_TYPE_QT(type)                                                                                          \
-  if ((type).is(TY_UNRESOLVED)) {                                                                                                \
-    if constexpr (std::is_base_of<ExprNode, decltype(node)>()) {                                                                 \
-      const auto exprNode = spice_pointer_cast<ExprNode *>(node);                                                                \
-      return exprNode->setEvaluatedSymbolType(type, manIdx);                                                                     \
-    } else {                                                                                                                     \
-      return type;                                                                                                               \
-    }                                                                                                                            \
-  }
+  if ((type).is(TY_UNRESOLVED))                                                                                                  \
+    return type;
 
 #define HANDLE_UNRESOLVED_TYPE_PTR(type)                                                                                         \
   if ((type).is(TY_UNRESOLVED))                                                                                                  \

@@ -8,7 +8,7 @@ import "std/text/string-ext";
 import "bootstrap/bindings/llvm/linker-flags";
 
 // External functions
-ext f<unsigned int> snprintf(char*, unsigned long, string, int, int, int);
+ext f<int> snprintf(char*, unsigned long, string, ...);
 
 // ===== External type definitions =====
 type VoidPtr alias byte*;
@@ -1324,9 +1324,10 @@ public f<String> getVersionString() {
     unsigned int minor = 0;
     unsigned int patch = 0;
     LLVMGetVersion(&major, &minor, &patch);
-    const unsigned int length = snprintf(nil<char*>, 0l, "%d.%d.%d", major, minor, patch);
+    const int length = snprintf(nil<char*>, 0l, "%d.%d.%d", major, minor, patch);
     result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%d.%d.%d", major, minor, patch);
+    const int actualLength = snprintf(cast<char*>(result.getRaw()), length + 1l, "%d.%d.%d", major, minor, patch);
+    assert actualLength == length;
 }
 
 public p llvm_shutdown() {

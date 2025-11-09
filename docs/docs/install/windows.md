@@ -18,6 +18,12 @@ After installing Spice, you should be able to run it. If not, please restart you
 
 It is possible that you see an error notification by your anti-virus software complaining about Spice being a potentially dangerous application. This can happen if the latest version was released very recently and too few people downloaded it yet. If you want to validate the file signature, you can visit [this GitHub repo](https://github.com/microsoft/winget-pkgs/tree/master/manifests/c/ChilliBits/Spice), select your version and open the file `ChilliBits.Spice.installer.yaml`. There you can find the SHA256 signatures for the `x64` exe installer.
 
+### Install from archive file
+If neither of the two installation approaches matched your desire, you also can download an archive file, that contains
+all resources that Spice needs to run.
+
+[Download 64bit](https://github.com/spicelang/spice/releases/latest/download/spice_windows_amd64.zip){ .md-button .md-button--primary .md-button--small }
+
 ### Use
 ```sh
 spice [options] <input>

@@ -27,7 +27,9 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
   global->setLinkage(llvm::GlobalValue::ExternalLinkage);
-  global->setComdat(module->getOrInsertComdat(globalName));
+  // MachO does not support comdat annotations
+  if (doesTargetSupportComDat())
+    global->setComdat(module->getOrInsertComdat(globalName));
 
   return spiceStruct->vTableData.typeInfoName = global;
 }
@@ -83,7 +85,8 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
   global->setLinkage(llvm::GlobalValue::ExternalLinkage);
-  global->setComdat(module->getOrInsertComdat(mangledName));
+  if (doesTargetSupportComDat())
+    global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 
   return spiceStruct->vTableData.typeInfo = global;
@@ -111,7 +114,8 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
   global->setLinkage(llvm::GlobalValue::ExternalLinkage);
-  global->setComdat(module->getOrInsertComdat(mangledName));
+  if (doesTargetSupportComDat())
+    global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 
   return spiceStruct->vTableData.vtable = global;
@@ -148,5 +152,7 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) const
   assert(global != nullptr);
   global->setInitializer(initializer);
 }
+
+bool IRGenerator::doesTargetSupportComDat() const { return cliOptions.targetTriple.getObjectFormat() != llvm::Triple::MachO; }
 
 } // namespace spice::compiler

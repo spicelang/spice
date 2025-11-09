@@ -44,11 +44,11 @@ const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_SKIP_WINDOWS = "skip-windows";
+const char *const CTL_SKIP_MACOS = "skip-macos";
 const char *const CTL_DEBUG_INFO = "with-debug-info";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
 const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
 const char *const CTL_LTO = "with-lto";
-
 
 struct TestCase {
   const std::string testSuite;
@@ -57,8 +57,8 @@ struct TestCase {
 };
 
 // Typedefs
-using GetOutputFct = const std::function<std::string()>&;
-using ModifyOutputFct = const std::function<void(std::string& expectedOutput, std::string& actualOutput)>&;
+using GetOutputFct = const std::function<std::string()> &;
+using ModifyOutputFct = const std::function<void(std::string &expectedOutput, std::string &actualOutput)> &;
 
 class TestUtil {
 public:
@@ -74,8 +74,7 @@ public:
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
       const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
-      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {},
-      bool x86Only = false);
+      ModifyOutputFct modifyOutputFct = [](std::string &, std::string &) {}, bool x86Only = false);
   static bool doesRefExist(const std::filesystem::path &originalRefPath);
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);

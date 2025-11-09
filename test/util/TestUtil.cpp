@@ -5,8 +5,8 @@
 #include "TestUtil.h"
 
 #include <dirent.h>
-#ifdef OS_UNIX
-#include <cstring> // Required by builds on Linux
+#if OS_UNIX
+#include <cstring> // Required by builds on Unix
 #endif
 
 #include <gtest/gtest.h>
@@ -128,11 +128,11 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
 
   // Fail if no ref file exists
   const std::filesystem::path refPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (!exists(refPath))
+  if (!doesRefExist(refPath))
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&] { return errorWhat; });
+  checkRefMatch(refPath, [&] { return errorWhat; });
 }
 
 /**
@@ -200,6 +200,9 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
 #ifdef OS_WINDOWS
   if (exists(testCase.testPath / CTL_SKIP_WINDOWS))
+    return true;
+#elifdef OS_MACOS
+  if (exists(testCase.testPath / CTL_SKIP_MACOS))
     return true;
 #endif
   return false;

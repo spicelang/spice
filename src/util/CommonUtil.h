@@ -6,6 +6,11 @@
 
 #include <Token.h>
 
+// Forward declarations
+namespace llvm {
+class Triple;
+} // namespace llvm
+
 namespace spice::compiler {
 
 // Forward declarations
@@ -31,6 +36,7 @@ public:
   static std::string formatBytes(size_t bytes);
   static std::string demangleTypeName(const char *mangledName);
   static bool isValidMangledName(const std::string &mangledName);
+  static std::string getOSNameFromTargetTriple(const llvm::Triple* targetTriple);
   static std::string getCircularImportMessage(std::stack<const SourceFile *> &sourceFiles);
   static std::string buildVersionInfo();
 };

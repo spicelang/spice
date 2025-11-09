@@ -1,8 +1,8 @@
 // Contains the operating system name in lower case
-public const string OS_NAME = "windows";
+public const string OS_NAME = "macos";
 
 // Contains the native path separator
-public const char PATH_SEPARATOR = '\\';
+public const char PATH_SEPARATOR = '/';
 
 // System exit codes
 public const int EXIT_CODE_SUCCESS = 0;
@@ -13,17 +13,17 @@ public f<bool> isLinux() {
     return false;
 }
 
-// Returns true  if the current OS is Windows
+// Returns true if the current OS is Windows
 public f<bool> isWindows() {
-    return true;
+    return false;
 }
 
-// Returns true  if the current OS is macOS
+// Returns true if the current OS is macOS
 public f<bool> isMacOS() {
-    return false;
+    return true;
 }
 
 // Returns true if the current OS is Unix-based
 public f<bool> isUnixBased() {
-    return false;
+    return true;
 }

@@ -1,40 +1,55 @@
-import "std/type/type-conversion";
-import "std/type/long";
+import "std/data/vector";
+
+import "bootstrap/util/common-util";
+import "bootstrap/source-file-intf";
+
+type MockSourceFile struct : ISourceFile {
+    string fileName
+    unsigned long lineCount = 0l
+}
+
+p MockSourceFile.ctor(string fileName, unsigned long lineCount = 0l) {
+    this.fileName = fileName;
+    this.lineCount = lineCount;
+}
+
+f<unsigned long> MockSourceFile.getLineCount() {
+    return this.lineCount;
+}
+
+f<string> MockSourceFile.getFileName() {
+    return this.fileName;
+}
+
+f<bool> MockSourceFile.isStdFile() {
+    return false;
+}
 
 f<int> main() {
-    // toDouble()
-    double asDouble = toDouble(123l);
-    assert asDouble == 123.0;
+    // getLastFragment
+    String lastFragment = getLastFragment(String("this.is.a.test.haystack"), ".");
+    assert lastFragment == "haystack";
+    lastFragment = getLastFragment(String(""), ";");
+    assert lastFragment == "";
+    lastFragment = getLastFragment(String("x-y-z-"), "-");
+    assert lastFragment == "";
+    // getCircularImportMessage
+    const MockSourceFile msf1 = MockSourceFile("file1.spice", 1l);
+    const MockSourceFile msf2 = MockSourceFile("file2.spice", 12l);
+    const MockSourceFile msf3 = MockSourceFile("file3.spice", 123l);
+    const MockSourceFile msf4 = MockSourceFile("file4.spice", 1234l);
+    Vector<const ISourceFile*> sourceFiles;
+    unsafe {
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf1));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf2));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf3));
+        sourceFiles.pushBack(cast<const ISourceFile*>(&msf4));
+    }
+    const String cim = getCircularImportMessage(sourceFiles);
+    printf("Circular error message:\n%s\n", cim);
+    // buildVersionInfo
+    const String versionInfo = buildVersionInfo();
+    printf("Version info:\n%s\n", versionInfo);
 
-    // toInt()
-    int asInt = toInt(459873l);
-    assert asInt == 459873;
-
-    // toShort()
-    short asShort = toShort(-345l);
-    assert asShort == -345s;
-
-    // toByte()
-    byte asByte = toByte(12l);
-    assert asByte == cast<byte>(12);
-
-    // toChar()
-    char asChar = toChar(66l);
-    assert asChar == 'B';
-
-    // toString()
-    String asString = toString(12345l);
-    assert asString.getRaw() == "12345";
-
-    // toBool()
-    bool asBool1 = toBool(1l);
-    assert asBool1 == true;
-    bool asBool2 = toBool(0l);
-    assert asBool2 == false;
-
-    // isPowerOfTwo()
-    assert isPowerOfTwo(16l);
-    assert !isPowerOfTwo(31l);
-
-    printf("All assertions succeeded");
+    printf("All assertions passed!");
 }

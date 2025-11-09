@@ -19,7 +19,7 @@ Library('antlr')
 Executable('spice-run')
 {
     .Libraries          = { 'Spice' }
-    .LinkerOutput       = '../bin/spice.exe'
+    .LinkerOutput       = '../build/spice.exe'
 }
 
 ; Create a default target

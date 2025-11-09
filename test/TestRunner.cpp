@@ -40,9 +40,9 @@ void execTestCase(const TestCase &testCase) {
   CliOptions cliOptions = {
       /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
       /* targetTriple= */ targetTriple,
-      /* targetArch= */ std::string(targetTriple.getArchName()),
-      /* targetVendor= */ std::string(targetTriple.getVendorName()),
-      /* targetOs= */ std::string(targetTriple.getOSName()),
+      /* targetArch= */ targetTriple.getArchName().str(),
+      /* targetVendor= */ targetTriple.getVendorName().str(),
+      /* targetOs= */ targetTriple.getOSName().str(),
       /* isNativeTarget= */ true,
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
@@ -85,7 +85,12 @@ void execTestCase(const TestCase &testCase) {
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
+#if defined(__clang__) && defined(__apple_build_version__)
+  // some std types for Apple Clang are smaller than for GCC and Clang
+  static_assert(sizeof(CliOptions) == 288, "CliOptions struct size changed");
+#else
   static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
+#endif
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
@@ -140,7 +145,7 @@ void execTestCase(const TestCase &testCase) {
                             [&] { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
-    if (exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
+    if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
     // Check dependency graph

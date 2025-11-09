@@ -110,7 +110,7 @@ ExecResult FileUtil::exec(const std::string &command, bool redirectStdErrToStdOu
  */
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #if OS_UNIX
-const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+  const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
 #elif OS_WINDOWS
   const std::string checkCmd = "where " + cmd + " > nul 2>&1";
 #else
@@ -196,7 +196,8 @@ std::filesystem::path FileUtil::getStdDir() {
   if (std::getenv("SPICE_STD_DIR"))
     if (const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR")); exists(stdPath))
       return stdPath;
-  return ""; // GCOV_EXCL_LINE
+  const auto errMsg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // GCOV_EXCL_LINE
+  throw CompilerError(STD_NOT_FOUND, errMsg);                                                           // GCOV_EXCL_LINE
 }
 
 /**
@@ -210,7 +211,8 @@ std::filesystem::path FileUtil::getBootstrapDir() {
     if (const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR")); exists(stdPath))
       return stdPath;
   }
-  return ""; // GCOV_EXCL_LINE
+  const auto errMsg = "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists"; // GCOV_EXCL_LINE
+  throw CompilerError(BOOTSTRAP_NOT_FOUND, errMsg);                                                             // GCOV_EXCL_LINE
 }
 
 /**
@@ -220,9 +222,11 @@ std::filesystem::path FileUtil::getBootstrapDir() {
  */
 std::filesystem::path FileUtil::getSpiceBinDir() {
 #if OS_UNIX
-return "/usr/local/bin/";
+  return "/usr/local/bin/";
 #elif OS_WINDOWS
-  return std::filesystem::path(std::getenv("USERPROFILE")) / "spice" / "bin";
+  const char *userProfile = std::getenv("USERPROFILE");
+  assert(userProfile != nullptr && strlen(userProfile) > 0);
+  return std::filesystem::path(userProfile) / "spice" / "bin";
 #else
 #error "Unsupported platform"
 #endif

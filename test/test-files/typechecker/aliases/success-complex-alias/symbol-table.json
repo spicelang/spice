@@ -3,7 +3,151 @@
   "children": [
     {
       "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L19C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "a",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L21C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "b",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
       "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "p ctor<T>(unsigned long)",
+          "symbols": [
+            {
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "TestStruct<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "p printLength<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L12C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "TestStruct<T>*"
+            }
+          ]
+        }
+      ],
+      "name": "struct:TestStruct",
+      "symbols": [
+        {
+          "codeLoc": "L4C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "_f1",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "T"
+        },
+        {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L8C1",
+          "orderIndex": 2,
+          "state": "declared",
+          "type": "p(unsigned long)"
+        },
+        {
+          "codeLoc": "L5C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "length",
+          "orderIndex": 1,
+          "state": "declared",
+          "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "p()"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "p ctor<T>(unsigned long)",
+          "symbols": [
+            {
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "TestStruct<T>*"
+            }
+          ]
+        },
         {
           "captures": [],
           "children": [],
@@ -32,22 +176,6 @@
         {
           "captures": [],
           "children": [],
-          "name": "p printLength<long>()",
-          "symbols": [
-            {
-              "codeLoc": "L12C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "TestStruct<long>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
           "name": "p printLength<T>()",
           "symbols": [
             {
@@ -64,25 +192,16 @@
         {
           "captures": [],
           "children": [],
-          "name": "p ctor<T>(unsigned long)",
+          "name": "p printLength<long>()",
           "symbols": [
             {
-              "codeLoc": "L8C19",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "initialLength",
-              "orderIndex": 1,
-              "state": "initialized",
-              "type": "unsigned long"
-            },
-            {
-              "codeLoc": "L8C1",
+              "codeLoc": "L12C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "TestStruct<T>*"
+              "type": "TestStruct<long>*"
             }
           ]
         }
@@ -133,125 +252,6 @@
           "orderIndex": 3,
           "state": "declared",
           "type": "p()"
-        },
-        {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "fct:main",
-      "symbols": [
-        {
-          "codeLoc": "L19C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "a",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "TestStruct<long>"
-        },
-        {
-          "codeLoc": "L21C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "b",
-          "orderIndex": 2,
-          "state": "initialized",
-          "type": "TestStruct<long>"
-        },
-        {
-          "codeLoc": "L18C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [],
-          "name": "p printLength<T>()",
-          "symbols": [
-            {
-              "codeLoc": "L12C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "TestStruct<T>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "p ctor<T>(unsigned long)",
-          "symbols": [
-            {
-              "codeLoc": "L8C19",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "initialLength",
-              "orderIndex": 1,
-              "state": "initialized",
-              "type": "unsigned long"
-            },
-            {
-              "codeLoc": "L8C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "TestStruct<T>*"
-            }
-          ]
-        }
-      ],
-      "name": "struct:TestStruct",
-      "symbols": [
-        {
-          "codeLoc": "L4C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "_f1",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "T"
-        },
-        {
-          "codeLoc": "L8C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "ctor:L8C1",
-          "orderIndex": 2,
-          "state": "declared",
-          "type": "p(unsigned long)"
-        },
-        {
-          "codeLoc": "L5C5",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "length",
-          "orderIndex": 1,
-          "state": "declared",
-          "type": "unsigned long"
         },
         {
           "codeLoc": "L12C1",

@@ -28,7 +28,6 @@ f<bool> MockSourceFile.isStdFile() {
 f<int> main() {
     // getLastFragment
     String lastFragment = getLastFragment(String("this.is.a.test.haystack"), ".");
-    printf("%s", lastFragment);
     assert lastFragment == "haystack";
     lastFragment = getLastFragment(String(""), ";");
     assert lastFragment == "";

@@ -105,7 +105,7 @@ public:
   // Public members
   Scope *parent;
   SourceFile *sourceFile;
-  std::unordered_map<std::string, std::shared_ptr<Scope>> children;
+  std::map<std::string, std::shared_ptr<Scope>> children;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
   const ScopeType type;

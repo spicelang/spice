@@ -2,15 +2,15 @@
 set -eu
 
 # Prepare
-if [ ! -d bin ]; then
-    mkdir -p bin
+if [ ! -d build ]; then
+    mkdir -p build
 fi
 export LLVM_DIR=./llvm/build-release/lib/cmake/llvm
 
 # Build
 (
-  cd ./bin || exit
-  cmake -DCMAKE_BUILD_TYPE=Release -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+  cd ./build || exit
+  cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
   cmake --build . --target spice spicetest
   mv ./src/spice spice
   mv ./test/spicetest spicetest

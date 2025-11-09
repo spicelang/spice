@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cassert>
+#include <type_traits>
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -13,10 +14,12 @@
 #define ALWAYS_INLINE __attribute__((always_inline))
 
 // Casts a pointer to another pointer type and asserts that the cast was successful in debug mode
-template <typename T> ALWAYS_INLINE static T spice_pointer_cast(auto source) {
-  static_assert(std::is_pointer_v<decltype(source)>, "Source is not a pointer type");
-  assert(dynamic_cast<T>(source) != nullptr);
-  return static_cast<T>(source);
+template <typename DstT, typename SrcT>
+ALWAYS_INLINE static DstT spice_pointer_cast(SrcT source)
+  requires(std::is_pointer_v<SrcT> && std::is_pointer_v<DstT>)
+{
+  assert(dynamic_cast<DstT>(source) != nullptr);
+  return static_cast<DstT>(source);
 }
 
 // Fail with an assertion error message
