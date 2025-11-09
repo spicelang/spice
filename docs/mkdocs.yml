@@ -73,6 +73,7 @@ nav:
   - intro.md
   - Install:
     - install/linux.md
+    - install/macos.md
     - install/windows.md
     - install/docker.md
     - install/source.md
