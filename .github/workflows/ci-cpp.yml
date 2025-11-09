@@ -70,7 +70,7 @@ jobs:
           git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -182,7 +182,7 @@ jobs:
           git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -246,7 +246,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -323,7 +323,7 @@ jobs:
           git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs

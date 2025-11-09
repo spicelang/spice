@@ -85,8 +85,7 @@ You can find the build output in the `build` subdirectory.
 Currently, Spice only offers stable support for linux/x86_64, linux/aarch64, windows/x86_64 and darwin/aarch64.
 But you can try to compile to the following architectures without any stability promises:
 
-`aarch64`, `amdgpu`, `armv5`, `armv6`, `armv7`, `avr`, `bpf`, `hexagon`, `lanai`, `loongarch`, `mips`, `msp430`, `nvptx`,
-`powerpc`, `riscv`, `sparc`, `spirv`, `systemz`, `ve`, `webassembly`, `x86`, `x86_64`, `xcore`
+`aarch64`, `amdgpu`, `armv5`, `armv6`, `armv7`, `mips`, `nvptx`, `powerpc`, `riscv`, `webassembly`, `x86`, `x86_64`
 
 ## Contribute to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).
