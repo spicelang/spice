@@ -66,6 +66,7 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_TRUE(driver.cliOptions.useLTO);                                      // -lto
   ASSERT_TRUE(driver.cliOptions.printDebugOutput);                            // -d
   ASSERT_TRUE(driver.cliOptions.dump.dumpIR);                                 // -ir
+  ASSERT_TRUE(driver.cliOptions.useLifetimeMarkers);                          // implicitly due to enabled address sanitizer
 }
 
 TEST(DriverTest, RunSubcommandMinimal) {
@@ -199,14 +200,14 @@ TEST(DriverTest, MemorySanitizerOnlyLinux) {
   Driver driver(true);
   driver.init();
 
-#if OS_LINUX
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+#if OS_LINUX
   driver.enrich();
-
   ASSERT_EQ(Sanitizer::MEMORY, driver.cliOptions.instrumentation.sanitizer);
+  ASSERT_TRUE(driver.cliOptions.useLifetimeMarkers); // implicitly due to enabled address sanitizer
 #else
   try {
-    driver.parse(argc, argv);
+    driver.enrich();
     FAIL();
   } catch (CliError &error) {
     auto errorMsg = "[Error|CLI] Feature is not supported for this target: Memory sanitizer is only supported for Linux targets";
