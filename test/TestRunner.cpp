@@ -35,15 +35,25 @@ void execTestCase(const TestCase &testCase) {
   if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
 
+  // Choose target for compilation
+  std::string targetTripleString = llvm::sys::getDefaultTargetTriple();
+  const std::filesystem::path targetTripleFile = testCase.testPath / INPUT_NAME_TARGET_TRIPLE;
+  if (exists(targetTripleFile)) {
+    std::ifstream file(targetTripleFile, std::ios::binary);
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    targetTripleString = buffer.str();
+  }
+  const llvm::Triple targetTriple(llvm::Triple::normalize(targetTripleString));
+
   // Create fake cli options
-  const llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {
       /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
       /* targetTriple= */ targetTriple,
       /* targetArch= */ targetTriple.getArchName().str(),
       /* targetVendor= */ targetTriple.getVendorName().str(),
       /* targetOs= */ targetTriple.getOSName().str(),
-      /* isNativeTarget= */ true,
+      /* isNativeTarget= */ !exists(targetTripleFile),
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
       /* cacheDir= */ "./cache",
