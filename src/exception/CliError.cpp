@@ -45,6 +45,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Feature not supported when dockerized";
   case INVALID_BUILD_MODE:
     return "Invalid build mode";
+  case INVALID_SANITIZER:
+    return "Invalid sanitizer";
   case COMING_SOON_CLI:
     return "Coming soon";
   }

@@ -124,7 +124,7 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
  *
  * @return Present or not
  */
-bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
+bool FileUtil::isGraphvizInstalled() { return isCommandAvailable("dot"); }
 
 /**
  * Search for a supported linker invoker on the system and return the executable name or path.
@@ -191,7 +191,7 @@ ExternalBinaryFinderResult FileUtil::findLinker([[maybe_unused]] const CliOption
 std::filesystem::path FileUtil::getStdDir() {
 #if OS_UNIX
   if (exists(std::filesystem::path("/usr/lib/spice/std/")))
-    return {"/usr/lib/spice/std/"};
+    return "/usr/lib/spice/std/";
 #endif
   if (std::getenv("SPICE_STD_DIR"))
     if (const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR")); exists(stdPath))

@@ -1,0 +1,10 @@
+#[core.compiler.mangle = false]
+public f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
+}
+
+f<int> main() {
+   int fiboBase = 45;
+   printf("Fibonacci of %d: %d", fiboBase, fibo(fiboBase));
+}

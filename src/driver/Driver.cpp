@@ -323,7 +323,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
     else if (inputString == BUILD_MODE_TEST)
       cliOptions.buildMode = BuildMode::TEST;
     else
-      throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
+      throw CliError(INVALID_BUILD_MODE, inputString);
 
     return true;
   };
@@ -393,7 +393,7 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) {
     else if (inputString == SANITIZER_MEMORY)
       cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
     else
-      throw CliError(INVALID_BUILD_MODE, "Invalid sanitizer: " + inputString);
+      throw CliError(INVALID_SANITIZER, inputString);
 
     return true;
   };

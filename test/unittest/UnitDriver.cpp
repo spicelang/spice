@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <driver/Driver.h>
+#include <exception/CliError.h>
 
 namespace spice::testing {
 
@@ -30,7 +31,19 @@ TEST(DriverTest, BuildSubcommandMinimal) {
 }
 
 TEST(DriverTest, BuildSubcommandComplex) {
-  const char *argv[] = {"spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "--sanitizer=address", "../../media/test-project/test.spice"};
+  const char *argv[] = {
+      "spice",
+      "b",
+      "-d",
+      "-ir",
+      "-g",
+      "-Os",
+      "-m",
+      "release",
+      "-lto",
+      "--sanitizer=address",
+      "../../media/test-project/test.spice",
+  };
   static constexpr int argc = std::size(argv);
   Driver driver(true);
   driver.init();
@@ -48,11 +61,11 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
-  ASSERT_TRUE(driver.cliOptions.instrumentation.generateDebugInfo);   // -g
-  ASSERT_EQ(Sanitizer::ADDRESS, driver.cliOptions.instrumentation.sanitizer);   // --sanitizer=address
-  ASSERT_TRUE(driver.cliOptions.useLTO);              // -lto
-  ASSERT_TRUE(driver.cliOptions.printDebugOutput);    // -d
-  ASSERT_TRUE(driver.cliOptions.dump.dumpIR); // -ir
+  ASSERT_TRUE(driver.cliOptions.instrumentation.generateDebugInfo);           // -g
+  ASSERT_EQ(Sanitizer::ADDRESS, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=address
+  ASSERT_TRUE(driver.cliOptions.useLTO);                                      // -lto
+  ASSERT_TRUE(driver.cliOptions.printDebugOutput);                            // -d
+  ASSERT_TRUE(driver.cliOptions.dump.dumpIR);                                 // -ir
 }
 
 TEST(DriverTest, RunSubcommandMinimal) {
@@ -76,7 +89,7 @@ TEST(DriverTest, RunSubcommandMinimal) {
 }
 
 TEST(DriverTest, RunSubcommandComplex) {
-  const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "--sanitizer=memory", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
   driver.init();
@@ -93,8 +106,9 @@ TEST(DriverTest, RunSubcommandComplex) {
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
-  ASSERT_EQ(8, driver.cliOptions.compileJobCount);     // -j 8
-  ASSERT_TRUE(driver.cliOptions.dump.dumpAST); // -ast
+  ASSERT_EQ(8, driver.cliOptions.compileJobCount);                           // -j 8
+  ASSERT_TRUE(driver.cliOptions.dump.dumpAST);                               // -ast
+  ASSERT_EQ(Sanitizer::MEMORY, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=memory
 }
 
 TEST(DriverTest, TestSubcommandMinimal) {
@@ -119,7 +133,7 @@ TEST(DriverTest, TestSubcommandMinimal) {
 }
 
 TEST(DriverTest, TestSubcommandComplex) {
-  const char *argv[] = {"spice", "t", "-s", "-cst", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "t", "-s", "-cst", "--sanitizer=thread", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
   driver.init();
@@ -135,8 +149,9 @@ TEST(DriverTest, TestSubcommandComplex) {
   ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
   ASSERT_TRUE(driver.cliOptions.generateTestMain);
   ASSERT_TRUE(driver.cliOptions.noEntryFct);
-  ASSERT_TRUE(driver.cliOptions.dump.dumpCST);      // -cst
-  ASSERT_TRUE(driver.cliOptions.dump.dumpAssembly); // -s
+  ASSERT_TRUE(driver.cliOptions.dump.dumpCST);                               // -cst
+  ASSERT_TRUE(driver.cliOptions.dump.dumpAssembly);                          // -s
+  ASSERT_EQ(Sanitizer::THREAD, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=thread
 }
 
 TEST(DriverTest, InstallSubcommandMinimal) {
@@ -178,5 +193,33 @@ TEST(DriverTest, UninstallSubcommandMinimal) {
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
 }
+
+using DriverInvalidEnumTestParam = std::pair<const char *, const char *>;
+class DriverTest : public ::testing::TestWithParam<DriverInvalidEnumTestParam> {};
+
+TEST_P(DriverTest, LengthGreaterThanZero) {
+  const auto &[arg, errorMessage] = GetParam();
+  const char *argv[] = {"spice", "build", arg, "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  Driver driver(true);
+  driver.init();
+  try {
+    driver.parse(argc, argv);
+    FAIL();
+  } catch (CliError &error) {
+    ASSERT_STREQ(errorMessage, error.what());
+  }
+}
+
+const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
+    DriverInvalidEnumTestParam{
+        "--build-mode=unknown",
+        "[Error|CLI] Invalid build mode: unknown",
+    },
+    DriverInvalidEnumTestParam{
+        "--sanitizer=unknown",
+        "[Error|CLI] Invalid sanitizer: unknown",
+    });
+INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 
 } // namespace spice::testing

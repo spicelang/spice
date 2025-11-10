@@ -103,7 +103,7 @@ struct CliOptions {
 class Driver {
 public:
   // Constructors
-  Driver() = default;
+  Driver() = default; // LCOV_EXCL_LINE
   explicit Driver(bool dryRun) : dryRun(dryRun) {}
   Driver(const Driver &) = delete;
 

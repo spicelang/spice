@@ -50,6 +50,7 @@ const char *const CTL_DEBUG_INFO = "with-debug-info";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
 const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
 const char *const CTL_LTO = "with-lto";
+const char *const CTL_TYPE_METADATA = "with-type-metadata";
 
 struct TestCase {
   const std::string testSuite;
