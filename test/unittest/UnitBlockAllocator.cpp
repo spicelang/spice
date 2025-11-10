@@ -37,7 +37,7 @@ public:
   MOCK_METHOD(void, deallocate, (byte * ptr), (const override));
 };
 
-TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
+TEST(BlockAllocatorTest, BlockAllocatorLarge) {
   destructedDummyNodes = 0;                     // Reset destruction counter
   static constexpr size_t NODE_COUNT = 100'000; // 100.000 * 48 bytes = 4.8 MB
 
@@ -66,7 +66,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
   ASSERT_EQ(NODE_COUNT, destructedDummyNodes);
 }
 
-TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
+TEST(BlockAllocatorTest, BlockAllocatorUnevenBlockSize) {
   destructedDummyNodes = 0;                   // Reset destruction counter
   static constexpr size_t NODE_COUNT = 1'000; // 1.000 * 48 bytes = 48 KB
 
@@ -95,7 +95,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
   ASSERT_EQ(NODE_COUNT, destructedDummyNodes);
 }
 
-TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
+TEST(BlockAllocatorTest, BlockAllocatorOOM) {
   destructedDummyNodes = 0;                // Reset destruction counter
   static constexpr size_t NODE_COUNT = 10; // 10 * 48 bytes = 0.48 KB
 

@@ -79,7 +79,7 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
-      /* useTBAAMetadata */ false,
+      /* useTBAAMetadata */ exists(testCase.testPath / CTL_TYPE_METADATA),
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),

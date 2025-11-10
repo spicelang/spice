@@ -27,9 +27,9 @@ std::string IRGenerator::getSysCallAsmString(uint8_t numRegs) const {
       for (uint8_t i = 0; i < numRegs; ++i)
         asmString << "mov " << regs[i] << ", $" << std::to_string(i) << "\n";
       asmString << "svc #0x80\n";
-    } else {
-      assert_fail("Unsupported macOS target for inline assembly");
-    }
+    } else {                                                       // LCOV_EXCL_LINE
+      assert_fail("Unsupported macOS target for inline assembly"); // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
   } else if (targetTriple.isOSLinux()) {
     if (targetTriple.getArch() == llvm::Triple::ArchType::x86_64) {
       static constexpr const char *regs[] = {"%rax", "%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"};
@@ -47,12 +47,12 @@ std::string IRGenerator::getSysCallAsmString(uint8_t numRegs) const {
       for (uint8_t i = 0; i < numRegs; ++i)
         asmString << "mov " << regs[i] << ", $" << std::to_string(i) << "\n";
       asmString << "svc 0\n";
-    } else {
-      assert_fail("Unsupported Linux/Windows target for inline assembly");
-    }
-  } else {
-    assert_fail("Unsupported target for inline assembly");
-  }
+    } else {                                                       // LCOV_EXCL_LINE
+      assert_fail("Unsupported Linux target for inline assembly"); // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
+  } else {                                                 // LCOV_EXCL_LINE
+    assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   return asmString.str();
 }
@@ -84,9 +84,9 @@ std::string IRGenerator::getSysCallConstraintString(uint8_t numRegs) const {
       for (uint8_t i = 0; i < numRegs; i++)
         constraints << "," << clobbers[i];
       constraints << ",~{dirflag},~{fpsr},~{flags}";
-    } else {
-      assert_fail("Unsupported macOS target for inline assembly");
-    }
+    } else {                                                       // LCOV_EXCL_LINE
+      assert_fail("Unsupported macOS target for inline assembly"); // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
   } else if (targetTriple.isOSLinux()) {
     if (targetTriple.getArch() == llvm::Triple::ArchType::x86_64) {
       static constexpr const char *clobbers[] = {"~{rax}", "~{rdi}", "~{rsi}", "~{rdx}", "~{r10}", "~{r8}", "~{r9}"};
@@ -118,10 +118,12 @@ std::string IRGenerator::getSysCallConstraintString(uint8_t numRegs) const {
       for (uint8_t i = 0; i < numRegs; i++)
         constraints << "," << clobbers[i];
       constraints << ",~{dirflag},~{fpsr},~{flags}";
-    }
-  } else {
-    assert_fail("Unsupported target for inline assembly");
-  }
+    } else {                                                       // LCOV_EXCL_LINE
+      assert_fail("Unsupported Linux target for inline assembly"); // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
+  } else {                                                 // LCOV_EXCL_LINE
+    assert_fail("Unsupported target for inline assembly"); // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   return constraints.str();
 }

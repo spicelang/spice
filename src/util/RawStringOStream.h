@@ -6,7 +6,7 @@
 
 namespace spice::compiler {
 
-class RawStringOStream : public llvm::raw_pwrite_stream {
+class RawStringOStream final : public llvm::raw_pwrite_stream {
 public:
   // Public constructors
   explicit RawStringOStream(std::string &output);

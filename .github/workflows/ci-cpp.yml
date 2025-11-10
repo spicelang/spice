@@ -73,7 +73,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -188,7 +188,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -255,7 +255,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs

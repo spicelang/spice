@@ -41,7 +41,7 @@ void ExternalLinkerInterface::prepare() {
   }
 
   // Web Assembly
-  if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
+  if (cliOptions.targetTriple.isWasm()) {
     addLinkerFlag("-nostdlib");
     addLinkerFlag("-Wl,--no-entry");
     addLinkerFlag("-Wl,--export-all");
