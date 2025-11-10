@@ -82,7 +82,7 @@ void Driver::init() {
     }
 
     // Set output file extension
-    if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
+    if (cliOptions.targetTriple.isWasm()) {
       cliOptions.outputPath.replace_extension("wasm");
     } else {
 #if OS_UNIX
@@ -409,9 +409,10 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) {
  */
 void Driver::ensureNotDockerized() {
   const char *envValue = std::getenv(ENV_VAR_DOCKERIZED);
-  if (envValue != nullptr && std::strcmp(envValue, "true") == 0)
-    throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
-                   "This feature is not supported in a containerized environment. Please use the standalone version of Spice.");
+  if (envValue != nullptr && std::strcmp(envValue, "true") == 0) { // LCOV_EXCL_START
+    auto errorMsg = "This feature is not supported in a containerized environment. Please use the standalone version of Spice.";
+    throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, errorMsg);
+  } // LCOV_EXCL_STOP
 }
 
 } // namespace spice::compiler

@@ -14,8 +14,6 @@
 namespace spice::compiler {
 
 const char *const TARGET_UNKNOWN = "unknown";
-const char *const TARGET_WASM32 = "wasm32";
-const char *const TARGET_WASM64 = "wasm64";
 const char *const ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
 
 enum class OptLevel : uint8_t {
