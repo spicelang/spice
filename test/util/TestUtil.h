@@ -19,6 +19,7 @@ const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
+const char *const INPUT_NAME_TARGET_TRIPLE = "target-triple.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
 const char *const INPUT_NAME_BUILD_MODE = "build-mode.txt";
 const char *const INPUT_NAME_SANITIZER = "sanitizer.txt";

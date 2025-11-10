@@ -24,7 +24,7 @@ colored_echo "[Step 3] Building LLVM (Could take a whole while, please be patien
 mkdir ./llvm/build-release 2>/dev/null
 (
   cd ./llvm/build-release || exit
-  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-fuse-ld=lld" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt;libunwind" -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DCOMPILER_RT_BUILD_SANITIZERS=ON -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt;libunwind" -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DCOMPILER_RT_BUILD_SANITIZERS=ON -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
   cmake --build .
 )
 colored_echo "done."
