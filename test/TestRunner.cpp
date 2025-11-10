@@ -164,13 +164,6 @@ void execTestCase(const TestCase &testCase) {
       return mainSourceFile->compilerOutput.depGraphString;
     });
 
-    // Run backend for all dependencies
-    for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
-      sourceFile->runBackEnd();
-
-    // Execute IR generator in normal or debug mode
-    mainSourceFile->runIRGenerator();
-
     // Enable sanitizers
     const std::filesystem::path sanitizerFile = testCase.testPath / INPUT_NAME_SANITIZER;
     if (exists(sanitizerFile)) {
@@ -187,6 +180,13 @@ void execTestCase(const TestCase &testCase) {
       else
         FAIL() << "Unexpected sanitizer was requested: '" << sanitizerString << "'";
     }
+
+    // Run backend for all dependencies
+    for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
+      sourceFile->runBackEnd();
+
+    // Execute IR generator in normal or debug mode
+    mainSourceFile->runIRGenerator();
 
     // Check IR code
     for (uint8_t i = 0; i <= 5; i++) {
