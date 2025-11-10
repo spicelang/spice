@@ -41,21 +41,23 @@ jobs:
         with:
           languages: cpp
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/llvm
+          path: ${{ github.workspace }}/llvm/build
           key: llvm-21.1.5-linux-x64
 
-      - name: Setup LLVM
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
         run: |
           echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
-          cd ..
-          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
-          mkdir ./llvm/build
-          cd ./llvm/build
+          mkdir ./build
+          cd ./build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 

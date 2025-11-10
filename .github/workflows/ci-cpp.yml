@@ -57,19 +57,22 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: sudo pipx install gcovr
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/llvm
+          path: ${{ github.workspace }}/llvm/build
           key: llvm-21.1.5-linux-x64
 
-      - name: Setup LLVM
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
         run: |
-          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
-          mkdir ./llvm/build
-          cd ./llvm/build
+          mkdir ./build
+          cd ./build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
@@ -169,6 +172,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install ninja-build graphviz uuid-dev
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
@@ -176,12 +182,12 @@ jobs:
           path: ${{ github.workspace }}/llvm
           key: llvm-21.1.5-linux-aarch64
 
-      - name: Setup LLVM
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
         run: |
-          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
-          mkdir ./llvm/build
-          cd ./llvm/build
+          mkdir ./build
+          cd ./build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
@@ -230,22 +236,25 @@ jobs:
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/llvm
+          path: ${{ github.workspace }}/llvm/build
           key: llvm-21.1.5-win-x64
 
-      - name: Setup LLVM
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
         run: |
-          git clone --depth 1 --branch llvmorg-21.1.5  https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
-          mkdir ./llvm/build
-          cd ./llvm/build
+          mkdir ./build
+          cd ./build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
@@ -310,19 +319,22 @@ jobs:
           brew update
           brew install graphviz
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/llvm
+          path: ${{ github.workspace }}/llvm/build
           key: llvm-21.1.5-macos-aarch64
 
-      - name: Setup LLVM
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
         run: |
-          git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
-          mkdir ./llvm/build
-          cd ./llvm/build
+          mkdir ./build
+          cd ./build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
