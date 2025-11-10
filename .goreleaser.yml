@@ -29,8 +29,7 @@ dockers_v2:
       - "ghcr.io/spicelang/spice"
     tags:
       - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-      - "{{ if contains .Prerelease 'rc' }}dev{{ end }}"
-      - "{{ if not contains .Prerelease 'rc' }}latest{{ end }}"
+      - "latest"
     labels:
       "org.opencontainers.image.description": "Spice programming language."
       "org.opencontainers.image.created": "{{ .Date }}"
