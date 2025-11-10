@@ -72,6 +72,8 @@ nfpms:
       - build-essential
       - clang
       - lld
+    suggests:
+      - mold
     contents:
       - src: std
         dst: /usr/lib/spice/std
