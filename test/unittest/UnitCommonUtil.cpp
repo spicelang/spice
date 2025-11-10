@@ -8,7 +8,7 @@ namespace spice::testing {
 
 using namespace spice::compiler;
 
-TEST(CommonUtilTest, TestReplaceAll) {
+TEST(CommonUtilTest, ReplaceAll) {
   std::string test = "This is a test";
   CommonUtil::replaceAll(test, " ", "_");
   ASSERT_EQ("This_is_a_test", test);
@@ -34,14 +34,14 @@ TEST(CommonUtilTest, TestReplaceAll) {
   ASSERT_EQ("This is a test", test);
 }
 
-TEST(CommonUtilTest, TestGetLastFragment) {
+TEST(CommonUtilTest, GetLastFragment) {
   ASSERT_EQ("test", CommonUtil::getLastFragment("This is a test", " "));
   ASSERT_EQ("test", CommonUtil::getLastFragment("This_is_a_test", "_"));
   ASSERT_EQ("", CommonUtil::getLastFragment("This.is.a.", "."));
   ASSERT_EQ("This is a test", CommonUtil::getLastFragment("This is a test", "This is a test "));
 }
 
-TEST(CommonUtilTest, TestTrim) {
+TEST(CommonUtilTest, Trim) {
   ASSERT_EQ("test", CommonUtil::trim("  test  "));
   ASSERT_EQ("This is a test", CommonUtil::trim("This is a test  "));
   ASSERT_EQ("String with whitespaces only at the front", CommonUtil::trim("  String with whitespaces only at the front"));
@@ -50,7 +50,7 @@ TEST(CommonUtilTest, TestTrim) {
   ASSERT_EQ("", CommonUtil::trim(""));
 }
 
-TEST(CommonUtilTest, TestSplit) {
+TEST(CommonUtilTest, Split) {
   ASSERT_EQ(std::vector<std::string>({"test", "test"}), CommonUtil::split("test test"));
   ASSERT_EQ(std::vector<std::string>({"This", "is", "a", "test"}), CommonUtil::split("This is a test"));
   ASSERT_EQ(std::vector<std::string>({"String", "with", "whitespaces", "at", "the", "front"}),
@@ -60,7 +60,7 @@ TEST(CommonUtilTest, TestSplit) {
   ASSERT_EQ(std::vector<std::string>({}), CommonUtil::split(""));
 }
 
-TEST(CommonUtilTest, TestFormatBytes) {
+TEST(CommonUtilTest, FormatBytes) {
   ASSERT_EQ("0.00 B", CommonUtil::formatBytes(0ull));
   ASSERT_EQ("1.00 B", CommonUtil::formatBytes(1ull));
   ASSERT_EQ("1.00 KB", CommonUtil::formatBytes(1024ull));

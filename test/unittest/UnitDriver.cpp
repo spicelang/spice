@@ -8,7 +8,7 @@ namespace spice::testing {
 
 using namespace spice::compiler;
 
-TEST(DriverTest, TestBuildSubcommandMinimal) {
+TEST(DriverTest, BuildSubcommandMinimal) {
   const char *argv[] = {"spice", "build", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -29,7 +29,7 @@ TEST(DriverTest, TestBuildSubcommandMinimal) {
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
 }
 
-TEST(DriverTest, TestBuildSubcommandComplex) {
+TEST(DriverTest, BuildSubcommandComplex) {
   const char *argv[] = {"spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "--sanitizer=address", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -55,7 +55,7 @@ TEST(DriverTest, TestBuildSubcommandComplex) {
   ASSERT_TRUE(driver.cliOptions.dump.dumpIR); // -ir
 }
 
-TEST(DriverTest, TestRunSubcommandMinimal) {
+TEST(DriverTest, RunSubcommandMinimal) {
   const char *argv[] = {"spice", "run", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -75,7 +75,7 @@ TEST(DriverTest, TestRunSubcommandMinimal) {
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
 }
 
-TEST(DriverTest, TestRunSubcommandComplex) {
+TEST(DriverTest, RunSubcommandComplex) {
   const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -97,7 +97,7 @@ TEST(DriverTest, TestRunSubcommandComplex) {
   ASSERT_TRUE(driver.cliOptions.dump.dumpAST); // -ast
 }
 
-TEST(DriverTest, TestTestSubcommandMinimal) {
+TEST(DriverTest, TestSubcommandMinimal) {
   const char *argv[] = {"spice", "test", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -118,7 +118,7 @@ TEST(DriverTest, TestTestSubcommandMinimal) {
   ASSERT_TRUE(driver.cliOptions.noEntryFct);
 }
 
-TEST(DriverTest, TestTestSubcommandComplex) {
+TEST(DriverTest, TestSubcommandComplex) {
   const char *argv[] = {"spice", "t", "-s", "-cst", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -139,7 +139,7 @@ TEST(DriverTest, TestTestSubcommandComplex) {
   ASSERT_TRUE(driver.cliOptions.dump.dumpAssembly); // -s
 }
 
-TEST(DriverTest, TestInstallSubcommandMinimal) {
+TEST(DriverTest, InstallSubcommandMinimal) {
   const char *argv[] = {"spice", "install", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
@@ -159,7 +159,7 @@ TEST(DriverTest, TestInstallSubcommandMinimal) {
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
 }
 
-TEST(DriverTest, TestUninstallSubcommandMinimal) {
+TEST(DriverTest, UninstallSubcommandMinimal) {
   const char *argv[] = {"spice", "uninstall", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
