@@ -89,7 +89,7 @@ TEST(DriverTest, RunSubcommandMinimal) {
 }
 
 TEST(DriverTest, RunSubcommandComplex) {
-  const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "--sanitizer=memory", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
   driver.init();
@@ -106,9 +106,8 @@ TEST(DriverTest, RunSubcommandComplex) {
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
-  ASSERT_EQ(8, driver.cliOptions.compileJobCount);                           // -j 8
-  ASSERT_TRUE(driver.cliOptions.dump.dumpAST);                               // -ast
-  ASSERT_EQ(Sanitizer::MEMORY, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=memory
+  ASSERT_EQ(8, driver.cliOptions.compileJobCount); // -j 8
+  ASSERT_TRUE(driver.cliOptions.dump.dumpAST);     // -ast
 }
 
 TEST(DriverTest, TestSubcommandMinimal) {
@@ -192,6 +191,28 @@ TEST(DriverTest, UninstallSubcommandMinimal) {
   ASSERT_FALSE(driver.cliOptions.generateTestMain);
   ASSERT_FALSE(driver.cliOptions.testMode);
   ASSERT_FALSE(driver.cliOptions.noEntryFct);
+}
+
+TEST(DriverTest, MemorySanitizerOnlyLinux) {
+  const char *argv[] = {"spice", "build", "--sanitizer=memory", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  Driver driver(true);
+  driver.init();
+
+#if OS_LINUX
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_EQ(Sanitizer::MEMORY, driver.cliOptions.instrumentation.sanitizer);
+#else
+  try {
+    driver.parse(argc, argv);
+    FAIL();
+  } catch (CliError &error) {
+    auto errorMsg = "[Error|CLI] Feature is not supported for this target: Memory sanitizer is only supported for Linux targets";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
 }
 
 using DriverInvalidEnumTestParam = std::pair<const char *, const char *>;
