@@ -179,23 +179,6 @@ void execTestCase(const TestCase &testCase) {
       return mainSourceFile->compilerOutput.depGraphString;
     });
 
-    // Enable sanitizers
-    const std::filesystem::path sanitizerFile = testCase.testPath / INPUT_NAME_SANITIZER;
-    if (exists(sanitizerFile)) {
-      std::ifstream file(sanitizerFile, std::ios::binary);
-      std::ostringstream buffer;
-      buffer << file.rdbuf();
-      const std::string sanitizerString = buffer.str();
-      if (sanitizerString == SANITIZER_ADDRESS)
-        cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
-      else if (sanitizerString == SANITIZER_THREAD)
-        cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
-      else if (sanitizerString == SANITIZER_MEMORY)
-        cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
-      else
-        FAIL() << "Unexpected sanitizer was requested: '" << sanitizerString << "'";
-    }
-
     // Run backend for all dependencies
     for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
       sourceFile->runBackEnd();

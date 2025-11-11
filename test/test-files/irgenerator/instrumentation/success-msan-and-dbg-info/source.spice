@@ -1,3 +1,5 @@
+// TEST: --sanitizer=memory --build-mode=release -g
+
 f<int> main() {
     int i;
     i++;

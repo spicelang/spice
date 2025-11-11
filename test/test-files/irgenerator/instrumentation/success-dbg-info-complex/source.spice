@@ -1,3 +1,5 @@
+// TEST: -g
+
 import "std/data/vector";
 import "std/data/pair";
 

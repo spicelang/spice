@@ -23,7 +23,6 @@ const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_TARGET_TRIPLE = "target-triple.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
 const char *const INPUT_NAME_BUILD_MODE = "build-mode.txt";
-const char *const INPUT_NAME_SANITIZER = "sanitizer.txt";
 
 const char *const REF_NAME_SOURCE = "source.spice";
 const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
