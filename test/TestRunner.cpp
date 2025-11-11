@@ -33,25 +33,14 @@ void execTestCase(const TestCase &testCase) {
   if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
 
-  // Choose target for compilation
-  std::string targetTripleString = llvm::sys::getDefaultTargetTriple();
-  const std::filesystem::path targetTripleFile = testCase.testPath / INPUT_NAME_TARGET_TRIPLE;
-  if (exists(targetTripleFile)) {
-    std::ifstream file(targetTripleFile, std::ios::binary);
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    targetTripleString = buffer.str();
-  }
-  const llvm::Triple targetTriple(llvm::Triple::normalize(targetTripleString));
-
   // Create fake cli options
   const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   CliOptions cliOptions = {
       /* mainSourceFile= */ mainSourceFilePath,
-      /* targetTriple= */ targetTriple,
-      /* targetArch= */ targetTriple.getArchName().str(),
-      /* targetVendor= */ targetTriple.getVendorName().str(),
-      /* targetOs= */ targetTriple.getOSName().str(),
+      /* targetTriple= */ {},
+      /* targetArch= */ TARGET_UNKNOWN,
+      /* targetVendor= */ TARGET_UNKNOWN,
+      /* targetOs= */ TARGET_UNKNOWN,
       /* isNativeTarget= */ true,
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
@@ -106,16 +95,20 @@ void execTestCase(const TestCase &testCase) {
   TestUtil::parseTestArgs(cliOptions.mainSourceFile, args);
   args.push_back(mainSourceFilePath.string());
 
-  std::vector<const char*> argv;
+  bool explicitlySelectedTarget = false;
+  std::vector<const char *> argv;
   argv.reserve(args.size());
-  for (const std::string& arg : args)
+  for (const std::string &arg : args) {
+    if (arg.starts_with("--target"))
+      explicitlySelectedTarget = true;
     argv.push_back(arg.c_str());
+  }
   Driver driver(cliOptions, true);
   driver.parse(argv.size(), argv.data());
   driver.enrich();
 
   // If this is a cross-compilation test, we want to emit the target information in IR. For this we need to set native to false
-  if (exists(targetTripleFile))
+  if (explicitlySelectedTarget)
     cliOptions.isNativeTarget = false;
 
   // Instantiate GlobalResourceManager
