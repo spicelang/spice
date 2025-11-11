@@ -15,6 +15,7 @@ namespace spice::testing {
 
 const char *const PATH_TEST_FILES = "./test-files/";
 static constexpr size_t EXPECTED_NUMBER_OF_TESTS = 250;
+
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 
@@ -73,6 +74,7 @@ public:
   };
 
   // Public static methods
+  static void parseTestArgs(const std::filesystem::path &sourceCodePath, std::vector<std::string> &args);
   static std::vector<TestCase> collectTestCases(const char *suiteName, bool useSubDirs);
   static bool checkRefMatch(
       const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,

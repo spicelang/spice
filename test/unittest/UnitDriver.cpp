@@ -12,7 +12,8 @@ using namespace spice::compiler;
 TEST(DriverTest, BuildSubcommandMinimal) {
   const char *argv[] = {"spice", "build", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -20,13 +21,13 @@ TEST(DriverTest, BuildSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
-  ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_EQ(BuildMode::DEBUG, driver.cliOptions.buildMode);
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_EQ(BuildMode::DEBUG, cliOptions.buildMode);
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
 }
 
 TEST(DriverTest, BuildSubcommandComplex) {
@@ -44,7 +45,8 @@ TEST(DriverTest, BuildSubcommandComplex) {
       "../../media/test-project/test.spice",
   };
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -52,25 +54,26 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
-  ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::Os, driver.cliOptions.optLevel);        // -Os
-  ASSERT_EQ(BuildMode::RELEASE, driver.cliOptions.buildMode); // -m release
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
-  ASSERT_TRUE(driver.cliOptions.instrumentation.generateDebugInfo);           // -g
-  ASSERT_EQ(Sanitizer::ADDRESS, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=address
-  ASSERT_TRUE(driver.cliOptions.useLTO);                                      // -lto
-  ASSERT_TRUE(driver.cliOptions.printDebugOutput);                            // -d
-  ASSERT_TRUE(driver.cliOptions.dump.dumpIR);                                 // -ir
-  ASSERT_TRUE(driver.cliOptions.useLifetimeMarkers);                          // implicitly due to enabled address sanitizer
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::Os, cliOptions.optLevel);        // -Os
+  ASSERT_EQ(BuildMode::RELEASE, cliOptions.buildMode); // -m release
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
+  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo);           // -g
+  ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer); // --sanitizer=address
+  ASSERT_TRUE(cliOptions.useLTO);                                      // -lto
+  ASSERT_TRUE(cliOptions.printDebugOutput);                            // -d
+  ASSERT_TRUE(cliOptions.dump.dumpIR);                                 // -ir
+  ASSERT_TRUE(cliOptions.useLifetimeMarkers);                          // implicitly due to enabled address sanitizer
 }
 
 TEST(DriverTest, RunSubcommandMinimal) {
   const char *argv[] = {"spice", "run", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -78,18 +81,19 @@ TEST(DriverTest, RunSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
-  ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
+  ASSERT_TRUE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
 }
 
 TEST(DriverTest, RunSubcommandComplex) {
   const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -97,20 +101,21 @@ TEST(DriverTest, RunSubcommandComplex) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
-  ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O2, driver.cliOptions.optLevel); // -O2
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
-  ASSERT_EQ(8, driver.cliOptions.compileJobCount); // -j 8
-  ASSERT_TRUE(driver.cliOptions.dump.dumpAST);     // -ast
+  ASSERT_TRUE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O2, cliOptions.optLevel); // -O2
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
+  ASSERT_EQ(8, cliOptions.compileJobCount); // -j 8
+  ASSERT_TRUE(cliOptions.dump.dumpAST);     // -ast
 }
 
 TEST(DriverTest, TestSubcommandMinimal) {
   const char *argv[] = {"spice", "test", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -118,19 +123,20 @@ TEST(DriverTest, TestSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
-  ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_EQ(BuildMode::TEST, driver.cliOptions.buildMode); // -m test
-  ASSERT_TRUE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_TRUE(driver.cliOptions.noEntryFct);
+  ASSERT_TRUE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_EQ(BuildMode::TEST, cliOptions.buildMode); // -m test
+  ASSERT_TRUE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_TRUE(cliOptions.noEntryFct);
 }
 
 TEST(DriverTest, TestSubcommandComplex) {
   const char *argv[] = {"spice", "t", "-s", "-cst", "--sanitizer=thread", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -138,20 +144,21 @@ TEST(DriverTest, TestSubcommandComplex) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_TRUE(driver.shouldExecute);
-  ASSERT_TRUE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_TRUE(driver.cliOptions.generateTestMain);
-  ASSERT_TRUE(driver.cliOptions.noEntryFct);
-  ASSERT_TRUE(driver.cliOptions.dump.dumpCST);                               // -cst
-  ASSERT_TRUE(driver.cliOptions.dump.dumpAssembly);                          // -s
-  ASSERT_EQ(Sanitizer::THREAD, driver.cliOptions.instrumentation.sanitizer); // --sanitizer=thread
+  ASSERT_TRUE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_TRUE(cliOptions.generateTestMain);
+  ASSERT_TRUE(cliOptions.noEntryFct);
+  ASSERT_TRUE(cliOptions.dump.dumpCST);                               // -cst
+  ASSERT_TRUE(cliOptions.dump.dumpAssembly);                          // -s
+  ASSERT_EQ(Sanitizer::THREAD, cliOptions.instrumentation.sanitizer); // --sanitizer=thread
 }
 
 TEST(DriverTest, InstallSubcommandMinimal) {
   const char *argv[] = {"spice", "install", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -159,18 +166,19 @@ TEST(DriverTest, InstallSubcommandMinimal) {
   ASSERT_TRUE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
-  ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
 }
 
 TEST(DriverTest, UninstallSubcommandMinimal) {
   const char *argv[] = {"spice", "uninstall", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -178,24 +186,25 @@ TEST(DriverTest, UninstallSubcommandMinimal) {
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_TRUE(driver.shouldUninstall);
   ASSERT_FALSE(driver.shouldExecute);
-  ASSERT_FALSE(driver.cliOptions.execute);
-  ASSERT_EQ("../../media/test-project/test.spice", driver.cliOptions.mainSourceFile.relative_path().generic_string());
-  ASSERT_EQ(OptLevel::O0, driver.cliOptions.optLevel);
-  ASSERT_FALSE(driver.cliOptions.generateTestMain);
-  ASSERT_FALSE(driver.cliOptions.testMode);
-  ASSERT_FALSE(driver.cliOptions.noEntryFct);
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
 }
 
 TEST(DriverTest, MemorySanitizerOnlyLinux) {
   const char *argv[] = {"spice", "build", "--sanitizer=memory", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
 
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
 #if OS_LINUX
   driver.enrich();
-  ASSERT_EQ(Sanitizer::MEMORY, driver.cliOptions.instrumentation.sanitizer);
-  ASSERT_TRUE(driver.cliOptions.useLifetimeMarkers); // implicitly due to enabled address sanitizer
+  ASSERT_EQ(Sanitizer::MEMORY, cliOptions.instrumentation.sanitizer);
+  ASSERT_TRUE(cliOptions.useLifetimeMarkers); // implicitly due to enabled address sanitizer
 #else
   try {
     driver.enrich();
@@ -214,7 +223,8 @@ TEST_P(DriverTest, LengthGreaterThanZero) {
   const auto &[arg, errorMessage] = GetParam();
   const char *argv[] = {"spice", "build", arg, "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
-  Driver driver(true);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
   try {
     driver.parse(argc, argv);
     FAIL();

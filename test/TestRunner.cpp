@@ -51,7 +51,7 @@ void execTestCase(const TestCase &testCase) {
       /* targetArch= */ targetTriple.getArchName().str(),
       /* targetVendor= */ targetTriple.getVendorName().str(),
       /* targetOs= */ targetTriple.getOSName().str(),
-      /* isNativeTarget= */ !exists(targetTripleFile),
+      /* isNativeTarget= */ true,
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
       /* cacheDir= */ "./cache",
@@ -99,6 +99,23 @@ void execTestCase(const TestCase &testCase) {
 #else
   static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
 #endif
+
+  // Parse test args
+  std::vector<std::string> args = {"spice", "build"};
+  TestUtil::parseTestArgs(cliOptions.mainSourceFile, args);
+  args.push_back(testCase.testPath / REF_NAME_SOURCE);
+
+  std::vector<const char*> argv;
+  argv.reserve(args.size());
+  for (const std::string& arg : args)
+    argv.push_back(arg.c_str());
+  Driver driver(cliOptions, true);
+  driver.parse(argv.size(), argv.data());
+  driver.enrich();
+
+  // If this is a cross-compilation test, we want to emit the target information in IR. For this we need to set native to false
+  if (exists(targetTripleFile))
+    cliOptions.isNativeTarget = false;
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
