@@ -14,14 +14,14 @@ define dso_local i32 @_Z17functionInModuleBii(i32 %0, i32 %1) local_unnamed_addr
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #4
   %2 = icmp eq i32 %1, 3
-  br i1 %2, label %assert.exit.L4, label %assert.then.L4, !prof !5
+  br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
-assert.then.L4:                                   ; preds = %0
+assert.then.L6:                                   ; preds = %0
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
   tail call void @exit(i32 1)
   unreachable
 
-assert.exit.L4:                                   ; preds = %0
+assert.exit.L6:                                   ; preds = %0
   %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }

@@ -1,3 +1,5 @@
+// TEST: -lto
+
 import "source1";
 
 f<int> main() {

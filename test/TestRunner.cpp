@@ -67,14 +67,14 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
-      /* useTBAAMetadata */ exists(testCase.testPath / CTL_TYPE_METADATA),
+      /* useTBAAMetadata */ false,
       /* optLevel= */ OptLevel::O0,
-      /* useLTO= */ exists(testCase.testPath / CTL_LTO),
+      /* useLTO= */ false,
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
       CliOptions::InstrumentationSettings{
-          /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+          /* generateDebugInfo= */ false,
           /* sanitizer= */ Sanitizer::NONE,
       },
       /* disableVerifier= */ false,
@@ -117,23 +117,6 @@ void execTestCase(const TestCase &testCase) {
   try {
     // Create source file instance for main source file
     SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
-
-    // Change build mode
-    const std::filesystem::path buildModeFile = testCase.testPath / INPUT_NAME_BUILD_MODE;
-    if (exists(buildModeFile)) {
-      std::ifstream file(buildModeFile, std::ios::binary);
-      std::ostringstream buffer;
-      buffer << file.rdbuf();
-      const std::string buildMode = buffer.str();
-      if (buildMode == BUILD_MODE_DEBUG)
-        cliOptions.buildMode = BuildMode::DEBUG;
-      else if (buildMode == BUILD_MODE_RELEASE)
-        cliOptions.buildMode = BuildMode::RELEASE;
-      else if (buildMode == BUILD_MODE_TEST)
-        cliOptions.buildMode = BuildMode::TEST;
-      else
-        FAIL() << "Unexpected build mode was requested: '" << buildMode << "'";
-    }
 
     // Run Lexer and Parser
     mainSourceFile->runLexer();
