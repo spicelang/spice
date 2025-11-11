@@ -14,7 +14,7 @@
 namespace spice::testing {
 
 const char *const PATH_TEST_FILES = "./test-files/";
-static constexpr unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
+static constexpr size_t EXPECTED_NUMBER_OF_TESTS = 250;
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 

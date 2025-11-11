@@ -1,7 +1,5 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
-// GCOV_EXCL_START
-
 #include <string>
 #include <vector>
 
@@ -21,7 +19,7 @@
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
-#include "driver/Driver.h"
+#include "driver/TestDriver.h"
 #include "util/TestUtil.h"
 
 using namespace spice::compiler;
@@ -391,5 +389,3 @@ INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil:
                          TestUtil::NameResolver());
 
 } // namespace spice::testing
-
-// GCOV_EXCL_STOP

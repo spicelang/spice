@@ -101,12 +101,13 @@ struct CliOptions {
 class Driver {
 public:
   // Constructors
-  Driver() = default; // LCOV_EXCL_LINE
-  explicit Driver(bool dryRun) : dryRun(dryRun) {}
+  explicit Driver(bool dryRun = false);
+
+  // Delete copy ctor and assignment operator
   Driver(const Driver &) = delete;
+  Driver operator=(const Driver&) = delete;
 
   // Public methods
-  void init();
   int parse(int argc, const char *argv[]);
   void enrich();
   void runBinary() const;
@@ -117,7 +118,7 @@ public:
   bool shouldInstall = false;
   bool shouldUninstall = false;
   bool shouldExecute = false;
-  bool dryRun = false; // For unit testing purposes
+  bool performDryRun = false; // For unit testing purposes
 
 private:
   // Private methods

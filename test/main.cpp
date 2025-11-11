@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
-#include "driver/Driver.h"
+#include "driver/TestDriver.h"
 
 #include <gtest/gtest.h>
 
@@ -17,7 +17,7 @@ using namespace spice::testing;
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Initialize command line parser
-  Driver driver;
+  TestDriver driver;
   driver.createInterface();
   driver.addOptions();
   // Parse command line args

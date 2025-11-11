@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
-#include "Driver.h"
+#include "TestDriver.h"
 
 #include "util/CommonUtil.h"
 
@@ -9,7 +9,7 @@ namespace spice::testing {
 
 TestDriverCliOptions testDriverCliOptions;
 
-void Driver::createInterface() {
+void TestDriver::createInterface() {
   // Allow positional args
   app.allow_non_standard_option_names();
   app.positionals_at_end();
@@ -21,7 +21,7 @@ void Driver::createInterface() {
   app.set_version_flag("--version,-v", compiler::CommonUtil::buildVersionInfo());
 }
 
-void Driver::addOptions() {
+void TestDriver::addOptions() {
   // --update-refs
   app.add_flag<bool>("--update-refs,-u", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
@@ -41,13 +41,13 @@ void Driver::addOptions() {
  * @param argv Argument vector
  * @return Return code
  */
-int Driver::parse(int argc, char **argv) {
+int TestDriver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
+    return 0;
   } catch (const CLI::ParseError &parseError) {
     return app.exit(parseError);
   }
-  return 0;
 }
 
 } // namespace spice::testing
