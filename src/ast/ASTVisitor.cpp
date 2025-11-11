@@ -6,6 +6,7 @@
 
 namespace spice::compiler {
 
+// LCOV_EXCL_START
 std::any ASTVisitor::visitEntry(EntryNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitMainFctDef(MainFctDefNode *node) { return visitChildren(node); }
@@ -175,5 +176,6 @@ std::any ASTVisitor::visitBaseDataType(BaseDataTypeNode *node) { return visitChi
 std::any ASTVisitor::visitCustomDataType(CustomDataTypeNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitFunctionDataType(FunctionDataTypeNode *node) { return visitChildren(node); }
+// LCOV_EXCL_STOP
 
 } // namespace spice::compiler

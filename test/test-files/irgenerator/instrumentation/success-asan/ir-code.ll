@@ -9,17 +9,151 @@ $asan.module_ctor = comdat any
 @__stop_asan_globals = extern_weak hidden global i64
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr @asan.module_ctor }]
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_address uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %iPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store ptr null, ptr %iPtr, align 8
   %1 = load ptr, ptr %iPtr, align 8
+  %2 = ptrtoint ptr %1 to i64
+  %3 = lshr i64 %2, 3
+  %4 = add i64 %3, 2147450880
+  %5 = inttoptr i64 %4 to ptr
+  %6 = load i8, ptr %5, align 1
+  %7 = icmp ne i8 %6, 0
+  br i1 %7, label %8, label %14, !prof !6
+
+8:                                                ; preds = %0
+  %9 = and i64 %2, 7
+  %10 = add i64 %9, 3
+  %11 = trunc i64 %10 to i8
+  %12 = icmp sge i8 %11, %6
+  br i1 %12, label %13, label %14
+
+13:                                               ; preds = %8
+  call void @__asan_report_store4(i64 %2) #3
+  unreachable
+
+14:                                               ; preds = %8, %0
   store i32 123, ptr %1, align 4
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
+
+declare void @__asan_report_load_n(i64, i64)
+
+declare void @__asan_loadN(i64, i64)
+
+declare void @__asan_report_load1(i64)
+
+declare void @__asan_load1(i64)
+
+declare void @__asan_report_load2(i64)
+
+declare void @__asan_load2(i64)
+
+declare void @__asan_report_load4(i64)
+
+declare void @__asan_load4(i64)
+
+declare void @__asan_report_load8(i64)
+
+declare void @__asan_load8(i64)
+
+declare void @__asan_report_load16(i64)
+
+declare void @__asan_load16(i64)
+
+declare void @__asan_report_store_n(i64, i64)
+
+declare void @__asan_storeN(i64, i64)
+
+declare void @__asan_report_store1(i64)
+
+declare void @__asan_store1(i64)
+
+declare void @__asan_report_store2(i64)
+
+declare void @__asan_store2(i64)
+
+declare void @__asan_report_store4(i64)
+
+declare void @__asan_store4(i64)
+
+declare void @__asan_report_store8(i64)
+
+declare void @__asan_store8(i64)
+
+declare void @__asan_report_store16(i64)
+
+declare void @__asan_store16(i64)
+
+declare void @__asan_report_exp_load_n(i64, i64, i32)
+
+declare void @__asan_exp_loadN(i64, i64, i32)
+
+declare void @__asan_report_exp_load1(i64, i32)
+
+declare void @__asan_exp_load1(i64, i32)
+
+declare void @__asan_report_exp_load2(i64, i32)
+
+declare void @__asan_exp_load2(i64, i32)
+
+declare void @__asan_report_exp_load4(i64, i32)
+
+declare void @__asan_exp_load4(i64, i32)
+
+declare void @__asan_report_exp_load8(i64, i32)
+
+declare void @__asan_exp_load8(i64, i32)
+
+declare void @__asan_report_exp_load16(i64, i32)
+
+declare void @__asan_exp_load16(i64, i32)
+
+declare void @__asan_report_exp_store_n(i64, i64, i32)
+
+declare void @__asan_exp_storeN(i64, i64, i32)
+
+declare void @__asan_report_exp_store1(i64, i32)
+
+declare void @__asan_exp_store1(i64, i32)
+
+declare void @__asan_report_exp_store2(i64, i32)
+
+declare void @__asan_exp_store2(i64, i32)
+
+declare void @__asan_report_exp_store4(i64, i32)
+
+declare void @__asan_exp_store4(i64, i32)
+
+declare void @__asan_report_exp_store8(i64, i32)
+
+declare void @__asan_exp_store8(i64, i32)
+
+declare void @__asan_report_exp_store16(i64, i32)
+
+declare void @__asan_exp_store16(i64, i32)
+
+declare ptr @__asan_memmove(ptr, ptr, i64)
+
+declare ptr @__asan_memcpy(ptr, ptr, i64)
+
+declare ptr @__asan_memset(ptr, i32, i64)
+
+declare void @__asan_handle_no_return()
+
+declare void @__sanitizer_ptr_cmp(i64, i64)
+
+declare void @__sanitizer_ptr_sub(i64, i64)
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i1 @llvm.amdgcn.is.shared(ptr) #1
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i1 @llvm.amdgcn.is.private(ptr) #1
 
 declare void @__asan_before_dynamic_init(i64)
 
@@ -40,7 +174,7 @@ declare void @__asan_unregister_elf_globals(i64, i64, i64)
 declare void @__asan_init()
 
 ; Function Attrs: nounwind uwtable
-define internal void @asan.module_ctor() #1 comdat {
+define internal void @asan.module_ctor() #2 comdat {
   call void @__asan_init()
   call void @__asan_version_mismatch_check_v8()
   call void @__asan_register_elf_globals(i64 ptrtoint (ptr @___asan_globals_registered to i64), i64 ptrtoint (ptr @__start_asan_globals to i64), i64 ptrtoint (ptr @__stop_asan_globals to i64))
@@ -49,8 +183,10 @@ define internal void @asan.module_ctor() #1 comdat {
 
 declare void @__asan_version_mismatch_check_v8()
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nounwind uwtable "frame-pointer"="all" }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { nounwind uwtable "frame-pointer"="all" }
+attributes #3 = { nomerge }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
@@ -61,3 +197,4 @@ attributes #1 = { nounwind uwtable "frame-pointer"="all" }
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{i32 4, !"nosanitize_address", i32 1}
 !5 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!6 = !{!"branch_weights", i32 1, i32 1048575}

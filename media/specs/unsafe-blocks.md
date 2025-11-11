@@ -25,9 +25,9 @@ should only be available within `unsafe` blocks.
 
 Following operations should be (introduced and) marked unsafe:
 
-- [ ] Operators `+=`, `-=`, `+` and `-` with pointer lhs
+- [x] Operators `+=`, `-=`, `++`, `--`, `+` and `-` with pointer lhs
 - [x] Cast from any pointer type to any other pointer type
-- [ ] Subscript operator on pointers
+- [x] Subscript operator on pointers
 
 ## External function calls unsafe (no decision yet)
 There are external functions like `malloc` or `free` which the user should

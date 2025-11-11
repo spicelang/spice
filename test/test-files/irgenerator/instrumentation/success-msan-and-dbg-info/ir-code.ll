@@ -12,37 +12,66 @@ source_filename = "source.spice"
 @__msan_va_arg_origin_tls = external thread_local(initialexec) global [200 x i32]
 @__msan_va_arg_overflow_size_tls = external thread_local(initialexec) global i64
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable
 define dso_local noundef i32 @main() #0 {
   call void @llvm.donothing()
   %result = alloca i32, align 4
   %1 = ptrtoint ptr %result to i64
   %2 = xor i64 %1, 87960930222080
   %3 = inttoptr i64 %2 to ptr
-  call void @llvm.memset.p0.i64(ptr align 4 %3, i8 0, i64 4, i1 false)
+  call void @llvm.memset.p0.i64(ptr align 4 %3, i8 -1, i64 4, i1 false)
   %i = alloca i32, align 4
   %4 = ptrtoint ptr %i to i64
   %5 = xor i64 %4, 87960930222080
   %6 = inttoptr i64 %5 to ptr
-  call void @llvm.memset.p0.i64(ptr align 4 %6, i8 0, i64 4, i1 false)
+  call void @llvm.memset.p0.i64(ptr align 4 %6, i8 -1, i64 4, i1 false)
   %7 = ptrtoint ptr %result to i64
   %8 = xor i64 %7, 87960930222080
   %9 = inttoptr i64 %8 to ptr
   store i32 0, ptr %9, align 4
   store i32 0, ptr %result, align 4
   %10 = load i32, ptr %i, align 4
-  %11 = add nsw i32 %10, 1
-  %12 = ptrtoint ptr %i to i64
-  %13 = xor i64 %12, 87960930222080
-  %14 = inttoptr i64 %13 to ptr
-  store i32 0, ptr %14, align 4
-  store i32 %11, ptr %i, align 4
-  %15 = load i32, ptr %i, align 4
-  store i32 0, ptr inttoptr (i64 add (i64 ptrtoint (ptr @__msan_va_arg_tls to i64), i64 8) to ptr), align 8
+  %11 = ptrtoint ptr %i to i64
+  %12 = xor i64 %11, 87960930222080
+  %13 = inttoptr i64 %12 to ptr
+  %_msld = load i32, ptr %13, align 4
+  %_msprop = or i32 %_msld, 0
+  %14 = add nsw i32 %10, 1
+  %15 = ptrtoint ptr %i to i64
+  %16 = xor i64 %15, 87960930222080
+  %17 = inttoptr i64 %16 to ptr
+  store i32 %_msprop, ptr %17, align 4
+  store i32 %14, ptr %i, align 4
+  %18 = load i32, ptr %i, align 4
+  %19 = ptrtoint ptr %i to i64
+  %20 = xor i64 %19, 87960930222080
+  %21 = inttoptr i64 %20 to ptr
+  %_msld1 = load i32, ptr %21, align 4
+  store i32 %_msld1, ptr inttoptr (i64 add (i64 ptrtoint (ptr @__msan_va_arg_tls to i64), i64 8) to ptr), align 8
   store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8
-  %16 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %15)
-  %17 = load i32, ptr %result, align 4
-  ret i32 %17
+  %_mscmp = icmp ne i32 %_msld1, 0
+  br i1 %_mscmp, label %22, label %23, !prof !6
+
+22:                                               ; preds = %0
+  call void @__msan_warning_noreturn() #5
+  unreachable
+
+23:                                               ; preds = %0
+  %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %18)
+  %25 = load i32, ptr %result, align 4
+  %26 = ptrtoint ptr %result to i64
+  %27 = xor i64 %26, 87960930222080
+  %28 = inttoptr i64 %27 to ptr
+  %_msld2 = load i32, ptr %28, align 4
+  %_mscmp3 = icmp ne i32 %_msld2, 0
+  br i1 %_mscmp3, label %29, label %30, !prof !6
+
+29:                                               ; preds = %23
+  call void @__msan_warning_noreturn() #5
+  unreachable
+
+30:                                               ; preds = %23
+  ret i32 %25
 }
 
 ; Function Attrs: nofree nounwind
@@ -100,11 +129,12 @@ declare void @llvm.donothing() #3
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immarg) #4
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind uwtable "frame-pointer"="all" }
 attributes #3 = { nocallback nofree nosync nounwind willreturn memory(none) }
 attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: write) }
+attributes #5 = { nomerge }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
@@ -115,3 +145,4 @@ attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{i32 4, !"nosanitize_memory", i32 1}
 !5 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!6 = !{!"branch_weights", i32 1, i32 1048575}
