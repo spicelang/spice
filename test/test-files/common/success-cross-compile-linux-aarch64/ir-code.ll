@@ -29,25 +29,25 @@ define dso_local noundef i32 @main() #0 {
   call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr %2)
   %5 = call %struct.VectorIterator @_ZN6VectorI6StringE11getIteratorEv(ptr %stringVec)
   store %struct.VectorIterator %5, ptr %3, align 8
-  br label %foreach.head.L8
+  br label %foreach.head.L10
 
-foreach.head.L8:                                  ; preds = %foreach.tail.L8, %0
+foreach.head.L10:                                 ; preds = %foreach.tail.L10, %0
   %6 = call i1 @_ZN14VectorIteratorI6StringE7isValidEv(ptr %3)
-  br i1 %6, label %foreach.body.L8, label %foreach.exit.L8
+  br i1 %6, label %foreach.body.L10, label %foreach.exit.L10
 
-foreach.body.L8:                                  ; preds = %foreach.head.L8
+foreach.body.L10:                                 ; preds = %foreach.head.L10
   %7 = call ptr @_ZN14VectorIteratorI6StringE3getEv(ptr %3)
   store ptr %7, ptr %4, align 8
   %8 = load ptr, ptr %4, align 8
   %9 = load %struct.String, ptr %8, align 8
   call void @_Z5printI6StringEv6String(%struct.String %9)
-  br label %foreach.tail.L8
+  br label %foreach.tail.L10
 
-foreach.tail.L8:                                  ; preds = %foreach.body.L8
+foreach.tail.L10:                                 ; preds = %foreach.body.L10
   call void @_ZN14VectorIteratorI6StringE4nextEv(ptr %3)
-  br label %foreach.head.L8
+  br label %foreach.head.L10
 
-foreach.exit.L8:                                  ; preds = %foreach.head.L8
+foreach.exit.L10:                                 ; preds = %foreach.head.L10
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   call void @_ZN6VectorI6StringE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %stringVec)

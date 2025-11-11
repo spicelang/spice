@@ -45,8 +45,9 @@ void execTestCase(const TestCase &testCase) {
   const llvm::Triple targetTriple(llvm::Triple::normalize(targetTripleString));
 
   // Create fake cli options
+  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   CliOptions cliOptions = {
-      /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
+      /* mainSourceFile= */ mainSourceFilePath,
       /* targetTriple= */ targetTriple,
       /* targetArch= */ targetTriple.getArchName().str(),
       /* targetVendor= */ targetTriple.getVendorName().str(),
@@ -103,7 +104,7 @@ void execTestCase(const TestCase &testCase) {
   // Parse test args
   std::vector<std::string> args = {"spice", "build"};
   TestUtil::parseTestArgs(cliOptions.mainSourceFile, args);
-  args.push_back(testCase.testPath / REF_NAME_SOURCE);
+  args.push_back(mainSourceFilePath.string());
 
   std::vector<const char*> argv;
   argv.reserve(args.size());
