@@ -3,8 +3,8 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/../src/Spice.g4 VISITOR PACKAGE s
 
 set(SOURCES
         main.cpp
-        driver/Driver.cpp
-        driver/Driver.h
+        driver/TestDriver.cpp
+        driver/TestDriver.h
         TestRunner.cpp
         util/TestUtil.cpp
         util/TestUtil.h

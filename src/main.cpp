@@ -65,9 +65,8 @@ bool compileProject(const CliOptions &cliOptions) {
  */
 int main(int argc, const char *argv[]) {
   // Initialize command line parser
-  Driver driver;
-  driver.init();
   try {
+    Driver driver;
     if (const int exitCode = driver.parse(argc, argv); exitCode != EXIT_SUCCESS)
       return exitCode;
 

@@ -13,7 +13,7 @@
 
 namespace spice::compiler {
 
-void Driver::init() {
+Driver::Driver(bool dryRun) : performDryRun(dryRun) {
   // Allow positional args
   app.positionals_at_end();
   app.allow_extras(false);
@@ -40,7 +40,7 @@ void Driver::init() {
       // Prepare the installation path
       std::filesystem::path installPath = FileUtil::getSpiceBinDir();
       installPath /= cliOptions.mainSourceFile.stem();
-      if (!dryRun)
+      if (!performDryRun)
         create_directories(installPath);
 #if OS_WINDOWS
       installPath.replace_extension("exe");
@@ -51,7 +51,7 @@ void Driver::init() {
         cliOptions.outputPath = installPath;
 
       // If the binary should be uninstalled, check if the executable exists and uninstall it
-      if (shouldUninstall && !dryRun) {
+      if (shouldUninstall && !performDryRun) {
         if (exists(installPath) && std::filesystem::remove(installPath))
           std::cout << "Successfully uninstalled.\n";
         else

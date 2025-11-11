@@ -14,7 +14,7 @@
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
-#include "../driver/Driver.h"
+#include "../driver/TestDriver.h"
 
 namespace spice::testing {
 

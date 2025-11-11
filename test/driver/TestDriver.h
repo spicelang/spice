@@ -23,11 +23,8 @@ struct TestDriverCliOptions {
 /**
  * Helper class to set up the cli interface and command line parser
  */
-class Driver {
+class TestDriver {
 public:
-  // Constructors
-  explicit Driver() = default;
-
   // Public methods
   void createInterface();
   void addOptions();
@@ -35,7 +32,7 @@ public:
 
 private:
   // Private members
-  CLI::App app = CLI::App{"Spice Test Runner", "spice"};
+  CLI::App app = CLI::App{"Spice Test Runner", "spicetest"};
 };
 
 } // namespace spice::testing

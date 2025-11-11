@@ -13,7 +13,6 @@ TEST(DriverTest, BuildSubcommandMinimal) {
   const char *argv[] = {"spice", "build", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -46,7 +45,6 @@ TEST(DriverTest, BuildSubcommandComplex) {
   };
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -73,7 +71,6 @@ TEST(DriverTest, RunSubcommandMinimal) {
   const char *argv[] = {"spice", "run", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -93,7 +90,6 @@ TEST(DriverTest, RunSubcommandComplex) {
   const char *argv[] = {"spice", "r", "-O2", "-j", "8", "-ast", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -115,7 +111,6 @@ TEST(DriverTest, TestSubcommandMinimal) {
   const char *argv[] = {"spice", "test", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -136,7 +131,6 @@ TEST(DriverTest, TestSubcommandComplex) {
   const char *argv[] = {"spice", "t", "-s", "-cst", "--sanitizer=thread", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -158,7 +152,6 @@ TEST(DriverTest, InstallSubcommandMinimal) {
   const char *argv[] = {"spice", "install", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -178,7 +171,6 @@ TEST(DriverTest, UninstallSubcommandMinimal) {
   const char *argv[] = {"spice", "uninstall", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
   driver.enrich();
 
@@ -198,7 +190,6 @@ TEST(DriverTest, MemorySanitizerOnlyLinux) {
   const char *argv[] = {"spice", "build", "--sanitizer=memory", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
 
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
 #if OS_LINUX
@@ -224,7 +215,6 @@ TEST_P(DriverTest, LengthGreaterThanZero) {
   const char *argv[] = {"spice", "build", arg, "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   Driver driver(true);
-  driver.init();
   try {
     driver.parse(argc, argv);
     FAIL();
