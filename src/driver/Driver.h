@@ -101,19 +101,19 @@ struct CliOptions {
 class Driver {
 public:
   // Constructors
-  explicit Driver(bool dryRun = false);
+  explicit Driver(CliOptions &foreignCliOptions, bool dryRun = false);
 
   // Delete copy ctor and assignment operator
   Driver(const Driver &) = delete;
-  Driver operator=(const Driver&) = delete;
+  Driver operator=(const Driver &) = delete;
 
   // Public methods
   int parse(int argc, const char *argv[]);
-  void enrich();
+  void enrich() const;
   void runBinary() const;
 
   // Public members
-  CliOptions cliOptions = {};
+  CliOptions &cliOptions;
   bool shouldCompile = false;
   bool shouldInstall = false;
   bool shouldUninstall = false;
@@ -127,8 +127,8 @@ private:
   void addTestSubcommand();
   void addInstallSubcommand();
   void addUninstallSubcommand();
-  void addCompileSubcommandOptions(CLI::App *subCmd);
-  void addInstrumentationOptions(CLI::App *subCmd);
+  void addCompileSubcommandOptions(CLI::App *subCmd) const;
+  void addInstrumentationOptions(CLI::App *subCmd) const;
   static void ensureNotDockerized();
 
   // Members

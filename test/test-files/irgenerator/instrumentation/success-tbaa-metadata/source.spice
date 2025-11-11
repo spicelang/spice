@@ -1,3 +1,5 @@
+// TEST: --use-tbaa-metadata
+
 f<int> main() {
     int i = 123;
     unsigned long j = cast<unsigned long>(i);

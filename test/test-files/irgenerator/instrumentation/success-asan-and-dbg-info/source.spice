@@ -1,3 +1,5 @@
+// TEST: --sanitizer=address -g
+
 f<int> main() {
     heap int* iPtr = sNew<int>();
     *iPtr = 123;

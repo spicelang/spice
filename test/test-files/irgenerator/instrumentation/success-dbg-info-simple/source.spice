@@ -1,3 +1,5 @@
+// TEST: -g
+
 type TestStruct struct {
     long lng
     String str

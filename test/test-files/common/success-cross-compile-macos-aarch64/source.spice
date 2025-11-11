@@ -1,3 +1,5 @@
+// TEST: --target=arm64-apple-macosx
+
 import "std/data/vector";
 import "std/text/print";
 

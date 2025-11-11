@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @__asan_shadow_memory_dynamic_address = external global i64
 @__asan_option_detect_stack_use_after_return = external global i32
-@___asan_gen_stack = private unnamed_addr constant [14 x i8] c"1 32 8 4 iPtr\00", align 1
+@___asan_gen_stack = private unnamed_addr constant [16 x i8] c"1 32 8 6 iPtr:4\00", align 1
 @llvm.used = appending global [1 x ptr] [ptr @asan.module_ctor], section "llvm.metadata"
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr null }]
 
@@ -47,87 +47,102 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
   %21 = add i64 %20, %1
   %22 = add i64 %21, 0
   %23 = inttoptr i64 %22 to ptr
-  store i64 -868083117767659023, ptr %23, align 1
-    #dbg_declare(ptr %result, !16, !DIExpression(), !17)
-  store i32 0, ptr %result, align 4, !dbg !17
+  store i64 -868082052615769615, ptr %23, align 1
+  call void @llvm.lifetime.start.p0(i64 4, ptr %result), !dbg !16
+    #dbg_declare(ptr %result, !17, !DIExpression(), !16)
+  store i32 0, ptr %result, align 4, !dbg !16
   %24 = call ptr @_Z4sNewIiEPiv(), !dbg !18
+  %25 = add i64 %21, 4, !dbg !18
+  %26 = inttoptr i64 %25 to ptr, !dbg !18
+  store i8 0, ptr %26, align 1, !dbg !18
+  call void @llvm.lifetime.start.p0(i64 8, ptr %14), !dbg !18
   store ptr %24, ptr %14, align 8, !dbg !18
     #dbg_declare(ptr %asan_local_stack_base, !19, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !21)
-  %25 = load ptr, ptr %14, align 8, !dbg !22
-  %26 = ptrtoint ptr %25 to i64, !dbg !23
-  %27 = lshr i64 %26, 3, !dbg !23
-  %28 = add i64 %27, %1, !dbg !23
-  %29 = inttoptr i64 %28 to ptr, !dbg !23
-  %30 = load i8, ptr %29, align 1, !dbg !23
-  %31 = icmp ne i8 %30, 0, !dbg !23
-  br i1 %31, label %32, label %38, !dbg !23, !prof !24
+  %27 = load ptr, ptr %14, align 8, !dbg !22
+  %28 = ptrtoint ptr %27 to i64, !dbg !23
+  %29 = lshr i64 %28, 3, !dbg !23
+  %30 = add i64 %29, %1, !dbg !23
+  %31 = inttoptr i64 %30 to ptr, !dbg !23
+  %32 = load i8, ptr %31, align 1, !dbg !23
+  %33 = icmp ne i8 %32, 0, !dbg !23
+  br i1 %33, label %34, label %40, !dbg !23, !prof !24
 
-32:                                               ; preds = %11
-  %33 = and i64 %26, 7, !dbg !23
-  %34 = add i64 %33, 3, !dbg !23
-  %35 = trunc i64 %34 to i8, !dbg !23
-  %36 = icmp sge i8 %35, %30, !dbg !23
-  br i1 %36, label %37, label %38, !dbg !23
+34:                                               ; preds = %11
+  %35 = and i64 %28, 7, !dbg !23
+  %36 = add i64 %35, 3, !dbg !23
+  %37 = trunc i64 %36 to i8, !dbg !23
+  %38 = icmp sge i8 %37, %32, !dbg !23
+  br i1 %38, label %39, label %40, !dbg !23
 
-37:                                               ; preds = %32
-  call void @__asan_report_store4(i64 %26) #3, !dbg !23
+39:                                               ; preds = %34
+  call void @__asan_report_store4(i64 %28) #4, !dbg !23
   unreachable
 
-38:                                               ; preds = %32, %11
-  store i32 123, ptr %25, align 4, !dbg !23
+40:                                               ; preds = %34, %11
+  store i32 123, ptr %27, align 4, !dbg !23
   call void @_Z8sDeallocRPh(ptr %14), !dbg !25
-  %39 = load ptr, ptr %14, align 8, !dbg !27
-  %40 = ptrtoint ptr %39 to i64, !dbg !28
-  %41 = lshr i64 %40, 3, !dbg !28
-  %42 = add i64 %41, %1, !dbg !28
-  %43 = inttoptr i64 %42 to ptr, !dbg !28
-  %44 = load i8, ptr %43, align 1, !dbg !28
-  %45 = icmp ne i8 %44, 0, !dbg !28
-  br i1 %45, label %46, label %52, !dbg !28, !prof !24
+  %41 = load ptr, ptr %14, align 8, !dbg !27
+  %42 = ptrtoint ptr %41 to i64, !dbg !28
+  %43 = lshr i64 %42, 3, !dbg !28
+  %44 = add i64 %43, %1, !dbg !28
+  %45 = inttoptr i64 %44 to ptr, !dbg !28
+  %46 = load i8, ptr %45, align 1, !dbg !28
+  %47 = icmp ne i8 %46, 0, !dbg !28
+  br i1 %47, label %48, label %54, !dbg !28, !prof !24
 
-46:                                               ; preds = %38
-  %47 = and i64 %40, 7, !dbg !28
-  %48 = add i64 %47, 3, !dbg !28
-  %49 = trunc i64 %48 to i8, !dbg !28
-  %50 = icmp sge i8 %49, %44, !dbg !28
-  br i1 %50, label %51, label %52, !dbg !28
+48:                                               ; preds = %40
+  %49 = and i64 %42, 7, !dbg !28
+  %50 = add i64 %49, 3, !dbg !28
+  %51 = trunc i64 %50 to i8, !dbg !28
+  %52 = icmp sge i8 %51, %46, !dbg !28
+  br i1 %52, label %53, label %54, !dbg !28
 
-51:                                               ; preds = %46
-  call void @__asan_report_store4(i64 %40) #3, !dbg !28
+53:                                               ; preds = %48
+  call void @__asan_report_store4(i64 %42) #4, !dbg !28
   unreachable
 
-52:                                               ; preds = %46, %38
-  store i32 321, ptr %39, align 4, !dbg !28
+54:                                               ; preds = %48, %40
+  store i32 321, ptr %41, align 4, !dbg !28
   call void @_Z8sDeallocRPh(ptr %14), !dbg !29
-  %53 = load i32, ptr %result, align 4, !dbg !29
+  %55 = add i64 %21, 4, !dbg !29
+  %56 = inttoptr i64 %55 to ptr, !dbg !29
+  store i8 -8, ptr %56, align 1, !dbg !29
+  call void @llvm.lifetime.end.p0(i64 8, ptr %14), !dbg !29
+  %57 = load i32, ptr %result, align 4, !dbg !29
   store i64 1172321806, ptr %15, align 8, !dbg !29
-  %54 = icmp ne i64 %7, 0, !dbg !29
-  br i1 %54, label %55, label %62, !dbg !29
+  %58 = icmp ne i64 %7, 0, !dbg !29
+  br i1 %58, label %59, label %66, !dbg !29
 
-55:                                               ; preds = %52
-  %56 = add i64 %21, 0, !dbg !29
-  %57 = inttoptr i64 %56 to ptr, !dbg !29
-  store i64 -723401728380766731, ptr %57, align 1, !dbg !29
-  %58 = add i64 %7, 56, !dbg !29
-  %59 = inttoptr i64 %58 to ptr, !dbg !29
-  %60 = load i64, ptr %59, align 8, !dbg !29
+59:                                               ; preds = %54
+  %60 = add i64 %21, 0, !dbg !29
   %61 = inttoptr i64 %60 to ptr, !dbg !29
-  store i8 0, ptr %61, align 1, !dbg !29
-  br label %65, !dbg !29
+  store i64 -723401728380766731, ptr %61, align 1, !dbg !29
+  %62 = add i64 %7, 56, !dbg !29
+  %63 = inttoptr i64 %62 to ptr, !dbg !29
+  %64 = load i64, ptr %63, align 8, !dbg !29
+  %65 = inttoptr i64 %64 to ptr, !dbg !29
+  store i8 0, ptr %65, align 1, !dbg !29
+  br label %69, !dbg !29
 
-62:                                               ; preds = %52
-  %63 = add i64 %21, 0, !dbg !29
-  %64 = inttoptr i64 %63 to ptr, !dbg !29
-  store i64 0, ptr %64, align 1, !dbg !29
-  br label %65, !dbg !29
+66:                                               ; preds = %54
+  %67 = add i64 %21, 0, !dbg !29
+  %68 = inttoptr i64 %67 to ptr, !dbg !29
+  store i64 0, ptr %68, align 1, !dbg !29
+  br label %69, !dbg !29
 
-65:                                               ; preds = %62, %55
-  ret i32 %53, !dbg !29
+69:                                               ; preds = %66, %59
+  ret i32 %57, !dbg !29
 }
+
+; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
+declare void @llvm.lifetime.start.p0(i64 immarg, ptr captures(none)) #1
 
 declare ptr @_Z4sNewIiEPiv()
 
 declare void @_Z8sDeallocRPh(ptr)
+
+; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
+declare void @llvm.lifetime.end.p0(i64 immarg, ptr captures(none)) #1
 
 declare void @__asan_report_load_n(i64, i64)
 
@@ -238,10 +253,10 @@ declare void @__sanitizer_ptr_cmp(i64, i64)
 declare void @__sanitizer_ptr_sub(i64, i64)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i1 @llvm.amdgcn.is.shared(ptr) #1
+declare i1 @llvm.amdgcn.is.shared(ptr) #2
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i1 @llvm.amdgcn.is.private(ptr) #1
+declare i1 @llvm.amdgcn.is.private(ptr) #2
 
 declare i64 @__asan_stack_malloc_0(i64)
 
@@ -340,7 +355,7 @@ declare void @__asan_unregister_elf_globals(i64, i64, i64)
 declare void @__asan_init()
 
 ; Function Attrs: nounwind uwtable
-define internal void @asan.module_ctor() #2 {
+define internal void @asan.module_ctor() #3 {
   call void @__asan_init()
   call void @__asan_version_mismatch_check_v8()
   ret void
@@ -349,9 +364,10 @@ define internal void @asan.module_ctor() #2 {
 declare void @__asan_version_mismatch_check_v8()
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { nounwind uwtable "frame-pointer"="all" }
-attributes #3 = { nomerge }
+attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn }
+attributes #2 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #3 = { nounwind uwtable "frame-pointer"="all" }
+attributes #4 = { nomerge }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6}
 !llvm.ident = !{!7}
@@ -367,23 +383,23 @@ attributes #3 = { nomerge }
 !7 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !8 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !9, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
 
-!10 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !11, file: !11, line: 1, type: !12, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !8, retainedNodes: !15)
+!10 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !11, file: !11, line: 3, type: !12, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !8, retainedNodes: !15)
 
 !12 = !DISubroutineType(types: !13)
 !13 = !{!14}
 !14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !15 = !{}
-!16 = !DILocalVariable(name: "result", scope: !10, file: !11, line: 1, type: !14)
-!17 = !DILocation(line: 1, column: 1, scope: !10)
-!18 = !DILocation(line: 2, column: 22, scope: !10)
-!19 = !DILocalVariable(name: "iPtr", scope: !10, file: !11, line: 2, type: !20)
+!16 = !DILocation(line: 3, column: 1, scope: !10)
+!17 = !DILocalVariable(name: "result", scope: !10, file: !11, line: 3, type: !14)
+!18 = !DILocation(line: 4, column: 22, scope: !10)
+!19 = !DILocalVariable(name: "iPtr", scope: !10, file: !11, line: 4, type: !20)
 !20 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !14, size: 64)
-!21 = !DILocation(line: 2, column: 5, scope: !10)
-!22 = !DILocation(line: 3, column: 6, scope: !10)
-!23 = !DILocation(line: 3, column: 13, scope: !10)
+!21 = !DILocation(line: 4, column: 5, scope: !10)
+!22 = !DILocation(line: 5, column: 6, scope: !10)
+!23 = !DILocation(line: 5, column: 13, scope: !10)
 !24 = !{!"branch_weights", i32 1, i32 1048575}
-!25 = !DILocation(line: 5, column: 35, scope: !26)
-!26 = distinct !DILexicalBlock(scope: !10, file: !11, line: 4, column: 5)
-!27 = !DILocation(line: 7, column: 6, scope: !10)
-!28 = !DILocation(line: 7, column: 13, scope: !10)
-!29 = !DILocation(line: 8, column: 1, scope: !10)
+!25 = !DILocation(line: 7, column: 35, scope: !26)
+!26 = distinct !DILexicalBlock(scope: !10, file: !11, line: 6, column: 5)
+!27 = !DILocation(line: 9, column: 6, scope: !10)
+!28 = !DILocation(line: 9, column: 13, scope: !10)
+!29 = !DILocation(line: 10, column: 1, scope: !10)

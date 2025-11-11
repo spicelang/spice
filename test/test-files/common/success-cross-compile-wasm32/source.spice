@@ -1,3 +1,5 @@
+// TEST: --target=wasm32-unknown-unknown
+
 #[core.compiler.mangle = false]
 public f<int> fibo(int n) {
     if n <= 1 { return n; }

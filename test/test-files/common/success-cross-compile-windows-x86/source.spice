@@ -1,3 +1,5 @@
+// TEST: --target=x86_64-pc-windows-gnu
+
 import "std/data/vector";
 import "std/text/print";
 

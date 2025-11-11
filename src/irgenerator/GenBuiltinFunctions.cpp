@@ -170,13 +170,15 @@ std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
   llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
   builder.CreateCall(fprintfFct, {stdErr, globalString, errorMessage});
 
+  // Cleanup the scope before calling exit()
+  // Unreachable below counts as terminator
+  terminateBlock(node->getNextOuterStmtLst());
+
   // Generate call to exit()
   llvm::Function *exitFct = stdFunctionManager.getExitFct();
   builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
   // Create unreachable instruction
   builder.CreateUnreachable();
-  // Unreachable counts as terminator
-  terminateBlock(node->getNextOuterStmtLst());
 
   return nullptr;
 }

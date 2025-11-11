@@ -13,27 +13,27 @@ define private void @_Z6workerv() #0 {
   call void @__tsan_func_entry(ptr %1)
   %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
-  br label %for.head.L6
+  br label %for.head.L8
 
-for.head.L6:                                      ; preds = %for.tail.L6, %0
+for.head.L8:                                      ; preds = %for.tail.L8, %0
   %2 = load i32, ptr %i, align 4
   %3 = icmp slt i32 %2, 1000000
-  br i1 %3, label %for.body.L6, label %for.exit.L6
+  br i1 %3, label %for.body.L8, label %for.exit.L8
 
-for.body.L6:                                      ; preds = %for.head.L6
+for.body.L8:                                      ; preds = %for.head.L8
   %4 = load i32, ptr @COUNTER, align 4
   %5 = add nsw i32 %4, 1
   call void @__tsan_write4(ptr @COUNTER)
   store i32 %5, ptr @COUNTER, align 4
-  br label %for.tail.L6
+  br label %for.tail.L8
 
-for.tail.L6:                                      ; preds = %for.body.L6
+for.tail.L8:                                      ; preds = %for.body.L8
   %6 = load i32, ptr %i, align 4
   %7 = add nsw i32 %6, 1
   store i32 %7, ptr %i, align 4
-  br label %for.head.L6
+  br label %for.head.L8
 
-for.exit.L6:                                      ; preds = %for.head.L6
+for.exit.L8:                                      ; preds = %for.head.L8
   call void @__tsan_func_exit()
   ret void
 }

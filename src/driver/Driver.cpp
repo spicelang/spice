@@ -13,7 +13,7 @@
 
 namespace spice::compiler {
 
-Driver::Driver(bool dryRun) : performDryRun(dryRun) {
+Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignCliOptions), performDryRun(dryRun) {
   // Allow positional args
   app.positionals_at_end();
   app.allow_extras(false);
@@ -122,9 +122,10 @@ int Driver::parse(int argc, const char *argv[]) {
 /**
  * Initialize the cli options based on the input of the user
  */
-void Driver::enrich() {
+void Driver::enrich() const {
   // Make path of given main source file canonical and relative
-  cliOptions.mainSourceFile = relative(cliOptions.mainSourceFile);
+  if (!performDryRun)
+    cliOptions.mainSourceFile = relative(cliOptions.mainSourceFile);
 
   // Propagate llvm args to llvm
   if (!cliOptions.llvmArgs.empty()) {
@@ -311,7 +312,7 @@ void Driver::addUninstallSubcommand() {
       ->required();
 }
 
-void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
+void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   const auto buildModeCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);
@@ -379,7 +380,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
       ->required();
 }
 
-void Driver::addInstrumentationOptions(CLI::App *subCmd) {
+void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   const auto sanitizerCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);

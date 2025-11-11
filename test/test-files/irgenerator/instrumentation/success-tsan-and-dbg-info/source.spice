@@ -1,3 +1,5 @@
+// TEST: --sanitizer=thread -g
+
 import "std/os/thread";
 
 int COUNTER = 0;

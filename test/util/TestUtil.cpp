@@ -1,7 +1,5 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
-// GCOV_EXCL_START
-
 #include "TestUtil.h"
 
 #include <dirent.h>
@@ -21,6 +19,35 @@ namespace spice::testing {
 using namespace spice::compiler;
 
 extern TestDriverCliOptions testDriverCliOptions;
+
+void TestUtil::parseTestArgs(const std::filesystem::path &sourceCodePath, std::vector<std::string> &args) {
+  if (!exists(sourceCodePath))
+    return;
+
+  std::ifstream file(sourceCodePath);
+  assert(file.is_open());
+
+  std::string firstLine;
+  if (!std::getline(file, firstLine))
+    return;
+  firstLine = CommonUtil::trim(firstLine);
+
+  // Only allow "// TEST: " as prefix
+  assert(firstLine.rfind("//TEST:", 0) != 0);
+  if (firstLine.rfind("// TEST: ", 0) != 0)
+    return;
+
+  const size_t colonPos = firstLine.find(':');
+  if (colonPos == std::string::npos)
+    return;
+
+  const std::string argString = CommonUtil::trim(firstLine.substr(colonPos + 1));
+  for (const std::string &arg : CommonUtil::split(argString)) {
+    const std::string trimmedArg = CommonUtil::trim(arg);
+    if (trimmedArg.length() > 0)
+      args.push_back(trimmedArg);
+  }
+}
 
 /**
  * Collect the test cases in a particular test suite
@@ -128,8 +155,8 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
 
   // Fail if no ref file exists
   const std::filesystem::path refPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (!doesRefExist(refPath))
-    FAIL() << "Expected no error, but got: " + errorWhat;
+  if (!doesRefExist(refPath))                             // LCOV_EXCL_LINE
+    FAIL() << "Expected no error, but got: " + errorWhat; // LCOV_EXCL_LINE
 
   // Check if the exception message matches the expected output
   checkRefMatch(refPath, [&] { return errorWhat; });
@@ -264,5 +291,3 @@ std::array<std::filesystem::path, 3> TestUtil::expandRefPaths(const std::filesys
 }
 
 } // namespace spice::testing
-
-// GCOV_EXCL_STOP

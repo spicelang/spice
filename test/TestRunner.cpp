@@ -33,25 +33,15 @@ void execTestCase(const TestCase &testCase) {
   if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
 
-  // Choose target for compilation
-  std::string targetTripleString = llvm::sys::getDefaultTargetTriple();
-  const std::filesystem::path targetTripleFile = testCase.testPath / INPUT_NAME_TARGET_TRIPLE;
-  if (exists(targetTripleFile)) {
-    std::ifstream file(targetTripleFile, std::ios::binary);
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    targetTripleString = buffer.str();
-  }
-  const llvm::Triple targetTriple(llvm::Triple::normalize(targetTripleString));
-
   // Create fake cli options
+  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   CliOptions cliOptions = {
-      /* mainSourceFile= */ testCase.testPath / REF_NAME_SOURCE,
-      /* targetTriple= */ targetTriple,
-      /* targetArch= */ targetTriple.getArchName().str(),
-      /* targetVendor= */ targetTriple.getVendorName().str(),
-      /* targetOs= */ targetTriple.getOSName().str(),
-      /* isNativeTarget= */ !exists(targetTripleFile),
+      /* mainSourceFile= */ mainSourceFilePath,
+      /* targetTriple= */ {},
+      /* targetArch= */ TARGET_UNKNOWN,
+      /* targetVendor= */ TARGET_UNKNOWN,
+      /* targetOs= */ TARGET_UNKNOWN,
+      /* isNativeTarget= */ true,
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
       /* cacheDir= */ "./cache",
@@ -77,14 +67,14 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
-      /* useTBAAMetadata */ exists(testCase.testPath / CTL_TYPE_METADATA),
+      /* useTBAAMetadata */ false,
       /* optLevel= */ OptLevel::O0,
-      /* useLTO= */ exists(testCase.testPath / CTL_LTO),
+      /* useLTO= */ false,
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
       CliOptions::InstrumentationSettings{
-          /* generateDebugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
+          /* generateDebugInfo= */ false,
           /* sanitizer= */ Sanitizer::NONE,
       },
       /* disableVerifier= */ false,
@@ -100,29 +90,33 @@ void execTestCase(const TestCase &testCase) {
   static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
 #endif
 
+  // Parse test args
+  std::vector<std::string> args = {"spice", "build"};
+  TestUtil::parseTestArgs(cliOptions.mainSourceFile, args);
+  args.push_back(mainSourceFilePath.string());
+
+  bool explicitlySelectedTarget = false;
+  std::vector<const char *> argv;
+  argv.reserve(args.size());
+  for (const std::string &arg : args) {
+    if (arg.starts_with("--target"))
+      explicitlySelectedTarget = true;
+    argv.push_back(arg.c_str());
+  }
+  Driver driver(cliOptions, true);
+  driver.parse(argv.size(), argv.data());
+  driver.enrich();
+
+  // If this is a cross-compilation test, we want to emit the target information in IR. For this we need to set native to false
+  if (explicitlySelectedTarget)
+    cliOptions.isNativeTarget = false;
+
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
 
   try {
     // Create source file instance for main source file
     SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
-
-    // Change build mode
-    const std::filesystem::path buildModeFile = testCase.testPath / INPUT_NAME_BUILD_MODE;
-    if (exists(buildModeFile)) {
-      std::ifstream file(buildModeFile, std::ios::binary);
-      std::ostringstream buffer;
-      buffer << file.rdbuf();
-      const std::string buildMode = buffer.str();
-      if (buildMode == BUILD_MODE_DEBUG)
-        cliOptions.buildMode = BuildMode::DEBUG;
-      else if (buildMode == BUILD_MODE_RELEASE)
-        cliOptions.buildMode = BuildMode::RELEASE;
-      else if (buildMode == BUILD_MODE_TEST)
-        cliOptions.buildMode = BuildMode::TEST;
-      else
-        FAIL() << "Unexpected build mode was requested: '" << buildMode << "'";
-    }
 
     // Run Lexer and Parser
     mainSourceFile->runLexer();
@@ -161,23 +155,6 @@ void execTestCase(const TestCase &testCase) {
       mainSourceFile->runDependencyGraphVisualizer();
       return mainSourceFile->compilerOutput.depGraphString;
     });
-
-    // Enable sanitizers
-    const std::filesystem::path sanitizerFile = testCase.testPath / INPUT_NAME_SANITIZER;
-    if (exists(sanitizerFile)) {
-      std::ifstream file(sanitizerFile, std::ios::binary);
-      std::ostringstream buffer;
-      buffer << file.rdbuf();
-      const std::string sanitizerString = buffer.str();
-      if (sanitizerString == SANITIZER_ADDRESS)
-        cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
-      else if (sanitizerString == SANITIZER_THREAD)
-        cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
-      else if (sanitizerString == SANITIZER_MEMORY)
-        cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
-      else
-        FAIL() << "Unexpected sanitizer was requested: '" << sanitizerString << "'";
-    }
 
     // Run backend for all dependencies
     for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)

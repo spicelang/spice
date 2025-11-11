@@ -20,12 +20,12 @@ Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 Breakpoint 1, main (_argc=1, _argv=...)
     at ./test-files/irgenerator/instrumentation/success-dbg-info-complex/source.spice:42
-42	    it.next();
+42	    it += 4;
 result = 0
 vi = {contents = , capacity = 5, size = 5}
-it = {vector = , cursor = 4}
+it = {vector = , cursor = 0}
 pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 218681) exited normally]
+[Inferior 1 (process 172651) exited normally]
