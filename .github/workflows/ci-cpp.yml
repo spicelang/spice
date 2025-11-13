@@ -16,6 +16,10 @@ on:
 #      - 'media/**'
 #      - '**.md'
 
+env:
+  LLVM_VERSION: "21.1.5"
+  GCC_VERSION: "14"
+
 jobs:
   build-linux-x86:
     name: C++ CI - Linux/x86_64
@@ -32,11 +36,11 @@ jobs:
           java-version: 21
           java-package: jre
 
-      - name: Configure GCC 14 as default
+      - name: Configure selected GCC version as default
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -58,14 +62,14 @@ jobs:
         run: sudo pipx install gcovr
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-21.1.5-linux-x64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -155,11 +159,11 @@ jobs:
           java-version: 21
           java-package: jre
 
-      - name: Configure GCC 14 as default
+      - name: Configure selected GCC version as default
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -173,14 +177,14 @@ jobs:
           sudo apt-get install ninja-build graphviz uuid-dev
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm
-          key: llvm-21.1.5-linux-aarch64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -237,14 +241,14 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-21.1.5-win-x64
+          key: llvm-${{ env.LLVM_VERSION }}-win-x64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -320,14 +324,14 @@ jobs:
           brew install graphviz
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-21.1.5-macos-aarch64
+          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'

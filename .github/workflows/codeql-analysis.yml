@@ -6,6 +6,10 @@ on:
     - cron: '0 6 * * 6' # Every saturday at 06:00
   workflow_dispatch:
 
+env:
+  LLVM_VERSION: "21.1.5"
+  GCC_VERSION: "14"
+
 jobs:
   analyze-cpp:
     name: Analyze C++ Code
@@ -21,11 +25,11 @@ jobs:
           java-version: 21
           java-package: jre
 
-      - name: Configure GCC 14 as default
+      - name: Configure selected GCC version as default
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -42,14 +46,14 @@ jobs:
           languages: cpp
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-21.1.5 https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-21.1.5-linux-x64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
