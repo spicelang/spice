@@ -408,19 +408,19 @@ jobs:
 
       - name: Deploy to Debian / Raspbian repo
         run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-trixie/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-bookworm/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-bullseye/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-buster/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-stretch/"
-          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-jessie/"
 
       - name: Deploy to Ubuntu repo
         run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-resolute/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-noble/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-jammy/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-focal/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-bionic/"
-          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-xenial/"
 
       - name: Deploy to CentOS repo
         run: |
