@@ -1,13 +1,13 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@anon.string.0 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*iPtr == 1234' evaluated to false.\0A\00", align 1
+@anon.string.0 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*iPtr == 1234' evaluated to false.\0A\00", align 4
 @anon.array.0 = private unnamed_addr constant [3 x i64] [i64 123, i64 456, i64 789]
-@anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 1
-@anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 456l' evaluated to false.\0A\00", align 1
-@anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 1
-@anon.string.4 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 789l' evaluated to false.\0A\00", align 1
-@anon.string.5 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 1
+@anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 456l' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 4
+@anon.string.4 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 789l' evaluated to false.\0A\00", align 4
+@anon.string.5 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition '*lPtr == 123l' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
