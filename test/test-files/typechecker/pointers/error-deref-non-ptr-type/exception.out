@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:18:
+Wrong data type for operator: Cannot apply de-referencing operator on type int
+
+3  printf("%d", *i);
+                ^^

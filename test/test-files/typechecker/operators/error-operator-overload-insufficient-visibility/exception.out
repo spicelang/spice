@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:5:
+Insufficient symbol visibility: Overloaded operator 'p op.plusplus.post(Operand&)' has insufficient visibility
+
+5  op++;
+   ^^^^
