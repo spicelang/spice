@@ -1,0 +1,7 @@
+public type Operand struct {
+    int i = 0
+}
+
+p operator++(Operand& op) {
+    op.i++;
+}

@@ -1,0 +1,6 @@
+import "source2";
+
+f<int> main() {
+    Operand op;
+    op++;
+}

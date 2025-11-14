@@ -1,0 +1,37 @@
+f<int> main() {
+    // Pointer cast
+    {
+        long l = 1234l;
+        long* lPtr = &l;
+        int* iPtr;
+        unsafe {
+            iPtr = cast<int*>(lPtr);
+        }
+        assert *iPtr == 1234;
+    }
+
+    // Pointer increment/decrement
+    {
+        long[3] lArr = [123l, 456l, 789l];
+        long* lPtr = lArr;
+        assert *lPtr == 123l;
+        unsafe {
+            lPtr++;
+        }
+        assert *lPtr == 456l;
+        unsafe {
+            lPtr--;
+        }
+        assert *lPtr == 123l;
+        unsafe {
+            lPtr += 2;
+        }
+        assert *lPtr == 789l;
+        unsafe {
+            lPtr -= 2;
+        }
+        assert *lPtr == 123l;
+    }
+
+    printf("All assertions passed!");
+}
