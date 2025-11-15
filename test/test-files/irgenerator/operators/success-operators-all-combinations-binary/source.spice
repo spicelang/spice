@@ -1,0 +1,25 @@
+type TLhs dyn;
+type TRhs dyn;
+type TRes dyn;
+
+f<T> getMinValue() {
+
+}
+
+p plusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    lhs += rhs;
+    assert lhs == expectedResult;
+}
+
+p plusEqualTest() {
+    // Double
+    plusEqualTestVarRhs<double, double>(1.234); // positive double lhs
+    plusEqualTestVarRhs<double, double>(-1.234); // negative double lhs
+}
+
+f<int> main() {
+    plusEqualTest(); // +=
+    // ToDo: Extend
+
+    printf("All assertions passed!");
+}

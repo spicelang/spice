@@ -55,3 +55,13 @@ public type U64 alias unsigned long;
 
 // Floating point type aliases
 public type F64 alias double;
+
+// Type constant lookup helpers
+type T double|int|unsigned int|long|unsigned long|short|unsigned short|char|byte;
+
+// Retrieve min value
+f<double> getMinValue<T>(T _double = 0.0) { return DOUBLE_MIN_VALUE; }
+f<int> getMinValue<T>(T _int = 0) { return INT_MIN_VALUE; }
+f<unsigned int> getMinValue<T>(T _unsignedInt = 0u) { return UINT_MIN_VALUE; }
+f<long> getMinValue<T>(T _long = 0l) { return LONG_MIN_VALUE; }
+f<unsigned long> getMinValue<T>(T _unsignedLong = 0ul) { return ULONG_MIN_VALUE; }
