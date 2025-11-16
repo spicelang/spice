@@ -56,10 +56,12 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateAdd(lhsV(), rhsLong, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
-  case COMB(TY_CHAR, TY_CHAR):
+  case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  case COMB(TY_CHAR, TY_INT): {
+    llvm::Value *rhsChar = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
+    return {.value = builder.CreateAdd(lhsV(), rhsChar, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
@@ -111,10 +113,12 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateSub(lhsV(), rhsLong, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
-  case COMB(TY_CHAR, TY_CHAR):
+  case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  case COMB(TY_CHAR, TY_INT): {
+    llvm::Value *rhsChar = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
+    return {.value = builder.CreateSub(lhsV(), rhsChar, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
@@ -167,8 +171,7 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateMul(lhsV(), rhsLong, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateMul(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
@@ -214,8 +217,7 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
-  case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_LONG, TY_LONG):
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE

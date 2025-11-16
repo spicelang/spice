@@ -1,8 +1,13 @@
+import "std/type/types";
+
+type T double|int|unsigned int|long|unsigned long|short|unsigned short|char|byte;
+
+f<double> getMinValue<double>() { return DOUBLE_MIN_VALUE; }
+f<int> getMinValue<T>(T _int = 0) { return INT_MIN_VALUE; }
+f<unsigned int> getMinValue<T>(T _unsignedInt = 0u) { return UINT_MIN_VALUE; }
+f<long> getMinValue<T>(T _long = 0l) { return LONG_MIN_VALUE; }
+f<unsigned long> getMinValue<T>(T _unsignedLong = 0ul) { return ULONG_MIN_VALUE; }
+
 f<int> main() {
-    heap int* iPtr = sNew<int>();
-    *iPtr = 123;
-    unsafe {
-        sDealloc(cast<heap byte*>(iPtr));
-    }
-    *iPtr = 321;
+    printf("%d", getMinValue<int>());
 }
