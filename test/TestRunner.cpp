@@ -14,7 +14,6 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
-#include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
