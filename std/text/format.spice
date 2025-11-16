@@ -20,7 +20,7 @@ type IntLongShort int|long|short;
  */
 public f<char> toUpper(char c) {
     if c >= MIN_LOWER_CHAR && c <= MAX_LOWER_CHAR {
-        c -= cast<char>(ASCII_SHIFT_OFFSET);
+        c -= ASCII_SHIFT_OFFSET;
     }
     return c;
 }
@@ -44,7 +44,7 @@ public f<String> toUpper(const String& text) {
  */
 public f<char> toLower(char c) {
     if c >= MIN_UPPER_CHAR && c <= MAX_UPPER_CHAR {
-        c += cast<char>(ASCII_SHIFT_OFFSET);
+        c += ASCII_SHIFT_OFFSET;
     }
     return c;
 }

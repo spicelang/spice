@@ -37,6 +37,9 @@ p plusEqualTest() {
     plusEqualTestOuter<long, int>(78l, 674, 752l, -752l, 596l, -596l);
     plusEqualTestOuter<long, short>(78l, 7s, 85l, -85l, -71l, 71l);
     plusEqualTestOuter<long, long>(78l, 2384723l, 2384801l, -2384801l, 2384645l, -2384645l);
+    // Lhs is char
+    plusEqualTestInner<char, int>('A', 5, 'F');
+    plusEqualTestInner<char, int>('A', -5, '<');
     // Lhs is ptr
     int[5] input = [0, 0, 0, 0, 0];
     plusEqualTestInnerUnsafe(&input[2], 2, &input[4]);
@@ -84,6 +87,9 @@ p minusEqualTest() {
     minusEqualTestOuter<long, int>(78l, 674, -596l, 596l, -752l, 752l);
     minusEqualTestOuter<long, short>(78l, 7s, 71l, -71l, -85l, 85l);
     minusEqualTestOuter<long, long>(78l, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    // Lhs is char
+    minusEqualTestInner<char, int>('A', 5, '<');
+    minusEqualTestInner<char, int>('A', -5, 'F');
     // Lhs is ptr
     int[5] input = [0, 0, 0, 0, 0];
     minusEqualTestInnerUnsafe(&input[2], 2, &input[0]);
@@ -142,7 +148,7 @@ p divEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedRes
 
 p divEqualTest() {
     // Lhs double
-    //divEqualTestOuter<double, double>(9.0, 3.0, 3.0, 3.0, -3.0, -3.0);
+    divEqualTestOuter<double, double>(9.0, 3.0, 3.0, 3.0, -3.0, -3.0);
     // Lhs int
     divEqualTestOuter<int, int>(42, 7, 6, 6, -6, -6);
     divEqualTestOuter<int, short>(42, 3s, 14, 14, -14, -14);
