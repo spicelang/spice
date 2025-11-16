@@ -1,6 +1,8 @@
 type TLhs dyn;
 type TRhs dyn;
 
+// ------------------------------------------ += ------------------------------------------
+
 p plusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
     lhs += rhs;
     assert lhs == expectedResult;
@@ -14,10 +16,10 @@ p plusEqualTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedRe
 }
 
 p plusEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
-    plusEqualTestInner(lhs, rhs, expectedResult1); // Lhs +, Rhs +
+    plusEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
     plusEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
-    plusEqualTestInner(-lhs, rhs, expectedResult3); // Lhs -, Rhs +
-    plusEqualTestInner(lhs, -rhs, expectedResult4); // Lhs +, Rhs -
+    plusEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    plusEqualTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
 }
 
 p plusEqualTest() {
@@ -45,6 +47,8 @@ p plusEqualTest() {
     plusEqualTestInnerUnsafe(&input[2], -2l, &input[0]);
 }
 
+// ------------------------------------------ -= ------------------------------------------
+
 p minusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
     lhs -= rhs;
     assert lhs == expectedResult;
@@ -58,10 +62,10 @@ p minusEqualTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedR
 }
 
 p minusEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
-    minusEqualTestInner(lhs, rhs, expectedResult1); // Lhs +, Rhs +
+    minusEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
     minusEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
-    minusEqualTestInner(-lhs, rhs, expectedResult3); // Lhs -, Rhs +
-    minusEqualTestInner(lhs, -rhs, expectedResult4); // Lhs +, Rhs -
+    minusEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    minusEqualTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
 }
 
 p minusEqualTest() {
@@ -74,7 +78,8 @@ p minusEqualTest() {
     // Lhs is short
     minusEqualTestOuter<short, int>(78s, 674, -596s, 596s, -752s, 752s);
     minusEqualTestOuter<short, short>(78s, 7s, 71s, -71s, -85s, 85s);
-    minusEqualTestOuter<short, long>(78s, 2384723l, -25349s, 25349s, -25505s, 25505s);
+    // Note: wrap-around consistent with short semantics
+    minusEqualTestOuter<short, long>(78s, 2384723l, cast<short>(78s - 2384723l), cast<short>(-78s - -2384723l), cast<short>(-78s - 2384723l), cast<short>(78s - -2384723l));
     // Lhs is long
     minusEqualTestOuter<long, int>(78l, 674, -596l, 596l, -752l, 752l);
     minusEqualTestOuter<long, short>(78l, 7s, 71l, -71l, -85l, 85l);
@@ -89,9 +94,74 @@ p minusEqualTest() {
     minusEqualTestInnerUnsafe(&input[2], -2l, &input[4]);
 }
 
+// ------------------------------------------ *= ------------------------------------------
+
+p mulEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs *= rhs;
+    assert lhs == expectedResult;
+}
+
+p mulEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+    mulEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    mulEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    mulEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    mulEqualTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p mulEqualTest() {
+    // Lhs double
+    mulEqualTestOuter<double, double>(1.5, 2.0, 3.0, 3.0, -3.0, -3.0);
+    // Lhs int
+    mulEqualTestOuter<int, int>(6, 7, 42, 42, -42, -42);
+    mulEqualTestOuter<int, short>(6, 3s, 18, 18, -18, -18);
+    mulEqualTestOuter<int, long>(6, 5l, 30, 30, -30, -30);
+    // Lhs short
+    mulEqualTestOuter<short, int>(6s, 7, 42s, 42s, -42s, -42s);
+    mulEqualTestOuter<short, short>(6s, 3s, 18s, 18s, -18s, -18s);
+    // Note: wrap-around consistent with short semantics
+    mulEqualTestOuter<short, long>(200s, 2000l, cast<short>(200 * 2000), cast<short>(-200 * -2000), cast<short>(-200 * 2000), cast<short>(200 * -2000));
+    // Lhs long
+    mulEqualTestOuter<long, int>(6l, 7, 42l, 42l, -42l, -42l);
+    mulEqualTestOuter<long, short>(6l, 3s, 18l, 18l, -18l, -18l);
+    mulEqualTestOuter<long, long>(6l, 5l, 30l, 30l, -30l, -30l);
+}
+
+// ------------------------------------------ /= ------------------------------------------
+
+p divEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs /= rhs;
+    assert lhs == expectedResult;
+}
+
+p divEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+    divEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    divEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    divEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    divEqualTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p divEqualTest() {
+    // Lhs double
+    //divEqualTestOuter<double, double>(9.0, 3.0, 3.0, 3.0, -3.0, -3.0);
+    // Lhs int
+    divEqualTestOuter<int, int>(42, 7, 6, 6, -6, -6);
+    divEqualTestOuter<int, short>(42, 3s, 14, 14, -14, -14);
+    divEqualTestOuter<int, long>(42, 6l, 7, 7, -7, -7);
+    // Lhs short
+    divEqualTestOuter<short, int>(42s, 7, 6s, 6s, -6s, -6s);
+    divEqualTestOuter<short, short>(42s, 3s, 14s, 14s, -14s, -14s);
+    divEqualTestOuter<short, long>(100s, 25l, 4s, 4s, -4s,- 4s);
+    // Lhs long
+    divEqualTestOuter<long, int>(42l, 7, 6l, 6l, -6l, -6l);
+    divEqualTestOuter<long, short>(42l, 3s, 14l, 14l, -14l, -14l);
+    divEqualTestOuter<long, long>(42l, 6l, 7l, 7l, -7l, -7l);
+}
+
 f<int> main() {
     plusEqualTest(); // +=
     minusEqualTest(); // -=
+    mulEqualTest(); // *=
+    divEqualTest(); // /=
     // ToDo: Extend
 
     printf("All assertions passed!");

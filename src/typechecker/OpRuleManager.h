@@ -78,7 +78,6 @@ static constexpr BinaryOpRule MUL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long *= int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long *= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long *= long -> long
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte *= byte -> byte
 };
 
 // Div equal op rules
@@ -93,7 +92,6 @@ static constexpr BinaryOpRule DIV_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long /= int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long /= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long /= long -> long
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte /= byte -> byte
 };
 
 // Rem equal op rules
