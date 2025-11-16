@@ -50,8 +50,6 @@ static constexpr BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long += int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long += short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long += long -> long
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte += byte -> byte
-    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char += char -> char
 };
 
 // Minus equal op rules
@@ -66,8 +64,6 @@ static constexpr BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long -= int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long -= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long -= long -> long
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte -= byte -> byte
-    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char -= char -> char
 };
 
 // Mul equal op rules

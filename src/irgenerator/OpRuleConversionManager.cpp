@@ -57,9 +57,6 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
     return {.value = builder.CreateAdd(lhsV(), rhsLong, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
-  case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
@@ -112,9 +109,6 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
     return {.value = builder.CreateSub(lhsV(), rhsLong, "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
-  case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {

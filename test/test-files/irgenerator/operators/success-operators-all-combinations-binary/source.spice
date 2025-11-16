@@ -1,24 +1,97 @@
 type TLhs dyn;
 type TRhs dyn;
-type TRes dyn;
 
-f<T> getMinValue() {
-
-}
-
-p plusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+p plusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
     lhs += rhs;
     assert lhs == expectedResult;
 }
 
+p plusEqualTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedResult) {
+    unsafe {
+        lhs += rhs;
+    }
+    assert lhs == expectedResult;
+}
+
+p plusEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+    plusEqualTestInner(lhs, rhs, expectedResult1); // Lhs +, Rhs +
+    plusEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    plusEqualTestInner(-lhs, rhs, expectedResult3); // Lhs -, Rhs +
+    plusEqualTestInner(lhs, -rhs, expectedResult4); // Lhs +, Rhs -
+}
+
 p plusEqualTest() {
-    // Double
-    plusEqualTestVarRhs<double, double>(1.234); // positive double lhs
-    plusEqualTestVarRhs<double, double>(-1.234); // negative double lhs
+    // Lhs is double
+    plusEqualTestOuter<double, double>(1.234, 98.7654, 99.9994, -99.9994, 97.5314, -97.5314);
+    // Lhs is int
+    plusEqualTestOuter<int, int>(78, 674, 752, -752, 596, -596);
+    plusEqualTestOuter<int, short>(78, 7s, 85, -85, -71, 71);
+    plusEqualTestOuter<int, long>(78, 2384723l, 2384801, -2384801, 2384645, -2384645);
+    // Lhs is short
+    plusEqualTestOuter<short, int>(78s, 674, 752s, -752s, 596s, -596s);
+    plusEqualTestOuter<short, short>(78s, 7s, 85s, -85s, -71s, 71s);
+    plusEqualTestOuter<short, long>(78s, 2384723l, 25505s, -25505s, 25349s, -25349s);
+    // Lhs is long
+    plusEqualTestOuter<long, int>(78l, 674, 752l, -752l, 596l, -596l);
+    plusEqualTestOuter<long, short>(78l, 7s, 85l, -85l, -71l, 71l);
+    plusEqualTestOuter<long, long>(78l, 2384723l, 2384801l, -2384801l, 2384645l, -2384645l);
+    // Lhs is ptr
+    int[5] input = [0, 0, 0, 0, 0];
+    plusEqualTestInnerUnsafe(&input[2], 2, &input[4]);
+    plusEqualTestInnerUnsafe(&input[2], -2, &input[0]);
+    plusEqualTestInnerUnsafe(&input[2], 2s, &input[4]);
+    plusEqualTestInnerUnsafe(&input[2], -2s, &input[0]);
+    plusEqualTestInnerUnsafe(&input[2], 2l, &input[4]);
+    plusEqualTestInnerUnsafe(&input[2], -2l, &input[0]);
+}
+
+p minusEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs -= rhs;
+    assert lhs == expectedResult;
+}
+
+p minusEqualTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedResult) {
+    unsafe {
+        lhs -= rhs;
+    }
+    assert lhs == expectedResult;
+}
+
+p minusEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+    minusEqualTestInner(lhs, rhs, expectedResult1); // Lhs +, Rhs +
+    minusEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    minusEqualTestInner(-lhs, rhs, expectedResult3); // Lhs -, Rhs +
+    minusEqualTestInner(lhs, -rhs, expectedResult4); // Lhs +, Rhs -
+}
+
+p minusEqualTest() {
+    // Lhs is double
+    minusEqualTestOuter<double, double>(1.234, 98.7654, -97.5314, 97.5314, -99.9994, 99.9994);
+    // Lhs is int
+    minusEqualTestOuter<int, int>(78, 674, -596, 596, -752, 752);
+    minusEqualTestOuter<int, short>(78, 7s, 71, -71, -85, 85);
+    minusEqualTestOuter<int, long>(78, 2384723l, -2384645, 2384645, -2384801, 2384801);
+    // Lhs is short
+    minusEqualTestOuter<short, int>(78s, 674, -596s, 596s, -752s, 752s);
+    minusEqualTestOuter<short, short>(78s, 7s, 71s, -71s, -85s, 85s);
+    minusEqualTestOuter<short, long>(78s, 2384723l, -25349s, 25349s, -25505s, 25505s);
+    // Lhs is long
+    minusEqualTestOuter<long, int>(78l, 674, -596l, 596l, -752l, 752l);
+    minusEqualTestOuter<long, short>(78l, 7s, 71l, -71l, -85l, 85l);
+    minusEqualTestOuter<long, long>(78l, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    // Lhs is ptr
+    int[5] input = [0, 0, 0, 0, 0];
+    minusEqualTestInnerUnsafe(&input[2], 2, &input[0]);
+    minusEqualTestInnerUnsafe(&input[2], -2, &input[4]);
+    minusEqualTestInnerUnsafe(&input[2], 2s, &input[0]);
+    minusEqualTestInnerUnsafe(&input[2], -2s, &input[4]);
+    minusEqualTestInnerUnsafe(&input[2], 2l, &input[0]);
+    minusEqualTestInnerUnsafe(&input[2], -2l, &input[4]);
 }
 
 f<int> main() {
     plusEqualTest(); // +=
+    minusEqualTest(); // -=
     // ToDo: Extend
 
     printf("All assertions passed!");
