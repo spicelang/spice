@@ -167,6 +167,7 @@ set(SOURCES
         util/CompilerWarning.h
         util/GlobalDefinitions.h
         util/Timer.h
+        util/SaveAndRestore.h
         util/DeferredLogic.h
         util/Memory.h
         util/RawStringOStream.cpp
