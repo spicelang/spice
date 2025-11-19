@@ -3,6 +3,7 @@
 #include "CSTVisualizer.h"
 
 #include <util/CommonUtil.h>
+#include <util/SaveAndRestore.h>
 
 namespace spice::compiler {
 
@@ -17,8 +18,10 @@ std::string CSTVisualizer::buildRule(antlr4::ParserRuleContext *ctx) {
   // Build result
   result << nodeId << R"( [color="lightgreen",label=")" << ruleName << "\"];\n";
 
+  // Save the current node id and restore it at the end of the scope
+  SaveAndRestore restoreParentNodeId(parentNodeId);
+
   // Link parent node with the current one
-  const std::string parentNodeIdBackup = parentNodeId;
   if (!parentNodeId.empty())
     result << getSpaces() << parentNodeId << " -> " << nodeId << ";\n";
   parentNodeId = nodeId; // Set parentNodeId for children
@@ -40,9 +43,6 @@ std::string CSTVisualizer::buildRule(antlr4::ParserRuleContext *ctx) {
       result << std::any_cast<std::string>(visit(child));
     }
   }
-
-  // Restore parent node id
-  parentNodeId = parentNodeIdBackup;
 
   return result.str();
 }

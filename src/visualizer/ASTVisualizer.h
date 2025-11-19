@@ -9,6 +9,7 @@
 #include <ast/ASTNodes.h>
 #include <ast/AbstractASTVisitor.h>
 #include <util/CommonUtil.h>
+#include <util/SaveAndRestore.h>
 
 namespace spice::compiler {
 
@@ -113,7 +114,7 @@ public:
 private:
   // Members
   const std::vector<std::string> nodeNames;
-  std::stack<std::string> parentNodeIds;
+  std::string parentNodeId;
 
   // Private methods
   template <typename T>
@@ -132,18 +133,17 @@ private:
     result << nodeId << R"( [color="lightgreen",label=")" << nodeName << "\"];\n";
 
     // Link parent node with the current one
-    if (!parentNodeIds.empty())
-      result << " " << parentNodeIds.top() << " -> " << nodeId << ";\n";
+    if (!parentNodeId.empty())
+      result << " " << parentNodeId << " -> " << nodeId << ";\n";
 
-    parentNodeIds.push(nodeId); // Set parentNodeId for children
+    // Set parentNodeId for children
+    SaveAndRestore restoreParentNodeId(parentNodeId, nodeId);
 
     // Visit all the children
-    for (ASTNode *child : node->getChildren())
-      if (child != nullptr)
-        result << " " << std::any_cast<std::string>(visit(child));
-
-    // Remove parent node id from the stack
-    parentNodeIds.pop();
+    for (ASTNode *child : node->getChildren()) {
+      assert(child != nullptr);
+      result << " " << std::any_cast<std::string>(visit(child));
+    }
 
     return result.str();
   }

@@ -7,9 +7,12 @@
 
 namespace spice::compiler {
 
+/**
+ * RAII helper that can run a lambda at the end of the scope
+ **/
 struct DeferredLogic {
   // Constructors
-  explicit DeferredLogic(std::function<void()> deferredFunc, bool triggerOnDestruct = true)
+  explicit DeferredLogic(std::function<void()> deferredFunc, const bool triggerOnDestruct = true)
       : deferredFunc(std::move(deferredFunc)), triggerOnDestruct(triggerOnDestruct) {}
 
   // Destructor
