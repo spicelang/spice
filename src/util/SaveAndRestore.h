@@ -26,7 +26,7 @@ template <typename T> struct SaveAndRestore {
 private:
   // Private members
   T &value;
-  T &oldValue;
+  T oldValue;
 };
 
 } // namespace spice::compiler
