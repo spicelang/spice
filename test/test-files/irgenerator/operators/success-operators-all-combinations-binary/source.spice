@@ -338,6 +338,30 @@ p xorEqualTest() {
     xorEqualTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
 }
 
+// ------------------------------------------ | ------------------------------------------
+
+p bitwiseOrTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    const TLhs actualResult = lhs | rhs;
+    assert actualResult == expectedResult;
+}
+
+p bitwiseOrTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    bitwiseOrTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p bitwiseOrTest() {
+    // Lhs int
+    bitwiseOrTestOuter<int, int>(5, 3, 7);
+    // Lhs short
+    bitwiseOrTestOuter<short, short>(8s, 1s, 9s);
+    // Lhs long
+    bitwiseOrTestOuter<long, long>(1234876l, 21l, 1234877l);
+    // Lhs byte
+    bitwiseOrTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
+    // Lhs bool
+    bitwiseOrTestOuter<bool, bool>(false, true, true);
+}
+
 f<int> main() {
     plusEqualTest(); // +=
     minusEqualTest(); // -=
@@ -349,6 +373,8 @@ f<int> main() {
     andEqualTest(); // &=
     orEqualTest(); // |=
     xorEqualTest(); // ^=
+    bitwiseOrTest(); // |
+    bitwiseAndTest(); // &
     // ToDo: Extend
 
     printf("All assertions passed!");
