@@ -51,13 +51,4 @@ TEST(FileUtilTest, GetLineCountNonExisting) {
   }
 }
 
-TEST(FileUtilTest, IsCommandAvailable) {
-  ASSERT_TRUE(FileUtil::isCommandAvailable("dot"));
-  ASSERT_FALSE(FileUtil::isCommandAvailable("non-existing-command"));
-}
-
-TEST(FileUtilTest, IsGraphvizInstalled) {
-  ASSERT_TRUE(FileUtil::isGraphvizInstalled());
-}
-
 } // namespace spice::testing

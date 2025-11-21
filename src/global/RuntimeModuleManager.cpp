@@ -6,7 +6,7 @@
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
-#include <util/FileUtil.h>
+#include <util/SystemUtil.h>
 
 namespace spice::compiler {
 
@@ -42,7 +42,7 @@ bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) cons
 SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) const {
   const auto [importName, fileName] = resolveNamePair(requestedModule);
   const std::string fileNameWithExt = std::string(fileName) + ".spice";
-  const std::filesystem::path filePath = FileUtil::getStdDir() / "runtime" / fileNameWithExt;
+  const std::filesystem::path filePath = SystemUtil::getStdDir() / "runtime" / fileNameWithExt;
   assert(filePath != parentSourceFile->filePath);
 
   // Instruct the global resource manager to create a new source file

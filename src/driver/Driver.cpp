@@ -5,7 +5,7 @@
 #include <exception/CliError.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
-#include <util/FileUtil.h>
+#include <util/SystemUtil.h>
 
 #include <llvm/Support/CommandLine.h>
 #include <llvm/TargetParser/Host.h>
@@ -38,7 +38,7 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
 
     if (shouldInstall || shouldUninstall) {
       // Prepare the installation path
-      std::filesystem::path installPath = FileUtil::getSpiceBinDir();
+      std::filesystem::path installPath = SystemUtil::getSpiceBinDir();
       installPath /= cliOptions.mainSourceFile.stem();
       if (!performDryRun)
         create_directories(installPath);

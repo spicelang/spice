@@ -1,13 +1,13 @@
 // Copyright (c) 2021-2025 ChilliBits. All rights reserved.
 
 #include "ExternalLinkerInterface.h"
-#include "util/Timer.h"
 
 #include <iostream>
 
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
-#include <util/FileUtil.h>
+#include <util/SystemUtil.h>
+#include <util/Timer.h>
 
 namespace spice::compiler {
 
@@ -34,7 +34,7 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-ltsan");
     break;
   case Sanitizer::MEMORY:
-    addLinkerFlag("-L/usr/local/lib/clang/21/lib/x86_64-unknown-linux-gnu");
+    addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
     addLinkerFlag("-lclang_rt.msan");
     addLinkerFlag("-lm");
     break;
@@ -56,9 +56,9 @@ void ExternalLinkerInterface::link() const {
 
   // Build the linker command
   std::stringstream linkerCommandBuilder;
-  const auto [linkerInvokerName, linkerInvokerPath] = FileUtil::findLinkerInvoker();
+  const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
   linkerCommandBuilder << linkerInvokerPath;
-  const auto [linkerName, linkerPath] = FileUtil::findLinker(cliOptions);
+  const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
   linkerCommandBuilder << " -fuse-ld=" << linkerPath;
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
@@ -69,17 +69,20 @@ void ExternalLinkerInterface::link() const {
   for (const std::string &objectFilePath : objectFilePaths)
     linkerCommandBuilder << " " << objectFilePath;
 
+  // Assemble the linker command
+  const std::string linkerCommand = linkerCommandBuilder.str();
+
   // Print status message
   if (cliOptions.printDebugOutput) {
     std::cout << "\nLinking with: " << linkerInvokerName << " (invoker) / " << linkerName << " (linker)"; // GCOV_EXCL_LINE
+    std::cout << "\nLinker command: " << linkerCommand;                                                   // GCOV_EXCL_LINE
     std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n";                        // GCOV_EXCL_LINE
   }
 
   // Call the linker
   Timer timer;
   timer.start();
-  const std::string linkerCommand = linkerCommandBuilder.str();
-  const auto [output, exitCode] = FileUtil::exec(linkerCommand);
+  const auto [output, exitCode] = SystemUtil::exec(linkerCommand);
   timer.stop();
 
   // Check for linker error

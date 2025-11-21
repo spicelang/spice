@@ -9,6 +9,7 @@ set(SOURCES
         unittest/UnitBlockAllocator.cpp
         unittest/UnitCommonUtil.cpp
         unittest/UnitFileUtil.cpp
+        unittest/UnitSystemUtil.cpp
         unittest/UnitDriver.cpp)
 
 add_executable(spicetest ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

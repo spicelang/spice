@@ -95,6 +95,7 @@ set(SOURCES
         # Utility
         util/CommonUtil.cpp
         util/FileUtil.cpp
+        util/SystemUtil.cpp
         util/CustomHashFunctions.cpp
         util/CodeLoc.cpp
         util/CompilerWarning.cpp
