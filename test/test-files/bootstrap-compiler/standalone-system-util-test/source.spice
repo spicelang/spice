@@ -1,4 +1,4 @@
-import "bootstrap/util/file-util";
+import "bootstrap/util/system-util";
 
 f<int> main() {
     printf("GCC installed: %s\n", isCommandAvailable("gcc") ? "yes" : "no");
