@@ -7,7 +7,7 @@
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
-#include <util/FileUtil.h>
+#include <util/SystemUtil.h>
 
 namespace spice::compiler {
 
@@ -30,12 +30,12 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   std::filesystem::path basePath;
   if (isStd) { // Include source file from standard library
     // Find std library
-    const std::filesystem::path stdPath = FileUtil::getStdDir();
+    const std::filesystem::path stdPath = SystemUtil::getStdDir();
     // Format: /dir/to/path/file
     basePath = stdPath / node->importPath.substr(node->importPath.find("std/") + 4);
   } else if (isBootstrap) { // Include source file from bootstrap library
     // Find bootstrap library
-    const std::filesystem::path bootstrapPath = FileUtil::getBootstrapDir();
+    const std::filesystem::path bootstrapPath = SystemUtil::getBootstrapDir();
     // Format: /dir/to/path/file
     basePath = bootstrapPath / node->importPath.substr(node->importPath.find("bootstrap/") + 10);
   } else { // Include own source file

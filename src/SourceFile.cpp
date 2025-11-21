@@ -23,6 +23,7 @@
 #include <typechecker/TypeChecker.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
+#include <util/SystemUtil.h>
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
@@ -823,7 +824,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   if (cliOptions.dump.dumpToFiles) {
     // Check if graphviz is installed
     // GCOV_EXCL_START
-    if (!FileUtil::isGraphvizInstalled())
+    if (!SystemUtil::isGraphvizInstalled())
       throw CompilerError(IO_ERROR, "Please check if you have installed Graphviz and added it to the PATH variable");
     // GCOV_EXCL_STOP
 
@@ -839,7 +840,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     svgFilePath.replace_extension("svg");
     dotFilePath.make_preferred();
     svgFilePath.make_preferred();
-    FileUtil::exec("dot -T svg -o" + svgFilePath.string() + " " + dotFilePath.string());
+    SystemUtil::exec("dot -T svg -o" + svgFilePath.string() + " " + dotFilePath.string());
     std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
   } else {
     // Dump to console

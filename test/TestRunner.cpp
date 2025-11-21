@@ -16,7 +16,7 @@
 #include <global/TypeRegistry.h>
 #include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/SymbolTable.h>
-#include <util/FileUtil.h>
+#include <util/SystemUtil.h>
 
 #include "driver/TestDriver.h"
 #include "util/TestUtil.h"
@@ -260,7 +260,7 @@ void execTestCase(const TestCase &testCase) {
       cmd << TestUtil::getDefaultExecutableName();
       if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-      const auto [output, exitCode] = FileUtil::exec(cmd.str(), true);
+      const auto [output, exitCode] = SystemUtil::exec(cmd.str(), true);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one
@@ -285,7 +285,7 @@ void execTestCase(const TestCase &testCase) {
             EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
             gdbScriptPath.make_preferred();
             const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
-            const auto [output, exitCode] = FileUtil::exec(cmd);
+            const auto [output, exitCode] = SystemUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
             EXPECT_EQ(0, exitCode) << "GDB exited with non-zero exit code when running debug script";
