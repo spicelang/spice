@@ -163,11 +163,192 @@ p divEqualTest() {
     divEqualTestOuter<long, long>(42l, 6l, 7l, 7l, -7l, -7l);
 }
 
+// ------------------------------------------ %= ------------------------------------------
+
+p remEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs %= rhs;
+    assert lhs == expectedResult;
+}
+
+p remEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+    remEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    remEqualTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    remEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    remEqualTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p remEqualTest() {
+    // Lhs double
+    remEqualTestOuter<double, double>(9.0, 3.0, 0.0, 0.0, 0.0, 0.0);
+    // Lhs int
+    remEqualTestOuter<int, int>(42, 7, -0, -0, 0, 0);
+    remEqualTestOuter<int, short>(42, 8s, 2, -2, -2, 2);
+    remEqualTestOuter<int, long>(42, 9l, 6, -6, -6, 6);
+    // Lhs short
+    remEqualTestOuter<short, int>(42s, 7, -0s, -0s, 0s, 0s);
+    remEqualTestOuter<short, short>(42s, 8s, 2s, -2s, -2s, 2s);
+    remEqualTestOuter<short, long>(100s, 26l, 22s, -22s, -22s, 22s);
+    // Lhs long
+    remEqualTestOuter<long, int>(42l, 7, -0l, -0l, 0l, 0l);
+    remEqualTestOuter<long, short>(42l, 10s, 2l, -2l, -2l, 2l);
+    remEqualTestOuter<long, long>(10932847123l, 234324l, 226579l, -226579l, -226579l, 226579l);
+    // Lhs byte
+    remEqualTestInner<byte, byte>(cast<byte>(42), cast<byte>(41), cast<byte>(1));
+}
+
+// ------------------------------------------ <<= -----------------------------------------
+
+p shlEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs <<= rhs;
+    assert lhs == expectedResult;
+}
+
+p shlEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2) {
+    shlEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    shlEqualTestInner(-lhs, rhs, expectedResult2);  // Lhs -, Rhs +
+}
+
+p shlEqualTest() {
+    // Lhs int
+    shlEqualTestOuter<int, int>(5, 3, 40, -40);
+    shlEqualTestOuter<int, short>(5, 2s, 20, -20);
+    shlEqualTestOuter<int, long>(5, 4l, 80, -80);
+    // Lhs short
+    shlEqualTestOuter<short, int>(8s, 2, 32s, -32s);
+    shlEqualTestOuter<short, short>(8s, 1s, 16s, -16s);
+    shlEqualTestOuter<short, long>(8s, 6l, 512s, -512s);
+    // Lhs long
+    shlEqualTestOuter<long, int>(7l, 7, 896l, -896l);
+    shlEqualTestOuter<long, short>(7l, 10s, 7168l, -7168l);
+    shlEqualTestOuter<long, long>(1234876l, 21l, 2589722673152l, -2589722673152l);
+    // Lhs byte
+    shlEqualTestInner<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(84));
+}
+
+// ------------------------------------------ >>= -----------------------------------------
+
+p shrEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs >>= rhs;
+    assert lhs == expectedResult;
+}
+
+p shrEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2) {
+    shrEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    shrEqualTestInner(-lhs, rhs, expectedResult2);  // Lhs -, Rhs +
+}
+
+p shrEqualTest() {
+    // Lhs int
+    shrEqualTestOuter<int, int>(5, 3, 0, -1);
+    shrEqualTestOuter<int, short>(5, 2s, 1, -2);
+    shrEqualTestOuter<int, long>(5, 1l, 2, -3);
+    // Lhs short
+    shrEqualTestOuter<short, int>(8s, 2, 2s, -2s);
+    shrEqualTestOuter<short, short>(8s, 1s, 4s, 32764s);
+    shrEqualTestOuter<short, long>(8s, 3l, 1s, -1s);
+    // Lhs long
+    shrEqualTestOuter<long, int>(23425l, 7, 183l, -184l);
+    shrEqualTestOuter<long, short>(34587334534l, 10s, 33776693l, -33776694l);
+    shrEqualTestOuter<long, long>(1234876l, 21l, 0l, -1l);
+    // Lhs byte
+    shrEqualTestInner<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(21));
+}
+
+// ------------------------------------------ &= ------------------------------------------
+
+p andEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs &= rhs;
+    assert lhs == expectedResult;
+}
+
+p andEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    andEqualTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p andEqualTest() {
+    // Lhs int
+    andEqualTestOuter<int, int>(5, 3, 1);
+    andEqualTestOuter<int, short>(5, 2s, 0);
+    andEqualTestOuter<int, long>(5, 1l, 1);
+    // Lhs short
+    andEqualTestOuter<short, int>(8s, 2, 0s);
+    andEqualTestOuter<short, short>(8s, 1s, 0s);
+    andEqualTestOuter<short, long>(8s, 3l, 0s);
+    // Lhs long
+    andEqualTestOuter<long, int>(23425l, 7, 1l);
+    andEqualTestOuter<long, short>(34587334534l, 10s, 2l);
+    andEqualTestOuter<long, long>(1234876l, 21l, 20l);
+    // Lhs byte
+    andEqualTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(0));
+}
+
+// ------------------------------------------ |= ------------------------------------------
+
+p orEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs |= rhs;
+    assert lhs == expectedResult;
+}
+
+p orEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    orEqualTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p orEqualTest() {
+    // Lhs int
+    orEqualTestOuter<int, int>(5, 3, 7);
+    orEqualTestOuter<int, short>(5, 2s, 7);
+    orEqualTestOuter<int, long>(5, 1l, 5);
+    // Lhs short
+    orEqualTestOuter<short, int>(8s, 2, 10s);
+    orEqualTestOuter<short, short>(8s, 1s, 9s);
+    orEqualTestOuter<short, long>(8s, 3l, 11s);
+    // Lhs long
+    orEqualTestOuter<long, int>(23425l, 7, 23431l);
+    orEqualTestOuter<long, short>(34587334534l, 10s, 34587334542l);
+    orEqualTestOuter<long, long>(1234876l, 21l, 1234877l);
+    // Lhs byte
+    orEqualTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
+}
+
+// ------------------------------------------ ^= ------------------------------------------
+
+p xorEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    lhs ^= rhs;
+    assert lhs == expectedResult;
+}
+
+p xorEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    xorEqualTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p xorEqualTest() {
+    // Lhs int
+    xorEqualTestOuter<int, int>(5, 3, 6);
+    xorEqualTestOuter<int, short>(5, 2s, 7);
+    xorEqualTestOuter<int, long>(5, 1l, 4);
+    // Lhs short
+    xorEqualTestOuter<short, int>(8s, 2, 10s);
+    xorEqualTestOuter<short, short>(8s, 1s, 9s);
+    xorEqualTestOuter<short, long>(8s, 3l, 11s);
+    // Lhs long
+    xorEqualTestOuter<long, int>(23425l, 7, 23430l);
+    xorEqualTestOuter<long, short>(34587334534l, 10s, 34587334540l);
+    xorEqualTestOuter<long, long>(1234876l, 21l, 1234857l);
+    // Lhs byte
+    xorEqualTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
+}
+
 f<int> main() {
     plusEqualTest(); // +=
     minusEqualTest(); // -=
     mulEqualTest(); // *=
     divEqualTest(); // /=
+    remEqualTest(); // %=
+    shlEqualTest(); // <<=
+    shrEqualTest(); // >>=
+    andEqualTest(); // &=
+    orEqualTest(); // |=
+    xorEqualTest(); // ^=
     // ToDo: Extend
 
     printf("All assertions passed!");
