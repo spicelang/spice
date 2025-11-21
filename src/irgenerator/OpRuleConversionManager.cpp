@@ -545,13 +545,12 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateICmpEQ(lhsLong, rhsV())};
   }
-  case COMB(TY_INT, TY_BYTE): // fallthrough
   case COMB(TY_INT, TY_CHAR): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpEQ(lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), lhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -564,7 +563,6 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateICmpEQ(lhsLong, rhsV())};
   }
-  case COMB(TY_SHORT, TY_BYTE): // fallthrough
   case COMB(TY_SHORT, TY_CHAR): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpEQ(lhsV(), rhsShort)};
@@ -580,27 +578,18 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
-  case COMB(TY_LONG, TY_BYTE): // fallthrough
   case COMB(TY_LONG, TY_CHAR): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpEQ(lhsV(), rhsLong)};
   }
-  case COMB(TY_BYTE, TY_INT): // fallthrough
-  case COMB(TY_CHAR, TY_INT): {
-    llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpEQ(lhsInt, rhsV())};
-  }
-  case COMB(TY_BYTE, TY_SHORT): // fallthrough
-  case COMB(TY_CHAR, TY_SHORT): {
-    llvm::Value *lhsShort = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpEQ(lhsShort, rhsV())};
-  }
-  case COMB(TY_BYTE, TY_LONG): // fallthrough
+  case COMB(TY_BYTE, TY_BYTE):
+    return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
+  case COMB(TY_CHAR, TY_INT):   // fallthrough
+  case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG): {
-    llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpEQ(lhsLong, rhsV())};
+    llvm::Value *lhsCasted = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
+    return {.value = builder.CreateICmpEQ(lhsCasted, rhsV())};
   }
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
   case COMB(TY_STRING, TY_STRING): {
@@ -615,7 +604,7 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
     llvm::Function *memcmpFct = stdFunctionManager.getMemcmpFct();
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
-    return {.value = builder.CreateICmpEQ(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
+    return {.value = builder.CreateICmpEQ(memcmpResult, builder.getInt32(0))};
   }
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
@@ -679,7 +668,6 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateICmpNE(lhsLong, rhsV())};
   }
-  case COMB(TY_INT, TY_BYTE): // fallthrough
   case COMB(TY_INT, TY_CHAR): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpNE(lhsV(), rhsInt)};
@@ -698,7 +686,6 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateICmpNE(lhsLong, rhsV())};
   }
-  case COMB(TY_SHORT, TY_BYTE): // fallthrough
   case COMB(TY_SHORT, TY_CHAR): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpNE(lhsV(), rhsShort)};
@@ -714,27 +701,18 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
-  case COMB(TY_LONG, TY_BYTE): // fallthrough
   case COMB(TY_LONG, TY_CHAR): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned());
     return {.value = builder.CreateICmpNE(lhsV(), rhsLong)};
   }
-  case COMB(TY_BYTE, TY_INT):
-  case COMB(TY_CHAR, TY_INT): {
-    llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpNE(lhsInt, rhsV())};
-  }
-  case COMB(TY_BYTE, TY_SHORT): // fallthrough
-  case COMB(TY_CHAR, TY_SHORT): {
-    llvm::Value *lhsShort = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpNE(lhsShort, rhsV())};
-  }
-  case COMB(TY_BYTE, TY_LONG): // fallthrough
+  case COMB(TY_BYTE, TY_BYTE):
+    return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
+  case COMB(TY_CHAR, TY_INT):   // fallthrough
+  case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG): {
-    llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateICmpNE(lhsLong, rhsV())};
+    llvm::Value *lhsCasted = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
+    return {.value = builder.CreateICmpNE(lhsCasted, rhsV())};
   }
-  case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
   case COMB(TY_STRING, TY_STRING): {
@@ -750,7 +728,7 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
     llvm::Function *memcmpFct = stdFunctionManager.getMemcmpFct();
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
-    return {.value = builder.CreateICmpNE(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
+    return {.value = builder.CreateICmpNE(memcmpResult, builder.getInt32(0))};
   }
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
