@@ -233,8 +233,12 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
-  case COMB(TY_DOUBLE, TY_DOUBLE):
+  case COMB(TY_DOUBLE, TY_DOUBLE): {
+    // LLVM generates a call to fmod on Linux systems
+    if (irGenerator->cliOptions.targetTriple.isOSLinux())
+      irGenerator->resourceManager.linker.requestLibMathLinkage();
     return {.value = builder.CreateFRem(lhsV(), rhsV())};
+  }
   case COMB(TY_INT, TY_INT):
     return {.value = builder.CreateSRem(lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -1410,8 +1414,12 @@ LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExpr
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
-  case COMB(TY_DOUBLE, TY_DOUBLE):
+  case COMB(TY_DOUBLE, TY_DOUBLE): {
+    // LLVM generates a call to fmod on Linux systems
+    if (irGenerator->cliOptions.targetTriple.isOSLinux())
+      irGenerator->resourceManager.linker.requestLibMathLinkage();
     return {.value = builder.CreateFRem(lhsV(), rhsV())};
+  }
   case COMB(TY_INT, TY_INT):
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {

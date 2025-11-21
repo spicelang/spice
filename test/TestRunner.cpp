@@ -221,6 +221,9 @@ void execTestCase(const TestCase &testCase) {
       if (!objectFilesEmitted)
         mainSourceFile->runObjectEmitter();
 
+      // Conclude the compilation
+      mainSourceFile->concludeCompilation();
+
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
@@ -229,9 +232,6 @@ void execTestCase(const TestCase &testCase) {
       if (exists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
-
-      // Conclude the compilation
-      mainSourceFile->concludeCompilation();
 
       // Prepare and run linker
       resourceManager.linker.prepare();

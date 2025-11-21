@@ -21,6 +21,7 @@ public:
   void addObjectFilePath(const std::string &objectFilePath);
   void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
+  void requestLibMathLinkage();
 
   // Public members
   std::filesystem::path outputPath;
@@ -30,6 +31,7 @@ private:
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags;
+  bool linkLibMath = false;
 };
 
 } // namespace spice::compiler
