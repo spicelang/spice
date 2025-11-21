@@ -1,153 +1,91 @@
 type TLhs dyn;
 type TRhs dyn;
 
-// ------------------------------------------ == -----------------------------------------
+// ------------------------------------------ <= -----------------------------------------
 
-p equalTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
-    const bool actualResult = lhs == rhs;
+p lessEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
+    const bool actualResult = lhs <= rhs;
     assert actualResult == expectedResult;
 }
 
-p equalTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult1, const bool expectedResult2, const bool expectedResult3, const bool expectedResult4) {
-    equalTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    equalTestInner(lhs, -rhs, expectedResult2);  // Lhs +, Rhs -
-    equalTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
-    equalTestInner(-lhs, -rhs, expectedResult4); // Lhs -, Rhs -
+p lessEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult1, const bool expectedResult2, const bool expectedResult3, const bool expectedResult4) {
+    lessEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    lessEqualTestInner(lhs, -rhs, expectedResult2);  // Lhs +, Rhs -
+    lessEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    lessEqualTestInner(-lhs, -rhs, expectedResult4); // Lhs -, Rhs -
 }
 
-p equalTest() {
-    // Lhs is ptr
-    int i = 213;
-    int* iPtr = &i;
-    equalTestInner<int*, int*>(iPtr, iPtr, false);
+p lessEqualTest() {
     // Lhs double
-    equalTestOuter<double, int>(87.0, 87, true, false, false, true);
-    equalTestOuter<double, short>(14.0, 14s, true, false, false, true);
-    equalTestOuter<double, long>(2349234.0, 2349234l, true, false, false, true);
+    lessEqualTestOuter<double, double>(87.123, 87.124, true, false, false, true);
+    lessEqualTestOuter<double, int>(87.0, 88, true, false, false, true);
+    lessEqualTestOuter<double, short>(14.0, 15s, true, false, false, true);
+    lessEqualTestOuter<double, long>(2349234.0, 2349235l, true, false, false, true);
     // Lhs int
-    equalTestOuter<int, double>(12345, 12345.0, true, false, false, true);
-    equalTestOuter<int, int>(5, 5, true, false, false, true);
-    equalTestOuter<int, short>(-234, -234s, true, false, false, true);
-    equalTestOuter<int, long>(-9999999, 9999999l, false, true, true, false);
-    equalTestInner<int, char>(67, 'C', true);
+    lessEqualTestOuter<int, double>(12345, 12345.1, true, false, false, true);
+    lessEqualTestOuter<int, int>(5, 6, true, false, false, true);
+    lessEqualTestOuter<int, short>(-234, -233s, true, false, false, true);
+    lessEqualTestOuter<int, long>(9999999, -9999999l, false, true, true, false);
     // Lhs short
-    equalTestOuter<short, double>(12345s, 12345.0, true, false, false, true);
-    equalTestOuter<short, int>(5s, 5, true, false, false, true);
-    equalTestOuter<short, short>(-234s, -234s, true, false, false, true);
-    equalTestOuter<short, long>(-999s, 999l, false, true, true, false);
-    equalTestInner<short, char>(68s, 'D', true);
+    lessEqualTestOuter<short, double>(12345s, 12345.423, true, false, false, true);
+    lessEqualTestOuter<short, int>(5s, 6, true, false, false, true);
+    lessEqualTestOuter<short, short>(-234s, -233s, true, false, false, true);
+    lessEqualTestOuter<short, long>(999s, -999l, false, true, true, false);
     // Lhs long
-    equalTestOuter<long, double>(12345l, 12345.0, true, false, false, true);
-    equalTestOuter<long, int>(5l, 5, true, false, false, true);
-    equalTestOuter<long, short>(-234l, -234s, true, false, false, true);
-    equalTestOuter<long, long>(-999l, 999l, false, true, true, false);
-    equalTestInner<long, char>(68l, 'D', true);
+    lessEqualTestOuter<long, double>(12345l, 12345.1, true, false, false, true);
+    lessEqualTestOuter<long, int>(5l, 6, true, false, false, true);
+    lessEqualTestOuter<long, short>(-234l, -233s, true, false, false, true);
+    lessEqualTestOuter<long, long>(999l, -999l, false, true, true, false);
     // Lhs byte
-    equalTestInner<byte, byte>(cast<byte>(15), cast<byte>(15), true);
+    lessEqualTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), true);
     // Lhs char
-    equalTestInner<char, int>('x', -15, false);
-    equalTestInner<char, short>('5', 53s, true);
-    equalTestInner<char, long>('+', 43l, true);
-    equalTestInner<char, char>('#', '#', true);
-    // Lhs string
-    equalTestInner<string, string>("this is a test", "this is a test", true);
-    equalTestInner<string, string>("string", "strong", false);
-    String strA = String("this is a test");
-    String strB = String("strong");
-    equalTestInner<string, string>("this is a test", strA.getRaw(), true);
-    equalTestInner<string, string>("string", strB.getRaw(), false);
-    // Lhs bool
-    equalTestInner<bool, bool>(false, false, false);
-    equalTestInner<bool, bool>(false, true, true);
-    equalTestInner<bool, bool>(true, false, true);
-    equalTestInner<bool, bool>(true, true, false);
-    // Lhs function
-    const dyn funcA = f<int>(bool b, double d) { return 123; };
-    const dyn funcB = f<int>(bool b, double d) { return 456; };
-    equalTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcA, true);
-    equalTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcB, false);
-    // Lhs procedure
-    const dyn procA = p(string s, char c) {};
-    const dyn procB = p(string s, char c) {};
-    equalTestInner<p(string, char), p(string, char)>(procA, procA, true);
-    equalTestInner<p(string, char), p(string, char)>(procA, procB, false);
+    lessEqualTestInner<char, char>('#', '#', true);
 }
 
-// ------------------------------------------ != -----------------------------------------
+// ------------------------------------------ >= -----------------------------------------
 
-p notEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
-    const bool actualResult = lhs == rhs;
+p greaterEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
+    const bool actualResult = lhs >= rhs;
     assert actualResult == expectedResult;
 }
 
-p notEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult1, const bool expectedResult2, const bool expectedResult3, const bool expectedResult4) {
-    notEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    notEqualTestInner(lhs, -rhs, expectedResult2);  // Lhs +, Rhs -
-    notEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
-    notEqualTestInner(-lhs, -rhs, expectedResult4); // Lhs -, Rhs -
+p greaterEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult1, const bool expectedResult2, const bool expectedResult3, const bool expectedResult4) {
+    greaterEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    greaterEqualTestInner(lhs, -rhs, expectedResult2);  // Lhs +, Rhs -
+    greaterEqualTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    greaterEqualTestInner(-lhs, -rhs, expectedResult4); // Lhs -, Rhs -
 }
 
-p notEqualTest() {
-    // Lhs is ptr
-    int i = 213;
-    int* iPtr = &i;
-    notEqualTestInner<int*, int*>(iPtr, iPtr, true);
+p greaterEqualTest() {
     // Lhs double
-    notEqualTestOuter<double, int>(87.0, 87, false, true, true, false);
-    notEqualTestOuter<double, short>(14.0, 14s, false, true, true, false);
-    notEqualTestOuter<double, long>(2349234.0, 2349234l, false, true, true, false);
+    greaterEqualTestOuter<double, double>(87.123, 87.124, false, true, true, false);
+    greaterEqualTestOuter<double, int>(87.0, 88, false, true, true, false);
+    greaterEqualTestOuter<double, short>(14.0, 15s, false, true, true, false);
+    greaterEqualTestOuter<double, long>(2349234.0, 2349235l, false, true, true, false);
     // Lhs int
-    notEqualTestOuter<int, double>(12345, 12345.0, false, true, true, false);
-    notEqualTestOuter<int, int>(5, 5, false, true, true, false);
-    notEqualTestOuter<int, short>(-234, -234s, false, true, true, false);
-    notEqualTestOuter<int, long>(-9999999, 9999999l, true, false, false, true);
-    notEqualTestInner<int, char>(67, 'C', false);
+    greaterEqualTestOuter<int, double>(12345, 12345.1, false, true, true, false);
+    greaterEqualTestOuter<int, int>(5, 6, false, true, true, false);
+    greaterEqualTestOuter<int, short>(-234, -233s, false, true, true, false);
+    greaterEqualTestOuter<int, long>(9999999, -9999999l, true, false, false, true);
     // Lhs short
-    notEqualTestOuter<short, double>(12345s, 12345.0, false, true, true, false);
-    notEqualTestOuter<short, int>(5s, 5, false, true, true, false);
-    notEqualTestOuter<short, short>(-234s, -234s, false, true, true, false);
-    notEqualTestOuter<short, long>(-999s, 999l, true, false, false, true);
-    notEqualTestInner<short, char>(68s, 'D', false);
+    greaterEqualTestOuter<short, double>(12345s, 12345.423, false, true, true, false);
+    greaterEqualTestOuter<short, int>(5s, 6, false, true, true, false);
+    greaterEqualTestOuter<short, short>(-234s, -233s, false, true, true, false);
+    greaterEqualTestOuter<short, long>(999s, -999l, true, false, false, true);
     // Lhs long
-    notEqualTestOuter<long, double>(12345l, 12345.0, false, true, true, false);
-    notEqualTestOuter<long, int>(5l, 5, false, true, true, false);
-    notEqualTestOuter<long, short>(-234l, -234s, false, true, true, false);
-    notEqualTestOuter<long, long>(-999l, 999l, true, false, false, true);
-    notEqualTestInner<long, char>(68l, 'D', false);
+    greaterEqualTestOuter<long, double>(12345l, 12345.1, false, true, true, false);
+    greaterEqualTestOuter<long, int>(5l, 6, false, true, true, false);
+    greaterEqualTestOuter<long, short>(-234l, -233s, false, true, true, false);
+    greaterEqualTestOuter<long, long>(999l, -999l, true, false, false, true);
     // Lhs byte
-    notEqualTestInner<byte, byte>(cast<byte>(15), cast<byte>(15), false);
+    greaterEqualTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), false);
     // Lhs char
-    notEqualTestInner<char, int>('x', -15, true);
-    notEqualTestInner<char, short>('5', 53s, false);
-    notEqualTestInner<char, long>('+', 43l, false);
-    notEqualTestInner<char, char>('#', '#', false);
-    // Lhs string
-    notEqualTestInner<string, string>("this is a test", "this is a test", false);
-    notEqualTestInner<string, string>("string", "strong", true);
-    String strA = String("this is a test");
-    String strB = String("strong");
-    notEqualTestInner<string, string>("this is a test", strA.getRaw(), false);
-    notEqualTestInner<string, string>("string", strB.getRaw(), true);
-    // Lhs bool
-    notEqualTestInner<bool, bool>(false, false, true);
-    notEqualTestInner<bool, bool>(false, true, false);
-    notEqualTestInner<bool, bool>(true, false, false);
-    notEqualTestInner<bool, bool>(true, true, true);
-    // Lhs function
-    const dyn funcA = f<int>(bool b, double d) { return 123; };
-    const dyn funcB = f<int>(bool b, double d) { return 456; };
-    notEqualTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcA, false);
-    notEqualTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcB, true);
-    // Lhs procedure
-    const dyn procA = p(string s, char c) {};
-    const dyn procB = p(string s, char c) {};
-    notEqualTestInner<p(string, char), p(string, char)>(procA, procA, false);
-    notEqualTestInner<p(string, char), p(string, char)>(procA, procB, true);
+    greaterEqualTestInner<char, char>('#', '#', true);
 }
 
 f<int> main() {
-    equalTest(); // ==
-    notEqualTest(); // !=
+    lessEqualTest(); // <=
+    greaterEqualTest(); // >=
     // ToDo: Extend
 
     printf("All assertions passed!");
