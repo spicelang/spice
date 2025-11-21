@@ -1,5 +1,6 @@
 type TLhs dyn;
 type TRhs dyn;
+type TRes dyn;
 
 // ------------------------------------------ += ------------------------------------------
 
@@ -203,24 +204,19 @@ p shlEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedRes
     assert lhs == expectedResult;
 }
 
-p shlEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2) {
-    shlEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    shlEqualTestInner(-lhs, rhs, expectedResult2);  // Lhs -, Rhs +
-}
-
 p shlEqualTest() {
     // Lhs int
-    shlEqualTestOuter<int, int>(5, 3, 40, -40);
-    shlEqualTestOuter<int, short>(5, 2s, 20, -20);
-    shlEqualTestOuter<int, long>(5, 4l, 80, -80);
+    shlEqualTestInner<int, int>(5, 3, 40);
+    shlEqualTestInner<int, short>(5, 2s, 20);
+    shlEqualTestInner<int, long>(5, 4l, 80);
     // Lhs short
-    shlEqualTestOuter<short, int>(8s, 2, 32s, -32s);
-    shlEqualTestOuter<short, short>(8s, 1s, 16s, -16s);
-    shlEqualTestOuter<short, long>(8s, 6l, 512s, -512s);
+    shlEqualTestInner<short, int>(8s, 2, 32s);
+    shlEqualTestInner<short, short>(8s, 1s, 16s);
+    shlEqualTestInner<short, long>(8s, 6l, 512s);
     // Lhs long
-    shlEqualTestOuter<long, int>(7l, 7, 896l, -896l);
-    shlEqualTestOuter<long, short>(7l, 10s, 7168l, -7168l);
-    shlEqualTestOuter<long, long>(1234876l, 21l, 2589722673152l, -2589722673152l);
+    shlEqualTestInner<long, int>(7l, 7, 896l);
+    shlEqualTestInner<long, short>(7l, 10s, 7168l);
+    shlEqualTestInner<long, long>(1234876l, 21l, 2589722673152l);
     // Lhs byte
     shlEqualTestInner<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(84));
 }
@@ -232,24 +228,19 @@ p shrEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedRes
     assert lhs == expectedResult;
 }
 
-p shrEqualTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2) {
-    shrEqualTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    shrEqualTestInner(-lhs, rhs, expectedResult2);  // Lhs -, Rhs +
-}
-
 p shrEqualTest() {
     // Lhs int
-    shrEqualTestOuter<int, int>(5, 3, 0, -1);
-    shrEqualTestOuter<int, short>(5, 2s, 1, -2);
-    shrEqualTestOuter<int, long>(5, 1l, 2, -3);
+    shrEqualTestInner<int, int>(5, 3, 0);
+    shrEqualTestInner<int, short>(5, 2s, 1);
+    shrEqualTestInner<int, long>(5, 1l, 2);
     // Lhs short
-    shrEqualTestOuter<short, int>(8s, 2, 2s, -2s);
-    shrEqualTestOuter<short, short>(8s, 1s, 4s, 32764s);
-    shrEqualTestOuter<short, long>(8s, 3l, 1s, -1s);
+    shrEqualTestInner<short, int>(8s, 2, 2s);
+    shrEqualTestInner<short, short>(8s, 1s, 4s);
+    shrEqualTestInner<short, long>(8s, 3l, 1s);
     // Lhs long
-    shrEqualTestOuter<long, int>(23425l, 7, 183l, -184l);
-    shrEqualTestOuter<long, short>(34587334534l, 10s, 33776693l, -33776694l);
-    shrEqualTestOuter<long, long>(1234876l, 21l, 0l, -1l);
+    shrEqualTestInner<long, int>(23425l, 7, 183l);
+    shrEqualTestInner<long, short>(34587334534l, 10s, 33776693l);
+    shrEqualTestInner<long, long>(1234876l, 21l, 0l);
     // Lhs byte
     shrEqualTestInner<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(21));
 }
@@ -727,6 +718,168 @@ p greaterEqualTest() {
     greaterEqualTestInner<char, char>('#', '#', true);
 }
 
+// ------------------------------------------ << -----------------------------------------
+
+p shlTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    const TLhs actualResult = lhs << rhs;
+    assert actualResult == expectedResult;
+}
+
+p shlTest() {
+    // Lhs int
+    shlTestInner<int, int>(5, 3, 40);
+    shlTestInner<int, short>(5, 2s, 20);
+    shlTestInner<int, long>(5, 4l, 80);
+    // Lhs short
+    shlTestInner<short, int>(8s, 2, 32s);
+    shlTestInner<short, short>(8s, 1s, 16s);
+    shlTestInner<short, long>(8s, 6l, 512s);
+    // Lhs long
+    shlTestInner<long, int>(7l, 7, 896l);
+    shlTestInner<long, short>(7l, 10s, 7168l);
+    shlTestInner<long, long>(1234876l, 21l, 2589722673152l);
+    // Lhs byte
+    shlTestInner<byte, int>(cast<byte>(3), 2, cast<byte>(12));
+    shlTestInner<byte, short>(cast<byte>(3), 2s, cast<byte>(12));
+    shlTestInner<byte, long>(cast<byte>(3), 2l, cast<byte>(12));
+    shlTestInner<byte, byte>(cast<byte>(3), cast<byte>(2), cast<byte>(12));
+}
+
+// ------------------------------------------ >> -----------------------------------------
+
+p shrTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    const TLhs actualResult = lhs >> rhs;
+    assert actualResult == expectedResult;
+}
+
+p shrTest() {
+    // Lhs int
+    shrTestInner<int, int>(5, 3, 0);
+    shrTestInner<int, short>(5, 2s, 1);
+    shrTestInner<int, long>(5, 1l, 2);
+    // Lhs short
+    shrTestInner<short, int>(8s, 2, 2s);
+    shrTestInner<short, short>(8s, 1s, 4s);
+    shrTestInner<short, long>(8s, 3l, 1s);
+    // Lhs long
+    shrTestInner<long, int>(23425l, 7, 183l);
+    shrTestInner<long, short>(34587334534l, 10s, 33776693l);
+    shrTestInner<long, long>(1234876l, 21l, 0l);
+    // Lhs byte
+    shrTestInner<byte, int>(cast<byte>(12), 2, cast<byte>(3));
+    shrTestInner<byte, short>(cast<byte>(12), 2s, cast<byte>(3));
+    shrTestInner<byte, long>(cast<byte>(12), 2l, cast<byte>(3));
+    shrTestInner<byte, byte>(cast<byte>(12), cast<byte>(2), cast<byte>(3));
+}
+
+// ------------------------------------------ + -------------------------------------------
+
+p plusTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs + rhs;
+    assert actualResult == expectedResult;
+}
+
+p plusTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedResult) {
+    unsafe {
+        const int* actualResult = lhs + rhs;
+        assert actualResult == expectedResult;
+    }
+}
+
+p plusTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    plusTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    plusTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    plusTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    plusTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p plusTest() {
+    // Lhs is double
+    plusTestOuter<double, double, double>(1.234, 98.7654, 99.9994, -99.9994, 97.5314, -97.5314);
+    plusTestOuter<double, int, double>(1.234, 98, 99.234, -99.234, 96.766, -96.766);
+    plusTestOuter<double, short, double>(1.234, 98s, 99.234, -99.234, 96.766, -96.766);
+    plusTestOuter<double, long, double>(1.234, 98l, 99.234, -99.234, 96.766, -96.766);
+    // Lhs is int
+    plusTestOuter<int, double, double>(78, 674.45, 752.45, -752.45, 596.45, -596.45);
+    plusTestOuter<int, int, int>(78, 674, 752, -752, 596, -596);
+    plusTestOuter<int, short, int>(78, 7s, 85, -85, -71, 71);
+    plusTestOuter<int, long, long>(78, 2384723l, 2384801l, -2384801l, 2384645l, -2384645l);
+    // Lhs is short
+    plusTestOuter<short, double, double>(78s, 674.76, 752.76, -752.76, 596.76, -596.76);
+    plusTestOuter<short, int, int>(78s, 674, 752, -752, 596, -596);
+    plusTestOuter<short, short, short>(78s, 7s, 85s, -85s, -71s, 71s);
+    plusTestOuter<short, long, long>(78s, 2384723l, 2384801l, -2384801l, 2384645l, -2384645l);
+    // Lhs is long
+    plusTestOuter<long, double, double>(78l, 674.91, 752.91, -752.91, 596.91, -596.91);
+    plusTestOuter<long, int, long>(78l, 674, 752l, -752l, 596l, -596l);
+    plusTestOuter<long, short, long>(78l, 7s, 85l, -85l, -71l, 71l);
+    plusTestOuter<long, long, long>(78l, 2384723l, 2384801l, -2384801l, 2384645l, -2384645l);
+    // Lhs is byte
+    plusTestInner<byte, byte, byte>(cast<byte>(5), cast<byte>(6), cast<byte>(11));
+    // Lhs is ptr
+    int[5] input = [0, 0, 0, 0, 0];
+    plusTestInnerUnsafe(&input[2], 2, &input[4]);
+    plusTestInnerUnsafe(&input[2], -2, &input[0]);
+    plusTestInnerUnsafe(&input[2], 2s, &input[4]);
+    plusTestInnerUnsafe(&input[2], -2s, &input[0]);
+    plusTestInnerUnsafe(&input[2], 2l, &input[4]);
+    plusTestInnerUnsafe(&input[2], -2l, &input[0]);
+}
+
+// ------------------------------------------ - -------------------------------------------
+
+p minusTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs - rhs;
+    assert actualResult == expectedResult;
+}
+
+p minusTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedResult) {
+    unsafe {
+        const int* actualResult = lhs - rhs;
+        assert actualResult == expectedResult;
+    }
+}
+
+p minusTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    minusTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    minusTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    minusTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    minusTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p minusTest() {
+    // Lhs is double
+    minusTestOuter<double, double, double>(1.234, 98.7654, -97.5314, 97.5314, -99.9994, 99.9994);
+    minusTestOuter<double, int, double>(1.234, 98, -96.766, 96.766, -99.234, 99.234);
+    minusTestOuter<double, short, double>(1.234, 98s, -96.766, 96.766, -99.234, 99.234);
+    minusTestOuter<double, long, double>(1.234, 98l, -96.766, 96.766, -99.234, 99.234);
+    // Lhs is int
+    minusTestOuter<int, double, double>(78, 674.45, -596.45, 596.45, -752.45, 752.45);
+    minusTestOuter<int, int, int>(78, 674, -596, 596, -752, 752);
+    minusTestOuter<int, short, int>(78, 7s, 71, -71, -85, 85);
+    minusTestOuter<int, long, long>(78, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    // Lhs is short
+    minusTestOuter<short, double, double>(78s, 674.76, -596.76, 596.76, -752.76, 752.76);
+    minusTestOuter<short, int, int>(78s, 674, -596, 596, -752, 752);
+    minusTestOuter<short, short, short>(78s, 7s, 71s, -71s, -85s, 85s);
+    minusTestOuter<short, long, long>(78s, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    // Lhs is long
+    minusTestOuter<long, double, double>(78l, 674.91, -596.91, 596.91, -752.91, 752.91);
+    minusTestOuter<long, int, long>(78l, 674, -596l, 596l, -752l, 752l);
+    minusTestOuter<long, short, long>(78l, 7s, 71l, -71l, -85l, 85l);
+    minusTestOuter<long, long, long>(78l, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    // Lhs is byte
+    minusTestInner<byte, byte, byte>(cast<byte>(6), cast<byte>(5), cast<byte>(1));
+    // Lhs is ptr
+    int[5] input = [0, 0, 0, 0, 0];
+    minusTestInnerUnsafe(&input[2], 2, &input[0]);
+    minusTestInnerUnsafe(&input[2], -2, &input[4]);
+    minusTestInnerUnsafe(&input[2], 2s, &input[0]);
+    minusTestInnerUnsafe(&input[2], -2s, &input[4]);
+    minusTestInnerUnsafe(&input[2], 2l, &input[0]);
+    minusTestInnerUnsafe(&input[2], -2l, &input[4]);
+}
+
 f<int> main() {
     plusEqualTest();    // +=
     minusEqualTest();   // -=
@@ -745,8 +898,12 @@ f<int> main() {
     notEqualTest();     // !=
     lessTest();         // <
     greaterTest();      // >
-    lessEqualTest();    // >
-    greaterEqualTest(); // >
+    lessEqualTest();    // <=
+    greaterEqualTest(); // >=
+    shlTest();          // <<
+    shrTest();          // >>
+    plusTest();         // +
+    minusTest();        // -
     // ToDo: Extend
 
     printf("All assertions passed!");
