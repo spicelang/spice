@@ -3,7 +3,7 @@ import "std/data/unordered-map";
 
 // Own imports
 import "bootstrap/source-file-intf";
-import "bootstrap/util/file-util";
+import "bootstrap/util/system-util";
 import "bootstrap/global/global-resource-manager-intf";
 
 // Constants

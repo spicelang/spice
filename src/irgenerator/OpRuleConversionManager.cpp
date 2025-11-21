@@ -1257,7 +1257,8 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
-    llvm::Value *rhsExt = builder.CreateIntCast(rhsV(), builder.getInt64Ty(), rhsSTy.isSigned());
+    llvm::Value *rhsNeg = builder.CreateNeg(rhsV());
+    llvm::Value *rhsExt = builder.CreateIntCast(rhsNeg, builder.getInt64Ty(), rhsSTy.isSigned());
     return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsExt)};
   }
   default:                                                            // GCOV_EXCL_LINE
