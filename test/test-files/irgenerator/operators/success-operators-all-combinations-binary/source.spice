@@ -338,6 +338,34 @@ p xorEqualTest() {
     xorEqualTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
 }
 
+// ------------------------------------------ ^ ------------------------------------------
+
+p bitwiseXorTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    const TLhs actualResult = lhs ^ rhs;
+    printf("actualResult: %lld, expectedResult: %lld\n", actualResult, expectedResult);
+    assert actualResult == expectedResult;
+}
+
+p bitwiseXorTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    bitwiseXorTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p bitwiseXorTest() {
+    // Lhs int
+    bitwiseXorTestOuter<int, int>(5, 3, 6);
+    // Lhs short
+    bitwiseXorTestOuter<short, short>(8s, 1s, 9s);
+    // Lhs long
+    bitwiseXorTestOuter<long, long>(1234876l, 21l, 1234857l);
+    // Lhs byte
+    bitwiseXorTestOuter<byte, byte>(cast<byte>(15), cast<byte>(23), cast<byte>(24));
+    // Lhs bool
+    bitwiseXorTestOuter<bool, bool>(false, false, false);
+    bitwiseXorTestOuter<bool, bool>(false, true, true);
+    bitwiseXorTestOuter<bool, bool>(true, false, true);
+    bitwiseXorTestOuter<bool, bool>(true, true, false);
+}
+
 // ------------------------------------------ | ------------------------------------------
 
 p bitwiseOrTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
@@ -359,21 +387,53 @@ p bitwiseOrTest() {
     // Lhs byte
     bitwiseOrTestOuter<byte, byte>(cast<byte>(42), cast<byte>(1), cast<byte>(43));
     // Lhs bool
+    bitwiseOrTestOuter<bool, bool>(false, false, false);
     bitwiseOrTestOuter<bool, bool>(false, true, true);
+    bitwiseOrTestOuter<bool, bool>(true, false, true);
+    bitwiseOrTestOuter<bool, bool>(true, true, true);
+}
+
+// ------------------------------------------ & ------------------------------------------
+
+p bitwiseAndTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    const TLhs actualResult = lhs & rhs;
+    printf("actualResult: %lld, expectedResult: %lld\n", actualResult, expectedResult);
+    assert actualResult == expectedResult;
+}
+
+p bitwiseAndTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
+    bitwiseAndTestInner(lhs, rhs, expectedResult);   // Lhs +, Rhs +
+}
+
+p bitwiseAndTest() {
+    // Lhs int
+    bitwiseAndTestOuter<int, int>(5, 3, 1);
+    // Lhs short
+    bitwiseAndTestOuter<short, short>(8s, 1s, 0s);
+    // Lhs long
+    bitwiseAndTestOuter<long, long>(1234876l, 21l, 20l);
+    // Lhs byte
+    bitwiseAndTestOuter<byte, byte>(cast<byte>(15), cast<byte>(23), cast<byte>(7));
+    // Lhs bool
+    bitwiseAndTestOuter<bool, bool>(false, false, false);
+    bitwiseAndTestOuter<bool, bool>(false, true, false);
+    bitwiseAndTestOuter<bool, bool>(true, false, false);
+    bitwiseAndTestOuter<bool, bool>(true, true, true);
 }
 
 f<int> main() {
-    plusEqualTest(); // +=
+    plusEqualTest();  // +=
     minusEqualTest(); // -=
-    mulEqualTest(); // *=
-    divEqualTest(); // /=
-    remEqualTest(); // %=
-    shlEqualTest(); // <<=
-    shrEqualTest(); // >>=
-    andEqualTest(); // &=
-    orEqualTest(); // |=
-    xorEqualTest(); // ^=
-    bitwiseOrTest(); // |
+    mulEqualTest();   // *=
+    divEqualTest();   // /=
+    remEqualTest();   // %=
+    shlEqualTest();   // <<=
+    shrEqualTest();   // >>=
+    andEqualTest();   // &=
+    orEqualTest();    // |=
+    xorEqualTest();   // ^=
+    bitwiseOrTest();  // |
+    bitwiseXorTest(); // ^
     bitwiseAndTest(); // &
     // ToDo: Extend
 
