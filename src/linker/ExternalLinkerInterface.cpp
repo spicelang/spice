@@ -36,7 +36,7 @@ void ExternalLinkerInterface::prepare() {
   case Sanitizer::MEMORY:
     addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
     addLinkerFlag("-lclang_rt.msan");
-    addLinkerFlag("-lm");
+    requestLibMathLinkage();
     break;
   }
 
@@ -63,13 +63,13 @@ void ExternalLinkerInterface::link() const {
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
     linkerCommandBuilder << " " << linkerFlag;
+  if (linkLibMath)
+    linkerCommandBuilder << " -lm";
   // Append output path
   linkerCommandBuilder << " -o " << outputPath.string();
   // Append object files
   for (const std::string &objectFilePath : objectFilePaths)
     linkerCommandBuilder << " " << objectFilePath;
-
-  // Assemble the linker command
   const std::string linkerCommand = linkerCommandBuilder.str();
 
   // Print status message
@@ -86,8 +86,10 @@ void ExternalLinkerInterface::link() const {
   timer.stop();
 
   // Check for linker error
-  if (exitCode != 0)                                                          // GCOV_EXCL_LINE
-    throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code"); // GCOV_EXCL_LINE
+  if (exitCode != 0) {                                                                                          // GCOV_EXCL_LINE
+    const std::string errorMessage = "Linker exited with non-zero exit code\nLinker command: " + linkerCommand; // GCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, errorMessage);                                                              // GCOV_EXCL_LINE
+  } // GCOV_EXCL_LINE
 
   // Print linker result if appropriate
   if (cliOptions.printDebugOutput && !output.empty())    // GCOV_EXCL_LINE
@@ -127,6 +129,13 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
   // Add the file to the linker
   additionalSource.make_preferred();
   addObjectFilePath(additionalSource.string());
+}
+
+/**
+ * Link against libmath a.k.a. -lm
+ */
+void ExternalLinkerInterface::requestLibMathLinkage() {
+  linkLibMath = true;
 }
 
 } // namespace spice::compiler
