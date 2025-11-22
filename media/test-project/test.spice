@@ -2,63 +2,41 @@ type TLhs dyn;
 type TRhs dyn;
 type TRes dyn;
 
-// ------------------------------------------ - -------------------------------------------
+// ------------------------------------------ % -------------------------------------------
 
-p minusTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
-    const TRes actualResult = lhs - rhs;
+p remTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs % rhs;
+    //printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
+    //printf("actualResult: %f, expectedResult: %f\n", actualResult, expectedResult);
     assert actualResult == expectedResult;
 }
 
-p minusTestInnerUnsafe<TRhs>(int* lhs, const TRhs rhs, const int* expectedResult) {
-    unsafe {
-        const int* actualResult = lhs - rhs;
-        printf("actualResult: %p, expectedResult: %p\n", actualResult, expectedResult);
-        assert actualResult == expectedResult;
-    }
+p remTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    remTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    remTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    remTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    remTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
 }
 
-p minusTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
-    minusTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    minusTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
-    minusTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
-    minusTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
-}
-
-p minusTest() {
+p remTest() {
     // Lhs is double
-    minusTestOuter<double, double, double>(1.234, 98.7654, -97.5314, 97.5314, -99.9994, 99.9994);
-    minusTestOuter<double, int, double>(1.234, 98, -96.766, 96.766, -99.234, 99.234);
-    minusTestOuter<double, short, double>(1.234, 98s, -96.766, 96.766, -99.234, 99.234);
-    minusTestOuter<double, long, double>(1.234, 98l, -96.766, 96.766, -99.234, 99.234);
+    remTestOuter<double, double, double>(121.0, 5.5, 0.0, -0.0, -0.0, 0.0);
     // Lhs is int
-    minusTestOuter<int, double, double>(78, 674.45, -596.45, 596.45, -752.45, 752.45);
-    minusTestOuter<int, int, int>(78, 674, -596, 596, -752, 752);
-    minusTestOuter<int, short, int>(78, 7s, 71, -71, -85, 85);
-    minusTestOuter<int, long, long>(78, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    remTestOuter<int, int, int>(52572, 674, 0, 0, -0, -0);
+    remTestOuter<int, short, int>(546, 8s, 2, -2, -2, 2);
+    remTestOuter<int, long, long>(186008394, 238l, 208l, -208l, -208l, 208l);
     // Lhs is short
-    minusTestOuter<short, double, double>(78s, 674.76, -596.76, 596.76, -752.76, 752.76);
-    minusTestOuter<short, int, int>(78s, 674, -596, 596, -752, 752);
-    minusTestOuter<short, short, short>(78s, 7s, 71s, -71s, -85s, 85s);
-    minusTestOuter<short, long, long>(78s, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
+    remTestOuter<short, int, int>(10s, 5, 0, -0, -0, 0);
+    remTestOuter<short, short, short>(546s, 9s, 6s, -6s, -6s, 6s);
+    remTestOuter<short, long, long>(78s, 78l, 0l, -0l, -0l, 0l);
     // Lhs is long
-    minusTestOuter<long, double, double>(78l, 674.91, -596.91, 596.91, -752.91, 752.91);
-    minusTestOuter<long, int, long>(78l, 674, -596l, 596l, -752l, 752l);
-    minusTestOuter<long, short, long>(78l, 7s, 71l, -71l, -85l, 85l);
-    minusTestOuter<long, long, long>(78l, 2384723l, -2384645l, 2384645l, -2384801l, 2384801l);
-    // Lhs is byte
-    minusTestInner<byte, byte, byte>(cast<byte>(6), cast<byte>(5), cast<byte>(1));
-    // Lhs is ptr
-    int[5] input = [0, 0, 0, 0, 0];
-    minusTestInnerUnsafe(&input[2], 2, &input[0]);
-    minusTestInnerUnsafe(&input[2], -2, &input[4]);
-    minusTestInnerUnsafe(&input[2], 2s, &input[0]);
-    minusTestInnerUnsafe(&input[2], -2s, &input[4]);
-    minusTestInnerUnsafe(&input[2], 2l, &input[0]);
-    minusTestInnerUnsafe(&input[2], -2l, &input[4]);
+    remTestOuter<long, int, long>(52572l, 1, 0l, -0l, -0l, 0l);
+    remTestOuter<long, short, long>(546l, 11s, 7l, -7l, -7l, 7l);
+    remTestOuter<long, long, long>(186008394l, 186008393l, 1l, -1l, -1l, 1l);
 }
 
 f<int> main() {
-    minusTest(); // -
+    remTest(); // %
     // ToDo: Extend
 
     printf("All assertions passed!");

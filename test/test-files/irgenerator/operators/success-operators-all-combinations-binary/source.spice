@@ -880,6 +880,117 @@ p minusTest() {
     minusTestInnerUnsafe(&input[2], -2l, &input[4]);
 }
 
+// ------------------------------------------ * -------------------------------------------
+
+p mulTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs * rhs;
+    assert actualResult == expectedResult;
+}
+
+p mulTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    mulTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    mulTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    mulTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    mulTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p mulTest() {
+    // Lhs is double
+    mulTestOuter<double, double, double>(1.23, 98.76, 121.4748, 121.4748, -121.4748, -121.4748);
+    mulTestOuter<double, int, double>(1.234, 98, 120.932, 120.932, -120.932, -120.932);
+    mulTestOuter<double, short, double>(1.234, 98s, 120.932, 120.932, -120.932, -120.932);
+    mulTestOuter<double, long, double>(1.234, 98l, 120.932, 120.932, -120.932, -120.932);
+    // Lhs is int
+    mulTestOuter<int, double, double>(78, 674.4, 52603.2, 52603.2, -52603.2, -52603.2);
+    mulTestOuter<int, int, int>(78, 674, 52572, 52572, -52572, -52572);
+    mulTestOuter<int, short, int>(78, 7s, 546, 546, -546, -546);
+    mulTestOuter<int, long, long>(78, 2384723l, 186008394l, 186008394l, -186008394l, -186008394l);
+    // Lhs is short
+    mulTestOuter<short, double, double>(78s, 674.76, 52631.28, 52631.28, -52631.28, -52631.28);
+    mulTestOuter<short, int, int>(78s, 674, 52572, 52572, -52572, -52572);
+    mulTestOuter<short, short, short>(78s, 7s, 546s, 546s, -546s, -546s);
+    mulTestOuter<short, long, long>(78s, 2384723l, 186008394l, 186008394l, -186008394l, -186008394l);
+    // Lhs is long
+    mulTestOuter<long, double, double>(78l, 674.9, 52642.2, 52642.2, -52642.2, -52642.2);
+    mulTestOuter<long, int, long>(78l, 674, 52572l, 52572l, -52572l, -52572l);
+    mulTestOuter<long, short, long>(78l, 7s, 546l, 546l, -546l, -546l);
+    mulTestOuter<long, long, long>(78l, 2384723l, 186008394l, 186008394l, -186008394l, -186008394l);
+    // Lhs is byte
+    mulTestInner<byte, byte, byte>(cast<byte>(6), cast<byte>(5), cast<byte>(30));
+}
+
+// ------------------------------------------ / -------------------------------------------
+
+p divTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs / rhs;
+    assert actualResult == expectedResult;
+}
+
+p divTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    divTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    divTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    divTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    divTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p divTest() {
+    // Lhs is double
+    divTestOuter<double, double, double>(121.4748, 98.76, 1.23, 1.23, -1.23, -1.23);
+    divTestOuter<double, int, double>(120.932, 98, 1.234, 1.234, -1.234, -1.234);
+    divTestOuter<double, short, double>(120.932, 98s, 1.234, 1.234, -1.234, -1.234);
+    divTestOuter<double, long, double>(120.932, 98l, 1.234, 1.234, -1.234, -1.234);
+    // Lhs is int
+    divTestOuter<int, double, double>(500, 50.0, 10.0, 10.0, -10.0, -10.0);
+    divTestOuter<int, int, int>(52572, 674, 78, 78, -78, -78);
+    divTestOuter<int, short, int>(546, 7s, 78, 78, -78, -78);
+    divTestOuter<int, long, long>(186008394, 2384723l, 78l, 78l, -78l, -78l);
+    // Lhs is short
+    divTestOuter<short, double, double>(6s, 1.5, 4.0, 4.0, -4.0, -4.0);
+    divTestOuter<short, int, int>(10s, 5, 2, 2, -2, -2);
+    divTestOuter<short, short, short>(546s, 7s, 78s, 78s, -78s, -78s);
+    divTestOuter<short, long, long>(78s, 2384723l, 0l, 0l, -0l, -0l);
+    // Lhs is long
+    divTestOuter<long, double, double>(52642l, 2.5, 21056.8, 21056.8, -21056.8, -21056.8);
+    divTestOuter<long, int, long>(52572l, 674, 78l, 78l, -78l, -78l);
+    divTestOuter<long, short, long>(546l, 7s, 78l, 78l, -78l, -78l);
+    divTestOuter<long, long, long>(186008394l, 2384723l, 78l, 78l, -78l, -78l);
+    // Lhs is byte
+    divTestInner<byte, byte, byte>(cast<byte>(30), cast<byte>(5), cast<byte>(6));
+}
+
+// ------------------------------------------ % -------------------------------------------
+
+p remTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs % rhs;
+    //printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
+    //printf("actualResult: %f, expectedResult: %f\n", actualResult, expectedResult);
+    assert actualResult == expectedResult;
+}
+
+p remTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
+    remTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
+    remTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
+    remTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
+    remTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
+}
+
+p remTest() {
+    // Lhs is double
+    remTestOuter<double, double, double>(121.0, 5.5, 0.0, -0.0, -0.0, 0.0);
+    // Lhs is int
+    remTestOuter<int, int, int>(52572, 674, 0, 0, -0, -0);
+    remTestOuter<int, short, int>(546, 8s, 2, -2, -2, 2);
+    remTestOuter<int, long, long>(186008394, 238l, 208l, -208l, -208l, 208l);
+    // Lhs is short
+    remTestOuter<short, int, int>(10s, 5, 0, -0, -0, 0);
+    remTestOuter<short, short, short>(546s, 9s, 6s, -6s, -6s, 6s);
+    remTestOuter<short, long, long>(78s, 78l, 0l, -0l, -0l, 0l);
+    // Lhs is long
+    remTestOuter<long, int, long>(52572l, 1, 0l, -0l, -0l, 0l);
+    remTestOuter<long, short, long>(546l, 11s, 7l, -7l, -7l, 7l);
+    remTestOuter<long, long, long>(186008394l, 186008393l, 1l, -1l, -1l, 1l);
+}
+
 f<int> main() {
     plusEqualTest();    // +=
     minusEqualTest();   // -=
@@ -904,7 +1015,8 @@ f<int> main() {
     shrTest();          // >>
     plusTest();         // +
     minusTest();        // -
-    // ToDo: Extend
-
+    mulTest();          // *
+    divTest();          // /
+    remTest();          // %
     printf("All assertions passed!");
 }
