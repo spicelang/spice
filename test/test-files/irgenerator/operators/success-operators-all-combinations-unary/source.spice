@@ -77,13 +77,13 @@ p bitwiseNotTestInner<T>(T lhs, const T expectedResult) {
 
 p bitwiseNotTest() {
     // Lhs is int
-    bitwiseNotTestInner<int>(52572, 52572, 52573);
+    bitwiseNotTestInner<int>(52572, -52573);
     // Lhs is short
-    bitwiseNotTestInner<short>(10s, 10s, 11s);
+    bitwiseNotTestInner<short>(10s, -11s);
     // Lhs is long
-    bitwiseNotTestInner<long>(186008394l, 186008394l, 186008395l);
+    bitwiseNotTestInner<long>(186008394l, -186008395l);
     // Lhs is byte
-    bitwiseNotTestInner<byte>(186008394l, 186008394l, 186008395l);
+    bitwiseNotTestInner<byte>(cast<byte>(18), cast<byte>(-19));
 }
 
 // ------------------------------------------ ++ ------------------------------------------
