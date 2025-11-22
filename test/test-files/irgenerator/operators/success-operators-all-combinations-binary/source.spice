@@ -960,12 +960,14 @@ p divTest() {
 
 // ------------------------------------------ % -------------------------------------------
 
-p remTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult) {
-    const TLhs actualResult = lhs % rhs;
+p remTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
+    const TRes actualResult = lhs % rhs;
+    //printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
+    //printf("actualResult: %f, expectedResult: %f\n", actualResult, expectedResult);
     assert actualResult == expectedResult;
 }
 
-p remTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1, const TLhs expectedResult2, const TLhs expectedResult3, const TLhs expectedResult4) {
+p remTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
     remTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
     remTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
     remTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
@@ -974,19 +976,19 @@ p remTestOuter<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const TLhs expectedResult1,
 
 p remTest() {
     // Lhs is double
-    remTestOuter<double, double>(121.0, 5.5, 0.0, -0.0, -0.0, 0.0);
+    remTestOuter<double, double, double>(121.0, 5.5, 0.0, -0.0, -0.0, 0.0);
     // Lhs is int
-    remTestOuter<int, int>(52572, 674, 0, 0, -0, -0);
-    remTestOuter<int, short>(546, 8s, 2, -2, -2, 2);
-    remTestOuter<int, long>(186008394, 238l, 208, -208, -208, 208);
+    remTestOuter<int, int, int>(52572, 674, 0, 0, -0, -0);
+    remTestOuter<int, short, int>(546, 8s, 2, -2, -2, 2);
+    remTestOuter<int, long, long>(186008394, 238l, 208l, -208l, -208l, 208l);
     // Lhs is short
-    remTestOuter<short, int>(10s, 5, 2s, -2s, -2s, 2s);
-    remTestOuter<short, short>(546s, 9s, 6s, -6s, -6s, 6s);
-    remTestOuter<short, long>(78s, 78l, 0s, -0s, -0s, 0s);
+    remTestOuter<short, int, int>(10s, 5, 0, -0, -0, 0);
+    remTestOuter<short, short, short>(546s, 9s, 6s, -6s, -6s, 6s);
+    remTestOuter<short, long, long>(78s, 78l, 0l, -0l, -0l, 0l);
     // Lhs is long
-    remTestOuter<long, int>(52572l, 1, 0l, -0l, -0l, 0l);
-    remTestOuter<long, short>(546l, 11s, 7l, -7l, -7l, 7l);
-    remTestOuter<long, long>(186008394l, 186008393l, 1l, -1l, -1l, 1l);
+    remTestOuter<long, int, long>(52572l, 1, 0l, -0l, -0l, 0l);
+    remTestOuter<long, short, long>(546l, 11s, 7l, -7l, -7l, 7l);
+    remTestOuter<long, long, long>(186008394l, 186008393l, 1l, -1l, -1l, 1l);
 }
 
 f<int> main() {
