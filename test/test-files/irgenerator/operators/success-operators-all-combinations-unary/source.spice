@@ -1,0 +1,199 @@
+type T dyn;
+type TRes dyn;
+
+// ------------------------------------------ - -------------------------------------------
+
+p prefixMinusTestInner<T>(T lhs, const T expectedResult) {
+    const T actualResult = -lhs;
+    assert actualResult == expectedResult;
+}
+
+p prefixMinusTest() {
+    // Lhs is double
+    prefixMinusTestInner<double>(121.567, -121.567);
+    // Lhs is int
+    prefixMinusTestInner<int>(52572, -52572);
+    // Lhs is short
+    prefixMinusTestInner<short>(10s, -10s);
+    // Lhs is long
+    prefixMinusTestInner<long>(186008394l, -186008394l);
+}
+
+// ------------------------------------------ ++ ------------------------------------------
+
+p prefixIncrementTestInner<T>(T lhs, const T expectedResultBefore, const T expectedResultAfter) {
+    const T actualResultBefore = ++lhs;
+    assert actualResultBefore == expectedResultBefore;
+    const T acutalResultAfter = lhs;
+    assert acutalResultAfter == expectedResultAfter;
+}
+
+p prefixIncrementTest() {
+    // Lhs is int
+    prefixIncrementTestInner<int>(52572, 52573, 52573);
+    // Lhs is short
+    prefixIncrementTestInner<short>(10s, 11s, 11s);
+    // Lhs is long
+    prefixIncrementTestInner<long>(186008394l, 186008395l, 186008395l);
+}
+
+// ------------------------------------------ -- ------------------------------------------
+
+p prefixDecrementTestInner<T>(T lhs, const T expectedResultBefore, const T expectedResultAfter) {
+    const T actualResultBefore = --lhs;
+    assert actualResultBefore == expectedResultBefore;
+    const T acutalResultAfter = lhs;
+    assert acutalResultAfter == expectedResultAfter;
+}
+
+p prefixDecrementTest() {
+    // Lhs is int
+    prefixDecrementTestInner<int>(52572, 52571, 52571);
+    // Lhs is short
+    prefixDecrementTestInner<short>(10s, 9s, 9s);
+    // Lhs is long
+    prefixDecrementTestInner<long>(186008394l, 186008393l, 186008393l);
+}
+
+// ------------------------------------------ ! -------------------------------------------
+
+p notTestInner(bool lhs, bool expectedResult) {
+    const bool actualResult = !lhs;
+    assert actualResult == expectedResult;
+}
+
+p notTest() {
+    // Lhs is bool
+    notTestInner<bool>(true, false);
+    notTestInner<bool>(false, true);
+}
+
+// ------------------------------------------ ~ -------------------------------------------
+
+p bitwiseNotTestInner<T>(T lhs, const T expectedResult) {
+    const T actualResult = ~lhs;
+    assert actualResult == expectedResult;
+}
+
+p bitwiseNotTest() {
+    // Lhs is int
+    bitwiseNotTestInner<int>(52572, 52572, 52573);
+    // Lhs is short
+    bitwiseNotTestInner<short>(10s, 10s, 11s);
+    // Lhs is long
+    bitwiseNotTestInner<long>(186008394l, 186008394l, 186008395l);
+    // Lhs is byte
+    bitwiseNotTestInner<byte>(186008394l, 186008394l, 186008395l);
+}
+
+// ------------------------------------------ ++ ------------------------------------------
+
+p postfixIncrementTestInner<T>(T lhs, const T expectedResultBefore, const T expectedResultAfter) {
+    const T actualResultBefore = lhs++;
+    assert actualResultBefore == expectedResultBefore;
+    const T acutalResultAfter = lhs;
+    assert acutalResultAfter == expectedResultAfter;
+}
+
+p postfixIncrementTest() {
+    // Lhs is int
+    postfixIncrementTestInner<int>(52572, 52572, 52573);
+    // Lhs is short
+    postfixIncrementTestInner<short>(10s, 10s, 11s);
+    // Lhs is long
+    postfixIncrementTestInner<long>(186008394l, 186008394l, 186008395l);
+}
+
+// ------------------------------------------ -- ------------------------------------------
+
+p postfixDecrementTestInner<T>(T lhs, const T expectedResultBefore, const T expectedResultAfter) {
+    const T actualResultBefore = lhs--;
+    assert actualResultBefore == expectedResultBefore;
+    const T acutalResultAfter = lhs;
+    assert acutalResultAfter == expectedResultAfter;
+}
+
+p postfixDecrementTest() {
+    // Lhs is int
+    postfixDecrementTestInner<int>(52572, 52572, 52571);
+    // Lhs is short
+    postfixDecrementTestInner<short>(10s, 10s, 9s);
+    // Lhs is long
+    postfixDecrementTestInner<long>(186008394l, 186008394l, 186008393l);
+}
+
+// -------------------------------------- cast<T>(x) --------------------------------------
+
+p castInner<TRes, T>(T lhs, TRes expectedResult) {
+    const TRes actualResult = cast<TRes>(lhs);
+    assert actualResult == expectedResult;
+}
+
+p castInnerUnsafe<TRes, T>(T lhs, TRes expectedResult) {
+    unsafe {
+        const TRes actualResult = cast<TRes>(lhs);
+        assert actualResult == expectedResult;
+    }
+}
+
+p castTest() {
+    // Identity casts
+    castInner<double, double>(1.123, 1.123);
+    castInner<int, int>(123, 123);
+    castInner<short, short>(3457s, 3457s);
+    castInner<long, long>(23068763214l, 23068763214l);
+    castInner<byte, byte>(cast<byte>(324), cast<byte>(324));
+    castInner<char, char>('+', '+');
+    castInner<string, string>("test", "test");
+    castInner<bool, bool>(true, true);
+    bool b = false;
+    castInner<bool*, bool*>(&b, &b);
+    // Lhs double
+    castInner<double, int>(1, 1.0);
+    castInner<double, short>(1s, 1.0);
+    castInner<double, long>(1l, 1.0);
+    // Lhs int
+    castInner<int, double>(1.0, 1);
+    castInner<int, short>(1s, 1);
+    castInner<int, long>(1l, 1);
+    castInner<int, byte>(cast<byte>(1), 1);
+    castInner<int, char>('A', 65);
+    // Lhs short
+    castInner<short, double>(1.0, 1s);
+    castInner<short, int>(1, 1s);
+    castInner<short, long>(1l, 1s);
+    // Lhs long
+    castInner<long, double>(1.0, 1l);
+    castInner<long, int>(1, 1l);
+    castInner<long, short>(1s, 1l);
+    // Lhs byte
+    castInner<byte, int>(56, cast<byte>(56));
+    castInner<byte, char>('8', cast<byte>(56));
+    // Lhs char
+    castInner<char, int>(57, '9');
+    castInner<char, short>(57s, '9');
+    castInner<char, long>(57l, '9');
+    castInner<char, byte>(cast<byte>(57), '9');
+    // Special casts
+    // cast<const char*>(string)
+    String str = String("test");
+    castInner<string, const char*>(cast<const char*>(str.getRaw()), "test");
+    // cast<char[]>(string)
+    castInner<string, const char[]>(['t', 'e', 's', 't', '\0'], "test");
+    // cast<string>(const char*)
+    castInner<const char*, string>("test", cast<const char*>(str.getRaw()));
+    // cast<any*>(any*)
+    castInnerUnsafe<int*, short*>(nil<short*>, nil<int*>);
+}
+
+f<int> main() {
+    prefixMinusTest();      // -x
+    prefixIncrementTest();  // ++x
+    prefixDecrementTest();  // --x
+    notTest();              // !x
+    bitwiseNotTest();       // ~x
+    postfixIncrementTest(); // x++
+    postfixDecrementTest(); // x--
+    castTest();             // cast<T>(x)
+    printf("All assertions passed!");
+}

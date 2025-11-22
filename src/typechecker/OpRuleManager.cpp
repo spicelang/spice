@@ -671,8 +671,7 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
     return lhsType;
   // Allow casts any* -> any*
   if (lhsType.isOneOf({TY_PTR, TY_STRING}) && rhsType.isOneOf({TY_PTR, TY_STRING})) {
-    if (lhsType != rhsType)
-      ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
+    ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
     return lhsType;
   }
   // Check primitive type combinations

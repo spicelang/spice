@@ -505,8 +505,8 @@ static constexpr BinaryOpRule REM_OP_RULES[] = {
 
 // Prefix Minus op rules
 static constexpr UnaryOpRule PREFIX_MINUS_OP_RULES[] = {
-    UnaryOpRule(TY_INT, TY_INT, false),       // -int -> int
     UnaryOpRule(TY_DOUBLE, TY_DOUBLE, false), // -double -> double
+    UnaryOpRule(TY_INT, TY_INT, false),       // -int -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false),   // -short -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),     // -long -> long
 };

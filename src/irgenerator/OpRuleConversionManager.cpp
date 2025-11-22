@@ -1532,7 +1532,8 @@ LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *n
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
-  case TY_LONG:
+  case TY_LONG:  // fallthrough
+  case TY_BYTE:
     return {.value = builder.CreateNot(lhsV())};
   default:
     break;
@@ -1637,9 +1638,7 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     return {.value = lhsSTy.isSigned() ? builder.CreateFPToSI(rhsV(), lhsT) : builder.CreateFPToUI(rhsV(), lhsT)};
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): // fallthrough
-  case COMB(TY_BYTE, TY_INT):   // fallthrough
-  case COMB(TY_BYTE, TY_SHORT): // fallthrough
-  case COMB(TY_BYTE, TY_LONG):
+  case COMB(TY_BYTE, TY_INT):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_BYTE, TY_CHAR):
     return {.value = rhsV()};
