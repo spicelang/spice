@@ -50,7 +50,7 @@ static constexpr BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long += int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long += short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long += long -> long
-    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),       // char += int -> char
+    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),        // char += int -> char
 };
 
 // Minus equal op rules
@@ -65,7 +65,7 @@ static constexpr BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long -= int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long -= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long -= long -> long
-    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),       // char -= int -> char
+    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),        // char -= int -> char
 };
 
 // Mul equal op rules
@@ -494,10 +494,10 @@ static constexpr BinaryOpRule REM_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double % double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int % int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int % short -> int
-    BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),         // int % long -> int
-    BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT, false),      // short % int -> short
+    BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),        // int % long -> long
+    BinaryOpRule(TY_SHORT, TY_INT, TY_INT, false),        // short % int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short % short -> short
-    BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT, false),     // short % long -> short
+    BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG, false),      // short % long -> long
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long % int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long % short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long % long -> long
