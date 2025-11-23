@@ -1,5 +1,5 @@
 @echo off
 
 mkdir coverage
-gcovr --html --html-details -s -r . -o coverage/index.html
-gcovr --txt -r . -o coverage.txt
+gcovr --exclude-lines-by-pattern "assert(" --html --html-details -s -r . -o coverage/index.html
+gcovr --exclude-lines-by-pattern "assert(" --txt -r . -o coverage.txt
