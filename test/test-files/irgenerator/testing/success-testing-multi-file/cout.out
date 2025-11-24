@@ -1,7 +1,7 @@
 [==========] Running 4 test(s) from 2 source file(s)
 [----------] Running 2 test(s) from source2.spice
 [ RUN      ] testSub1
-[1m[31m[ FAILED   ][0m[22m testSub1
+[1m[32m[ PASSED   ][0m[22m testSub1
 [ RUN      ] testSub2
 [1m[32m[ PASSED   ][0m[22m testSub2
 [----------] Ran 2 test(s) from source2.spice
@@ -10,7 +10,7 @@
 [ RUN      ] testAdd1
 [1m[32m[ PASSED   ][0m[22m testAdd1
 [ RUN      ] testAdd2
-[1m[31m[ FAILED   ][0m[22m testAdd2
+[1m[32m[ PASSED   ][0m[22m testAdd2
 [----------] Ran 2 test(s) from source.spice
 
 [==========] Ran 4 test(s) from 2 source file(s)

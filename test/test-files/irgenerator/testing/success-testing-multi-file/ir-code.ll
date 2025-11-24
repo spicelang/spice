@@ -107,53 +107,40 @@ assert.then.L19:                                  ; preds = %assert.exit.L18
   unreachable
 
 assert.exit.L19:                                  ; preds = %assert.exit.L18
-  ret i1 false
+  ret i1 true
 }
 
 ; Function Attrs: norecurse
 define i32 @main() #2 {
-  %result = alloca i32, align 4
-  store i1 true, ptr %result, align 1
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 4, i32 2)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 2, ptr @fileName0)
   %3 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName0)
   %4 = call i1 @_Z8testSub1v()
-  %5 = load i32, ptr %result, align 4
-  %6 = zext i1 %4 to i32
-  %7 = and i32 %5, %6
-  store i32 %7, ptr %result, align 4
-  %8 = select i1 %4, ptr @successMsg0, ptr @errorMsg0
-  %9 = call i32 (ptr, ...) @printf(ptr %8, ptr @testName0)
-  %10 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName1)
-  %11 = call i1 @_Z8testSub2v()
-  %12 = load i32, ptr %result, align 4
-  %13 = zext i1 %11 to i32
-  %14 = and i32 %12, %13
-  store i32 %14, ptr %result, align 4
-  %15 = select i1 %11, ptr @successMsg0, ptr @errorMsg0
-  %16 = call i32 (ptr, ...) @printf(ptr %15, ptr @testName1)
-  %17 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName0)
-  %18 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 2, ptr @fileName1)
-  %19 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName2)
-  %20 = call i1 @_Z8testAdd1v()
-  %21 = load i32, ptr %result, align 4
-  %22 = zext i1 %20 to i32
-  %23 = and i32 %21, %22
-  store i32 %23, ptr %result, align 4
-  %24 = select i1 %20, ptr @successMsg0, ptr @errorMsg0
-  %25 = call i32 (ptr, ...) @printf(ptr %24, ptr @testName2)
-  %26 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName3)
-  %27 = call i1 @_Z8testAdd2v()
-  %28 = load i32, ptr %result, align 4
-  %29 = zext i1 %27 to i32
-  %30 = and i32 %28, %29
-  store i32 %30, ptr %result, align 4
-  %31 = select i1 %27, ptr @successMsg0, ptr @errorMsg0
-  %32 = call i32 (ptr, ...) @printf(ptr %31, ptr @testName3)
-  %33 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName1)
-  %34 = call i32 (ptr, ...) @printf(ptr @allEndMsg0, i32 4, i32 2)
-  %35 = load i32, ptr %result, align 4
-  ret i32 %35
+  %5 = select i1 %4, ptr @successMsg0, ptr @errorMsg0
+  %6 = call i32 (ptr, ...) @printf(ptr %5, ptr @testName0)
+  %7 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName1)
+  %8 = call i1 @_Z8testSub2v()
+  %9 = select i1 %8, ptr @successMsg0, ptr @errorMsg0
+  %10 = call i32 (ptr, ...) @printf(ptr %9, ptr @testName1)
+  %11 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName0)
+  %12 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 2, ptr @fileName1)
+  %13 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName2)
+  %14 = call i1 @_Z8testAdd1v()
+  %15 = select i1 %14, ptr @successMsg0, ptr @errorMsg0
+  %16 = call i32 (ptr, ...) @printf(ptr %15, ptr @testName2)
+  %17 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName3)
+  %18 = call i1 @_Z8testAdd2v()
+  %19 = select i1 %18, ptr @successMsg0, ptr @errorMsg0
+  %20 = call i32 (ptr, ...) @printf(ptr %19, ptr @testName3)
+  %21 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName1)
+  %22 = call i32 (ptr, ...) @printf(ptr @allEndMsg0, i32 4, i32 2)
+  %23 = and i1 true, %4
+  %24 = and i1 %23, %8
+  %25 = and i1 %24, %14
+  %26 = and i1 %25, %18
+  %27 = xor i1 %26, true
+  %28 = zext i1 %27 to i32
+  ret i32 %28
 }
 
 declare i1 @_Z8testSub1v()

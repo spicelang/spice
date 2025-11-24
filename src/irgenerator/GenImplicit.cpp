@@ -636,10 +636,8 @@ void IRGenerator::generateTestMain() {
   // Generate
   const std::function<void()> generateBody = [&] {
     // Prepare result variable
-    llvm::Type *boolTy = builder.getInt1Ty();
-    llvm::Type *i32Ty = builder.getInt32Ty();
-    llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
-    insertStore(builder.getInt32(1), overallResult);
+    std::vector<llvm::Value *> testCaseResults;
+    testCaseResults.reserve(tests.size());
 
     // Print start message
     const auto accFct = [&](size_t sum, const std::vector<const Function *> *innerVector) { return sum + innerVector->size(); };
@@ -696,12 +694,7 @@ void IRGenerator::generateTestMain() {
         llvm::Function *callee = module->getFunction(mangledName);
         assert(callee != nullptr);
         llvm::Value *testCaseResult = builder.CreateCall(callee);
-        llvm::Value *testCaseResultNeg = builder.CreateNeg(testCaseResult);
-
-        // Update result variable
-        llvm::Value *oldResult = insertLoad(boolTy, overallResult);
-        llvm::Value *newResult = builder.CreateOr(oldResult, testCaseResultNeg);
-        insertStore(newResult, overallResult);
+        testCaseResults.push_back(testCaseResult);
 
         // Print test case result message
         llvm::Value *message = builder.CreateSelect(testCaseResult, successMsg, errorMsg);
@@ -715,9 +708,15 @@ void IRGenerator::generateTestMain() {
     // Print end message
     builder.CreateCall(printfFct, {allEndMsg, builder.getInt32(totalTestCount), builder.getInt32(tests.size())});
 
-    // Return result
-    llvm::Value *finalResult = insertLoad(i32Ty, overallResult);
-    builder.CreateRet(finalResult);
+    // Compute overall result
+    llvm::Value *overallResult = builder.getTrue();
+    for (llvm::Value *testCaseResult : testCaseResults)
+      overallResult = builder.CreateAnd(overallResult, testCaseResult);
+
+    // Return code must be 0 for success and 1 for failure, so we need to invert the result and zero extend to 32 bit
+    llvm::Value *overallResultNegated = builder.CreateNot(overallResult);
+    llvm::Value *exitCode = builder.CreateZExt(overallResultNegated, builder.getInt32Ty());
+    builder.CreateRet(exitCode);
   };
   generateImplicitFunction(generateBody, &testMain);
 }

@@ -1,0 +1,7 @@
+[==========] Running 1 test(s) from 1 source file(s)
+[----------] Running 1 test(s) from source.spice
+[ RUN      ] testAdd
+[1m[31m[ FAILED   ][0m[22m testAdd
+[----------] Ran 1 test(s) from source.spice
+
+[==========] Ran 1 test(s) from 1 source file(s)

@@ -1,0 +1,4 @@
+[==========] Running 1 test(s) from 1 source file(s)
+[----------] Running 1 test(s) from source.spice
+[ RUN      ] testAdd
+Assertion failed: Condition 'add(1, 2) == 4' evaluated to false.
