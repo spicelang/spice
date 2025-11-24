@@ -17,5 +17,5 @@ f<bool> testAdd2() {
     assert add(5, -4) == 1;
     assert add(2, 8) == 10;
     assert add(-3, 5) == 2;
-    return false;
+    return true;
 }

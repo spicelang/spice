@@ -159,7 +159,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L29
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L29
-  ret i1 false
+  ret i1 true
 }
 
 define dso_local i1 @_Z8testSub2v() {
@@ -199,40 +199,30 @@ assert.exit.L38:                                  ; preds = %assert.exit.L37
 
 ; Function Attrs: norecurse
 define i32 @main() #2 {
-  %result = alloca i32, align 4
-  store i1 true, ptr %result, align 1
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 4, i32 1)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 4, ptr @fileName0)
   %3 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName0)
   %4 = call i1 @_Z8testAdd1v()
-  %5 = load i32, ptr %result, align 4
-  %6 = zext i1 %4 to i32
-  %7 = and i32 %5, %6
-  store i32 %7, ptr %result, align 4
-  %8 = select i1 %4, ptr @successMsg0, ptr @errorMsg0
-  %9 = call i32 (ptr, ...) @printf(ptr %8, ptr @testName0)
-  %10 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName1)
-  %11 = call i32 (ptr, ...) @printf(ptr @skippedMsg0, ptr @testName1)
-  %12 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName2)
-  %13 = call i1 @_Z8testSub1v()
-  %14 = load i32, ptr %result, align 4
-  %15 = zext i1 %13 to i32
-  %16 = and i32 %14, %15
-  store i32 %16, ptr %result, align 4
-  %17 = select i1 %13, ptr @successMsg0, ptr @errorMsg0
-  %18 = call i32 (ptr, ...) @printf(ptr %17, ptr @testName2)
-  %19 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName3)
-  %20 = call i1 @_Z8testSub2v()
-  %21 = load i32, ptr %result, align 4
-  %22 = zext i1 %20 to i32
-  %23 = and i32 %21, %22
-  store i32 %23, ptr %result, align 4
-  %24 = select i1 %20, ptr @successMsg0, ptr @errorMsg0
-  %25 = call i32 (ptr, ...) @printf(ptr %24, ptr @testName3)
-  %26 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 4, ptr @fileName0)
-  %27 = call i32 (ptr, ...) @printf(ptr @allEndMsg0, i32 4, i32 1)
-  %28 = load i32, ptr %result, align 4
-  ret i32 %28
+  %5 = select i1 %4, ptr @successMsg0, ptr @errorMsg0
+  %6 = call i32 (ptr, ...) @printf(ptr %5, ptr @testName0)
+  %7 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName1)
+  %8 = call i32 (ptr, ...) @printf(ptr @skippedMsg0, ptr @testName1)
+  %9 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName2)
+  %10 = call i1 @_Z8testSub1v()
+  %11 = select i1 %10, ptr @successMsg0, ptr @errorMsg0
+  %12 = call i32 (ptr, ...) @printf(ptr %11, ptr @testName2)
+  %13 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName3)
+  %14 = call i1 @_Z8testSub2v()
+  %15 = select i1 %14, ptr @successMsg0, ptr @errorMsg0
+  %16 = call i32 (ptr, ...) @printf(ptr %15, ptr @testName3)
+  %17 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 4, ptr @fileName0)
+  %18 = call i32 (ptr, ...) @printf(ptr @allEndMsg0, i32 4, i32 1)
+  %19 = and i1 true, %4
+  %20 = and i1 %19, %10
+  %21 = and i1 %20, %14
+  %22 = xor i1 %21, true
+  %23 = zext i1 %22 to i32
+  ret i32 %23
 }
 
 attributes #0 = { nofree nounwind }

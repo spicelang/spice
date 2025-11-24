@@ -28,7 +28,7 @@ f<bool> testSub1() {
     assert sub(1, 2) == -1;
     assert sub(2, 2) == 0;
     assert sub(3, 2) == 1;
-    return false;
+    return true;
 }
 
 #[test=true, test.skip=false]
