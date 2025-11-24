@@ -1,43 +1,26 @@
-type TLhs dyn;
-type TRhs dyn;
+type T dyn;
 type TRes dyn;
 
-// ------------------------------------------ % -------------------------------------------
+// ------------------------------------------ ~ -------------------------------------------
 
-p remTestInner<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult) {
-    const TRes actualResult = lhs % rhs;
-    //printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
-    //printf("actualResult: %f, expectedResult: %f\n", actualResult, expectedResult);
+p bitwiseNotTestInner<T>(T lhs, const T expectedResult) {
+    const T actualResult = ~lhs;
+    printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
     assert actualResult == expectedResult;
 }
 
-p remTestOuter<TLhs, TRhs, TRes>(TLhs lhs, const TRhs rhs, const TRes expectedResult1, const TRes expectedResult2, const TRes expectedResult3, const TRes expectedResult4) {
-    remTestInner(lhs, rhs, expectedResult1);   // Lhs +, Rhs +
-    remTestInner(-lhs, -rhs, expectedResult2); // Lhs -, Rhs -
-    remTestInner(-lhs, rhs, expectedResult3);  // Lhs -, Rhs +
-    remTestInner(lhs, -rhs, expectedResult4);  // Lhs +, Rhs -
-}
-
-p remTest() {
-    // Lhs is double
-    remTestOuter<double, double, double>(121.0, 5.5, 0.0, -0.0, -0.0, 0.0);
+p bitwiseNotTest() {
     // Lhs is int
-    remTestOuter<int, int, int>(52572, 674, 0, 0, -0, -0);
-    remTestOuter<int, short, int>(546, 8s, 2, -2, -2, 2);
-    remTestOuter<int, long, long>(186008394, 238l, 208l, -208l, -208l, 208l);
+    bitwiseNotTestInner<int>(52572, -52573);
     // Lhs is short
-    remTestOuter<short, int, int>(10s, 5, 0, -0, -0, 0);
-    remTestOuter<short, short, short>(546s, 9s, 6s, -6s, -6s, 6s);
-    remTestOuter<short, long, long>(78s, 78l, 0l, -0l, -0l, 0l);
+    bitwiseNotTestInner<short>(10s, -11s);
     // Lhs is long
-    remTestOuter<long, int, long>(52572l, 1, 0l, -0l, -0l, 0l);
-    remTestOuter<long, short, long>(546l, 11s, 7l, -7l, -7l, 7l);
-    remTestOuter<long, long, long>(186008394l, 186008393l, 1l, -1l, -1l, 1l);
+    bitwiseNotTestInner<long>(186008394l, -186008395l);
+    // Lhs is byte
+    bitwiseNotTestInner<byte>(cast<byte>(18), cast<byte>(-19));
 }
 
 f<int> main() {
-    remTest(); // %
-    // ToDo: Extend
-
+    bitwiseNotTest();
     printf("All assertions passed!");
 }

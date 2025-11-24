@@ -1464,10 +1464,9 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, 
   case TY_SHORT: // fallthrough
   case TY_LONG:
     return {.value = builder.CreateNeg(lhsV(), "")};
-  default:
-    break;
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
@@ -1485,10 +1484,9 @@ LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *nod
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
   }
-  default:
-    break;
+  default:                                                                      // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
@@ -1506,10 +1504,9 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *n
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
   }
-  default:
-    break;
+  default:                                                                      // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
@@ -1519,10 +1516,9 @@ LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LL
   switch (lhsSTy.getSuperType()) {
   case TY_BOOL:
     return {.value = builder.CreateNot(lhsV())};
-  default:
-    break;
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
@@ -1532,12 +1528,12 @@ LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *n
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
-  case TY_LONG:
+  case TY_LONG:  // fallthrough
+  case TY_BYTE:
     return {.value = builder.CreateNot(lhsV())};
-  default:
-    break;
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ~"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
@@ -1561,10 +1557,9 @@ LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *no
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
   }
-  default:
-    break;
+  default:                                                                       // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
@@ -1588,10 +1583,9 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
   }
-  default:
-    break;
+  default:                                                                       // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs,
@@ -1637,9 +1631,7 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     return {.value = lhsSTy.isSigned() ? builder.CreateFPToSI(rhsV(), lhsT) : builder.CreateFPToUI(rhsV(), lhsT)};
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): // fallthrough
-  case COMB(TY_BYTE, TY_INT):   // fallthrough
-  case COMB(TY_BYTE, TY_SHORT): // fallthrough
-  case COMB(TY_BYTE, TY_LONG):
+  case COMB(TY_BYTE, TY_INT):
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_BYTE, TY_CHAR):
     return {.value = rhsV()};

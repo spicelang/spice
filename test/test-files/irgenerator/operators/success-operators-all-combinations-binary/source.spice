@@ -485,7 +485,7 @@ p equalTest() {
 // ------------------------------------------ != -----------------------------------------
 
 p notEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
-    const bool actualResult = lhs == rhs;
+    const bool actualResult = lhs != rhs;
     assert actualResult == expectedResult;
 }
 
@@ -992,31 +992,31 @@ p remTest() {
 }
 
 f<int> main() {
-    plusEqualTest();    // +=
-    minusEqualTest();   // -=
-    mulEqualTest();     // *=
-    divEqualTest();     // /=
-    remEqualTest();     // %=
-    shlEqualTest();     // <<=
-    shrEqualTest();     // >>=
-    andEqualTest();     // &=
-    orEqualTest();      // |=
-    xorEqualTest();     // ^=
-    bitwiseOrTest();    // |
-    bitwiseXorTest();   // ^
-    bitwiseAndTest();   // &
-    equalTest();        // ==
-    notEqualTest();     // !=
-    lessTest();         // <
-    greaterTest();      // >
-    lessEqualTest();    // <=
-    greaterEqualTest(); // >=
-    shlTest();          // <<
-    shrTest();          // >>
-    plusTest();         // +
-    minusTest();        // -
-    mulTest();          // *
-    divTest();          // /
-    remTest();          // %
+    plusEqualTest();    // x += y
+    minusEqualTest();   // x -= y
+    mulEqualTest();     // x *= y
+    divEqualTest();     // x /= y
+    remEqualTest();     // x %= y
+    shlEqualTest();     // x <<= y
+    shrEqualTest();     // x >>= y
+    andEqualTest();     // x &= y
+    orEqualTest();      // x |= y
+    xorEqualTest();     // x ^= y
+    bitwiseOrTest();    // x | y
+    bitwiseXorTest();   // x ^ y
+    bitwiseAndTest();   // x & y
+    equalTest();        // x == y
+    notEqualTest();     // x != y
+    lessTest();         // x < y
+    greaterTest();      // x > y
+    lessEqualTest();    // x <= y
+    greaterEqualTest(); // x >= y
+    shlTest();          // x << y
+    shrTest();          // x >> y
+    plusTest();         // x + y
+    minusTest();        // x - y
+    mulTest();          // x * y
+    divTest();          // x / y
+    remTest();          // x % y
     printf("All assertions passed!");
 }
