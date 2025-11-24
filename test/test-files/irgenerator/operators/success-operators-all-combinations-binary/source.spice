@@ -485,7 +485,7 @@ p equalTest() {
 // ------------------------------------------ != -----------------------------------------
 
 p notEqualTestInner<TLhs, TRhs>(TLhs lhs, const TRhs rhs, const bool expectedResult) {
-    const bool actualResult = lhs == rhs;
+    const bool actualResult = lhs != rhs;
     assert actualResult == expectedResult;
 }
 
