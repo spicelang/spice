@@ -636,9 +636,10 @@ void IRGenerator::generateTestMain() {
   // Generate
   const std::function<void()> generateBody = [&] {
     // Prepare result variable
+    llvm::Type *boolTy = builder.getInt1Ty();
     llvm::Type *i32Ty = builder.getInt32Ty();
     llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
-    insertStore(builder.getTrue(), overallResult);
+    insertStore(builder.getInt32(1), overallResult);
 
     // Print start message
     const auto accFct = [&](size_t sum, const std::vector<const Function *> *innerVector) { return sum + innerVector->size(); };
@@ -695,10 +696,11 @@ void IRGenerator::generateTestMain() {
         llvm::Function *callee = module->getFunction(mangledName);
         assert(callee != nullptr);
         llvm::Value *testCaseResult = builder.CreateCall(callee);
+        llvm::Value *testCaseResultNeg = builder.CreateNeg(testCaseResult);
 
         // Update result variable
-        llvm::Value *oldResult = insertLoad(i32Ty, overallResult);
-        llvm::Value *newResult = builder.CreateAnd(oldResult, builder.CreateZExt(testCaseResult, i32Ty));
+        llvm::Value *oldResult = insertLoad(boolTy, overallResult);
+        llvm::Value *newResult = builder.CreateOr(oldResult, testCaseResultNeg);
         insertStore(newResult, overallResult);
 
         // Print test case result message
