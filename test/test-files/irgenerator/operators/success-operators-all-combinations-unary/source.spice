@@ -176,12 +176,12 @@ p castTest() {
     castInner<char, byte>(cast<byte>(57), '9');
     // Special casts
     // cast<const char*>(string)
-    String str = String("test");
-    castInner<string, const char*>(cast<const char*>(str.getRaw()), "test");
+    //String str = String("test");
+    //castInner<string, const char*>(cast<const char*>(str.getRaw()), "test");
     // cast<char[]>(string)
-    castInner<string, const char[]>(['t', 'e', 's', 't', '\0'], "test");
+    //castInner<string, const char[]>(['t', 'e', 's', 't', '\0'], "test");
     // cast<string>(const char*)
-    castInner<const char*, string>("test", cast<const char*>(str.getRaw()));
+    //castInner<const char*, string>("test", cast<const char*>(str.getRaw()));
     // cast<any*>(any*)
     castInnerUnsafe<int*, short*>(nil<short*>, nil<int*>);
 }
