@@ -97,8 +97,7 @@ public type SemanticErrorType enum {
     EXPECTED_CONST_VARIABLE,
     DIVISION_BY_ZERO,
     TEST_FUNCTION_WITH_PARAMS,
-    TEST_FUNCTION_WRONG_RETURN_TYPE,
-    COMING_SOON_SA
+    TEST_FUNCTION_WRONG_RETURN_TYPE
 }
 
 public type SemanticError struct {

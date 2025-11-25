@@ -37,7 +37,7 @@ void execTestCase(const TestCase &testCase) {
   CliOptions cliOptions = {
       /* mainSourceFile= */ mainSourceFilePath,
       /* targetTriple= */ {},
-      /* targetArch= */ TARGET_UNKNOWN,
+      /* targetArch= */ TARGET_UNKNOWN, // GCOV_EXCL_LINE - coverage tool bug
       /* targetVendor= */ TARGET_UNKNOWN,
       /* targetOs= */ TARGET_UNKNOWN,
       /* isNativeTarget= */ true,
@@ -146,8 +146,8 @@ void execTestCase(const TestCase &testCase) {
                             [&] { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
-    if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT))
-      FAIL() << "Expected error, but got no error";
+    if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT)) // GCOV_EXCL_LINE
+      FAIL() << "Expected error, but got no error";                        // GCOV_EXCL_LINE
 
     // Check dependency graph
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_DEP_GRAPH, [&] {
@@ -195,6 +195,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check assembly code (only when not running test on GitHub Actions)
     bool objectFilesEmitted = false;
+    // GCOV_EXCL_START
     if (!testDriverCliOptions.isGitHubActions) {
       TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] {
         mainSourceFile->runObjectEmitter();
@@ -203,6 +204,7 @@ void execTestCase(const TestCase &testCase) {
         return mainSourceFile->compilerOutput.asmString;
       });
     }
+    // GCOV_EXCL_STOP
 
     // Check warnings
     mainSourceFile->collectAndPrintWarnings();
@@ -226,12 +228,6 @@ void execTestCase(const TestCase &testCase) {
 
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
-
-      // Parse linker flags
-      const std::filesystem::path linkerFlagsFile = testCase.testPath / INPUT_NAME_LINKER_FLAGS;
-      if (exists(linkerFlagsFile))
-        for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
-          resourceManager.linker.addLinkerFlag(linkerFlag);
 
       // Prepare and run linker
       resourceManager.linker.prepare();
@@ -276,6 +272,7 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the debugger output matches the expected output
+    // GCOV_EXCL_START
     if (!testDriverCliOptions.isGitHubActions) { // GDB tests are currently not support on GH actions
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_GDB_OUTPUT,
@@ -299,6 +296,7 @@ void execTestCase(const TestCase &testCase) {
             TestUtil::eraseGDBHeader(actualOutput);
           });
     }
+    // GCOV_EXCL_STOP
   } catch (LexerError &error) {
     TestUtil::handleError(testCase, error);
   } catch (ParserError &error) {
@@ -309,9 +307,9 @@ void execTestCase(const TestCase &testCase) {
     TestUtil::handleError(testCase, error);
   } catch (LinkerError &error) {
     TestUtil::handleError(testCase, error);
-  } catch (std::exception &error) {
-    TestUtil::handleError(testCase, error);
-  }
+  } catch (std::exception &error) {         // GCOV_EXCL_LINE
+    TestUtil::handleError(testCase, error); // GCOV_EXCL_LINE
+  } // GCOV_EXCL_LINE
 
   SUCCEED();
 }
