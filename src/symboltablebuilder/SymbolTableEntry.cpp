@@ -103,24 +103,6 @@ bool SymbolTableEntry::isField() const {
 }
 
 /**
- * Check if this symbol is a function/procedure definition
- *
- * @return Function/procedure or not
- */
-bool SymbolTableEntry::isFunctionOrProcedure() const {
-  return scope->type == ScopeType::GLOBAL && qualType.isOneOf({TY_FUNCTION, TY_PROCEDURE});
-}
-
-/**
- * Check if this symbol is a method definition
- *
- * @return Method or not
- */
-bool SymbolTableEntry::isMethod() const {
-  return scope->type == ScopeType::STRUCT && !isField() && qualType.isOneOf({TY_FUNCTION, TY_PROCEDURE});
-}
-
-/**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
  *
  * Example:

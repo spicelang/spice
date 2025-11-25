@@ -34,8 +34,8 @@ void TestUtil::parseTestArgs(const std::filesystem::path &sourceCodePath, std::v
 
   // Only allow "// TEST: " as prefix
   assert(firstLine.rfind("//TEST:", 0) != 0);
-  if (firstLine.rfind("// TEST: ", 0) != 0)
-    return;
+  if (firstLine.rfind("// TEST: ", 0) != 0) // GCOV_EXCL_LINE
+    return;                                 // GCOV_EXCL_LINE
 
   const size_t colonPos = firstLine.find(':');
   if (colonPos == std::string::npos)
@@ -101,15 +101,15 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOutputFct getActualOutput,
                              ModifyOutputFct modifyOutputFct, [[maybe_unused]] bool x86Only) {
   for (const std::filesystem::path &refPath : expandRefPaths(originalRefPath)) {
-    if (testDriverCliOptions.isVerbose)
-      std::cout << "Checking for ref file: " << refPath << " - ";
+    if (testDriverCliOptions.isVerbose)                           // GCOV_EXCL_LINE
+      std::cout << "Checking for ref file: " << refPath << " - "; // GCOV_EXCL_LINE
     if (!exists(refPath)) {
-      if (testDriverCliOptions.isVerbose)
-        std::cout << "not found" << std::endl;
+      if (testDriverCliOptions.isVerbose)      // GCOV_EXCL_LINE
+        std::cout << "not found" << std::endl; // GCOV_EXCL_LINE
       continue;
     }
-    if (testDriverCliOptions.isVerbose)
-      std::cout << "ok" << std::endl;
+    if (testDriverCliOptions.isVerbose) // GCOV_EXCL_LINE
+      std::cout << "ok" << std::endl;   // GCOV_EXCL_LINE
 
     // Get actual output
     std::string actualOutput = getActualOutput();
@@ -120,9 +120,9 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
       return true;
 #endif
 
-    if (testDriverCliOptions.updateRefs) { // Update refs
-      FileUtil::writeToFile(refPath, actualOutput);
-    } else { // Check refs
+    if (testDriverCliOptions.updateRefs) {          // GCOV_EXCL_LINE
+      FileUtil::writeToFile(refPath, actualOutput); // GCOV_EXCL_LINE
+    } else {
       std::string expectedOutput = FileUtil::getFileContent(refPath);
       modifyOutputFct(expectedOutput, actualOutput);
       EXPECT_EQ(expectedOutput, actualOutput) << "Output does not match the reference file: " << refPath;

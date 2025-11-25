@@ -17,7 +17,6 @@ static constexpr size_t EXPECTED_NUMBER_OF_TESTS = 250;
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 
-const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
 
 const char *const REF_NAME_SOURCE = "source.spice";

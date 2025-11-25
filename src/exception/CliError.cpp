@@ -47,8 +47,6 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Invalid build mode";
   case INVALID_SANITIZER:
     return "Invalid sanitizer";
-  case COMING_SOON_CLI:
-    return "Coming soon";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

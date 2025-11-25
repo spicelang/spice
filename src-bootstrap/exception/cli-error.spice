@@ -9,8 +9,7 @@ public type CliErrorType enum {
     INVALID_TARGET_TRIPLE,
     SOURCE_FILE_MISSING,
     OPT_DEBUG_INFO_INCOMPATIBILITY,
-    NON_ZERO_EXIT_CODE,
-    COMING_SOON_CLI
+    NON_ZERO_EXIT_CODE
 }
 
 /**
@@ -43,7 +42,6 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::SOURCE_FILE_MISSING: { return "Source file missing"; }
         case CliErrorType::OPT_DEBUG_INFO_INCOMPATIBILITY: { return "Cannot emit debug info with optimization enabled"; }
         case CliErrorType::NON_ZERO_EXIT_CODE: { return "Non-zero exit code"; }
-        case CliErrorType::COMING_SOON_CLI: { return "Coming soon"; }
         default: { panic(Error("Unknown error")); }
     }
 }
