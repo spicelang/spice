@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
-define private i32 @_Z4testv() {
+define private noundef i32 @_Z4testv() {
   %result = alloca i32, align 4
   ret i32 12
 }

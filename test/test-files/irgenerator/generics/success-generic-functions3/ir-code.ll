@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 6' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
-define private void @_Z3fooIRiEvRi(ptr %0) {
+define private void @_Z3fooIRiEvRi(ptr noundef %0) {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -15,7 +15,7 @@ define private void @_Z3fooIRiEvRi(ptr %0) {
   ret void
 }
 
-define private void @_Z3barRi(ptr %0) {
+define private void @_Z3barRi(ptr noundef %0) {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -31,7 +31,7 @@ define dso_local noundef i32 @main() #0 {
   %t = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i32 1, ptr %t, align 4
-  call void @_Z3fooIRiEvRi(ptr %t)
+  call void @_Z3fooIRiEvRi(ptr noundef %t)
   %1 = load i32, ptr %t, align 4
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L13, label %assert.then.L13, !prof !5
@@ -42,7 +42,7 @@ assert.then.L13:                                  ; preds = %0
   unreachable
 
 assert.exit.L13:                                  ; preds = %0
-  call void @_Z3barRi(ptr %t)
+  call void @_Z3barRi(ptr noundef %t)
   %4 = load i32, ptr %t, align 4
   %5 = icmp eq i32 %4, 6
   br i1 %5, label %assert.exit.L15, label %assert.then.L15, !prof !5

@@ -10,7 +10,7 @@ source_filename = "source.spice"
 define private fastcc void @_Z3foov() unnamed_addr #0 {
   %1 = alloca %struct.Error, align 8
   %2 = tail call ptr @__acrt_iob_func(i32 2)
-  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr nonnull @anon.string.1)
+  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef nonnull @anon.string.1)
   %3 = getelementptr inbounds nuw i8, ptr %1, i64 8
   %4 = load ptr, ptr %3, align 8
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr nonnull @anon.string.0, ptr %4)

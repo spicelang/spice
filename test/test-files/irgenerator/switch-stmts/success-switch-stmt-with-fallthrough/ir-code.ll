@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.3 = private unnamed_addr constant [22 x i8] c"Input is at least 2.\0A\00", align 4
 @printf.str.4 = private unnamed_addr constant [22 x i8] c"Input is at least 1.\0A\00", align 4
 
-define private void @_Z12isBiggerThani(i32 %0) {
+define private void @_Z12isBiggerThani(i32 noundef %0) {
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
   %2 = load i32, ptr %input, align 4
@@ -50,9 +50,9 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  call void @_Z12isBiggerThani(i32 3)
-  call void @_Z12isBiggerThani(i32 5)
-  call void @_Z12isBiggerThani(i32 1)
+  call void @_Z12isBiggerThani(i32 noundef 3)
+  call void @_Z12isBiggerThani(i32 noundef 5)
+  call void @_Z12isBiggerThani(i32 noundef 1)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

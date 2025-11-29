@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @anon.array.1 = private unnamed_addr constant [4 x i64] [i64 10, i64 12, i64 14, i64 16]
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 4
 
-define private i32 @_Z10sumNumbersIsEiPsl(ptr %0, i64 %1) {
+define private noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %0, i64 noundef %1) {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -45,7 +45,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private i32 @_Z10sumNumbersIlEiPll(ptr %0, i64 %1) {
+define private noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %0, i64 noundef %1) {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -84,7 +84,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private void @_Z9printDataIPiEvlPi(i64 %0, ptr %1) {
+define private void @_Z9printDataIPiEvlPi(i64 noundef %0, ptr noundef %1) {
   %arrayLength = alloca i64, align 8
   %list = alloca ptr, align 8
   %i = alloca i64, align 8
@@ -132,11 +132,11 @@ define dso_local noundef i32 @main() #1 {
   store i32 0, ptr %result, align 4
   store [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7], ptr %numberList1, align 2
   %2 = getelementptr inbounds [7 x i16], ptr %numberList1, i64 0, i32 0
-  %3 = call i32 @_Z10sumNumbersIsEiPsl(ptr %2, i64 7)
+  %3 = call noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %2, i64 noundef 7)
   store i32 %3, ptr %result1, align 4
   store [4 x i64] [i64 10, i64 12, i64 14, i64 16], ptr %numberList2, align 8
   %4 = getelementptr inbounds [4 x i64], ptr %numberList2, i64 0, i32 0
-  %5 = call i32 @_Z10sumNumbersIlEiPll(ptr %4, i64 4)
+  %5 = call noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %4, i64 noundef 4)
   store i32 %5, ptr %result2, align 4
   %6 = getelementptr inbounds [2 x i32], ptr %1, i64 0
   %7 = load i32, ptr %result1, align 4
@@ -147,7 +147,7 @@ define dso_local noundef i32 @main() #1 {
   %10 = load [2 x i32], ptr %1, align 4
   store [2 x i32] %10, ptr %resultList, align 4
   %11 = getelementptr inbounds [2 x i32], ptr %resultList, i64 0, i32 0
-  call void @_Z9printDataIPiEvlPi(i64 2, ptr %11)
+  call void @_Z9printDataIPiEvlPi(i64 noundef 2, ptr noundef %11)
   %12 = load i32, ptr %result1, align 4
   %13 = load i32, ptr %result2, align 4
   %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %12, i32 noundef %13)

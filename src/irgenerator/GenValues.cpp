@@ -60,15 +60,16 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   Function *spiceFunc = data.callee;
+  assert(data.isFctPtrCall() || spiceFunc != nullptr); // If not a function pointer call, we must have a function
   std::string mangledName;
   if (!data.isFctPtrCall())
     mangledName = spiceFunc->getMangledName();
-  std::vector<llvm::Value *> argValues;
 
   // Get entry of the first fragment
   SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
 
   // Get this type
+  std::vector<llvm::Value *> argValues;
   llvm::Value *thisPtr = nullptr;
   if (data.isMethodCall()) {
     assert(!data.isCtorCall());
@@ -226,7 +227,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
   assert(fctType != nullptr);
 
-  llvm::CallInst *result;
+  llvm::CallInst *callInst;
   if (data.isVirtualMethodCall()) {
     assert(data.callee->isVirtual);
     assert(thisPtr != nullptr);
@@ -238,7 +239,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
 
     // Generate function call
-    result = builder.CreateCall({fctType, fct}, argValues);
+    callInst = builder.CreateCall({fctType, fct}, argValues);
   } else if (data.isFctPtrCall()) {
     assert(firstFragEntry != nullptr);
     QualType firstFragType = firstFragEntry->getQualType();
@@ -248,22 +249,20 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
 
     // Generate function call
-    result = builder.CreateCall({fctType, fct}, argValues);
+    callInst = builder.CreateCall({fctType, fct}, argValues);
   } else {
     // Get callee function
     llvm::Function *callee = module->getFunction(mangledName);
     assert(callee != nullptr);
 
     // Generate function call
-    result = builder.CreateCall(callee, argValues);
+    callInst = builder.CreateCall(callee, argValues);
   }
 
-  if (data.isMethodCall() || data.isCtorCall() || data.isVirtualMethodCall()) {
-    result->addParamAttr(0, llvm::Attribute::NoUndef);
-    result->addParamAttr(0, llvm::Attribute::NonNull);
-    llvm::Type *thisType = data.thisType.toLLVMType(sourceFile);
-    result->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(thisType));
-    result->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(thisType)));
+  // Set argument and return value attributes
+  if (!data.isFctPtrCall()) {
+    setCallArgAttrs(callInst, spiceFunc, paramSTypes);
+    setCallReturnValAttrs(callInst, returnSType);
   }
 
   // Attach address to anonymous symbol to keep track of de-allocation
@@ -275,8 +274,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       if (data.isCtorCall()) {
         anonymousSymbol->updateAddress(thisPtr);
       } else {
-        resultPtr = insertAlloca(result->getType());
-        insertStore(result, resultPtr);
+        resultPtr = insertAlloca(callInst->getType());
+        insertStore(callInst, resultPtr);
         anonymousSymbol->updateAddress(resultPtr);
       }
     }
@@ -288,10 +287,50 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // In case this is a callee, returning a reference, return the address
   if (returnSType.isRef())
-    return LLVMExprResult{.ptr = result, .refPtr = resultPtr, .entry = anonymousSymbol};
+    return LLVMExprResult{.ptr = callInst, .refPtr = resultPtr, .entry = anonymousSymbol};
 
   // Otherwise return the value
-  return LLVMExprResult{.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
+  return LLVMExprResult{.value = callInst, .ptr = resultPtr, .entry = anonymousSymbol};
+}
+
+void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const {
+  const bool isFctPtr = spiceFunc == nullptr;
+  const bool isMethod = !isFctPtr && !spiceFunc->thisType.is(TY_DYN);
+  const size_t expectedParamCount = isMethod || isFctPtr ? paramSTypes.size() + 1 : paramSTypes.size();
+  assert(callInst->arg_size() == expectedParamCount);
+  for (size_t i = 0; i < expectedParamCount; i++) {
+    const QualType &paramType = i == 0 && isMethod ? spiceFunc->thisType.toPtr(nullptr) : paramSTypes.at(isMethod ? i - 1 : i);
+
+    // NoUndef attribute
+    callInst->addParamAttr(i, llvm::Attribute::NoUndef);
+
+    if (paramType.isPtr()) {
+      // NonNull attribute
+      if (i == 0 && isMethod)
+        callInst->addParamAttr(i, llvm::Attribute::NonNull);
+      // Dereferenceable attribute
+      llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
+      assert(pointeeType != nullptr);
+      callInst->addDereferenceableParamAttr(i, callInst->getModule()->getDataLayout().getTypeStoreSize(pointeeType));
+      // Alignment attribute
+      callInst->addParamAttr(i, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(pointeeType)));
+    }
+
+    // ZExt or SExt attribute
+    if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramType); extAttrKind != llvm::Attribute::None)
+      callInst->addParamAttr(i, extAttrKind);
+  }
+}
+
+void IRGenerator::setCallReturnValAttrs(llvm::CallInst *callInst, const QualType &returnType) const {
+  if (returnType.is(TY_DYN))
+    return;
+
+  // NoUndef attribute
+  callInst->addRetAttr(llvm::Attribute::NoUndef);
+  // ZExt or SExt attribute
+  if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(returnType); extAttrKind != llvm::Attribute::None)
+    callInst->addRetAttr(extAttrKind);
 }
 
 std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *node) {

@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
-define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
+define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) {
   %intRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
   store ptr %0, ptr %intRef, align 8
@@ -29,7 +29,7 @@ define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private i32 @_Z4funcRdRK6Struct(ptr %0, ptr %1) {
+define private noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) {
   %result = alloca i32, align 4
   %doubleRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
@@ -59,7 +59,7 @@ define dso_local noundef i32 @main() #1 {
   store ptr %i, ptr %1, align 8
   %3 = getelementptr inbounds nuw %struct.Struct, ptr %1, i32 0, i32 1
   store i1 true, ptr %3, align 1
-  call void @_Z4procRiRK6Struct(ptr %i, ptr %1)
+  call void @_Z4procRiRK6Struct(ptr noundef %i, ptr noundef %1)
   %4 = load i32, ptr %i, align 4
   %5 = icmp eq i32 %4, -4309
   br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !5
@@ -74,7 +74,7 @@ assert.exit.L20:                                  ; preds = %0
   store ptr %i, ptr %2, align 8
   %7 = getelementptr inbounds nuw %struct.Struct, ptr %2, i32 0, i32 1
   store i1 false, ptr %7, align 1
-  %8 = call i32 @_Z4funcRdRK6Struct(ptr %d, ptr %2)
+  %8 = call noundef i32 @_Z4funcRdRK6Struct(ptr noundef %d, ptr noundef %2)
   store i32 %8, ptr %result, align 4
   %9 = load double, ptr %d, align 8
   %10 = fcmp oeq double %9, -1.076400e+02

@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @printf.str.0 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 4
 
-define private ptr @_Z13getTestStringidb(i32 %0, double %1, i1 %2) {
+define private noundef ptr @_Z13getTestStringidb(i32 noundef %0, double noundef %1, i1 noundef zeroext %2) {
   %result = alloca ptr, align 8
   %_arg0 = alloca i32, align 4
   %_arg1 = alloca double, align 8
@@ -21,7 +21,7 @@ define private ptr @_Z13getTestStringidb(i32 %0, double %1, i1 %2) {
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call ptr @_Z13getTestStringidb(i32 1, double 3.400000e+00, i1 true)
+  %1 = call noundef ptr @_Z13getTestStringidb(i32 noundef 1, double noundef 3.400000e+00, i1 noundef zeroext true)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

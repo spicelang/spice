@@ -25,7 +25,7 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceab
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) {
+define private noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) {
   %result = alloca %struct.Stamp, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -47,7 +47,7 @@ define dso_local noundef i32 @main() #1 {
   %1 = load i1, ptr %glued.addr, align 1
   %2 = zext i1 %1 to i32
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %2)
-  %4 = call %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
+  %4 = call noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
   store %struct.Stamp %4, ptr %stamp, align 8
   call void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %stamp)
   %5 = load i32, ptr %result, align 4

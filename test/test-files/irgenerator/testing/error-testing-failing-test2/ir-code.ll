@@ -13,7 +13,7 @@ source_filename = "source.spice"
 @fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
 @testName0 = private unnamed_addr constant [8 x i8] c"testAdd\00", align 4
 
-define private i32 @_Z3addii(i32 %0, i32 %1) {
+define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -25,9 +25,9 @@ define private i32 @_Z3addii(i32 %0, i32 %1) {
   ret i32 %5
 }
 
-define dso_local i1 @_Z7testAddv() {
+define dso_local noundef zeroext i1 @_Z7testAddv() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3addii(i32 1, i32 2)
+  %1 = call noundef i32 @_Z3addii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, 4
   br i1 %2, label %assert.exit.L7, label %assert.then.L7, !prof !5
 

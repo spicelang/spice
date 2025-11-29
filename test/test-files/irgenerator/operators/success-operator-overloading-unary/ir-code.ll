@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @anon.string.3 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 123l' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
-define private ptr @_Z16op.plusplus.postR10TestStruct(ptr %0) {
+define private noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) {
   %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8
@@ -22,7 +22,7 @@ define private ptr @_Z16op.plusplus.postR10TestStruct(ptr %0) {
   ret ptr %5
 }
 
-define private ptr @_Z18op.minusminus.postR10TestStruct(ptr %0) {
+define private noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0) {
   %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8

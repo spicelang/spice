@@ -54,13 +54,13 @@ define dso_local noundef i32 @main() #1 !dbg !30 {
   %2 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1, !dbg !36
   store ptr poison, ptr %2, align 8, !dbg !36
   %3 = load { ptr, ptr }, ptr %fat.ptr, align 8, !dbg !36
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread1, { ptr, ptr } %3), !dbg !36
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread1, { ptr, ptr } noundef %3), !dbg !36
     #dbg_declare(ptr %thread1, !37, !DIExpression(), !48)
   store ptr @_Z6workerv, ptr %fat.ptr1, align 8, !dbg !49
   %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1, !dbg !49
   store ptr poison, ptr %4, align 8, !dbg !49
   %5 = load { ptr, ptr }, ptr %fat.ptr1, align 8, !dbg !49
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread2, { ptr, ptr } %5), !dbg !49
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread2, { ptr, ptr } noundef %5), !dbg !49
     #dbg_declare(ptr %thread2, !50, !DIExpression(), !51)
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread1), !dbg !52
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread2), !dbg !53

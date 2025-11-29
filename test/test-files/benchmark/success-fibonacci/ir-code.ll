@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-define private i32 @_Z4fiboi(i32 %0) {
+define private noundef i32 @_Z4fiboi(i32 noundef %0) {
   %result = alloca i32, align 4
   %n = alloca i32, align 4
   store i32 %0, ptr %n, align 4
@@ -18,10 +18,10 @@ if.then.L2:                                       ; preds = %1
 if.exit.L2:                                       ; preds = %1
   %5 = load i32, ptr %n, align 4
   %6 = sub nsw i32 %5, 1
-  %7 = call i32 @_Z4fiboi(i32 %6)
+  %7 = call noundef i32 @_Z4fiboi(i32 noundef %6)
   %8 = load i32, ptr %n, align 4
   %9 = sub nsw i32 %8, 2
-  %10 = call i32 @_Z4fiboi(i32 %9)
+  %10 = call noundef i32 @_Z4fiboi(i32 noundef %9)
   %11 = add nsw i32 %7, %10
   ret i32 %11
 }
@@ -30,7 +30,7 @@ if.exit.L2:                                       ; preds = %1
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_Z4fiboi(i32 30)
+  %1 = call noundef i32 @_Z4fiboi(i32 noundef 30)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

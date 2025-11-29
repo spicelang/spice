@@ -33,7 +33,7 @@ define private void @_ZN3Car5driveEi(ptr noundef nonnull writeonly align 8 captu
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
-define private i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull readonly align 8 captures(none) dereferenceable(16) %0) #1 {
+define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull readonly align 8 captures(none) dereferenceable(16) %0) #1 {
   %driving.addr = getelementptr inbounds nuw i8, ptr %0, i64 8
   %2 = load i1, ptr %driving.addr, align 8
   ret i1 %2
@@ -45,11 +45,11 @@ define dso_local noundef i32 @main() local_unnamed_addr #2 {
   call fastcc void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %car) #4
   %vtable.addr = load ptr, ptr %car, align 8
   %fct = load ptr, ptr %vtable.addr, align 8
-  call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %car, i32 12) #4
+  call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %car, i32 noundef 12) #4
   %vtable.addr1 = load ptr, ptr %car, align 8
   %vfct.addr2 = getelementptr inbounds nuw i8, ptr %vtable.addr1, i64 8
   %fct3 = load ptr, ptr %vfct.addr2, align 8
-  %1 = call i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %car) #4
+  %1 = call noundef zeroext i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %car) #4
   %2 = zext i1 %1 to i32
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %2)
   ret i32 0

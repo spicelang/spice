@@ -13,13 +13,13 @@ define dso_local noundef i32 @main() #0 {
   %i = alloca i32, align 4
   %iPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @_Z11printFormatIdEvd(double 1.123000e+00)
-  call void @_Z11printFormatIiEvi(i32 543)
-  call void @_Z11printFormatIA2_PKcEvA2_PKc([2 x ptr] [ptr @anon.string.0, ptr @anon.string.1])
+  call void @_Z11printFormatIdEvd(double noundef 1.123000e+00)
+  call void @_Z11printFormatIiEvi(i32 noundef 543)
+  call void @_Z11printFormatIA2_PKcEvA2_PKc([2 x ptr] noundef [ptr @anon.string.0, ptr @anon.string.1])
   store i32 1234, ptr %test, align 4
-  call void @_Z11printFormatIPiEvPi(ptr %test)
+  call void @_Z11printFormatIPiEvPi(ptr noundef align 4 dereferenceable(4) %test)
   store i32 12, ptr %i, align 4
-  %1 = call ptr @_Z7getAIncIiEPiPi(ptr %i)
+  %1 = call noundef ptr @_Z7getAIncIiEPiPi(ptr noundef align 4 dereferenceable(4) %i)
   store ptr %1, ptr %iPtr, align 8
   %2 = load ptr, ptr %iPtr, align 8
   %3 = load i32, ptr %2, align 4

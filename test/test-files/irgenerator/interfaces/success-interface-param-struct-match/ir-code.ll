@@ -43,7 +43,7 @@ define private void @_ZN4Test4testEv(ptr noundef nonnull align 8 dereferenceable
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private void @_Z7testFctR5ITest(ptr %0) {
+define private void @_Z7testFctR5ITest(ptr noundef %0) {
   %test = alloca ptr, align 8
   store ptr %0, ptr %test, align 8
   %2 = load ptr, ptr %test, align 8
@@ -63,7 +63,7 @@ define dso_local noundef i32 @main() #1 {
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %test)
   store ptr %test, ptr %itest, align 8
   %1 = load ptr, ptr %itest, align 8
-  call void @_Z7testFctR5ITest(ptr %1)
+  call void @_Z7testFctR5ITest(ptr noundef %1)
   ret i32 0
 }
 

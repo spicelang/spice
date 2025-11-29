@@ -27,7 +27,7 @@ source_filename = "source.spice"
 @testName2 = private unnamed_addr constant [9 x i8] c"testSub1\00", align 4
 @testName3 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 4
 
-define private i32 @_Z3addii(i32 %0, i32 %1) {
+define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -39,7 +39,7 @@ define private i32 @_Z3addii(i32 %0, i32 %1) {
   ret i32 %5
 }
 
-define private i32 @_Z3subii(i32 %0, i32 %1) {
+define private noundef i32 @_Z3subii(i32 noundef %0, i32 noundef %1) {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -51,9 +51,9 @@ define private i32 @_Z3subii(i32 %0, i32 %1) {
   ret i32 %5
 }
 
-define dso_local i1 @_Z8testAdd1v() {
+define dso_local noundef zeroext i1 @_Z8testAdd1v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3addii(i32 1, i32 2)
+  %1 = call noundef i32 @_Z3addii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L12, label %assert.then.L12, !prof !5
 
@@ -63,7 +63,7 @@ assert.then.L12:                                  ; preds = %0
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
-  %4 = call i32 @_Z3addii(i32 2, i32 2)
+  %4 = call noundef i32 @_Z3addii(i32 noundef 2, i32 noundef 2)
   %5 = icmp eq i32 %4, 4
   br i1 %5, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
@@ -73,7 +73,7 @@ assert.then.L13:                                  ; preds = %assert.exit.L12
   unreachable
 
 assert.exit.L13:                                  ; preds = %assert.exit.L12
-  %7 = call i32 @_Z3addii(i32 3, i32 2)
+  %7 = call noundef i32 @_Z3addii(i32 noundef 3, i32 noundef 2)
   %8 = icmp eq i32 %7, 5
   br i1 %8, label %assert.exit.L14, label %assert.then.L14, !prof !5
 
@@ -92,9 +92,9 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
 
-define dso_local i1 @_Z8testAdd2v() {
+define dso_local noundef zeroext i1 @_Z8testAdd2v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3addii(i32 5, i32 -4)
+  %1 = call noundef i32 @_Z3addii(i32 noundef 5, i32 noundef -4)
   %2 = icmp eq i32 %1, 1
   br i1 %2, label %assert.exit.L20, label %assert.then.L20, !prof !5
 
@@ -104,7 +104,7 @@ assert.then.L20:                                  ; preds = %0
   unreachable
 
 assert.exit.L20:                                  ; preds = %0
-  %4 = call i32 @_Z3addii(i32 2, i32 8)
+  %4 = call noundef i32 @_Z3addii(i32 noundef 2, i32 noundef 8)
   %5 = icmp eq i32 %4, 10
   br i1 %5, label %assert.exit.L21, label %assert.then.L21, !prof !5
 
@@ -114,7 +114,7 @@ assert.then.L21:                                  ; preds = %assert.exit.L20
   unreachable
 
 assert.exit.L21:                                  ; preds = %assert.exit.L20
-  %7 = call i32 @_Z3addii(i32 -3, i32 5)
+  %7 = call noundef i32 @_Z3addii(i32 noundef -3, i32 noundef 5)
   %8 = icmp eq i32 %7, 2
   br i1 %8, label %assert.exit.L22, label %assert.then.L22, !prof !5
 
@@ -127,9 +127,9 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
   ret i1 false
 }
 
-define dso_local i1 @_Z8testSub1v() {
+define dso_local noundef zeroext i1 @_Z8testSub1v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3subii(i32 1, i32 2)
+  %1 = call noundef i32 @_Z3subii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, -1
   br i1 %2, label %assert.exit.L28, label %assert.then.L28, !prof !5
 
@@ -139,7 +139,7 @@ assert.then.L28:                                  ; preds = %0
   unreachable
 
 assert.exit.L28:                                  ; preds = %0
-  %4 = call i32 @_Z3subii(i32 2, i32 2)
+  %4 = call noundef i32 @_Z3subii(i32 noundef 2, i32 noundef 2)
   %5 = icmp eq i32 %4, 0
   br i1 %5, label %assert.exit.L29, label %assert.then.L29, !prof !5
 
@@ -149,7 +149,7 @@ assert.then.L29:                                  ; preds = %assert.exit.L28
   unreachable
 
 assert.exit.L29:                                  ; preds = %assert.exit.L28
-  %7 = call i32 @_Z3subii(i32 3, i32 2)
+  %7 = call noundef i32 @_Z3subii(i32 noundef 3, i32 noundef 2)
   %8 = icmp eq i32 %7, 1
   br i1 %8, label %assert.exit.L30, label %assert.then.L30, !prof !5
 
@@ -162,9 +162,9 @@ assert.exit.L30:                                  ; preds = %assert.exit.L29
   ret i1 true
 }
 
-define dso_local i1 @_Z8testSub2v() {
+define dso_local noundef zeroext i1 @_Z8testSub2v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3subii(i32 5, i32 -4)
+  %1 = call noundef i32 @_Z3subii(i32 noundef 5, i32 noundef -4)
   %2 = icmp eq i32 %1, 9
   br i1 %2, label %assert.exit.L36, label %assert.then.L36, !prof !5
 
@@ -174,7 +174,7 @@ assert.then.L36:                                  ; preds = %0
   unreachable
 
 assert.exit.L36:                                  ; preds = %0
-  %4 = call i32 @_Z3subii(i32 2, i32 8)
+  %4 = call noundef i32 @_Z3subii(i32 noundef 2, i32 noundef 8)
   %5 = icmp eq i32 %4, -6
   br i1 %5, label %assert.exit.L37, label %assert.then.L37, !prof !5
 
@@ -184,7 +184,7 @@ assert.then.L37:                                  ; preds = %assert.exit.L36
   unreachable
 
 assert.exit.L37:                                  ; preds = %assert.exit.L36
-  %7 = call i32 @_Z3subii(i32 -3, i32 5)
+  %7 = call noundef i32 @_Z3subii(i32 noundef -3, i32 noundef 5)
   %8 = icmp eq i32 %7, -8
   br i1 %8, label %assert.exit.L38, label %assert.then.L38, !prof !5
 

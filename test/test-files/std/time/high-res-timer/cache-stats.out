@@ -5,7 +5,7 @@ FunctionManager lookup cache statistics:
 
 StructManager lookup cache statistics:
   lookup cache entries: 3
-  lookup cache hits: 22
+  lookup cache hits: 23
   lookup cache misses: 3
 
 InterfaceManager lookup cache statistics:

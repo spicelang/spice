@@ -24,7 +24,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"Shopping cart item 1: %s\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [30 x i8] c"Another cart item 2 unit: %s\0A\00", align 4
 
-define private %struct.ShoppingCart @_Z15newShoppingCartv() {
+define private noundef %struct.ShoppingCart @_Z15newShoppingCartv() {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
@@ -43,7 +43,7 @@ define private %struct.ShoppingCart @_Z15newShoppingCartv() {
   ret %struct.ShoppingCart %7
 }
 
-define private %struct.ShoppingCart @_Z19anotherShoppingCartv() {
+define private noundef %struct.ShoppingCart @_Z19anotherShoppingCartv() {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
@@ -61,14 +61,14 @@ define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %shoppingCart = alloca %struct.ShoppingCart, align 8
   store i32 0, ptr %result, align 4
-  %1 = call %struct.ShoppingCart @_Z15newShoppingCartv()
+  %1 = call noundef %struct.ShoppingCart @_Z15newShoppingCartv()
   store %struct.ShoppingCart %1, ptr %shoppingCart, align 8
   %items.addr = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
   %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items.addr, i64 0, i32 1
   %name.addr = getelementptr inbounds %struct.ShoppingItem, ptr %2, i64 0, i32 0
   %3 = load ptr, ptr %name.addr, align 8
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %3)
-  %5 = call %struct.ShoppingCart @_Z19anotherShoppingCartv()
+  %5 = call noundef %struct.ShoppingCart @_Z19anotherShoppingCartv()
   store %struct.ShoppingCart %5, ptr %shoppingCart, align 8
   %items.addr1 = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
   %6 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items.addr1, i64 0, i32 2

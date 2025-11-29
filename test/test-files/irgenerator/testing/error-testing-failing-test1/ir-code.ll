@@ -12,7 +12,7 @@ source_filename = "source.spice"
 @fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
 @testName0 = private unnamed_addr constant [8 x i8] c"testAdd\00", align 4
 
-define dso_local i1 @_Z7testAddv() {
+define dso_local noundef zeroext i1 @_Z7testAddv() {
   %result = alloca i1, align 1
   ret i1 false
 }

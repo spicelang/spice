@@ -8,7 +8,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 
-define private ptr @_Z7getNamei(i32 %0) {
+define private noundef ptr @_Z7getNamei(i32 noundef %0) {
   %result = alloca ptr, align 8
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
@@ -37,11 +37,11 @@ switch.exit.L8:                                   ; preds = %1
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call ptr @_Z7getNamei(i32 0)
+  %1 = call noundef ptr @_Z7getNamei(i32 noundef 0)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
-  %3 = call ptr @_Z7getNamei(i32 1)
+  %3 = call noundef ptr @_Z7getNamei(i32 noundef 1)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %3)
-  %5 = call ptr @_Z7getNamei(i32 2)
+  %5 = call noundef ptr @_Z7getNamei(i32 noundef 2)
   %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %5)
   ret i32 0
 }

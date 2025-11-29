@@ -5,12 +5,12 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 4
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 4
 
-define private i1 @_Z7condFctv() {
+define private noundef zeroext i1 @_Z7condFctv() {
   %result = alloca i1, align 1
   ret i1 false
 }
 
-define private ptr @_Z7trueFctv() {
+define private noundef ptr @_Z7trueFctv() {
   %result = alloca ptr, align 8
   br i1 false, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
@@ -30,7 +30,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
 
-define private ptr @_Z8falseFctv() {
+define private noundef ptr @_Z8falseFctv() {
   %result = alloca ptr, align 8
   ret ptr @anon.string.1
 }
@@ -39,15 +39,15 @@ define private ptr @_Z8falseFctv() {
 define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_Z7condFctv()
+  %1 = call noundef zeroext i1 @_Z7condFctv()
   br i1 %1, label %cond.true.L15C26, label %cond.false.L15C26
 
 cond.true.L15C26:                                 ; preds = %0
-  %2 = call ptr @_Z7trueFctv()
+  %2 = call noundef ptr @_Z7trueFctv()
   br label %cond.exit.L15C26
 
 cond.false.L15C26:                                ; preds = %0
-  %3 = call ptr @_Z8falseFctv()
+  %3 = call noundef ptr @_Z8falseFctv()
   br label %cond.exit.L15C26
 
 cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, %cond.true.L15C26

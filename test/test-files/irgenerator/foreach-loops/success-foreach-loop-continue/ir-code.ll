@@ -18,7 +18,7 @@ define dso_local noundef i32 @main() #0 {
   %l = alloca ptr, align 8
   %2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  %3 = call %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 3, i16 8)
+  %3 = call noundef %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 noundef signext 3, i16 noundef signext 8)
   store %struct.NumberIterator %3, ptr %shortIterator, align 8
   br label %foreach.head.L5
 
@@ -40,7 +40,7 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   br i1 %13, label %if.then.L7, label %if.exit.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %14 = call %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2)
+  %14 = call noundef %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 noundef 1, i64 noundef 2)
   store %struct.NumberIterator.0 %14, ptr %1, align 8
   br label %foreach.head.L8
 

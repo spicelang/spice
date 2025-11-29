@@ -5,7 +5,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Field value: %d\00", align 4
 
-define private ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+define private noundef ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -23,7 +23,7 @@ define dso_local noundef i32 @main() #0 {
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store %struct.Test { i32 12 }, ptr %t, align 4
-  %1 = call ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
+  %1 = call noundef ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
   %2 = load i32, ptr %1, align 4
   store i32 %2, ptr %res, align 4
   %3 = load i32, ptr %res, align 4

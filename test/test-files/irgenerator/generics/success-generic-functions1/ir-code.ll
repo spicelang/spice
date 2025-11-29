@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
-define private double @_Z15genericFunctionIidEdid(i32 %0, double %1) {
+define private noundef double @_Z15genericFunctionIidEdid(i32 noundef %0, double noundef %1) {
   %result = alloca double, align 8
   %arg1 = alloca i32, align 4
   %arg2 = alloca double, align 8
@@ -23,7 +23,7 @@ define private double @_Z15genericFunctionIidEdid(i32 %0, double %1) {
   ret double %9
 }
 
-define private double @_Z15genericFunctionIldEdld(i64 %0, double %1) {
+define private noundef double @_Z15genericFunctionIldEdld(i64 noundef %0, double noundef %1) {
   %result = alloca double, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca double, align 8
@@ -41,7 +41,7 @@ define private double @_Z15genericFunctionIldEdld(i64 %0, double %1) {
   ret double %9
 }
 
-define private i64 @_Z15genericFunctionIlsEllsl(i64 %0, i16 %1, i64 %2) {
+define private noundef i64 @_Z15genericFunctionIlsEllsl(i64 noundef %0, i16 noundef signext %1, i64 noundef %2) {
   %result = alloca i64, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca i16, align 2
@@ -62,11 +62,11 @@ define private i64 @_Z15genericFunctionIlsEllsl(i64 %0, i16 %1, i64 %2) {
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call double @_Z15genericFunctionIidEdid(i32 1, double 2.400000e+00)
+  %1 = call noundef double @_Z15genericFunctionIidEdid(i32 noundef 1, double noundef 2.400000e+00)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double noundef %1)
-  %3 = call double @_Z15genericFunctionIldEdld(i64 12, double 2.000000e+00)
+  %3 = call noundef double @_Z15genericFunctionIldEdld(i64 noundef 12, double noundef 2.000000e+00)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, double noundef %3)
-  %5 = call i64 @_Z15genericFunctionIlsEllsl(i64 12, i16 1, i64 11)
+  %5 = call noundef i64 @_Z15genericFunctionIlsEllsl(i64 noundef 12, i16 noundef signext 1, i64 noundef 11)
   %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 noundef %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7

@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 4
 
-define private i32 @_Z8testFuncv() {
+define private noundef i32 @_Z8testFuncv() {
   %result = alloca i32, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 1
@@ -15,7 +15,7 @@ define private i32 @_Z8testFuncv() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private i32 @_Z8testFuncPKc(ptr %0) {
+define private noundef i32 @_Z8testFuncPKc(ptr noundef %0) {
   %result = alloca i32, align 4
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8
@@ -29,11 +29,11 @@ define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_Z8testFuncv()
+  %1 = call noundef i32 @_Z8testFuncv()
   store i32 %1, ptr %res, align 4
   %2 = load i32, ptr %res, align 4
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %2)
-  %4 = call i32 @_Z8testFuncPKc(ptr @anon.string.0)
+  %4 = call noundef i32 @_Z8testFuncPKc(ptr noundef @anon.string.0)
   store i32 %4, ptr %res, align 4
   %5 = load i32, ptr %result, align 4
   ret i32 %5

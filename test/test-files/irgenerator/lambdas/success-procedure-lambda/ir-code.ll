@@ -34,7 +34,7 @@ define dso_local noundef i32 @main() #0 {
   store ptr poison, ptr %5, align 8
   %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %6, ptr %callbackWithArgs1, align 8
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.0)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
   call void %fct2(ptr %1, double 3.140000e+00)
   store ptr @_Z15lambda.L12C41.06Stringb, ptr %fat.ptr3, align 8
@@ -42,7 +42,7 @@ define dso_local noundef i32 @main() #0 {
   store ptr poison, ptr %7, align 8
   %8 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %8, ptr %callbackWithArgs2, align 8
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.1)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.1)
   call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
   %9 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8

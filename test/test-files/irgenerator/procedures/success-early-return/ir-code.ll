@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 4
 
-define private void @_Z13executeActionb(i1 %0) {
+define private void @_Z13executeActionb(i1 noundef zeroext %0) {
   %input = alloca i1, align 1
   store i1 %0, ptr %input, align 1
   %2 = load i1, ptr %input, align 1
@@ -24,7 +24,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  call void @_Z13executeActionb(i1 false)
+  call void @_Z13executeActionb(i1 noundef zeroext false)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

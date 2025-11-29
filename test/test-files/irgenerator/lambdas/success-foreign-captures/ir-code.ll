@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
 
-define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %0, { ptr, ptr } %1) {
+define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } noundef %0, { ptr, ptr } noundef %1) {
   %l1 = alloca { ptr, ptr }, align 8
   %l2 = alloca { ptr, ptr }, align 8
   %x = alloca i32, align 4
@@ -94,7 +94,7 @@ define dso_local noundef i32 @main() #2 {
   store { ptr, ptr } %10, ptr %foo2, align 8
   %11 = load { ptr, ptr }, ptr %foo1, align 8
   %12 = load { ptr, ptr }, ptr %foo2, align 8
-  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %11, { ptr, ptr } %12)
+  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } noundef %11, { ptr, ptr } noundef %12)
   %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   %14 = load i32, ptr %result, align 4
   ret i32 %14
