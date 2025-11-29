@@ -39,7 +39,7 @@ define dso_local noundef i32 @main() #0 {
   store ptr poison, ptr %7, align 8
   %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.2)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.2)
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
   %9 = call i1 %fct2(ptr %1, double 3.140000e+00)
   %10 = zext i1 %9 to i32
@@ -49,7 +49,7 @@ define dso_local noundef i32 @main() #0 {
   store ptr poison, ptr %12, align 8
   %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.3)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.3)
   call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
   %14 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
@@ -85,7 +85,7 @@ define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %5 = load double, ptr %d, align 8
   %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4, double noundef %5)
   %7 = load ptr, ptr %str, align 8
-  %8 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %7)
+  %8 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %7)
   %9 = call i1 @_Z10isRawEqualPKcPKc(ptr %8, ptr @anon.string.1)
   br i1 %9, label %land.1.L9C16, label %land.exit.L9C16
 

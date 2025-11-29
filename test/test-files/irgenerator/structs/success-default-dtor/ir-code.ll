@@ -25,11 +25,11 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   store ptr null, ptr %2, align 8
-  %3 = call %struct.Result @_Z6sAllocm(i64 10)
+  %3 = call noundef %struct.Result @_Z6sAllocm(i64 noundef 10)
   store %struct.Result %3, ptr %res, align 8
   %4 = load ptr, ptr %this, align 8
   %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %4, i64 0, i32 0
-  %5 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  %5 = call noundef ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   %6 = load ptr, ptr %5, align 8
   store ptr %6, ptr %data.addr, align 8
   ret void

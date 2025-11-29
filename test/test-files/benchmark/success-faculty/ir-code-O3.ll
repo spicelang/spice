@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 4
 
 ; Function Attrs: nofree norecurse nosync nounwind memory(none)
-define private fastcc i32 @_Z7facultyi(i32 range(i32 1, 11) %0) unnamed_addr #0 {
+define private fastcc noundef i32 @_Z7facultyi(i32 noundef range(i32 1, 11) %0) unnamed_addr #0 {
   %2 = icmp samesign ult i32 %0, 2
   br i1 %2, label %common.ret, label %vector.ph
 
@@ -50,7 +50,7 @@ common.ret:                                       ; preds = %middle.block, %1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #4
+  %1 = tail call fastcc noundef i32 @_Z7facultyi(i32 noundef 10) #4
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef 10, i32 noundef %1)
   ret i32 0
 }

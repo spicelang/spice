@@ -13,7 +13,7 @@ source_filename = "source.spice"
 define dso_local noundef i32 @main() local_unnamed_addr #0 {
   %shortIterator = alloca %struct.NumberIterator, align 8
   %1 = alloca %struct.NumberIterator.0, align 8
-  %2 = tail call %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 3, i16 8) #2
+  %2 = tail call noundef %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 noundef signext 3, i16 noundef signext 8) #2
   %.fca.0.0.extract2 = extractvalue %struct.NumberIterator %2, 0, 0
   store ptr %.fca.0.0.extract2, ptr %shortIterator, align 8
   %.fca.1.extract4 = extractvalue %struct.NumberIterator %2, 1
@@ -44,7 +44,7 @@ foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.
   br i1 %.not, label %foreach.tail.L5, label %if.then.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %9 = call %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2) #2
+  %9 = call noundef %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 noundef 1, i64 noundef 2) #2
   %.fca.0.0.extract = extractvalue %struct.NumberIterator.0 %9, 0, 0
   store ptr %.fca.0.0.extract, ptr %1, align 8
   %.fca.1.extract = extractvalue %struct.NumberIterator.0 %9, 1

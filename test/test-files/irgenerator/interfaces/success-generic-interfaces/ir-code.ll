@@ -29,7 +29,7 @@ $_ZTV6Person = comdat any
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 4
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
-define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr %1, ptr %2, i32 %3) {
+define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2, i32 noundef %3) {
   %this = alloca ptr, align 8
   %firstName = alloca ptr, align 8
   %lastName = alloca ptr, align 8
@@ -61,7 +61,7 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
   ret void
 }
 
-define private i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr %1, ptr %2) {
+define private noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   %a = alloca ptr, align 8
@@ -102,10 +102,10 @@ define dso_local noundef i32 @main() #0 {
   %2 = alloca i64, align 8
   %isEqual = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  call void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %mike, ptr @anon.string.0, ptr @anon.string.1, i32 43)
+  call void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %mike, ptr noundef @anon.string.0, ptr noundef @anon.string.1, i32 noundef 43)
   store i64 22, ptr %1, align 8
   store i64 22, ptr %2, align 8
-  %3 = call i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %mike, ptr %1, ptr %2)
+  %3 = call noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %mike, ptr noundef %1, ptr noundef %2)
   %4 = icmp eq i32 %3, 1
   store i1 %4, ptr %isEqual, align 1
   %5 = load i1, ptr %isEqual, align 1

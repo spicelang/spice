@@ -22,7 +22,7 @@ source_filename = "source.spice"
 @testName2 = private unnamed_addr constant [9 x i8] c"testAdd1\00", align 4
 @testName3 = private unnamed_addr constant [9 x i8] c"testAdd2\00", align 4
 
-define private i32 @_Z3addii(i32 %0, i32 %1) {
+define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -34,9 +34,9 @@ define private i32 @_Z3addii(i32 %0, i32 %1) {
   ret i32 %5
 }
 
-define dso_local i1 @_Z8testAdd1v() {
+define dso_local noundef zeroext i1 @_Z8testAdd1v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3addii(i32 1, i32 2)
+  %1 = call noundef i32 @_Z3addii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
@@ -46,7 +46,7 @@ assert.then.L9:                                   ; preds = %0
   unreachable
 
 assert.exit.L9:                                   ; preds = %0
-  %4 = call i32 @_Z3addii(i32 2, i32 2)
+  %4 = call noundef i32 @_Z3addii(i32 noundef 2, i32 noundef 2)
   %5 = icmp eq i32 %4, 4
   br i1 %5, label %assert.exit.L10, label %assert.then.L10, !prof !5
 
@@ -56,7 +56,7 @@ assert.then.L10:                                  ; preds = %assert.exit.L9
   unreachable
 
 assert.exit.L10:                                  ; preds = %assert.exit.L9
-  %7 = call i32 @_Z3addii(i32 3, i32 2)
+  %7 = call noundef i32 @_Z3addii(i32 noundef 3, i32 noundef 2)
   %8 = icmp eq i32 %7, 5
   br i1 %8, label %assert.exit.L11, label %assert.then.L11, !prof !5
 
@@ -75,9 +75,9 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
 
-define dso_local i1 @_Z8testAdd2v() {
+define dso_local noundef zeroext i1 @_Z8testAdd2v() {
   %result = alloca i1, align 1
-  %1 = call i32 @_Z3addii(i32 5, i32 -4)
+  %1 = call noundef i32 @_Z3addii(i32 noundef 5, i32 noundef -4)
   %2 = icmp eq i32 %1, 1
   br i1 %2, label %assert.exit.L17, label %assert.then.L17, !prof !5
 
@@ -87,7 +87,7 @@ assert.then.L17:                                  ; preds = %0
   unreachable
 
 assert.exit.L17:                                  ; preds = %0
-  %4 = call i32 @_Z3addii(i32 2, i32 8)
+  %4 = call noundef i32 @_Z3addii(i32 noundef 2, i32 noundef 8)
   %5 = icmp eq i32 %4, 10
   br i1 %5, label %assert.exit.L18, label %assert.then.L18, !prof !5
 
@@ -97,7 +97,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L17
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
-  %7 = call i32 @_Z3addii(i32 -3, i32 5)
+  %7 = call noundef i32 @_Z3addii(i32 noundef -3, i32 noundef 5)
   %8 = icmp eq i32 %7, 2
   br i1 %8, label %assert.exit.L19, label %assert.then.L19, !prof !5
 

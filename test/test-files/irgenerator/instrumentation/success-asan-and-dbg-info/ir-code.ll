@@ -54,7 +54,7 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
   call void @llvm.lifetime.start.p0(i64 4, ptr %result), !dbg !16
     #dbg_declare(ptr %result, !17, !DIExpression(), !16)
   store i32 0, ptr %result, align 4, !dbg !16
-  %23 = call ptr @_Z4sNewIiEPiv(), !dbg !18
+  %23 = call noundef ptr @_Z4sNewIiEPiv(), !dbg !18
   %24 = add i64 %20, 4, !dbg !18
   %25 = inttoptr i64 %24 to ptr, !dbg !18
   store i8 0, ptr %25, align 1, !dbg !18
@@ -83,7 +83,7 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
 
 39:                                               ; preds = %33, %10
   store i32 123, ptr %26, align 4, !dbg !23
-  call void @_Z8sDeallocRPh(ptr %13), !dbg !25
+  call void @_Z8sDeallocRPh(ptr noundef %13), !dbg !25
   %40 = load ptr, ptr %13, align 8, !dbg !27
   %41 = ptrtoint ptr %40 to i64, !dbg !28
   %42 = lshr i64 %41, 3, !dbg !28

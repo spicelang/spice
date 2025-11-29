@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Param: %d\0A\00", align 4
 
-define private void @_Z4testi(i32 %0) {
+define private void @_Z4testi(i32 noundef %0) {
   %param = alloca i32, align 4
   store i32 %0, ptr %param, align 4
   %2 = load i32, ptr %param, align 4
@@ -18,7 +18,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  call void @_Z4testi(i32 12)
+  call void @_Z4testi(i32 noundef 12)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

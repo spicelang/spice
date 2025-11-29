@@ -9,7 +9,7 @@ source_filename = "source.spice"
 define private void @_Z3foov() {
   %1 = alloca %struct.Error, align 8
   %2 = call ptr @__acrt_iob_func(i32 2)
-  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.1)
+  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef @anon.string.1)
   %3 = getelementptr inbounds nuw %struct.Error, ptr %1, i32 0, i32 1
   %4 = load ptr, ptr %3, align 8
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0, ptr %4)

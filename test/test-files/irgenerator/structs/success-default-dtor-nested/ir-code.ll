@@ -48,7 +48,7 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceabl
   store ptr null, ptr %3, align 8
   %4 = load ptr, ptr %this, align 8
   %data.addr = getelementptr inbounds %struct.Inner, ptr %4, i64 0, i32 1
-  %5 = call ptr @malloc(i64 10)
+  %5 = call noundef ptr @malloc(i64 noundef 10)
   store ptr %5, ptr %data.addr, align 8
   ret void
 }
@@ -59,7 +59,7 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
   %2 = load ptr, ptr %this, align 8
   %data.addr = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 1
   %3 = load ptr, ptr %data.addr, align 8
-  call void @free(ptr %3)
+  call void @free(ptr noundef nonnull align 1 dereferenceable(1) %3)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }

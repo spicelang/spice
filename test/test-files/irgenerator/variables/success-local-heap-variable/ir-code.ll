@@ -11,7 +11,7 @@ define dso_local noundef i32 @main() #0 {
   %j = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store i32 123, ptr %1, align 4
-  %2 = call ptr @_Z4sNewIiEPiRKi(ptr %1)
+  %2 = call noundef ptr @_Z4sNewIiEPiRKi(ptr noundef %1)
   store ptr %2, ptr %i, align 8
   %3 = load ptr, ptr %i, align 8
   store ptr %3, ptr %j, align 8

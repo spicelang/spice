@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 4
 @printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 4
 
-define private void @_Z4swapRiRi(ptr %0, ptr %1) {
+define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) {
   %a = alloca ptr, align 8
   %b = alloca ptr, align 8
   %temp = alloca i32, align 4
@@ -24,7 +24,7 @@ define private void @_Z4swapRiRi(ptr %0, ptr %1) {
   ret void
 }
 
-define private void @_Z4sortRA10_iPFbiiE(ptr %0, { ptr, ptr } %1) {
+define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr } noundef %1) {
   %array = alloca ptr, align 8
   %sortFct = alloca { ptr, ptr }, align 8
   %i = alloca i32, align 4
@@ -76,7 +76,7 @@ if.then.L10:                                      ; preds = %for.body.L9
   %27 = add nsw i32 %26, 1
   %28 = load ptr, ptr %array, align 8
   %29 = getelementptr inbounds [10 x i32], ptr %28, i64 0, i32 %27
-  call void @_Z4swapRiRi(ptr %25, ptr %29)
+  call void @_Z4swapRiRi(ptr noundef %25, ptr noundef %29)
   br label %if.exit.L10
 
 if.exit.L10:                                      ; preds = %if.then.L10, %for.body.L9
@@ -112,8 +112,8 @@ define dso_local noundef i32 @main() #0 {
   %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_Z4sortRA10_iPFbiiE(ptr %array, { ptr, ptr } %2)
-  call void @_Z10printArrayRA10_i(ptr %array)
+  call void @_Z4sortRA10_iPFbiiE(ptr noundef %array, { ptr, ptr } noundef %2)
+  call void @_Z10printArrayRA10_i(ptr noundef %array)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
 }
@@ -129,7 +129,7 @@ define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
   ret i1 %5
 }
 
-define private void @_Z10printArrayRA10_i(ptr %0) {
+define private void @_Z10printArrayRA10_i(ptr noundef %0) {
   %array = alloca ptr, align 8
   %i = alloca i32, align 4
   store ptr %0, ptr %array, align 8
