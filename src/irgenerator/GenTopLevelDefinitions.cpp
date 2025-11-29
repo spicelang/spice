@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <llvm/IR/Module.h>
+#include <llvm/Target/TargetLoweringObjectFile.h>
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
@@ -221,17 +222,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     if (manifestation->entry->getQualType().isInline())
       func->addFnAttr(llvm::Attribute::AlwaysInline);
     enableFunctionInstrumentation(func);
-
-    // Set attributes to 'this' param
-    if (manifestation->isMethod()) {
-      func->addParamAttr(0, llvm::Attribute::NoUndef);
-      func->addParamAttr(0, llvm::Attribute::NonNull);
-      assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
-      assert(structType != nullptr);
-      func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
-      func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
-    }
+    // Set attributes to function parameters and return value
+    setParamAttrs(func, paramInfoList);
+    setFunctionReturnValAttrs(func, manifestation->returnType);
 
     // Add debug info
     diGenerator.generateFunctionDebugInfo(func, manifestation);
@@ -335,9 +328,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Get 'this' entry
     std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
-    SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
-      thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
@@ -388,16 +380,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
     enableFunctionInstrumentation(proc);
 
-    // Set attributes to 'this' param
-    if (manifestation->isMethod()) {
-      proc->addParamAttr(0, llvm::Attribute::NoUndef);
-      proc->addParamAttr(0, llvm::Attribute::NonNull);
-      assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
-      assert(structType != nullptr);
-      proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
-      proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
-    }
+    // Set attributes to function parameters
+    setParamAttrs(proc, paramInfoList);
 
     // Add debug info
     diGenerator.generateFunctionDebugInfo(proc, manifestation);
@@ -469,6 +453,53 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   assert(currentScope == rootScope);
 
   return nullptr;
+}
+
+void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const {
+  assert(function->arg_size() == paramInfo.size());
+  for (size_t i = 0; i < paramInfo.size(); i++) {
+    const QualType &paramType = paramInfo.at(i).second->getQualType();
+
+    // NoUndef attribute
+    function->addParamAttr(i, llvm::Attribute::NoUndef);
+
+    if (paramType.isPtr()) {
+      // NonNull attribute
+      function->addParamAttr(i, llvm::Attribute::NonNull);
+      // Dereferenceable attribute
+      llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
+      assert(pointeeType != nullptr);
+      function->addDereferenceableParamAttr(i, module->getDataLayout().getTypeStoreSize(pointeeType));
+      // Alignment attribute
+      function->addParamAttr(i, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(pointeeType)));
+    }
+
+    // ZExt or SExt attribute
+    if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramType); extAttrKind != llvm::Attribute::None)
+      function->addParamAttr(i, extAttrKind);
+  }
+}
+
+void IRGenerator::setFunctionReturnValAttrs(llvm::Function *function, const QualType &returnType) const {
+  if (returnType.is(TY_DYN))
+    return;
+
+  // NoUndef attribute
+  function->addRetAttr(llvm::Attribute::NoUndef);
+  // ZExt or SExt attribute
+  if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(returnType); extAttrKind != llvm::Attribute::None)
+    function->addRetAttr(extAttrKind);
+}
+
+llvm::Attribute::AttrKind IRGenerator::getExtAttrKindForType(const QualType &type) const {
+  if (type.is(TY_DYN))
+    return llvm::Attribute::None;
+
+  const llvm::Type *llvmType = type.toLLVMType(sourceFile);
+  const unsigned int maxExtWidth = cliOptions.targetTriple.isPPC() ? 64 : 32;
+  if (llvmType->isIntegerTy() && llvmType->getIntegerBitWidth() < maxExtWidth)
+    return type.isSigned() ? llvm::Attribute::SExt : llvm::Attribute::ZExt;
+  return llvm::Attribute::None;
 }
 
 std::any IRGenerator::visitStructDef(const StructDefNode *node) {
