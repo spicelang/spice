@@ -53,7 +53,7 @@ define dso_local noundef i32 @main() #1 {
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %2)
   store ptr %intArray, ptr %intArray1, align 8
   store ptr %intArray1, ptr %intArray2, align 8
-  call void @_Z8testProcPPPA4_i(ptr noundef nonnull align 8 dereferenceable(8) %intArray2)
+  call void @_Z8testProcPPPA4_i(ptr noundef align 8 dereferenceable(8) %intArray2)
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }

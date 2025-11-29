@@ -306,7 +306,8 @@ void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spic
 
     if (paramType.isPtr()) {
       // NonNull attribute
-      callInst->addParamAttr(i, llvm::Attribute::NonNull);
+      if (i == 0 && isMethod)
+        callInst->addParamAttr(i, llvm::Attribute::NonNull);
       // Dereferenceable attribute
       llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
       assert(pointeeType != nullptr);
