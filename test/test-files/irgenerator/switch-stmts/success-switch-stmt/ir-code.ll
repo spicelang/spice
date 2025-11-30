@@ -24,7 +24,7 @@ source_filename = "source.spice"
 @printf.str.9 = private unnamed_addr constant [9 x i8] c"0 is %s\0A\00", align 4
 @printf.str.10 = private unnamed_addr constant [10 x i8] c"10 is %s\0A\00", align 4
 
-define private ptr @_Z13digitToStringj(i32 %0) {
+define private noundef ptr @_Z13digitToStringj(i32 noundef %0) {
   %result = alloca ptr, align 8
   %number = alloca i32, align 4
   store i32 %0, ptr %number, align 4
@@ -84,27 +84,27 @@ switch.exit.L2:                                   ; No predecessors!
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call ptr @_Z13digitToStringj(i32 1)
+  %1 = call noundef ptr @_Z13digitToStringj(i32 noundef 1)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
-  %3 = call ptr @_Z13digitToStringj(i32 8)
+  %3 = call noundef ptr @_Z13digitToStringj(i32 noundef 8)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %3)
-  %5 = call ptr @_Z13digitToStringj(i32 5)
+  %5 = call noundef ptr @_Z13digitToStringj(i32 noundef 5)
   %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %5)
-  %7 = call ptr @_Z13digitToStringj(i32 9)
+  %7 = call noundef ptr @_Z13digitToStringj(i32 noundef 9)
   %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr noundef %7)
-  %9 = call ptr @_Z13digitToStringj(i32 2)
+  %9 = call noundef ptr @_Z13digitToStringj(i32 noundef 2)
   %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, ptr noundef %9)
-  %11 = call ptr @_Z13digitToStringj(i32 3)
+  %11 = call noundef ptr @_Z13digitToStringj(i32 noundef 3)
   %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, ptr noundef %11)
-  %13 = call ptr @_Z13digitToStringj(i32 4)
+  %13 = call noundef ptr @_Z13digitToStringj(i32 noundef 4)
   %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.6, ptr noundef %13)
-  %15 = call ptr @_Z13digitToStringj(i32 7)
+  %15 = call noundef ptr @_Z13digitToStringj(i32 noundef 7)
   %16 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.7, ptr noundef %15)
-  %17 = call ptr @_Z13digitToStringj(i32 6)
+  %17 = call noundef ptr @_Z13digitToStringj(i32 noundef 6)
   %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr noundef %17)
-  %19 = call ptr @_Z13digitToStringj(i32 0)
+  %19 = call noundef ptr @_Z13digitToStringj(i32 noundef 0)
   %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.9, ptr noundef %19)
-  %21 = call ptr @_Z13digitToStringj(i32 10)
+  %21 = call noundef ptr @_Z13digitToStringj(i32 noundef 10)
   %22 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, ptr noundef %21)
   %23 = load i32, ptr %result, align 4
   ret i32 %23

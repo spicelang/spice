@@ -20,7 +20,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = call i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %2)
+  %3 = call noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %2)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
   ret void
 }
@@ -28,7 +28,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
+define private noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

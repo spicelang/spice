@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 4
 
-define private i32 @_Z7facultyi(i32 %0) {
+define private noundef i32 @_Z7facultyi(i32 noundef %0) {
   %result = alloca i32, align 4
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
@@ -17,7 +17,7 @@ if.then.L2:                                       ; preds = %1
 if.exit.L2:                                       ; preds = %1
   %4 = load i32, ptr %input, align 4
   %5 = sub nsw i32 %4, 1
-  %6 = call i32 @_Z7facultyi(i32 %5)
+  %6 = call noundef i32 @_Z7facultyi(i32 noundef %5)
   %7 = load i32, ptr %input, align 4
   %8 = mul nsw i32 %7, %6
   store i32 %8, ptr %result, align 4
@@ -33,7 +33,7 @@ define dso_local noundef i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i32 10, ptr %input, align 4
   %1 = load i32, ptr %input, align 4
-  %2 = call i32 @_Z7facultyi(i32 %1)
+  %2 = call noundef i32 @_Z7facultyi(i32 noundef %1)
   store i32 %2, ptr %faculty, align 4
   %3 = load i32, ptr %input, align 4
   %4 = load i32, ptr %faculty, align 4

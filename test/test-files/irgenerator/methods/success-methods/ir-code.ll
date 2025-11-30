@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 4
 
-define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+define private noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -17,7 +17,7 @@ define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 derefer
   ret ptr %3
 }
 
-define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr %1) {
+define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr noundef %1) {
   %this = alloca ptr, align 8
   %text = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -35,8 +35,8 @@ define dso_local noundef i32 @main() #0 {
   %letter = alloca %struct.Letter, align 8
   store i32 0, ptr %result, align 4
   store %struct.Letter { ptr @anon.string.0 }, ptr %letter, align 8
-  call void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %letter, ptr @anon.string.1)
-  %1 = call ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %letter)
+  call void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %letter, ptr noundef @anon.string.1)
+  %1 = call noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %letter)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

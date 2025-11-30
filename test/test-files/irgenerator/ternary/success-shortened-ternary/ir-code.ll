@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-define private i1 @_Z2f1v() {
+define private noundef zeroext i1 @_Z2f1v() {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 false
@@ -14,7 +14,7 @@ define private i1 @_Z2f1v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private i1 @_Z2f2v() {
+define private noundef zeroext i1 @_Z2f2v() {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 true
@@ -24,15 +24,15 @@ define private i1 @_Z2f2v() {
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_Z2f1v()
+  %1 = call noundef zeroext i1 @_Z2f1v()
   br i1 %1, label %cond.true.L12C26, label %cond.false.L12C26
 
 cond.true.L12C26:                                 ; preds = %0
-  %2 = call i1 @_Z2f1v()
+  %2 = call noundef zeroext i1 @_Z2f1v()
   br label %cond.exit.L12C26
 
 cond.false.L12C26:                                ; preds = %0
-  %3 = call i1 @_Z2f2v()
+  %3 = call noundef zeroext i1 @_Z2f2v()
   br label %cond.exit.L12C26
 
 cond.exit.L12C26:                                 ; preds = %cond.false.L12C26, %cond.true.L12C26

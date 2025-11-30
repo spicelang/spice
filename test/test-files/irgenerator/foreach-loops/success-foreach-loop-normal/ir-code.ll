@@ -24,19 +24,19 @@ define dso_local noundef i32 @main() #0 {
   store i32 0, ptr %result, align 4
   call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %intVector)
   store i32 1, ptr %1, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %1)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %1)
   store i32 5, ptr %2, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %2)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %2)
   store i32 4, ptr %3, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %3)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %3)
   store i32 0, ptr %4, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %4)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %4)
   store i32 12, ptr %5, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %5)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %5)
   store i32 12345, ptr %6, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %6)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %6)
   store i32 9, ptr %7, align 4
-  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr %7)
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %7)
   %9 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr %intVector)
   store %struct.VectorIterator %9, ptr %8, align 8
   br label %foreach.head.L12

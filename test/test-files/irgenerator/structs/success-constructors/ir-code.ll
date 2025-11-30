@@ -31,7 +31,7 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
   ret void
 }
 
-define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) {
+define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr noundef %1) {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -50,7 +50,7 @@ define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereference
   ret void
 }
 
-define private ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+define private noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -70,7 +70,7 @@ define dso_local noundef i32 @main() #0 {
   %field2.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %4 = load ptr, ptr %field2.addr, align 8
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3, ptr noundef %4)
-  call void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.2)
+  call void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef @anon.string.2)
   %6 = load %struct.Vector, ptr %1, align 8
   store %struct.Vector %6, ptr %vec, align 8
   %field1.addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
@@ -79,7 +79,7 @@ define dso_local noundef i32 @main() #0 {
   %field2.addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %9 = load ptr, ptr %field2.addr2, align 8
   %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8, ptr noundef %9)
-  %11 = call ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
+  %11 = call noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %11)
   %13 = load i32, ptr %result, align 4
   ret i32 %13

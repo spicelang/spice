@@ -19,7 +19,7 @@ define dso_local noundef i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
   %2 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
-  %3 = call %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr %2, i64 7)
+  %3 = call noundef %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr noundef %2, i64 noundef 7)
   store %struct.ArrayIterator %3, ptr %1, align 8
   store i64 0, ptr %index, align 8
   br label %foreach.head.L5

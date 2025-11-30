@@ -22,7 +22,7 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
-define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !46 {
+define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) !dbg !46 {
   %result = alloca %struct.TestStruct, align 8
   %ref = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
@@ -30,7 +30,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !46 {
     #dbg_declare(ptr %result, !50, !DIExpression(), !51)
   store ptr %0, ptr %ref, align 8, !dbg !52
     #dbg_declare(ptr %ref, !53, !DIExpression(), !52)
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !54
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.0), !dbg !54
   store i64 6, ptr %ts, align 8, !dbg !55
   %3 = load %struct.String, ptr %2, align 8, !dbg !55
   %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !55
@@ -55,14 +55,14 @@ define dso_local noundef i32 @main() #1 !dbg !60 {
   store i32 0, ptr %result, align 4, !dbg !64
   store i32 987654, ptr %test, align 4, !dbg !65
     #dbg_declare(ptr %test, !66, !DIExpression(), !67)
-  %1 = call %struct.TestStruct @_Z3fctRi(ptr %test), !dbg !68
+  %1 = call noundef %struct.TestStruct @_Z3fctRi(ptr noundef %test), !dbg !68
   store %struct.TestStruct %1, ptr %res, align 8, !dbg !68
     #dbg_declare(ptr %res, !69, !DIExpression(), !70)
   %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !71
   %2 = load i64, ptr %lng.addr, align 8, !dbg !71
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %2), !dbg !71
   %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
-  %5 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
+  %5 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
   %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %5), !dbg !72
   %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !73
   %7 = load i32, ptr %i.addr, align 4, !dbg !73

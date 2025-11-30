@@ -38,7 +38,7 @@ define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(
   ret void
 }
 
-define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 %1) {
+define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) {
   %this = alloca ptr, align 8
   %param = alloca i32, align 4
   store ptr %0, ptr %this, align 8
@@ -49,7 +49,7 @@ define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable
   ret void
 }
 
-define private i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -71,12 +71,12 @@ define dso_local noundef i32 @main() #0 {
   %vtable.addr = load ptr, ptr %1, align 8
   %vfct.addr = getelementptr inbounds ptr, ptr %vtable.addr, i64 0
   %fct = load ptr, ptr %vfct.addr, align 8
-  call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %1, i32 12)
+  call void %fct(ptr noundef nonnull align 8 dereferenceable(8) %1, i32 noundef 12)
   %2 = load ptr, ptr %driveable, align 8
   %vtable.addr1 = load ptr, ptr %2, align 8
   %vfct.addr2 = getelementptr inbounds ptr, ptr %vtable.addr1, i64 1
   %fct3 = load ptr, ptr %vfct.addr2, align 8
-  %3 = call i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %2)
+  %3 = call noundef zeroext i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %2)
   %4 = zext i1 %3 to i32
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
   %6 = load i32, ptr %result, align 4

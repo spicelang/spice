@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc i32 @_Z4fiboi(i32 %0) unnamed_addr #0 {
+define private fastcc noundef i32 @_Z4fiboi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 2
   br i1 %2, label %common.ret, label %if.exit.L2
 
@@ -18,7 +18,7 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
   %.tr5 = phi i32 [ %5, %if.exit.L2 ], [ %0, %1 ]
   %accumulator.tr4 = phi i32 [ %6, %if.exit.L2 ], [ 0, %1 ]
   %3 = add nsw i32 %.tr5, -1
-  %4 = tail call fastcc i32 @_Z4fiboi(i32 %3)
+  %4 = tail call fastcc noundef i32 @_Z4fiboi(i32 noundef %3)
   %5 = add nsw i32 %.tr5, -2
   %6 = add nsw i32 %4, %accumulator.tr4
   %7 = icmp samesign ult i32 %.tr5, 4
@@ -27,7 +27,7 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_Z4fiboi(i32 30) #3
+  %1 = tail call fastcc noundef i32 @_Z4fiboi(i32 noundef 30) #3
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %1)
   ret i32 0
 }

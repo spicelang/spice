@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 4
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc range(i32 -2147483647, -2147483648) i32 @_Z3ackii(i32 range(i32 0, 4) %0, i32 %1) unnamed_addr #0 {
+define private fastcc noundef range(i32 -2147483647, -2147483648) i32 @_Z3ackii(i32 noundef range(i32 0, 4) %0, i32 noundef %1) unnamed_addr #0 {
   %3 = icmp eq i32 %0, 0
   br i1 %3, label %if.then.L2, label %if.exit.L2
 
@@ -29,7 +29,7 @@ if.exit.L2.1:                                     ; preds = %tailrecurse.backedg
 
 if.exit.L3.1:                                     ; preds = %if.exit.L2.1
   %8 = add nsw i32 %.tr7.be, -1
-  %9 = tail call fastcc i32 @_Z3ackii(i32 %.tr.be, i32 %8)
+  %9 = tail call fastcc noundef i32 @_Z3ackii(i32 noundef %.tr.be, i32 noundef %8)
   br label %tailrecurse.backedge.1
 
 tailrecurse.backedge.1:                           ; preds = %if.exit.L3.1, %if.exit.L2.1
@@ -44,18 +44,18 @@ if.exit.L2.2:                                     ; preds = %tailrecurse.backedg
 
 if.exit.L3.2:                                     ; preds = %if.exit.L2.2
   %12 = add nsw i32 %.tr7.be.1, -1
-  %13 = tail call fastcc i32 @_Z3ackii(i32 %.tr.be.1, i32 %12)
+  %13 = tail call fastcc noundef i32 @_Z3ackii(i32 noundef %.tr.be.1, i32 noundef %12)
   br label %if.then.L2
 
 if.exit.L3:                                       ; preds = %if.exit.L2
   %14 = add nsw i32 %1, -1
-  %15 = tail call fastcc i32 @_Z3ackii(i32 %0, i32 %14)
+  %15 = tail call fastcc noundef i32 @_Z3ackii(i32 noundef %0, i32 noundef %14)
   br label %tailrecurse.backedge
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_Z3ackii(i32 3, i32 10) #3
+  %1 = tail call fastcc noundef i32 @_Z3ackii(i32 noundef 3, i32 noundef 10) #3
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef 3, i32 noundef 10, i32 noundef %1)
   ret i32 0
 }

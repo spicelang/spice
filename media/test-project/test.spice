@@ -1,26 +1,7 @@
-type T dyn;
-type TRes dyn;
+import "bootstrap/symboltablebuilder/type-qualifiers";
 
-// ------------------------------------------ ~ -------------------------------------------
-
-p bitwiseNotTestInner<T>(T lhs, const T expectedResult) {
-    const T actualResult = ~lhs;
-    printf("actualResult: %d, expectedResult: %d\n", actualResult, expectedResult);
-    assert actualResult == expectedResult;
-}
-
-p bitwiseNotTest() {
-    // Lhs is int
-    bitwiseNotTestInner<int>(52572, -52573);
-    // Lhs is short
-    bitwiseNotTestInner<short>(10s, -11s);
-    // Lhs is long
-    bitwiseNotTestInner<long>(186008394l, -186008395l);
-    // Lhs is byte
-    bitwiseNotTestInner<byte>(cast<byte>(18), cast<byte>(-19));
-}
-
+// Wrapper for 'spice test' unit test
 f<int> main() {
-    bitwiseNotTest();
+    testTypeQualifiersSmoke();
     printf("All assertions passed!");
 }

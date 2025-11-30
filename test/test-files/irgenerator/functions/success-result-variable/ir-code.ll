@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 4
 
-define private i32 @_Z6getAgev() {
+define private noundef i32 @_Z6getAgev() {
   %result = alloca i32, align 4
   %i = alloca i1, align 1
   store i1 false, ptr %i, align 1
@@ -35,7 +35,7 @@ define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %age = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_Z6getAgev()
+  %1 = call noundef i32 @_Z6getAgev()
   store i32 %1, ptr %age, align 4
   %2 = load i32, ptr %age, align 4
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)

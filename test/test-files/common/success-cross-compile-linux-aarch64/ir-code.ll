@@ -23,10 +23,10 @@ define dso_local noundef i32 @main() #0 {
   %4 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN6VectorI6StringE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %stringVec)
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.0)
-  call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr %1)
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.1)
-  call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr %2)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
+  call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr noundef %1)
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.1)
+  call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr noundef %2)
   %5 = call %struct.VectorIterator @_ZN6VectorI6StringE11getIteratorEv(ptr %stringVec)
   store %struct.VectorIterator %5, ptr %3, align 8
   br label %foreach.head.L10
@@ -40,7 +40,7 @@ foreach.body.L10:                                 ; preds = %foreach.head.L10
   store ptr %7, ptr %4, align 8
   %8 = load ptr, ptr %4, align 8
   %9 = load %struct.String, ptr %8, align 8
-  call void @_Z5printI6StringEv6String(%struct.String %9)
+  call void @_Z5printI6StringEv6String(%struct.String noundef %9)
   br label %foreach.tail.L10
 
 foreach.tail.L10:                                 ; preds = %foreach.body.L10

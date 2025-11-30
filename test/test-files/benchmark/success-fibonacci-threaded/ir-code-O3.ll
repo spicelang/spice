@@ -8,7 +8,7 @@ source_filename = "source.spice"
 @str = private unnamed_addr constant [45 x i8] c"Started all threads. Waiting for results ...\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc range(i32 -2147483647, -2147483648) i32 @_Z3fibi(i32 %0) unnamed_addr #0 {
+define private fastcc noundef range(i32 -2147483647, -2147483648) i32 @_Z3fibi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 3
   br i1 %2, label %common.ret, label %if.exit.L4
 
@@ -24,7 +24,7 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
   %.tr4 = phi i32 [ %6, %if.exit.L4 ], [ %0, %1 ]
   %accumulator.tr3 = phi i32 [ %7, %if.exit.L4 ], [ 0, %1 ]
   %4 = add nsw i32 %.tr4, -1
-  %5 = tail call fastcc i32 @_Z3fibi(i32 %4)
+  %5 = tail call fastcc noundef i32 @_Z3fibi(i32 noundef %4)
   %6 = add nsw i32 %.tr4, -2
   %7 = add nsw i32 %5, %accumulator.tr3
   %8 = icmp samesign ult i32 %.tr4, 5
@@ -49,7 +49,7 @@ for.body.L11:
   %.fca.1.gep = getelementptr inbounds nuw i8, ptr %0, i64 16
   %1 = getelementptr inbounds nuw i8, ptr %threads, i64 24
   call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(168) %1, i8 0, i64 168, i1 false)
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load = load ptr, ptr %0, align 8
   %.fca.0.1.load = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load = load i64, ptr %.fca.1.gep, align 8
@@ -57,7 +57,7 @@ for.body.L11:
   store ptr %.fca.0.1.load, ptr %.fca.0.0.1.gep, align 8
   store i64 %.fca.1.load, ptr %.fca.0.1.gep9, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %threads) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.1 = load ptr, ptr %0, align 8
   %.fca.0.1.load.1 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.1 = load i64, ptr %.fca.1.gep, align 8
@@ -67,7 +67,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.1 = getelementptr inbounds nuw i8, ptr %threads, i64 40
   store i64 %.fca.1.load.1, ptr %.fca.1.insert5.fca.1.gep.1, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.2 = load ptr, ptr %0, align 8
   %.fca.0.1.load.2 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.2 = load i64, ptr %.fca.1.gep, align 8
@@ -77,7 +77,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.2 = getelementptr inbounds nuw i8, ptr %threads, i64 64
   store i64 %.fca.1.load.2, ptr %.fca.1.insert5.fca.1.gep.2, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.3 = load ptr, ptr %0, align 8
   %.fca.0.1.load.3 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.3 = load i64, ptr %.fca.1.gep, align 8
@@ -87,7 +87,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.3 = getelementptr inbounds nuw i8, ptr %threads, i64 88
   store i64 %.fca.1.load.3, ptr %.fca.1.insert5.fca.1.gep.3, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.4 = load ptr, ptr %0, align 8
   %.fca.0.1.load.4 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.4 = load i64, ptr %.fca.1.gep, align 8
@@ -97,7 +97,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.4 = getelementptr inbounds nuw i8, ptr %threads, i64 112
   store i64 %.fca.1.load.4, ptr %.fca.1.insert5.fca.1.gep.4, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.5 = load ptr, ptr %0, align 8
   %.fca.0.1.load.5 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.5 = load i64, ptr %.fca.1.gep, align 8
@@ -107,7 +107,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.5 = getelementptr inbounds nuw i8, ptr %threads, i64 136
   store i64 %.fca.1.load.5, ptr %.fca.1.insert5.fca.1.gep.5, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.6 = load ptr, ptr %0, align 8
   %.fca.0.1.load.6 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.6 = load i64, ptr %.fca.1.gep, align 8
@@ -117,7 +117,7 @@ for.body.L11:
   %.fca.1.insert5.fca.1.gep.6 = getelementptr inbounds nuw i8, ptr %threads, i64 160
   store i64 %.fca.1.load.6, ptr %.fca.1.insert5.fca.1.gep.6, align 8
   call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #4
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #4
   %.fca.0.0.load.7 = load ptr, ptr %0, align 8
   %.fca.0.1.load.7 = load ptr, ptr %.fca.0.1.gep, align 8
   %.fca.1.load.7 = load i64, ptr %.fca.1.gep, align 8
@@ -142,7 +142,7 @@ for.body.L11:
 
 ; Function Attrs: nofree nounwind
 define private void @_Z15lambda.L12C29.0v() #2 {
-  %1 = tail call fastcc i32 @_Z3fibi(i32 30)
+  %1 = tail call fastcc noundef i32 @_Z3fibi(i32 noundef 30)
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %1)
   ret void
 }

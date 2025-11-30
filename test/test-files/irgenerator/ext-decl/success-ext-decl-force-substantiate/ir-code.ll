@@ -28,7 +28,7 @@ define dso_local noundef i32 @main() #0 {
   %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %i, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  %3 = call i32 @pthread_create(ptr %tid1, ptr null, { ptr, ptr } %2, ptr null)
+  %3 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid1, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr } noundef %2, ptr noundef align 1 dereferenceable(1) null)
   store ptr %d, ptr %captures, align 8
   %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %captures, i32 0, i32 1
   store ptr %i, ptr %4, align 8
@@ -36,11 +36,11 @@ define dso_local noundef i32 @main() #0 {
   %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
   store ptr %captures, ptr %5, align 8
   %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  %7 = call i32 @pthread_create(ptr %tid2, ptr null, { ptr, ptr } %6, ptr null)
+  %7 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid2, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr } noundef %6, ptr noundef align 1 dereferenceable(1) null)
   %8 = load i64, ptr %tid1, align 8
-  %9 = call i32 @pthread_join(i64 %8, ptr null)
+  %9 = call noundef i32 @pthread_join(i64 noundef %8, ptr noundef align 8 dereferenceable(8) null)
   %10 = load i64, ptr %tid2, align 8
-  %11 = call i32 @pthread_join(i64 %10, ptr null)
+  %11 = call noundef i32 @pthread_join(i64 noundef %10, ptr noundef align 8 dereferenceable(8) null)
   %12 = load volatile i32, ptr %i, align 4
   %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %12)
   %14 = load i32, ptr %result, align 4

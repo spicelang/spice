@@ -43,7 +43,7 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private void @_Z4testi(i32 %0) {
+define private void @_Z4testi(i32 noundef %0) {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -84,7 +84,7 @@ define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   call void @_Z4testv()
-  call void @_Z4testi(i32 4321)
+  call void @_Z4testi(i32 noundef 4321)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-define private i32 @_Z3getv() {
+define private noundef i32 @_Z3getv() {
   %result = alloca i32, align 4
   ret i32 12
 }
@@ -19,7 +19,7 @@ define dso_local noundef i32 @main() #0 {
   br i1 %1, label %cond.true.L7C13, label %cond.false.L7C13
 
 cond.true.L7C13:                                  ; preds = %0
-  %2 = call i32 @_Z3getv()
+  %2 = call noundef i32 @_Z3getv()
   br label %cond.exit.L7C13
 
 cond.false.L7C13:                                 ; preds = %0

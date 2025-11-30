@@ -13,7 +13,7 @@ define dso_local noundef i32 @main() #0 {
   %s = alloca %struct.Socket, align 8
   %n = alloca %struct.NestedSocket, align 8
   store i32 0, ptr %result, align 4
-  %1 = call %struct.Socket @_Z16openServerSockett(i16 8080)
+  %1 = call noundef %struct.Socket @_Z16openServerSockett(i16 noundef zeroext 8080)
   store %struct.Socket %1, ptr %s, align 8
   %nested.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 2
   call void @llvm.memcpy.p0.p0.i64(ptr %n, ptr %nested.addr, i64 16, i1 false)

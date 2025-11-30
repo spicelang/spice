@@ -5,14 +5,14 @@ source_filename = "lto-module"
 @str = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition '(functionInModuleB(1, 2) == 3)' evaluated to false.\00", align 1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i32 @_Z17functionInModuleBii(i32 %0, i32 %1) local_unnamed_addr #0 {
+define dso_local noundef i32 @_Z17functionInModuleBii(i32 noundef %0, i32 noundef %1) local_unnamed_addr #0 {
   %3 = add nsw i32 %0, %1
   ret i32 %3
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
-  %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #4
+  %1 = tail call noundef i32 @_Z17functionInModuleBii(i32 noundef 1, i32 noundef 2) #4
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !5
 

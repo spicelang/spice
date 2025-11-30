@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [30 x i8] c"Logical and evaluated to: %d\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 4
 
-define private i1 @_Z12functionTruev() {
+define private noundef zeroext i1 @_Z12functionTruev() {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 true
@@ -15,7 +15,7 @@ define private i1 @_Z12functionTruev() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-define private i1 @_Z13functionFalsev() {
+define private noundef zeroext i1 @_Z13functionFalsev() {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 false
@@ -25,22 +25,22 @@ define private i1 @_Z13functionFalsev() {
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_Z13functionFalsev()
+  %1 = call noundef zeroext i1 @_Z13functionFalsev()
   br i1 %1, label %land.1.L13C46, label %land.exit.L13C46
 
 land.1.L13C46:                                    ; preds = %0
-  %2 = call i1 @_Z12functionTruev()
+  %2 = call noundef zeroext i1 @_Z12functionTruev()
   br label %land.exit.L13C46
 
 land.exit.L13C46:                                 ; preds = %land.1.L13C46, %0
   %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L13C46 ]
   %3 = zext i1 %land_phi to i32
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %3)
-  %5 = call i1 @_Z12functionTruev()
+  %5 = call noundef zeroext i1 @_Z12functionTruev()
   br i1 %5, label %lor.exit.L16C45, label %lor.1.L16C45
 
 lor.1.L16C45:                                     ; preds = %land.exit.L13C46
-  %6 = call i1 @_Z13functionFalsev()
+  %6 = call noundef zeroext i1 @_Z13functionFalsev()
   br label %lor.exit.L16C45
 
 lor.exit.L16C45:                                  ; preds = %lor.1.L16C45, %land.exit.L13C46
