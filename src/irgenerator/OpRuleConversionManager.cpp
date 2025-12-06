@@ -14,8 +14,7 @@
 namespace spice::compiler {
 
 OpRuleConversionManager::OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator)
-    : context(irGenerator->cliOptions.useLTO ? irGenerator->resourceManager.ltoContext : sourceFile->context),
-      builder(sourceFile->builder), irGenerator(irGenerator), stdFunctionManager(irGenerator->stdFunctionManager) {}
+    : builder(sourceFile->builder), irGenerator(irGenerator), stdFunctionManager(irGenerator->stdFunctionManager) {}
 
 LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
                                                          LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {

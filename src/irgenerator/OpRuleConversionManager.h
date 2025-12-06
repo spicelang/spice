@@ -91,7 +91,6 @@ public:
 
 private:
   // Members
-  llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   IRGenerator *irGenerator;
   const StdFunctionManager &stdFunctionManager;
