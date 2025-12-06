@@ -119,14 +119,15 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
       substantiatedInterface->declNode->getInterfaceManifestations()->push_back(substantiatedInterface);
 
       // Copy interface entry
-      const std::string newSignature = substantiatedInterface->getSignature();
+      const std::string &newSignature = substantiatedInterface->getSignature();
       matchScope->lookupStrict(substantiatedInterface->name)->used = true;
       substantiatedInterface->entry = matchScope->symbolTable.copySymbol(substantiatedInterface->name, newSignature);
       assert(substantiatedInterface->entry != nullptr);
 
       // Copy interface scope
-      const std::string newScopeName = INTERFACE_SCOPE_PREFIX + newSignature;
-      matchScope->copyChildScope(INTERFACE_SCOPE_PREFIX + presetInterface.name, newScopeName);
+      const std::string &oldScopeName = presetInterface.getScopeName();
+      const std::string &newScopeName = substantiatedInterface->getScopeName();
+      matchScope->copyChildScope(oldScopeName, newScopeName);
       substantiatedInterface->scope = matchScope->getChildScope(newScopeName);
       assert(substantiatedInterface->scope != nullptr);
       substantiatedInterface->scope->isGenericScope = false;
@@ -174,7 +175,8 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  * @param node Instantiation AST node for printing error messages
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping, const ASTNode *node) {
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping,
+                                          const ASTNode *node) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())

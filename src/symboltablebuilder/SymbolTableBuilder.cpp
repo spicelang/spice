@@ -84,7 +84,8 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Change to struct scope if this function is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->name->structName);
+    const std::string scopeName = Struct::getScopeName(node->name->structName);
+    node->structScope = currentScope = currentScope->getChildScope(scopeName);
     if (!currentScope)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }
@@ -147,7 +148,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Change to struct scope if this procedure is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->name->structName);
+    const std::string &scopeName = Struct::getScopeName(node->name->structName);
+    node->structScope = currentScope = currentScope->getChildScope(scopeName);
     if (!currentScope)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }
@@ -200,8 +202,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->structName + "'");
 
   // Create scope for the struct
-  node->structScope = currentScope =
-      rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, ScopeType::STRUCT, &node->codeLoc);
+  const std::string &scopeName = Struct::getScopeName(node->structName);
+  node->structScope = currentScope = rootScope->createChildScope(scopeName, ScopeType::STRUCT, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes;
 
   // Insert implicit field for each interface type
@@ -248,8 +250,8 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
 
   // Create scope for the interface
-  node->interfaceScope = currentScope =
-      rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, ScopeType::INTERFACE, &node->codeLoc);
+  const std::string &scopeName = Interface::getScopeName(node->interfaceName);
+  node->interfaceScope = currentScope = rootScope->createChildScope(scopeName, ScopeType::INTERFACE, &node->codeLoc);
 
   // Visit signatures
   for (SignatureNode *signature : node->signatures)

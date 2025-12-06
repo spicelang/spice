@@ -42,8 +42,8 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
-      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
+      const std::string &scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
+      changeToScope(scopeName, ScopeType::STRUCT);
     }
 
     // Change to function scope
@@ -98,8 +98,8 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
-      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
+      const std::string& scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
+      changeToScope(scopeName, ScopeType::STRUCT);
     }
 
     // Change to procedure scope

@@ -20,6 +20,8 @@ public:
         interfaceTypes(std::move(interfaceTypes)) {}
 
   // Public methods
+  [[nodiscard]] std::string getScopeName() const;
+  static std::string getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes = {});
   [[nodiscard]] bool hasReferenceFields() const;
 
   // Public members

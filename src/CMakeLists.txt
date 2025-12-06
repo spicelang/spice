@@ -82,6 +82,7 @@ set(SOURCES
         model/Function.cpp
         model/StructBase.cpp
         model/Struct.cpp
+        model/Interface.cpp
         model/GenericType.cpp
         # Exception handling
         exception/ErrorManager.cpp

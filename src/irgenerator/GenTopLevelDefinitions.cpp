@@ -154,8 +154,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
-      currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
+      const std::string scopeName = Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
+      currentScope = currentScope->getChildScope(scopeName);
       assert(currentScope != nullptr);
     }
 
@@ -316,8 +316,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
-      currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
+      const std::string scopeName = Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
+      currentScope = currentScope->getChildScope(scopeName);
       assert(currentScope != nullptr);
     }
 
