@@ -6,7 +6,7 @@ option(SPICE_TARGET_MIPS "Enable MIPS target" OFF)
 option(SPICE_TARGET_NVPTX "Enable NVPTX target" OFF)
 option(SPICE_TARGET_POWERPC "Enable PowerPC target" OFF)
 option(SPICE_TARGET_RISCV "Enable RISC-V target" OFF)
-option(SPICE_TARGET_WEBASSEMBLY "Enable WebAssembly target" OFF)
+option(SPICE_TARGET_WEBASSEMBLY "Enable WebAssembly target" ON)
 option(SPICE_TARGET_X86 "Enable X86 target" ON)
 
 # Switch to enable all target architectures
