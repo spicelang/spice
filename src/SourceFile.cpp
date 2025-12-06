@@ -350,6 +350,12 @@ void SourceFile::runIRGenerator() {
   IRGenerator irGenerator(resourceManager, this);
   irGenerator.visit(ast);
 
+  // Print warning if the verifier is disabled
+  if (isMainFile && cliOptions.disableVerifier) {
+    const std::string warningMessage = "The LLVM verifier passes are disabled. Please use this cli option with caution.";
+    compilerOutput.warnings.emplace_back(VERIFIER_DISABLED, warningMessage);
+  }
+
   // Save the ir string in the compiler output
   if (cliOptions.dump.dumpIR || cliOptions.testMode)
     compilerOutput.irString = IRGenerator::getIRString(llvmModule.get(), cliOptions);
@@ -533,14 +539,6 @@ void SourceFile::concludeCompilation() {
   // Dump lookup cache statistics
   if (isMainFile && cliOptions.dump.dumpCacheStats)
     dumpOutput(compilerOutput.cacheStats, "Cache Statistics", "cache-stats.out");
-
-  // Print warning if the verifier is disabled
-  if (isMainFile && cliOptions.disableVerifier) {
-    const std::string warningMessage =
-        CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
-            .warningMessage;
-    std::cout << "\n" << warningMessage;
-  }
 
   if (cliOptions.printDebugOutput)
     std::cout << "Finished compiling " << fileName << std::endl;

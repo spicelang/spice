@@ -10,7 +10,6 @@ namespace spice::compiler {
 const char *const MAIN_FUNCTION_NAME = "main";
 const char *const RETURN_VARIABLE_NAME = "result";
 const char *const THIS_VARIABLE_NAME = "this";
-const char *const FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const char *const CTOR_FUNCTION_NAME = "ctor";
 const char *const DTOR_FUNCTION_NAME = "dtor";
 const char *const ALIAS_CONTAINER_SUFFIX = ".container";
