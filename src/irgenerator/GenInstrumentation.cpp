@@ -20,6 +20,9 @@ void IRGenerator::enableFunctionInstrumentation(llvm::Function *function) const 
   case Sanitizer::MEMORY:
     function->addFnAttr(llvm::Attribute::SanitizeMemory);
     break;
+  case Sanitizer::TYPE:
+    function->addFnAttr(llvm::Attribute::SanitizeType);
+    break;
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Unhandled sanitizer type"); // GCOV_EXCL_LINE
   }
