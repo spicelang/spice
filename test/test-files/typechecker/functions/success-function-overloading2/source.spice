@@ -1,8 +1,10 @@
 type T dyn;
 
-p hash(int input) {}
-p hash<T>(const T* input) {}
+p hash(int _input) {}
+p hash<T>(const T* _input) {}
 
 f<int> main() {
     hash(123);
+    int i = 123;
+    hash(&i);
 }

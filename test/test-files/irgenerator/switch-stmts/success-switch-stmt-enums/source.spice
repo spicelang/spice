@@ -10,7 +10,7 @@ f<string> getName(Fruit input) {
         case Fruit::Banana: { return "Banana"; }
         case Fruit::Orange: { return "Orange"; }
     }
-    return "";
+    // No need to specify return, since the above switch/case is exhaustive
 }
 
 f<int> main() {

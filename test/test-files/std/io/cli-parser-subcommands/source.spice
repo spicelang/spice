@@ -5,10 +5,6 @@ type CliOptions struct {
     string greetName = ""
 }
 
-p callback(const bool& value) {
-    printf("Callback called with value %d\n", value);
-}
-
 f<int> main(int argc, string[] argv) {
     CliParser parser = CliParser("Test Program", "This is a simple test program");
     parser.setVersion("v0.1.0");
@@ -18,7 +14,7 @@ f<int> main(int argc, string[] argv) {
     CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
     greet.addOption("--name", options.greetName, "Name of the person to greet");
 
-    parser.parse(argc, argv);
+    result = parser.parse(argc, argv);
 
     // Greet persion if requested
     if options.greetName != "" {

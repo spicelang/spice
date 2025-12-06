@@ -5,5 +5,5 @@ type Outer struct {
 }
 
 f<int> main() {
-    TestStruct<Outer> ts = TestStruct<Outer>();
+    TestStruct<Outer> _ts = TestStruct<Outer>();
 }

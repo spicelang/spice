@@ -9,5 +9,5 @@ f<int> privateFunction<T>(const T& t) {
 }
 
 public p TestStruct.ctor() {
-    privateFunction(this.t);
+    int _res = privateFunction(this.t);
 }

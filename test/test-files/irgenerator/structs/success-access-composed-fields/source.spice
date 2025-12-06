@@ -9,7 +9,7 @@ type B struct {
 type C struct {
     compose A _1
     compose B _2
-    int f2
+    int _f2
 }
 
 type D struct {

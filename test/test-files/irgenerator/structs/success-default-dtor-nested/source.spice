@@ -2,7 +2,7 @@ ext f<heap byte*> malloc(unsigned long);
 ext p free(heap byte*);
 
 type Inner struct {
-    string message = "Hello World"
+    string _message = "Hello World"
     heap byte* data
 }
 
@@ -16,13 +16,13 @@ p Inner.dtor() {
 }
 
 type Middle struct {
-    Inner inner
+    Inner _inner
 }
 
 type Outer struct {
-    Middle middle
+    Middle _middle
 }
 
 f<int> main() {
-    Outer outer;
+    Outer _outer;
 }

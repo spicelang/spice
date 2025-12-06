@@ -1,8 +1,6 @@
 type T int|dyn|double;
 
-f<int> foo<T>(T t) {
-    return 1;
-}
+p foo<T>(T _t) {}
 
 f<int> main() {
     foo(1);

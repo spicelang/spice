@@ -5,22 +5,22 @@ f<int> main() {
     Result<File> fileResult = openFile("./test-file.txt", MODE_WRITE);
     assert fileResult.isOk();
     File file = fileResult.unwrap();
-    file.write("Hello, world!\n");
-    file.close();
+    bool _ = file.write("Hello, world!\n");
+    _ = file.close();
 
     // Read file
     fileResult = openFile("./test-file.txt", MODE_READ);
     assert fileResult.isOk();
     file = fileResult.unwrap();
     assert file.readLine() == String("Hello, world!");
-    file.close();
+    _ = file.close();
 
     // Append file
     fileResult = openFile("./test-file.txt", MODE_APPEND);
     assert fileResult.isOk();
     file = fileResult.unwrap();
-    file.write("Hello, again!\n");
-    file.close();
+    _ = file.write("Hello, again!\n");
+    _ = file.close();
 
     // Read file
     fileResult = openFile("./test-file.txt", MODE_READ);
@@ -28,7 +28,7 @@ f<int> main() {
     file = fileResult.unwrap();
     assert file.readLine() == String("Hello, world!");
     assert file.readLine() == String("Hello, again!");
-    file.close();
+    _ = file.close();
 
     printf("All assertions passed!");
 }

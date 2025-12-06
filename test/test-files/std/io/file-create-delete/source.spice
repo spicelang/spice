@@ -2,7 +2,7 @@ import "std/io/file";
 
 f<int> main() {
     string filename = "./test-file.txt";
-    deleteFile(filename); // Ensure that the file is not present in the beginning
+    bool _ = deleteFile(filename); // Ensure that the file is not present in the beginning
 
     assert !fileExists(filename);
     assert createFile(filename);

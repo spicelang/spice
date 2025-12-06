@@ -471,13 +471,13 @@ p equalTest() {
     equalTestInner<bool, bool>(true, false, true);
     equalTestInner<bool, bool>(true, true, false);
     // Lhs function
-    const dyn funcA = f<int>(bool b, double d) { return 123; };
-    const dyn funcB = f<int>(bool b, double d) { return 456; };
+    const dyn funcA = f<int>(bool _b, double _d) { return 123; };
+    const dyn funcB = f<int>(bool _b, double _d) { return 456; };
     equalTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcA, true);
     equalTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcB, false);
     // Lhs procedure
-    const dyn procA = p(string s, char c) {};
-    const dyn procB = p(string s, char c) {};
+    const dyn procA = p(string _s, char _c) {};
+    const dyn procB = p(string _s, char _c) {};
     equalTestInner<p(string, char), p(string, char)>(procA, procA, true);
     equalTestInner<p(string, char), p(string, char)>(procA, procB, false);
 }
@@ -543,13 +543,13 @@ p notEqualTest() {
     notEqualTestInner<bool, bool>(true, false, false);
     notEqualTestInner<bool, bool>(true, true, true);
     // Lhs function
-    const dyn funcA = f<int>(bool b, double d) { return 123; };
-    const dyn funcB = f<int>(bool b, double d) { return 456; };
+    const dyn funcA = f<int>(bool _b, double _d) { return 123; };
+    const dyn funcB = f<int>(bool _b, double _d) { return 456; };
     notEqualTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcA, false);
     notEqualTestInner<f<int>(bool, double), f<int>(bool, double)>(funcA, funcB, true);
     // Lhs procedure
-    const dyn procA = p(string s, char c) {};
-    const dyn procB = p(string s, char c) {};
+    const dyn procA = p(string _s, char _c) {};
+    const dyn procB = p(string _s, char _c) {};
     notEqualTestInner<p(string, char), p(string, char)>(procA, procA, false);
     notEqualTestInner<p(string, char), p(string, char)>(procA, procB, true);
 }

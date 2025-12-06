@@ -1,11 +1,4 @@
 type QualifierType enum {
-    NONE,
-    CONST,
-    SIGNED,
-    UNSIGNED,
-    INLINE,
-    PUBLIC,
-    HEAP,
     COMPOSE
 }
 

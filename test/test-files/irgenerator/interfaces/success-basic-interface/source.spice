@@ -11,7 +11,7 @@ p Car.ctor() {
     this.driving = false;
 }
 
-p Car.drive(int param) {
+p Car.drive(int _param) {
     this.driving = true;
 }
 
