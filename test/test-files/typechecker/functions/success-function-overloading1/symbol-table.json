@@ -4,6 +4,31 @@
     {
       "captures": [],
       "children": [],
+      "name": "f<double> calledFunction(const char*)",
+      "symbols": [
+        {
+          "codeLoc": "L7C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "double"
+        },
+        {
+          "codeLoc": "L7C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "testString",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
       "name": "f<double> calledFunction(int)",
       "symbols": [
         {
@@ -66,31 +91,6 @@
           "orderIndex": 0,
           "state": "declared",
           "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "f<double> calledFunction(string)",
-      "symbols": [
-        {
-          "codeLoc": "L7C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "double"
-        },
-        {
-          "codeLoc": "L7C26",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "testString",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "string"
         }
       ]
     },

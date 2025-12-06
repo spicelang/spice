@@ -116,7 +116,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
   for (const auto &manifestations : insertScope->functions | std::views::values) {
     if (manifestations.contains(signature)) {
       const SemanticErrorType errorType = newManifestation.isFunction() ? FUNCTION_DECLARED_TWICE : PROCEDURE_DECLARED_TWICE;
-      throw SemanticError(declNode, errorType, "'" + signature + "' is declared twice");
+      throw SemanticError(declNode, errorType, "'" + newManifestation.getSignature(true, false) + "' is declared twice");
     }
   }
 

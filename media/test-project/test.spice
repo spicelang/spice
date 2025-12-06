@@ -1,8 +1,11 @@
-type T string|const char*;
+f<string> exampleFunc() {
+    return "Hello";
+}
 
-p foo<T>(T str) {}
+f<string> exampleFunc() {
+    return "World";
+}
 
 f<int> main() {
-    foo(cast<const char*>("hello"));
-    foo("world");
+    printf("%s %s!", exampleFunc(), exampleFunc());
 }
