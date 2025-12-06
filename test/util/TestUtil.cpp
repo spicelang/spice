@@ -235,6 +235,7 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
   return false;
 }
 
+// LCOV_EXCL_START
 /**
  * Removes the first n lines of the GDB output to not compare target dependent code
  *
@@ -253,6 +254,7 @@ void TestUtil::eraseGDBHeader(std::string &gdbOutput) {
   if (pos != std::string::npos)
     gdbOutput.erase(pos);
 }
+// LCOV_EXCL_STOP
 
 /**
  * Remove lines, containing a certain substring to make the IR string comparable

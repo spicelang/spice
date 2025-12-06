@@ -143,7 +143,7 @@ GenericType *Scope::lookupGenericTypeStrict(const std::string &typeName) {
  */
 void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // NOLINT(misc-no-recursion)
   // Visit own symbols
-  for (const auto &entry : symbolTable.symbols | std::views::values) {
+  for (const SymbolTableEntry &entry : symbolTable.symbols | std::views::values) {
     // Do not produce a warning if the symbol is used or has a special name
     const std::string &name = entry.name;
     if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
@@ -209,12 +209,6 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       warningType = UNUSED_ENUM_ITEM;
       warningMessage = "The enum item '" + entry.name + "' is unused";
       break;
-    }
-    case ScopeType::FOREACH_BODY: {
-      // Skip idx variables
-      if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-        continue;
-      [[fallthrough]];
     }
     default: {
       warningType = UNUSED_VARIABLE;
