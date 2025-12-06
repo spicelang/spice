@@ -1,3 +1,11 @@
-f<int> main() {
+f<string> exampleFunc() {
+    return "Hello";
+}
 
+f<string> exampleFunc() {
+    return "World";
+}
+
+f<int> main() {
+    printf("%s %s!", exampleFunc(), exampleFunc());
 }

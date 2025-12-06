@@ -30,9 +30,11 @@ QualTypeList Function::getParamTypes() const {
  *
  * @param withThisType Include 'this' type in signature
  * @param withTemplateTypes Include concrete template types in the signature
+ * @param withTypeAliases Print type aliases as is and not decompose them
  * @return String representation as function signature
  */
-std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplateTypes /*=true*/) const {
+std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplateTypes /*=true*/,
+                                   bool withTypeAliases /*=true*/) const {
   QualTypeList concreteTemplateTypes;
   if (withTemplateTypes) {
     concreteTemplateTypes.reserve(templateTypes.size());
@@ -46,7 +48,7 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplat
     }
   }
 
-  return getSignature(name, thisType, returnType, paramList, concreteTemplateTypes, true, withThisType, true);
+  return getSignature(name, thisType, returnType, paramList, concreteTemplateTypes, true, withThisType, true, withTypeAliases);
 }
 
 /**
@@ -60,11 +62,13 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplat
  * @param withReturnType Include return type in signature
  * @param withThisType Include 'this' type in signature
  * @param ignorePublic Not include public modifiers in signature
+ * @param withTypeAliases Print type aliases as is and not decompose them
  * @return Function signature
  */
 std::string Function::getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
                                    const ParamList &paramList, const QualTypeList &concreteTemplateTypes,
-                                   bool withReturnType /*=true*/, bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
+                                   bool withReturnType /*=true*/, bool withThisType /*=true*/, bool ignorePublic /*=false*/,
+                                   bool withTypeAliases /*=true*/) {
   std::stringstream signature;
 
   // Build return type string
@@ -73,7 +77,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
       signature << "p ";
     } else {
       signature << "f<";
-      returnType.getName(signature, false, ignorePublic);
+      returnType.getName(signature, false, ignorePublic, withTypeAliases);
       signature << "> ";
     }
   }
@@ -87,7 +91,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
         if (i > 0)
           signature << ",";
-        signature << thisTemplateTypes.at(i).getName(false, ignorePublic);
+        signature << thisTemplateTypes.at(i).getName(false, ignorePublic, withTypeAliases);
       }
       signature << ">";
     }
@@ -103,7 +107,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         signature << ",";
-      signature << concreteTemplateTypes.at(i).getName(false, ignorePublic);
+      signature << concreteTemplateTypes.at(i).getName(false, ignorePublic, withTypeAliases);
     }
     signature << ">";
   }
@@ -114,7 +118,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     const auto &[qualType, isOptional] = paramList.at(i);
     if (i > 0)
       signature << ",";
-    signature << qualType.getName(false, ignorePublic);
+    signature << qualType.getName(false, ignorePublic, withTypeAliases);
     if (isOptional)
       signature << "?";
   }
@@ -124,7 +128,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
 }
 
 std::string Function::getScopeName() const {
-  return getSignature(false);
+  return getSignature(false, true, false);
 }
 
 std::string Function::getMangledName() const {

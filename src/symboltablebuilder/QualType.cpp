@@ -425,6 +425,12 @@ bool QualType::canBind(const QualType &inputType, bool isTemporary) const {
  * @return Matching or not
  */
 bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const {
+  // Special case: string is equivalent to const char*
+  if (is(TY_STRING) && otherType.isPtrTo(TY_CHAR) && otherType.isConst())
+    return true;
+  if (isPtrTo(TY_CHAR) && isConst() && otherType.is(TY_STRING))
+    return true;
+
   // Compare type
   if (!type->matches(otherType.type, ignoreArraySize))
     return false;
@@ -548,8 +554,9 @@ bool QualType::needsDeAllocation() const {
  * @param name Name stream
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  */
-void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic) const {
+void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic, bool withAliases) const {
   // Append the qualifiers
   const TypeQualifiers defaultForSuperType = TypeQualifiers::of(getBase().getSuperType());
   if (!ignorePublic && qualifiers.isPublic && !defaultForSuperType.isPublic)
@@ -566,7 +573,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
     name << "unsigned ";
 
   // Loop through all chain elements
-  type->getName(name, withSize, ignorePublic);
+  type->getName(name, withSize, ignorePublic, withAliases);
 }
 
 /**
@@ -574,11 +581,12 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
  *
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-std::string QualType::getName(bool withSize, bool ignorePublic) const {
+std::string QualType::getName(bool withSize, bool ignorePublic, bool withAliases) const {
   std::stringstream name;
-  getName(name, withSize, ignorePublic);
+  getName(name, withSize, ignorePublic, withAliases);
   return name.str();
 }
 

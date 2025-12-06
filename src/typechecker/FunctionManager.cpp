@@ -110,13 +110,13 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const Qual
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string signature = newManifestation.getSignature(true, false);
+  const std::string signature = newManifestation.getSignature(true, false, false);
 
   // Check if the function exists already
   for (const auto &manifestations : insertScope->functions | std::views::values) {
     if (manifestations.contains(signature)) {
       const SemanticErrorType errorType = newManifestation.isFunction() ? FUNCTION_DECLARED_TWICE : PROCEDURE_DECLARED_TWICE;
-      throw SemanticError(declNode, errorType, "'" + signature + "' is declared twice");
+      throw SemanticError(declNode, errorType, "'" + newManifestation.getSignature(true, false) + "' is declared twice");
     }
   }
 
@@ -268,7 +268,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      const std::string nonGenericSignature = candidate.getSignature(true, false);
+      const std::string nonGenericSignature = candidate.getSignature(true, false, false);
       if (matchScope->functions.at(fctId).contains(nonGenericSignature)) {
         matches.push_back(&matchScope->functions.at(fctId).at(nonGenericSignature));
         break; // Leave the whole manifestation list to not double-match the manifestation

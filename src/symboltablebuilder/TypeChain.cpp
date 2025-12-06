@@ -40,7 +40,7 @@ bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
 
 bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
 
-void TypeChainElement::getName(std::stringstream &name, bool withSize, bool ignorePublic) const {
+void TypeChainElement::getName(std::stringstream &name, bool withSize, bool ignorePublic, bool withAliases) const {
   switch (superType) {
   case TY_PTR:
     name << "*";
@@ -70,7 +70,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
     name << "char";
     break;
   case TY_STRING:
-    name << "string";
+    name << (withAliases ? "string" : "const char*");
     break;
   case TY_BOOL:
     name << "bool";
@@ -145,11 +145,12 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
  *
  * @param withSize Also encode array sizes
  * @param ignorePublic Ignore public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Name as string
  */
-std::string TypeChainElement::getName(bool withSize, bool ignorePublic) const {
+std::string TypeChainElement::getName(bool withSize, bool ignorePublic, bool withAliases) const {
   std::stringstream name;
-  getName(name, withSize, ignorePublic);
+  getName(name, withSize, ignorePublic, withAliases);
   return name.str();
 }
 
