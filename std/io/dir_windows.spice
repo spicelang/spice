@@ -159,7 +159,7 @@ public p listDir(string path) {
 
     // Find first file
     handle = findFirstFileA(path, &dirEntry);
-    if handle == INVALID_HANDLE {
+    if handle == cast<unsigned long>(INVALID_HANDLE) {
         printf("Dir does not exist\n");
     } else {
         // Read all files
@@ -183,7 +183,7 @@ public p listDirRecursive(string path) {
 
     // Find first file
     handle = findFirstFileA(path, &dirEntry);
-    if handle == INVALID_HANDLE {
+    if handle == cast<unsigned long>(INVALID_HANDLE) {
         printf("Dir does not exist\n");
     } else {
         // Read all files
