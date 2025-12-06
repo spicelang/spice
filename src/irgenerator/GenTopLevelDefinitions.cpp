@@ -160,7 +160,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Change scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
+    currentScope = currentScope->getChildScope(manifestation->getScopeName());
     assert(currentScope != nullptr);
 
     // Get 'this' entry
@@ -322,7 +322,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Change scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
+    currentScope = currentScope->getChildScope(manifestation->getScopeName());
     assert(currentScope != nullptr);
 
     // Get 'this' entry

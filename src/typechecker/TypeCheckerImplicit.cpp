@@ -48,7 +48,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   defaultMethod.implicitDefault = true;
 
   // Create function scope
-  Scope *procScope = structScope->createChildScope(defaultMethod.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  Scope *procScope = structScope->createChildScope(defaultMethod.getScopeName(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   defaultMethod.bodyScope = procScope;
 
   // Create 'this' symbol in the function scope

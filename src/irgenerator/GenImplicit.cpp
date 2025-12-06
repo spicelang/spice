@@ -250,7 +250,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
     diGenerator.setSourceLocation(node);
 
   // Change to body scope
-  changeToScope(spiceFunc->getSignature(false), ScopeType::FUNC_PROC_BODY);
+  changeToScope(spiceFunc->getScopeName(), ScopeType::FUNC_PROC_BODY);
 
   // Create entry block
   llvm::BasicBlock *bEntry = createBlock();
@@ -342,7 +342,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   diGenerator.setSourceLocation(node);
 
   // Change to body scope
-  changeToScope(spiceProc->getSignature(false), ScopeType::FUNC_PROC_BODY);
+  changeToScope(spiceProc->getScopeName(), ScopeType::FUNC_PROC_BODY);
 
   // Create entry block
   llvm::BasicBlock *bEntry = createBlock();
@@ -631,7 +631,7 @@ void IRGenerator::generateTestMain() {
   testMain.mangleFunctionName = false;
 
   // Prepare scope
-  rootScope->createChildScope(testMain.getSignature(false), ScopeType::FUNC_PROC_BODY, nullptr);
+  rootScope->createChildScope(testMain.getScopeName(), ScopeType::FUNC_PROC_BODY, nullptr);
 
   // Generate
   const std::function<void()> generateBody = [&] {
