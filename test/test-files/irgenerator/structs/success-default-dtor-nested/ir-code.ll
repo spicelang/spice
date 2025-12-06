@@ -115,10 +115,10 @@ define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
-  %outer = alloca %struct.Outer, align 8
+  %_outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %outer)
-  call void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %outer)
+  call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %_outer)
+  call void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %_outer)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

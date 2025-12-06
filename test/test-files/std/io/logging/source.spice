@@ -18,5 +18,5 @@ f<int> main() {
     assert fileText.contains("[info] This is a info message");
     assert fileText.contains("[warning] This is a warning message");
     assert fileText.contains("[error] This is a error message");
-    deleteFile("log.txt");
+    bool _ = deleteFile("log.txt");
 }

@@ -1,8 +1,6 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.NestedStruct = type { i32, ptr }
-
 @printf.str.0 = private unnamed_addr constant [18 x i8] c"Double value: %f\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [15 x i8] c"Int value: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [17 x i8] c"Short value: %d\0A\00", align 4
@@ -12,8 +10,7 @@ source_filename = "source.spice"
 @printf.str.5 = private unnamed_addr constant [16 x i8] c"Byte value: %d\0A\00", align 4
 @printf.str.6 = private unnamed_addr constant [16 x i8] c"Char value: %c\0A\00", align 4
 @printf.str.7 = private unnamed_addr constant [16 x i8] c"Bool value: %d\0A\00", align 4
-@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
-@printf.str.8 = private unnamed_addr constant [24 x i8] c"Struct array value: %s\0A\00", align 4
+@printf.str.8 = private unnamed_addr constant [23 x i8] c"Int pointer value: %p\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
@@ -26,7 +23,7 @@ define dso_local noundef i32 @main() #0 {
   %byteVar = alloca i8, align 1
   %charVar = alloca i8, align 1
   %boolVar = alloca i1, align 1
-  %structArrayVar = alloca [4 x %struct.NestedStruct], align 8
+  %intPtrVar = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store double 0.000000e+00, ptr %doubleVar, align 8
   %1 = load double, ptr %doubleVar, align 8
@@ -56,13 +53,11 @@ define dso_local noundef i32 @main() #0 {
   %18 = load i1, ptr %boolVar, align 1
   %19 = zext i1 %18 to i32
   %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 noundef %19)
-  store [4 x %struct.NestedStruct] [%struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }], ptr %structArrayVar, align 8
-  %21 = getelementptr inbounds [4 x %struct.NestedStruct], ptr %structArrayVar, i64 0, i32 2
-  %field2.addr = getelementptr inbounds %struct.NestedStruct, ptr %21, i64 0, i32 1
-  %22 = load ptr, ptr %field2.addr, align 8
-  %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr noundef %22)
-  %24 = load i32, ptr %result, align 4
-  ret i32 %24
+  store ptr null, ptr %intPtrVar, align 8
+  %21 = load ptr, ptr %intPtrVar, align 8
+  %22 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr noundef %21)
+  %23 = load i32, ptr %result, align 4
+  ret i32 %23
 }
 
 ; Function Attrs: nofree nounwind

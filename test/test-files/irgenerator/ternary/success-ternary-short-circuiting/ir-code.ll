@@ -40,18 +40,18 @@ define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z7condFctv()
-  br i1 %1, label %cond.true.L15C26, label %cond.false.L15C26
+  br i1 %1, label %cond.true.L14C26, label %cond.false.L14C26
 
-cond.true.L15C26:                                 ; preds = %0
+cond.true.L14C26:                                 ; preds = %0
   %2 = call noundef ptr @_Z7trueFctv()
-  br label %cond.exit.L15C26
+  br label %cond.exit.L14C26
 
-cond.false.L15C26:                                ; preds = %0
+cond.false.L14C26:                                ; preds = %0
   %3 = call noundef ptr @_Z8falseFctv()
-  br label %cond.exit.L15C26
+  br label %cond.exit.L14C26
 
-cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, %cond.true.L15C26
-  %cond.result = phi ptr [ %2, %cond.true.L15C26 ], [ %3, %cond.false.L15C26 ]
+cond.exit.L14C26:                                 ; preds = %cond.false.L14C26, %cond.true.L14C26
+  %cond.result = phi ptr [ %2, %cond.true.L14C26 ], [ %3, %cond.false.L14C26 ]
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %cond.result)
   %5 = load i32, ptr %result, align 4
   ret i32 %5

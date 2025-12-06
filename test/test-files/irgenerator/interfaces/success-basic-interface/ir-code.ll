@@ -40,9 +40,9 @@ define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(
 
 define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) {
   %this = alloca ptr, align 8
-  %param = alloca i32, align 4
+  %_param = alloca i32, align 4
   store ptr %0, ptr %this, align 8
-  store i32 %1, ptr %param, align 4
+  store i32 %1, ptr %_param, align 4
   %3 = load ptr, ptr %this, align 8
   %driving.addr = getelementptr inbounds %struct.Car, ptr %3, i64 0, i32 1
   store i1 true, ptr %driving.addr, align 1
