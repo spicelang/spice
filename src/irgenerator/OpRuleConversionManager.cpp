@@ -511,8 +511,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
 
-  // Check if lhs is of type pointer and rhs is of type int
-  if (lhsT->isPointerTy() && rhsT->isIntegerTy(32)) {
+  // Check if lhs is of type pointer and rhs is of type long
+  if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return {.value = builder.CreateICmpEQ(lhsInt, rhsV())};
   }
@@ -634,8 +634,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
 
-  // Check if lhs is of type pointer and rhs is of type int
-  if (lhsT->isPointerTy() && rhsT->isIntegerTy(32)) {
+  // Check if lhs is of type pointer and rhs is of type long
+  if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return {.value = builder.CreateICmpNE(lhsInt, rhsV())};
   }
