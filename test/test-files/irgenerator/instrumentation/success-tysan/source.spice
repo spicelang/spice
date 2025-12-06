@@ -1,3 +1,5 @@
+// TEST: --sanitizer=type
+
 f<int> main() {
     long l = 100l;
     unsafe {

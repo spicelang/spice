@@ -175,6 +175,9 @@ void Driver::enrich() const {
   // Some sanitizers need lifetime markers to work properly
   if (sanitizer == Sanitizer::ADDRESS || sanitizer == Sanitizer::MEMORY)
     cliOptions.useLifetimeMarkers = true;
+  // Type sanitizer needs TBAA metadata to work properly
+  if (sanitizer == Sanitizer::TYPE)
+    cliOptions.useTBAAMetadata = true;
 }
 
 /**
