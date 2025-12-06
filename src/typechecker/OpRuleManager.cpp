@@ -362,8 +362,8 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
   if (lhsType.isPtr() && rhsType.isPtr())
     return ExprResult(QualType(TY_BOOL));
 
-  // Allow 'pointer == int' straight away
-  if (lhsType.isPtr() && rhsType.is(TY_INT))
+  // Allow 'pointer == unsigned long' straight away
+  if (lhsType.isPtr() && rhsType.is(TY_LONG) && rhsType.isUnsigned())
     return ExprResult(QualType(TY_BOOL));
 
   // Allow 'string == char*' and vice versa straight away
@@ -388,8 +388,8 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult 
   if (lhsType.isPtr() && rhsType.isPtr())
     return ExprResult(QualType(TY_BOOL));
 
-  // Allow 'pointer != int' straight away
-  if (lhsType.isPtr() && rhsType.is(TY_INT))
+  // Allow 'pointer != unsigned long' straight away
+  if (lhsType.isPtr() && rhsType.is(TY_LONG) && rhsType.isUnsigned())
     return ExprResult(QualType(TY_BOOL));
 
   // Allow 'string != char*' and vice versa straight away
