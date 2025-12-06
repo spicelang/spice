@@ -19,6 +19,10 @@ public:
             std::vector<GenericType> templateTypes, ASTNode *declNode)
       : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), methods(std::move(methods)) {}
 
+  // Public methods
+  [[nodiscard]] std::string getScopeName() const;
+  static std::string getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes = {});
+
   // Public members
   std::vector<Function *> methods;
 };

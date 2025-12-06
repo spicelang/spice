@@ -281,14 +281,14 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
 
       // Copy function entry
-      const std::string newSignature = substantiatedFunction->getSignature(false);
+      const std::string newScopeName = substantiatedFunction->getScopeName();
       matchScope->lookupStrict(presetFunction.entry->name)->used = true;
-      substantiatedFunction->entry = matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
+      substantiatedFunction->entry = matchScope->symbolTable.copySymbol(presetFunction.entry->name, newScopeName);
       assert(substantiatedFunction->entry != nullptr);
 
       // Copy function scope
-      const std::string oldSignature = presetFunction.getSignature(false);
-      Scope *childScope = matchScope->copyChildScope(oldSignature, newSignature);
+      const std::string oldScopeName = presetFunction.getScopeName();
+      Scope *childScope = matchScope->copyChildScope(oldScopeName, newScopeName);
       assert(childScope != nullptr);
       childScope->isGenericScope = false;
       substantiatedFunction->bodyScope = childScope;

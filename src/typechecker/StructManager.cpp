@@ -5,7 +5,6 @@
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/Scope.h>
-#include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
 #include <util/CustomHashFunctions.h>
@@ -130,8 +129,8 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       assert(substantiatedStruct->entry != nullptr);
 
       // Copy struct scope
-      const std::string oldScopeName = STRUCT_SCOPE_PREFIX + presetStruct.name;
-      const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
+      const std::string &oldScopeName = presetStruct.getScopeName();
+      const std::string &newScopeName = substantiatedStruct->getScopeName();
       substantiatedStruct->scope = matchScope->copyChildScope(oldScopeName, newScopeName);
       assert(substantiatedStruct->scope != nullptr);
       substantiatedStruct->scope->isGenericScope = false;

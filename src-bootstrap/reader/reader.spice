@@ -1,7 +1,6 @@
 // Std imports
 import "std/io/filepath";
 import "std/io/file";
-import "std/os/os";
 
 // Own imports
 import "bootstrap/reader/code-loc";

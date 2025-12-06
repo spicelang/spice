@@ -1,7 +1,11 @@
-import "bootstrap/symboltablebuilder/type-qualifiers";
+import "std/data/vector";
+import "std/text/print";
 
-// Wrapper for 'spice test' unit test
 f<int> main() {
-    testTypeQualifiersSmoke();
-    printf("All assertions passed!");
+    Vector<String> stringVec;
+    stringVec.pushBack(String("Hello "));
+    stringVec.pushBack(String("World!"));
+    foreach String& str : stringVec {
+        print(str);
+    }
 }

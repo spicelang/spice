@@ -123,6 +123,10 @@ std::string Function::getSignature(const std::string &name, const QualType &this
   return signature.str();
 }
 
+std::string Function::getScopeName() const {
+  return getSignature(false);
+}
+
 std::string Function::getMangledName() const {
   // Use predefined mangled name if available
   if (!predefinedMangledName.empty())

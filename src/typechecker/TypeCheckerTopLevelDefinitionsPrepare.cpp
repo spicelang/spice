@@ -179,10 +179,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Duplicate / rename the original child scope to reflect the substantiated versions of the function
   for (size_t i = 1; i < node->manifestations.size(); i++) {
-    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getScopeName());
     node->manifestations.at(i)->bodyScope = scope;
   }
-  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getScopeName());
 
   // Change to the root scope
   currentScope = rootScope;
@@ -297,10 +297,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Duplicate / rename the original child scope to reflect the substantiated versions of the procedure
   for (size_t i = 1; i < node->manifestations.size(); i++) {
-    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getScopeName());
     node->manifestations.at(i)->bodyScope = scope;
   }
-  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getScopeName());
 
   // Change to the root scope
   currentScope = rootScope;
@@ -677,7 +677,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   node->entry->updateType(extFunctionType, false);
 
   // Rename the original child scope to reflect the substantiated versions of the external function
-  currentScope->renameChildScope(node->getScopeId(), spiceFunc.getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), spiceFunc.getScopeName());
 
   return nullptr;
 }
