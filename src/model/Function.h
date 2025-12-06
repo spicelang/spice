@@ -40,10 +40,12 @@ public:
 
   // Public methods
   [[nodiscard]] QualTypeList getParamTypes() const;
-  [[nodiscard]] std::string getSignature(bool withThisType = true, bool withTemplateTypes = true) const;
+  [[nodiscard]] std::string getSignature(bool withThisType = true, bool withTemplateTypes = true,
+                                         bool withTypeAliases = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
                                                 const ParamList &paramList, const QualTypeList &concreteTemplateTypes,
-                                                bool withReturnType = true, bool withThisType = true, bool ignorePublic = true);
+                                                bool withReturnType = true, bool withThisType = true, bool ignorePublic = true,
+                                                bool withTypeAliases = true);
   [[nodiscard]] std::string getScopeName() const;
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);

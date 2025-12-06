@@ -273,7 +273,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     return llvm::StructType::get(context, {ptrTy, ptrTy});
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true, true)); // GCOVR_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true, true, true)); // GCOVR_EXCL_LINE
 }
 
 /**
@@ -485,12 +485,13 @@ bool Type::isOneOf(const std::initializer_list<SuperType> &superTypes) const {
  * @param name Get name of type
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic, bool withAliases) const {
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
-    name << chainElement.getName(withSize, ignorePublic);
+    name << chainElement.getName(withSize, ignorePublic, withAliases);
 }
 
 /**
@@ -498,11 +499,12 @@ void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) co
  *
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const {
+std::string Type::getName(bool withSize, bool ignorePublic, bool withAliases) const {
   std::stringstream name;
-  getName(name, withSize, ignorePublic);
+  getName(name, withSize, ignorePublic, withAliases);
   return name.str();
 }
 

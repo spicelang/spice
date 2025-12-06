@@ -61,8 +61,8 @@ struct TypeChainElement {
   // Overloaded operators
   friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
   friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
-  void getName(std::stringstream &name, bool withSize, bool ignorePublic) const;
-  [[nodiscard]] std::string getName(bool withSize, bool ignorePublic) const;
+  void getName(std::stringstream &name, bool withSize, bool ignorePublic, bool withAliases) const;
+  [[nodiscard]] std::string getName(bool withSize, bool ignorePublic, bool withAliases) const;
 
   // Public members
   SuperType superType = TY_INVALID;

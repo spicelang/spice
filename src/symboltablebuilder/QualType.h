@@ -99,8 +99,8 @@ public:
   [[nodiscard]] bool needsDeAllocation() const;
 
   // Serialization
-  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
-  [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
+  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) const;
+  [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false, bool withAliases = true) const;
 
   // LLVM helpers
   [[nodiscard]] llvm::Type *toLLVMType(SourceFile *sourceFile) const;

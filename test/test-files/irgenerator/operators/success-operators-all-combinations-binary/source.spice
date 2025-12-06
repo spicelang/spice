@@ -429,6 +429,7 @@ p equalTest() {
     int i = 213;
     int* iPtr = &i;
     equalTestInner<int*, int*>(iPtr, iPtr, false);
+    equalTestInner<int*, unsigned long>(iPtr, 0ul, false);
     // Lhs double
     equalTestOuter<double, int>(87.0, 87, true, false, false, true);
     equalTestOuter<double, short>(14.0, 14s, true, false, false, true);
@@ -501,6 +502,7 @@ p notEqualTest() {
     int i = 213;
     int* iPtr = &i;
     notEqualTestInner<int*, int*>(iPtr, iPtr, true);
+    notEqualTestInner<int*, unsigned long>(iPtr, 0ul, false);
     // Lhs double
     notEqualTestOuter<double, int>(87.0, 87, false, true, true, false);
     notEqualTestOuter<double, short>(14.0, 14s, false, true, true, false);

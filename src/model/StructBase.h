@@ -28,6 +28,7 @@ public:
   // Public methods
   [[nodiscard]] std::string getSignature() const;
   static std::string getSignature(const std::string &name, const QualTypeList &concreteTemplateTypes);
+  [[nodiscard]] std::string getScopeName() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] QualTypeList getTemplateTypes() const;
