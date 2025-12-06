@@ -1,4 +1,4 @@
-type T int&;
+type T int&|int*;
 
 p foo<T>(T t) {
     t += 2;

@@ -20,7 +20,7 @@ f<int> main(int argc, string[] argv) {
         printf("CB called with value %d\n", value);
     }, "Call a callback function");
 
-    parser.parse(argc, argv);
+    result = parser.parse(argc, argv);
 
     // Print hi if requested
     if options.sayHi {

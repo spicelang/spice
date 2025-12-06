@@ -103,7 +103,7 @@ void execTestCase(const TestCase &testCase) {
     argv.push_back(arg.c_str());
   }
   Driver driver(cliOptions, true);
-  driver.parse(argv.size(), argv.data());
+  driver.parse(static_cast<int>(argv.size()), argv.data());
   driver.enrich();
 
   // If this is a cross-compilation test, we want to emit the target information in IR. For this we need to set native to false

@@ -1,11 +1,3 @@
-import "std/data/vector";
-import "std/text/print";
-
 f<int> main() {
-    Vector<String> stringVec;
-    stringVec.pushBack(String("Hello "));
-    stringVec.pushBack(String("World!"));
-    foreach String& str : stringVec {
-        print(str);
-    }
+
 }

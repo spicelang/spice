@@ -1,8 +1,10 @@
 import "source1";
 
 f<int> main() {
-    TestStruct ts;
-    TestInterface ti;
-    TestEnum te;
-    TestAlias ta;
+    TestStruct _ts;
+    TestInterface _ti;
+    TestEnum _te1 = TestEnum::A;
+    TestEnum _te2 = TestEnum::B;
+    TestEnum _te3 = TestEnum::C;
+    TestAlias _ta;
 }

@@ -6,5 +6,5 @@ f<int> dummy() {
 }
 
 f<int> main() {
-    dummy();
+    int _res = dummy();
 }
