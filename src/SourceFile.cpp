@@ -679,7 +679,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   sourceFile->dependants.push_back(this);
 
   // Add the dependency to the global list of new dependencies
-  resourceManager.newDependencies.insert(sourceFile);
+  resourceManager.newDependencies.push_back(sourceFile);
 }
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {

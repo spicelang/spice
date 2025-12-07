@@ -1,32 +1,29 @@
-import "std/iterator/iterable";
-import "std/iterator/iterator";
+import "std/data/hash-table";
 import "std/data/pair";
 
-type T dyn;
-
-type Container<T> struct : IIterable<T> {}
-
-type ContainerIterator<T> struct : IIterator<T> {
-    Container<T>& container
-    int idx = 0
-}
-
-p ContainerIterator.ctor(Container<T>& container) {
-    this.container = container;
-}
-
-f<ContainerIterator<T>> Container.getIterator() {
-    return ContainerIterator<T>(*this);
-}
-
-f<int&> ContainerIterator.get() { return this.idx; }
-f<Pair<unsigned long, T&>> ContainerIterator.getIdx() { return Pair<unsigned long, T&>(0l, this.idx); }
-f<bool> ContainerIterator.isValid() { return false; }
-p ContainerIterator.next() {}
-
 f<int> main() {
-    Container<int> c;
-    foreach dyn item : c {
-        printf("%d\n", item);
+    HashTable<int, int> table;
+
+    // Iterate over empty container
+    {
+        foreach Pair<int&, int&> item : table {
+            printf("%d: %d\n", item.getFirst(), item.getSecond());
+        }
+    }
+
+    table.upsert(1, 2);
+    table.upsert(2, 3);
+    table.upsert(3, 4);
+    table.upsert(4, 5);
+    table.upsert(5, 6);
+    table.upsert(99, 99);
+    table.upsert(100, 100);
+    table.upsert(1265, 100);
+    table.upsert(101, 101);
+    table.upsert(102, 102);
+
+    // Iterate over filled container
+    foreach Pair<int&, int&> item : table {
+        printf("%d: %d\n", item.getFirst(), item.getSecond());
     }
 }
