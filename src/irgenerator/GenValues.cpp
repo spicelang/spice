@@ -149,33 +149,36 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       const QualType &expectedSTy = paramSTypes.at(i);
       const QualType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
-      const auto matchFct = [](const QualType &lhsTy, const QualType &rhsTy) {
-        return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
+      const auto matchFct = [](QualType expectedTy, QualType actualTy) {
+        if (expectedTy.matches(actualTy, false, true, true))
+          return true;
+
+        // Unwrap as far as possible and remove reference wrappers if possible
+        QualType::unwrapBoth(expectedTy, actualTy);
+        return expectedTy.matchesInterfaceImplementedByStruct(actualTy);
       };
 
       if (matchFct(expectedSTy, actualSTy)) {
         // Resolve address if actual type is reference, otherwise value
         if (actualSTy.isRef()) {
           argValues.push_back(resolveAddress(argNode));
+        } else if (copyCtor) {
+          assert(!actualSTy.isTriviallyCopyable(node));
+          llvm::Value *originalPtr = resolveAddress(argNode);
+
+          // Generate copy ctor call
+          llvm::Type *valueType = actualSTy.toLLVMType(sourceFile);
+          llvm::Value *valueCopyPtr = insertAlloca(valueType, "arg.copy");
+          generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
+          llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
+
+          // Attach address of copy to anonymous symbol
+          SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode->codeLoc, SIZE_MAX);
+          anonymousSymbol->updateAddress(valueCopyPtr);
+
+          argValues.push_back(newValue);
         } else {
-          if (copyCtor) {
-            assert(!actualSTy.isTriviallyCopyable(node));
-            llvm::Value *originalPtr = resolveAddress(argNode);
-
-            // Generate copy ctor call
-            llvm::Type *valueType = actualSTy.toLLVMType(sourceFile);
-            llvm::Value *valueCopyPtr = insertAlloca(valueType, "arg.copy");
-            generateCtorOrDtorCall(valueCopyPtr, copyCtor, {originalPtr});
-            llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
-
-            // Attach address of copy to anonymous symbol
-            SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode->codeLoc, SIZE_MAX);
-            anonymousSymbol->updateAddress(valueCopyPtr);
-
-            argValues.push_back(newValue);
-          } else {
-            argValues.push_back(resolveValue(argNode));
-          }
+          argValues.push_back(resolveValue(argNode));
         }
       } else if (expectedSTy.isRef() && matchFct(expectedSTy.getContained(), actualSTy)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);

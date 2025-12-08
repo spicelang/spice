@@ -150,7 +150,7 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
   if (typesCompatible && lhsType.isBase(TY_INTERFACE) && rhsType.isBase(TY_STRUCT)) {
     QualType lhsTypeCopy = lhsType;
     QualType rhsTypeCopy = rhsType;
-    QualType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
+    QualType::unwrapBothWithRefWrappers(lhsTypeCopy, rhsTypeCopy);
     if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
       return lhsType;
   }

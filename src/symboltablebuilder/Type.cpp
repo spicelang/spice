@@ -583,12 +583,26 @@ bool Type::matches(const Type *otherType, bool ignoreArraySize) const {
 
 /**
  * Remove pointers / arrays / references if both types have them as far as possible.
- * Furthermore, remove reference wrappers if possible.
  *
  * @param typeA Candidate type
  * @param typeB Requested type
  */
 void Type::unwrapBoth(const Type *&typeA, const Type *&typeB) {
+  // Unwrap both types as far as possible
+  while (typeA->isSameContainerTypeAs(typeB)) {
+    typeB = typeB->getContained();
+    typeA = typeA->getContained();
+  }
+}
+
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ * Furthermore, remove reference wrappers if possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+void Type::unwrapBothWithRefWrappers(const Type *&typeA, const Type *&typeB) {
   // Remove reference wrapper of front type if required
   if (typeA->isRef() && !typeB->isRef())
     typeA = typeA->removeReferenceWrapper();
@@ -598,10 +612,7 @@ void Type::unwrapBoth(const Type *&typeA, const Type *&typeB) {
     typeB = typeB->removeReferenceWrapper();
 
   // Unwrap both types as far as possible
-  while (typeA->isSameContainerTypeAs(typeB)) {
-    typeB = typeB->getContained();
-    typeA = typeA->getContained();
-  }
+  unwrapBoth(typeA, typeB);
 }
 
 /**

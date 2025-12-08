@@ -928,11 +928,21 @@ bool operator!=(const QualType &lhs, const QualType &rhs) { return !(lhs == rhs)
 
 /**
  * Remove pointers / arrays / references if both types have them as far as possible.
- * Furthermore, remove reference wrappers if possible.
  *
  * @param typeA Candidate type
  * @param typeB Requested type
  */
 void QualType::unwrapBoth(QualType &typeA, QualType &typeB) { Type::unwrapBoth(typeA.type, typeB.type); }
+
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ * Furthermore, remove reference wrappers if possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+void QualType::unwrapBothWithRefWrappers(QualType &typeA, QualType &typeB) {
+  Type::unwrapBothWithRefWrappers(typeA.type, typeB.type);
+}
 
 } // namespace spice::compiler

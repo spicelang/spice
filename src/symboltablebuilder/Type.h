@@ -82,6 +82,7 @@ public:
 
   // Public static methods
   static void unwrapBoth(const Type *&typeA, const Type *&typeB);
+  static void unwrapBothWithRefWrappers(const Type *&typeA, const Type *&typeB);
   static bool hasSameTypeChainDepth(const Type *typeA, const Type *typeB);
 
   // Public members

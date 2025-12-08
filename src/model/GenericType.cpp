@@ -44,7 +44,7 @@ bool GenericType::checkTypeConditionOf(const QualType &requestedType, QualType &
     // In situations like this we need to unwrap: requestedType = const int&, typeCondition = int
     QualType typeConditionCopy = typeCondition;
     QualType requestedTypeCopy = requestedType;
-    unwrapBoth(typeConditionCopy, requestedTypeCopy);
+    unwrapBothWithRefWrappers(typeConditionCopy, requestedTypeCopy);
     if (typeConditionCopy.matches(requestedTypeCopy, ignoreArraySize, ignoreQualifiers, ignoreQualifiers)) {
       substantiation = typeCondition;
       return true;

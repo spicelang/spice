@@ -1,0 +1,19 @@
+type ITest interface {
+    p bar();
+}
+
+type Test struct : ITest {}
+
+p Test.bar() {
+    printf("Bar");
+}
+
+p foo(ITest& test) {
+    test.bar();
+}
+
+f<int> main() {
+    Test t;
+    Test& tRef = t;
+    foo(tRef);
+}
