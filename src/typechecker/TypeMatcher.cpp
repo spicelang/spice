@@ -28,7 +28,7 @@ bool TypeMatcher::matchRequestedToCandidateTypes(const QualTypeList &candidateTy
 bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
                                                 ResolverFct &resolverFct, bool strictQualifierMatching) {
   // Unwrap as far as possible and remove reference wrappers if possible
-  QualType::unwrapBoth(candidateType, requestedType);
+  QualType::unwrapBothWithRefWrappers(candidateType, requestedType);
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts()) {

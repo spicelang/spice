@@ -148,6 +148,7 @@ public:
 
   // Public static methods
   static void unwrapBoth(QualType &typeA, QualType &typeB);
+  static void unwrapBothWithRefWrappers(QualType &typeA, QualType &typeB);
 
 private:
   // Private members
