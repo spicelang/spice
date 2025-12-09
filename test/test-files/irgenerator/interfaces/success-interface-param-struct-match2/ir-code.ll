@@ -34,6 +34,18 @@ define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) 
   ret void
 }
 
+; Function Attrs: norecurse
+define void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr %1) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %3 = load ptr, ptr %this, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %3, ptr %1, i64 8, i1 false)
+  ret void
+}
+
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+
 define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -42,7 +54,7 @@ define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 define private void @_Z3fooR5ITest(ptr noundef %0) {
   %test = alloca ptr, align 8
@@ -56,13 +68,15 @@ define private void @_Z3fooR5ITest(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #2 {
+define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
+  %t1 = alloca %struct.Test, align 8
   %tRef = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %t)
-  store ptr %t, ptr %tRef, align 8
+  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8) %t1, ptr %t)
+  store ptr %t1, ptr %tRef, align 8
   %1 = load ptr, ptr %tRef, align 8
   call void @_Z3fooR5ITest(ptr noundef %1)
   %2 = load i32, ptr %result, align 4
@@ -70,8 +84,9 @@ define dso_local noundef i32 @main() #2 {
 }
 
 attributes #0 = { norecurse }
-attributes #1 = { nofree nounwind }
-attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
