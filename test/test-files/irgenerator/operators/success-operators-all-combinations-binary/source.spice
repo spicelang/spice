@@ -595,6 +595,13 @@ p lessTest() {
     lessTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), true);
     // Lhs char
     lessTestInner<char, char>('#', '#', false);
+    // Lhs pointer
+    int i = 123;
+    double d = 4.5;
+    lessTestInner<int*, int*>(&i, &i, false);
+    lessTestInner<int*, double*>(&i, &d, false);
+    lessTestInner<double*, int*>(&d, &i, true);
+    lessTestInner<double*, double*>(&d, &d, false);
 }
 
 // ------------------------------------------ > ------------------------------------------
@@ -636,6 +643,13 @@ p greaterTest() {
     greaterTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), false);
     // Lhs char
     greaterTestInner<char, char>('#', '#', false);
+    // Lhs pointer
+    int i = 123;
+    double d = 4.5;
+    greaterTestInner<int*, int*>(&i, &i, false);
+    greaterTestInner<int*, double*>(&i, &d, true);
+    greaterTestInner<double*, int*>(&d, &i, false);
+    greaterTestInner<double*, double*>(&d, &d, false);
 }
 
 // ------------------------------------------ <= -----------------------------------------
@@ -677,6 +691,13 @@ p lessEqualTest() {
     lessEqualTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), true);
     // Lhs char
     lessEqualTestInner<char, char>('#', '#', true);
+    // Lhs pointer
+    int i = 123;
+    double d = 4.5;
+    lessEqualTestInner<int*, int*>(&i, &i, true);
+    lessEqualTestInner<int*, double*>(&i, &d, true);
+    lessEqualTestInner<double*, int*>(&d, &i, false);
+    lessEqualTestInner<double*, double*>(&d, &d, true);
 }
 
 // ------------------------------------------ >= -----------------------------------------
@@ -718,6 +739,13 @@ p greaterEqualTest() {
     greaterEqualTestInner<byte, byte>(cast<byte>(15), cast<byte>(16), false);
     // Lhs char
     greaterEqualTestInner<char, char>('#', '#', true);
+    // Lhs pointer
+    int i = 123;
+    double d = 4.5;
+    greaterEqualTestInner<int*, int*>(&i, &i, true);
+    greaterEqualTestInner<int*, double*>(&i, &d, true);
+    greaterEqualTestInner<double*, int*>(&d, &i, false);
+    greaterEqualTestInner<double*, double*>(&d, &d, true);
 }
 
 // ------------------------------------------ << -----------------------------------------
