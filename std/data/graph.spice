@@ -48,7 +48,7 @@ public f<Vertex<T>&> Graph.addVertex(const T& value) {
     return vertex;
 }
 
-public p Graph.addEdge(Vertex<T>& v1, Vertex<T>& v2) {
+public p Graph.addEdge(const Vertex<T>& v1, const Vertex<T>& v2) {
     if !this.adjList.contains(v1) || !this.adjList.contains(v2) {
         panic(Error("Graph must already contain both given vertices"));
     }
