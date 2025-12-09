@@ -249,6 +249,7 @@ static constexpr BinaryOpRule EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),           // bool == bool -> bool
     BinaryOpRule(TY_FUNCTION, TY_FUNCTION, TY_BOOL, false),   // function == function -> bool
     BinaryOpRule(TY_PROCEDURE, TY_PROCEDURE, TY_BOOL, false), // procedure == procedure -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),             // any* == any* -> bool
 };
 
 // Not equal op rules
@@ -281,6 +282,7 @@ static constexpr BinaryOpRule NOT_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),           // bool != bool -> bool
     BinaryOpRule(TY_FUNCTION, TY_FUNCTION, TY_BOOL, false),   // function != function -> bool
     BinaryOpRule(TY_PROCEDURE, TY_PROCEDURE, TY_BOOL, false), // procedure != procedure -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),             // any* != any* -> bool
 };
 
 // Less op rules
@@ -303,6 +305,7 @@ static constexpr BinaryOpRule LESS_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL, false),     // long < long -> bool
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL, false),     // byte < byte -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char < char -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),       // any* < any* -> bool
 };
 
 // Greater op rules
@@ -325,6 +328,7 @@ static constexpr BinaryOpRule GREATER_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL, false),     // long > long -> bool
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL, false),     // byte > byte -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char > char -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),       // any* > any* -> bool
 };
 
 // Less equal op rules
@@ -347,6 +351,7 @@ static constexpr BinaryOpRule LESS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL, false),     // long <= long -> bool
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL, false),     // byte <= byte -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char <= char -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),       // any* <= any* -> bool
 };
 
 // Greater equal op rules
@@ -369,6 +374,7 @@ static constexpr BinaryOpRule GREATER_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL, false),     // long >= long -> bool
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL, false),     // byte >= byte -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char >= char -> bool
+    BinaryOpRule(TY_PTR, TY_PTR, TY_BOOL, false),       // any* >= any* -> bool
 };
 
 // Shift left op rules

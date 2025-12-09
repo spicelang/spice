@@ -506,10 +506,6 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   if (callsOverloadedOpFct(node, opIdx))
     return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
-  // Check if both values are of type pointer
-  if (lhsSTy.isPtr() && rhsSTy.isPtr())
-    return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
-
   // Check if lhs is of type pointer and rhs is of type long
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
@@ -609,6 +605,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpEQ(memcmpResult, builder.getInt32(0))};
   }
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
   }
@@ -628,10 +626,6 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
     return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
-
-  // Check if both values are of type pointer
-  if (lhsSTy.isPtr() && rhsSTy.isPtr())
-    return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
 
   // Check if lhs is of type pointer and rhs is of type long
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
@@ -733,6 +727,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpNE(memcmpResult, builder.getInt32(0))};
   }
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
   }
@@ -797,6 +793,8 @@ LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExp
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpULT(lhsV(), rhsV())};
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
   }
@@ -861,6 +859,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVM
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpUGT(lhsV(), rhsV())};
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
   }
@@ -925,6 +925,8 @@ LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LL
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpULE(lhsV(), rhsV())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
   }
@@ -989,6 +991,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node,
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_PTR):
+    return {.value = builder.CreateICmpUGE(lhsV(), rhsV())};
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
   }

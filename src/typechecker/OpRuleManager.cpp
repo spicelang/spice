@@ -358,10 +358,6 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  // Allow 'pointer == pointer' straight away
-  if (lhsType.isPtr() && rhsType.isPtr())
-    return ExprResult(QualType(TY_BOOL));
-
   // Allow 'pointer == unsigned long' straight away
   if (lhsType.isPtr() && rhsType.is(TY_LONG) && rhsType.isUnsigned())
     return ExprResult(QualType(TY_BOOL));
@@ -383,10 +379,6 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult 
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
-
-  // Allow 'pointer != pointer' straight away
-  if (lhsType.isPtr() && rhsType.isPtr())
-    return ExprResult(QualType(TY_BOOL));
 
   // Allow 'pointer != unsigned long' straight away
   if (lhsType.isPtr() && rhsType.is(TY_LONG) && rhsType.isUnsigned())
@@ -428,6 +420,10 @@ QualType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const Exp
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
+
+  // Allow 'pointer == pointer' straight away
+  if (lhsType.isPtr() && rhsType.isPtr())
+    return QualType(TY_BOOL);
 
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, std::size(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType);
 }
