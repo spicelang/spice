@@ -481,8 +481,6 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   for (size_t i = 0; i < fieldCount; i++) {
     const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
-    if (fieldSymbol->isImplicitField)
-      continue;
 
     // Retrieve the address of the original field (copy source)
     llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, i);
@@ -568,8 +566,6 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
   for (size_t i = 0; i < fieldCount; i++) {
     const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
-    if (fieldSymbol->isImplicitField)
-      continue;
 
     // Call dtor for struct fields
     const QualType &fieldType = fieldSymbol->getQualType();
