@@ -1,7 +1,9 @@
 import "std/data/unordered-map";
 import "std/data/vector";
+import "std/data/pair";
 import "std/math/hash";
 import "std/text/stringstream";
+import "std/type/type-conversion";
 
 // Generic types
 type T dyn;
@@ -74,7 +76,26 @@ public const f<bool> Graph.isDAG() {
 }
 
 public const p Graph.toGraphviz(StringStream& ss) {
-    ss << (this.directed ? "digraph" : "graph") << " G {\n";
+    const string graphType = this.directed ? "digraph" : "graph";
+    const string edgeSep = this.directed ? "->" : "--";
+    ss << graphType << " G {\n";
+
+    // Emit all vertices
+    foreach const Vertex<T>& v : this.vertices {
+        ss << "  \"" << toString(v.value) << "\";\n";
+    }
+
+    // Emit all edges
+    foreach const Pair<Vertex<T>&, Vector<Vertex<T>*>&> pair : this.adjList {
+        const Vertex<T>& vertex = pair.getFirst();
+        foreach const Vertex<T>* neighbor : pair.getSecond() {
+            if !this.directed && neighbor < &vertex {
+                continue;
+            }
+
+            ss << "  \"" << toString(vertex.value) << "\" " << edgeSep << " \"" << toString(neighbor.value) << "\";\n";
+        }
+    }
 
     ss << "}";
 }
