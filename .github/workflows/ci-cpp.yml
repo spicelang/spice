@@ -66,7 +66,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-x64
@@ -181,7 +181,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm
           key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
@@ -245,7 +245,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-win-x64
@@ -328,7 +328,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64

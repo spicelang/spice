@@ -48,7 +48,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets
@@ -129,7 +129,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets
@@ -211,7 +211,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-win-x64-all-targets
@@ -279,7 +279,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64-all-targets
@@ -348,7 +348,7 @@ jobs:
           go-version: '1.25'
 
       - name: Restore Go modules cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
