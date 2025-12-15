@@ -87,7 +87,7 @@ jobs:
         run: checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: spice-linux-x64
           path: ./build/spice**
@@ -168,7 +168,7 @@ jobs:
         run: checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: spice-linux-arm64
           path: ./build/spice**
@@ -248,7 +248,7 @@ jobs:
         run: mv ./src/spice.exe spice.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: spice-windows-static-x64
           path: ./build/spice**
@@ -314,7 +314,7 @@ jobs:
           chmod +x spice
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: spice-macos-arm64
           path: ./build/spice**
@@ -389,7 +389,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dist-output
           path: dist/
