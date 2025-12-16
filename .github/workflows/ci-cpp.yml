@@ -17,7 +17,7 @@ on:
 #      - '**.md'
 
 env:
-  LLVM_VERSION: "21.1.7"
+  LLVM_VERSION: "21.1.8"
   GCC_VERSION: "14"
 
 jobs:
