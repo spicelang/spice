@@ -63,7 +63,6 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
       mangleType(mangledName, spiceFunc.returnType);
     else
       mangledName << "v";
-
   } else if (spiceFunc.isMethod()) {
     mangledName << "E";
   }
@@ -82,7 +81,11 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   const auto paramPredicate = [](const Param &p) { return p.qualType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
   const bool paramTypeIsFctOrProc = std::ranges::any_of(spiceFunc.paramList, paramPredicate);
   const auto templateTypePredicate = [&](const GenericType &t) {
-    return typeMapping.at(t.getSubType()).getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+    if (t.is(TY_GENERIC)) {
+      assert(typeMapping.contains(t.getSubType()));
+      return typeMapping.at(t.getSubType()).getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+    }
+    return t.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
   };
   const bool templateTypeIsFctOrProc = std::ranges::any_of(spiceFunc.templateTypes, templateTypePredicate);
   if (!returnTypeIsFctOrProc && !paramTypeIsFctOrProc && !templateTypeIsFctOrProc)
