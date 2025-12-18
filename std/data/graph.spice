@@ -87,13 +87,12 @@ public const p Graph.toGraphviz(StringStream& ss) {
 
     // Emit all edges
     foreach const Pair<Vertex<T>&, Vector<Vertex<T>*>&> pair : this.adjList {
-        const Vertex<T>& vertex = pair.getFirst();
-        foreach const Vertex<T>* neighbor : pair.getSecond() {
-            if !this.directed && neighbor < &vertex {
-                continue;
-            }
-
-            ss << "  \"" << toString(vertex.value) << "\" " << edgeSep << " \"" << toString(neighbor.value) << "\";\n";
+        const Vertex<T>& src = pair.getFirst();
+        const T& srcValue = src.value;
+        const Vector<Vertex<T>*>& dsts = pair.getSecond();
+        foreach const Vertex<T>* dst : dsts {
+            const T& dstValue = dst.value;
+            ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dstValue) << "\";\n";
         }
     }
 
