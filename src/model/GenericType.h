@@ -19,7 +19,6 @@ class GenericType : public QualType {
 public:
   // Constructors
   explicit GenericType(const QualType &type) : QualType(type) {}
-  explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
   GenericType(const std::string &name, QualTypeList typeConditions)
       : QualType(TY_GENERIC, name), typeConditions(std::move(typeConditions)) {}
   GenericType() = default;
