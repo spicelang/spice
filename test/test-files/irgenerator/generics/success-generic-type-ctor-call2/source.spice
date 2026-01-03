@@ -40,7 +40,4 @@ f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
 
 f<int> main() {
     ExampleIterableType eit;
-    foreach ExampleContainedType ct : eit {
-        printf("Content: %d\n", ct.content);
-    }
 }

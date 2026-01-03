@@ -30,7 +30,6 @@ $_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
 @_ZTI9IIteratorI20ExampleContainedTypeE = external global ptr
 @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, comdat, align 8
 @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, comdat, align 8
-@printf.str.1 = private unnamed_addr constant [13 x i8] c"Content: %d\0A\00", align 4
 
 define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) {
   %this = alloca ptr, align 8
@@ -124,34 +123,10 @@ define private noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11ge
 define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %eit = alloca %struct.ExampleIterableType, align 8
-  %1 = alloca %struct.ExampleTypeIterator, align 8
-  %ct = alloca %struct.ExampleContainedType, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %eit)
-  %2 = call %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr %eit)
-  store %struct.ExampleTypeIterator %2, ptr %1, align 8
-  br label %foreach.head.L43
-
-foreach.head.L43:                                 ; preds = %foreach.tail.L43, %0
-  %3 = call i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr %1)
-  br i1 %3, label %foreach.body.L43, label %foreach.exit.L43
-
-foreach.body.L43:                                 ; preds = %foreach.head.L43
-  %4 = call ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr %1)
-  %5 = load %struct.ExampleContainedType, ptr %4, align 4
-  store %struct.ExampleContainedType %5, ptr %ct, align 4
-  %content.addr = getelementptr inbounds %struct.ExampleContainedType, ptr %ct, i64 0, i32 0
-  %6 = load i32, ptr %content.addr, align 4
-  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %6)
-  br label %foreach.tail.L43
-
-foreach.tail.L43:                                 ; preds = %foreach.body.L43
-  call void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr %1)
-  br label %foreach.head.L43
-
-foreach.exit.L43:                                 ; preds = %foreach.head.L43
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  %1 = load i32, ptr %result, align 4
+  ret i32 %1
 }
 
 attributes #0 = { nofree nounwind }
