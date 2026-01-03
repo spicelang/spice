@@ -271,6 +271,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       const std::string nonGenericSignature = candidate.getSignature(true, false, false);
       if (matchScope->functions.at(fctId).contains(nonGenericSignature)) {
         matches.push_back(&matchScope->functions.at(fctId).at(nonGenericSignature));
+        matches.back()->used = true;
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

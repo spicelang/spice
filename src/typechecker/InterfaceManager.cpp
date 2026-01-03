@@ -110,6 +110,7 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getSignature())) {
         matches.push_back(&matchScope->interfaces.at(defCodeLocStr).at(candidate.getSignature()));
+        matches.back()->used = true;
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
