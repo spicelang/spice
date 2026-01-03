@@ -114,6 +114,7 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getSignature())) {
         matches.push_back(&matchScope->structs.at(structId).at(candidate.getSignature()));
+        matches.back()->used = true;
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

@@ -44,19 +44,3 @@ f<int> main() {
         printf("Content: %d\n", ct.content);
     }
 }
-
-/*import "std/data/graph";
-import "std/text/stringstream";
-
-f<int> main() {
-    Graph<int> g;
-    Vertex<int>& v1 = g.addVertex(1);
-    Vertex<int>& v2 = g.addVertex(2);
-    Vertex<int>& v3 = g.addVertex(3);
-    g.addEdge(v1, v2);
-    g.addEdge(v2, v3);
-
-    StringStream ss;
-    g.toGraphviz(ss);
-    printf("%s\n", ss.str());
-}*/

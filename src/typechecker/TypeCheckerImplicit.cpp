@@ -47,6 +47,11 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   Function defaultMethod(name, procEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
+  // Fill type mapping for the case, that the template type list contains non-generic types
+  for (const GenericType &templateType : templateTypes)
+    if (!templateType.is(TY_GENERIC))
+      defaultMethod.typeMapping[templateType.getSubType()] = static_cast<QualType>(templateType);
+
   // Create function scope
   Scope *procScope = structScope->createChildScope(defaultMethod.getScopeName(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   defaultMethod.bodyScope = procScope;
