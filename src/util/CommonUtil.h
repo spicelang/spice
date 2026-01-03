@@ -38,6 +38,7 @@ public:
   static bool isValidMangledName(const std::string &mangledName);
   static std::string getOSNameFromTargetTriple(const llvm::Triple* targetTriple);
   static std::string getCircularImportMessage(std::stack<const SourceFile *> &sourceFiles);
+  static int getCurrentYear();
   static std::string buildVersionInfo();
 };
 

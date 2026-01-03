@@ -7,6 +7,8 @@ import "std/io/cli-subcommand";
 import "std/io/cli-option";
 import "std/io/filepath";
 import "std/text/string-ext";
+import "std/time/time";
+import "std/type/type-conversion";
 
 // Own imports
 import "util/common-util";
@@ -118,7 +120,7 @@ public type Driver struct {
 
 public p Driver.init() {
     this.cliParser = CliParser("Spice", "Spice programming language");
-    this.cliParser.setFooter("(c) Marc Auberer 2021-2026");
+    this.cliParser.setFooter("(c) Marc Auberer 2021-" + toString(getCurrentYear()));
 
     // Add version flag
     this.cliParser.setVersion(buildVersionInfo());

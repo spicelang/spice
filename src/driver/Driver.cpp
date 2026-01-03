@@ -17,7 +17,7 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
   // Allow positional args
   app.positionals_at_end();
   app.allow_extras(false);
-  app.footer("(c) Marc Auberer 2021-2026");
+  app.footer("(c) Marc Auberer 2021-" + std::to_string(CommonUtil::getCurrentYear()));
 
   // Add version flag
   app.set_version_flag("--version,-v", CommonUtil::buildVersionInfo());
