@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2025 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "CommonUtil.h"
 
@@ -182,7 +182,7 @@ std::string CommonUtil::buildVersionInfo() {
   versionString << "Git hash:      " << SPICE_GIT_HASH << "\n";
   versionString << "LLVM version:  " << LLVM_VERSION_STRING << "\n";
   versionString << "built by:      " << SPICE_BUILT_BY << "\n\n";
-  versionString << "(c) Marc Auberer 2021-2025";
+  versionString << "(c) Marc Auberer 2021-2026";
   return versionString.str();
 }
 

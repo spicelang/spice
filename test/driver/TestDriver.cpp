@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2025 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "TestDriver.h"
 
@@ -15,7 +15,7 @@ void TestDriver::createInterface() {
   app.positionals_at_end();
   app.require_subcommand(0);
   app.allow_extras(false);
-  app.footer("(c) Marc Auberer 2021-2025");
+  app.footer("(c) Marc Auberer 2021-2026");
 
   // Add version flag
   app.set_version_flag("--version,-v", compiler::CommonUtil::buildVersionInfo());

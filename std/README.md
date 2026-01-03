@@ -35,4 +35,4 @@ The package `std/time` offers functions for accessing system time in different f
 ## Type
 The package `std/type` offers functions for type related work like type conversions, etc.
 
-© ChilliBits 2021-2025
+© ChilliBits 2021-2026

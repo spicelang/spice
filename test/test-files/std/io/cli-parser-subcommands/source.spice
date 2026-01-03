@@ -8,7 +8,7 @@ type CliOptions struct {
 f<int> main(int argc, string[] argv) {
     CliParser parser = CliParser("Test Program", "This is a simple test program");
     parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2025");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2026");
 
     CliOptions options;
     CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");

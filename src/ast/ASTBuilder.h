@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2025 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #pragma once
 
