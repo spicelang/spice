@@ -171,6 +171,12 @@ std::string CommonUtil::getCircularImportMessage(std::stack<const SourceFile *> 
   return message.str();
 }
 
+int CommonUtil::getCurrentYear() {
+  const std::time_t t = std::time(nullptr);
+  const std::tm *tm = std::localtime(&t);
+  return tm->tm_year + 1900;
+}
+
 /**
  * Generate the version info string for the Spice driver
  *
@@ -182,7 +188,7 @@ std::string CommonUtil::buildVersionInfo() {
   versionString << "Git hash:      " << SPICE_GIT_HASH << "\n";
   versionString << "LLVM version:  " << LLVM_VERSION_STRING << "\n";
   versionString << "built by:      " << SPICE_BUILT_BY << "\n\n";
-  versionString << "(c) Marc Auberer 2021-2026";
+  versionString << "(c) Marc Auberer 2021-" << getCurrentYear();
   return versionString.str();
 }
 

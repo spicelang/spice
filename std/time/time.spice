@@ -40,3 +40,42 @@ public f<long> getCurrentMicros() {
     gettimeofday(&time, nil<TimeZone*>);
     return 1000000l * time.tvSec + time.tvUsec;
 }
+
+/**
+ * Check whether a given year is a leap year (Gregorian calendar)
+ */
+public f<bool> isLeapYear(int year) {
+    if year % 400 == 0 {
+        return true;
+    }
+    if year % 100 == 0 {
+        return false;
+    }
+    return year % 4 == 0;
+}
+
+/**
+ * Return the current UTC year in a fully cross-platform way
+ */
+public f<int> getCurrentYear() {
+    // Seconds since Unix epoch (1970-01-01T00:00:00Z)
+    TimeVal time = TimeVal{};
+    gettimeofday(&time, nil<TimeZone*>);
+
+    long seconds = time.tvSec;
+    long days = seconds / 86400l;
+
+    int year = 1970;
+
+    // Subtract full years until remaining days fit into the current year
+    while true {
+        const int daysInYear = isLeapYear(year) ? 366 : 365;
+        if (days < daysInYear) {
+            break;
+        }
+        days -= daysInYear;
+        year++;
+    }
+
+    return year;
+}
