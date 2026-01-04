@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 
@@ -98,7 +99,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const std::string& scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
+      const std::string &scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(scopeName, ScopeType::STRUCT);
     }
 
@@ -154,9 +155,14 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     changeToScope(manifestation->scope, ScopeType::STRUCT);
 
     // Re-visit all default values. This is required, since the type of the default value might vary for different manifestations
-    for (const FieldNode *field : node->fields)
-      if (field->defaultValue != nullptr)
+    for (const FieldNode *field : node->fields) {
+      if (field->defaultValue != nullptr) {
         visit(field->defaultValue);
+        SymbolTableEntry *fieldEntry = manifestation->scope->lookupStrict(field->fieldName);
+        assert(fieldEntry != nullptr);
+        fieldEntry->updateState(INITIALIZED, field);
+      }
+    }
 
     // Build struct type
     const QualType structType = manifestation->entry->getQualType();
@@ -207,21 +213,28 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       }
     }
 
-    // Generate default ctor body if required
+    // Check default ctor body if required
     const Function *ctorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
-    if (ctorFunc != nullptr && ctorFunc->implicitDefault)
+    if (ctorFunc != nullptr && ctorFunc->implicitDefault) {
       createCtorBodyPreamble(ctorFunc->bodyScope);
+      assert(manifestation->areAllFieldsInitialized() == nullptr);
+    }
 
-    // Generate default copy ctor body if required
+    // Check default copy ctor body if required
     const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
-    if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
+    if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault) {
       createCopyCtorBodyPreamble(copyCtorFunc->bodyScope);
+      assert(manifestation->areAllFieldsInitialized() == nullptr);
+    }
 
-    // Generate default dtor body if required
+    // Check default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
       createDtorBodyPreamble(dtorFunc->bodyScope);
+
+    // Reset field symbols to declared state for the next manifestation
+    manifestation->resetFieldSymbolsToDeclared(node);
 
     // Return to the root scope
     currentScope = rootScope;

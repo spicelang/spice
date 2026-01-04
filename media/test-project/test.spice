@@ -1,29 +1,22 @@
-import "std/io/cli-parser";
-
-type CliOptions struct {
-    bool sayHi = false
+type Inner struct {
+    short x = -43s
 }
 
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
+p Inner.ctor(const Inner& other) {
+    this.x = other.x + 5s;
 }
 
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2026");
+type Middle struct {
+    Inner inner
+}
 
-    CliOptions options;
-    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
-    parser.addFlag("--callback", callback, "Call a callback function");
-    parser.addFlag("-cb", p(const bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
+type Outer struct {
+    Middle middle
+}
 
-    result = parser.parse(argc, argv);
-
-    // Print hi if requested
-    if options.sayHi {
-        printf("Hi!\n");
-    }
+f<int> main() {
+    Outer outer;
+    printf("x = %d\n", outer.middle.inner.x);
+    Outer outer2 = outer;
+    printf("x = %d\n", outer2.middle.inner.x);
 }

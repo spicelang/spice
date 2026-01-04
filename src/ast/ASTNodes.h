@@ -1026,7 +1026,6 @@ public:
   DataTypeNode *dataType = nullptr;
   TernaryExprNode *defaultValue = nullptr;
   std::string fieldName;
-  SymbolTableEntry *entry = nullptr;
 };
 
 // ======================================================== SignatureNode ========================================================

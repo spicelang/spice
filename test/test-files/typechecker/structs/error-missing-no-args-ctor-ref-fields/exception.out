@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:7:5:
-No matching ctor found: Struct 'TypeWithVTable' misses a no-args constructor
+No matching ctor found: Struct 'TypeWithVTable' is not trivially constructible and has no no-args constructor.
 
 7  TypeWithVTable v;
    ^^^^^^^^^^^^^^^^

@@ -88,7 +88,7 @@
           "isVolatile": false,
           "name": "_f1",
           "orderIndex": 0,
-          "state": "declared",
+          "state": "initialized",
           "type": "T"
         },
         {
@@ -106,7 +106,7 @@
           "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
-          "state": "declared",
+          "state": "initialized",
           "type": "unsigned long"
         },
         {

@@ -62,8 +62,8 @@ std::string StructBase::getSignature(const std::string &name, const QualTypeList
  * @return Substantiated generics or not
  */
 bool StructBase::hasSubstantiatedGenerics() const {
-  const auto lambda = [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); };
-  return std::ranges::none_of(templateTypes, lambda);
+  const auto pred = [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); };
+  return std::ranges::none_of(templateTypes, pred);
 }
 
 /**

@@ -8,6 +8,14 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 
+define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  store i16 -43, ptr %2, align 2
+  ret void
+}
+
 define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr noundef %1) {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
@@ -26,11 +34,29 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
 }
 
 ; Function Attrs: norecurse
+define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  call void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %2)
+  ret void
+}
+
+; Function Attrs: norecurse
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
   call void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %3, ptr %1)
+  ret void
+}
+
+; Function Attrs: norecurse
+define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  call void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %2)
   ret void
 }
 
@@ -49,7 +75,7 @@ define dso_local noundef i32 @main() #1 {
   %outer = alloca %struct.Outer, align 8
   %outer2 = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
-  store %struct.Outer { %struct.Middle { %struct.Inner { i16 -43 } } }, ptr %outer, align 2
+  call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %outer)
   %middle.addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
   %inner.addr = getelementptr inbounds %struct.Middle, ptr %middle.addr, i64 0, i32 0
   %x.addr = getelementptr inbounds %struct.Inner, ptr %inner.addr, i64 0, i32 0

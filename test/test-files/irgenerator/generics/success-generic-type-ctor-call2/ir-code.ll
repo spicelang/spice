@@ -31,6 +31,14 @@ $_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
 @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, comdat, align 8
 @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, comdat, align 8
 
+define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  store i32 321, ptr %2, align 4
+  ret void
+}
+
 define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
@@ -60,8 +68,10 @@ define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   store ptr getelementptr inbounds ({ [6 x ptr] }, ptr @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE, i64 0, i32 0, i32 2), ptr %2, align 8
-  %3 = getelementptr inbounds nuw %struct.ExampleTypeIterator, ptr %2, i32 0, i32 2
-  store i1 true, ptr %3, align 1
+  %3 = getelementptr inbounds nuw %struct.ExampleTypeIterator, ptr %2, i32 0, i32 1
+  call void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %3)
+  %4 = getelementptr inbounds nuw %struct.ExampleTypeIterator, ptr %2, i32 0, i32 2
+  store i1 true, ptr %4, align 1
   ret void
 }
 

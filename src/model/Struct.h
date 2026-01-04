@@ -11,6 +11,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+enum LifecycleState : uint8_t;
+
 class Struct : public StructBase {
 public:
   // Constructors
@@ -23,6 +26,9 @@ public:
   [[nodiscard]] std::string getScopeName() const;
   static std::string getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes = {});
   [[nodiscard]] bool hasReferenceFields() const;
+  const SymbolTableEntry *areAllFieldsInState(LifecycleState state) const;
+  const SymbolTableEntry *areAllFieldsInitialized() const;
+  void resetFieldSymbolsToDeclared(const ASTNode *node) const;
 
   // Public members
   QualTypeList fieldTypes;
