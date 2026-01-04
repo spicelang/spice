@@ -8,6 +8,8 @@ type ExampleContainedType struct {
     int content = 321
 }
 
+p ExampleContainedType.ctor() {}
+
 p ExampleContainedType.ctor(const ExampleContainedType& other) {
     printf("Copy Ctor called!\n");
 }

@@ -87,6 +87,7 @@ public:
   [[nodiscard]] bool hasAnyGenericParts() const;
 
   // Complex queries on the type
+  [[nodiscard]] bool isTriviallyConstructible(const ASTNode *node) const;
   [[nodiscard]] bool isTriviallyCopyable(const ASTNode *node) const;
   [[nodiscard]] bool isTriviallyDestructible(const ASTNode *node) const;
   [[nodiscard]] bool doesImplement(const QualType &implementedInterfaceType, const ASTNode *node) const;

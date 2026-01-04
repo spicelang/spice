@@ -1,62 +1,29 @@
-import "std/iterator/iterable";
-import "std/iterator/iterator";
-import "std/data/pair";
+import "std/io/cli-parser";
 
-type T dyn;
-
-type ExampleContainedType struct {
-    int content = 321
+type CliOptions struct {
+    bool sayHi = false
 }
 
-p ExampleContainedType.ctor(const ExampleContainedType& other) {
-    printf("Copy Ctor called!\n");
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
 }
 
-type ExampleIterableType struct : IIterable<ExampleContainedType> {}
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2026");
 
-type ExampleTypeIterator<T> struct: IIterator<T> {
-    T item
-    bool isValid = true
-}
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(const bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
 
-f<T&> ExampleTypeIterator.get() {
-    return this.item;
-}
+    result = parser.parse(argc, argv);
 
-f<Pair<unsigned long, T&>> ExampleTypeIterator.getIdx() {
-    return Pair<unsigned long, T&>(0ul, this.item);
-}
-
-f<bool> ExampleTypeIterator.isValid() {
-    result = this.isValid;
-    this.isValid = false;
-}
-
-p ExampleTypeIterator.next() {}
-
-f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
-    return ExampleTypeIterator<ExampleContainedType>();
-}
-
-f<int> main() {
-    ExampleIterableType eit;
-    foreach ExampleContainedType ct : eit {
-        printf("Content: %d\n", ct.content);
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
     }
 }
-
-/*import "std/data/graph";
-import "std/text/stringstream";
-
-f<int> main() {
-    Graph<int> g;
-    Vertex<int>& v1 = g.addVertex(1);
-    Vertex<int>& v2 = g.addVertex(2);
-    Vertex<int>& v3 = g.addVertex(3);
-    g.addEdge(v1, v2);
-    g.addEdge(v2, v3);
-
-    StringStream ss;
-    g.toGraphviz(ss);
-    printf("%s\n", ss.str());
-}*/

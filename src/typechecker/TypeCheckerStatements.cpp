@@ -79,14 +79,15 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we are required to call a ctor
       const Struct *spiceStruct = localVarType.getStruct(node);
       assert(spiceStruct != nullptr);
-      auto structDeclNode = spice_pointer_cast<StructDefNode *>(spiceStruct->declNode);
-      node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
+      node->isCtorCallRequired = !localVarType.isTriviallyConstructible(node);
       // Check if we have a no-args ctor to call
-      const std::string &structName = localVarType.getSubType();
       const QualType &thisType = localVarType;
       node->calledInitCtor = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
-      if (!node->calledInitCtor && node->isCtorCallRequired)
-        SOFT_ERROR_QT(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
+      if (node->calledInitCtor == nullptr && node->isCtorCallRequired) {
+        const std::string &structName = localVarType.getSubType();
+        const auto msg = "Struct '" + structName + "' is not trivially constructible and has no no-args constructor.";
+        SOFT_ERROR_QT(node, NO_MATCHING_CTOR_FOUND, msg);
+      }
     }
   }
 

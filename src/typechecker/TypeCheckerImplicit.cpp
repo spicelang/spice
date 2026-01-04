@@ -1,5 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
+#include "MacroDefs.h"
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
@@ -69,7 +70,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
  * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
  * For generating a default ctor, the following conditions need to be met:
- * - No user-defined constructors
+ * - No user-defined constructors (incl. copy/move ctors)
  *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
@@ -279,8 +280,13 @@ void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) const {
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       const Function *spiceFunc = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
-      if (spiceFunc != nullptr)
+      if (spiceFunc != nullptr) {
         fieldSymbol->updateType(fieldType.getWithBodyScope(spiceFunc->thisType.getBodyScope()), true);
+      } else if (!fieldType.isTriviallyConstructible(fieldNode)) {
+        const std::string &structName = fieldType.getSubType();
+        const auto msg = "Struct '" + structName + "' is not trivially constructible and has no no-args constructor.";
+        SOFT_ERROR_VOID(fieldNode, NO_MATCHING_CTOR_FOUND, msg);
+      }
     }
   }
 }
@@ -311,8 +317,13 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) const {
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(fieldNode), false /* we always have the field as storage */}};
       const Function *copyCtorFct = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
-      if (copyCtorFct != nullptr)
+      if (copyCtorFct != nullptr) {
         fieldSymbol->updateType(fieldType.getWithBodyScope(copyCtorFct->thisType.getBodyScope()), true);
+      } else if (!fieldType.isTriviallyCopyable(fieldNode)) {
+        const std::string &structName = fieldType.getSubType();
+        const auto msg = "Struct '" + structName + "' is not trivially copyable and has no copy constructor.";
+        SOFT_ERROR_VOID(fieldNode, NO_MATCHING_CTOR_FOUND, msg);
+      }
     }
   }
 }
@@ -353,7 +364,7 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
  * @param node AST node
  */
 Function *TypeChecker::implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName,
-                                                  const ArgList &args, const ASTNode *node) {
+                                                  const ArgList &args, const ASTNode *node) const {
   const QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
   return implicitlyCallStructMethod(thisType, methodName, args, node);
 }
@@ -407,7 +418,7 @@ Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, co
  * @param entry Symbol entry to use as 'this' pointer for the dtor call
  * @param node StmtLstNode for the current scope
  */
-void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
+void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const {
   // Add the dtor to the stmt list node to call it later in codegen
   if (Function *dtor = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node))
     node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, dtor);
@@ -437,7 +448,7 @@ void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) const {
  *
  * @param node StmtLstNode for the current scope
  */
-void TypeChecker::doScopeCleanup(StmtLstNode *node) {
+void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
   // Get all variables, that are approved for de-allocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
   // Sort by reverse declaration order
