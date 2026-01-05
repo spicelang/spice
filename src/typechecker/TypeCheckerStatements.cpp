@@ -77,8 +77,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
-      const Struct *spiceStruct = localVarType.getStruct(node);
-      assert(spiceStruct != nullptr);
       node->isCtorCallRequired = !localVarType.isTriviallyConstructible(node);
       // Check if we have a no-args ctor to call
       const QualType &thisType = localVarType;
