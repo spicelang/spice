@@ -109,10 +109,8 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
 
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
-      const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
-      const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
+      const bool isCtorCallRequired = !fieldType.isTriviallyConstructible(node);
       // Lookup ctor function
       const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
@@ -169,15 +167,13 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     // If the field is of type struct, check if this struct has a copy ctor that has to be called
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      const Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
-      const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
-      const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
+      const bool isCopyCtorCallRequired = !structType.isTriviallyCopyable(node);
       // Lookup copy ctor function
       const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
       const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
       // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
-      if (!ctorFct && isCtorCallRequired)
+      if (!ctorFct && isCopyCtorCallRequired)
         return;
       copyCtorRequired |= ctorFct != nullptr;
     }

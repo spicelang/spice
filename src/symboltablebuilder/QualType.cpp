@@ -319,8 +319,6 @@ bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
  * @return Trivially constructible or not
  */
 bool QualType::isTriviallyConstructible(const ASTNode *node) const {
-  assert(!hasAnyGenericParts());
-
   // Heap-allocated values require manual allocation, which is done in the default/explicit ctor
   if (qualifiers.isHeap)
     return false;
@@ -367,8 +365,6 @@ bool QualType::isTriviallyConstructible(const ASTNode *node) const {
  * @return Trivially copyable or not
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
-  assert(!hasAnyGenericParts());
-
   // Heap-allocated values may not be copied via memcpy
   if (qualifiers.isHeap)
     return false;
@@ -406,8 +402,6 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
  * @return Trivially destructible or not
  */
 bool QualType::isTriviallyDestructible(const ASTNode *node) const {
-  assert(!hasAnyGenericParts());
-
   // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
   if (qualifiers.isHeap)
     return false;

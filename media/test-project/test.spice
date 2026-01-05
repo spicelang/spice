@@ -1,22 +1,69 @@
-type Inner struct {
-    short x = -43s
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
+
+type T dyn;
+
+type ExampleContainedType struct {
+    int content = 321
 }
 
-p Inner.ctor(const Inner& other) {
-    this.x = other.x + 5s;
+p ExampleContainedType.ctor(const ExampleContainedType& other) {
+    printf("Copy Ctor called!\n");
 }
 
-type Middle struct {
-    Inner inner
+type ExampleIterableType struct : IIterable<ExampleContainedType> {}
+
+type ExampleTypeIterator<T> struct: IIterator<T> {
+    T item
+    bool isValid = true
 }
 
-type Outer struct {
-    Middle middle
+f<T&> ExampleTypeIterator.get() {
+    return this.item;
+}
+
+f<Pair<unsigned long, T&>> ExampleTypeIterator.getIdx() {
+    return Pair<unsigned long, T&>(0ul, this.item);
+}
+
+f<bool> ExampleTypeIterator.isValid() {
+    result = this.isValid;
+    this.isValid = false;
+}
+
+p ExampleTypeIterator.next() {}
+
+f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
+    return ExampleTypeIterator<ExampleContainedType>();
 }
 
 f<int> main() {
-    Outer outer;
-    printf("x = %d\n", outer.middle.inner.x);
-    Outer outer2 = outer;
-    printf("x = %d\n", outer2.middle.inner.x);
+    ExampleIterableType eit;
+    ExampleTypeIterator<ExampleContainedType> eti = eit.getIterator();
+    while eti.isValid() {
+        ExampleContainedType& ct = eti.get();
+        printf("Content: %d\n", ct.content);
+        eti.next();
+    }
+
+    /*foreach ExampleContainedType& ct : eit {
+        printf("Content: %d\n", ct.content);
+    }*/
 }
+
+/*import "std/data/graph";
+import "std/text/stringstream";
+
+f<int> main() {
+    Graph<int> g;
+    Vertex<int>& v1 = g.addVertex(1);
+    Vertex<int>& v2 = g.addVertex(2);
+    Vertex<int>& v3 = g.addVertex(3);
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
+
+    StringStream ss;
+    g.toGraphviz(ss);
+    printf("%s\n", ss.str());
+}*/
