@@ -142,7 +142,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Check result type. This is important, also for copy ctor calls, etc.
   const ExprResult itemResult = {itemType, itemVarSymbol};
   const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-  (void)opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+  const auto [_, copyCtor] = opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+  node->calledItemCopyCtor = copyCtor;
 
   // Update type of item
   itemVarSymbol->updateType(itemType, true);

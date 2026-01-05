@@ -663,6 +663,7 @@ public:
   Function *getIdxFct = nullptr;
   Function *isValidFct = nullptr;
   Function *nextFct = nullptr;
+  Function *calledItemCopyCtor = nullptr;
 };
 
 // ========================================================= WhileLoopNode =======================================================

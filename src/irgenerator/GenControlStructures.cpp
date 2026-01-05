@@ -162,6 +162,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Switch to body block
   switchToBlock(bBody);
   // Get the current iterator values
+  LLVMExprResult itemResult;
   if (hasIdx) {
     // Allocate space to save pair
     const QualType& pairSTy = node->getIdxFct->returnType;
@@ -179,16 +180,21 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     assert(idxAddress != nullptr && idxEntry != nullptr);
     doAssignment(idxAddress, idxEntry, idxResult, QualType(TY_LONG), node, true);
     // Store item to item var
-    llvm::Value *itemAddrInPair = insertStructGEP(pairTy, pairPtr, 1, "item.addr");
-    LLVMExprResult itemResult = {.refPtr = itemAddrInPair};
-    doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, node, true);
+    itemResult.refPtr = insertStructGEP(pairTy, pairPtr, 1, "item.addr");
   } else {
     // Call .get() on iterator
     assert(node->getFct);
     llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
-    llvm::Value *getItemPtr = builder.CreateCall(getFct, iteratorPtr);
-    LLVMExprResult getResult = {.ptr = getItemPtr};
-    doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, node, true);
+    itemResult.ptr = builder.CreateCall(getFct, iteratorPtr);
+  }
+  if (node->calledItemCopyCtor != nullptr) {
+    // Call copy ctor
+    llvm::Value *rhsAddress = resolveAddress(itemResult);
+    assert(rhsAddress != nullptr);
+    generateCtorOrDtorCall(itemEntry, node->calledItemCopyCtor, {rhsAddress});
+  } else {
+    // Perform normal assignment
+    doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, node, true);
   }
   // Visit body
   visit(node->body);
