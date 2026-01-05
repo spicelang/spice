@@ -2,7 +2,7 @@
 
 #include "ScopeHandle.h"
 
-#include "CompilerPass.h"
+#include <CompilerPass.h>
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
@@ -10,7 +10,7 @@
 namespace spice::compiler {
 
 ScopeHandle::ScopeHandle(CompilerPass *pass, Scope *childScope, const ScopeType &scopeType)
-    : DeferredLogic([=]() { pass->changeToParentScope(scopeType); }) {
+    : DeferredLogic([=] { pass->changeToParentScope(scopeType); }) {
   pass->changeToScope(childScope, scopeType);
 }
 
@@ -18,7 +18,7 @@ ScopeHandle::ScopeHandle(CompilerPass *pass, const std::string &childScopeId, co
     : ScopeHandle(pass, pass->currentScope->getChildScope(childScopeId), scopeType) {}
 
 ScopeHandle::ScopeHandle(IRGenerator *generator, Scope *childScope, const ScopeType &scopeType, const ASTNode *node)
-    : DeferredLogic([=]() {
+    : DeferredLogic([=] {
         generator->changeToParentScope(scopeType);
         generator->diGenerator.popLexicalBlock();
       }) {

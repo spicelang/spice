@@ -160,14 +160,14 @@ private:
   void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
   void createDtorBodyPreamble(const Scope *bodyScope) const;
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
-                                       const ASTNode *node);
+                                       const ASTNode *node) const;
   Function *implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node) const;
   Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) const;
   Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const;
-  void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
+  void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const;
   void implicitlyCallDeallocate(const ASTNode *node) const;
-  void doScopeCleanup(StmtLstNode *node);
+  void doScopeCleanup(StmtLstNode *node) const;
 };
 
 } // namespace spice::compiler

@@ -39,4 +39,37 @@ bool Struct::hasReferenceFields() const {
   return std::ranges::any_of(fieldTypes, [](const QualType &fieldType) { return fieldType.isRef(); });
 }
 
+/**
+ * Check that all fields are in a certain lifecycle state.
+ *
+ * @param state Lifecycle state to check for
+ * @return nullptr if all fields are in this state, otherwise the first mismatched field symbol
+ */
+const SymbolTableEntry *Struct::areAllFieldsInState(LifecycleState state) const {
+  for (size_t i = 0; i < fieldTypes.size(); i++) {
+    const SymbolTableEntry *fieldSymbol = scope->lookupField(i);
+    assert(fieldSymbol != nullptr);
+    if (!fieldSymbol->isImplicitField && fieldSymbol->getLifecycle().getCurrentState() != state)
+      return fieldSymbol;
+  }
+  return nullptr;
+}
+
+/**
+ * Check that all fields are initialized.
+ *
+ * @return nullptr if all fields are initialized, otherwise the first uninitialized field symbol
+ */
+const SymbolTableEntry *Struct::areAllFieldsInitialized() const { return areAllFieldsInState(INITIALIZED); }
+
+/**
+ * Reset the initialization state of all fields to DECLARED.
+ *
+ * @param node AST node to associate with the update
+ */
+void Struct::resetFieldSymbolsToDeclared(const ASTNode *node) const {
+  for (size_t i = 0; i < fieldTypes.size(); i++)
+    scope->lookupField(i)->updateState(DECLARED, node);
+}
+
 } // namespace spice::compiler

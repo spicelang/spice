@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:14:5:
+No matching ctor found: Struct 'TestOuter' is not trivially constructible and has no no-args constructor.
+
+14  TestOuter t;
+    ^^^^^^^^^^^

@@ -68,7 +68,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Struct with infinite size";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
-  case MISSING_NO_ARGS_CTOR:
+  case NO_MATCHING_CTOR_FOUND:
     return "No matching ctor found";
   case COPY_CTOR_REQUIRED:
     return "Missing mandatory copy ctor";

@@ -1,0 +1,15 @@
+type TestInner struct {
+    int value = 123
+}
+
+// An explicit copy constructor is defined, which prevents the implicit default constructor from being generated.
+p TestInner.ctor(const TestInner& other) {}
+
+type TestOuter struct {
+    TestInner ti
+}
+
+f<int> main() {
+    // This should cause an error because there is no ctor, but a ctor is required due to the default field value
+    TestOuter t;
+}

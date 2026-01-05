@@ -56,14 +56,14 @@ std::string StructBase::getSignature(const std::string &name, const QualTypeList
 }
 
 /**
- * Checks if a struct contains template types.
+ * Checks if a struct contains generic template types.
  * This would imply that the struct is not substantiated by its generic types yet.
  *
  * @return Substantiated generics or not
  */
 bool StructBase::hasSubstantiatedGenerics() const {
-  const auto lambda = [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); };
-  return std::ranges::none_of(templateTypes, lambda);
+  const auto pred = [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); };
+  return std::ranges::none_of(templateTypes, pred);
 }
 
 /**

@@ -2,6 +2,8 @@ type Inner struct {
     short x = -43s
 }
 
+p Inner.ctor() {}
+
 p Inner.ctor(const Inner& other) {
     this.x = other.x + 5s;
 }

@@ -40,9 +40,16 @@ f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
 
 f<int> main() {
     ExampleIterableType eit;
-    foreach ExampleContainedType ct : eit {
+    ExampleTypeIterator<ExampleContainedType> eti = eit.getIterator();
+    while eti.isValid() {
+        ExampleContainedType& ct = eti.get();
         printf("Content: %d\n", ct.content);
+        eti.next();
     }
+
+    /*foreach ExampleContainedType& ct : eit {
+        printf("Content: %d\n", ct.content);
+    }*/
 }
 
 /*import "std/data/graph";

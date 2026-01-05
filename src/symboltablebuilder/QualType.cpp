@@ -312,6 +312,52 @@ bool QualType::isErrorObj() const {
 bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
 
 /**
+ * Check if constructing an instance of the current type would require calling a ctor.
+ * If this function return true, the type does not need to be constructed.
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially constructible or not
+ */
+bool QualType::isTriviallyConstructible(const ASTNode *node) const {
+  // Heap-allocated values require manual allocation, which is done in the default/explicit ctor
+  if (qualifiers.isHeap)
+    return false;
+
+  // References can't be default initialized
+  if (isRef())
+    return false;
+
+  // In case of an array, the item type is determining the construction triviality
+  if (isArray())
+    return getBase().isTriviallyConstructible(node);
+
+  // In case of a struct, the member types determine the construction triviality
+  if (is(TY_STRUCT)) {
+    // If the struct has a ctor, it is a non-trivially constructible one
+    const Struct *spiceStruct = getStruct(node);
+    const Function *ctor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, {}, true);
+    if (ctor != nullptr)
+      return false;
+
+    // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
+    const auto *structDefNode = spice_pointer_cast<StructDefNode *>(spiceStruct->declNode);
+    if (structDefNode->emitVTable)
+      return false;
+
+    // If any field has a default value, the struct is non-trivially constructible
+    const auto pred1 = [&](const FieldNode *fieldNode) { return fieldNode->defaultValue != nullptr; };
+    if (std::ranges::any_of(structDefNode->fields, pred1))
+      return false;
+
+    // Check if all member types are trivially constructible
+    const auto pred2 = [&](const QualType &fieldType) { return fieldType.isTriviallyConstructible(node); };
+    return std::ranges::all_of(spiceStruct->fieldTypes, pred2);
+  }
+
+  return true;
+}
+
+/**
  * Check if copying an instance of the current type would require a call to the copy ctor.
  * If this function return true, the type can be copied by calling memcpy.
  *
@@ -319,8 +365,6 @@ bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
  * @return Trivially copyable or not
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
-  assert(!hasAnyGenericParts());
-
   // Heap-allocated values may not be copied via memcpy
   if (qualifiers.isHeap)
     return false;
@@ -351,15 +395,13 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
 }
 
 /**
- * Check if destructing an instance of the current type would require calling other dtors.
- * If this function return true, the type does not need to be destructed
+ * Check if destructing an instance of the current type would require calling a dtor.
+ * If this function return true, the type does not need to be destructed.
  *
  * @param node Accessing ASTNode
  * @return Trivially destructible or not
  */
 bool QualType::isTriviallyDestructible(const ASTNode *node) const {
-  assert(!hasAnyGenericParts());
-
   // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
   if (qualifiers.isHeap)
     return false;

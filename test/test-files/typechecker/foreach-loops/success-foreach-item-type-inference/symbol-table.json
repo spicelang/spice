@@ -178,7 +178,7 @@
           "isVolatile": false,
           "name": "cursor",
           "orderIndex": 2,
-          "state": "declared",
+          "state": "initialized",
           "type": "unsigned long"
         },
         {
@@ -223,7 +223,7 @@
           "isVolatile": false,
           "name": "item",
           "orderIndex": 1,
-          "state": "declared",
+          "state": "initialized",
           "type": "T"
         },
         {
