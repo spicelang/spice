@@ -46,7 +46,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #1
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define i32 @main() #2 {
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 1, i32 1)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 1, ptr @fileName0)
@@ -64,7 +64,7 @@ define i32 @main() #2 {
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { cold noreturn nounwind }
-attributes #2 = { norecurse }
+attributes #2 = { mustprogress noinline nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

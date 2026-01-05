@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 4, !dbg !9
 @printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 4, !dbg !12
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !23 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8, !dbg !43
@@ -77,7 +77,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 declare ptr @_ZN6String6getRawEv(ptr)
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 

@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [29 x i8] c"Default value of double: %f\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [27 x i8] c"Default value of bool: %d\0A\00", align 4
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN10TestStruct4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -50,7 +50,7 @@ define dso_local noundef i32 @main() #1 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 

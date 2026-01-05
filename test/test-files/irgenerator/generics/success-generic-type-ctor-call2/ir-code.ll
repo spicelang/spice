@@ -53,7 +53,7 @@ define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -62,7 +62,7 @@ define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 derefer
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -140,7 +140,7 @@ define dso_local noundef i32 @main() #2 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { norecurse }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
 attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

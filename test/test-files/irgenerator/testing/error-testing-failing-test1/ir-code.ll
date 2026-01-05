@@ -20,7 +20,7 @@ define dso_local noundef zeroext i1 @_Z7testAddv() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define i32 @main() #1 {
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 1, i32 1)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 1, ptr @fileName0)
@@ -37,7 +37,7 @@ define i32 @main() #1 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { norecurse }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -25,7 +25,7 @@ $_ZTV4Test = comdat any
 @_ZTV4Test = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI4Test, ptr @_ZN4Test3barEv] }, comdat, align 8
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"Bar\00", align 4
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -34,7 +34,7 @@ define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) 
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -83,7 +83,7 @@ define dso_local noundef i32 @main() #3 {
   ret i32 %2
 }
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
 attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
