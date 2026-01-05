@@ -86,15 +86,28 @@ public const p Graph.toGraphviz(StringStream& ss) {
     }
 
     // Emit all edges
-    foreach const Pair<Vertex<T>&, Vector<Vertex<T>*>&> pair : this.adjList {
+    UnorderedMapIterator<Vertex<T>, Vector<Vertex<T>*>> it = this.adjList.getIterator();
+    while it.isValid() {
+        const Pair<const Vertex<T>&, Vector<Vertex<T>*>&>& pair = it.get();
+        const Vertex<T>& src = pair.getFirst();
+        const T& srcValue = src.value;
+        const Vector<Vertex<T>*>& dsts = pair.getSecond();
+        VectorIterator<Vertex<T>*> dstIt = dsts.getIterator();
+        while dstIt.isValid() {
+            const Vertex<T>* dst = dstIt.get();
+            ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dst.value) << "\";\n";
+            dstIt.next();
+        }
+        it.next();
+    }
+    /*foreach const Pair<Vertex<T>&, Vector<Vertex<T>*>&> pair : this.adjList {
         const Vertex<T>& src = pair.getFirst();
         const T& srcValue = src.value;
         const Vector<Vertex<T>*>& dsts = pair.getSecond();
         foreach const Vertex<T>* dst : dsts {
-            const T& dstValue = dst.value;
-            ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dstValue) << "\";\n";
+            ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dst.value) << "\";\n";
         }
-    }
+    }*/
 
     ss << "}";
 }
