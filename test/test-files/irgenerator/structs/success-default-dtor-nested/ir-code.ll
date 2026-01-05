@@ -12,7 +12,7 @@ declare ptr @malloc(i64 noundef)
 
 declare void @free(ptr noundef)
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -67,7 +67,7 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -76,7 +76,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -85,7 +85,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceab
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -94,7 +94,7 @@ define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -103,7 +103,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -123,7 +123,7 @@ define dso_local noundef i32 @main() #3 {
   ret i32 %1
 }
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
 attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }

@@ -33,7 +33,7 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -42,7 +42,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -51,7 +51,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceab
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -60,7 +60,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0)
   ret void
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -96,7 +96,7 @@ define dso_local noundef i32 @main() #1 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 

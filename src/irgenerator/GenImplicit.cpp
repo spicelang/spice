@@ -231,7 +231,15 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
   fct->setLinkage(linkage);
-  fct->setDoesNotRecurse();
+  fct->addFnAttr(llvm::Attribute::MustProgress);
+  fct->addFnAttr(llvm::Attribute::NoUnwind);
+  if (cliOptions.optLevel == OptLevel::O0) {
+    fct->addFnAttr(llvm::Attribute::OptimizeNone);
+    fct->addFnAttr(llvm::Attribute::NoInline);
+  } else if (cliOptions.optLevel >= OptLevel::Os) {
+    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
+  }
+  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
 
   // Set attributes to 'this' param
   if (spiceFunc->isMethod()) {
@@ -324,7 +332,15 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
   fct->setLinkage(linkage);
-  fct->setDoesNotRecurse();
+  fct->addFnAttr(llvm::Attribute::MustProgress);
+  fct->addFnAttr(llvm::Attribute::NoUnwind);
+  if (cliOptions.optLevel == OptLevel::O0) {
+    fct->addFnAttr(llvm::Attribute::OptimizeNone);
+    fct->addFnAttr(llvm::Attribute::NoInline);
+  } else if (cliOptions.optLevel >= OptLevel::Os) {
+    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
+  }
+  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
 
   // Set attributes to 'this' param
   if (spiceProc->isMethod()) {
@@ -410,8 +426,8 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   }
 
   const size_t fieldCount = structScope->getFieldCount();
-  for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+  for (size_t fieldIdx = 0; fieldIdx < fieldCount; fieldIdx++) {
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
@@ -425,7 +441,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       if (const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false)) {
         if (!thisPtr)
           thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-        llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
+        llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
         generateCtorOrDtorCall(fieldAddress, ctorFunction, {});
       }
       continue;
@@ -436,7 +452,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue != nullptr) {
@@ -478,12 +494,12 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
 
   const size_t fieldCount = structScope->getFieldCount();
-  for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+  for (size_t fieldIdx = 0; fieldIdx < fieldCount; fieldIdx++) {
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
 
     // Retrieve the address of the original field (copy source)
-    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, i);
+    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, fieldIdx);
 
     const QualType &fieldType = fieldSymbol->getQualType();
 
@@ -501,7 +517,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     // Retrieve the address of the new field (copy dest)
     if (!thisPtr)
       thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
+    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
 
     // For owning heap fields, copy the underlying heap storage
     if (fieldType.isHeap()) {

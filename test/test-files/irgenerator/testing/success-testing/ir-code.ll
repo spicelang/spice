@@ -197,7 +197,7 @@ assert.exit.L38:                                  ; preds = %assert.exit.L37
   ret i1 true
 }
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define i32 @main() #2 {
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 4, i32 1)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 4, ptr @fileName0)
@@ -227,7 +227,7 @@ define i32 @main() #2 {
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { cold noreturn nounwind }
-attributes #2 = { norecurse }
+attributes #2 = { mustprogress noinline nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

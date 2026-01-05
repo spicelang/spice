@@ -25,7 +25,7 @@ source_filename = "source.spice"
 @anon.string.19 = private unnamed_addr constant [83 x i8] c"Assertion failed: Condition 't.f20 == QualifierType::COMPOSE' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
-; Function Attrs: norecurse
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %0) #0 {
   %this = alloca ptr, align 8
   %2 = alloca i32, align 4
@@ -332,7 +332,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
-attributes #0 = { norecurse }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { cold noreturn nounwind }
