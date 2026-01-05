@@ -564,7 +564,8 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+    const size_t fieldIdx = fieldCount - 1 - i; // Destruct fields in reverse order
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
 
     // Call dtor for struct fields
@@ -581,7 +582,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, i);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
       // Call dealloc function
       generateDeallocCall(fieldAddress);
     }

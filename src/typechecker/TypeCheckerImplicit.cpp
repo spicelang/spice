@@ -343,7 +343,8 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+    const size_t fieldIdx = fieldCount - 1 - i; // Destruct fields in reverse order
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
