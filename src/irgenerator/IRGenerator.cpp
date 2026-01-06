@@ -528,11 +528,24 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     return LLVMExprResult{.value = rhsAddress, .ptr = lhsAddress, .entry = lhsEntry};
   }
 
-  // We can load the value from the right side and store it to the left side
-  // Retrieve value of the right side
-  llvm::Value *rhsValue = resolveValue(rhsSType, rhs);
-  // Store the value to the address
-  insertStore(rhsValue, lhsAddress, rhsSType);
+  // Optimization: If we have the address of both sides, we can do a memcpy instead of loading and storing the value
+  llvm::Value *rhsValue = nullptr;
+  if (rhsSType.is(TY_STRUCT) && rhs.value == nullptr && rhs.constant == nullptr) {
+    // Create shallow copy
+    const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
+    llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    assert(rhsAddress != nullptr);
+    const std::string copyName = lhsEntry ? lhsEntry->name : "";
+    generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry && lhsEntry->isVolatile);
+  } else {
+    // We can load the value from the right side and store it to the left side
+    // Retrieve value of the right side
+    rhsValue = resolveValue(rhsSType, rhs);
+    // Store the value to the address
+    insertStore(rhsValue, lhsAddress, rhsSType);
+  }
+
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 

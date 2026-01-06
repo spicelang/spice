@@ -78,86 +78,86 @@ main:                                   # @main
 	leaq	40(%rsp), %rax
 	addq	$168, %rax
 	movq	%rax, 32(%rsp)                  # 8-byte Spill
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
+	callq	_ZN6Thread4ctorEPFvE@PLT
 	leaq	40(%rsp), %rdi
 	addq	$24, %rdi
 	xorl	%esi, %esi
 	movl	$168, %edx
 	callq	memset@PLT
-	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
-	movq	%rsp, %rdi
-	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 40(%rsp)
-	movq	%rcx, 48(%rsp)
-	movq	%rdx, 56(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 48(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 56(%rsp)
 	leaq	40(%rsp), %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 64(%rsp)
-	movq	%rcx, 72(%rsp)
-	movq	%rdx, 80(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 72(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 80(%rsp)
 	movq	%rbx, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 88(%rsp)
-	movq	%rcx, 96(%rsp)
-	movq	%rdx, 104(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 96(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 104(%rsp)
 	movq	%rbp, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 112(%rsp)
-	movq	%rcx, 120(%rsp)
-	movq	%rdx, 128(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 120(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 128(%rsp)
 	movq	%r13, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 136(%rsp)
-	movq	%rcx, 144(%rsp)
-	movq	%rdx, 152(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 144(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 152(%rsp)
 	movq	%r12, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 160(%rsp)
-	movq	%rcx, 168(%rsp)
-	movq	%rdx, 176(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 168(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 176(%rsp)
 	movq	%r15, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 184(%rsp)
-	movq	%rcx, 192(%rsp)
-	movq	%rdx, 200(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 192(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 200(%rsp)
 	movq	%r14, %rdi
 	movq	%r14, %r15
 	callq	_ZN6Thread3runEv@PLT
@@ -165,11 +165,11 @@ main:                                   # @main
 	movq	%rsp, %rdi
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movq	(%rsp), %rax
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
 	movq	%rax, 208(%rsp)
-	movq	%rcx, 216(%rsp)
-	movq	%rdx, 224(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 216(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 224(%rsp)
 	movq	32(%rsp), %r14                  # 8-byte Reload
 	movq	%r14, %rdi
 	callq	_ZN6Thread3runEv@PLT
