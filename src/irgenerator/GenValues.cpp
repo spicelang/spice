@@ -3,7 +3,6 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
-#include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 

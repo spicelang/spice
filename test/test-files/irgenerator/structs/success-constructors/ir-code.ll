@@ -71,25 +71,28 @@ define dso_local noundef i32 @main() #0 {
   %4 = load ptr, ptr %field2.addr, align 8
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3, ptr noundef %4)
   call void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef @anon.string.2)
-  %6 = load %struct.Vector, ptr %1, align 8
-  store %struct.Vector %6, ptr %vec, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %1, i64 16, i1 false)
   %field1.addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
-  %7 = load i1, ptr %field1.addr1, align 1
-  %8 = zext i1 %7 to i32
+  %6 = load i1, ptr %field1.addr1, align 1
+  %7 = zext i1 %6 to i32
   %field2.addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
-  %9 = load ptr, ptr %field2.addr2, align 8
-  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8, ptr noundef %9)
-  %11 = call noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %11)
-  %13 = load i32, ptr %result, align 4
-  ret i32 %13
+  %8 = load ptr, ptr %field2.addr2, align 8
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %7, ptr noundef %8)
+  %10 = call noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
+  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %10)
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
+
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
+attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

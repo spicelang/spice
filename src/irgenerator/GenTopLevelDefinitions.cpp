@@ -166,9 +166,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Get 'this' entry
     std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
-    SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
-      thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
