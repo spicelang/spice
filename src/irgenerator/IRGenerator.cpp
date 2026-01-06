@@ -466,40 +466,6 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     lhsAddress = insertLoad(builder.getPtrTy(), lhsAddress);
   }
 
-  // Check if we need to copy the rhs to the lhs. This happens for structs
-  if (needsCopy) {
-    // Get address of right side
-    llvm::Value *rhsAddress = resolveAddress(rhs);
-    assert(rhsAddress != nullptr);
-
-    // Allocate new memory if the lhs address does not exist
-    if (!lhsAddress) {
-      assert(lhsEntry != nullptr);
-      lhsAddress = insertAlloca(lhsEntry->getQualType());
-      lhsEntry->updateAddress(lhsAddress);
-    }
-
-    // Check if we have a copy ctor
-    const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
-    Scope *structScope = rhsSTypeNonRef.getBodyScope();
-    const ArgList args = {{rhsSTypeNonRef.toConstRef(node), rhs.isTemporary()}};
-    const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, rhsSTypeNonRef, args, true);
-    if (copyCtor != nullptr) {
-      // Call copy ctor
-      generateCtorOrDtorCall(lhsAddress, copyCtor, {rhsAddress});
-    } else if (rhsSTypeNonRef.isTriviallyCopyable(node)) {
-      // Create shallow copy
-      llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
-      const std::string copyName = lhsEntry ? lhsEntry->name : "";
-      generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry && lhsEntry->isVolatile);
-    } else {
-      const std::string structName = rhsSTypeNonRef.getName();
-      const std::string msg = "Cannot copy struct '" + structName + "', as it is not trivially copyable and has no copy ctor";
-      throw SemanticError(node, COPY_CTOR_REQUIRED, msg);
-    }
-    return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
-  }
-
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
     assert(lhsEntry != nullptr);
     // Directly set the address to the lhs entry (temp stealing)
@@ -526,6 +492,35 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     llvm::Value *firstItemAddress = insertInBoundsGEP(elementTy, rhsAddress, indices);
     insertStore(firstItemAddress, lhsAddress);
     return LLVMExprResult{.value = rhsAddress, .ptr = lhsAddress, .entry = lhsEntry};
+  }
+
+  // Check if we need to copy the rhs to the lhs. This happens for structs
+  if (needsCopy) {
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    assert(rhsAddress != nullptr);
+
+    const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
+    if (rhsSTypeNonRef.isTriviallyCopyable(node)) {
+      // Create shallow copy
+      llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
+      const std::string copyName = lhsEntry ? lhsEntry->name : "";
+      generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry && lhsEntry->isVolatile);
+    } else {
+      // Check if we have a copy ctor
+      Scope *structScope = rhsSTypeNonRef.getBodyScope();
+      const ArgList args = {{rhsSTypeNonRef.toConstRef(node), rhs.isTemporary()}};
+      const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, rhsSTypeNonRef, args, true);
+      if (copyCtor != nullptr) {
+        // Call copy ctor
+        generateCtorOrDtorCall(lhsAddress, copyCtor, {rhsAddress});
+      } else {
+        const std::string structName = rhsSTypeNonRef.getName();
+        const std::string msg = "Cannot copy struct '" + structName + "', as it is not trivially copyable and has no copy ctor";
+        throw SemanticError(node, COPY_CTOR_REQUIRED, msg);
+      }
+    }
+    return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
   }
 
   // Optimization: If we have the address of both sides, we can do a memcpy instead of loading and storing the value
