@@ -131,7 +131,7 @@ llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *baseP
   }));
 
   if (!cliOptions.namesForIRValues)
-    varName = "";
+    varName.clear();
 
   // Insert GEP
   return builder.CreateInBoundsGEP(type, basePtr, indices, varName);
@@ -141,7 +141,7 @@ llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr
   assert(basePtr->getType()->isPointerTy());
 
   if (!cliOptions.namesForIRValues)
-    varName = "";
+    varName.clear();
 
   // If we use index 0 we can use the base pointer directly
   if (index == 0)

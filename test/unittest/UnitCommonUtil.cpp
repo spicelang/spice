@@ -1,4 +1,5 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+// LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 
@@ -7,6 +8,11 @@
 namespace spice::testing {
 
 using namespace spice::compiler;
+
+template <typename T>
+struct DummyStruct {
+  T t;
+};
 
 TEST(CommonUtilTest, ReplaceAll) {
   std::string test = "This is a test";
@@ -71,4 +77,14 @@ TEST(CommonUtilTest, FormatBytes) {
   ASSERT_EQ("1.00 TB", CommonUtil::formatBytes(1024ull * 1024ull * 1024ull * 1024ull));
 }
 
+TEST(CommonUtilTest, DemangleTypeName) {
+  // Successful cases
+  ASSERT_EQ("int", CommonUtil::demangleTypeName(typeid(int).name()));
+  ASSERT_EQ("spice::testing::DummyStruct<double>", CommonUtil::demangleTypeName(typeid(DummyStruct<double>).name()));
+  // Mangled name is returned, if de-mangling was not successful
+  ASSERT_EQ("5TestIdE", CommonUtil::demangleTypeName("5TestIdE"));
+}
+
 } // namespace spice::testing
+
+// LCOV_EXCL_STOP

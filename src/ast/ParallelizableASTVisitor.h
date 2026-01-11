@@ -94,6 +94,7 @@ class BaseDataTypeNode;
 class CustomDataTypeNode;
 class FunctionDataTypeNode;
 
+// LCOV_EXCL_START
 class ParallelizableASTVisitor {
 public:
   // Destructor
@@ -190,5 +191,6 @@ public:
   virtual std::any visitCustomDataType(const CustomDataTypeNode *node);
   virtual std::any visitFunctionDataType(const FunctionDataTypeNode *node);
 };
+// LCOV_EXCL_STOP
 
 } // namespace spice::compiler

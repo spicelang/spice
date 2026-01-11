@@ -2062,7 +2062,6 @@ public:
     TYPE_INT,
     TYPE_SHORT,
     TYPE_LONG,
-    TYPE_BYTE,
     TYPE_CHAR,
     TYPE_STRING,
     TYPE_BOOL

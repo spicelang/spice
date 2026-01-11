@@ -6,6 +6,7 @@
 
 namespace spice::compiler {
 
+// LCOV_EXCL_START
 class ASTVisitor : public AbstractASTVisitor {
 public:
   virtual ~ASTVisitor() = default;
@@ -97,5 +98,6 @@ public:
   std::any visitCustomDataType(CustomDataTypeNode *node) override;
   std::any visitFunctionDataType(FunctionDataTypeNode *node) override;
 };
+// LCOV_EXCL_STOP
 
 } // namespace spice::compiler

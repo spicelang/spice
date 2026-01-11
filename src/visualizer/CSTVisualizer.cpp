@@ -52,7 +52,7 @@ std::string CSTVisualizer::getSpaces() const {
   for (int i = 0; i < currentTabs; i++)
     spaces += " ";
   return spaces;
-}
+} // LCOV_EXCL_LINE - false positive
 
 std::string CSTVisualizer::tokenToCodeLoc(const antlr4::Token &token) {
   return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());

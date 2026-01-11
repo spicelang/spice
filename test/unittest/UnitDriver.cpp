@@ -1,4 +1,5 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+// LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 
@@ -245,3 +246,5 @@ const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
 INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 
 } // namespace spice::testing
+
+// LCOV_EXCL_STOP
