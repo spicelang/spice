@@ -41,7 +41,7 @@ attributes #2 = { nofree nounwind }
 attributes #3 = { cold nofree noreturn nounwind }
 attributes #4 = { nounwind }
 
-!llvm.ident = !{!0, !0}
+!llvm.ident = !{!0}
 !llvm.module.flags = !{!1, !2, !3, !4}
 
 !0 = !{!"spice version dev (https://github.com/spicelang/spice)"}

@@ -70,10 +70,8 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   if (cliOptions.useLifetimeMarkers) {
     for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
       llvm::Value *address = var->getAddress();
-      if (address == nullptr)
-        continue;
-      const uint64_t sizeInBytes = module->getDataLayout().getTypeAllocSize(var->getQualType().toLLVMType(sourceFile));
-      builder.CreateLifetimeEnd(address, builder.getInt64(sizeInBytes));
+      if (address != nullptr)
+        builder.CreateLifetimeEnd(address);
     }
   }
 }

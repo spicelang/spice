@@ -77,10 +77,8 @@ llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string va
   }
 
   // Insert lifetime start marker
-  if (cliOptions.useLifetimeMarkers) {
-    const uint64_t sizeInBytes = module->getDataLayout().getTypeAllocSize(llvmType);
-    builder.CreateLifetimeStart(allocaInsertInst, builder.getInt64(sizeInBytes));
-  }
+  if (cliOptions.useLifetimeMarkers)
+    builder.CreateLifetimeStart(allocaInsertInst);
 
   return allocaInsertInst;
 }

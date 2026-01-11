@@ -25,127 +25,121 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
 
 5:                                                ; preds = %0, %3
   %6 = phi i64 [ 0, %0 ], [ %4, %3 ]
-  %7 = icmp eq i64 %6, 0
-  br i1 %7, label %8, label %10
+  %7 = inttoptr i64 %6 to ptr
+  %8 = icmp eq i64 %6, 0
+  br i1 %8, label %9, label %10
 
-8:                                                ; preds = %5
+9:                                                ; preds = %5
   %MyAlloca = alloca i8, i64 64, align 32
-  %9 = ptrtoint ptr %MyAlloca to i64
   br label %10
 
-10:                                               ; preds = %5, %8
-  %11 = phi i64 [ %6, %5 ], [ %9, %8 ]
-  store i64 %11, ptr %asan_local_stack_base, align 8
-  %12 = add i64 %11, 32
-  %13 = inttoptr i64 %12 to ptr
-  %14 = inttoptr i64 %11 to ptr
-  store i64 1102416563, ptr %14, align 8
-  %15 = add i64 %11, 8
-  %16 = inttoptr i64 %15 to ptr
-  store i64 ptrtoint (ptr @___asan_gen_stack to i64), ptr %16, align 8
-  %17 = add i64 %11, 16
-  %18 = inttoptr i64 %17 to ptr
-  store i64 ptrtoint (ptr @main to i64), ptr %18, align 8
-  %19 = lshr i64 %11, 3
-  %20 = add i64 %19, 2147450880
-  %21 = add i64 %20, 0
-  %22 = inttoptr i64 %21 to ptr
-  store i64 -868082052615769615, ptr %22, align 1
-  call void @llvm.lifetime.start.p0(i64 4, ptr %result), !dbg !16
+10:                                               ; preds = %5, %9
+  %11 = phi ptr [ %7, %5 ], [ %MyAlloca, %9 ]
+  store ptr %11, ptr %asan_local_stack_base, align 8
+  %12 = getelementptr i8, ptr %11, i64 32
+  store i64 1102416563, ptr %11, align 8
+  %13 = getelementptr i8, ptr %11, i64 8
+  store i64 ptrtoint (ptr @___asan_gen_stack to i64), ptr %13, align 8
+  %14 = getelementptr i8, ptr %11, i64 16
+  store i64 ptrtoint (ptr @main to i64), ptr %14, align 8
+  %15 = ptrtoint ptr %11 to i64
+  %16 = lshr i64 %15, 3
+  %17 = add i64 %16, 2147450880
+  %18 = add i64 %17, 0
+  %19 = inttoptr i64 %18 to ptr
+  store i64 -868082052615769615, ptr %19, align 1
+  call void @llvm.lifetime.start.p0(ptr %result), !dbg !16
     #dbg_declare(ptr %result, !17, !DIExpression(), !16)
   store i32 0, ptr %result, align 4, !dbg !16
-  %23 = call noundef ptr @_Z4sNewIiEPiv(), !dbg !18
-  %24 = add i64 %20, 4, !dbg !18
-  %25 = inttoptr i64 %24 to ptr, !dbg !18
-  store i8 0, ptr %25, align 1, !dbg !18
-  call void @llvm.lifetime.start.p0(i64 8, ptr %13), !dbg !18
-  store ptr %23, ptr %13, align 8, !dbg !18
+  %20 = call noundef ptr @_Z4sNewIiEPiv(), !dbg !18
+  %21 = add i64 %17, 4, !dbg !18
+  %22 = inttoptr i64 %21 to ptr, !dbg !18
+  store i8 0, ptr %22, align 1, !dbg !18
+  store ptr %20, ptr %12, align 8, !dbg !18
     #dbg_declare(ptr %asan_local_stack_base, !19, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !21)
-  %26 = load ptr, ptr %13, align 8, !dbg !22
-  %27 = ptrtoint ptr %26 to i64, !dbg !23
-  %28 = lshr i64 %27, 3, !dbg !23
-  %29 = add i64 %28, 2147450880, !dbg !23
-  %30 = inttoptr i64 %29 to ptr, !dbg !23
-  %31 = load i8, ptr %30, align 1, !dbg !23
-  %32 = icmp ne i8 %31, 0, !dbg !23
-  br i1 %32, label %33, label %39, !dbg !23, !prof !24
+  %23 = load ptr, ptr %12, align 8, !dbg !22
+  %24 = ptrtoint ptr %23 to i64, !dbg !23
+  %25 = lshr i64 %24, 3, !dbg !23
+  %26 = add i64 %25, 2147450880, !dbg !23
+  %27 = inttoptr i64 %26 to ptr, !dbg !23
+  %28 = load i8, ptr %27, align 1, !dbg !23
+  %29 = icmp ne i8 %28, 0, !dbg !23
+  br i1 %29, label %30, label %36, !dbg !23, !prof !24
 
-33:                                               ; preds = %10
-  %34 = and i64 %27, 7, !dbg !23
-  %35 = add i64 %34, 3, !dbg !23
-  %36 = trunc i64 %35 to i8, !dbg !23
-  %37 = icmp sge i8 %36, %31, !dbg !23
-  br i1 %37, label %38, label %39, !dbg !23
+30:                                               ; preds = %10
+  %31 = and i64 %24, 7, !dbg !23
+  %32 = add i64 %31, 3, !dbg !23
+  %33 = trunc i64 %32 to i8, !dbg !23
+  %34 = icmp sge i8 %33, %28, !dbg !23
+  br i1 %34, label %35, label %36, !dbg !23
 
-38:                                               ; preds = %33
-  call void @__asan_report_store4(i64 %27) #4, !dbg !23
+35:                                               ; preds = %30
+  call void @__asan_report_store4(i64 %24) #4, !dbg !23
   unreachable
 
-39:                                               ; preds = %33, %10
-  store i32 123, ptr %26, align 4, !dbg !23
-  call void @_Z8sDeallocRPh(ptr noundef %13), !dbg !25
-  %40 = load ptr, ptr %13, align 8, !dbg !27
-  %41 = ptrtoint ptr %40 to i64, !dbg !28
-  %42 = lshr i64 %41, 3, !dbg !28
-  %43 = add i64 %42, 2147450880, !dbg !28
-  %44 = inttoptr i64 %43 to ptr, !dbg !28
-  %45 = load i8, ptr %44, align 1, !dbg !28
-  %46 = icmp ne i8 %45, 0, !dbg !28
-  br i1 %46, label %47, label %53, !dbg !28, !prof !24
+36:                                               ; preds = %30, %10
+  store i32 123, ptr %23, align 4, !dbg !23
+  call void @_Z8sDeallocRPh(ptr noundef %12), !dbg !25
+  %37 = load ptr, ptr %12, align 8, !dbg !27
+  %38 = ptrtoint ptr %37 to i64, !dbg !28
+  %39 = lshr i64 %38, 3, !dbg !28
+  %40 = add i64 %39, 2147450880, !dbg !28
+  %41 = inttoptr i64 %40 to ptr, !dbg !28
+  %42 = load i8, ptr %41, align 1, !dbg !28
+  %43 = icmp ne i8 %42, 0, !dbg !28
+  br i1 %43, label %44, label %50, !dbg !28, !prof !24
 
-47:                                               ; preds = %39
-  %48 = and i64 %41, 7, !dbg !28
-  %49 = add i64 %48, 3, !dbg !28
-  %50 = trunc i64 %49 to i8, !dbg !28
-  %51 = icmp sge i8 %50, %45, !dbg !28
-  br i1 %51, label %52, label %53, !dbg !28
+44:                                               ; preds = %36
+  %45 = and i64 %38, 7, !dbg !28
+  %46 = add i64 %45, 3, !dbg !28
+  %47 = trunc i64 %46 to i8, !dbg !28
+  %48 = icmp sge i8 %47, %42, !dbg !28
+  br i1 %48, label %49, label %50, !dbg !28
 
-52:                                               ; preds = %47
-  call void @__asan_report_store4(i64 %41) #4, !dbg !28
+49:                                               ; preds = %44
+  call void @__asan_report_store4(i64 %38) #4, !dbg !28
   unreachable
 
-53:                                               ; preds = %47, %39
-  store i32 321, ptr %40, align 4, !dbg !28
-  call void @_Z8sDeallocRPh(ptr %13), !dbg !29
-  %54 = add i64 %20, 4, !dbg !29
-  %55 = inttoptr i64 %54 to ptr, !dbg !29
-  store i8 -8, ptr %55, align 1, !dbg !29
-  call void @llvm.lifetime.end.p0(i64 8, ptr %13), !dbg !29
-  %56 = load i32, ptr %result, align 4, !dbg !29
-  store i64 1172321806, ptr %14, align 8, !dbg !29
-  %57 = icmp ne i64 %6, 0, !dbg !29
-  br i1 %57, label %58, label %65, !dbg !29
+50:                                               ; preds = %44, %36
+  store i32 321, ptr %37, align 4, !dbg !28
+  call void @_Z8sDeallocRPh(ptr %12), !dbg !29
+  %51 = add i64 %17, 4, !dbg !29
+  %52 = inttoptr i64 %51 to ptr, !dbg !29
+  store i8 -8, ptr %52, align 1, !dbg !29
+  %53 = load i32, ptr %result, align 4, !dbg !29
+  store i64 1172321806, ptr %11, align 8, !dbg !29
+  %54 = icmp ne i64 %6, 0, !dbg !29
+  br i1 %54, label %55, label %61, !dbg !29
 
-58:                                               ; preds = %53
-  %59 = add i64 %20, 0, !dbg !29
+55:                                               ; preds = %50
+  %56 = add i64 %17, 0, !dbg !29
+  %57 = inttoptr i64 %56 to ptr, !dbg !29
+  store i64 -723401728380766731, ptr %57, align 1, !dbg !29
+  %58 = getelementptr i8, ptr %7, i64 56, !dbg !29
+  %59 = load i64, ptr %58, align 8, !dbg !29
   %60 = inttoptr i64 %59 to ptr, !dbg !29
-  store i64 -723401728380766731, ptr %60, align 1, !dbg !29
-  %61 = add i64 %6, 56, !dbg !29
-  %62 = inttoptr i64 %61 to ptr, !dbg !29
-  %63 = load i64, ptr %62, align 8, !dbg !29
-  %64 = inttoptr i64 %63 to ptr, !dbg !29
-  store i8 0, ptr %64, align 1, !dbg !29
-  br label %68, !dbg !29
+  store i8 0, ptr %60, align 1, !dbg !29
+  br label %64, !dbg !29
 
-65:                                               ; preds = %53
-  %66 = add i64 %20, 0, !dbg !29
-  %67 = inttoptr i64 %66 to ptr, !dbg !29
-  store i64 0, ptr %67, align 1, !dbg !29
-  br label %68, !dbg !29
+61:                                               ; preds = %50
+  %62 = add i64 %17, 0, !dbg !29
+  %63 = inttoptr i64 %62 to ptr, !dbg !29
+  store i64 0, ptr %63, align 1, !dbg !29
+  br label %64, !dbg !29
 
-68:                                               ; preds = %65, %58
-  ret i32 %56, !dbg !29
+64:                                               ; preds = %61, %55
+  ret i32 %53, !dbg !29
 }
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
-declare void @llvm.lifetime.start.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.start.p0(ptr captures(none)) #1
 
 declare ptr @_Z4sNewIiEPiv()
 
 declare void @_Z8sDeallocRPh(ptr)
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
-declare void @llvm.lifetime.end.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.end.p0(ptr captures(none)) #1
 
 declare void @__asan_report_load_n(i64, i64)
 
@@ -255,10 +249,10 @@ declare void @__sanitizer_ptr_cmp(i64, i64)
 
 declare void @__sanitizer_ptr_sub(i64, i64)
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare i1 @llvm.amdgcn.is.shared(ptr) #2
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare i1 @llvm.amdgcn.is.private(ptr) #2
 
 declare i64 @__asan_stack_malloc_0(i64)
@@ -369,7 +363,7 @@ declare void @__asan_version_mismatch_check_v8()
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
 attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn }
-attributes #2 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #3 = { nounwind uwtable "frame-pointer"="all" }
 attributes #4 = { nomerge }
 
