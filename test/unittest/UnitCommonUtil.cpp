@@ -80,7 +80,7 @@ TEST(CommonUtilTest, FormatBytes) {
 TEST(CommonUtilTest, DemangleTypeName) {
   // Successful cases
   ASSERT_EQ("int", CommonUtil::demangleTypeName(typeid(int).name()));
-  ASSERT_EQ("DummyStruct<double>", CommonUtil::demangleTypeName(typeid(DummyStruct<double>).name()));
+  ASSERT_EQ("spice::testing::DummyStruct<double>", CommonUtil::demangleTypeName(typeid(DummyStruct<double>).name()));
   // Mangled name is returned, if de-mangling was not successful
   ASSERT_EQ("5TestIdE", CommonUtil::demangleTypeName("5TestIdE"));
 }
