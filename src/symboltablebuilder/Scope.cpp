@@ -57,7 +57,7 @@ Scope *Scope::copyChildScope(const std::string &oldName, const std::string &newN
  * @return Deep copy of the current scope
  */
 std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
-  const std::shared_ptr<Scope> newScope = std::make_shared<Scope>(*this);
+  const auto newScope = std::make_shared<Scope>(*this);
   for (const auto &[childName, oldChild] : children) {
     newScope->children[childName] = oldChild->deepCopyScope();
     newScope->children[childName]->parent = newScope.get();
@@ -66,7 +66,7 @@ std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
   }
   newScope->symbolTable.scope = newScope.get();
   return newScope;
-}
+} // LCOV_EXCL_LINE - false positive
 
 /**
  * Get a child scope of the current scope by its name
@@ -111,7 +111,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
   }
 
   return varsGoingOutOfScope;
-}
+} // LCOV_EXCL_LINE - false positive
 
 /**
  * Insert a new generic type in this scope
@@ -285,7 +285,7 @@ std::vector<Function *> Scope::getVirtualMethods() {
   std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
 
   return methods;
-}
+} // LCOV_EXCL_LINE - false positive
 
 /**
  * Retrieve all struct manifestations in this scope in the order of their declaration
@@ -304,20 +304,7 @@ std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder(
   auto sortLambda = [](const Struct *lhs, const Struct *rhs) { return lhs->getDeclCodeLoc() < rhs->getDeclCodeLoc(); };
   std::ranges::sort(manifestations, sortLambda);
   return manifestations;
-}
-
-/**
- * Check if this struct has any reference fields
- *
- * @return Has reference fields or not
- */
-bool Scope::hasRefFields() {
-  assert(type == ScopeType::STRUCT);
-  for (size_t i = 0; i < getFieldCount(); i++)
-    if (lookupField(i)->getQualType().isRef())
-      return true;
-  return false;
-}
+} // LCOV_EXCL_LINE - false positive
 
 /**
  * Get the current number of nested loops

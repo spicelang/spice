@@ -179,7 +179,7 @@ std::vector<std::string> TestUtil::getSubdirs(const std::filesystem::path &baseP
     closedir(dir);
   }
   return subdirs;
-}
+} // LCOV_EXCL_LINE - false positive
 
 /**
  * Retrieve the contents of a file as a vector of line strings. Empty lines are omitted

@@ -65,9 +65,6 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   case ConstantNode::PrimitiveValueType::TYPE_LONG:
     superType = TY_LONG;
     break;
-  case ConstantNode::PrimitiveValueType::TYPE_BYTE:
-    superType = TY_BYTE;
-    break;
   case ConstantNode::PrimitiveValueType::TYPE_CHAR:
     superType = TY_CHAR;
     break;

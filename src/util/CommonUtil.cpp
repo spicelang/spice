@@ -143,16 +143,6 @@ bool CommonUtil::isValidMangledName(const std::string &mangledName) {
 }
 
 /**
- * Retrieve OS name without any version information from a LLVM target triple
- *
- * @param targetTriple LLVM target triple
- * @return OS name
- */
-std::string CommonUtil::getOSNameFromTargetTriple(const llvm::Triple *targetTriple) {
-  return targetTriple->getOSTypeName(targetTriple->getOS()).str();
-}
-
-/**
  * Generate a circular import message from the given source files
  *
  * @param sourceFiles Source files that form the circular dependency chain
