@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  LLVM_VERSION: "21.1.8"
+  LLVM_VERSION: "release/22.x"
   GCC_VERSION: "14"
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
           languages: cpp
 
       - name: Clone LLVM
-        run: git clone --depth 1 --branch llvmorg-${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
