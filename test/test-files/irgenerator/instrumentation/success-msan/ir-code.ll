@@ -17,7 +17,7 @@ define dso_local noundef i32 @main() #0 {
   call void @llvm.donothing()
   %result = alloca i32, align 4
   %i = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(i64 4, ptr %result)
+  call void @llvm.lifetime.start.p0(ptr %result)
   %1 = ptrtoint ptr %result to i64
   %2 = xor i64 %1, 87960930222080
   %3 = inttoptr i64 %2 to ptr
@@ -27,7 +27,7 @@ define dso_local noundef i32 @main() #0 {
   %6 = inttoptr i64 %5 to ptr
   store i32 0, ptr %6, align 4
   store i32 0, ptr %result, align 4
-  call void @llvm.lifetime.start.p0(i64 4, ptr %i)
+  call void @llvm.lifetime.start.p0(ptr %i)
   %7 = ptrtoint ptr %i to i64
   %8 = xor i64 %7, 87960930222080
   %9 = inttoptr i64 %8 to ptr
@@ -49,7 +49,7 @@ define dso_local noundef i32 @main() #0 {
   %20 = xor i64 %19, 87960930222080
   %21 = inttoptr i64 %20 to ptr
   %_msld1 = load i32, ptr %21, align 4
-  store i32 %_msld1, ptr inttoptr (i64 add (i64 ptrtoint (ptr @__msan_va_arg_tls to i64), i64 8) to ptr), align 8
+  store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8
   store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8
   %_mscmp = icmp ne i32 %_msld1, 0
   br i1 %_mscmp, label %22, label %23, !prof !6
@@ -60,7 +60,7 @@ define dso_local noundef i32 @main() #0 {
 
 23:                                               ; preds = %0
   %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %18)
-  call void @llvm.lifetime.end.p0(i64 4, ptr %i)
+  call void @llvm.lifetime.end.p0(ptr %i)
   %25 = load i32, ptr %result, align 4
   %26 = ptrtoint ptr %result to i64
   %27 = xor i64 %26, 87960930222080
@@ -78,13 +78,13 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.lifetime.start.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.start.p0(ptr captures(none)) #1
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.lifetime.end.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.end.p0(ptr captures(none)) #1
 
 declare void @__msan_init()
 

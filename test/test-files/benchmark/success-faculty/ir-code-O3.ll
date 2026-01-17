@@ -6,46 +6,67 @@ source_filename = "source.spice"
 ; Function Attrs: nofree norecurse nosync nounwind memory(none)
 define private fastcc noundef i32 @_Z7facultyi(i32 noundef range(i32 1, 11) %0) unnamed_addr #0 {
   %2 = icmp samesign ult i32 %0, 2
-  br i1 %2, label %common.ret, label %vector.ph
+  br i1 %2, label %common.ret, label %if.exit.L2.preheader
 
-vector.ph:                                        ; preds = %1
-  %n.rnd.up = add nuw nsw i32 %0, 2
-  %n.vec = and i32 %n.rnd.up, 28
-  %trip.count.minus.1 = add nsw i32 %0, -2
-  %broadcast.splatinsert = insertelement <4 x i32> poison, i32 %trip.count.minus.1, i64 0
-  %broadcast.splat = shufflevector <4 x i32> %broadcast.splatinsert, <4 x i32> poison, <4 x i32> zeroinitializer
-  %broadcast.splatinsert5 = insertelement <4 x i32> poison, i32 %0, i64 0
-  %broadcast.splat6 = shufflevector <4 x i32> %broadcast.splatinsert5, <4 x i32> poison, <4 x i32> zeroinitializer
-  %induction = add nsw <4 x i32> %broadcast.splat6, <i32 0, i32 -1, i32 -2, i32 -3>
-  %3 = icmp eq i32 %n.vec, 4
-  br i1 %3, label %middle.block, label %vector.body.1, !llvm.loop !5
+if.exit.L2.preheader:                             ; preds = %1
+  %3 = add nsw i32 %0, -1
+  %4 = add nsw i32 %0, -2
+  %xtraiter = and i32 %3, 7
+  %5 = icmp ult i32 %4, 7
+  br i1 %5, label %if.exit.L2.epil.preheader, label %if.exit.L2.preheader.new
 
-vector.body.1:                                    ; preds = %vector.ph
-  %vec.ind.next = add nsw <4 x i32> %broadcast.splat6, <i32 -4, i32 -5, i32 -6, i32 -7>
-  %4 = mul nsw <4 x i32> %vec.ind.next, %induction
-  %5 = icmp eq i32 %n.vec, 8
-  br i1 %5, label %middle.block, label %vector.body.2, !llvm.loop !5
+if.exit.L2.preheader.new:                         ; preds = %if.exit.L2.preheader
+  %unroll_iter = and i32 %3, -8
+  br label %if.exit.L2
 
-vector.body.2:                                    ; preds = %vector.body.1
-  %vec.ind.next.1 = add nsw <4 x i32> %broadcast.splat6, <i32 -8, i32 -9, i32 -10, i32 -11>
-  %6 = mul nsw <4 x i32> %vec.ind.next.1, %4
-  br label %middle.block
+common.ret.loopexit.unr-lcssa:                    ; preds = %if.exit.L2
+  %lcmp.mod.not = icmp eq i32 %xtraiter, 0
+  br i1 %lcmp.mod.not, label %common.ret, label %if.exit.L2.epil.preheader
 
-middle.block:                                     ; preds = %vector.body.2, %vector.body.1, %vector.ph
-  %index.lcssa = phi i32 [ 0, %vector.ph ], [ 4, %vector.body.1 ], [ 8, %vector.body.2 ]
-  %vec.phi.lcssa = phi <4 x i32> [ splat (i32 1), %vector.ph ], [ %induction, %vector.body.1 ], [ %4, %vector.body.2 ]
-  %.lcssa = phi <4 x i32> [ %induction, %vector.ph ], [ %4, %vector.body.1 ], [ %6, %vector.body.2 ]
-  %broadcast.splatinsert7 = insertelement <4 x i32> poison, i32 %index.lcssa, i64 0
-  %broadcast.splat8 = shufflevector <4 x i32> %broadcast.splatinsert7, <4 x i32> poison, <4 x i32> zeroinitializer
-  %vec.iv = or disjoint <4 x i32> %broadcast.splat8, <i32 0, i32 1, i32 2, i32 3>
-  %.not = icmp ugt <4 x i32> %vec.iv, %broadcast.splat
-  %7 = select <4 x i1> %.not, <4 x i32> %vec.phi.lcssa, <4 x i32> %.lcssa
-  %8 = tail call i32 @llvm.vector.reduce.mul.v4i32(<4 x i32> %7)
-  br label %common.ret
+if.exit.L2.epil.preheader:                        ; preds = %common.ret.loopexit.unr-lcssa, %if.exit.L2.preheader
+  %.tr4.epil.init = phi i32 [ %0, %if.exit.L2.preheader ], [ %22, %common.ret.loopexit.unr-lcssa ]
+  %accumulator.tr3.epil.init = phi i32 [ 1, %if.exit.L2.preheader ], [ %23, %common.ret.loopexit.unr-lcssa ]
+  %lcmp.mod6 = icmp ne i32 %xtraiter, 0
+  tail call void @llvm.assume(i1 %lcmp.mod6)
+  br label %if.exit.L2.epil
 
-common.ret:                                       ; preds = %middle.block, %1
-  %accumulator.tr.lcssa = phi i32 [ 1, %1 ], [ %8, %middle.block ]
+if.exit.L2.epil:                                  ; preds = %if.exit.L2.epil, %if.exit.L2.epil.preheader
+  %.tr4.epil = phi i32 [ %6, %if.exit.L2.epil ], [ %.tr4.epil.init, %if.exit.L2.epil.preheader ]
+  %accumulator.tr3.epil = phi i32 [ %7, %if.exit.L2.epil ], [ %accumulator.tr3.epil.init, %if.exit.L2.epil.preheader ]
+  %epil.iter = phi i32 [ %epil.iter.next, %if.exit.L2.epil ], [ 0, %if.exit.L2.epil.preheader ]
+  %6 = add nsw i32 %.tr4.epil, -1
+  %7 = mul nsw i32 %.tr4.epil, %accumulator.tr3.epil
+  %epil.iter.next = add i32 %epil.iter, 1
+  %epil.iter.cmp.not = icmp eq i32 %epil.iter.next, %xtraiter
+  br i1 %epil.iter.cmp.not, label %common.ret, label %if.exit.L2.epil, !llvm.loop !5
+
+common.ret:                                       ; preds = %common.ret.loopexit.unr-lcssa, %if.exit.L2.epil, %1
+  %accumulator.tr.lcssa = phi i32 [ 1, %1 ], [ %23, %common.ret.loopexit.unr-lcssa ], [ %7, %if.exit.L2.epil ]
   ret i32 %accumulator.tr.lcssa
+
+if.exit.L2:                                       ; preds = %if.exit.L2, %if.exit.L2.preheader.new
+  %.tr4 = phi i32 [ %0, %if.exit.L2.preheader.new ], [ %22, %if.exit.L2 ]
+  %accumulator.tr3 = phi i32 [ 1, %if.exit.L2.preheader.new ], [ %23, %if.exit.L2 ]
+  %niter = phi i32 [ 0, %if.exit.L2.preheader.new ], [ %niter.next.7, %if.exit.L2 ]
+  %8 = add nsw i32 %.tr4, -1
+  %9 = mul nsw i32 %.tr4, %accumulator.tr3
+  %10 = add nsw i32 %.tr4, -2
+  %11 = mul nsw i32 %8, %9
+  %12 = add nsw i32 %.tr4, -3
+  %13 = mul nsw i32 %10, %11
+  %14 = add nsw i32 %.tr4, -4
+  %15 = mul nsw i32 %12, %13
+  %16 = add nsw i32 %.tr4, -5
+  %17 = mul nsw i32 %14, %15
+  %18 = add nsw i32 %.tr4, -6
+  %19 = mul nsw i32 %16, %17
+  %20 = add nsw i32 %.tr4, -7
+  %21 = mul nsw i32 %18, %19
+  %22 = add nsw i32 %.tr4, -8
+  %23 = mul nsw i32 %20, %21
+  %niter.next.7 = add i32 %niter, 8
+  %niter.ncmp.7 = icmp eq i32 %niter.next.7, %unroll_iter
+  br i1 %niter.ncmp.7, label %common.ret.loopexit.unr-lcssa, label %if.exit.L2
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
@@ -58,13 +79,13 @@ define dso_local noundef i32 @main() local_unnamed_addr #1 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i32 @llvm.vector.reduce.mul.v4i32(<4 x i32>) #3
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(inaccessiblemem: write)
+declare void @llvm.assume(i1 noundef) #3
 
 attributes #0 = { nofree norecurse nosync nounwind memory(none) }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #3 = { nocallback nofree nosync nounwind willreturn memory(inaccessiblemem: write) }
 attributes #4 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
@@ -75,6 +96,5 @@ attributes #4 = { nounwind }
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!5 = distinct !{!5, !6, !7}
-!6 = !{!"llvm.loop.isvectorized", i32 1}
-!7 = !{!"llvm.loop.unroll.runtime.disable"}
+!5 = distinct !{!5, !6}
+!6 = !{!"llvm.loop.unroll.disable"}

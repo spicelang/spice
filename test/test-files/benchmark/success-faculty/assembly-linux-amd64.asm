@@ -1,38 +1,6 @@
 	.file	"source.spice"
-	.section	.rodata.cst16,"aM",@progbits,16
-	.p2align	4, 0x0                          # -- Begin function _Z7facultyi
-.LCPI0_0:
-	.long	0                               # 0x0
-	.long	4294967295                      # 0xffffffff
-	.long	4294967294                      # 0xfffffffe
-	.long	4294967293                      # 0xfffffffd
-.LCPI0_1:
-	.long	1                               # 0x1
-	.long	1                               # 0x1
-	.long	1                               # 0x1
-	.long	1                               # 0x1
-.LCPI0_2:
-	.long	4294967292                      # 0xfffffffc
-	.long	4294967291                      # 0xfffffffb
-	.long	4294967290                      # 0xfffffffa
-	.long	4294967289                      # 0xfffffff9
-.LCPI0_3:
-	.long	4294967288                      # 0xfffffff8
-	.long	4294967287                      # 0xfffffff7
-	.long	4294967286                      # 0xfffffff6
-	.long	4294967285                      # 0xfffffff5
-.LCPI0_4:
-	.long	2147483648                      # 0x80000000
-	.long	2147483648                      # 0x80000000
-	.long	2147483648                      # 0x80000000
-	.long	2147483648                      # 0x80000000
-.LCPI0_5:
-	.long	2147483648                      # 0x80000000
-	.long	2147483649                      # 0x80000001
-	.long	2147483650                      # 0x80000002
-	.long	2147483651                      # 0x80000003
 	.text
-	.p2align	4
+	.p2align	4                               # -- Begin function _Z7facultyi
 	.type	.L_Z7facultyi,@function
 .L_Z7facultyi:                          # @_Z7facultyi
 # %bb.0:
@@ -40,67 +8,58 @@
 	movl	$1, %eax
 	cmpl	$2, %edi
 	jb	.LBB0_7
-# %bb.1:                                # %vector.ph
-	leal	2(%rdi), %eax
-	andl	$28, %eax
-	leal	-2(%rdi), %ecx
-	movd	%ecx, %xmm0
-	pshufd	$0, %xmm0, %xmm0                # xmm0 = xmm0[0,0,0,0]
-	movd	%edi, %xmm1
-	pshufd	$0, %xmm1, %xmm2                # xmm2 = xmm1[0,0,0,0]
-	movdqa	.LCPI0_0(%rip), %xmm1           # xmm1 = [0,4294967295,4294967294,4294967293]
-	paddd	%xmm2, %xmm1
-	cmpl	$4, %eax
+# %bb.1:                                # %if.exit.L2.preheader
+	leal	-1(%rdi), %edx
+	leal	-2(%rdi), %esi
+	movl	%edx, %ecx
+	andl	$7, %ecx
+	cmpl	$7, %esi
+	jb	.LBB0_6
+# %bb.2:                                # %if.exit.L2.preheader.new
+	movl	%edx, %r8d
+	andl	$-8, %r8d
+	negl	%r8d
+	xorl	%esi, %esi
+	.p2align	4
+.LBB0_3:                                # %if.exit.L2
+                                        # =>This Inner Loop Header: Depth=1
+	leal	(%rdi,%rsi), %r9d
+	imull	%eax, %r9d
+	leal	(%rdx,%rsi), %eax
+	leal	(%rdx,%rsi), %r10d
+	decl	%r10d
+	imull	%eax, %r10d
+	imull	%r9d, %r10d
+	leal	(%rdx,%rsi), %eax
+	addl	$-2, %eax
+	leal	(%rdx,%rsi), %r9d
+	addl	$-3, %r9d
+	imull	%eax, %r9d
+	leal	(%rdx,%rsi), %r11d
+	addl	$-4, %r11d
+	imull	%r9d, %r11d
+	imull	%r10d, %r11d
+	leal	(%rdx,%rsi), %r9d
+	addl	$-5, %r9d
+	leal	(%rdx,%rsi), %eax
+	addl	$-6, %eax
+	imull	%r9d, %eax
+	imull	%r11d, %eax
+	addl	$-8, %esi
+	cmpl	%esi, %r8d
 	jne	.LBB0_3
-# %bb.2:
-	movdqa	.LCPI0_1(%rip), %xmm2           # xmm2 = [1,1,1,1]
-	xorl	%ecx, %ecx
-	jmp	.LBB0_6
-.LBB0_3:                                # %vector.body.1
-	movdqa	.LCPI0_2(%rip), %xmm3           # xmm3 = [4294967292,4294967291,4294967290,4294967289]
-	paddd	%xmm2, %xmm3
-	pshufd	$245, %xmm3, %xmm4              # xmm4 = xmm3[1,1,3,3]
-	pmuludq	%xmm1, %xmm3
-	pshufd	$232, %xmm3, %xmm3              # xmm3 = xmm3[0,2,2,3]
-	pshufd	$245, %xmm1, %xmm5              # xmm5 = xmm1[1,1,3,3]
-	pmuludq	%xmm4, %xmm5
-	pshufd	$232, %xmm5, %xmm4              # xmm4 = xmm5[0,2,2,3]
-	punpckldq	%xmm4, %xmm3            # xmm3 = xmm3[0],xmm4[0],xmm3[1],xmm4[1]
-	movl	$4, %ecx
-	cmpl	$8, %eax
-	jne	.LBB0_5
-# %bb.4:
-	movdqa	%xmm1, %xmm2
-	movdqa	%xmm3, %xmm1
-	jmp	.LBB0_6
-.LBB0_5:                                # %vector.body.2
-	paddd	.LCPI0_3(%rip), %xmm2
-	movdqa	%xmm2, %xmm1
-	pmuludq	%xmm3, %xmm1
-	pshufd	$232, %xmm1, %xmm1              # xmm1 = xmm1[0,2,2,3]
-	pshufd	$245, %xmm3, %xmm4              # xmm4 = xmm3[1,1,3,3]
-	pshufd	$245, %xmm2, %xmm2              # xmm2 = xmm2[1,1,3,3]
-	pmuludq	%xmm4, %xmm2
-	pshufd	$232, %xmm2, %xmm2              # xmm2 = xmm2[0,2,2,3]
-	punpckldq	%xmm2, %xmm1            # xmm1 = xmm1[0],xmm2[0],xmm1[1],xmm2[1]
-	movl	$8, %ecx
-	movdqa	%xmm3, %xmm2
-.LBB0_6:                                # %middle.block
-	movd	%ecx, %xmm3
-	pshufd	$0, %xmm3, %xmm3                # xmm3 = xmm3[0,0,0,0]
-	pxor	.LCPI0_4(%rip), %xmm0
-	por	.LCPI0_5(%rip), %xmm3
-	pcmpgtd	%xmm0, %xmm3
-	pand	%xmm3, %xmm2
-	pandn	%xmm1, %xmm3
-	por	%xmm2, %xmm3
-	pshufd	$238, %xmm3, %xmm0              # xmm0 = xmm3[2,3,2,3]
-	pshufd	$255, %xmm3, %xmm1              # xmm1 = xmm3[3,3,3,3]
-	pshufd	$245, %xmm3, %xmm2              # xmm2 = xmm3[1,1,3,3]
-	pmuludq	%xmm1, %xmm2
-	pmuludq	%xmm3, %xmm0
-	pmuludq	%xmm2, %xmm0
-	movd	%xmm0, %eax
+# %bb.4:                                # %common.ret.loopexit.unr-lcssa
+	testl	%ecx, %ecx
+	je	.LBB0_7
+# %bb.5:
+	addl	%esi, %edi
+	.p2align	4
+.LBB0_6:                                # %if.exit.L2.epil
+                                        # =>This Inner Loop Header: Depth=1
+	imull	%edi, %eax
+	decl	%edi
+	decl	%ecx
+	jne	.LBB0_6
 .LBB0_7:                                # %common.ret
 	retq
 .Lfunc_end0:
