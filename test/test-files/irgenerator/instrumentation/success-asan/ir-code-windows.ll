@@ -10,9 +10,9 @@ define dso_local noundef i32 @main() #0 {
   %1 = load i64, ptr @__asan_shadow_memory_dynamic_address, align 8
   %result = alloca i32, align 4
   %iPtr = alloca ptr, align 8
-  call void @llvm.lifetime.start.p0(i64 4, ptr %result)
+  call void @llvm.lifetime.start.p0(ptr %result)
   store i32 0, ptr %result, align 4
-  call void @llvm.lifetime.start.p0(i64 8, ptr %iPtr)
+  call void @llvm.lifetime.start.p0(ptr %iPtr)
   store ptr null, ptr %iPtr, align 8
   %2 = load ptr, ptr %iPtr, align 8
   %3 = ptrtoint ptr %2 to i64
@@ -36,16 +36,16 @@ define dso_local noundef i32 @main() #0 {
 
 15:                                               ; preds = %9, %0
   store i32 123, ptr %2, align 4
-  call void @llvm.lifetime.end.p0(i64 8, ptr %iPtr)
+  call void @llvm.lifetime.end.p0(ptr %iPtr)
   %16 = load i32, ptr %result, align 4
   ret i32 %16
 }
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
-declare void @llvm.lifetime.start.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.start.p0(ptr captures(none)) #1
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
-declare void @llvm.lifetime.end.p0(i64 immarg, ptr captures(none)) #1
+declare void @llvm.lifetime.end.p0(ptr captures(none)) #1
 
 declare void @__asan_report_load_n(i64, i64)
 
@@ -155,10 +155,10 @@ declare void @__sanitizer_ptr_cmp(i64, i64)
 
 declare void @__sanitizer_ptr_sub(i64, i64)
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare i1 @llvm.amdgcn.is.shared(ptr) #2
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare i1 @llvm.amdgcn.is.private(ptr) #2
 
 declare void @__asan_before_dynamic_init(i64)
@@ -190,7 +190,7 @@ declare void @__asan_version_mismatch_check_v8()
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
 attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn }
-attributes #2 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #3 = { nounwind uwtable "frame-pointer"="all" }
 attributes #4 = { nomerge }
 
