@@ -39,7 +39,7 @@ void ExternalLinkerInterface::prepare() {
     requestLibMathLinkage();
     break;
   case Sanitizer::TYPE:
-    addLinkerFlag("-L/usr/local/lib/clang/21/lib/x86_64-unknown-linux-gnu");
+    addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
     addLinkerFlag("-lclang_rt.tysan");
     break;
   }
