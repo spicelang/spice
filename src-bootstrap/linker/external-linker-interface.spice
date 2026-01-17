@@ -7,9 +7,10 @@ import "bootstrap/driver";
 
 public type ExternalLinkerInterface struct {
     CliOptions& cliOptions
-    public FilePath outputPath
     Vector<FilePath> objectFilePaths
     Vector<String> linkerFlags
+    FilePath outputPath
+    bool linkLibMath = false
 }
 
 public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
@@ -29,6 +30,24 @@ public p ExternalLinkerInterface.prepare() {
     // Stripping symbols
     if !this.cliOptions.generateDebugInfo {
         this.addLinkerFlag("-Wl,-s");
+    }
+
+    switch this.cliOptions.instrumentation.sanitizer {
+        case Sanitizer::ADDRESS: {
+            this.addLinkerFlag("-lasan");
+        }
+        case Sanitizer::THREAD: {
+            this.addLinkerFlag("-ltsan");
+        }
+        case Sanitizer::MEMORY: {
+            this.addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
+            this.addLinkerFlag("-lclang_rt.msan");
+            this.requestLibMathLinkage();
+        }
+        case Sanitizer::TYPE: {
+            this.addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
+            this.addLinkerFlag("-lclang_rt.tysan");
+        }
     }
 
     // Web Assembly
@@ -88,4 +107,11 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSour
 
     // Add the file to the linker
     this.addObjectFilePath(additionalSource);
+}
+
+/**
+ * Link against libmath a.k.a. -lm
+ */
+public p ExternalLinkerInterface.requestLibMathLinkage() {
+    this.linkLibMath = true;
 }
