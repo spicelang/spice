@@ -5,15 +5,6 @@
 #include <SourceFile.h> // Must be included before windows.h due to symbol name ambiguities
 
 #include <cxxabi.h>
-#if OS_UNIX
-#include <unistd.h>
-#elif OS_WINDOWS
-#include <windows.h>
-#else
-#error "Unsupported platform"
-#endif
-
-#include <llvm/TargetParser/Triple.h>
 
 namespace spice::compiler {
 
@@ -74,23 +65,6 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
     result.push_back(trim(token));
 
   return result;
-}
-
-/**
- * Get the memory page size of the current system
- *
- * @return Page size in bytes
- */
-size_t CommonUtil::getSystemPageSize() {
-#if OS_UNIX
-  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
-#elif OS_WINDOWS
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
-  return static_cast<size_t>(si.dwPageSize);
-#else
-#error "Unsupported platform"
-#endif
 }
 
 /**

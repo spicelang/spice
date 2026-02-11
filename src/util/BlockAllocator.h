@@ -7,13 +7,14 @@
 #include <exception/CompilerError.h>
 #include <util/CommonUtil.h>
 #include <util/Memory.h>
+#include <util/SystemUtil.h>
 
 namespace spice::compiler {
 
 template <typename Base> class BlockAllocator {
 public:
   // Constructors
-  explicit BlockAllocator(const MemoryManager &memoryManager, size_t blockSize = CommonUtil::getSystemPageSize())
+  explicit BlockAllocator(const MemoryManager &memoryManager, size_t blockSize = SystemUtil::getSystemPageSize())
       : memoryManager(memoryManager), blockSize(blockSize) {
     allocateNewBlock();
   }

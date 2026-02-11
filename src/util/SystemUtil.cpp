@@ -3,9 +3,15 @@
 #include "SystemUtil.h"
 
 #include <array>
-#include <cstring>
 #include <iostream> // IWYU pragma: keep (usage in Windows-only code)
 #include <vector>
+#if OS_UNIX
+#include <unistd.h>
+#elif OS_WINDOWS
+#include <windows.h>
+#else
+#error "Unsupported platform"
+#endif
 
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
@@ -178,6 +184,23 @@ std::filesystem::path SystemUtil::getSpiceBinDir() {
   const char *userProfile = std::getenv("USERPROFILE");
   assert(userProfile != nullptr && strlen(userProfile) > 0);
   return std::filesystem::path(userProfile) / "spice" / "bin";
+#else
+#error "Unsupported platform"
+#endif
+}
+
+/**
+ * Get the memory page size of the current system
+ *
+ * @return Page size in bytes
+ */
+size_t SystemUtil::getSystemPageSize() {
+#if OS_UNIX
+  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
+#elif OS_WINDOWS
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return static_cast<size_t>(si.dwPageSize);
 #else
 #error "Unsupported platform"
 #endif

@@ -30,6 +30,7 @@ public:
   static std::filesystem::path getStdDir();
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
+  static size_t getSystemPageSize();
 };
 
 } // namespace spice::compiler
