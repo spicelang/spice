@@ -5,15 +5,6 @@
 #include <SourceFile.h> // Must be included before windows.h due to symbol name ambiguities
 
 #include <cxxabi.h>
-#if OS_UNIX
-#include <unistd.h>
-#elif OS_WINDOWS
-#include <windows.h>
-#else
-#error "Unsupported platform"
-#endif
-
-#include <llvm/TargetParser/Triple.h>
 
 namespace spice::compiler {
 

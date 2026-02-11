@@ -3,9 +3,15 @@
 #include "SystemUtil.h"
 
 #include <array>
-#include <cstring>
 #include <iostream> // IWYU pragma: keep (usage in Windows-only code)
 #include <vector>
+#if OS_UNIX
+#include <unistd.h>
+#elif OS_WINDOWS
+#include <windows.h>
+#else
+#error "Unsupported platform"
+#endif
 
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
