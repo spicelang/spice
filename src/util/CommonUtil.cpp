@@ -77,23 +77,6 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
 }
 
 /**
- * Get the memory page size of the current system
- *
- * @return Page size in bytes
- */
-size_t CommonUtil::getSystemPageSize() {
-#if OS_UNIX
-  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
-#elif OS_WINDOWS
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
-  return static_cast<size_t>(si.dwPageSize);
-#else
-#error "Unsupported platform"
-#endif
-}
-
-/**
  * Return the given number of bytes in a human-readable format
  *
  * @return Human-readable size string
