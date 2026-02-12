@@ -2195,7 +2195,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
-  void customItemsInitialization(size_t manifestationCount) override;
+  void customItemsInitialization(size_t manifestationCount) override { manifestations.resize(manifestationCount); }
 
   // Public members
   ParamLstNode *paramLst = nullptr;
