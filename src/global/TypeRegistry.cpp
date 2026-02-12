@@ -2,9 +2,12 @@
 
 #include "TypeRegistry.h"
 
+#include <algorithm>
+#include <cassert>
 #include <ranges>
 #include <sstream>
 
+#include <symboltablebuilder/Type.h>
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
@@ -18,9 +21,7 @@ std::unordered_map<uint64_t, std::unique_ptr<Type>> TypeRegistry::types = {};
  * @param type Input type
  * @return type hash / type id
  */
-uint64_t TypeRegistry::getTypeHash(const Type &type) {
-  return std::hash<Type>{}(type);
-}
+uint64_t TypeRegistry::getTypeHash(const Type &type) { return std::hash<Type>{}(type); }
 
 /**
  * Get or insert a type into the type registry

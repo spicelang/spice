@@ -5,7 +5,12 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
+#include <model/GenericType.h>
+#include <symboltablebuilder/Scope.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
+#include <typechecker/StructManager.h>
 
 namespace spice::compiler {
 

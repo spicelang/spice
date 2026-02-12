@@ -6,8 +6,14 @@
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <model/GenericType.h>
+#include <model/Interface.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
+#include <typechecker/StructManager.h>
 
 namespace spice::compiler {
 

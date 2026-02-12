@@ -2,7 +2,7 @@
 
 #include <ast/ASTNodes.h>
 
-#include "SourceFile.h"
+#include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>

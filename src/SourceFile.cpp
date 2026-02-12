@@ -2,12 +2,11 @@
 
 #include "SourceFile.h"
 
-#include "visualizer/DependencyGraphVisualizer.h"
-
 #include <llvm/IR/Module.h>
 #include <llvm/MC/TargetRegistry.h>
 
 #include <ast/ASTBuilder.h>
+#include <driver/Driver.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
@@ -19,7 +18,10 @@
 #include <objectemitter/ObjectEmitter.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
+#include <typechecker/StructManager.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
@@ -27,6 +29,7 @@
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
+#include <visualizer/DependencyGraphVisualizer.h>
 
 namespace spice::compiler {
 

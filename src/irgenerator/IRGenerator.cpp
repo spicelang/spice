@@ -2,13 +2,14 @@
 
 #include "IRGenerator.h"
 
+#include <SourceFile.h>
+#include <driver/Driver.h>
+#include <global/GlobalResourceManager.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
+
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
-
-#include <SourceFile.h>
-#include <global/GlobalResourceManager.h>
-#include <irgenerator/NameMangling.h>
-#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 

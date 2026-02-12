@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <global/GlobalResourceManager.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/MacroDefs.h>
 

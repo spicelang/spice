@@ -2,13 +2,13 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
-#include <ast/ASTNodes.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <global/RuntimeModuleManager.h>
-#include <symboltablebuilder/Scope.h>
 #include <util/CompilerWarning.h>
+#include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Target/TargetMachine.h>
@@ -28,6 +28,10 @@ class EntryNode;
 class ASTNode;
 class Timer;
 struct CliOptions;
+class SymbolTableEntry;
+class Scope;
+class Function;
+class Type;
 
 enum CompileStageType : uint8_t {
   NONE,

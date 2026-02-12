@@ -3,7 +3,6 @@
 #include "CacheManager.h"
 
 #include <SourceFile.h>
-#include <util/FileUtil.h>
 
 namespace spice::compiler {
 

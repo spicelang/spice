@@ -2,6 +2,7 @@
 
 #include "Capture.h"
 
+#include <symboltablebuilder/SymbolTableEntry.h>
 #include <symboltablebuilder/TypeChain.h>
 
 namespace spice::compiler {

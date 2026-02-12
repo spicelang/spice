@@ -9,6 +9,9 @@
 
 namespace spice::compiler {
 
+Scope::Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc)
+    : parent(parent), sourceFile(sourceFile), codeLoc(codeLoc), type(scopeType) {}
+
 /**
  * Create a child scope and return it
  *

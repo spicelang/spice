@@ -9,6 +9,7 @@
 #include <global/GlobalResourceManager.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 
 #include <llvm/IR/Module.h>
 

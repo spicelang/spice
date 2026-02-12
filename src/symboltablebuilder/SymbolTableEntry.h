@@ -9,9 +9,12 @@
 #include <symboltablebuilder/Lifecycle.h>
 #include <symboltablebuilder/QualType.h>
 
-#include <llvm/IR/Value.h>
-
 #include "../../lib/json/json.hpp"
+
+// Forward declarations
+namespace llvm {
+class Value;
+} // namespace llvm
 
 namespace spice::compiler {
 
@@ -19,7 +22,6 @@ namespace spice::compiler {
 class Scope;
 class ASTNode;
 struct CodeLoc;
-union CompileTimeValue;
 
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties

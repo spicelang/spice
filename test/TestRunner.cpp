@@ -15,7 +15,11 @@
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <llvm/TargetParser/Triple.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTable.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
+#include <typechecker/StructManager.h>
 #include <util/SystemUtil.h>
 
 #include "driver/TestDriver.h"

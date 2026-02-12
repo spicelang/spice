@@ -5,7 +5,8 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
-#include <global/RuntimeModuleManager.h>
+#include <symboltablebuilder/Scope.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeChecker.h>
 
@@ -709,7 +710,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   opFctPointers.at(opIdx) = callee;
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet
-  typeChecker->requestRevisitIfRequired(callee);
+  TypeChecker::requestRevisitIfRequired(callee);
 
   // Check if the called function has sufficient visibility
   const bool isImported = calleeParentScope != nullptr && calleeParentScope->isImportedBy(typeChecker->rootScope);

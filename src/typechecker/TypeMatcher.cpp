@@ -3,6 +3,9 @@
 #include "TypeMatcher.h"
 
 #include <exception/SemanticError.h>
+#include <model/GenericType.h>
+#include <model/Interface.h>
+#include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {

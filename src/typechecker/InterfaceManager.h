@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <model/GenericType.h>
+#include <symboltablebuilder/QualType.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
@@ -15,6 +15,9 @@ namespace spice::compiler {
 // Forward declarations
 class Interface;
 class Scope;
+class ASTNode;
+class GenericType;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 // Typedefs
 using InterfaceManifestationList = std::map</*mangledName=*/std::string, Interface>;

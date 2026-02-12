@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <model/GenericType.h>
-#include <symboltablebuilder/Type.h>
+#include <string>
 
 namespace spice::compiler {
 
@@ -12,6 +11,8 @@ class Function;
 class StructBase;
 class Struct;
 class Interface;
+class QualType;
+struct TypeChainElement;
 
 /**
  * Helper for name mangling.
@@ -56,7 +57,7 @@ public:
 private:
   // Private methods
   static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
-  static void mangleType(std::stringstream &out, QualType qualType);
+  static void mangleType(std::stringstream &out, const QualType &qualType);
   static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness);
 };
 

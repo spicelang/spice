@@ -3,21 +3,20 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
 
-#include <model/Function.h>
-#include <model/GenericType.h>
 #include <model/StructBase.h>
 
 namespace spice::compiler {
+
+// Forward declarations
+class Function;
 
 class Interface : public StructBase {
 public:
   // Constructors
   Interface(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<Function *> methods,
-            std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), methods(std::move(methods)) {}
+            std::vector<GenericType> templateTypes, ASTNode *declNode);
 
   // Public methods
   [[nodiscard]] std::string getScopeName() const;

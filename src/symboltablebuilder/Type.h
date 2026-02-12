@@ -3,13 +3,12 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/TypeChain.h>
 
-// LLVM forward declarations
+// Forward declarations
 namespace llvm {
 class Type;
 } // namespace llvm

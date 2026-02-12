@@ -4,12 +4,15 @@
 
 #include <symboltablebuilder/SymbolTableEntry.h>
 
-#include <llvm/IR/Value.h>
+// Forward declarations
+namespace llvm {
+class Value;
+class Constant;
+} // namespace llvm
 
 namespace spice::compiler {
 
 // Forward declarations
-class SymbolTableEntry;
 class ExprNode;
 
 // For routing through multiple LLVM values at once

@@ -2,13 +2,17 @@
 
 #include "Function.h"
 
-#include "symboltablebuilder/SymbolTableBuilder.h"
-
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
+
+Function::Function(std::string name, SymbolTableEntry *entry, const QualType &thisType, const QualType &returnType,
+                   ParamList paramList, std::vector<GenericType> templateTypes, ASTNode *declNode)
+    : name(std::move(name)), thisType(thisType), returnType(returnType), paramList(std::move(paramList)),
+      templateTypes(std::move(templateTypes)), entry(entry), declNode(declNode) {}
 
 /**
  * Retrieve the parameter types of the current function

@@ -6,14 +6,15 @@
 #include <string>
 #include <vector>
 
-#include <driver/Driver.h>
-
 namespace spice::compiler {
+
+// Forward declarations
+struct CliOptions;
 
 class ExternalLinkerInterface {
 public:
   // Constructors
-  explicit ExternalLinkerInterface(const CliOptions &cliOptions) : outputPath(cliOptions.outputPath), cliOptions(cliOptions) {}
+  explicit ExternalLinkerInterface(const CliOptions &cliOptions);
 
   // Public methods
   void prepare();

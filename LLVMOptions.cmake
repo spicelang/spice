@@ -47,7 +47,3 @@ llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
 # Print status messages
 string(JOIN "," LLVM_TARGET_ARCHITECTURES_JOINED ${LLVM_TARGET_ARCHITECTURES})
 message(STATUS "Spice: Enabled targets: ${LLVM_TARGET_ARCHITECTURES_JOINED}")
-#string(JOIN "," LLVM_COMPONENTS_JOINED ${LLVM_COMPONENTS})
-#message(STATUS "Spice: LLVM components: ${LLVM_COMPONENTS_JOINED}")
-#string(JOIN "," LLVM_LIBS_JOINED ${LLVM_LIBS})
-#message(STATUS "Spice: LLVM libs: ${LLVM_LIBS_JOINED}")

@@ -2,13 +2,16 @@
 
 #pragma once
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <model/Function.h>
 #include <model/Interface.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTable.h>
-#include <typechecker/FunctionManager.h>
-#include <typechecker/InterfaceManager.h>
-#include <typechecker/StructManager.h>
-#include <util/CompilerWarning.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -16,6 +19,18 @@ namespace spice::compiler {
 class FctDefNode;
 class ProcDefNode;
 class SourceFile;
+class SymbolTableEntry;
+class GenericType;
+class CompilerWarning;
+class Function;
+class Struct;
+class ASTNode;
+using FunctionManifestationList = std::map</*mangledName=*/std::string, Function>;
+using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
+using StructManifestationList = std::map</*mangledName=*/std::string, Struct>;
+using StructRegistry = std::map</*structId=*/std::string, /*manifestationList=*/StructManifestationList>;
+using InterfaceManifestationList = std::map</*mangledName=*/std::string, Interface>;
+using InterfaceRegistry = std::map<CodeLoc, InterfaceManifestationList>;
 
 enum class ScopeType : uint8_t {
   GLOBAL,
@@ -55,8 +70,7 @@ enum class ScopeType : uint8_t {
 class Scope {
 public:
   // Constructors
-  Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc)
-      : parent(parent), sourceFile(sourceFile), codeLoc(codeLoc), type(scopeType) {}
+  Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc);
 
   // Friend classes
   friend class FunctionManager;

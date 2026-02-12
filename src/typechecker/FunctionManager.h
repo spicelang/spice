@@ -7,20 +7,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include <model/GenericType.h>
+#include <symboltablebuilder/QualType.h>
 
 namespace spice::compiler {
 
 // Forward declarations
-struct CodeLoc;
-struct ExprResult;
 class Function;
 class Scope;
 class SymbolTableEntry;
-class Type;
 class ASTNode;
 class GenericType;
-class TypeChecker;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 // Typedefs
 using FunctionManifestationList = std::map</*mangledName=*/std::string, Function>;

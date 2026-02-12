@@ -5,8 +5,10 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
+#include <driver/Driver.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <symboltablebuilder/Scope.h>
 #include <util/SystemUtil.h>
 
 namespace spice::compiler {

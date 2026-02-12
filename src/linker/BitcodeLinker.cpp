@@ -2,11 +2,17 @@
 
 #include "BitcodeLinker.h"
 
+#include <ranges>
+
 #include <SourceFile.h>
+#include <global/GlobalResourceManager.h>
 
 #include <llvm/IR/Module.h> // IWYU pragma: keep
 
 namespace spice::compiler {
+
+BitcodeLinker::BitcodeLinker(GlobalResourceManager &resourceManager)
+    : CompilerPass(resourceManager), linker(*resourceManager.ltoModule) {}
 
 void BitcodeLinker::link() {
   // Link all source file modules in

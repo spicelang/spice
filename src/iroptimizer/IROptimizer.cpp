@@ -2,15 +2,23 @@
 
 #include "IROptimizer.h"
 
+#include <SourceFile.h>
+#include <global/GlobalResourceManager.h>
+#include <driver/Driver.h>
+
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
 #include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
 #include <llvm/Transforms/Instrumentation/MemorySanitizer.h>
 #include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
 #include <llvm/Transforms/Instrumentation/TypeSanitizer.h>
-
-#include <driver/Driver.h>
+#include <llvm/Analysis/AliasAnalysis.h>
 
 namespace spice::compiler {
+
+IROptimizer::IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
+    : CompilerPass(resourceManager, sourceFile),
+      si(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context, false, resourceManager.cliOptions.testMode,
+         llvm::PrintPassOptions(false, true, false)) {}
 
 void IROptimizer::prepare() {
   llvm::PipelineTuningOptions pto;

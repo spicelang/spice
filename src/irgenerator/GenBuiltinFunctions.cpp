@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "global/TypeRegistry.h"
 
 #include <ast/ASTNodes.h>
-#include <global/GlobalResourceManager.h>
+#include <driver/Driver.h>
+#include <global/TypeRegistry.h>
 #include <llvm/IR/InlineAsm.h>
 
 #include <llvm/IR/Module.h>

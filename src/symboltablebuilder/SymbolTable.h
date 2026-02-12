@@ -3,10 +3,8 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
-#include <model/GenericType.h>
 #include <symboltablebuilder/Capture.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
@@ -18,6 +16,8 @@ namespace spice::compiler {
 class Scope;
 class Type;
 struct CodeLoc;
+class ASTNode;
+class QualType;
 
 using CaptureMap = std::map<std::string /*name*/, Capture /*capture*/>;
 using SymbolMap = std::map<std::string /*name*/, SymbolTableEntry /*entry*/>;

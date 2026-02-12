@@ -3,8 +3,11 @@
 #include "GlobalResourceManager.h"
 
 #include <SourceFile.h>
+#include <driver/Driver.h>
 #include <global/TypeRegistry.h>
+#include <symboltablebuilder/Scope.h> // IWYU pragma: keep - Scope
 #include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
 #include <util/FileUtil.h>
 

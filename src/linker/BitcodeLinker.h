@@ -2,18 +2,19 @@
 
 #pragma once
 
+#include <CompilerPass.h>
+
 #include <llvm/Linker/Linker.h>
 
-#include <CompilerPass.h>
-#include <global/GlobalResourceManager.h>
-
 namespace spice::compiler {
+
+// Forward declarations
+class GlobalResourceManager;
 
 class BitcodeLinker : public CompilerPass {
 public:
   // Constructors
-  explicit BitcodeLinker(GlobalResourceManager &resourceManager)
-      : CompilerPass(resourceManager), linker(*resourceManager.ltoModule) {}
+  explicit BitcodeLinker(GlobalResourceManager &resourceManager);
 
   // Public methods
   void link();

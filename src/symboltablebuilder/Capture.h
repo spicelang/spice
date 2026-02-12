@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include "SymbolTableEntry.h"
-
 #include "../../lib/json/json.hpp"
 
 namespace spice::compiler {
+
+// Forward declarations
+class SymbolTableEntry;
 
 enum CapturePassMode : uint8_t {
   BY_VALUE,

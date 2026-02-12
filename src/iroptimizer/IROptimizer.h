@@ -3,10 +3,7 @@
 #pragma once
 
 #include <CompilerPass.h>
-#include <SourceFile.h>
-#include <global/GlobalResourceManager.h>
 
-#include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/Passes/OptimizationLevel.h>
@@ -18,10 +15,7 @@ namespace spice::compiler {
 class IROptimizer final : CompilerPass {
 public:
   // Constructors
-  IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : CompilerPass(resourceManager, sourceFile),
-        si(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context, false, resourceManager.cliOptions.testMode,
-           llvm::PrintPassOptions(false, true, false)) {}
+  IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
   // Public methods
   void prepare();

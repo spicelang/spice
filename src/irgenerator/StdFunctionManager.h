@@ -3,7 +3,11 @@
 #pragma once
 
 #include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Value.h>
+
+// Forward declarations
+namespace llvm {
+class Value;
+} // namespace llvm
 
 namespace spice::compiler {
 

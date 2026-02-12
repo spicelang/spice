@@ -2,9 +2,6 @@
 
 #include "DebugInfoGenerator.h"
 
-#include <llvm/BinaryFormat/Dwarf.h>
-#include <llvm/IR/Module.h>
-
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <irgenerator/IRGenerator.h>
@@ -14,7 +11,12 @@
 #include <util/CustomHashFunctions.h>
 #include <util/FileUtil.h>
 
+#include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/Module.h>
+
 namespace spice::compiler {
+
+DebugInfoGenerator::DebugInfoGenerator(IRGenerator *irGenerator) : irGenerator(irGenerator) {}
 
 void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir) {
   llvm::Module *module = irGenerator->module;
