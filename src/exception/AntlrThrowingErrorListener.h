@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <filesystem>
-
 #include <BaseErrorListener.h>
 
 namespace spice::compiler {

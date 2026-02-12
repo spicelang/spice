@@ -2,11 +2,13 @@
 
 #include "ObjectEmitter.h"
 
+#include <SourceFile.h>
+#include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
-#include <util/FileUtil.h>
 #include <util/RawStringOStream.h>
 
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
 
 namespace spice::compiler {

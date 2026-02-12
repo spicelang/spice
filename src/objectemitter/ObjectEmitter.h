@@ -2,13 +2,20 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include <CompilerPass.h>
-#include <SourceFile.h>
+
+// Forward declarations
+namespace llvm {
+  class Module;
+} // namespace llvm
 
 namespace spice::compiler {
 
 // Forward declarations
 class GlobalResourceManager;
+class SourceFile;
 
 class ObjectEmitter : CompilerPass {
 public:

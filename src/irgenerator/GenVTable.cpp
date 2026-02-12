@@ -2,11 +2,11 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 

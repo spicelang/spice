@@ -2,11 +2,16 @@
 
 #pragma once
 
-#include <symboltablebuilder/QualType.h>
-#include <symboltablebuilder/Type.h>
-#include <symboltablebuilder/TypeChain.h>
+#include <cstdint>
+#include <vector>
 
 namespace spice::compiler {
+
+// Forward declarations
+struct TypeChainElement;
+class Type;
+class TypeQualifiers;
+class QualType;
 
 uint64_t hashMix(uint64_t hash) noexcept;
 
@@ -14,10 +19,7 @@ void hashCombine64(uint64_t &hash, uint64_t value) noexcept;
 
 template <typename T> uint64_t hashValue(const T &value) noexcept { return static_cast<uint64_t>(std::hash<T>{}(value)); }
 
-template <typename T>
-uint64_t hashPointer(const T *value) noexcept {
-  return reinterpret_cast<uint64_t>(value) >> 3;
-}
+template <typename T> uint64_t hashPointer(const T *value) noexcept { return reinterpret_cast<uint64_t>(value) >> 3; }
 
 template <typename T> uint64_t hashVector(const std::vector<T> &vec) noexcept {
   uint64_t hash = 0;

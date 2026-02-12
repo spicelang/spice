@@ -4,12 +4,16 @@
 
 #include <iostream>
 
+#include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
 #include <util/SystemUtil.h>
 #include <util/Timer.h>
 
 namespace spice::compiler {
+
+ExternalLinkerInterface::ExternalLinkerInterface(const CliOptions &cliOptions)
+    : outputPath(cliOptions.outputPath), cliOptions(cliOptions) {}
 
 void ExternalLinkerInterface::prepare() {
   // Set target to linker
@@ -138,8 +142,6 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
 /**
  * Link against libmath a.k.a. -lm
  */
-void ExternalLinkerInterface::requestLibMathLinkage() {
-  linkLibMath = true;
-}
+void ExternalLinkerInterface::requestLibMathLinkage() { linkLibMath = true; }
 
 } // namespace spice::compiler

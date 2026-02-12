@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+real_gpp=/usr/bin/g++
+
+is_compile=false
+src_file=""
+
+for arg in "$@"; do
+    if [[ "$arg" == "-c" ]]; then
+        is_compile=true
+    fi
+    if [[ "$arg" == *.c || "$arg" == *.cc || "$arg" == *.cpp || "$arg" == *.cxx ]]; then
+        src_file="$arg"
+    fi
+done
+
+if $is_compile && [[ -n "$src_file" ]]; then
+    start=$(date +%s%N)
+    "$real_gpp" "$@"
+    status=$?
+    end=$(date +%s%N)
+
+    duration_ms=$(( (end - start) / 1000000 ))
+
+    printf "%8d  %s\n" "$duration_ms" "$src_file" >> build_times.log
+
+    exit $status
+else
+    exec "$real_gpp" "$@"
+fi

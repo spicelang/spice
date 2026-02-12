@@ -5,7 +5,9 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {

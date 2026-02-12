@@ -3,18 +3,19 @@
 #include "DependencyGraphVisualizer.h"
 
 #include <cassert>
+#include <ranges>
 
 #include <SourceFile.h>
 
 namespace spice::compiler {
 
-void DependencyGraphVisualizer::getDependencyGraph(std::stringstream& output) {
+void DependencyGraphVisualizer::getDependencyGraph(std::stringstream &output) {
   assert(sourceFile->isMainFile);
   printedFiles.clear();
   getDependencyGraphNode(output, sourceFile);
 }
 
-void DependencyGraphVisualizer::getDependencyGraphNode(std::stringstream& output, const SourceFile *currentSourceFile) {
+void DependencyGraphVisualizer::getDependencyGraphNode(std::stringstream &output, const SourceFile *currentSourceFile) {
   // Skip if already printed
   if (printedFiles.contains(currentSourceFile))
     return;

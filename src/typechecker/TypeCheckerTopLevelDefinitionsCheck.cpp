@@ -3,9 +3,12 @@
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
+#include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
-#include <global/GlobalResourceManager.h>
+#include <model/Interface.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {

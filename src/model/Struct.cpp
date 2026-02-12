@@ -3,10 +3,17 @@
 #include "Struct.h"
 
 #include <ast/ASTNodes.h>
+#include <model/GenericType.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
 static constexpr auto STRUCT_SCOPE_PREFIX = "struct:";
+
+Struct::Struct(std::string name, SymbolTableEntry *entry, Scope *scope, QualTypeList fieldTypes,
+               std::vector<GenericType> templateTypes, QualTypeList interfaceTypes, ASTNode *declNode)
+    : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), fieldTypes(std::move(fieldTypes)),
+      interfaceTypes(std::move(interfaceTypes)) {}
 
 /**
  * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the struct

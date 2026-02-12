@@ -4,16 +4,20 @@
 
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
-#include <model/Function.h>
-#include <symboltablebuilder/Scope.h>
-#include <typechecker/FunctionManager.h>
 #include <typechecker/OpRuleManager.h>
-#include <util/CompilerWarning.h>
 
 namespace spice::compiler {
 
 // Forward declarations
 class LambdaBaseNode;
+class CompilerWarning;
+struct Param;
+struct NamedParam;
+using ParamList = std::vector<Param>;
+using NamedParamList = std::vector<NamedParam>;
+using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
+using ArgList = std::vector<Arg>;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 enum TypeCheckerMode : bool {
   TC_MODE_PRE,

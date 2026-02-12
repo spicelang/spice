@@ -3,12 +3,11 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include <symboltablebuilder/QualType.h>
-#include <symboltablebuilder/Type.h>
-
-#include "../../lib/json/json.hpp"
+#include <symboltablebuilder/TypeChain.h>
 
 namespace spice::compiler {
 

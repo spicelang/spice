@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "driver/Driver.h"
-
 #include <CompilerPass.h>
+#include <ast/ASTNodes.h>
 #include <ast/ParallelizableASTVisitor.h>
 #include <irgenerator/DebugInfoGenerator.h>
 #include <irgenerator/MetadataGenerator.h>
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
+#include <model/StructBase.h>
 #include <symboltablebuilder/Scope.h>
 #include <util/DeferredLogic.h>
 
@@ -171,7 +171,7 @@ private:
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
   llvm::Type *buildCapturesContainerType(const CaptureMap &captures) const;
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
-  void setParamAttrs(llvm::Function* function, const ParamInfoList& paramInfo) const;
+  void setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const;
   void setFunctionReturnValAttrs(llvm::Function *function, const QualType &returnType) const;
   void setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const;
   void setCallReturnValAttrs(llvm::CallInst *callInst, const QualType &returnType) const;

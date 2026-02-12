@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <queue>
 #include <utility>
 #include <vector>
@@ -10,16 +11,19 @@
 #include <ast/ParallelizableASTVisitor.h>
 #include <exception/CompilerError.h>
 #include <model/Function.h>
-#include <model/Struct.h>
-#include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/QualType.h>
+#include <symboltablebuilder/TypeChain.h>
 #include <symboltablebuilder/TypeQualifiers.h>
 #include <util/CodeLoc.h>
-#include <util/CommonUtil.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
 // Forward declarations
 class TopLevelDefNode;
+class Capture;
+using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
+using ArgList = std::vector<Arg>;
 
 // Macros
 #define GET_CHILDREN(...)                                                                                                        \
@@ -94,7 +98,7 @@ public:
 
   [[nodiscard]] virtual std::vector<ASTNode *> getChildren() const = 0;
 
-  virtual void resizeToNumberOfManifestations(size_t manifestationCount){ // NOLINT(misc-no-recursion)
+  virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
     for (ASTNode *child : getChildren()) {
       assert(child != nullptr);
@@ -2191,7 +2195,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
-  void customItemsInitialization(const size_t manifestationCount) override { manifestations.resize(manifestationCount); }
+  void customItemsInitialization(size_t manifestationCount) override;
 
   // Public members
   ParamLstNode *paramLst = nullptr;

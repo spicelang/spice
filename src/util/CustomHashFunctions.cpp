@@ -3,6 +3,10 @@
 #include "CustomHashFunctions.h"
 
 #include <numeric>
+#include <string>
+
+#include <symboltablebuilder/Type.h>
+#include <symboltablebuilder/TypeChain.h>
 
 namespace spice::compiler {
 

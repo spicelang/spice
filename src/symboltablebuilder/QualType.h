@@ -5,9 +5,12 @@
 #include <string>
 #include <vector>
 
-#include <llvm/IR/Type.h>
-
 #include <symboltablebuilder/TypeQualifiers.h>
+
+// Forward declarations
+namespace llvm {
+class Type;
+} // namespace llvm
 
 namespace spice::compiler {
 

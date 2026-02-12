@@ -2,8 +2,12 @@
 
 #pragma once
 
-#include <llvm/IR/Instructions.h>
 #include <llvm/IR/MDBuilder.h>
+
+// Forward declarations
+namespace llvm {
+class BranchInst;
+} // namespace llvm
 
 namespace spice::compiler {
 

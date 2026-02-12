@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
+#include <model/GenericType.h>
+#include <model/Interface.h>
 #include <symboltablebuilder/Scope.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>

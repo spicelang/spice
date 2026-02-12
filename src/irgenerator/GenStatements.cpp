@@ -2,11 +2,11 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 

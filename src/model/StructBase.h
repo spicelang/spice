@@ -6,29 +6,28 @@
 #include <unordered_map>
 #include <vector>
 
-#include <llvm/IR/DebugInfoMetadata.h>
+#include <symboltablebuilder/QualType.h>
 
-#include <model/GenericType.h>
+#include <llvm/IR/DebugInfoMetadata.h>
 
 namespace spice::compiler {
 
 // Forward declarations
-class Type;
 class SymbolTableEntry;
 class Scope;
 class ASTNode;
 struct CodeLoc;
+class GenericType;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 class StructBase {
 public:
   // Constructors
-  StructBase(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), templateTypes(std::move(templateTypes)), entry(entry), scope(scope), declNode(declNode) {}
+  StructBase(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<GenericType> templateTypes, ASTNode *declNode);
 
   // Public methods
   [[nodiscard]] std::string getSignature() const;
   static std::string getSignature(const std::string &name, const QualTypeList &concreteTemplateTypes);
-  [[nodiscard]] std::string getScopeName() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] QualTypeList getTemplateTypes() const;

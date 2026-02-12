@@ -1,9 +1,9 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "exception/CompilerError.h"
 
 #include <driver/Driver.h>
+#include <exception/CompilerError.h>
 
 namespace spice::compiler {
 

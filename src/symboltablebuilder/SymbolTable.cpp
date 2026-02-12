@@ -2,8 +2,9 @@
 
 #include "SymbolTable.h"
 
-#include "SourceFile.h"
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>

@@ -4,7 +4,6 @@
 
 #include <global/TypeRegistry.h>
 #include <irgenerator/IRGenerator.h>
-#include <util/CustomHashFunctions.h>
 
 #include <llvm/IR/Module.h>
 

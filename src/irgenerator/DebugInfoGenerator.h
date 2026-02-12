@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <stack>
+#include <unordered_map>
 
 #include <llvm/IR/DIBuilder.h>
 
@@ -21,7 +22,7 @@ struct CodeLoc;
 class DebugInfoGenerator {
 public:
   // Constructors
-  explicit DebugInfoGenerator(IRGenerator *irGenerator) : irGenerator(irGenerator) {}
+  explicit DebugInfoGenerator(IRGenerator *irGenerator);
 
   // Public methods
   void initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir);

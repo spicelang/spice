@@ -5,7 +5,8 @@
 #include <utility>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/Type.h>
+#include <symboltablebuilder/QualType.h>
+#include <symboltablebuilder/TypeChain.h>
 #include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/Function.h>
@@ -16,6 +17,7 @@ namespace spice::compiler {
 class ASTNode;
 struct CodeLoc;
 class SymbolTableEntry;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 struct Param {
   QualType qualType;
@@ -33,9 +35,7 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, const QualType &thisType, const QualType &returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), thisType(thisType), returnType(returnType), paramList(std::move(paramList)),
-        templateTypes(std::move(templateTypes)), entry(entry), declNode(declNode) {}
+           std::vector<GenericType> templateTypes, ASTNode *declNode);
   Function() = default;
 
   // Public methods

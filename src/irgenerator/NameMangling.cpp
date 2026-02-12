@@ -4,9 +4,11 @@
 
 #include <exception/CompilerError.h>
 #include <model/Function.h>
+#include <model/GenericType.h>
 #include <model/Interface.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
+#include <symboltablebuilder/Type.h>
 #include <util/CommonUtil.h>
 
 namespace spice::compiler {
@@ -155,7 +157,7 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
  * @param qualType Input symbol qualType
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, QualType qualType) { // NOLINT(*-no-recursion)
+void NameMangling::mangleType(std::stringstream &out, const QualType &qualType) { // NOLINT(*-no-recursion)
   const Type *type = qualType.getType();
   assert(!qualType.hasAnyGenericParts());
 

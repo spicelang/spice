@@ -2,12 +2,13 @@
 
 #include "StdFunctionManager.h"
 
-#include <llvm/IR/Module.h>
-
 #include <SourceFile.h>
+#include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 

@@ -5,11 +5,14 @@
 #include <sstream>
 
 #include <SourceFile.h>
+#include <ast/ASTNodes.h>
 #include <global/TypeRegistry.h>
+#include <model/GenericType.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <symboltablebuilder/Type.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
 

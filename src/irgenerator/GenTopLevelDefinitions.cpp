@@ -2,15 +2,15 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-#include <llvm/Target/TargetLoweringObjectFile.h>
-
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <driver/Driver.h>
-#include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
+
+#include <llvm/IR/Module.h>
+#include <llvm/Target/TargetLoweringObjectFile.h>
 
 namespace spice::compiler {
 

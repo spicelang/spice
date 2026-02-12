@@ -9,6 +9,10 @@
 
 namespace spice::compiler {
 
+StructBase::StructBase(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<GenericType> templateTypes,
+                       ASTNode *declNode)
+    : name(std::move(name)), templateTypes(std::move(templateTypes)), entry(entry), scope(scope), declNode(declNode) {}
+
 /**
  * Get a string representation of the current struct
  *

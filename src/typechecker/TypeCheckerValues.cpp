@@ -6,8 +6,11 @@
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
+#include <model/GenericType.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeMatcher.h>
 

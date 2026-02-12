@@ -6,7 +6,11 @@
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
+#include <model/GenericType.h>
+#include <model/Struct.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {

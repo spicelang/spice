@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include <ast/ASTNodes.h>
 #include <exception/CompilerError.h>
 #include <util/CommonUtil.h>
 #include <util/Memory.h>

@@ -2,9 +2,10 @@
 
 #include <ast/ASTNodes.h>
 
-#include "SourceFile.h"
+#include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
+#include <model/GenericType.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -501,6 +502,8 @@ CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*
 
   throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExprNode::getCompileTimeValue()");
 }
+
+void LambdaBaseNode::customItemsInitialization(size_t manifestationCount) { manifestations.resize(manifestationCount); }
 
 /**
  * Check if right above the closest assign expression ancestor is a statement node

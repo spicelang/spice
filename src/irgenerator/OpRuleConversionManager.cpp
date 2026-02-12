@@ -2,14 +2,14 @@
 
 #include "OpRuleConversionManager.h"
 
-#include <llvm/IR/Module.h>
-
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
