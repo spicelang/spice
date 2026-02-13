@@ -118,7 +118,7 @@ public type Driver struct {
     CliParser cliParser
 }
 
-public p Driver.init() {
+public p Driver.ctor() {
     this.cliParser = CliParser("Spice", "Spice programming language");
     this.cliParser.setFooter("(c) Marc Auberer 2021-" + toString(getCurrentYear()));
 
