@@ -620,6 +620,21 @@ void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   exprResult.value = exprResult.constant;
 }
 
+bool IRGenerator::isSymbolDSOLocal(bool isPublic) const {
+  (void)isPublic;
+  return true;
+}
+
+llvm::GlobalValue::LinkageTypes IRGenerator::getSymbolLinkageType(bool isPublic) const {
+  return isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
+}
+
+void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::string &comdatName, bool isPublic) const {
+  // MachO does not support comdat annotations
+  if (isPublic && cliOptions.targetTriple.getObjectFormat() != llvm::Triple::MachO)
+    global->setComdat(module->getOrInsertComdat(comdatName));
+}
+
 std::string IRGenerator::getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions) {
   assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
   const bool eliminateTarget = cliOptions.comparableOutput && cliOptions.isNativeTarget;

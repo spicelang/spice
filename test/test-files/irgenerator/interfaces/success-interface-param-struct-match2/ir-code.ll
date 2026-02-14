@@ -4,25 +4,13 @@ source_filename = "source.spice"
 %struct.Test = type { %interface.ITest }
 %interface.ITest = type { ptr }
 
-$_ZTS5ITest = comdat any
-
-$_ZTI5ITest = comdat any
-
-$_ZTV5ITest = comdat any
-
-$_ZTS4Test = comdat any
-
-$_ZTI4Test = comdat any
-
-$_ZTV4Test = comdat any
-
-@_ZTS5ITest = dso_local constant [7 x i8] c"5ITest\00", comdat, align 4
+@_ZTS5ITest = private constant [7 x i8] c"5ITest\00", align 4
 @_ZTV8TypeInfo = external global ptr
-@_ZTI5ITest = dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS5ITest }, comdat, align 8
-@_ZTV5ITest = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI5ITest, ptr null] }, comdat, align 8
-@_ZTS4Test = dso_local constant [6 x i8] c"4Test\00", comdat, align 4
-@_ZTI4Test = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS4Test, ptr @_ZTI5ITest }, comdat, align 8
-@_ZTV4Test = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI4Test, ptr @_ZN4Test3barEv] }, comdat, align 8
+@_ZTI5ITest = private constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS5ITest }, align 8
+@_ZTV5ITest = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI5ITest, ptr null] }, align 8
+@_ZTS4Test = private constant [6 x i8] c"4Test\00", align 4
+@_ZTI4Test = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS4Test, ptr @_ZTI5ITest }, align 8
+@_ZTV4Test = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI4Test, ptr @_ZN4Test3barEv] }, align 8
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"Bar\00", align 4
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable

@@ -5,25 +5,13 @@ source_filename = "source.spice"
 %interface.ITest = type { ptr }
 %struct.Test = type { ptr }
 
-$_ZTS5ITest = comdat any
-
-$_ZTI5ITest = comdat any
-
-$_ZTV5ITest = comdat any
-
-$_ZTS9InnerTest = comdat any
-
-$_ZTI9InnerTest = comdat any
-
-$_ZTV9InnerTest = comdat any
-
-@_ZTS5ITest = dso_local constant [7 x i8] c"5ITest\00", comdat, align 4
+@_ZTS5ITest = private constant [7 x i8] c"5ITest\00", align 4
 @_ZTV8TypeInfo = external global ptr
-@_ZTI5ITest = dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS5ITest }, comdat, align 8
-@_ZTV5ITest = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI5ITest, ptr null] }, comdat, align 8
-@_ZTS9InnerTest = dso_local constant [11 x i8] c"9InnerTest\00", comdat, align 4
-@_ZTI9InnerTest = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS9InnerTest, ptr @_ZTI5ITest }, comdat, align 8
-@_ZTV9InnerTest = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI9InnerTest, ptr @_ZN9InnerTest4testEv] }, comdat, align 8
+@_ZTI5ITest = private constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS5ITest }, align 8
+@_ZTV5ITest = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI5ITest, ptr null] }, align 8
+@_ZTS9InnerTest = private constant [11 x i8] c"9InnerTest\00", align 4
+@_ZTI9InnerTest = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS9InnerTest, ptr @_ZTI5ITest }, align 8
+@_ZTV9InnerTest = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI9InnerTest, ptr @_ZN9InnerTest4testEv] }, align 8
 @printf.str.0 = private unnamed_addr constant [18 x i8] c"InnerTest.test()\0A\00", align 4
 
 define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {

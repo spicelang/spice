@@ -8,28 +8,16 @@ source_filename = "source.spice"
 %struct.ExampleIterableType = type { %interface.IIterable }
 %interface.IIterable = type { ptr }
 
-$_ZTS19ExampleIterableType = comdat any
-
-$_ZTI19ExampleIterableType = comdat any
-
-$_ZTV19ExampleIterableType = comdat any
-
-$_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
-
-$_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
-
-$_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
-
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Copy Ctor called!\0A\00", align 4
-@_ZTS19ExampleIterableType = dso_local constant [22 x i8] c"19ExampleIterableType\00", comdat, align 4
+@_ZTS19ExampleIterableType = private constant [22 x i8] c"19ExampleIterableType\00", align 4
 @_ZTV8TypeInfo = external global ptr
 @_ZTI9IIterableI20ExampleContainedTypeE = external global ptr
-@_ZTI19ExampleIterableType = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleIterableType, ptr @_ZTI9IIterableI20ExampleContainedTypeE }, comdat, align 8
-@_ZTV19ExampleIterableType = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv] }, comdat, align 8
-@_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant [22 x i8] c"19ExampleTypeIterator\00", comdat, align 4
+@_ZTI19ExampleIterableType = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleIterableType, ptr @_ZTI9IIterableI20ExampleContainedTypeE }, align 8
+@_ZTV19ExampleIterableType = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv] }, align 8
+@_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = private constant [22 x i8] c"19ExampleTypeIterator\00", align 4
 @_ZTI9IIteratorI20ExampleContainedTypeE = external global ptr
-@_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, comdat, align 8
-@_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, comdat, align 8
+@_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, align 8
+@_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = private unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, align 8
 
 define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
   %this = alloca ptr, align 8

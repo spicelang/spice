@@ -526,8 +526,8 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setDSOLocal(true);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
@@ -680,8 +680,8 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setDSOLocal(true);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
@@ -828,8 +828,8 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setDSOLocal(true);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
