@@ -178,6 +178,7 @@ private:
   llvm::Attribute::AttrKind getExtAttrKindForType(const QualType &type) const;
   bool isSymbolDSOLocal(bool isPublic) const;
   llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
+  void attachComdatToSymbol(llvm::GlobalVariable *global, const std::string &comdatName, bool isPublic) const;
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
@@ -209,7 +210,6 @@ private:
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct) const;
-  bool doesTargetSupportComDat() const;
 
   // Generate code instrumentation
   void enableFunctionInstrumentation(llvm::Function *function) const;

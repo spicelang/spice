@@ -53,7 +53,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   llvm::Type *returnType = builder.getInt32Ty();
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module);
-  fct->setDSOLocal(isSymbolDSOLocal(true));
+  fct->setDSOLocal(true);
 
   // Add function attributes
   fct->addFnAttr(llvm::Attribute::MustProgress);
