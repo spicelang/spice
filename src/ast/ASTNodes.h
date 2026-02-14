@@ -70,7 +70,10 @@ public:
   // Constructors
   explicit ASTNode(const CodeLoc &codeLoc) : codeLoc(codeLoc) {}
   virtual ~ASTNode() = default;
+
+  // Prevent copy
   ASTNode(const ASTNode &) = delete;
+  ASTNode &operator=(const ASTNode &) = delete;
 
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;

@@ -20,7 +20,7 @@
 namespace spice::compiler {
 
 GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
-    : cliOptions(cliOptions), linker(cliOptions), cacheManager(cliOptions.cacheDir), runtimeModuleManager(*this) {
+    : cliOptions(cliOptions), linker(cliOptions), cacheManager(cliOptions), runtimeModuleManager(*this) {
   // Initialize the required LLVM targets
   if (cliOptions.isNativeTarget) {
     llvm::InitializeNativeTarget();

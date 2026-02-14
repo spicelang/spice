@@ -113,7 +113,10 @@ public:
   // Constructors
   SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::filesystem::path &filePath,
              bool stdFile);
+
+  // Prevent copy
   SourceFile(const SourceFile &) = delete;
+  SourceFile &operator=(const SourceFile &) = delete;
 
   // Friend classes
   friend class RuntimeModuleManager;

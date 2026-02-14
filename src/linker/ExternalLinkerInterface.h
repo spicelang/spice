@@ -16,6 +16,10 @@ public:
   // Constructors
   explicit ExternalLinkerInterface(const CliOptions &cliOptions);
 
+  // Avoid copies
+  ExternalLinkerInterface(const ExternalLinkerInterface &) = delete;
+  ExternalLinkerInterface &operator=(const ExternalLinkerInterface &) = delete;
+
   // Public methods
   void prepare();
   void link() const;

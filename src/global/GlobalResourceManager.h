@@ -30,8 +30,11 @@ class GlobalResourceManager {
 public:
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
-  GlobalResourceManager(const GlobalResourceManager &) = delete; // Global resource manager can only exist exactly once
   ~GlobalResourceManager();
+
+  // Prevent copy
+  GlobalResourceManager(const GlobalResourceManager &) = delete;
+  GlobalResourceManager &operator=(const GlobalResourceManager &) = delete;
 
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
