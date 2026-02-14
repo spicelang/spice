@@ -1,6 +1,6 @@
 import "source2";
 
-type Car struct : Driveable {
+public type Car struct : Driveable {
     bool driving
 }
 
