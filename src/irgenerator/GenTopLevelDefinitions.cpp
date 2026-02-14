@@ -53,7 +53,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   llvm::Type *returnType = builder.getInt32Ty();
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module);
-  fct->setDSOLocal(true);
+  fct->setDSOLocal(isSymbolDSOLocal(true));
 
   // Add function attributes
   fct->addFnAttr(llvm::Attribute::MustProgress);
@@ -203,8 +203,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     bool externalLinkage = isPublic;
     if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
       externalLinkage |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
-    const llvm::GlobalValue::LinkageTypes linkage =
-        externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+    const auto linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
@@ -216,7 +215,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(func->empty());
 
     // Set attributes to function
-    func->setDSOLocal(true);
+    func->setDSOLocal(isSymbolDSOLocal(isPublic));
     func->setLinkage(linkage);
     if (manifestation->entry->getQualType().isInline())
       func->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -360,9 +359,6 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Get return type
     llvm::Type *returnType = builder.getVoidTy();
 
-    // Get procedure linkage
-    const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
-
     // Create procedure or implement declared procedure
     const std::string mangledName = manifestation->getMangledName();
     llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
@@ -373,8 +369,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(proc->empty());
 
     // Set attributes to procedure
-    proc->setDSOLocal(true);
-    proc->setLinkage(linkage);
+    proc->setLinkage(getSymbolLinkageType(isPublic));
+    proc->setDSOLocal(isSymbolDSOLocal(isPublic));
     if (manifestation->entry->getQualType().isInline())
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
     enableFunctionInstrumentation(proc);
@@ -603,15 +599,14 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 
   // Get correct type and linkage type
   const auto varType = std::any_cast<llvm::Type *>(visit(node->dataType));
-  const auto linkage = isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
 
   // Create global var
   llvm::Value *varAddress = module->getOrInsertGlobal(node->varName, varType);
   llvm::GlobalVariable *var = module->getNamedGlobal(node->varName);
   // Set some attributes, based on the given information
-  var->setLinkage(linkage);
   var->setConstant(isConst);
-  var->setDSOLocal(true);
+  var->setLinkage(getSymbolLinkageType(isPublic));
+  var->setDSOLocal(isSymbolDSOLocal(isPublic));
 
   // Set initializer
   if (node->hasValue) { // Set the constant value as variable initializer

@@ -16,13 +16,13 @@ $_ZTI6Person = comdat any
 
 $_ZTV6Person = comdat any
 
-@_ZTS11CompareableIlE = dso_local constant [14 x i8] c"11Compareable\00", comdat, align 4
+@_ZTS11CompareableIlE = private constant [14 x i8] c"11Compareable\00", comdat, align 4
 @_ZTV8TypeInfo = external global ptr
-@_ZTI11CompareableIlE = dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS11CompareableIlE }, comdat, align 8
-@_ZTV11CompareableIlE = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI11CompareableIlE, ptr null] }, comdat, align 8
-@_ZTS6Person = dso_local constant [8 x i8] c"6Person\00", comdat, align 4
-@_ZTI6Person = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS6Person, ptr @_ZTI11CompareableIlE }, comdat, align 8
-@_ZTV6Person = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat, align 8
+@_ZTI11CompareableIlE = private constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS11CompareableIlE }, comdat, align 8
+@_ZTV11CompareableIlE = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI11CompareableIlE, ptr null] }, comdat, align 8
+@_ZTS6Person = private constant [8 x i8] c"6Person\00", comdat, align 4
+@_ZTI6Person = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS6Person, ptr @_ZTI11CompareableIlE }, comdat, align 8
+@_ZTV6Person = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat, align 8
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 4

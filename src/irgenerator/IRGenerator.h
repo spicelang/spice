@@ -176,6 +176,8 @@ private:
   void setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const;
   void setCallReturnValAttrs(llvm::CallInst *callInst, const QualType &returnType) const;
   llvm::Attribute::AttrKind getExtAttrKindForType(const QualType &type) const;
+  bool isSymbolDSOLocal(bool isPublic) const;
+  llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);

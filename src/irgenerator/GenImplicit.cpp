@@ -223,13 +223,12 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
 
   // Get function linkage
   const bool isPublic = spiceFunc->entry->getQualType().isPublic();
-  const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
   const std::string mangledName = spiceFunc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-  llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
-  fct->setLinkage(linkage);
+  const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
+  llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
   fct->addFnAttr(llvm::Attribute::MustProgress);
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   if (cliOptions.optLevel == OptLevel::O0) {
@@ -324,13 +323,12 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
 
   // Get function linkage
   const bool isPublic = spiceProc->entry->getQualType().isPublic();
-  const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
   const std::string mangledName = spiceProc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
-  llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
-  fct->setLinkage(linkage);
+  const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
+  llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
   fct->addFnAttr(llvm::Attribute::MustProgress);
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   if (cliOptions.optLevel == OptLevel::O0) {

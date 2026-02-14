@@ -20,15 +20,15 @@ $_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
 
 $_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = comdat any
 
-@_ZTS19ExampleIterableType = dso_local constant [22 x i8] c"19ExampleIterableType\00", comdat, align 4
+@_ZTS19ExampleIterableType = private constant [22 x i8] c"19ExampleIterableType\00", comdat, align 4
 @_ZTV8TypeInfo = external global ptr
 @_ZTI9IIterableI20ExampleContainedTypeE = external global ptr
-@_ZTI19ExampleIterableType = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleIterableType, ptr @_ZTI9IIterableI20ExampleContainedTypeE }, comdat, align 8
-@_ZTV19ExampleIterableType = dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv] }, comdat, align 8
-@_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant [22 x i8] c"19ExampleTypeIterator\00", comdat, align 4
+@_ZTI19ExampleIterableType = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleIterableType, ptr @_ZTI9IIterableI20ExampleContainedTypeE }, comdat, align 8
+@_ZTV19ExampleIterableType = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv] }, comdat, align 8
+@_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = private constant [22 x i8] c"19ExampleTypeIterator\00", comdat, align 4
 @_ZTI9IIteratorI20ExampleContainedTypeE = external global ptr
-@_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, comdat, align 8
-@_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = dso_local unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, comdat, align 8
+@_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, comdat, align 8
+@_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = private unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, comdat, align 8
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'ct.copied' evaluated to false.\0A\00", align 4
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4

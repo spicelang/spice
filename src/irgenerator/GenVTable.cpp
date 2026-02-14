@@ -22,11 +22,13 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   if (cliOptions.comparableOutput)
     global->setAlignment(llvm::Align(4));
 
+  const bool isPublic = spiceStruct->entry->getQualType().isPublic();
+
   // Set global attributes
   global->setConstant(true);
-  global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setDSOLocal(isSymbolDSOLocal(isPublic));
   // MachO does not support comdat annotations
   if (doesTargetSupportComDat())
     global->setComdat(module->getOrInsertComdat(globalName));
@@ -80,11 +82,13 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
   global->setInitializer(typeInfo);
 
+  const bool isPublic = spiceStruct->entry->getQualType().isPublic();
+
   // Set global attributes
   global->setConstant(true);
-  global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setDSOLocal(isSymbolDSOLocal(isPublic));
   if (doesTargetSupportComDat())
     global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
@@ -109,11 +113,13 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   module->getOrInsertGlobal(mangledName, spiceStruct->vTableData.vtableType);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
 
+  const bool isPublic = spiceStruct->entry->getQualType().isPublic();
+
   // Set global attributes
   global->setConstant(true);
-  global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setDSOLocal(isSymbolDSOLocal(isPublic));
   if (doesTargetSupportComDat())
     global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
