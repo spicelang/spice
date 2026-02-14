@@ -107,7 +107,7 @@ public:
 
   // Delete copy ctor and assignment operator
   Driver(const Driver &) = delete;
-  Driver operator=(const Driver &) = delete;
+  Driver &operator=(const Driver &) = delete;
 
   // Public methods
   int parse(int argc, const char *argv[]);

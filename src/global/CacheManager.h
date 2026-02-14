@@ -8,12 +8,16 @@ namespace spice::compiler {
 
 // Forward declarations
 class SourceFile;
+struct CliOptions;
 
 class CacheManager {
 public:
   // Constructors
-  explicit CacheManager(const std::filesystem::path &cacheDir) : cacheDir(cacheDir) {}
+  explicit CacheManager(const CliOptions &cliOptions);
+
+  // Prevent copy
   CacheManager(const CacheManager &) = delete;
+  CacheManager &operator=(const CacheManager &) = delete;
 
   // Public methods
   bool lookupSourceFile(const SourceFile *sourceFile) const;
@@ -21,6 +25,7 @@ public:
 
 private:
   // Private members
+  const CliOptions &cliOptions;
   const std::filesystem::path &cacheDir;
 };
 

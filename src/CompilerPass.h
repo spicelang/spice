@@ -18,7 +18,10 @@ class CompilerPass {
 public:
   // Constructors
   explicit CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile = nullptr);
+
+  // Prevent copy
   CompilerPass(const CompilerPass &) = delete;
+  CompilerPass &operator=(const CompilerPass &) = delete;
 
   // Destructor
   virtual ~CompilerPass() = default;

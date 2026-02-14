@@ -3,8 +3,11 @@
 #include "CacheManager.h"
 
 #include <SourceFile.h>
+#include <driver/Driver.h>
 
 namespace spice::compiler {
+
+CacheManager::CacheManager(const CliOptions &cliOptions) : cliOptions(cliOptions), cacheDir(cliOptions.cacheDir) {}
 
 bool CacheManager::lookupSourceFile(const SourceFile *sourceFile) const {
   const std::filesystem::path symbolTableFilePath = cacheDir / (sourceFile->cacheKey + ".bson");

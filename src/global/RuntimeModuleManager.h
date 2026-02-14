@@ -72,7 +72,10 @@ class RuntimeModuleManager {
 public:
   // Constructors
   explicit RuntimeModuleManager(GlobalResourceManager &resourceManager) : resourceManager(resourceManager) {}
+
+  // Prevent copy
   RuntimeModuleManager(const RuntimeModuleManager &) = delete;
+  RuntimeModuleManager &operator=(const RuntimeModuleManager &) = delete;
 
   // Public methods
   SourceFile *requestModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
