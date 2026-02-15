@@ -9,6 +9,8 @@
 #include <util/CodeLoc.h>
 #include <util/Memory.h>
 
+// LCOV_EXCL_START
+
 namespace spice::testing {
 
 using namespace spice::compiler;
@@ -23,8 +25,8 @@ class DummyNode final : public ASTNode {
   ~DummyNode() override { destructedDummyNodes++; }
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return {}; }             // LCOV_EXCL_LINE
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; } // LCOV_EXCL_LINE
+  std::any accept(AbstractASTVisitor *visitor) override { return {}; }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; }
 
   // Other methods
   GET_CHILDREN();

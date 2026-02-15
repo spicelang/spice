@@ -631,9 +631,6 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_PLUS_PLUS: {
-    // Make sure the value is present
-    resolveValue(lhsNode, lhs);
-
     // Execute operation
     lhs.value = conversionManager.getPrefixPlusPlusInst(node, lhs, lhsSTy).value;
 
@@ -651,9 +648,6 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS_MINUS: {
-    // Make sure the value is present
-    resolveValue(lhsNode, lhs);
-
     // Execute operation
     lhs.value = conversionManager.getPrefixMinusMinusInst(node, lhs, lhsSTy).value;
 
@@ -671,45 +665,23 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_NOT: {
-    // Make sure the value is present
-    resolveValue(lhsNode, lhs);
-
     // Execute operation
     lhs = conversionManager.getPrefixNotInst(node, lhs, lhsSTy);
-
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT: {
-    // Make sure the value is present
-    resolveValue(lhsNode, lhs);
-
     // Execute operation
     lhs = conversionManager.getPrefixBitwiseNotInst(node, lhs, lhsSTy);
-
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE: {
-    // Make sure the value is present
-    resolveValue(lhsNode, lhs);
-
-    // Execute operation
-    lhs.ptr = lhs.value;
-
-    // Reset the value
-    lhs.value = nullptr;
-
+    // Set value as address, clear all other fields
+    lhs = {.ptr = resolveValue(lhsNode, lhs)};
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF: {
-    // Make sure the address is present
-    resolveAddress(lhs);
-
-    // Execute operation
-    lhs.value = lhs.ptr;
-
-    // Reset the address
-    lhs.ptr = nullptr;
-
+    // Set address as value, clear all other fields
+    lhs = {.value = resolveAddress(lhs)};
     break;
   }
   default:                                                                 // GCOV_EXCL_LINE
@@ -759,12 +731,8 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       llvm::Value *indices[2] = {builder.getInt64(0), indexValue};
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indices);
     } else { // Pointer
-      // Make sure the value is present
-      resolveValue(lhsNode, lhs);
-      assert(lhs.value != nullptr);
-
       // Now the pointer is the value
-      lhs.ptr = lhs.value;
+      lhs.ptr = resolveValue(lhsNode, lhs);
 
       llvm::Type *lhsTy = lhsSTy.getContained().toLLVMType(sourceFile);
       // Calculate address of pointer item
