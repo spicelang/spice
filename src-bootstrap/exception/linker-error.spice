@@ -5,7 +5,9 @@ import "std/text/stringstream";
 import "bootstrap/util/code-loc";
 
 public type LinkerErrorType enum {
+    LINKER_INVOKER_NOT_FOUND,
     LINKER_NOT_FOUND,
+    ARCHIVER_NOT_FOUND,
     LINKER_ERROR
 }
 
@@ -34,7 +36,9 @@ public p LinkerError.ctor(const LinkerErrorType errorType, const string message)
  */
 f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
     switch errorType {
+        case LinkerErrorType::LINKER_INVOKER_NOT_FOUND: { return "Linker invoker not found"; }
         case LinkerErrorType::LINKER_NOT_FOUND: { return "Linker not found"; }
+        case LinkerErrorType::ARCHIVER_NOT_FOUND: { return "Archiver not found"; }
         case LinkerErrorType::LINKER_ERROR: { return "Linker error occurred"; }
         default: { panic(Error("Unknown error")); }
     }

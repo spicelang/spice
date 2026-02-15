@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <driver/Driver.h>
+#include <util/SystemUtil.h>
 
 namespace spice::compiler {
 
@@ -11,7 +12,8 @@ CacheManager::CacheManager(const CliOptions &cliOptions) : cliOptions(cliOptions
 
 bool CacheManager::lookupSourceFile(const SourceFile *sourceFile) const {
   const std::filesystem::path symbolTableFilePath = cacheDir / (sourceFile->cacheKey + ".bson");
-  const std::filesystem::path objectFilePath = cacheDir / (sourceFile->cacheKey + ".o");
+  const char *objectFileExtension = SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
+  const std::filesystem::path objectFilePath = cacheDir / (sourceFile->cacheKey + objectFileExtension);
 
   // Check if cache entry is available
   if (!exists(symbolTableFilePath) || !exists(objectFilePath))

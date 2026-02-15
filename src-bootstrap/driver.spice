@@ -51,6 +51,18 @@ const string BUILD_MODE_DEBUG = "debug";
 const string BUILD_MODE_RELEASE = "release";
 const string BUILD_MODE_TEST = "test";
 
+public type OutputContainer enum {
+    EXECUTABLE = 0,     // On Linux and macOS no extension, on Windows .exe files
+    OBJECT_FILE = 1,    // On Linux and macOS .o files and on Windows .obj files
+    STATIC_LIBRARY = 2, // On Linux and macOS .a files and on Windows .lib files
+    SHARED_LIBRARY = 3, // On Linux .so, on Windows .dll and on macOS .dylib files
+    COUNT
+}
+const string OUTPUT_CONTAINER_EXECUTABLE = "exec";
+const string OUTPUT_CONTAINER_OBJECT_FILE = "obj";
+const string OUTPUT_CONTAINER_STATIC_LIBRARY = "lib";
+const string OUTPUT_CONTAINER_SHARED_LIBRARY = "dylib";
+
 public type DumpSettings struct {
     public bool dumpCST = false
     public bool dumpAST = false
@@ -74,7 +86,7 @@ public type InstrumentationSettings struct {
  * Representation of the various cli options
  */
 public type CliOptions struct {
-    public FilePath mainSourceFile   // e.g. main.spice
+    public FilePath mainSourceFile // e.g. main.spice
     public llvm::Triple targetTriple // In format: <arch><sub>-<vendor>-<sys>-<abi>
     public String targetArch = String(TARGET_UNKNOWN)
     public String targetVendor = String(TARGET_UNKNOWN)
@@ -82,11 +94,12 @@ public type CliOptions struct {
     public bool isNativeTarget = true
     public bool useCPUFeatures = true
     public bool execute = false
-    public FilePath cacheDir                      // Where the cache files go. Should always be a temp directory
-    public FilePath outputDir = FilePath("./")    // Where the object files go. Should always be a temp directory
-    public FilePath outputPath                    // Where the output binary goes.
+    public FilePath cacheDir // Where the cache files go. Should always be a temp directory
+    public FilePath outputDir = FilePath("./") // Where the object files go. Should always be a temp directory
+    public FilePath outputPath // Where the output binary goes.
     public BuildMode buildMode = BuildMode::DEBUG // Default build mode is debug
-    public unsigned int compileJobCount = 0       // O for auto
+    public OutputContainer outputContainer = OutputContainer::EXECUTABLE
+    public unsigned int compileJobCount = 0 // O for auto
     public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
@@ -290,6 +303,22 @@ p Driver.addBuildSubcommand() {
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
 
+    const p(const string&) outputContainerCallback = p(const string& outputContainer) {
+        if outputContainer == OUTPUT_CONTAINER_EXECUTABLE {
+            this.cliOptions.outputContainer = OutputContainer::EXECUTABLE;
+        } else if outputContainer == OUTPUT_CONTAINER_OBJECT_FILES {
+            this.cliOptions.outputContainer = OutputContainer::OBJECT_FILES;
+        } else if outputContainer == OUTPUT_CONTAINER_STATIC_LIBRARY {
+            this.cliOptions.buildMode = OutputContainer::STATIC_LIBRARY;
+        } else if outputContainer == OUTPUT_CONTAINER_SHARED_LIBRARY {
+            this.cliOptions.buildMode = OutputContainer::SHARED_LIBRARY;
+        } else {
+            panic(Error("Invalid output container"));
+        }
+    };
+
+    // --output-container
+    CliOption<string>& outputContainerOption = subCmd.addOption("--output-container", outputContainerCallback, "Output container for the emitted code: exec (default), obj, lib, dylib");
     // --target-triple
     CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple.value, "Target triple for the emitted executable (for cross-compiling)");
     targetOption.addAlias("--target-triple");
@@ -379,7 +408,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     };
 
     // --build-mode
-    CliOption<string>& buildModeOption = subCmd.addOption("--build-mode", buildModeCallback, "Build mode (debug, release, test)");
+    CliOption<string>& buildModeOption = subCmd.addOption("--build-mode", buildModeCallback, "Build mode: debug (default), release, test");
     buildModeOption.addAlias("-m");
     // --llvm-args
     CliOption<String>& llvmArgsOption = subCmd.addOption("--llvm-args", this.cliOptions.llvmArgs, "Additional arguments for LLVM");
@@ -456,7 +485,7 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
     CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --sanitizer
-    subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory, type");
+    subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
 }
 
 /**

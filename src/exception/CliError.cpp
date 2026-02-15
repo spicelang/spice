@@ -35,8 +35,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Invalid target triple";
   case SOURCE_FILE_MISSING:
     return "Source file missing";
-  case OPT_DEBUG_INFO_INCOMPATIBILITY:
-    return "Cannot emit debug info with optimization enabled";
+  case INCOMPATIBLE_OPTIONS:
+    return "Incompatible options";
   case NON_ZERO_EXIT_CODE:
     return "Non-zero exit code";
   case FEATURE_NOT_SUPPORTED_FOR_TARGET:
@@ -45,6 +45,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Feature not supported when dockerized";
   case INVALID_BUILD_MODE:
     return "Invalid build mode";
+  case INVALID_OUTPUT_CONTAINER:
+    return "Invalid output container";
   case INVALID_SANITIZER:
     return "Invalid sanitizer";
   }

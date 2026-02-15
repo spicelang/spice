@@ -42,9 +42,8 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
       installPath /= cliOptions.mainSourceFile.stem();
       if (!performDryRun)
         create_directories(installPath);
-#if OS_WINDOWS
-      installPath.replace_extension("exe");
-#endif
+      assert(cliOptions.outputContainer == OutputContainer::EXECUTABLE);
+      installPath.replace_extension(SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE));
 
       // If the binary should be installed, set the output path to the Spice bin directory
       if (shouldInstall)
@@ -73,7 +72,7 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
       if (is_directory(cliOptions.outputPath)) {
         cliOptions.outputDir = cliOptions.outputPath;
         cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
-      } else {
+      } else if (cliOptions.outputPath.has_parent_path()) {
         cliOptions.outputDir = cliOptions.outputPath.parent_path();
       }
     } else {
@@ -82,17 +81,7 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
     }
 
     // Set output file extension
-    if (cliOptions.targetTriple.isWasm()) {
-      cliOptions.outputPath.replace_extension("wasm");
-    } else {
-#if OS_UNIX
-      cliOptions.outputPath.replace_extension("");
-#elif OS_WINDOWS
-      cliOptions.outputPath.replace_extension("exe");
-#else
-#error "Unsupported platform"
-#endif
-    }
+    cliOptions.outputPath.replace_extension(SystemUtil::getOutputFileExtension(cliOptions, cliOptions.outputContainer));
 
     // Set cache dir
     cliOptions.cacheDir = std::filesystem::temp_directory_path() / "spice" / "cache";
@@ -178,6 +167,10 @@ void Driver::enrich() const {
   // Type sanitizer needs TBAA metadata to work properly
   if (sanitizer == Sanitizer::TYPE)
     cliOptions.useTBAAMetadata = true;
+
+  // Prevent incompatible option combinations
+  if (cliOptions.staticLinking && cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY)
+    throw CliError(INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library");
 }
 
 /**
@@ -212,6 +205,27 @@ void Driver::addBuildSubcommand() {
   addCompileSubcommandOptions(subCmd);
   addInstrumentationOptions(subCmd);
 
+  const auto outputContainerCallback = [&](const CLI::results_t &results) {
+    std::string inputString = results.front();
+    std::ranges::transform(inputString, inputString.begin(), tolower);
+
+    if (inputString == OUTPUT_CONTAINER_EXECUTABLE)
+      cliOptions.outputContainer = OutputContainer::EXECUTABLE;
+    else if (inputString == OUTPUT_CONTAINER_OBJECT_FILE)
+      cliOptions.outputContainer = OutputContainer::OBJECT_FILE;
+    else if (inputString == OUTPUT_CONTAINER_STATIC_LIBRARY)
+      cliOptions.outputContainer = OutputContainer::STATIC_LIBRARY;
+    else if (inputString == OUTPUT_CONTAINER_SHARED_LIBRARY)
+      cliOptions.outputContainer = OutputContainer::SHARED_LIBRARY;
+    else
+      throw CliError(INVALID_OUTPUT_CONTAINER, inputString);
+
+    return true;
+  };
+
+  // --output-container
+  subCmd->add_option("--output-container", outputContainerCallback,
+                     "Format of the compilation output container: exec (default), obj, lib, dylib)");
   // --target-triple
   subCmd->add_option<llvm::Triple>("--target,--target-triple,-t", cliOptions.targetTriple,
                                    "Target triple for the emitted executable (for cross-compiling)");
@@ -333,7 +347,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   };
 
   // --build-mode
-  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release, test)");
+  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode: debug (default), release, test");
   // --llvm-args
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs
@@ -407,7 +421,7 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
   // --sanitizer
-  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer. Possible values: none, address, thread, memory, type");
+  subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
 }
 
 /**

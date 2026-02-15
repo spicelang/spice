@@ -8,7 +8,9 @@
 namespace spice::compiler {
 
 enum LinkerErrorType : uint8_t {
+  LINKER_INVOKER_NOT_FOUND,
   LINKER_NOT_FOUND,
+  ARCHIVER_NOT_FOUND,
   LINKER_ERROR,
 };
 

@@ -34,9 +34,12 @@ bool compileProject(const CliOptions &cliOptions) {
     mainSourceFile->runBackEnd();
     CHECK_ABORT_FLAG_B()
 
-    // Link the target executable (link object files to executable)
-    resourceManager.linker.prepare();
-    resourceManager.linker.link();
+    // Link the target executable (link object files to executable/library)
+    if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE) {
+      resourceManager.linker.prepare();
+      resourceManager.linker.run();
+      resourceManager.linker.cleanup();
+    }
 
     // Print compiler warnings
     mainSourceFile->collectAndPrintWarnings();

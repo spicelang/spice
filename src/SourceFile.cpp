@@ -55,7 +55,8 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   const std::string &cpuName = resourceManager.cpuName;
   const std::string &features = resourceManager.cpuFeatures;
   const llvm::Triple &targetTriple = cliOptions.targetTriple;
-  llvm::TargetMachine *targetMachineRaw = target->createTargetMachine(targetTriple, cpuName, features, opt, llvm::Reloc::PIC_);
+  constexpr llvm::Reloc::Model relocModel = llvm::Reloc::PIC_;
+  llvm::TargetMachine *targetMachineRaw = target->createTargetMachine(targetTriple, cpuName, features, opt, relocModel);
   targetMachine = std::unique_ptr<llvm::TargetMachine>(targetMachineRaw);
 }
 
@@ -511,7 +512,7 @@ void SourceFile::runObjectEmitter() {
     dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
   // Add the object file to the linker objects
-  resourceManager.linker.addObjectFilePath(objectFilePath.string());
+  resourceManager.linker.addObjectFilePath(objectFilePath);
 
   previousStage = OBJECT_EMITTER;
   timer.stop();

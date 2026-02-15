@@ -20,8 +20,13 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   // Attach information to the module
   module->setTargetTriple(cliOptions.targetTriple);
   module->setDataLayout(sourceFile->targetMachine->createDataLayout());
-  module->setPICLevel(llvm::PICLevel::BigPIC);
-  module->setPIELevel(llvm::PIELevel::Large);
+  if (cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
+    module->setPICLevel(llvm::PICLevel::SmallPIC);
+    module->setPIELevel(llvm::PIELevel::Default);
+  } else {
+    module->setPICLevel(llvm::PICLevel::BigPIC);
+    module->setPIELevel(llvm::PIELevel::Large);
+  }
   module->setUwtable(llvm::UWTableKind::Default);
   module->setFramePointer(llvm::FramePointerKind::All);
 
@@ -621,8 +626,9 @@ void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
 }
 
 bool IRGenerator::isSymbolDSOLocal(bool isPublic) const {
-  (void)isPublic;
-  return true;
+  // If we are compiling a shared library and export the global symbol, we need to drop dso_local
+  // because it may be interposed by other shared objects by the dynamic linker.
+  return !(isPublic && cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY);
 }
 
 llvm::GlobalValue::LinkageTypes IRGenerator::getSymbolLinkageType(bool isPublic) const {

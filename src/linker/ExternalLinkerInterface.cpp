@@ -7,6 +7,7 @@
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
+#include <util/GlobalDefinitions.h>
 #include <util/SystemUtil.h>
 #include <util/Timer.h>
 
@@ -20,8 +21,15 @@ void ExternalLinkerInterface::prepare() {
   addLinkerFlag("--target=" + cliOptions.targetTriple.str());
 
   // Static linking
-  if (cliOptions.staticLinking)
+  if (cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
+    addLinkerFlag("-shared");
+  } else if (cliOptions.staticLinking) {
     addLinkerFlag("-static");
+  }
+
+  // The following flags only make sense if we want to emit an executable
+  if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
+    return;
 
   // Stripping symbols
   if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin())
@@ -56,47 +64,74 @@ void ExternalLinkerInterface::prepare() {
   }
 }
 
+void ExternalLinkerInterface::run() const {
+  switch (cliOptions.outputContainer) {
+  case OutputContainer::EXECUTABLE:
+  case OutputContainer::SHARED_LIBRARY:
+    link();
+    break;
+  case OutputContainer::STATIC_LIBRARY:
+    archive();
+    break;
+  case OutputContainer::OBJECT_FILE:
+    // No linking necessary
+    break;
+  default:
+    assert_fail("Unknown output container");
+  }
+}
+
 /**
- * Start the linking process
+ * Cleanup intermediary object files
+ */
+void ExternalLinkerInterface::cleanup() const {
+  // Cleanup intermediary object files
+  if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE && !cliOptions.dump.dumpToFiles)
+    for (const std::filesystem::path &path : objectFilePaths)
+      std::filesystem::remove(path);
+}
+
+/**
+ * Link the object files to an executable
  */
 void ExternalLinkerInterface::link() const {
   assert(!outputPath.empty());
 
   // Build the linker command
-  std::stringstream linkerCommandBuilder;
+  std::stringstream commandBuilder;
   const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
-  linkerCommandBuilder << linkerInvokerPath;
+  commandBuilder << linkerInvokerPath;
   const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
-  linkerCommandBuilder << " -fuse-ld=" << linkerPath;
+  commandBuilder << " -fuse-ld=" << linkerPath;
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
-    linkerCommandBuilder << " " << linkerFlag;
+    commandBuilder << " " << linkerFlag;
   if (linkLibMath)
-    linkerCommandBuilder << " -lm";
+    commandBuilder << " -lm";
   // Append output path
-  linkerCommandBuilder << " -o " << outputPath.string();
+  commandBuilder << " -o " << outputPath.string();
   // Append object files
-  for (const std::string &objectFilePath : objectFilePaths)
-    linkerCommandBuilder << " " << objectFilePath;
-  const std::string linkerCommand = linkerCommandBuilder.str();
+  for (const std::filesystem::path &objectFilePath : objectFilePaths)
+    commandBuilder << " " << objectFilePath.string();
+  const std::string command = commandBuilder.str();
 
   // Print status message
   if (cliOptions.printDebugOutput) {
     std::cout << "\nLinking with: " << linkerInvokerName << " (invoker) / " << linkerName << " (linker)"; // GCOV_EXCL_LINE
-    std::cout << "\nLinker command: " << linkerCommand;                                                   // GCOV_EXCL_LINE
+    std::cout << "\nLinker command: " << command;                                                         // GCOV_EXCL_LINE
     std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n";                        // GCOV_EXCL_LINE
   }
 
   // Call the linker
   Timer timer;
   timer.start();
-  const auto [output, exitCode] = SystemUtil::exec(linkerCommand);
+  const auto [output, exitCode] = SystemUtil::exec(command);
   timer.stop();
 
   // Check for linker error
-  if (exitCode != 0) {                                                                                          // GCOV_EXCL_LINE
-    const std::string errorMessage = "Linker exited with non-zero exit code\nLinker command: " + linkerCommand; // GCOV_EXCL_LINE
-    throw LinkerError(LINKER_ERROR, errorMessage);                                                              // GCOV_EXCL_LINE
+  if (exitCode != 0) {                                                                                    // GCOV_EXCL_LINE
+    const std::string errorMessage = "Linker exited with non-zero exit code\nLinker command: " + command; // GCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, errorMessage);                                                        // GCOV_EXCL_LINE
   } // GCOV_EXCL_LINE
 
   // Print linker result if appropriate
@@ -109,11 +144,55 @@ void ExternalLinkerInterface::link() const {
 }
 
 /**
+ * Archive the object files to a static library
+ */
+void ExternalLinkerInterface::archive() const {
+  assert(!outputPath.empty());
+
+  // Build the archiver command
+  std::stringstream commandBuilder;
+  const auto [archiverName, archiverPath] = SystemUtil::findArchiver();
+  commandBuilder << archiverPath;
+  commandBuilder << " rcs "; // r = insert files into archive; c = create archive if not existing, s = create archive index
+  commandBuilder << outputPath.string();
+  for (const std::filesystem::path &objectFilePath : objectFilePaths)
+    commandBuilder << " " << objectFilePath.string();
+  const std::string command = commandBuilder.str();
+
+  // Print status message
+  if (cliOptions.printDebugOutput) {
+    std::cout << "\nArchiving with: " << archiverName;                                 // GCOV_EXCL_LINE
+    std::cout << "\nArchiver command: " << command;                                    // GCOV_EXCL_LINE
+    std::cout << "\nEmitting static library to path: " << outputPath.string() << "\n"; // GCOV_EXCL_LINE
+  }
+
+  // Call the archiver
+  Timer timer;
+  timer.start();
+  const auto [output, exitCode] = SystemUtil::exec(command);
+  timer.stop();
+
+  // Check for linker error
+  if (exitCode != 0) {                                                                                        // GCOV_EXCL_LINE
+    const std::string errorMessage = "Archiver exited with non-zero exit code\nArchiver command: " + command; // GCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, errorMessage);                                                            // GCOV_EXCL_LINE
+  } // GCOV_EXCL_LINE
+
+  // Print linker result if appropriate
+  if (cliOptions.printDebugOutput && !output.empty())      // GCOV_EXCL_LINE
+    std::cout << "Archiving result: " << output << "\n\n"; // GCOV_EXCL_LINE
+
+  // Print link time
+  if (cliOptions.printDebugOutput)                                                       // GCOV_EXCL_LINE
+    std::cout << "Total archive time: " << timer.getDurationMilliseconds() << " ms\n\n"; // GCOV_EXCL_LINE
+}
+
+/**
  * Add another object file to be linked when calling 'link()'
  *
- * @param objectFilePath Path to the object file
+ * @param path Path to the object file
  */
-void ExternalLinkerInterface::addObjectFilePath(const std::string &objectFilePath) { objectFilePaths.push_back(objectFilePath); }
+void ExternalLinkerInterface::addObjectFilePath(const std::filesystem::path &path) { objectFilePaths.push_back(path); }
 
 /**
  * Add another linker flag for the call to the linker executable
@@ -136,7 +215,7 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
 
   // Add the file to the linker
   additionalSource.make_preferred();
-  addObjectFilePath(additionalSource.string());
+  addObjectFilePath(additionalSource);
 }
 
 /**

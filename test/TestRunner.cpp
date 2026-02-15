@@ -51,6 +51,7 @@ void execTestCase(const TestCase &testCase) {
       /* outputDir= */ "./",
       /* outputPath= */ "",
       /* buildMode= */ BuildMode::DEBUG,
+      /* outputContainer= */ OutputContainer::EXECUTABLE,
       /* compileJobCount= */ 0,
       /* ignoreCache */ true,
       /* llvmArgs= */ "",
@@ -235,7 +236,7 @@ void execTestCase(const TestCase &testCase) {
 
       // Prepare and run linker
       resourceManager.linker.prepare();
-      resourceManager.linker.link();
+      resourceManager.linker.run();
     }
 
     // Check type registry output
