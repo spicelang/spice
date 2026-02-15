@@ -44,18 +44,18 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %intArray = alloca [4 x i32], align 4
-  %intArray1 = alloca ptr, align 8
-  %intArray2 = alloca ptr, align 8
+  %1 = alloca ptr, align 8
+  %2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
-  %1 = getelementptr inbounds [4 x i32], ptr %intArray, i64 0, i32 1
-  %2 = load i32, ptr %1, align 4
-  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %2)
-  store ptr %intArray, ptr %intArray1, align 8
-  store ptr %intArray1, ptr %intArray2, align 8
-  call void @_Z8testProcPPPA4_i(ptr noundef align 8 dereferenceable(8) %intArray2)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  %3 = getelementptr inbounds [4 x i32], ptr %intArray, i64 0, i32 1
+  %4 = load i32, ptr %3, align 4
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %4)
+  store ptr %intArray, ptr %1, align 8
+  store ptr %1, ptr %2, align 8
+  call void @_Z8testProcPPPA4_i(ptr noundef align 8 dereferenceable(8) %2)
+  %6 = load i32, ptr %result, align 4
+  ret i32 %6
 }
 
 attributes #0 = { nofree nounwind }
