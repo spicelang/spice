@@ -181,7 +181,7 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
   // De-reference if reference type
   const bool isVolatile = exprResult.entry && exprResult.entry->isVolatile;
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
-    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, isVolatile);
+    exprResult.ptr = insertLoad(qualType.toPtr(exprResult.node), exprResult.refPtr, isVolatile);
 
   // Load the value from the pointer
   const QualType referencedType = qualType.removeReferenceWrapper();
@@ -416,8 +416,9 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node) {
   // Get entry of left side
-  auto [value, constant, ptr, refPtr, entry, _] = std::any_cast<LLVMExprResult>(visit(lhsNode));
-  llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? refPtr : ptr;
+  auto exprResult = std::any_cast<LLVMExprResult>(visit(lhsNode));
+  SymbolTableEntry *entry = exprResult.entry;
+  llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? exprResult.refPtr : resolveAddress(exprResult);
   return doAssignment(lhsAddress, entry, rhsNode, node);
 }
 
