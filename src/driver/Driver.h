@@ -47,23 +47,37 @@ const char *const BUILD_MODE_DEBUG = "debug";
 const char *const BUILD_MODE_RELEASE = "release";
 const char *const BUILD_MODE_TEST = "test";
 
+enum class OutputContainer : uint8_t {
+  EXECUTABLE = 0,     // On Linux and macOS no extension, on Windows .exe files
+  OBJECT_FILE = 1,    // On Linux and macOS .o files and on Windows .obj files
+  STATIC_LIBRARY = 2, // On Linux and macOS .a files and on Windows .lib files
+  SHARED_LIBRARY = 3, // On Linux .so, on macOS .dylib and on Windows .dll files
+  MAX,
+};
+
+const char *const OUTPUT_CONTAINER_EXECUTABLE = "exec";
+const char *const OUTPUT_CONTAINER_OBJECT_FILE = "obj";
+const char *const OUTPUT_CONTAINER_STATIC_LIBRARY = "lib";
+const char *const OUTPUT_CONTAINER_SHARED_LIBRARY = "dylib";
+
 /**
  * Representation of the various cli options
  */
 struct CliOptions {
   std::filesystem::path mainSourceFile; // e.g. ./main.spice
-  llvm::Triple targetTriple;            // In format: <arch><sub>-<vendor>-<sys>-<abi>
+  llvm::Triple targetTriple; // In format: <arch><sub>-<vendor>-<sys>-<abi>
   std::string targetArch = TARGET_UNKNOWN;
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
   bool isNativeTarget = true;
   bool useCPUFeatures = true;
   bool execute = false;
-  std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
+  std::filesystem::path cacheDir; // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
-  std::filesystem::path outputPath;       // Where the output binary goes.
+  std::filesystem::path outputPath; // Where the output binary goes.
   BuildMode buildMode = BuildMode::DEBUG; // Default build mode is debug
-  unsigned short compileJobCount = 0;     // 0 for auto
+  OutputContainer outputContainer = OutputContainer::EXECUTABLE; // Default output container is executable
+  unsigned short compileJobCount = 0; // 0 for auto
   bool ignoreCache = false;
   std::string llvmArgs;
   bool printDebugOutput = false;
@@ -134,7 +148,7 @@ private:
   static void ensureNotDockerized();
 
   // Members
-  CLI::App app = CLI::App{"Spice Programming Language", "spice"};
+  CLI::App app = CLI::App("Spice Programming Language", "spice");
 };
 
 } // namespace spice::compiler

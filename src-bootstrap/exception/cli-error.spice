@@ -8,8 +8,13 @@ public type CliErrorType enum {
     INCOMPLETE_TARGET_TRIPLE,
     INVALID_TARGET_TRIPLE,
     SOURCE_FILE_MISSING,
-    OPT_DEBUG_INFO_INCOMPATIBILITY,
-    NON_ZERO_EXIT_CODE
+    INCOMPATIBLE_OPTIONS,
+    NON_ZERO_EXIT_CODE,
+    FEATURE_NOT_SUPPORTED_FOR_TARGET,
+    FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
+    INVALID_BUILD_MODE,
+    INVALID_OUTPUT_CONTAINER,
+    INVALID_SANITIZER
 }
 
 /**
@@ -40,8 +45,13 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::INCOMPLETE_TARGET_TRIPLE: { return "Incomplete target triple"; }
         case CliErrorType::INVALID_TARGET_TRIPLE: { return "Invalid target triple"; }
         case CliErrorType::SOURCE_FILE_MISSING: { return "Source file missing"; }
-        case CliErrorType::OPT_DEBUG_INFO_INCOMPATIBILITY: { return "Cannot emit debug info with optimization enabled"; }
+        case CliErrorType::INCOMPATIBLE_OPTIONS: { return "Incompatible options"; }
         case CliErrorType::NON_ZERO_EXIT_CODE: { return "Non-zero exit code"; }
+        case CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET: { return "Feature is not supported for this target"; }
+        case CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED: { return "Feature not supported when dockerized"; }
+        case CliErrorType::INVALID_BUILD_MODE: { return "Invalid build mode"; }
+        case CliErrorType::INVALID_OUTPUT_CONTAINER: { return "Invalid output container"; }
+        case CliErrorType::INVALID_SANITIZER: { return "Invalid sanitizer"; }
         default: { panic(Error("Unknown error")); }
     }
 }

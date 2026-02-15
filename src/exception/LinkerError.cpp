@@ -29,8 +29,12 @@ const char *LinkerError::what() const noexcept { return errorMessage.c_str(); }
  */
 std::string LinkerError::getMessagePrefix(LinkerErrorType errorType) {
   switch (errorType) {
+  case LINKER_INVOKER_NOT_FOUND:
+    return "Linker invoker not found";
   case LINKER_NOT_FOUND:
     return "Linker not found";
+  case ARCHIVER_NOT_FOUND:
+    return "Archiver not found";
   case LINKER_ERROR:
     return "Linker error occurred";
   }

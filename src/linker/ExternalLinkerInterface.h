@@ -22,8 +22,9 @@ public:
 
   // Public methods
   void prepare();
-  void link() const;
-  void addObjectFilePath(const std::string &objectFilePath);
+  void run() const;
+  void cleanup() const;
+  void addObjectFilePath(const std::filesystem::path &path);
   void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
   void requestLibMathLinkage();
@@ -32,9 +33,13 @@ public:
   std::filesystem::path outputPath;
 
 private:
+  // Private methods
+  void link() const;
+  void archive() const;
+
   // Members
   const CliOptions &cliOptions;
-  std::vector<std::string> objectFilePaths;
+  std::vector<std::filesystem::path> objectFilePaths;
   std::vector<std::string> linkerFlags;
   bool linkLibMath = false;
 };

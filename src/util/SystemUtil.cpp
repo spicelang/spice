@@ -17,6 +17,8 @@
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
 
+#include <llvm/TargetParser/Triple.h>
+
 namespace spice::compiler {
 
 /**
@@ -103,13 +105,14 @@ ExternalBinaryFinderResult SystemUtil::findLinkerInvoker() {
 #error "Unsupported platform"
 #endif
   const auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
-  throw LinkerError(LINKER_NOT_FOUND, msg);                                                             // LCOV_EXCL_LINE
+  throw LinkerError(LINKER_INVOKER_NOT_FOUND, msg);                                                     // LCOV_EXCL_LINE
 }
 
 /**
  * Search for a supported linker on the system and return the executable name or path.
  * This function may throw a LinkerError if no linker is found.
  *
+ * @param cliOptions Command line options
  * @return Name and path to the linker executable
  */
 ExternalBinaryFinderResult SystemUtil::findLinker([[maybe_unused]] const CliOptions &cliOptions) {
@@ -137,6 +140,53 @@ ExternalBinaryFinderResult SystemUtil::findLinker([[maybe_unused]] const CliOpti
 #endif
   const auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
   throw LinkerError(LINKER_NOT_FOUND, msg);                                                              // LCOV_EXCL_LINE
+}
+
+/**
+ * Search for a supported archiver on the system and return the executable name or path.
+ * This function may throw a LinkerError if no archiver is found.
+ *
+ * @return Name and path to the archiver executable
+ */
+ExternalBinaryFinderResult SystemUtil::findArchiver() {
+#if OS_UNIX
+  for (const char *archiverName : {"llvm-ar", "gcc-ar", "ar"})
+    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+      if (std::filesystem::exists(path + archiverName))
+        return ExternalBinaryFinderResult{archiverName, path + archiverName};
+#elif OS_WINDOWS
+  for (const char *archiverName : {"llvm-lib", "lib"})
+    if (isCommandAvailable(std::string(archiverName) + " -v"))
+      return ExternalBinaryFinderResult{archiverName, archiverName};
+#else
+#error "Unsupported platform"
+#endif
+  const auto msg = "No supported archiver was found on the system. Supported are: llvm-ar and ar"; // LCOV_EXCL_LINE
+  throw LinkerError(ARCHIVER_NOT_FOUND, msg);                                                      // LCOV_EXCL_LINE
+}
+
+/**
+ * Retrieve the file extension of the produced output file, depending on target container format and target OS
+ *
+ * @param cliOptions Command line options
+ * @param outputContainer Output container
+ * @return File extension
+ */
+const char *SystemUtil::getOutputFileExtension(const CliOptions &cliOptions, OutputContainer outputContainer) {
+  static constexpr auto OUTPUT_CONTAINER_COUNT = static_cast<size_t>(OutputContainer::MAX);
+  static constexpr std::array<const char *, OUTPUT_CONTAINER_COUNT> OC_EXT_MAP_WASM = {"wasm", "o", "a", "so"};
+  static constexpr std::array<const char *, OUTPUT_CONTAINER_COUNT> OC_EXT_MAP_MACOS = {"", "o", "a", "dylib"};
+  static constexpr std::array<const char *, OUTPUT_CONTAINER_COUNT> OC_EXT_MAP_WINDOWS = {"exe", "obj", "lib", "dll"};
+  static constexpr std::array<const char *, OUTPUT_CONTAINER_COUNT> OC_EXT_MAP_LINUX = {"", "o", "a", "so"};
+
+  const auto outputContainerCasted = static_cast<uint8_t>(outputContainer);
+  if (cliOptions.targetTriple.isWasm())
+    return OC_EXT_MAP_WASM[outputContainerCasted];
+  if (cliOptions.targetTriple.isOSDarwin())
+    return OC_EXT_MAP_MACOS[outputContainerCasted];
+  if (cliOptions.targetTriple.isOSWindows())
+    return OC_EXT_MAP_WINDOWS[outputContainerCasted];
+  return OC_EXT_MAP_LINUX[outputContainerCasted];
 }
 
 /**

@@ -9,6 +9,7 @@ namespace spice::compiler {
 
 // Forward declarations
 struct CliOptions;
+enum class OutputContainer : uint8_t;
 
 struct ExecResult {
   std::string output;
@@ -27,6 +28,8 @@ public:
   static bool isGraphvizInstalled();
   static ExternalBinaryFinderResult findLinkerInvoker();
   static ExternalBinaryFinderResult findLinker(const CliOptions &cliOptions);
+  static ExternalBinaryFinderResult findArchiver();
+  static const char *getOutputFileExtension(const CliOptions &cliOptions, OutputContainer outputContainer);
   static std::filesystem::path getStdDir();
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
