@@ -52,8 +52,8 @@ define dso_local noundef i32 @main() #0 {
   store i64 100, ptr %l, align 8, !tbaa !12
   call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2)
   store ptr %l, ptr %ptr, align 8, !tbaa !14
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 1)
-  %1 = load ptr, ptr %ptr, align 8, !tbaa !14
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1)
+  %1 = load ptr, ptr %ptr, align 8
   call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1)
   %2 = load double, ptr %1, align 8, !tbaa !16
   %3 = fadd double %2, 2.000000e+00

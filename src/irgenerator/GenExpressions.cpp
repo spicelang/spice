@@ -675,13 +675,23 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE: {
-    // Set value as address, clear all other fields
-    lhs = {.ptr = resolveValue(lhsNode, lhs)};
+    // If only .refPtr is filled, we can't simply rewire the fields, but need to actually perform a load.
+    // For that we can use resolveValue().
+    const bool onlyRefPtrIsFilled = lhs.value == nullptr && lhs.ptr == nullptr;
+    // Rewire the fields
+    llvm::Value *newRefPtr = onlyRefPtrIsFilled ? resolveValue(lhsNode, lhs) : lhs.ptr;
+    llvm::Value *newPtr = lhs.value;
+    lhs = {.ptr = newPtr, .refPtr = newRefPtr};
     break;
   }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF: {
-    // Set address as value, clear all other fields
-    lhs = {.value = resolveAddress(lhs)};
+    // If only .value is filled, we can't simply rewire the fields, but need to actually perform alloca + store.
+    // For that we can use resolveAddress().
+    const bool onlyValueIsFilled = lhs.ptr == nullptr && lhs.refPtr == nullptr;
+    // Rewire the fields
+    llvm::Value *newValue = onlyValueIsFilled ? resolveAddress(lhs) : lhs.ptr;
+    llvm::Value *newPtr = lhs.refPtr;
+    lhs = {.value = newValue, .ptr = newPtr};
     break;
   }
   default:                                                                 // GCOV_EXCL_LINE
