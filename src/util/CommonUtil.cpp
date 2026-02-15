@@ -107,7 +107,7 @@ std::string CommonUtil::demangleTypeName(const char *mangledName) {
 /**
  * Check if the given string is a valid, mangled name
  *
- * @return
+ * @return Valid mangled name or not
  */
 bool CommonUtil::isValidMangledName(const std::string &mangledName) {
   int status;
@@ -135,6 +135,11 @@ std::string CommonUtil::getCircularImportMessage(std::stack<const SourceFile *> 
   return message.str();
 }
 
+/**
+ * Obtain current year
+ *
+ * @return Current year
+ */
 int CommonUtil::getCurrentYear() {
   const std::time_t t = std::time(nullptr);
   const std::tm *tm = std::localtime(&t);

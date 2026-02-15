@@ -43,6 +43,7 @@ TEST(DriverTest, BuildSubcommandComplex) {
       "release",
       "-lto",
       "--sanitizer=address",
+      "--output-container=exec",
       "../../media/test-project/test.spice",
   };
   static constexpr int argc = std::size(argv);
@@ -64,6 +65,7 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_FALSE(cliOptions.noEntryFct);
   ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo);           // -g
   ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer); // --sanitizer=address
+  ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);  // --output-container=exec
   ASSERT_TRUE(cliOptions.useLTO);                                      // -lto
   ASSERT_TRUE(cliOptions.printDebugOutput);                            // -d
   ASSERT_TRUE(cliOptions.dump.dumpIR);                                 // -ir
@@ -217,10 +219,26 @@ TEST(DriverTest, MemorySanitizerOnlyLinux) {
 #endif
 }
 
+TEST(DriverTest, IncompatibleOptions) {
+  // --static in combination with --output-container=dylib is not allowed
+  const char *argv[] = {"spice", "build", "--static", "--output-container=dylib", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Incompatible options: Cannot link statically if compiling shared library";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+}
+
 using DriverInvalidEnumTestParam = std::pair<const char *, const char *>;
 class DriverTest : public ::testing::TestWithParam<DriverInvalidEnumTestParam> {};
 
-TEST_P(DriverTest, LengthGreaterThanZero) {
+TEST_P(DriverTest, InvalidEnumValue) {
   const auto &[arg, errorMessage] = GetParam();
   const char *argv[] = {"spice", "build", arg, "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
@@ -242,6 +260,10 @@ const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
     DriverInvalidEnumTestParam{
         "--sanitizer=unknown",
         "[Error|CLI] Invalid sanitizer: unknown",
+    },
+    DriverInvalidEnumTestParam{
+        "--output-container=unknown",
+        "[Error|CLI] Invalid output container: unknown",
     });
 INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 

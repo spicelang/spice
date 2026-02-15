@@ -1,0 +1,10 @@
+// TEST: --output-container=exec
+
+f<int> add(int a, int b) {
+    return a + b;
+}
+
+// Compiling to executable requires main function
+f<int> main() {
+    return add(1, 2) - 3;
+}

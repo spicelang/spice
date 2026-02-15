@@ -23,7 +23,8 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
   visitChildren(node);
 
   // Check if the main function exists
-  if (sourceFile->isMainFile && !cliOptions.noEntryFct && !hasMainFunction)
+  const bool mainFctRequired = cliOptions.outputContainer == OutputContainer::EXECUTABLE && !cliOptions.noEntryFct;
+  if (sourceFile->isMainFile && mainFctRequired && !hasMainFunction)
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found", false);
 
   return nullptr;

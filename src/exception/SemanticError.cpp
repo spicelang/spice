@@ -117,7 +117,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
   case SWITCH_CASE_TYPE_MISMATCH:
     return "Case constant type does not match switch expression type";
   case MISSING_MAIN_FUNCTION:
-    return "Spice programs must contain a main function";
+    return "Spice executables must contain a main function";
   case FCT_PARAM_IS_TYPE_DYN:
     return "Parameter type dyn not valid in function/procedure definition without default value";
   case INVALID_BREAK_NUMBER:
