@@ -181,7 +181,7 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
   // De-reference if reference type
   const bool isVolatile = exprResult.entry && exprResult.entry->isVolatile;
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
-    exprResult.ptr = insertLoad(qualType.toPtr(exprResult.node), exprResult.refPtr, isVolatile);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, isVolatile);
 
   // Load the value from the pointer
   const QualType referencedType = qualType.removeReferenceWrapper();
