@@ -50,16 +50,16 @@ public f<Vertex<T>&> Graph.addVertex(const T& value) {
     return vertex;
 }
 
-public p Graph.addEdge(const Vertex<T>& v1, const Vertex<T>& v2) {
-    if !this.adjList.contains(v1) || !this.adjList.contains(v2) {
+public p Graph.addEdge(const Vertex<T>& from, const Vertex<T>& to) {
+    if !this.adjList.contains(from) || !this.adjList.contains(to) {
         panic(Error("Graph must already contain both given vertices"));
     }
 
-    Vector<Vertex<T>*>& adjListV1 = this.adjList.get(v1);
-    adjListV1.pushBack(&v2);
+    Vector<Vertex<T>*>& adjListFrom = this.adjList.get(from);
+    adjListFrom.pushBack(&to);
     if !this.directed {
-        Vector<Vertex<T>*>& adjListV2 = this.adjList.get(v2);
-        adjListV2.pushBack(&v1);
+        Vector<Vertex<T>*>& adjListTo = this.adjList.get(to);
+        adjListTo.pushBack(&from);
     }
 }
 
@@ -86,28 +86,12 @@ public const p Graph.toGraphviz(StringStream& ss) {
     }
 
     // Emit all edges
-    UnorderedMapIterator<Vertex<T>, Vector<Vertex<T>*>> it = this.adjList.getIterator();
-    while it.isValid() {
-        const Pair<const Vertex<T>&, Vector<Vertex<T>*>&>& pair = it.get();
-        const Vertex<T>& src = pair.getFirst();
-        const T& srcValue = src.value;
-        const Vector<Vertex<T>*>& dsts = pair.getSecond();
-        VectorIterator<Vertex<T>*> dstIt = dsts.getIterator();
-        while dstIt.isValid() {
-            const Vertex<T>* dst = dstIt.get();
+    foreach const dyn pair : this.adjList {
+        const T& srcValue = pair.getFirst().value;
+        foreach const Vertex<T>* dst : pair.getSecond() {
             ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dst.value) << "\";\n";
-            dstIt.next();
         }
-        it.next();
     }
-    /*foreach const Pair<Vertex<T>&, Vector<Vertex<T>*>&> pair : this.adjList {
-        const Vertex<T>& src = pair.getFirst();
-        const T& srcValue = src.value;
-        const Vector<Vertex<T>*>& dsts = pair.getSecond();
-        foreach const Vertex<T>* dst : dsts {
-            ss << "  \"" << toString(srcValue) << "\" " << edgeSep << " \"" << toString(dst.value) << "\";\n";
-        }
-    }*/
 
     ss << "}";
 }
