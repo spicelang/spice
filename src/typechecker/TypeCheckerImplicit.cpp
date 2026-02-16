@@ -463,7 +463,15 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
   // Get all variables, that are approved for de-allocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
   // Sort by reverse declaration order
-  auto comp = [](const SymbolTableEntry *a, const SymbolTableEntry *b) { return a->declNode->codeLoc > b->declNode->codeLoc; };
+  const auto comp = [this](const SymbolTableEntry *a, const SymbolTableEntry *b) {
+    const ASTNode *aDeclNode = a->declNode;
+    const ASTNode *bDeclNode = b->declNode;
+    // Primary sort criteria is the code location
+    if (aDeclNode->codeLoc != bDeclNode->codeLoc)
+      return aDeclNode->codeLoc > bDeclNode->codeLoc;
+    // Secondary sort criteria is the node id
+    return resourceManager.nodeToNodeId[aDeclNode] > resourceManager.nodeToNodeId[bDeclNode];
+  };
   std::ranges::stable_sort(vars, comp);
   // Call the dtor of each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {

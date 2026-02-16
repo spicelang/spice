@@ -49,6 +49,7 @@ public:
   DefaultMemoryManager memoryManager;
   std::vector<std::string> compileTimeStringValues;
   BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes
+  std::unordered_map<const ASTNode *, size_t> nodeToNodeId;
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
