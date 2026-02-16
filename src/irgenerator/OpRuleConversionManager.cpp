@@ -1721,7 +1721,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (opFct->returnType.is(TY_STRUCT)) {
-    anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node->codeLoc, opIdx);
+    anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node, opIdx);
     if (anonymousSymbol != nullptr) {
       resultPtr = irGenerator->insertAlloca(result->getType());
       irGenerator->insertStore(result, resultPtr);

@@ -132,6 +132,7 @@ private:
   // Members
   antlr4::ANTLRInputStream *inputStream;
   std::stack<ASTNode *> parentStack;
+  size_t currentNodeId = 0;
 
   // Private methods
   template <typename SrcTy, typename TgtTy>
@@ -149,6 +150,7 @@ private:
   {
     // Create the new node
     T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
+    resourceManager.nodeToNodeId[node] = currentNodeId++;
     if constexpr (!std::is_same_v<T, EntryNode>)
       node->parent = parentStack.top();
     // This node is the parent for its children

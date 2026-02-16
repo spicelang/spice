@@ -285,7 +285,8 @@ std::vector<Function *> Scope::getVirtualMethods() {
   }
 
   // Sort the list
-  std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
+  const auto pred = [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); };
+  std::ranges::sort(methods, pred);
 
   return methods;
 } // LCOV_EXCL_LINE - false positive
