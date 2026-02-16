@@ -1,9 +1,13 @@
 import "std/data/unordered-map";
 import "std/data/vector";
+import "std/data/stack";
+import "std/data/queue";
 import "std/data/pair";
 import "std/math/hash";
 import "std/text/stringstream";
 import "std/type/type-conversion";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
 
 // Generic types
 type T dyn;
@@ -33,7 +37,7 @@ public f<Hash> Vertex.hash() {
  *
  * ToDo: Add time complexities for common operations
  */
-public type Graph<T> struct {
+public type Graph<T> struct : IIterable<T> {
     Vector<Vertex<T>> vertices
     UnorderedMap<Vertex<T>, Vector<Vertex<T>*>> adjList
     bool directed
@@ -57,14 +61,18 @@ public p Graph.addEdge(const Vertex<T>& from, const Vertex<T>& to) {
 
     Vector<Vertex<T>*>& adjListFrom = this.adjList.get(from);
     adjListFrom.pushBack(&to);
-    if !this.directed {
-        Vector<Vertex<T>*>& adjListTo = this.adjList.get(to);
-        adjListTo.pushBack(&from);
-    }
+}
+
+const f<bool> Graph.hasCyclesDirected() {
+    return false;
+}
+
+const f<bool> Graph.hasCyclesUndirected() {
+    return false;
 }
 
 public const f<bool> Graph.hasCycles() {
-    return false; // ToDo: Implement
+    return this.directed ? this.hasCyclesDirected() : this.hasCyclesUndirected();
 }
 
 public const f<bool> Graph.isDirected() {
@@ -94,4 +102,233 @@ public const p Graph.toGraphviz(StringStream& ss) {
     }
 
     ss << "}";
+}
+
+/**
+ * Iterator to iterate over a graph data structure in a depth-first manner.
+ */
+public type GraphDFSIterator<T> struct : IIterator<Vertex<T>> {
+    Graph<T>& graph
+    Stack<Vertex<T>*> stack
+    UnorderedMap<Vertex<T>, bool> visited
+    Vertex<T>* current
+    unsigned long index = 0ul
+    unsigned long nextVertexIndex = 0ul
+}
+
+public p GraphDFSIterator.ctor<T>(Graph<T>& graph, Vertex<T>* startVertex = nil<Vertex<T>*>) {
+    this.graph = graph;
+    if startVertex != nil<Vertex<T>*> {
+       this.stack.push(startVertex);
+    }
+    this.advance();
+}
+
+p GraphDFSIterator.pushNextComponent() {
+    while this.nextVertexIndex < this.graph.vertices.getSize() {
+        Vertex<T>& v = this.graph.vertices[this.nextVertexIndex++];
+        if !this.visited.contains(v) {
+            this.stack.push(&v);
+            break;
+        }
+    }
+}
+
+p GraphDFSIterator.advance() {
+    while true {
+        if this.stack.isEmpty() {
+            this.pushNextComponent();
+            if this.stack.isEmpty() {
+                this.current = nil<Vertex<T>*>;
+                return;
+            }
+        }
+
+        Vertex<T>* v = this.stack.top();
+        this.stack.pop();
+
+        if this.visited.contains(*v) {
+            continue;
+        }
+
+        this.visited.upsert(*v, true);
+
+        // push neighbors in reverse order for natural DFS order
+        if this.graph.adjList.contains(*v) {
+            const Vector<Vertex<T>*>& neighbors = this.graph.adjList.get(*v);
+            for unsigned long i = neighbors.getSize() - 1ul; i-- >= 0ul; 0 {
+                Vertex<T>* n = neighbors[i];
+                if !this.visited.contains(*n) {
+                    this.stack.push(n);
+                }
+            }
+        }
+
+        this.current = v;
+        return;
+    }
+}
+
+/**
+ * Returns the current vertex of the graph
+ *
+ * @return Reference to the current vertex
+ */
+public inline f<Vertex<T>&> GraphDFSIterator.get() {
+    return *this.current;
+}
+
+/**
+ * Returns the current index and the current vertex of the graph
+ *
+ * @return Pair of current index and reference to current vertex
+ */
+public inline f<Pair<unsigned long, Vertex<T>&>> GraphDFSIterator.getIdx() {
+    return Pair<unsigned long, Vertex<T>&>(this.index, *this.current);
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> GraphDFSIterator.isValid() {
+    return this.current != nil<Vertex<T>*>;
+}
+
+/**
+ * Returns the current vertex of the graph iterator and moves the cursor to the next vertex
+ */
+public inline p GraphDFSIterator.next() {
+    if !this.isValid() {
+        panic(Error("Calling next() on invalid iterator"));
+    }
+    this.index++;
+    this.advance();
+}
+
+/**
+ * Iterator to iterate over a graph data structure in a breadth-first manner.
+ */
+public type GraphBFSIterator<T> struct : IIterator<Vertex<T>> {
+    Graph<T>& graph
+    Queue<Vertex<T>*> queue
+    UnorderedMap<Vertex<T>, bool> visited
+    Vertex<T>* current
+    unsigned long index = 0ul
+    unsigned long nextVertexIndex = 0ul
+}
+
+public p GraphBFSIterator.ctor<T>(Graph<T>& graph, Vertex<T>* startVertex = nil<Vertex<T>*>) {
+    this.graph = graph;
+    if startVertex != nil<Vertex<T>*> {
+        this.queue.push(startVertex);
+    }
+    this.advance();
+}
+
+p GraphBFSIterator.pushNextComponent() {
+    while this.nextVertexIndex < this.graph.vertices.getSize() {
+        Vertex<T>& v = this.graph.vertices[this.nextVertexIndex++];
+        if !this.visited.contains(v) {
+            this.queue.push(&v);
+            break;
+        }
+    }
+}
+
+p GraphBFSIterator.advance() {
+    while true {
+        if this.queue.isEmpty() {
+            this.pushNextComponent();
+            if this.queue.isEmpty() {
+                this.current = nil<Vertex<T>*>;
+                return;
+            }
+        }
+
+        Vertex<T>* v = this.queue.front();
+        this.queue.pop();
+
+        if this.visited.contains(*v) {
+            continue;
+        }
+
+        this.visited.upsert(*v, true);
+
+        // enqueue neighbors in natural order (FIFO)
+        if this.graph.adjList.contains(*v) {
+            Vector<Vertex<T>*>& neighbors = this.graph.adjList.get(*v);
+
+            for unsigned long i = 0ul; i < neighbors.getSize(); i++ {
+                Vertex<T>* n = neighbors[i];
+                if !this.visited.contains(*n) {
+                    this.queue.push(n);
+                }
+            }
+        }
+
+        this.current = v;
+        return;
+    }
+}
+
+/**
+ * Returns the current vertex of the graph
+ *
+ * @return Reference to the current vertex
+ */
+public inline f<Vertex<T>&> GraphBFSIterator.get() {
+    return *this.current;
+}
+
+/**
+ * Returns the current index and the current vertex of the graph
+ *
+ * @return Pair of current index and reference to current vertex
+ */
+public inline f<Pair<unsigned long, Vertex<T>&>> GraphBFSIterator.getIdx() {
+    return Pair<unsigned long, Vertex<T>&>(this.index, *this.current);
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> GraphBFSIterator.isValid() {
+    return this.current != nil<Vertex<T>*>;
+}
+
+/**
+ * Returns the current vertex of the graph iterator and moves the cursor to the next vertex
+ */
+public inline p GraphBFSIterator.next() {
+    if !this.isValid() {
+        panic(Error("Calling next() on invalid iterator"));
+    }
+
+    this.index++;
+    this.advance();
+}
+
+/**
+ * Retrieve a depth-first iterator for the graph
+ */
+public f<GraphDFSIterator<T>> Graph.dfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
+    return GraphDFSIterator<T>(*this, startVertex);
+}
+
+/**
+ * Retrieve a breadth-first iterator for the graph
+ */
+public f<GraphBFSIterator<T>> Graph.bfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
+    return GraphBFSIterator<T>(*this, startVertex);
+}
+
+/**
+ * Retrieve a depth-first iterator for the graph
+ */
+public f<GraphDFSIterator<T>> Graph.getIterator() {
+    return this.dfs();
 }
