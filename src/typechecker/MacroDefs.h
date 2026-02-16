@@ -48,4 +48,8 @@
   if (resourceManager.abortCompilation)                                                                                          \
     return true;
 
+#define RETURN_NULLPTR_IF_NULLPTR(value)                                                                                         \
+  if (value == nullptr)                                                                                                          \
+    return nullptr;
+
 #pragma warning(default : 4129)

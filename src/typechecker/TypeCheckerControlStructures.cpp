@@ -116,17 +116,17 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   QualType iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::match(matchScope, "getIdx", iteratorType, {}, {}, false, node);
-    assert(node->getIdxFct != nullptr);
+    RETURN_NULLPTR_IF_NULLPTR(node->getIdxFct);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::match(matchScope, "get", iteratorType, {}, {}, false, node);
-    assert(node->getFct != nullptr);
+    RETURN_NULLPTR_IF_NULLPTR(node->getFct);
     iteratorItemType = node->getFct->returnType;
   }
   node->isValidFct = FunctionManager::match(matchScope, "isValid", iteratorType, {}, {}, false, node);
-  assert(node->isValidFct != nullptr);
+  RETURN_NULLPTR_IF_NULLPTR(node->isValidFct);
   node->nextFct = FunctionManager::match(matchScope, "next", iteratorType, {}, {}, false, node);
-  assert(node->nextFct != nullptr);
+  RETURN_NULLPTR_IF_NULLPTR(node->nextFct);
 
   // Retrieve item variable entry
   SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
