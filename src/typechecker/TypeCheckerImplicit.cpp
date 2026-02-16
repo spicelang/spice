@@ -464,7 +464,7 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
   // Sort by reverse declaration order
   auto comp = [](const SymbolTableEntry *a, const SymbolTableEntry *b) { return a->declNode->codeLoc > b->declNode->codeLoc; };
-  std::ranges::sort(vars, comp);
+  std::ranges::stable_sort(vars, comp);
   // Call the dtor of each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
     // Check if we have a heap-allocated pointer

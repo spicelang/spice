@@ -115,7 +115,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     iteratorPtr = resolveAddress(callResult);
 
     // If an anonymous symbol exists, set its address
-    if (SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode->codeLoc))
+    if (SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode))
       returnSymbol->updateAddress(iteratorPtr);
   } else { // The iteratorAssignExpr is of type Iterator
     iteratorPtr = resolveAddress(iteratorAssignNode);

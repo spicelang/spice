@@ -52,13 +52,13 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  */
 SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix) {
   // Check if the anonymous entry already exists
-  if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
+  if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode, numericSuffix))
     return anonSymbol;
   // Otherwise, create an anonymous entry
   std::stringstream name;
-  name << "anon." << declNode->codeLoc.toString();
+  name << "anon." << declNode->codeLoc.toString() << "." << reinterpret_cast<size_t>(declNode);
   if (numericSuffix > 0)
-    name << '.' << std::to_string(numericSuffix);
+    name << "." << numericSuffix;
   SymbolTableEntry *anonSymbol = insert(name.str(), declNode, true);
   anonSymbol->updateType(qualType, false);
   anonSymbol->updateState(DECLARED, declNode);
@@ -217,15 +217,16 @@ SymbolTableEntry *SymbolTable::lookupStrictByIndex(unsigned int orderIndex) {
 /**
  * Check if an anonymous symbol exists in the current scope and return it if possible
  *
- * @param codeLoc Definition code loc
+ * @param declNode AST node where the anonymous symbol is declared
  * @param numericSuffix Numeric suffix of the anonymous symbol
  * @return Anonymous symbol
  */
-SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix) {
-  std::string name = "anon." + codeLoc.toString();
+SymbolTableEntry *SymbolTable::lookupAnonymous(const ASTNode *declNode, size_t numericSuffix) {
+  std::stringstream name;
+  name << "anon." << declNode->codeLoc.toString() << "." << reinterpret_cast<size_t>(declNode);
   if (numericSuffix > 0)
-    name += "." + std::to_string(numericSuffix);
-  return lookup(name);
+    name << "." << numericSuffix;
+  return lookup(name.str());
 }
 
 /**

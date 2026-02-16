@@ -503,7 +503,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
   const auto comp = [](const Struct *lhs, const Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
-  std::ranges::sort(manifestations, comp);
+  std::ranges::stable_sort(manifestations, comp);
 
   for (Struct *spiceStruct : manifestations) {
     // Skip structs, that are not fully substantiated
@@ -559,7 +559,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
   const auto comp = [](const Interface *lhs, const Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
-  std::ranges::sort(manifestations, comp);
+  std::ranges::stable_sort(manifestations, comp);
 
   for (Interface *spiceInterface : manifestations) {
     // Skip interfaces, that are not fully substantiated

@@ -44,7 +44,7 @@ public:
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath);
   SymbolTableEntry *lookupStrictByIndex(unsigned int orderIndex);
-  SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix = 0);
+  SymbolTableEntry *lookupAnonymous(const ASTNode *declNode, size_t numericSuffix = 0);
   Capture *lookupCapture(const std::string &name);
   Capture *lookupCaptureStrict(const std::string &name);
   void setCapturingRequired();

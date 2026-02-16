@@ -172,7 +172,7 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     }
 
     // If we have an anonymous symbol for this ternary expr, make sure that it has an address to reference.
-    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (anonymousSymbol != nullptr) {
       if (!resultPtr) {
         resultPtr = insertAlloca(anonymousSymbol->getQualType());

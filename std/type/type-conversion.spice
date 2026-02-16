@@ -416,7 +416,7 @@ public f<char> toChar(string input) {
  */
 public f<String> toString(double input) {
     const int length = snprintf(nil<char*>, 0l, "%f", input);
-    result = String(length); // Assuming this length is enough
+    result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%f", input);
 }
 

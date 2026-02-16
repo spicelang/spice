@@ -172,7 +172,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
           llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
 
           // Attach address of copy to anonymous symbol
-          SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode->codeLoc, SIZE_MAX);
+          SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode, SIZE_MAX);
           anonymousSymbol->updateAddress(valueCopyPtr);
 
           argValues.push_back(newValue);
@@ -271,7 +271,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
-    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (anonymousSymbol != nullptr) {
       if (data.isCtorCall()) {
         anonymousSymbol->updateAddress(thisPtr);
@@ -468,7 +468,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     }
 
     // Attach address to anonymous symbol to keep track of de-allocation
-    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (returnSymbol != nullptr)
       returnSymbol->updateAddress(structAddr);
 

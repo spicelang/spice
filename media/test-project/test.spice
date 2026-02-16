@@ -1,46 +1,16 @@
-type Test struct {
-    int copies = 0
-}
-
-p Test.ctor() {}
-
-p Test.ctor(const Test& old) {
-    old.copies++;
-}
-
-p Test.dtor() {}
-
-f<Test> testRVO1(Test old) {
-    return old; // RVO
-}
-
-f<Test> testRVO2(const Test& old) {
-    return old; // No RVO
-}
-
-f<Test> testRVO3(Test old) {
-    Test old1 = old; // Copy here
-    return old1; // RVO
-}
-
-f<Test> testRVO4(const Test& old) {
-    const Test& old1 = old;
-    return old1;
-}
-
 f<int> main() {
-    Test t;
-    // Copy in the caller; in the callee we may perform RVO
-    Test t1 = testRVO1(t);
-    assert t.copies == 1;
-    // Pass by ref; in the callee we may must copy
-    Test t2 = testRVO2(t);
-    assert t.copies == 2;
-    // Copy in the caller; in the callee we may perform RVO
-    Test t3 = testRVO3(t);
-    assert t.copies == 3;
-    // Pass by ref; in the callee we may must copy
-    Test t4 = testRVO4(t);
-    assert t.copies == 4;
-    printf("All assertions passed!");
+    p() callbackWithoutArgs = p() {
+        printf("Callback called!\n");
+    };
+    callbackWithoutArgs();
+
+    p(String&, double) callbackWithArgs1 = p(String& str, double d) {
+        printf("Callback called with args: %s, %f\n", str, d);
+    };
+    callbackWithArgs1(String("Hello"), 3.14);
+
+    p(String, bool) callbackWithArgs2 = p(String str, bool b) {
+        printf("Callback called with args: %s, %d\n", str, b);
+    };
+    callbackWithArgs2(String("Hello World!"), false);
 }

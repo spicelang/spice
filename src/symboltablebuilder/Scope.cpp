@@ -285,7 +285,8 @@ std::vector<Function *> Scope::getVirtualMethods() {
   }
 
   // Sort the list
-  std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
+  const auto pred = [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); };
+  std::ranges::stable_sort(methods, pred);
 
   return methods;
 } // LCOV_EXCL_LINE - false positive
@@ -305,7 +306,7 @@ std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder(
 
   // Sort manifestations by declaration code location
   auto sortLambda = [](const Struct *lhs, const Struct *rhs) { return lhs->getDeclCodeLoc() < rhs->getDeclCodeLoc(); };
-  std::ranges::sort(manifestations, sortLambda);
+  std::ranges::stable_sort(manifestations, sortLambda);
   return manifestations;
 } // LCOV_EXCL_LINE - false positive
 

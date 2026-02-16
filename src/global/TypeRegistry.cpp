@@ -104,7 +104,7 @@ std::string TypeRegistry::dump() {
   for (const std::unique_ptr<Type> &type : types | std::views::values)
     typeStrings.push_back(type->getName(false, true, true));
   // Sort to ensure deterministic output
-  std::ranges::sort(typeStrings);
+  std::ranges::stable_sort(typeStrings);
   // Serialize type registry
   std::stringstream typeRegistryString;
   for (const std::string &typeString : typeStrings)
