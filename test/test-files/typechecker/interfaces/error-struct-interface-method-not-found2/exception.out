@@ -8,7 +8,7 @@ Interface method not implemented: The struct 'AstNode' does not implement method
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:13:1:
-Interface method not implemented: The struct 'AstEntryNode' does not implement method 'f<bool> Visitable.accept(Visitor*)'. The signature does not match.
+Interface method not implemented: The struct 'AstEntryNode' does not implement method 'f<bool> Visitable.accept(Visitor*)'.
 
 13  type AstEntryNode struct : Visitable {
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

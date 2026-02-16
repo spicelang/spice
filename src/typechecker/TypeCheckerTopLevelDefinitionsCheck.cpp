@@ -197,8 +197,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         Function *spiceFunction = FunctionManager::match(currentScope, methodName, structType, args, {}, true, node);
         if (spiceFunction == nullptr) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
-                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
-                        "'. The signature does not match.");
+                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() + "'.");
           continue;
         }
 
