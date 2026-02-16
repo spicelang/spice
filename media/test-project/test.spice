@@ -6,10 +6,19 @@ f<int> main() {
     Vertex<int>& v1 = g.addVertex(1);
     Vertex<int>& v2 = g.addVertex(2);
     Vertex<int>& v3 = g.addVertex(3);
-    g.addEdge(v1, v2);
+    Vertex<int>& v4 = g.addVertex(4);
+    Vertex<int>& v5 = g.addVertex(5);
+    g.addEdge(v2, v1);
     g.addEdge(v2, v3);
+    g.addEdge(v1, v4);
+    g.addEdge(v3, v5);
+    g.addEdge(v5, v2);
 
     StringStream ss;
     g.toGraphviz(ss);
     printf("%s\n", ss.str());
+
+    foreach unsigned long idx, const Vertex<int>& v : g.bfs(&v2) {
+        printf("%d: %d\n", idx, v.getValue());
+    }
 }
