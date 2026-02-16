@@ -25,7 +25,7 @@ f<Test> testRVO3(Test old) {
 
 f<Test> testRVO4(const Test& old) {
     const Test& old1 = old;
-    return old1;
+    return old1; // No RVO
 }
 
 f<int> main() {

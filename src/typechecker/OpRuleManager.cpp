@@ -45,10 +45,8 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
     if (lhsType.matches(rhsModified, false, false, true)) {
-      // Check if we support rvo. If yes, skip the implicit copy ctor call
-      const bool supportsRVO = isReturn && !rhs.isTemporary();
       Function *copyCtor = nullptr;
-      if (rhsModified.is(TY_STRUCT) && !supportsRVO)
+      if (rhsModified.is(TY_STRUCT))
         copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsModified, node);
       return {lhsType, copyCtor};
     }
