@@ -15,9 +15,8 @@ namespace spice::compiler {
 OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
-std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs,
-                                                                   const ExprResult &rhs, bool isDecl, bool isReturn,
-                                                                   const char *errMsgPrefix) const {
+std::pair<QualType, Function *> OpRuleManager::getAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                                   bool isDecl, bool isReturn, const char *errMsgPrefix) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
@@ -45,6 +44,13 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsModified = rhsType.getContained().toNonConst();
     if (lhsType.matches(rhsModified, false, false, true)) {
+      // Check is there is an overloaded operator function available
+      if (!isDecl && !isReturn) {
+        const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
+        if (!type.is(TY_INVALID))
+          return {type, nullptr};
+      }
+
       Function *copyCtor = nullptr;
       if (rhsModified.is(TY_STRUCT))
         copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsModified, node);
@@ -56,6 +62,13 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
     return {rhsType, nullptr};
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
+    // Check is there is an overloaded operator function available
+    if (!isDecl && !isReturn) {
+      const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
+      if (!type.is(TY_INVALID))
+        return {type, nullptr};
+    }
+
     // Check if we support rvo. If yes, skip the implicit copy ctor call
     const bool supportsRVO = isReturn && !rhs.isTemporary();
     Function *copyCtor = nullptr;
@@ -75,7 +88,7 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(const ASTNode
   return {binOpType, nullptr};
 }
 
-QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+QualType OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                                  bool isDecl) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
@@ -94,12 +107,23 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
   }
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
+    // Check is there is an overloaded operator function available
+    const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
+    if (!type.is(TY_INVALID))
+      return type;
+
     if (!rhs.isTemporary())
       typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+
     return rhsType;
   }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
+    // Check is there is an overloaded operator function available
+    const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
+    if (!type.is(TY_INVALID))
+      return type;
+
     // In case of a return expression, we perform temp stealing
     if (rhsType.getContained().is(TY_STRUCT) && !rhs.isTemporary())
       typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
@@ -181,7 +205,7 @@ ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult
   // Check if this is an unsafe operation
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     ensureUnsafeAllowed(node, "+=", lhsType, rhsType);
-    return {lhs};
+    return lhs;
   }
 
   return {validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, std::size(PLUS_EQUAL_OP_RULES), "+=", lhsType, rhsType)};
@@ -203,7 +227,7 @@ ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResul
   // Check if this is an unsafe operation
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     ensureUnsafeAllowed(node, "-=", lhsType, rhsType);
-    return {lhs};
+    return lhs;
   }
 
   return {validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, std::size(MINUS_EQUAL_OP_RULES), "-=", lhsType, rhsType)};
@@ -427,7 +451,8 @@ QualType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const Exp
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, std::size(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType);
 }
 
-ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
+ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                 size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -440,7 +465,8 @@ ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult
   return {validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, std::size(SHIFT_LEFT_OP_RULES), "<<", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
+ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                  size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHR, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -490,12 +516,7 @@ ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lh
   // Allow any* - <int/long/short>
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     ensureUnsafeAllowed(node, "-", lhsType, rhsType);
-    return {lhs};
-  }
-  // Allow <int/long/short> - any*
-  if (lhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhsType.isPtr()) {
-    ensureUnsafeAllowed(node, "-", lhsType, rhsType);
-    return {rhs};
+    return lhs;
   }
 
   return {validateBinaryOperation(node, MINUS_OP_RULES, std::size(MINUS_OP_RULES), "-", lhsType, rhsType)};
@@ -619,7 +640,7 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
     ensureUnsafeAllowed(node, "++", lhsType);
-    return {lhs};
+    return lhs;
   }
 
   return {validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, std::size(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhsType)};
@@ -640,7 +661,7 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
     ensureUnsafeAllowed(node, "--", lhsType);
-    return {lhs};
+    return lhs;
   }
 
   return {validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, std::size(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhsType)};

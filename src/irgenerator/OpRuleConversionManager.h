@@ -26,6 +26,8 @@ using ResolverFct = const std::function<llvm::Value *()>;
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
+static constexpr size_t DEFAULT_OP_IDX = 0;
+
 /**
  * Helper class for the IRGenerator to resolve operator instructions for each valid operator/type combination
  */
@@ -35,7 +37,8 @@ public:
   OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator);
 
   // Public methods
-  LLVMExprResult getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
+  LLVMExprResult getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
+                                  QualType rhsSTy);
   LLVMExprResult getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
                                    QualType rhsSTy);
   LLVMExprResult getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);

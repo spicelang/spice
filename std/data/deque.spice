@@ -64,6 +64,22 @@ public p Deque.ctor(const Deque<T>& original) {
     this.idxBack = original.idxBack;
 }
 
+public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
+    // Allocate space for the initial number of elements
+    const long itemSize = sizeof<T>();
+    unsafe {
+        Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
+        this.contents = cast<heap T*>(allocResult.unwrap());
+    }
+    this.capacity = newValue.capacity;
+    this.size = newValue.size;
+    this.idxFront = newValue.idxFront;
+    this.idxBack = newValue.idxBack;
+    unsafe {
+        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), newValue.size);
+    }
+}
+
 /**
  * Add an item at the back of the deque
  */

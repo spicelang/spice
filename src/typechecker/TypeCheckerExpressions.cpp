@@ -33,10 +33,6 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
       const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
-
-      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (rhsEntry != nullptr && rhsEntry->anonymous)
-        currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
     } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_MINUS_EQUAL) {

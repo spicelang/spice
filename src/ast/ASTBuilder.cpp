@@ -1666,6 +1666,8 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
     fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
   else if (ctx->LBRACKET())
     fctNameNode->name = OP_FCT_SUBSCRIPT;
+  else if (ctx->ASSIGN())
+    fctNameNode->name = OP_FCT_ASSIGN;
   else
     assert_fail("Unsupported overloadable operator"); // GCOV_EXCL_LINE
 

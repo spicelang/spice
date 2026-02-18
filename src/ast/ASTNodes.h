@@ -46,6 +46,7 @@ constexpr const char *const OP_FCT_DIV_EQUAL = "op.divequal";
 constexpr const char *const OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
 constexpr const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
 constexpr const char *const OP_FCT_SUBSCRIPT = "op.subscript";
+constexpr const char *const OP_FCT_ASSIGN = "op.assign";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
