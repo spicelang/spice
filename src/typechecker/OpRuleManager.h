@@ -605,10 +605,10 @@ public:
                                                       const char *errMsgPrefix = "") const;
   QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                     bool isDecl = false) const;
-  ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
+  ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   QualType getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   QualType getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   QualType getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
@@ -620,18 +620,18 @@ public:
   static QualType getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getBitwiseXorResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  ExprResult getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
+  ExprResult getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   static QualType getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getGreaterResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getLessEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getGreaterEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  ExprResult getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
-  ExprResult getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
+  ExprResult getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
   static ExprResult getRemResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs);
   QualType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) const;
@@ -640,14 +640,14 @@ public:
   static QualType getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs);
-  ExprResult getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx);
-  ExprResult getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx);
+  ExprResult getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs) const;
+  ExprResult getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs) const;
   QualType getCastResultType(const ASTNode *node, QualType lhsType, const ExprResult &rhs) const;
 
   // Operator overloading
   template <size_t N>
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
-                                               size_t opIdx);
+                                               size_t opIdx) const;
 
 private:
   // Members

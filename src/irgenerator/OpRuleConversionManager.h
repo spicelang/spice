@@ -35,14 +35,11 @@ public:
   OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator);
 
   // Public methods
-  LLVMExprResult getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
-                                  size_t opIdx);
+  LLVMExprResult getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
-                                   QualType rhsSTy, size_t opIdx);
-  LLVMExprResult getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
-                                 size_t opIdx);
-  LLVMExprResult getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
-                                 size_t opIdx);
+                                   QualType rhsSTy);
+  LLVMExprResult getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
+  LLVMExprResult getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
@@ -55,10 +52,8 @@ public:
                                    QualType rhsSTy);
   LLVMExprResult getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
                                    QualType rhsSTy, size_t opIdx);
-  LLVMExprResult getEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
-                              size_t opIdx);
-  LLVMExprResult getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
-                                 size_t opIdx);
+  LLVMExprResult getEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
+  LLVMExprResult getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getLessInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
   LLVMExprResult getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
@@ -84,8 +79,8 @@ public:
   LLVMExprResult getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
-  LLVMExprResult getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, size_t opIdx);
-  LLVMExprResult getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, size_t opIdx);
+  LLVMExprResult getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy);
+  LLVMExprResult getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy);
   LLVMExprResult getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) const;
 
   // Operator overloading

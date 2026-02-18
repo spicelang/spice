@@ -38,13 +38,13 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       if (rhsEntry != nullptr && rhsEntry->anonymous)
         currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
     } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
-      rhsType = opRuleManager.getPlusEqualResultType(node, lhs, rhs, 0).type;
+      rhsType = opRuleManager.getPlusEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_MINUS_EQUAL) {
-      rhsType = opRuleManager.getMinusEqualResultType(node, lhs, rhs, 0).type;
+      rhsType = opRuleManager.getMinusEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_MUL_EQUAL) {
-      rhsType = opRuleManager.getMulEqualResultType(node, lhs, rhs, 0).type;
+      rhsType = opRuleManager.getMulEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_DIV_EQUAL) {
-      rhsType = opRuleManager.getDivEqualResultType(node, lhs, rhs, 0).type;
+      rhsType = opRuleManager.getDivEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_REM_EQUAL) {
       rhsType = opRuleManager.getRemEqualResultType(node, lhs, rhs);
     } else if (node->op == AssignExprNode::AssignOp::OP_SHL_EQUAL) {
@@ -257,9 +257,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check operator
   ExprResult result;
   if (node->op == EqualityExprNode::EqualityOp::OP_EQUAL) // Operator was equal
-    result = opRuleManager.getEqualResultType(node, lhs, rhs, 0);
+    result = opRuleManager.getEqualResultType(node, lhs, rhs);
   else if (node->op == EqualityExprNode::EqualityOp::OP_NOT_EQUAL) // Operator was not equal
-    result = opRuleManager.getNotEqualResultType(node, lhs, rhs, 0);
+    result = opRuleManager.getNotEqualResultType(node, lhs, rhs);
   else
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
 
@@ -581,7 +581,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS: {
-    operandType = opRuleManager.getPostfixPlusPlusResultType(node, operand, 0).type;
+    operandType = opRuleManager.getPostfixPlusPlusResultType(node, operand).type;
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
@@ -595,7 +595,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS: {
-    operandType = opRuleManager.getPostfixMinusMinusResultType(node, operand, 0).type;
+    operandType = opRuleManager.getPostfixMinusMinusResultType(node, operand).type;
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
