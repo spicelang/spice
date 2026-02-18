@@ -499,6 +499,15 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     return LLVMExprResult{.value = rhsAddress, .ptr = lhsAddress, .entry = lhsEntry};
   }
 
+  // Handle operator overloads
+  if (!isDecl && conversionManager.callsOverloadedOpFct(node, DEFAULT_OP_IDX)) {
+    ResolverFct lhsV = [&] { return static_cast<llvm::Value *>(nullptr); };
+    ResolverFct rhsV = [&] { return resolveValue(rhsSType, rhs); };
+    ResolverFct lhsP = [&] { return lhsAddress; };
+    ResolverFct rhsP = [&] { return resolveAddress(rhs); };
+    return conversionManager.callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
+  }
+
   // Check if we need to copy the rhs to the lhs. This happens for structs
   if (needsCopy) {
     // Get address of right side

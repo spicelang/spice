@@ -23,6 +23,7 @@ public const string OP_FCT_DIV_EQUAL = "op.divequal";
 public const string OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
 public const string OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
 public const string OP_FCT_SUBSCRIPT = "op.subscript";
+public const string OP_FCT_ASSIGN = "op.assign";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
