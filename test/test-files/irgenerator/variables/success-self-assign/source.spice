@@ -1,0 +1,27 @@
+type Test struct {
+    int i
+}
+
+p Test.ctor() {
+    this.i = 123;
+}
+
+p Test.ctor(const Test& other) {
+    this.i = other.i;
+}
+
+p Test.dtor() {
+    this.i = 0;
+}
+
+p foo() {}
+
+f<int> main() {
+    // Self-assign int
+    int i = 123;
+    i = i;
+
+    // Self-assign complex type
+    Test t;
+    t = t;
+}
