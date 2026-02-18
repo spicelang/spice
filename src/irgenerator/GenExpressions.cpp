@@ -37,16 +37,16 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
     LLVMExprResult result;
     switch (node->op) {
     case AssignExprNode::AssignOp::OP_PLUS_EQUAL:
-      result = conversionManager.getPlusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
+      result = conversionManager.getPlusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
     case AssignExprNode::AssignOp::OP_MINUS_EQUAL:
-      result = conversionManager.getMinusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
+      result = conversionManager.getMinusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
     case AssignExprNode::AssignOp::OP_MUL_EQUAL:
-      result = conversionManager.getMulEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
+      result = conversionManager.getMulEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
     case AssignExprNode::AssignOp::OP_DIV_EQUAL:
-      result = conversionManager.getDivEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, 0);
+      result = conversionManager.getDivEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
       break;
     case AssignExprNode::AssignOp::OP_REM_EQUAL:
       result = conversionManager.getRemEqualInst(node, lhs, lhsSTy, rhs, rhsSTy);
@@ -392,10 +392,10 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   // Retrieve the result value, based on the exact operator
   switch (node->op) {
   case EqualityExprNode::EqualityOp::OP_EQUAL:
-    result = conversionManager.getEqualInst(node, result, lhsSTy, rhs, rhsSTy, 0);
+    result = conversionManager.getEqualInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
   case EqualityExprNode::EqualityOp::OP_NOT_EQUAL:
-    result = conversionManager.getNotEqualInst(node, result, lhsSTy, rhs, rhsSTy, 0);
+    result = conversionManager.getNotEqualInst(node, result, lhsSTy, rhs, rhsSTy);
     break;
   default:                                                              // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
@@ -804,7 +804,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    const LLVMExprResult result = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy, 0);
+    const LLVMExprResult result = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy);
 
     // Save the new value to the old address
     if (conversionManager.callsOverloadedOpFct(node, 0)) {
@@ -827,7 +827,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    const LLVMExprResult result = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy, 0);
+    const LLVMExprResult result = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy);
 
     // Save the new value to the old address
     if (conversionManager.callsOverloadedOpFct(node, 0)) {

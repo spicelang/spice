@@ -13,11 +13,13 @@
 
 namespace spice::compiler {
 
+static constexpr size_t DEFAULT_OP_IDX = 0;
+
 OpRuleConversionManager::OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator)
     : builder(sourceFile->builder), irGenerator(irGenerator), stdFunctionManager(irGenerator->stdFunctionManager) {}
 
 LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                         LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                         LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -27,8 +29,8 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -74,7 +76,7 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
 }
 
 LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                          LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                          LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -84,8 +86,8 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -132,7 +134,7 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
 }
 
 LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                        LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                        LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -142,8 +144,8 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -178,7 +180,7 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
 }
 
 LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                        LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                        LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -188,8 +190,8 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -492,7 +494,7 @@ LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, L
 }
 
 LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                     LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                     LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -503,8 +505,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   // Check if lhs is of type pointer and rhs is of type long
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
@@ -613,7 +615,7 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
 }
 
 LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                        LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
+                                                        LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
@@ -624,8 +626,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   // Check if lhs is of type pointer and rhs is of type long
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(64)) {
@@ -1539,15 +1541,14 @@ LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *n
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                               size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, DEFAULT_OP_IDX);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1565,15 +1566,14 @@ LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *no
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                                 size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   // Handle operator overloads
-  if (callsOverloadedOpFct(node, opIdx))
-    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, opIdx);
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, DEFAULT_OP_IDX);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:

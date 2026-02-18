@@ -165,9 +165,9 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
   return QualType(TY_INVALID);
 }
 
-ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -187,9 +187,9 @@ ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult
   return {validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, std::size(PLUS_EQUAL_OP_RULES), "+=", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -209,9 +209,9 @@ ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResul
   return {validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, std::size(MINUS_EQUAL_OP_RULES), "-=", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -225,9 +225,9 @@ ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult 
   return {validateBinaryOperation(node, MUL_EQUAL_OP_RULES, std::size(MUL_EQUAL_OP_RULES), "*=", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -347,9 +347,9 @@ QualType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, const ExprR
   return validateBinaryOperation(node, BITWISE_AND_OP_RULES, std::size(BITWISE_AND_OP_RULES), "&", lhsType, rhsType);
 }
 
-ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -369,9 +369,9 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
   return ExprResult(validateBinaryOperation(node, EQUAL_OP_RULES, std::size(EQUAL_OP_RULES), "==", lhsType, rhsType));
 }
 
-ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -427,7 +427,7 @@ QualType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const Exp
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, std::size(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType);
 }
 
-ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -440,7 +440,7 @@ ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult
   return {validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, std::size(SHIFT_LEFT_OP_RULES), "<<", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHR, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -453,7 +453,7 @@ ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResul
   return {validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, std::size(SHIFT_RIGHT_OP_RULES), ">>", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult result = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
   if (!result.type.is(TY_INVALID))
@@ -477,7 +477,7 @@ ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs
   return {validateBinaryOperation(node, PLUS_OP_RULES, std::size(PLUS_OP_RULES), "+", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -501,7 +501,7 @@ ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lh
   return {validateBinaryOperation(node, MINUS_OP_RULES, std::size(MINUS_OP_RULES), "-", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -514,7 +514,7 @@ ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs,
   return {validateBinaryOperation(node, MUL_OP_RULES, std::size(MUL_OP_RULES), "*", lhsType, rhsType)};
 }
 
-ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
+ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
   // Check is there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -604,9 +604,9 @@ QualType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, const
   return lhsType.toPtr(node);
 }
 
-ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx) {
+ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -625,9 +625,9 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
   return {validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, std::size(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhsType)};
 }
 
-ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx) {
+ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs) const {
   // Check is there is an overloaded operator function available
-  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, 0);
   if (!resultType.type.is(TY_INVALID))
     return resultType;
 
@@ -675,7 +675,7 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
 
 template <size_t N>
 ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
-                                                            const std::array<ExprResult, N> &op, size_t opIdx) {
+                                                            const std::array<ExprResult, N> &op, size_t opIdx) const {
   static_assert(N == 1 || N == 2, "Only unary and binary operators are overloadable");
   Scope *calleeParentScope = nullptr;
   const Function *callee = nullptr;
