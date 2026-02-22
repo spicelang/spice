@@ -1,0 +1,2 @@
+[Error|Compiler]:
+I/O Error: The additional source file './test-files/symboltablebuilder/attributes/error-additional-link-source-not-found/non-existing.c' does not exist

@@ -24,7 +24,7 @@ public:
   void prepare();
   void run() const;
   void cleanup() const;
-  void addObjectFilePath(const std::filesystem::path &path);
+  void addFileToLinkage(const std::filesystem::path &path);
   void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
   void requestLibMathLinkage();
@@ -39,7 +39,7 @@ private:
 
   // Members
   const CliOptions &cliOptions;
-  std::vector<std::filesystem::path> objectFilePaths;
+  std::vector<std::filesystem::path> linkedFiles;
   std::vector<std::string> linkerFlags;
   bool linkLibMath = false;
 };

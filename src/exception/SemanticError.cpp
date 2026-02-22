@@ -150,6 +150,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Unknown attribute";
   case INVALID_ATTR_TARGET:
     return "Invalid attribute target";
+  case INVALID_ATTR_VALUE:
+    return "Invalid attribute value";
   case MISSING_ATTR_VALUE:
     return "Missing attribute value";
   case NUMBER_OF_FIELDS_NOT_MATCHING:
