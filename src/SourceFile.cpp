@@ -512,7 +512,7 @@ void SourceFile::runObjectEmitter() {
     dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
   // Add the object file to the linker objects
-  resourceManager.linker.addObjectFilePath(objectFilePath);
+  resourceManager.linker.addFileToLinkage(objectFilePath);
 
   previousStage = OBJECT_EMITTER;
   timer.stop();

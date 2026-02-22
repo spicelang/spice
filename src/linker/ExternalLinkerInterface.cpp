@@ -86,9 +86,11 @@ void ExternalLinkerInterface::run() const {
  */
 void ExternalLinkerInterface::cleanup() const {
   // Cleanup intermediary object files
+  const char *objFileExt = SystemUtil::getOutputFileExtension(cliOptions, cliOptions.outputContainer);
   if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE && !cliOptions.dump.dumpToFiles)
-    for (const std::filesystem::path &path : objectFilePaths)
-      std::filesystem::remove(path);
+    for (const std::filesystem::path &path : linkedFiles)
+      if (path.extension() == objFileExt)
+        std::filesystem::remove(path);
 }
 
 /**
@@ -111,7 +113,7 @@ void ExternalLinkerInterface::link() const {
   // Append output path
   commandBuilder << " -o " << outputPath.string();
   // Append object files
-  for (const std::filesystem::path &objectFilePath : objectFilePaths)
+  for (const std::filesystem::path &objectFilePath : linkedFiles)
     commandBuilder << " " << objectFilePath.string();
   const std::string command = commandBuilder.str();
 
@@ -155,8 +157,8 @@ void ExternalLinkerInterface::archive() const {
   commandBuilder << archiverPath;
   commandBuilder << " rcs "; // r = insert files into archive; c = create archive if not existing, s = create archive index
   commandBuilder << outputPath.string();
-  for (const std::filesystem::path &objectFilePath : objectFilePaths)
-    commandBuilder << " " << objectFilePath.string();
+  for (const std::filesystem::path &path : linkedFiles)
+    commandBuilder << " " << path.string();
   const std::string command = commandBuilder.str();
 
   // Print status message
@@ -192,7 +194,7 @@ void ExternalLinkerInterface::archive() const {
  *
  * @param path Path to the object file
  */
-void ExternalLinkerInterface::addObjectFilePath(const std::filesystem::path &path) { objectFilePaths.push_back(path); }
+void ExternalLinkerInterface::addFileToLinkage(const std::filesystem::path &path) { linkedFiles.push_back(path); }
 
 /**
  * Add another linker flag for the call to the linker executable
@@ -208,14 +210,15 @@ void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFla
  */
 void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path additionalSource) {
   // Check if the file exists
-  if (!exists(additionalSource)) {                                                                           // GCOV_EXCL_LINE
-    const std::string msg = "The additional source file '" + additionalSource.string() + "' does not exist"; // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, msg);                                                                      // GCOV_EXCL_LINE
-  } // GCOV_EXCL_LINE
+  if (!exists(additionalSource)) {
+    const std::string msg = "The additional source file '" + additionalSource.string() + "' does not exist";
+    throw CompilerError(IO_ERROR, msg);
+  }
 
   // Add the file to the linker
+  additionalSource = canonical(additionalSource);
   additionalSource.make_preferred();
-  addObjectFilePath(additionalSource);
+  addFileToLinkage(additionalSource);
 }
 
 /**

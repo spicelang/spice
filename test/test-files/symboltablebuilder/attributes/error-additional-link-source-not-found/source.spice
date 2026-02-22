@@ -1,0 +1,5 @@
+#![core.linker.additionalSource = "non-existing.c"]
+
+f<int> main() {
+    testFunction();
+}

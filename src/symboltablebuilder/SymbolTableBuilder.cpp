@@ -657,8 +657,7 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   // core.linker.additionalSource
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
     const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
-    const std::filesystem::path path = sourceFile->filePath.parent_path() / stringValue;
-    resourceManager.linker.addAdditionalSourcePath(canonical(path));
+    resourceManager.linker.addAdditionalSourcePath(sourceFile->filePath.parent_path() / stringValue);
   }
 
   return nullptr;
