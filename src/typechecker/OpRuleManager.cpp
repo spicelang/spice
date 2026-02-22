@@ -42,40 +42,19 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(ASTNode *node
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
-    const QualType rhsModified = rhsType.getContained().toNonConst();
-    if (lhsType.matches(rhsModified, false, false, true)) {
-      // Check is there is an overloaded operator function available
-      if (!isDecl && !isReturn) {
-        const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
-        if (!type.is(TY_INVALID))
-          return {type, nullptr};
-      }
-
-      Function *copyCtor = nullptr;
-      if (rhsModified.is(TY_STRUCT))
-        copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsModified, node);
-      return {lhsType, copyCtor};
+    const QualType rhsNonRef = rhsType.getContained().toNonConst();
+    if (lhsType.matches(rhsNonRef, false, false, true)) {
+      if (rhsNonRef.is(TY_STRUCT))
+        return performStructAssign(node, lhs, rhs, rhsNonRef, isDecl, isReturn);
+      return {lhsType, nullptr};
     }
   }
   // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
   if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
     return {rhsType, nullptr};
   // Allow struct of the same type straight away
-  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
-    // Check is there is an overloaded operator function available
-    if (!isDecl && !isReturn) {
-      const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
-      if (!type.is(TY_INVALID))
-        return {type, nullptr};
-    }
-
-    // Check if we support rvo. If yes, skip the implicit copy ctor call
-    const bool supportsRVO = isReturn && !rhs.isTemporary();
-    Function *copyCtor = nullptr;
-    if (rhs.entry != nullptr && !supportsRVO && !isReturn && !rhs.isTemporary())
-      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsType, rhs.entry->declNode);
-    return {rhsType, copyCtor};
-  }
+  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
+    return performStructAssign(node, lhs, rhs, rhsType, isDecl, isReturn);
 
   // Check common type combinations
   const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, isReturn);
@@ -106,17 +85,8 @@ QualType OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult
     return rhsType;
   }
   // Allow struct of the same type straight away
-  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true)) {
-    // Check is there is an overloaded operator function available
-    const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
-    if (!type.is(TY_INVALID))
-      return type;
-
-    if (!rhs.isTemporary())
-      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
-
-    return rhsType;
-  }
+  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
+    return performStructAssign(node, lhs, rhs, rhsType, isDecl, false).first;
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
     // Check is there is an overloaded operator function available
@@ -129,9 +99,13 @@ QualType OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult
       typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
     return lhsType;
   }
-  // Allow const ref type to type of the same contained type straight away
-  if (rhsType.isConstRef() && lhsType.matches(rhsType.getContained().toNonConst(), false, false, true))
-    return lhsType;
+  // Allow ref type to type of the same contained type straight away
+  if (rhsType.isRef()) {
+    // If this is const ref, remove both: the reference and the constness
+    const QualType rhsNonRef = rhsType.getContained().toNonConst();
+    if (lhsType.matches(rhsNonRef, false, false, true))
+      return performStructAssign(node, lhs, rhs, rhsNonRef, isDecl, false).first;
+  }
   // Allow immediate value to const ref of the same contained type straight away
   if (lhsType.isConstRef() && imm)
     return rhsType;
@@ -187,6 +161,37 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
 
   // Nothing matched
   return QualType(TY_INVALID);
+}
+
+std::pair<QualType, Function *> OpRuleManager::performStructAssign(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                                   const QualType &rhsType, bool isDecl, bool isReturn) const {
+  const bool rhsIsRef = rhs.type.isRef();
+
+  // Check is there is an overloaded operator function available
+  if (!isDecl && !isReturn && lhs.entry->isInitialized()) {
+    const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
+    if (!type.is(TY_INVALID))
+      return {type, nullptr};
+  }
+
+  // If temp stealing is possible, delete any rhs anonymous entry
+  if (!rhsIsRef && rhs.isTemporary()) {
+    if (rhs.entry != nullptr && rhs.entry->anonymous)
+      typeChecker->currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
+    return {rhsType, nullptr};
+  }
+
+  // If RVO is possible, cancel here
+  if (!rhsIsRef && isReturn && !rhs.isTemporary())
+    return {rhsType, nullptr};
+
+  // => We have to copy
+  // If struct, try to call copy ctor
+  if (rhsType.is(TY_STRUCT))
+    return {rhsType, typeChecker->implicitlyCallStructCopyCtor(rhsType, node)};
+
+  // Perform shallow copy
+  return {rhsType, nullptr};
 }
 
 ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {

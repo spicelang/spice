@@ -61,7 +61,7 @@ public p Queue.ctor(const Queue<T>& original) {
     this.idxBack = original.idxBack;
 }
 
-public p operator=(Queue<T>& this, const Queue<T>& newValue) {
+public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof<T>();
     unsafe {
