@@ -734,6 +734,8 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  bool compileThenBranch = true;
+  bool compileElseBranch = true;
   AssignExprNode *condition = nullptr;
   StmtLstNode *thenBody = nullptr;
   ElseStmtNode *elseStmt = nullptr;

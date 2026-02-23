@@ -401,8 +401,16 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 
   // Visit children
   ifStmtNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
-  ifStmtNode->thenBody = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
-  if (ctx->elseStmt())
+
+  // Check if the branches have to be compiled at all
+  const bool constantCondition = ifStmtNode->condition->hasCompileTimeValue();
+  ifStmtNode->compileThenBranch = !constantCondition || ifStmtNode->condition->getCompileTimeValue().boolValue;
+  ifStmtNode->compileElseBranch = !constantCondition || !ifStmtNode->condition->getCompileTimeValue().boolValue;
+
+  // Only compile then/else branch if required
+  if (ifStmtNode->compileThenBranch)
+    ifStmtNode->thenBody = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
+  if (ifStmtNode->compileElseBranch && ctx->elseStmt())
     ifStmtNode->elseStmt = std::any_cast<ElseStmtNode *>(visit(ctx->elseStmt()));
 
   return concludeNode(ifStmtNode);

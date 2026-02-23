@@ -1,56 +1,18 @@
-/*import "std/text/stringstream";
+type T1 dyn;
+type T2 dyn;
+
+type Test struct {}
+
+inline f<bool> isSame<T1, T2>() {
+    if typeid<T1>() == typeid<T2>() {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 f<int> main() {
-    // Basic usage with raw string literals
-    StringStream ss1;
-    ss1 << "Hello" << " World!";
-    assert ss1.str() == "Hello World!";
-
-    // Basic usage with String values
-    StringStream ss2 = StringStream(String("This "));
-    ss2 << String("is") << String(" a ") << String("test!") << endl();
-    assert ss2.str() == "This is a test!\n";
-
-    // Mixed usage
-    StringStream ss3 = StringStream("Hello");
-    ss3 << String(" fellow") << " Programmers" << endl();
-    assert ss3.str() == "Hello fellow Programmers\n";
-
-    // Usage spread over multiple lines
-    StringStream ss4 = StringStream();
-    ss4 << "This ";
-    ss4 << "is ";
-    ss4 << "a ";
-    ss4 << "multiline ";
-    ss4 << "test";
-    ss4 << endl();
-    assert ss4.str() == "This is a multiline test\n";
-
-    printf("All assertions passed!");
-}*/
-
-type Test struct {
-    int i
-}
-
-p Test.ctor() {
-    this.i = 123;
-}
-
-p Test.ctor(const Test& other) {
-    this.i = other.i;
-}
-
-p Test.dtor() {
-    this.i = 0;
-}
-
-p foo() {}
-
-f<int> main() {
-    Test t;
-    t = t;
-    /*foo();
-    t = Test();
-    foo();*/
+    printf("%d\n", isSame<Test, Test>());
+    printf("%d\n", isSame<Test, int>());
+    printf("%d\n", isSame<double*, Test>());
 }
