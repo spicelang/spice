@@ -1,0 +1,7 @@
+f<int> main() {
+    if 1.34 == 1.34 {
+        printf("Condition true\n");
+    } else {
+        this.branch.is.not.compiled();
+    }
+}

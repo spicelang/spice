@@ -6,28 +6,32 @@ source_filename = "source.spice"
 define private noundef i32 @_Z6getAgev() {
   %result = alloca i32, align 4
   %i = alloca i1, align 1
+  %b = alloca i1, align 1
   store i1 false, ptr %i, align 1
-  br i1 true, label %if.then.L3, label %if.else.L3
+  store i1 true, ptr %b, align 1
+  %1 = load i1, ptr %b, align 1
+  br i1 %1, label %if.then.L4, label %if.else.L4
 
-if.then.L3:                                       ; preds = %0
+if.then.L4:                                       ; preds = %0
   store i32 20, ptr %result, align 4
-  %1 = load i32, ptr %result, align 4
-  ret i32 %1
-
-if.else.L3:                                       ; preds = %0
-  store i1 false, ptr %i, align 1
-  br i1 false, label %if.then.L6, label %if.exit.L6
-
-if.then.L6:                                       ; preds = %if.else.L3
-  store i32 19, ptr %result, align 4
-  br label %if.exit.L6
-
-if.exit.L6:                                       ; preds = %if.then.L6, %if.else.L3
-  br label %if.exit.L3
-
-if.exit.L3:                                       ; preds = %if.exit.L6
   %2 = load i32, ptr %result, align 4
   ret i32 %2
+
+if.else.L4:                                       ; preds = %0
+  store i1 false, ptr %i, align 1
+  br i1 false, label %if.then.L7, label %if.exit.L7
+
+if.then.L7:                                       ; preds = %if.else.L4
+  store i32 19, ptr %result, align 4
+  br label %if.exit.L7
+
+if.exit.L7:                                       ; preds = %if.then.L7, %if.else.L4
+  br label %if.exit.L4
+
+if.exit.L4:                                       ; preds = %if.exit.L7
+  store i32 18, ptr %result, align 4
+  %3 = load i32, ptr %result, align 4
+  ret i32 %3
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable

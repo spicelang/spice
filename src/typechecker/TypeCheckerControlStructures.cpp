@@ -209,13 +209,14 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
                                                      "If you want to compare the values, use '=='");
 
   // Visit body
-  visit(node->thenBody);
+  if (node->compileThenBranch)
+    visit(node->thenBody);
 
   // Leave then body scope
   scopeHandle.leaveScopeEarly();
 
   // Visit else statement if existing
-  if (node->elseStmt)
+  if (node->compileElseBranch && node->elseStmt)
     visit(node->elseStmt);
 
   return nullptr;

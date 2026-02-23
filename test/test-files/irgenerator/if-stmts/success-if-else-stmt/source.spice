@@ -1,9 +1,12 @@
 f<int> main() {
-    if 1 != 1 {
+    bool condition1 = 1 != 1;
+    bool condition2 = 2.0 == 3.1415;
+    bool condition3 = 2.0 == 2.7183;
+    if condition1 {
         printf("If branch");
-    } else if 2.0 == 3.1415 {
+    } else if condition2 {
         printf("Else if 1");
-    } else if 2.0 == 2.7183 {
+    } else if condition3 {
         printf("Else if 2");
     } else {
         printf("Else");

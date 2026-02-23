@@ -1,6 +1,7 @@
 f<int> main() {
     string test;
-    if (false) {
+    bool b = false;
+    if (b) {
         int test = 12;
         printf("%d", test);
     }

@@ -315,10 +315,14 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
 std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
+  // Prepare
+  const bool compileThenBlock = node->compileThenBranch;
+  const bool compileElseBlock = node->compileElseBranch && node->elseStmt;
+
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bThen = createBlock("if.then." + codeLine);
-  llvm::BasicBlock *bElse = node->elseStmt ? createBlock("if.else." + codeLine) : nullptr;
+  llvm::BasicBlock *bThen = compileThenBlock ? createBlock("if.then." + codeLine) : nullptr;
+  llvm::BasicBlock *bElse = compileElseBlock ? createBlock("if.else." + codeLine) : nullptr;
   llvm::BasicBlock *bExit = createBlock("if.exit." + codeLine);
 
   // Change scope
@@ -327,19 +331,21 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Retrieve condition value
   llvm::Value *condValue = resolveValue(node->condition);
   // Check if condition is fulfilled
-  insertCondJump(condValue, bThen, node->elseStmt ? bElse : bExit);
+  insertCondJump(condValue, compileThenBlock ? bThen : bExit, compileElseBlock ? bElse : bExit);
 
-  // Switch to then block
-  switchToBlock(bThen);
-  // Visit then body
-  visit(node->thenBody);
-  // Create jump from then to end block
-  insertJump(bExit);
+  if (node->compileThenBranch) {
+    // Switch to then block
+    switchToBlock(bThen);
+    // Visit then body
+    visit(node->thenBody);
+    // Create jump from then to end block
+    insertJump(bExit);
+  }
 
   // Change scope back
   scopeHandle.leaveScopeEarly();
 
-  if (node->elseStmt) {
+  if (compileElseBlock) {
     // Switch to else block
     switchToBlock(bElse);
     // Visit else block

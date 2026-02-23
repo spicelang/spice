@@ -486,13 +486,14 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   visit(node->condition);
 
   // Visit then body
-  visit(node->thenBody);
+  if (node->compileThenBranch)
+    visit(node->thenBody);
 
   // Leave then body scope
   currentScope = node->thenBodyScope->parent;
 
   // Visit else stmt
-  if (node->elseStmt)
+  if (node->compileElseBranch && node->elseStmt)
     visit(node->elseStmt);
 
   return nullptr;

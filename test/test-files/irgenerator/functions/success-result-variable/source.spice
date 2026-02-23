@@ -1,11 +1,13 @@
 f<int> getAge() {
     dyn i;
-    if (true) {
+    bool b = true;
+    if (b) {
         result = 20;
         return;
     } else if (i = false) {
         result = 19;
     }
+    result = 18;
 }
 
 f<int> main() {
