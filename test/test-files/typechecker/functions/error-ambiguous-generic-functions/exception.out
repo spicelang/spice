@@ -1,5 +1,7 @@
-[Error|Semantic] ./source.spice:4:1:
-Multiple declarations of a procedure: 'p foo(byte*&)' is declared twice
+[Error|Semantic] ./source.spice:8:5:
+Function ambiguity: The function/procedure 'foo' is ambiguous. All of the following match the requested criteria:
+  p foo(byte*&)
+  p foo<byte>(byte*&)
 
-4  p foo<T>(T*& ptr) {}
-   ^^^^^^^^^^^^^^^^^^^^
+8  foo(ptr);
+   ^^^^^^^^

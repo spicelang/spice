@@ -9,4 +9,5 @@ f<int> main() {
     assert isSame<int, int>();
     assert !isSame<int, string>();
     assert isSame<double*&, double*&>();
+    printf("All assertions passed!\n");
 }

@@ -110,7 +110,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const Qual
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string signature = newManifestation.getSignature(true, false, false);
+  const std::string signature = newManifestation.getSignature(true, true, false);
 
   // Check if the function exists already
   for (const auto &manifestations : insertScope->functions | std::views::values) {
@@ -268,9 +268,9 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      const std::string nonGenericSignature = candidate.getSignature(true, false, false);
-      if (matchScope->functions.at(fctId).contains(nonGenericSignature)) {
-        matches.push_back(&matchScope->functions.at(fctId).at(nonGenericSignature));
+      const std::string newSignature = candidate.getSignature(true, true, false);
+      if (matchScope->functions.at(fctId).contains(newSignature)) {
+        matches.push_back(&matchScope->functions.at(fctId).at(newSignature));
         matches.back()->used = true;
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
@@ -316,7 +316,14 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
   if (matches.empty())
     return nullptr;
 
-  assert(matches.size() == 1);
+  // Check if more than one function matches the requirements
+  if (matches.size() > 1) {
+    std::stringstream errorMessage;
+    errorMessage << "The function/procedure '" << reqName << "' is ambiguous. All of the following match the requested criteria:";
+    for (const Function *match : matches)
+      errorMessage << "\n  " << match->getSignature();
+    throw SemanticError(callNode, FUNCTION_AMBIGUITY, errorMessage.str());
+  }
   Function *matchedFunction = matches.front();
 
   // Insert into cache
