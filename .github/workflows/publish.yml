@@ -7,7 +7,7 @@ on:
       - '*'
 
 env:
-  LLVM_VERSION: "llvmorg-22.1.0"
+  LLVM_VERSION: "llvmorg-22.1.1"
   GCC_VERSION: "14"
 
 jobs:
@@ -384,7 +384,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
-          version: v2.14.0
+          version: v2.14.3
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
