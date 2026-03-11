@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "typechecker/TypeChecker.h"
 
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
@@ -216,6 +217,48 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
   llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
 
   return LLVMExprResult{.value = result};
+}
+
+std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) const {
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
+    return visitBuiltinCallIsSame(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
+    return visitBuiltinCallImplementsInterface(node);
+
+  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
+  return nullptr;                                          // LCOV_EXCL_LINE
+}
+
+std::any IRGenerator::visitBuiltinCallIsSame(const FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME);
+
+  // Get the types to compare
+  bool isSame = true;
+  assert(node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() >= 2);
+  const std::vector<DataTypeNode *> &dataTypeNodes = node->templateTypeLst->dataTypes;
+  const QualType firstType = dataTypeNodes.front()->getEvaluatedSymbolType(manIdx);
+  for (size_t i = 1; i < dataTypeNodes.size(); i++) {
+    const QualType qualType = dataTypeNodes.at(i)->getEvaluatedSymbolType(manIdx);
+    if (!qualType.matches(firstType, false, true, false)) {
+      isSame = false;
+      break;
+    }
+  }
+
+  return LLVMExprResult{.value = builder.getInt1(isSame)};
+}
+
+std::any IRGenerator::visitBuiltinCallImplementsInterface(const FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE);
+
+  // Get the types to compare
+  const QualType interfaceType = node->templateTypeLst->dataTypes.at(0)->getEvaluatedSymbolType(manIdx);
+  const QualType structType = node->templateTypeLst->dataTypes.at(1)->getEvaluatedSymbolType(manIdx);
+
+  // The first type must be an interface and the second type must be a struct that implements this interface
+  const bool implementsInterface =
+      interfaceType.is(TY_INTERFACE) && structType.is(TY_STRUCT) && structType.doesImplement(interfaceType, node);
+  return LLVMExprResult{.value = builder.getInt1(implementsInterface)};
 }
 
 } // namespace spice::compiler

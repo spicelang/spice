@@ -176,6 +176,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Syscall number out of range";
   case TOO_MANY_SYSCALL_ARGS:
     return "Too many syscall args";
+  case BUILTIN_ARG_COUNT_MISMATCH:
+    return "Builtin function argument count mismatch";
+  case BUILTIN_ARG_TYPE_MISMATCH:
+    return "Builtin function argument type mismatch";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:

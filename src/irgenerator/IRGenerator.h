@@ -144,6 +144,11 @@ public:
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions);
 
 private:
+  // Private builtin function handlers
+  std::any visitNewBuiltinCall(const FctCallNode *node) const;
+  std::any visitBuiltinCallIsSame(const FctCallNode *node) const;
+  std::any visitBuiltinCallImplementsInterface(const FctCallNode *node) const;
+
   // Private methods
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;

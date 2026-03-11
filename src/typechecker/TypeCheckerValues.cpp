@@ -101,6 +101,30 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
   }
 
+  // Retrieve template types
+  templateTypes.clear();
+  if (node->hasTemplateTypes) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
+      auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
+      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+
+      // Abort if the type is unresolved
+      if (templateType.is(TY_UNRESOLVED))
+        HANDLE_UNRESOLVED_TYPE_ER(templateType)
+
+      // Check if the given type is generic
+      if (templateType.is(TY_GENERIC))
+        SOFT_ERROR_ER(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
+
+      templateTypes.push_back(templateType);
+    }
+  }
+
+  // Check if this is a builtin call
+  for (const char *builtinFctName : BUILTIN_FCT_NAMES)
+    if (node->fqFunctionName == builtinFctName)
+      return visitNewBuiltinCall(node);
+
   // Retrieve entry of the first fragment
   const std::string &firstFrag = node->functionNameFragments.front();
   SymbolTableEntry *firstFragEntry = currentScope->lookup(firstFrag);
@@ -129,31 +153,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   const std::string &fqFunctionName = isAlias ? structEntry->getQualType().getSubType() : node->fqFunctionName;
 
   // Get the concrete template types
-  templateTypes.clear();
   if (isAlias) {
     // Retrieve concrete template types from type alias
     templateTypes = structEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!templateTypes.empty() && node->hasTemplateTypes)
       SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
-  }
-
-  // Get concrete template types
-  if (node->hasTemplateTypes) {
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
-      auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
-      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
-
-      // Abort if the type is unresolved
-      if (templateType.is(TY_UNRESOLVED))
-        HANDLE_UNRESOLVED_TYPE_ER(templateType)
-
-      // Check if the given type is generic
-      if (templateType.is(TY_GENERIC))
-        SOFT_ERROR_ER(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
-
-      templateTypes.push_back(templateType);
-    }
   }
 
   // Check if this is a method call or a normal function call

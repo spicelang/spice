@@ -1,0 +1,5 @@
+f<int> main() {
+    __implements_interface<int, bool>(76); // With args
+    __implements_interface<int>(); // Too less template types
+    __implements_interface<int, int, string>(); // Too many template types
+}
