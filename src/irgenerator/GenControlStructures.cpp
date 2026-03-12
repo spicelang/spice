@@ -165,7 +165,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   LLVMExprResult itemResult;
   if (hasIdx) {
     // Allocate space to save pair
-    const QualType& pairSTy = node->getIdxFct->returnType;
+    const QualType &pairSTy = node->getIdxFct->returnType;
     llvm::Type *pairTy = pairSTy.toLLVMType(sourceFile);
     llvm::Value *pairPtr = insertAlloca(pairSTy, "pair.addr");
     // Call .getIdx() on iterator
@@ -315,14 +315,21 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
 std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
-  // Prepare
-  const bool compileThenBlock = node->compileThenBranch;
-  const bool compileElseBlock = node->compileElseBranch && node->elseStmt;
+  // If we have a compile time decision, only evaluate the respective branch
+  if (node->compileThenBranch && !node->compileElseBranch) {
+    ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
+    visit(node->thenBody);
+    return builder.getTrue();
+  }
+  if (!node->compileThenBranch && node->compileElseBranch) {
+    visit(node->elseStmt);
+    return builder.getFalse();
+  }
 
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bThen = compileThenBlock ? createBlock("if.then." + codeLine) : nullptr;
-  llvm::BasicBlock *bElse = compileElseBlock ? createBlock("if.else." + codeLine) : nullptr;
+  llvm::BasicBlock *bThen = createBlock("if.then." + codeLine);
+  llvm::BasicBlock *bElse = node->elseStmt ? createBlock("if.else." + codeLine) : nullptr;
   llvm::BasicBlock *bExit = createBlock("if.exit." + codeLine);
 
   // Change scope
@@ -331,21 +338,19 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Retrieve condition value
   llvm::Value *condValue = resolveValue(node->condition);
   // Check if condition is fulfilled
-  insertCondJump(condValue, compileThenBlock ? bThen : bExit, compileElseBlock ? bElse : bExit);
+  insertCondJump(condValue, bThen, node->elseStmt ? bElse : bExit);
 
-  if (node->compileThenBranch) {
-    // Switch to then block
-    switchToBlock(bThen);
-    // Visit then body
-    visit(node->thenBody);
-    // Create jump from then to end block
-    insertJump(bExit);
-  }
+  // Switch to then block
+  switchToBlock(bThen);
+  // Visit then body
+  visit(node->thenBody);
+  // Create jump from then to end block
+  insertJump(bExit);
 
   // Change scope back
   scopeHandle.leaveScopeEarly();
 
-  if (compileElseBlock) {
+  if (node->elseStmt) {
     // Switch to else block
     switchToBlock(bElse);
     // Visit else block
