@@ -188,4 +188,61 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
+std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
+    return visitBuiltinCallIsSame(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
+    return visitBuiltinCallImplementsInterface(node);
+
+  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
+  return nullptr;                                          // LCOV_EXCL_LINE
+}
+
+std::any TypeChecker::visitBuiltinCallIsSame(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME);
+
+  // Check if arguments are given
+  if (node->hasArgs)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take any arguments");
+
+  // Check that the function is called with two or more template types
+  if (!node->hasTemplateTypes || node->templateTypeLst->dataTypes.size() < 2)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin needs to be called with at least two template types");
+
+  // Directly set compile time value here, so that compile time ifs can be evaluated.
+  node->compileTimeValue.boolValue = true;
+  const std::vector<DataTypeNode *> &dataTypeNodes = node->templateTypeLst->dataTypes;
+  const QualType firstType = dataTypeNodes.front()->getEvaluatedSymbolType(manIdx);
+  for (size_t i = 1; i < dataTypeNodes.size(); i++) {
+    const QualType qualType = dataTypeNodes.at(i)->getEvaluatedSymbolType(manIdx);
+    if (!qualType.matches(firstType, false, true, false)) {
+      node->compileTimeValue.boolValue = false;
+      break;
+    }
+  }
+  node->compileTimeValueSet = true;
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinCallImplementsInterface(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE);
+
+  // Check if arguments are given
+  if (node->hasArgs)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take any arguments");
+
+  // Check that the function is called with exactly two or more template types
+  if (!node->hasTemplateTypes || node->templateTypeLst->dataTypes.size() != 2)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin needs to be called with exactly two template types");
+
+  const QualType interfaceType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  const QualType structType = node->templateTypeLst->dataTypes.back()->getEvaluatedSymbolType(manIdx);
+  const bool value = interfaceType.is(TY_INTERFACE) && structType.is(TY_STRUCT) && structType.doesImplement(interfaceType, node);
+  node->compileTimeValue.boolValue = value;
+  node->compileTimeValueSet = true;
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
 } // namespace spice::compiler

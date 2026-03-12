@@ -6,6 +6,7 @@
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeChecker.h>
 
 namespace spice::compiler {
 
@@ -500,6 +501,21 @@ CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*
     return CompileTimeValue{.longValue = opValue.longValue--};
 
   throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExprNode::getCompileTimeValue()");
+}
+
+bool ValueNode::hasCompileTimeValue() const { return isNil || ASTNode::hasCompileTimeValue(); }
+
+CompileTimeValue ValueNode::getCompileTimeValue() const {
+  return isNil ? CompileTimeValue{.longValue = 0} : ASTNode::getCompileTimeValue();
+}
+
+bool FctCallNode::hasCompileTimeValue() const {
+  const auto lambda = [&](const BuiltinFunctionInfo &info) { return info.name == fqFunctionName && info.hasConstantValue; };
+  return compileTimeValueSet && std::ranges::any_of(BUILTIN_FUNCTIONS, lambda);
+}
+
+CompileTimeValue FctCallNode::getCompileTimeValue() const {
+  return compileTimeValue;
 }
 
 /**

@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:5:
+Builtin function argument count mismatch: This builtin does not take any arguments
+
+2  __implements_interface<int, bool>(76); // With args
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:3:5:
+Builtin function argument count mismatch: This builtin needs to be called with exactly two template types
+
+3  __implements_interface<int>(); // Too less templa
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Builtin function argument count mismatch: This builtin needs to be called with exactly two template types
+
+4  __implements_interface<int, int, string>(); // Too many templa
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -2047,7 +2047,8 @@ public:
 
   // Other methods
   GET_CHILDREN(fctCall, arrayInitialization, structInstantiation, lambdaFunc, lambdaProc, lambdaExpr, nilType);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return isNil; }
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   FctCallNode *fctCall = nullptr;
@@ -2133,7 +2134,8 @@ public:
 
   // Other methods
   GET_CHILDREN(templateTypeLst, argLst);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
   void customItemsInitialization(const size_t manifestationCount) override { data.resize(manifestationCount); }
   [[nodiscard]] bool hasReturnValueReceiver() const;
 
@@ -2145,6 +2147,8 @@ public:
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   std::vector<FctCallData> data;
+  CompileTimeValue compileTimeValue;
+  bool compileTimeValueSet = false;
 };
 
 // ================================================= ArrayInitializationNode =====================================================

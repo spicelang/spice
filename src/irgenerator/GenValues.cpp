@@ -5,6 +5,7 @@
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeChecker.h>
 
 #include <llvm/IR/Module.h>
 
@@ -55,6 +56,11 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
 
 std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   diGenerator.setSourceLocation(node);
+
+  // Check if this is a builtin call
+  for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
+    if (node->fqFunctionName == builtinFctName)
+      return visitNewBuiltinCall(node);
 
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
 

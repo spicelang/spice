@@ -1,0 +1,4 @@
+f<int> main() {
+    __is_same<int, int>(true); // With args
+    __is_same<double>(); // Too less template types
+}

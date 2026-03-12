@@ -24,6 +24,17 @@ enum TypeCheckerMode : bool {
   TC_MODE_POST,
 };
 
+struct BuiltinFunctionInfo {
+  const char *name;
+  bool hasConstantValue;
+};
+static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
+static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
+static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
+    {BUILTIN_FCT_NAME_IS_SAME, true},
+    {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
+};
+
 /**
  * Jobs:
  * - Ensure that all actual types match the expected types
@@ -139,6 +150,11 @@ private:
   std::vector<CompilerWarning> &warnings;
   TypeMapping typeMapping;
   bool typeCheckedMainFct = false;
+
+  // Private builtin function handlers
+  std::any visitNewBuiltinCall(FctCallNode *node) const;
+  std::any visitBuiltinCallIsSame(FctCallNode *node) const;
+  std::any visitBuiltinCallImplementsInterface(FctCallNode *node) const;
 
   // Private methods
   bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const;

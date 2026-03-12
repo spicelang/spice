@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "typechecker/TypeChecker.h"
 
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
@@ -216,6 +217,14 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
   llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
 
   return LLVMExprResult{.value = result};
+}
+
+std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) const {
+  // All builtin calls, that are evaluatable at compile time, should not come here.
+  assert(!node->hasCompileTimeValue());
+
+  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
+  return nullptr;                                          // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

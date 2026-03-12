@@ -1,12 +1,16 @@
-type T1 dyn;
-type T2 dyn;
-
-inline f<bool> isSame<T1, T2>() {
-    return typeid<T1>() == typeid<T2>();
-}
-
 f<int> main() {
-    assert isSame<int, int>();
-    assert !isSame<int, string>();
-    assert isSame<double*&, double*&>();
+    double loopCounterOuter = 0.0;
+    while (loopCounterOuter < 10) {
+        loopCounterOuter += 0.15;
+        if (loopCounterOuter < 4) {
+            short loopCounterInner = 10s;
+            while (loopCounterInner > 0) {
+                printf("Outer: %f, inner: %d\n", loopCounterOuter, loopCounterInner);
+                loopCounterInner--;
+                if (loopCounterInner == 5) {
+                    continue 2;
+                }
+            }
+        }
+    }
 }
