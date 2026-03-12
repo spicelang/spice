@@ -7,13 +7,7 @@ source_filename = "source.spice"
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  br i1 true, label %if.then.L2, label %if.exit.L2
-
-if.then.L2:                                       ; preds = %0
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  br label %if.exit.L2
-
-if.exit.L2:                                       ; preds = %if.then.L2, %0
   %2 = load i32, ptr %result, align 4
   ret i32 %2
 }
