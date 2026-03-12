@@ -24,11 +24,15 @@ enum TypeCheckerMode : bool {
   TC_MODE_POST,
 };
 
+struct BuiltinFunctionInfo {
+  const char *name;
+  bool hasConstantValue;
+};
 static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
-static constexpr const char *BUILTIN_FCT_NAMES[] = {
-    BUILTIN_FCT_NAME_IS_SAME,
-    BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE,
+static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
+    {BUILTIN_FCT_NAME_IS_SAME, true},
+    {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
 };
 
 /**

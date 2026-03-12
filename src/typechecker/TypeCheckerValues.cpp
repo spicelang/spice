@@ -121,7 +121,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Check if this is a builtin call
-  for (const char *builtinFctName : BUILTIN_FCT_NAMES)
+  for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
       return visitNewBuiltinCall(node);
 
