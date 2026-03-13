@@ -63,7 +63,6 @@ public:
   std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
-  std::any visitAlignofCall(AlignofCallNode *node) override;
   std::any visitTypeidCall(TypeidCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;

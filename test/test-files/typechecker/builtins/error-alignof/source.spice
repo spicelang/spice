@@ -1,0 +1,5 @@
+f<int> main() {
+    alignof(); // No template types and no args
+    alignof<double, int>(); // Too many template types
+    alignof(1, 2); // Too many args
+}

@@ -884,8 +884,6 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
 
   if (ctx->printfCall()) {
     builtinCallNode->printfCall = std::any_cast<PrintfCallNode *>(visit(ctx->printfCall()));
-  } else if (ctx->alignOfCall()) {
-    builtinCallNode->alignofCall = std::any_cast<AlignofCallNode *>(visit(ctx->alignOfCall()));
   } else if (ctx->typeIdCall()) {
     builtinCallNode->typeidCall = std::any_cast<TypeidCallNode *>(visit(ctx->typeIdCall()));
   } else if (ctx->lenCall()) {
@@ -914,20 +912,6 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   fetchChildrenIntoVector(printfCallNode->args, ctx->assignExpr());
 
   return concludeNode(printfCallNode);
-}
-
-std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
-  const auto alignofCallNode = createNode<AlignofCallNode>(ctx);
-
-  // Visit children
-  if (ctx->assignExpr()) {
-    alignofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
-  } else {
-    alignofCallNode->isType = true;
-    alignofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
-  }
-
-  return concludeNode(alignofCallNode);
 }
 
 std::any ASTBuilder::visitTypeIdCall(SpiceParser::TypeIdCallContext *ctx) {
