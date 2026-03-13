@@ -101,7 +101,7 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   llvm::Value *resultValue = nullptr;
   llvm::Value *resultPtr = nullptr;
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (trueNode->hasCompileTimeValue() && falseNode->hasCompileTimeValue()) {
+  if (trueNode->hasCompileTimeValue(manIdx) && falseNode->hasCompileTimeValue(manIdx)) {
     // If both are constants, we can simply emit a selection instruction
     llvm::Value *trueValue = resolveValue(trueNode);
     llvm::Value *falseValue = resolveValue(falseNode);

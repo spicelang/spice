@@ -168,7 +168,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
           SOFT_ERROR_QT(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getQualType().is(TY_INT))
           SOFT_ERROR_QT(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
-        hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
+        hardcodedSize = globalVar->declNode->getCompileTimeValue(manIdx).intValue;
       }
 
       if (hasSize && hardcodedSize <= 1)

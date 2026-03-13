@@ -51,7 +51,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
 }
 
 std::any IRGenerator::visitConstant(const ConstantNode *node) {
-  return getConst(node->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
+  return getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
 }
 
 std::any IRGenerator::visitFctCall(const FctCallNode *node) {

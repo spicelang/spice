@@ -85,7 +85,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 
 std::any TypeChecker::visitFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope, compTimeVal, hasCompTimeVal] = data;
 
   // Retrieve arg types
   args.clear();
@@ -293,7 +293,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
 bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope, compTimeVal, hasCompTimeVal] = data;
 
   // Check if this is a well-known ctor/fct call
   if (node->functionNameFragments.size() == 1) {
@@ -361,7 +361,8 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunction
 
 bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const {
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
-  const auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
+  const auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope, compTimeVal, hasCompTimeVal] =
+      data;
 
   // Check if the given argument types match the type
   const QualTypeList expectedArgTypes = functionType.getFunctionParamTypes();
@@ -383,7 +384,7 @@ bool TypeChecker::visitFctPtrCall(const FctCallNode *node, const QualType &funct
 
 bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope] = data;
+  auto &[callType, isImported, templateTypes, thisType, args, callee, calleeParentScope, compTimeVal, hasCompTimeVal] = data;
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -525,7 +526,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       SymbolTableEntry *expectedField = spiceStruct->scope->lookupField(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       const ExprResult expected = {expectedField->getQualType(), expectedField};
-      const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+      const bool rhsIsImmediate = assignExpr->hasCompileTimeValue(manIdx);
 
       // Check if actual type matches expected type
       (void)opRuleManager.getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
@@ -559,7 +560,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   // Check if all control paths in the lambda body return
   bool returnsOnAllControlPaths = true;
-  if (!node->returnsOnAllControlPaths(&returnsOnAllControlPaths))
+  if (!node->returnsOnAllControlPaths(&returnsOnAllControlPaths, manIdx))
     SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
@@ -619,7 +620,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Mark unreachable statements
   bool doSetPredecessorsUnreachable = true;
-  node->returnsOnAllControlPaths(&doSetPredecessorsUnreachable);
+  node->returnsOnAllControlPaths(&doSetPredecessorsUnreachable, manIdx);
 
   // Change to function scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());

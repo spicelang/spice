@@ -65,71 +65,76 @@ const StmtLstNode *ASTNode::getNextOuterStmtLst() const { // NOLINT(*-no-recursi
   return isStmtLst() ? spice_pointer_cast<const StmtLstNode *>(this) : parent->getNextOuterStmtLst();
 }
 
-bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant->getCompileTimeValue(); }
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue(size_t manIdx) const { return constant->getCompileTimeValue(manIdx); }
 
-bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue = condAssign->hasCompileTimeValue() && condAssign->getCompileTimeValue().boolValue;
-  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool loopConditionAlwaysTrue =
+      condAssign->hasCompileTimeValue(manIdx) && condAssign->getCompileTimeValue(manIdx).boolValue;
+  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue = condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue;
-  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool loopConditionAlwaysTrue = condition->hasCompileTimeValue(manIdx) && condition->getCompileTimeValue(manIdx).boolValue;
+  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // Do-while loops will always be executed at least once. So if the body returns on all control paths, the loop will as well
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const { // NOLINT(misc-no-recursion)
   // If the condition always evaluates to 'true' the then block must return
   if (!compileElseBranch)
-    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If the condition always evaluates to 'false' the else block must return
   if (!compileThenBranch)
-    return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If the condition does not always evaluate to 'true' or 'false' we need to check both branches
-  return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt != nullptr &&
-         elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx) && elseStmt != nullptr &&
+         elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable,
+                                            size_t manIdx) const { // NOLINT(misc-no-recursion)
   if (isElseIf)
-    return ifStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return ifStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const auto pred = [=](const CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); };
+bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
+  const auto pred = [=](const CaseBranchNode *node) {
+    return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+  };
   const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches, pred);
-  const bool defaultBranchReturns = !defaultBranch || defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  const bool defaultBranchReturns =
+      !defaultBranch || defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
   return allCaseBranchesReturn && defaultBranchReturns;
 }
 
-bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
-bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // An empty statement list does not return at all
   if (statements.empty())
     return false;
@@ -142,7 +147,7 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) c
     if (returnsOnAllControlPaths && *doSetPredecessorsUnreachable)
       child->unreachable = true;
 
-    if (child->returnsOnAllControlPaths(doSetPredecessorsUnreachable))
+    if (child->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx))
       returnsOnAllControlPaths = true;
   }
   return returnsOnAllControlPaths;
@@ -182,15 +187,15 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
 
 const CompileTimeValue *AttrNode::getValue() const { return value ? &value->compileTimeValue : nullptr; }
 
-bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If the expression, passed to the assert statement is always evaluated to false, the assert statement will never succeed
-  return assignExpr->hasCompileTimeValue() && !assignExpr->getCompileTimeValue().boolValue;
+  return assignExpr->hasCompileTimeValue(manIdx) && !assignExpr->getCompileTimeValue(manIdx).boolValue;
 }
 
-bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If it's a ternary, do the default thing
   if (op == AssignOp::OP_NONE)
-    return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
   const AtomicExprNode *atomicExpr = lhs->postfixUnaryExpr ? lhs->postfixUnaryExpr->atomicExpr : nullptr;
@@ -204,45 +209,45 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   return false;
 }
 
-bool TernaryExprNode::hasCompileTimeValue() const {
-  const bool trueExprHasCompileTimeValue = !trueExpr || trueExpr->hasCompileTimeValue();
-  const bool falseExprHasCompileTimeValue = !falseExpr || falseExpr->hasCompileTimeValue();
-  return condition->hasCompileTimeValue() && trueExprHasCompileTimeValue && falseExprHasCompileTimeValue;
+bool TernaryExprNode::hasCompileTimeValue(size_t manIdx) const {
+  const bool trueExprHasCompileTimeValue = !trueExpr || trueExpr->hasCompileTimeValue(manIdx);
+  const bool falseExprHasCompileTimeValue = !falseExpr || falseExpr->hasCompileTimeValue(manIdx);
+  return condition->hasCompileTimeValue(manIdx) && trueExprHasCompileTimeValue && falseExprHasCompileTimeValue;
 }
 
-CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
+CompileTimeValue TernaryExprNode::getCompileTimeValue(size_t manIdx) const {
   assert(condition != nullptr);
   if (!trueExpr && !falseExpr)
-    return condition->getCompileTimeValue();
+    return condition->getCompileTimeValue(manIdx);
 
   // If the condition has no compile time value, we do not need to evaluate the true and false values
-  if (!condition->hasCompileTimeValue())
+  if (!condition->hasCompileTimeValue(manIdx))
     return {};
 
   // Check if the condition always evaluates to 'true'
-  if (condition->getCompileTimeValue().boolValue) {
+  if (condition->getCompileTimeValue(manIdx).boolValue) {
     const LogicalOrExprNode *trueValue = isShortened ? condition : trueExpr;
     assert(trueValue != nullptr);
-    return trueValue->getCompileTimeValue();
+    return trueValue->getCompileTimeValue(manIdx);
   }
 
   assert(falseExpr != nullptr);
-  return falseExpr->getCompileTimeValue();
+  return falseExpr->getCompileTimeValue(manIdx);
 }
 
-bool LogicalOrExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(); });
+bool LogicalOrExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
+CompileTimeValue LogicalOrExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
   // Check if one expression evaluates to 'true'
   for (const LogicalAndExprNode *op : operands) {
-    assert(op->hasCompileTimeValue());
+    assert(op->hasCompileTimeValue(manIdx));
     // If one operand evaluates to 'true' the whole expression is 'true'
-    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(); opCompileTimeValue.boolValue)
+    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(manIdx); opCompileTimeValue.boolValue)
       return CompileTimeValue{.boolValue = true};
   }
 
@@ -250,19 +255,19 @@ CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
   return CompileTimeValue{.boolValue = false};
 }
 
-bool LogicalAndExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(); });
+bool LogicalAndExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
+CompileTimeValue LogicalAndExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
   // Check if all expressions evaluate to 'true'
   for (const BitwiseOrExprNode *op : operands) {
-    assert(op->hasCompileTimeValue());
+    assert(op->hasCompileTimeValue(manIdx));
     // If one operand evaluates to 'false' the whole expression is 'false'
-    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(); !opCompileTimeValue.boolValue)
+    if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(manIdx); !opCompileTimeValue.boolValue)
       return CompileTimeValue{.boolValue = false};
   }
 
@@ -270,70 +275,70 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
   return CompileTimeValue{.boolValue = false};
 }
 
-bool BitwiseOrExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(); });
+bool BitwiseOrExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
+CompileTimeValue BitwiseOrExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     result.longValue |= opCompileTimeValue.longValue;
   }
 
   return result;
 }
 
-bool BitwiseXorExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(); });
+bool BitwiseXorExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
+CompileTimeValue BitwiseXorExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     result.longValue ^= opCompileTimeValue.longValue;
   }
 
   return result;
 }
 
-bool BitwiseAndExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const EqualityExprNode *node) { return node->hasCompileTimeValue(); });
+bool BitwiseAndExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const EqualityExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue BitwiseAndExprNode::getCompileTimeValue() const {
+CompileTimeValue BitwiseAndExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     result.longValue &= opCompileTimeValue.longValue;
   }
 
   return result;
 }
 
-bool EqualityExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const RelationalExprNode *node) { return node->hasCompileTimeValue(); });
+bool EqualityExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const RelationalExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
+CompileTimeValue EqualityExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
-  const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
+  const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue(manIdx);
+  const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue(manIdx);
   if (op == EqualityOp::OP_EQUAL)
     return CompileTimeValue{.boolValue = op0Value.longValue == op1Value.longValue};
   if (op == EqualityOp::OP_NOT_EQUAL)
@@ -342,16 +347,16 @@ CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
   throw CompilerError(UNHANDLED_BRANCH, "EqualityExprNode::getCompileTimeValue()");
 }
 
-bool RelationalExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const ShiftExprNode *node) { return node->hasCompileTimeValue(); });
+bool RelationalExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const ShiftExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
+CompileTimeValue RelationalExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue();
-  const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue();
+  const CompileTimeValue op0Value = operands.at(0)->getCompileTimeValue(manIdx);
+  const CompileTimeValue op1Value = operands.at(1)->getCompileTimeValue(manIdx);
   if (op == RelationalOp::OP_LESS)
     return CompileTimeValue{.boolValue = op0Value.longValue < op1Value.longValue};
   if (op == RelationalOp::OP_GREATER)
@@ -364,19 +369,19 @@ CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
   throw CompilerError(UNHANDLED_BRANCH, "RelationalExprNode::getCompileTimeValue()");
 }
 
-bool ShiftExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const AdditiveExprNode *node) { return node->hasCompileTimeValue(); });
+bool ShiftExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const AdditiveExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
+CompileTimeValue ShiftExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   OpQueue opQueueCopy = opQueue;
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     const ShiftOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
     if (op == ShiftOp::OP_SHIFT_LEFT)
@@ -389,19 +394,19 @@ CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool AdditiveExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(); });
+bool AdditiveExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
+CompileTimeValue AdditiveExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   OpQueue opQueueCopy = opQueue;
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     const AdditiveOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
     if (op == AdditiveOp::OP_PLUS)
@@ -414,19 +419,19 @@ CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool MultiplicativeExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands, [](const CastExprNode *node) { return node->hasCompileTimeValue(); });
+bool MultiplicativeExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return std::ranges::all_of(operands, [=](const CastExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
-CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
+CompileTimeValue MultiplicativeExprNode::getCompileTimeValue(size_t manIdx) const {
   if (operands.size() == 1)
-    return operands.front()->getCompileTimeValue();
+    return operands.front()->getCompileTimeValue(manIdx);
 
-  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue(manIdx);
   OpQueue opQueueCopy = opQueue;
   for (size_t i = 1; i < operands.size(); i++) {
-    assert(operands.at(i)->hasCompileTimeValue());
-    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
+    assert(operands.at(i)->hasCompileTimeValue(manIdx));
+    const CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue(manIdx);
     const MultiplicativeOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
     if (op == MultiplicativeOp::OP_MUL) {
@@ -444,29 +449,29 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool CastExprNode::hasCompileTimeValue() const {
-  return isCast ? assignExpr->hasCompileTimeValue() : prefixUnaryExpr->hasCompileTimeValue();
+bool CastExprNode::hasCompileTimeValue(size_t manIdx) const {
+  return isCast ? assignExpr->hasCompileTimeValue(manIdx) : prefixUnaryExpr->hasCompileTimeValue(manIdx);
 }
 
-CompileTimeValue CastExprNode::getCompileTimeValue() const {
-  return isCast ? assignExpr->getCompileTimeValue() : prefixUnaryExpr->getCompileTimeValue();
+CompileTimeValue CastExprNode::getCompileTimeValue(size_t manIdx) const {
+  return isCast ? assignExpr->getCompileTimeValue(manIdx) : prefixUnaryExpr->getCompileTimeValue(manIdx);
 }
 
-bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
+bool PrefixUnaryExprNode::hasCompileTimeValue(size_t manIdx) const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr)
-    return postfixUnaryExpr->hasCompileTimeValue();
+    return postfixUnaryExpr->hasCompileTimeValue(manIdx);
 
   const bool isSupported = op == PrefixUnaryOp::OP_NONE || op == PrefixUnaryOp::OP_MINUS || op == PrefixUnaryOp::OP_PLUS_PLUS ||
                            op == PrefixUnaryOp::OP_MINUS_MINUS || op == PrefixUnaryOp::OP_NOT ||
                            op == PrefixUnaryOp::OP_BITWISE_NOT;
-  return isSupported && prefixUnaryExpr->hasCompileTimeValue();
+  return isSupported && prefixUnaryExpr->hasCompileTimeValue(manIdx);
 }
 
-CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
+CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue(size_t manIdx) const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr)
-    return postfixUnaryExpr->getCompileTimeValue();
+    return postfixUnaryExpr->getCompileTimeValue(manIdx);
 
-  CompileTimeValue opValue = prefixUnaryExpr->getCompileTimeValue();
+  CompileTimeValue opValue = prefixUnaryExpr->getCompileTimeValue(manIdx);
   if (op == PrefixUnaryOp::OP_MINUS)
     return CompileTimeValue{.longValue = -opValue.longValue};
   if (op == PrefixUnaryOp::OP_PLUS_PLUS)
@@ -481,20 +486,20 @@ CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-
   throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExprNode::getCompileTimeValue()");
 }
 
-bool PostfixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
+bool PostfixUnaryExprNode::hasCompileTimeValue(size_t manIdx) const { // NOLINT(*-no-recursion)
   if (atomicExpr)
-    return atomicExpr->hasCompileTimeValue();
+    return atomicExpr->hasCompileTimeValue(manIdx);
 
   const bool isSupported =
       op == PostfixUnaryOp::OP_NONE || op == PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryOp::OP_MINUS_MINUS;
-  return isSupported && postfixUnaryExpr->hasCompileTimeValue();
+  return isSupported && postfixUnaryExpr->hasCompileTimeValue(manIdx);
 }
 
-CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
+CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue(size_t manIdx) const { // NOLINT(*-no-recursion)
   if (atomicExpr)
-    return atomicExpr->getCompileTimeValue();
+    return atomicExpr->getCompileTimeValue(manIdx);
 
-  CompileTimeValue opValue = postfixUnaryExpr->getCompileTimeValue();
+  CompileTimeValue opValue = postfixUnaryExpr->getCompileTimeValue(manIdx);
   if (op == PostfixUnaryOp::OP_PLUS_PLUS)
     return CompileTimeValue{.longValue = opValue.longValue++};
   if (op == PostfixUnaryOp::OP_MINUS_MINUS)
@@ -503,19 +508,21 @@ CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*
   throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExprNode::getCompileTimeValue()");
 }
 
-bool ValueNode::hasCompileTimeValue() const { return isNil || ASTNode::hasCompileTimeValue(); }
+bool ValueNode::hasCompileTimeValue(size_t manIdx) const { return isNil || ASTNode::hasCompileTimeValue(manIdx); }
 
-CompileTimeValue ValueNode::getCompileTimeValue() const {
-  return isNil ? CompileTimeValue{.longValue = 0} : ASTNode::getCompileTimeValue();
+CompileTimeValue ValueNode::getCompileTimeValue(size_t manIdx) const {
+  return isNil ? CompileTimeValue{.longValue = 0} : ASTNode::getCompileTimeValue(manIdx);
 }
 
-bool FctCallNode::hasCompileTimeValue() const {
+bool FctCallNode::hasCompileTimeValue(size_t manIdx) const {
   const auto lambda = [&](const BuiltinFunctionInfo &info) { return info.name == fqFunctionName && info.hasConstantValue; };
-  return compileTimeValueSet && std::ranges::any_of(BUILTIN_FUNCTIONS, lambda);
+  return data.at(manIdx).compileTimeValueSet && std::ranges::any_of(BUILTIN_FUNCTIONS, lambda);
 }
 
-CompileTimeValue FctCallNode::getCompileTimeValue() const {
-  return compileTimeValue;
+CompileTimeValue FctCallNode::getCompileTimeValue(size_t manIdx) const { return data.at(manIdx).compileTimeValue; }
+
+void FctCallNode::setCompileTimeValue(const CompileTimeValue &value, size_t manIdx) {
+  data.at(manIdx).setCompileTimeValue(value);
 }
 
 /**
@@ -535,12 +542,12 @@ bool FctCallNode::hasReturnValueReceiver() const {
   return node->getChildren().size() > 1 || !node->parent->isExprStmt();
 }
 
-bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body->returnsOnAllControlPaths(overrideUnreachable);
+bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(overrideUnreachable, manIdx);
 }
 
-bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body->returnsOnAllControlPaths(overrideUnreachable);
+bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const {
+  return body->returnsOnAllControlPaths(overrideUnreachable, manIdx);
 }
 
 void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)

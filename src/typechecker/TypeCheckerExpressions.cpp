@@ -521,8 +521,9 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // In case of compile time index value and known array size, perform a compile time out-of-bounds check
-    if (operandType.isArray() && operandType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
-      const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
+    if (operandType.isArray() && operandType.getArraySize() != ARRAY_SIZE_UNKNOWN &&
+        indexAssignExpr->hasCompileTimeValue(manIdx)) {
+      const int32_t constIndex = indexAssignExpr->getCompileTimeValue(manIdx).intValue;
       const unsigned int constSize = operandType.getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {

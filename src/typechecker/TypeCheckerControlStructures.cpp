@@ -210,9 +210,9 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 
   // Update the information, if one of the branches should be skipped.
   // This is important to check again here, because the constness of the condition can have changed after type checking.
-  const bool constantCondition = node->condition->hasCompileTimeValue();
-  node->compileThenBranch = !constantCondition || node->condition->getCompileTimeValue().boolValue;
-  node->compileElseBranch = !constantCondition || !node->condition->getCompileTimeValue().boolValue;
+  const bool constantCondition = node->condition->hasCompileTimeValue(manIdx);
+  node->compileThenBranch = !constantCondition || node->condition->getCompileTimeValue(manIdx).boolValue;
+  node->compileElseBranch = !constantCondition || !node->condition->getCompileTimeValue(manIdx).boolValue;
 
   // Visit body
   if (node->compileThenBranch)
