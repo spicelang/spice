@@ -121,8 +121,6 @@ std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node)
 
 std::any ParallelizableASTVisitor::visitPrintfCall(const PrintfCallNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitAlignofCall(const AlignofCallNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitTypeidCall(const TypeidCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitLenCall(const LenCallNode *node) { return visitChildren(node); }

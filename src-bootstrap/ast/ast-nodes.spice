@@ -653,17 +653,6 @@ public p ASTPrintfCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ======================================================== AlignofCallNode ======================================================
-
-public type ASTAlignofCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTAlignofCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
 // ========================================================= TypeidCallNode ======================================================
 
 public type ASTTypeidCallNode struct/*: IVisitable*/ {

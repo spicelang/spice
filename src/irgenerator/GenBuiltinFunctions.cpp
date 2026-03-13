@@ -14,8 +14,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
   if (node->printfCall)
     return visit(node->printfCall);
-  if (node->alignofCall)
-    return visit(node->alignofCall);
   if (node->typeidCall)
     return visit(node->typeidCall);
   if (node->lenCall)
@@ -74,21 +72,6 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
   return LLVMExprResult{.value = callInst};
-}
-
-std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
-  llvm::Type *type;
-  if (node->isType) { // Align of type
-    type = any_cast<llvm::Type *>(visit(node->dataType));
-  } else { // Align of value
-    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-  }
-  // Calculate size at compile-time
-  const llvm::Align alignmentInBytes = module->getDataLayout().getABITypeAlign(type);
-
-  // Return align value
-  llvm::Value *alignValue = builder.getInt64(alignmentInBytes.value());
-  return LLVMExprResult{.value = alignValue};
 }
 
 std::any IRGenerator::visitTypeidCall(const TypeidCallNode *node) {

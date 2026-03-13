@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:5:
+Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+
+2  alignof(); // No template typ
+   ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:3:5:
+Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+
+3  alignof<double, int>(); // Too many templa
+   ^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+
+4  alignof(1, 2); // Too many args
+   ^^^^^^^^^^^^^

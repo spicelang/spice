@@ -966,25 +966,6 @@ f<ASTPrintfCallNode*> Parser.parsePrintfCall() {
     return this.concludeNode(printfCallNode);
 }
 
-f<ASTAlignofCallNode*> Parser.parseAlignOfCall() {
-    dyn alignofCallNode = this.createNode<ASTAlignofCallNode>();
-
-    this.lexer.expect(TokenType::ALIGNOF);
-    if this.currentTokenIs(TokenType::LPAREN) {
-        this.lexer.expect(TokenType::LPAREN);
-        this.parseAssignExpr();
-        this.lexer.expect(TokenType::RPAREN);
-    } else {
-        this.lexer.expect(TokenType::LESS);
-        this.parseDataType();
-        this.lexer.expect(TokenType::GREATER);
-        this.lexer.expect(TokenType::LPAREN);
-        this.lexer.expect(TokenType::RPAREN);
-    }
-
-    return this.concludeNode(alignofCallNode);
-}
-
 f<ASTLenCallNode*> Parser.parseLenCall() {
     dyn lenCallNode = this.createNode<ASTLenCallNode>();
 
@@ -1250,8 +1231,6 @@ f<ASTAtomicExprNode*> Parser.parseAtomicExpr() {
         this.parseConstant();
     } else if this.currentTokenIs(TokenType::PRINTF) {
         this.parsePrintfCall();
-    } else if this.currentTokenIs(TokenType::ALIGNOF) {
-        this.parseAlignOfCall();
     } else if this.currentTokenIs(TokenType::LEN) {
         this.parseLenCall();
     } else if this.currentTokenIs(TokenType::PANIC) {

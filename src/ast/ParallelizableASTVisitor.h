@@ -59,7 +59,6 @@ class ContinueStmtNode;
 class FallthroughStmtNode;
 class BuiltinCallNode;
 class PrintfCallNode;
-class AlignofCallNode;
 class TypeidCallNode;
 class LenCallNode;
 class PanicCallNode;
@@ -155,7 +154,6 @@ public:
   virtual std::any visitAssertStmt(const AssertStmtNode *node);
   virtual std::any visitBuiltinCall(const BuiltinCallNode *node);
   virtual std::any visitPrintfCall(const PrintfCallNode *node);
-  virtual std::any visitAlignofCall(const AlignofCallNode *node);
   virtual std::any visitTypeidCall(const TypeidCallNode *node);
   virtual std::any visitLenCall(const LenCallNode *node);
   virtual std::any visitPanicCall(const PanicCallNode *node);
