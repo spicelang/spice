@@ -89,7 +89,6 @@ public:
   // Builtin functions
   std::any visitBuiltinCall(const BuiltinCallNode *node) override;
   std::any visitPrintfCall(const PrintfCallNode *node) override;
-  std::any visitTypeidCall(const TypeidCallNode *node) override;
   std::any visitLenCall(const LenCallNode *node) override;
   std::any visitPanicCall(const PanicCallNode *node) override;
   std::any visitSysCall(const SysCallNode *node) override;

@@ -14,8 +14,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
   if (node->printfCall)
     return visit(node->printfCall);
-  if (node->typeidCall)
-    return visit(node->typeidCall);
   if (node->lenCall)
     return visit(node->lenCall);
   if (node->panicCall)
@@ -72,14 +70,6 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
   return LLVMExprResult{.value = callInst};
-}
-
-std::any IRGenerator::visitTypeidCall(const TypeidCallNode *node) {
-  // Return type id value
-  const QualType qualType = node->assignExpr->getEvaluatedSymbolType(manIdx);
-  const uint64_t typeId = TypeRegistry::getTypeHash(*qualType.getType());
-  llvm::Value *typeIdValue = builder.getInt64(typeId);
-  return LLVMExprResult{.value = typeIdValue};
 }
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {

@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
+#include <global/TypeRegistry.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
@@ -12,8 +13,6 @@ namespace spice::compiler {
 std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
   if (node->printfCall)
     return visitPrintfCall(node->printfCall);
-  if (node->typeidCall)
-    return visitTypeidCall(node->typeidCall);
   if (node->lenCall)
     return visitLenCall(node->lenCall);
   if (node->panicCall)
@@ -100,16 +99,6 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
 }
 
-std::any TypeChecker::visitTypeidCall(TypeidCallNode *node) {
-  if (node->isType) { // Align of type
-    visit(node->dataType);
-  } else { // Align of value
-    visit(node->assignExpr);
-  }
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
-}
-
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -169,6 +158,8 @@ std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
     return visitBuiltinCallSizeOf(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF)
     return visitBuiltinCallAlignOf(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
+    return visitBuiltinCallTypeId(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
     return visitBuiltinCallIsSame(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
@@ -211,13 +202,35 @@ std::any TypeChecker::visitBuiltinCallAlignOf(FctCallNode *node) const {
 
   // Directly set compile time value here, so that compile time ifs can be evaluated.
   llvm::Type *type;
-  if (hasExactlyOneTemplateType) { // Size of type
+  if (hasExactlyOneTemplateType) { // Align of type
     type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-  } else { // Size of value
+  } else { // Align of value
     type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   const long typeAlignment = sourceFile->targetMachine->createDataLayout().getABITypeAlign(type).value();
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeAlignment});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinCallTypeId(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID);
+
+  // Check if arguments are given
+  const bool hasExactlyOneTemplateType = node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() == 1;
+  const bool hasExactlyOneArg = node->hasArgs && node->argLst->args.size() == 1;
+  if (!hasExactlyOneTemplateType && !hasExactlyOneArg)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does either take exactly one template type or argument");
+
+  // Directly set compile time value here, so that compile time ifs can be evaluated.
+  QualType qualType;
+  if (hasExactlyOneTemplateType) { // typeid of type
+    qualType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  } else { // typeid of value
+    qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
+  }
+  const long typeId = TypeRegistry::getTypeHash(*qualType.getType());
+  node->data.at(manIdx).setCompileTimeValue({.longValue = typeId});
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
