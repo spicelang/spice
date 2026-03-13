@@ -122,25 +122,26 @@ public:
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
-  [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] virtual bool hasCompileTimeValue(size_t manIdx) const { // NOLINT(misc-no-recursion)
     const std::vector<ASTNode *> children = getChildren();
     if (children.size() != 1)
       return false;
-    return children.front()->hasCompileTimeValue();
+    return children.front()->hasCompileTimeValue(manIdx);
   }
 
-  [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] virtual CompileTimeValue getCompileTimeValue(size_t manIdx) const { // NOLINT(misc-no-recursion)
     const std::vector<ASTNode *> children = getChildren();
     if (children.size() != 1)
       return {};
-    return children.front()->getCompileTimeValue();
+    return children.front()->getCompileTimeValue(manIdx);
   }
 
   [[nodiscard]] std::string getErrorMessage() const;
 
-  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable,
+                                                      size_t manIdx) const { // NOLINT(misc-no-recursion)
     const std::vector<ASTNode *> children = getChildren();
-    return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
   }
 
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
@@ -283,7 +284,7 @@ public:
   // Other methods
   GET_CHILDREN(attrs, paramLst, body);
   [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
-  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
@@ -329,7 +330,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
-  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   TopLevelDefinitionAttrNode *attrs = nullptr;
@@ -535,8 +536,8 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
   // Other methods
-  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return true; }
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Other methods
   GET_CHILDREN(dataType, constant);
@@ -634,7 +635,7 @@ public:
   // Other methods
   GET_CHILDREN(initDecl, condAssign, incAssign, body);
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   DeclStmtNode *initDecl = nullptr;
@@ -687,7 +688,7 @@ public:
   // Other methods
   GET_CHILDREN(condition, body);
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   AssignExprNode *condition = nullptr;
@@ -709,7 +710,7 @@ public:
   // Other methods
   GET_CHILDREN(body, condition);
   [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   StmtLstNode *body = nullptr;
@@ -731,7 +732,7 @@ public:
   // Other methods
   GET_CHILDREN(condition, thenBody, elseStmt);
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   bool compileThenBranch = true;
@@ -756,7 +757,7 @@ public:
   // Other methods
   GET_CHILDREN(ifStmt, body);
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   bool isElseIf = false;
@@ -778,7 +779,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr, caseBranches, defaultBranch);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   AssignExprNode *assignExpr = nullptr;
@@ -801,7 +802,7 @@ public:
   // Other methods
   GET_CHILDREN(caseConstants, body);
   [[nodiscard]] std::string getScopeId() const { return "case:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   std::vector<CaseConstantNode *> caseConstants;
@@ -823,7 +824,7 @@ public:
   // Other methods
   GET_CHILDREN(body);
   [[nodiscard]] std::string getScopeId() const { return "default:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   StmtLstNode *body = nullptr;
@@ -869,7 +870,7 @@ public:
 
   // Other methods
   GET_CHILDREN(statements);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
   void customItemsInitialization(const size_t manifestationCount) override { resourcesToCleanup.resize(manifestationCount); }
   [[nodiscard]] bool isStmtLst() const override { return true; }
 
@@ -1008,7 +1009,9 @@ public:
 
   // Other methods
   GET_CHILDREN();
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return {.intValue = static_cast<int32_t>(itemValue)}; }
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override {
+    return {.intValue = static_cast<int32_t>(itemValue)};
+  }
 
   // Public members
   bool hasValue = false;
@@ -1320,7 +1323,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *, size_t) const override { return true; }
   [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
@@ -1394,7 +1397,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   AssignExprNode *assignExpr = nullptr;
@@ -1438,7 +1441,7 @@ public:
 
   // Other methods
   GET_CHILDREN(args);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
 
   // Public members
   std::vector<AssignExprNode *> args;
@@ -1458,7 +1461,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr, dataType);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
 
   // Public members
   union {
@@ -1481,7 +1484,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr, dataType);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
 
   // Public members
   union {
@@ -1504,7 +1507,7 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr, dataType);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
 
   // Public members
   union {
@@ -1526,7 +1529,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLenCall(this); }
 
   // Other methods
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
 
   // Other methods
   GET_CHILDREN(assignExpr);
@@ -1548,8 +1551,8 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr);
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *, size_t) const override { return true; }
 
   // Public members
   AssignExprNode *assignExpr = nullptr;
@@ -1602,7 +1605,7 @@ public:
 
   // Other methods
   GET_CHILDREN(lhs, rhs, ternaryExpr);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
   [[nodiscard]] bool isAssignExpr() const override { return true; }
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
@@ -1629,8 +1632,8 @@ public:
 
   // Other methods
   GET_CHILDREN(condition, trueExpr, falseExpr);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
   LogicalOrExprNode *condition = nullptr;
@@ -1658,8 +1661,8 @@ public:
 
   // Public members
   std::vector<LogicalAndExprNode *> operands;
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
 
 // ===================================================== LogicalAndExprNode ======================================================
@@ -1678,8 +1681,8 @@ public:
 
   // Public members
   std::vector<BitwiseOrExprNode *> operands;
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
 
 // ===================================================== BitwiseOrExprNode =======================================================
@@ -1698,8 +1701,8 @@ public:
 
   // Public members
   std::vector<BitwiseXorExprNode *> operands;
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
 
 // ==================================================== BitwiseXorExprNode =======================================================
@@ -1718,8 +1721,8 @@ public:
 
   // Public members
   std::vector<BitwiseAndExprNode *> operands;
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
 
 // ==================================================== BitwiseAndExprNode =======================================================
@@ -1738,8 +1741,8 @@ public:
 
   // Public members
   std::vector<EqualityExprNode *> operands;
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
 
 // ===================================================== EqualityExprNode ========================================================
@@ -1762,8 +1765,8 @@ public:
 
   // Other methods
   GET_CHILDREN(operands);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
@@ -1796,8 +1799,8 @@ public:
 
   // Other methods
   GET_CHILDREN(operands);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
   std::vector<ShiftExprNode *> operands;
@@ -1827,8 +1830,8 @@ public:
 
   // Other methods
   GET_CHILDREN(operands);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
@@ -1861,8 +1864,8 @@ public:
 
   // Other methods
   GET_CHILDREN(operands);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
@@ -1896,8 +1899,8 @@ public:
 
   // Other methods
   GET_CHILDREN(operands);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
@@ -1921,8 +1924,8 @@ public:
 
   // Other methods
   GET_CHILDREN(prefixUnaryExpr, dataType, assignExpr);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
   PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
@@ -1956,8 +1959,8 @@ public:
 
   // Other methods
   GET_CHILDREN(prefixUnaryExpr, postfixUnaryExpr);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
   PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
@@ -1987,8 +1990,8 @@ public:
 
   // Other methods
   GET_CHILDREN(atomicExpr, postfixUnaryExpr, subscriptIndexExpr);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
@@ -2047,8 +2050,8 @@ public:
 
   // Other methods
   GET_CHILDREN(fctCall, arrayInitialization, structInstantiation, lambdaFunc, lambdaProc, lambdaExpr, nilType);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
   FctCallNode *fctCall = nullptr;
@@ -2086,8 +2089,8 @@ public:
 
   // Other methods
   GET_CHILDREN();
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return compileTimeValue; }
-  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override { return compileTimeValue; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return true; }
 
   // Public members
   PrimitiveValueType type = PrimitiveValueType::TYPE_NONE;
@@ -2116,6 +2119,8 @@ public:
     ArgList args;
     Function *callee = nullptr; // Stays nullptr if function pointer call
     Scope *calleeParentScope = nullptr;
+    CompileTimeValue compileTimeValue;
+    bool compileTimeValueSet = false;
 
     // Methods
     [[nodiscard]] bool isOrdinaryCall() const { return callType == FctCallType::TYPE_ORDINARY; }
@@ -2123,6 +2128,13 @@ public:
     [[nodiscard]] bool isVirtualMethodCall() const { return isMethodCall() && thisType.isBase(TY_INTERFACE); }
     [[nodiscard]] bool isCtorCall() const { return callType == FctCallType::TYPE_CTOR; }
     [[nodiscard]] bool isFctPtrCall() const { return callType == FctCallType::TYPE_FCT_PTR; }
+
+    void setCompileTimeValue(const CompileTimeValue &value) {
+      compileTimeValue = value;
+      compileTimeValueSet = true;
+    }
+
+    [[nodiscard]] bool hasCompileTimeValue() const { return compileTimeValueSet; }
   };
 
   // Constructors
@@ -2134,8 +2146,9 @@ public:
 
   // Other methods
   GET_CHILDREN(templateTypeLst, argLst);
-  [[nodiscard]] bool hasCompileTimeValue() const override;
-  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
+  void setCompileTimeValue(const CompileTimeValue &value, size_t manIdx);
   void customItemsInitialization(const size_t manifestationCount) override { data.resize(manifestationCount); }
   [[nodiscard]] bool hasReturnValueReceiver() const;
 
@@ -2147,8 +2160,6 @@ public:
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   std::vector<FctCallData> data;
-  CompileTimeValue compileTimeValue;
-  bool compileTimeValueSet = false;
 };
 
 // ================================================= ArrayInitializationNode =====================================================
@@ -2203,7 +2214,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
-  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
   void customItemsInitialization(size_t manifestationCount) override { manifestations.resize(manifestationCount); }
 
   // Public members
@@ -2226,7 +2237,7 @@ public:
 
   // Other methods
   GET_CHILDREN(returnType, paramLst, body, lambdaAttr);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const override;
 
   // Public members
   DataTypeNode *returnType = nullptr;
@@ -2247,7 +2258,7 @@ public:
 
   // Other methods
   GET_CHILDREN(paramLst, body, lambdaAttr);
-  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const override;
 
   // Public members
   StmtLstNode *body = nullptr;

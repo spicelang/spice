@@ -170,8 +170,8 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
 
   // Check if the syscall number is out of range
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->hasCompileTimeValue()) {
-    const unsigned short sysCallNumber = node->getCompileTimeValue().shortValue;
+  if (node->hasCompileTimeValue(manIdx)) {
+    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
     if (sysCallNumber < 0 || sysCallNumber > 439)
       SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
   }
@@ -210,17 +210,16 @@ std::any TypeChecker::visitBuiltinCallIsSame(FctCallNode *node) const {
     SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin needs to be called with at least two template types");
 
   // Directly set compile time value here, so that compile time ifs can be evaluated.
-  node->compileTimeValue.boolValue = true;
+  node->setCompileTimeValue({.boolValue = true}, manIdx);
   const std::vector<DataTypeNode *> &dataTypeNodes = node->templateTypeLst->dataTypes;
   const QualType firstType = dataTypeNodes.front()->getEvaluatedSymbolType(manIdx);
   for (size_t i = 1; i < dataTypeNodes.size(); i++) {
     const QualType qualType = dataTypeNodes.at(i)->getEvaluatedSymbolType(manIdx);
     if (!qualType.matches(firstType, false, true, false)) {
-      node->compileTimeValue.boolValue = false;
+      node->setCompileTimeValue({.boolValue = false}, manIdx);
       break;
     }
   }
-  node->compileTimeValueSet = true;
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
 }
@@ -239,8 +238,7 @@ std::any TypeChecker::visitBuiltinCallImplementsInterface(FctCallNode *node) con
   const QualType interfaceType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
   const QualType structType = node->templateTypeLst->dataTypes.back()->getEvaluatedSymbolType(manIdx);
   const bool value = interfaceType.is(TY_INTERFACE) && structType.is(TY_STRUCT) && structType.doesImplement(interfaceType, node);
-  node->compileTimeValue.boolValue = value;
-  node->compileTimeValueSet = true;
+  node->setCompileTimeValue({.boolValue = value}, manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
 }

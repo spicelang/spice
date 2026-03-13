@@ -221,7 +221,7 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
 
 std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) const {
   // All builtin calls, that are evaluatable at compile time, should not come here.
-  assert(!node->hasCompileTimeValue());
+  assert(!node->hasCompileTimeValue(manIdx));
 
   assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
   return nullptr;                                          // LCOV_EXCL_LINE

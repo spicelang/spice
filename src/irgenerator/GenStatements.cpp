@@ -107,7 +107,7 @@ std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
     return visit(node->constant);
 
   const SymbolTableEntry *constantEntry = node->entry;
-  return getConst(constantEntry->declNode->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
+  return getConst(constantEntry->declNode->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
 }
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
