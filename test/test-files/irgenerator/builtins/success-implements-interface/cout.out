@@ -1,0 +1,3 @@
+Implements interface (ITest, Test1): 1
+Implements interface (ITest, Test2): 0
+Implements interface (ITest, bool): 0

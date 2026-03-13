@@ -1,7 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "typechecker/TypeChecker.h"
 
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
@@ -15,8 +14,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
   if (node->printfCall)
     return visit(node->printfCall);
-  if (node->sizeofCall)
-    return visit(node->sizeofCall);
   if (node->alignofCall)
     return visit(node->alignofCall);
   if (node->typeidCall)
@@ -77,21 +74,6 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
   return LLVMExprResult{.value = callInst};
-}
-
-std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
-  llvm::Type *type;
-  if (node->isType) { // Size of type
-    type = any_cast<llvm::Type *>(visit(node->dataType));
-  } else { // Size of value
-    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-  }
-  // Calculate size at compile-time
-  const llvm::TypeSize sizeInBytes = module->getDataLayout().getTypeAllocSize(type);
-
-  // Return size value
-  llvm::Value *sizeValue = builder.getInt64(sizeInBytes);
-  return LLVMExprResult{.value = sizeValue};
 }
 
 std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
@@ -220,8 +202,10 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
 }
 
 std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) const {
-  // All builtin calls, that are evaluatable at compile time, should not come here.
-  assert(!node->hasCompileTimeValue(manIdx));
+  if (node->hasCompileTimeValue(manIdx)) {
+    llvm::Constant *value = getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
+    return LLVMExprResult{.constant = value};
+  }
 
   assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
   return nullptr;                                          // LCOV_EXCL_LINE

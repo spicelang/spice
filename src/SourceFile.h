@@ -120,6 +120,7 @@ public:
 
   // Friend classes
   friend class RuntimeModuleManager;
+  friend class Type;
 
   // Compiler pipeline triggers
   void runLexer();

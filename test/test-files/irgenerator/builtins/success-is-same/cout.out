@@ -1,0 +1,4 @@
+Is same (int, int): 1
+Is same (int, double*): 0
+Is same (Test, Test): 1
+Is same (Test&, Test): 0

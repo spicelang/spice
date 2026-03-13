@@ -61,9 +61,8 @@ fallthroughStmt: FALLTHROUGH;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | alignOfCall | typeIdCall | lenCall | panicCall | sysCall;
+builtinCall: printfCall | alignOfCall | typeIdCall | lenCall | panicCall | sysCall;
 printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
-sizeOfCall: SIZEOF (LPAREN assignExpr RPAREN | LESS dataType GREATER LPAREN RPAREN);
 alignOfCall: ALIGNOF (LPAREN assignExpr RPAREN | LESS dataType GREATER LPAREN RPAREN);
 typeIdCall: TYPEID (LPAREN assignExpr RPAREN | LESS dataType GREATER LPAREN RPAREN);
 lenCall: LEN LPAREN assignExpr RPAREN;
@@ -153,7 +152,6 @@ UNSAFE: 'unsafe';
 NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';
-SIZEOF: 'sizeof';
 ALIGNOF: 'alignof';
 TYPEID: 'typeid';
 LEN: 'len';

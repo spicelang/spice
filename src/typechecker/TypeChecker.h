@@ -28,9 +28,11 @@ struct BuiltinFunctionInfo {
   const char *name;
   bool hasConstantValue;
 };
+static constexpr auto BUILTIN_FCT_NAME_SIZEOF = "sizeof";
 static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
+    {BUILTIN_FCT_NAME_SIZEOF, true},
     {BUILTIN_FCT_NAME_IS_SAME, true},
     {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
 };
@@ -106,7 +108,6 @@ public:
   // Builtin functions
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
-  std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitAlignofCall(AlignofCallNode *node) override;
   std::any visitTypeidCall(TypeidCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
@@ -153,6 +154,7 @@ private:
 
   // Private builtin function handlers
   std::any visitNewBuiltinCall(FctCallNode *node) const;
+  std::any visitBuiltinCallSizeOf(FctCallNode *node) const;
   std::any visitBuiltinCallIsSame(FctCallNode *node) const;
   std::any visitBuiltinCallImplementsInterface(FctCallNode *node) const;
 
