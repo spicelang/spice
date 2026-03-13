@@ -1,0 +1,12 @@
+type Test struct {
+    int _fieldA
+    bool _fieldB
+    string _fieldC
+}
+
+f<int> main() {
+    printf("Is same (int, int): %d\n", __is_same<int, int>());
+    printf("Is same (int, double*): %d\n", __is_same<int, double*>());
+    printf("Is same (Test, Test): %d\n", __is_same<Test, Test>());
+    printf("Is same (Test&, Test): %d\n", __is_same<Test&, Test>());
+}

@@ -1,0 +1,17 @@
+type ITest interface {
+    p methodA();
+}
+
+type Test1 struct : ITest {}
+
+type Test2 struct {}
+
+p Test1.methodA() {
+    printf("Method A called!\n");
+}
+
+f<int> main() {
+    printf("Implements interface (ITest, Test1): %d\n", __implements_interface<ITest, Test1>());
+    printf("Implements interface (ITest, Test2): %d\n", __is_same<ITest, Test2>());
+    printf("Implements interface (ITest, bool): %d\n", __is_same<ITest, bool>());
+}

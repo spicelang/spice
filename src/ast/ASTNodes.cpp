@@ -78,16 +78,15 @@ CompileTimeValue GlobalVarDefNode::getCompileTimeValue(size_t manIdx) const { re
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue =
-      condAssign->hasCompileTimeValue(manIdx) && condAssign->getCompileTimeValue(manIdx).boolValue;
-  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+  const bool condAlwaysTrue = condAssign->hasCompileTimeValue(manIdx) && condAssign->getCompileTimeValue(manIdx).boolValue;
+  return condAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
 bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
   // we can assume that the loop itself will always return
-  const bool loopConditionAlwaysTrue = condition->hasCompileTimeValue(manIdx) && condition->getCompileTimeValue(manIdx).boolValue;
-  return loopConditionAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+  const bool condAlwaysTrue = condition->hasCompileTimeValue(manIdx) && condition->getCompileTimeValue(manIdx).boolValue;
+  return condAlwaysTrue && body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
 bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {

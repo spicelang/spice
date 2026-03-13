@@ -1416,11 +1416,10 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
 
   // Other methods
-  GET_CHILDREN(printfCall, sizeofCall, alignofCall, typeidCall, lenCall, panicCall, sysCall);
+  GET_CHILDREN(printfCall, alignofCall, typeidCall, lenCall, panicCall, sysCall);
 
   // Public members
   PrintfCallNode *printfCall = nullptr;
-  SizeofCallNode *sizeofCall = nullptr;
   AlignofCallNode *alignofCall = nullptr;
   TypeidCallNode *typeidCall = nullptr;
   LenCallNode *lenCall = nullptr;
@@ -1446,29 +1445,6 @@ public:
   // Public members
   std::vector<AssignExprNode *> args;
   std::string templatedString;
-};
-
-// ======================================================== SizeofCallNode =======================================================
-
-class SizeofCallNode final : public ExprNode {
-public:
-  // Constructors
-  using ExprNode::ExprNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSizeofCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSizeofCall(this); }
-
-  // Other methods
-  GET_CHILDREN(assignExpr, dataType);
-  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
-
-  // Public members
-  union {
-    AssignExprNode *assignExpr = nullptr;
-    DataTypeNode *dataType;
-  };
-  bool isType = false;
 };
 
 // ======================================================== AlignofCallNode ======================================================

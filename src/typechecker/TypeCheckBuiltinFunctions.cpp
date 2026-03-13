@@ -12,8 +12,6 @@ namespace spice::compiler {
 std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
   if (node->printfCall)
     return visitPrintfCall(node->printfCall);
-  if (node->sizeofCall)
-    return visitSizeofCall(node->sizeofCall);
   if (node->alignofCall)
     return visitAlignofCall(node->alignofCall);
   if (node->typeidCall)
@@ -104,16 +102,6 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
 }
 
-std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
-  if (node->isType) { // Size of type
-    visit(node->dataType);
-  } else { // Size of value
-    visit(node->assignExpr);
-  }
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
-}
-
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
   if (node->isType) { // Align of type
     visit(node->dataType);
@@ -189,6 +177,8 @@ std::any TypeChecker::visitSysCall(SysCallNode *node) {
 }
 
 std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF)
+    return visitBuiltinCallSizeOf(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
     return visitBuiltinCallIsSame(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
@@ -196,6 +186,28 @@ std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
 
   assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
   return nullptr;                                          // LCOV_EXCL_LINE
+}
+
+std::any TypeChecker::visitBuiltinCallSizeOf(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF);
+
+  // Check if arguments are given
+  const bool hasExactlyOneTemplateType = node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() == 1;
+  const bool hasExactlyOneArg = node->hasArgs && node->argLst->args.size() == 1;
+  if (!hasExactlyOneTemplateType && !hasExactlyOneArg)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does either take exactly one template type or argument");
+
+  // Directly set compile time value here, so that compile time ifs can be evaluated.
+  llvm::Type *type;
+  if (hasExactlyOneTemplateType) { // Size of type
+    type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  } else { // Size of value
+    type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  }
+  const long typeSize = sourceFile->targetMachine->createDataLayout().getTypeAllocSize(type);
+  node->data.at(manIdx).setCompileTimeValue({.longValue = typeSize});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitBuiltinCallIsSame(FctCallNode *node) const {

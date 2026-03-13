@@ -77,7 +77,6 @@ public:
   std::any visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override { return buildRule(ctx); }
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override { return buildRule(ctx); }
-  std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitTypeIdCall(SpiceParser::TypeIdCallContext *ctx) override { return buildRule(ctx); }
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override { return buildRule(ctx); }
@@ -122,7 +121,7 @@ private:
   std::string parentNodeId;
 
   // Private methods
-  std::string buildRule(antlr4::ParserRuleContext *ctx);
+  std::string buildRule(const antlr4::ParserRuleContext *ctx);
   [[nodiscard]] std::string getSpaces() const;
   [[nodiscard]] static std::string tokenToCodeLoc(const antlr4::Token &token);
 };

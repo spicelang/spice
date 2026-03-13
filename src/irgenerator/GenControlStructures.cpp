@@ -322,7 +322,8 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
     return builder.getTrue();
   }
   if (!node->compileThenBranch && node->compileElseBranch) {
-    visit(node->elseStmt);
+    if (node->elseStmt)
+      visit(node->elseStmt);
     return builder.getFalse();
   }
 

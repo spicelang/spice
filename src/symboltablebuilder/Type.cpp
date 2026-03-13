@@ -6,8 +6,10 @@
 
 #include <SourceFile.h>
 #include <ast/Attributes.h>
+#include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Struct.h>
@@ -187,7 +189,7 @@ const Type *Type::removeReferenceWrapper() const { return isRef() ? getContained
  */
 llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-recursion)
   assert(!typeChain.empty() && !is(TY_INVALID));
-  llvm::LLVMContext &context = sourceFile->llvmModule->getContext();
+  llvm::LLVMContext &context = sourceFile->cliOptions.useLTO ? sourceFile->resourceManager.ltoContext : sourceFile->context;
 
   if (isOneOf({TY_PTR, TY_REF, TY_STRING}) || (isArray() && getArraySize() == 0))
     return llvm::PointerType::get(context, 0);

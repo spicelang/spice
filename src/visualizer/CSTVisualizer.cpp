@@ -7,7 +7,7 @@
 
 namespace spice::compiler {
 
-std::string CSTVisualizer::buildRule(antlr4::ParserRuleContext *ctx) {
+std::string CSTVisualizer::buildRule(const antlr4::ParserRuleContext *ctx) {
   std::stringstream result;
 
   // Prepare strings
