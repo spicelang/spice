@@ -1,0 +1,5 @@
+f<int> main() {
+    typeid(); // No template types and no args
+    typeid<double, int>(); // Too many template types
+    typeid(1, 2); // Too many args
+}

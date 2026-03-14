@@ -30,11 +30,13 @@ struct BuiltinFunctionInfo {
 };
 static constexpr auto BUILTIN_FCT_NAME_SIZEOF = "sizeof";
 static constexpr auto BUILTIN_FCT_NAME_ALIGNOF = "alignof";
+static constexpr auto BUILTIN_FCT_NAME_TYPEID = "typeid";
 static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
     {BUILTIN_FCT_NAME_SIZEOF, true},
     {BUILTIN_FCT_NAME_ALIGNOF, true},
+    {BUILTIN_FCT_NAME_TYPEID, true},
     {BUILTIN_FCT_NAME_IS_SAME, true},
     {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
 };
@@ -110,7 +112,6 @@ public:
   // Builtin functions
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
-  std::any visitTypeidCall(TypeidCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;
   std::any visitSysCall(SysCallNode *node) override;
@@ -157,6 +158,7 @@ private:
   std::any visitNewBuiltinCall(FctCallNode *node) const;
   std::any visitBuiltinCallSizeOf(FctCallNode *node) const;
   std::any visitBuiltinCallAlignOf(FctCallNode *node) const;
+  std::any visitBuiltinCallTypeId(FctCallNode *node) const;
   std::any visitBuiltinCallIsSame(FctCallNode *node) const;
   std::any visitBuiltinCallImplementsInterface(FctCallNode *node) const;
 
