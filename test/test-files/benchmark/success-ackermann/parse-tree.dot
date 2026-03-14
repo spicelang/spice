@@ -778,20 +778,56 @@ digraph {
  L10C4_prefixUnaryExpr -> L10C4_postfixUnaryExpr;
  L10C4_atomicExpr [color="lightgreen",label="atomicExpr"];
  L10C4_postfixUnaryExpr -> L10C4_atomicExpr;
- L10C4_builtinCall [color="lightgreen",label="builtinCall"];
- L10C4_atomicExpr -> L10C4_builtinCall;
- L10C4_printfCall [color="lightgreen",label="printfCall"];
- L10C4_builtinCall -> L10C4_printfCall;
- L10C4 [color="lightblue",label="PRINTF: printf"];
- L10C4_printfCall -> L10C4
+ L10C4_value [color="lightgreen",label="value"];
+ L10C4_atomicExpr -> L10C4_value;
+ L10C4_fctCall [color="lightgreen",label="fctCall"];
+ L10C4_value -> L10C4_fctCall;
+ L10C4 [color="lightblue",label="IDENTIFIER: printf"];
+ L10C4_fctCall -> L10C4
  L10C10 [color="lightblue",label="LPAREN: ("];
- L10C4_printfCall -> L10C10
+ L10C4_fctCall -> L10C10
+ L10C11_argLst [color="lightgreen",label="argLst"];
+ L10C4_fctCall -> L10C11_argLst;
+ L10C11_assignExpr [color="lightgreen",label="assignExpr"];
+ L10C11_argLst -> L10C11_assignExpr;
+ L10C11_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L10C11_assignExpr -> L10C11_ternaryExpr;
+ L10C11_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L10C11_ternaryExpr -> L10C11_logicalOrExpr;
+ L10C11_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L10C11_logicalOrExpr -> L10C11_logicalAndExpr;
+ L10C11_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L10C11_logicalAndExpr -> L10C11_bitwiseOrExpr;
+ L10C11_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L10C11_bitwiseOrExpr -> L10C11_bitwiseXorExpr;
+ L10C11_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L10C11_bitwiseXorExpr -> L10C11_bitwiseAndExpr;
+ L10C11_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L10C11_bitwiseAndExpr -> L10C11_equalityExpr;
+ L10C11_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L10C11_equalityExpr -> L10C11_relationalExpr;
+ L10C11_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L10C11_relationalExpr -> L10C11_shiftExpr;
+ L10C11_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L10C11_shiftExpr -> L10C11_additiveExpr;
+ L10C11_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L10C11_additiveExpr -> L10C11_multiplicativeExpr;
+ L10C11_castExpr [color="lightgreen",label="castExpr"];
+ L10C11_multiplicativeExpr -> L10C11_castExpr;
+ L10C11_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L10C11_castExpr -> L10C11_prefixUnaryExpr;
+ L10C11_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L10C11_prefixUnaryExpr -> L10C11_postfixUnaryExpr;
+ L10C11_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L10C11_postfixUnaryExpr -> L10C11_atomicExpr;
+ L10C11_constant [color="lightgreen",label="constant"];
+ L10C11_atomicExpr -> L10C11_constant;
  L10C11 [color="lightblue",label="STRING_LIT: \"Ackermann of base m=%d and n=%d: %d\""];
- L10C4_printfCall -> L10C11
+ L10C11_constant -> L10C11
  L10C48 [color="lightblue",label="COMMA: ,"];
- L10C4_printfCall -> L10C48
+ L10C11_argLst -> L10C48
  L10C50_assignExpr [color="lightgreen",label="assignExpr"];
- L10C4_printfCall -> L10C50_assignExpr;
+ L10C11_argLst -> L10C50_assignExpr;
  L10C50_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L10C50_assignExpr -> L10C50_ternaryExpr;
  L10C50_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -825,9 +861,9 @@ digraph {
  L10C50 [color="lightblue",label="IDENTIFIER: baseM"];
  L10C50_atomicExpr -> L10C50
  L10C55 [color="lightblue",label="COMMA: ,"];
- L10C4_printfCall -> L10C55
+ L10C11_argLst -> L10C55
  L10C57_assignExpr [color="lightgreen",label="assignExpr"];
- L10C4_printfCall -> L10C57_assignExpr;
+ L10C11_argLst -> L10C57_assignExpr;
  L10C57_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L10C57_assignExpr -> L10C57_ternaryExpr;
  L10C57_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -861,9 +897,9 @@ digraph {
  L10C57 [color="lightblue",label="IDENTIFIER: baseN"];
  L10C57_atomicExpr -> L10C57
  L10C62 [color="lightblue",label="COMMA: ,"];
- L10C4_printfCall -> L10C62
+ L10C11_argLst -> L10C62
  L10C64_assignExpr [color="lightgreen",label="assignExpr"];
- L10C4_printfCall -> L10C64_assignExpr;
+ L10C11_argLst -> L10C64_assignExpr;
  L10C64_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L10C64_assignExpr -> L10C64_ternaryExpr;
  L10C64_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -977,7 +1013,7 @@ digraph {
  L10C80 [color="lightblue",label="RPAREN: )"];
  L10C64_fctCall -> L10C80
  L10C81 [color="lightblue",label="RPAREN: )"];
- L10C4_printfCall -> L10C81
+ L10C4_fctCall -> L10C81
  L10C82 [color="lightblue",label="SEMICOLON: ;"];
  L10C4_stmt -> L10C82
  L11C0 [color="lightblue",label="RBRACE: }"];

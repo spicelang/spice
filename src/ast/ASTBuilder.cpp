@@ -882,9 +882,7 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   const auto builtinCallNode = createNode<BuiltinCallNode>(ctx);
 
-  if (ctx->printfCall()) {
-    builtinCallNode->printfCall = std::any_cast<PrintfCallNode *>(visit(ctx->printfCall()));
-  } else if (ctx->panicCall()) {
+  if (ctx->panicCall()) {
     builtinCallNode->panicCall = std::any_cast<PanicCallNode *>(visit(ctx->panicCall()));
   } else if (ctx->sysCall()) {
     builtinCallNode->sysCall = std::any_cast<SysCallNode *>(visit(ctx->sysCall()));
@@ -893,21 +891,6 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   }
 
   return concludeNode(builtinCallNode);
-}
-
-std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
-  const auto printfCallNode = createNode<PrintfCallNode>(ctx);
-
-  // Enrich
-  std::string templatedString = ctx->STRING_LIT()->getText();
-  templatedString = templatedString.substr(1, templatedString.size() - 2);
-  replaceEscapeChars(templatedString);
-  printfCallNode->templatedString = templatedString;
-
-  // Visit children
-  fetchChildrenIntoVector(printfCallNode->args, ctx->assignExpr());
-
-  return concludeNode(printfCallNode);
 }
 
 std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {

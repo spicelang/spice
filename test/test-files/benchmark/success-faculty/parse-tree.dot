@@ -478,20 +478,56 @@ digraph {
  L11C4_prefixUnaryExpr -> L11C4_postfixUnaryExpr;
  L11C4_atomicExpr [color="lightgreen",label="atomicExpr"];
  L11C4_postfixUnaryExpr -> L11C4_atomicExpr;
- L11C4_builtinCall [color="lightgreen",label="builtinCall"];
- L11C4_atomicExpr -> L11C4_builtinCall;
- L11C4_printfCall [color="lightgreen",label="printfCall"];
- L11C4_builtinCall -> L11C4_printfCall;
- L11C4 [color="lightblue",label="PRINTF: printf"];
- L11C4_printfCall -> L11C4
+ L11C4_value [color="lightgreen",label="value"];
+ L11C4_atomicExpr -> L11C4_value;
+ L11C4_fctCall [color="lightgreen",label="fctCall"];
+ L11C4_value -> L11C4_fctCall;
+ L11C4 [color="lightblue",label="IDENTIFIER: printf"];
+ L11C4_fctCall -> L11C4
  L11C10 [color="lightblue",label="LPAREN: ("];
- L11C4_printfCall -> L11C10
+ L11C4_fctCall -> L11C10
+ L11C11_argLst [color="lightgreen",label="argLst"];
+ L11C4_fctCall -> L11C11_argLst;
+ L11C11_assignExpr [color="lightgreen",label="assignExpr"];
+ L11C11_argLst -> L11C11_assignExpr;
+ L11C11_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L11C11_assignExpr -> L11C11_ternaryExpr;
+ L11C11_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L11C11_ternaryExpr -> L11C11_logicalOrExpr;
+ L11C11_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L11C11_logicalOrExpr -> L11C11_logicalAndExpr;
+ L11C11_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L11C11_logicalAndExpr -> L11C11_bitwiseOrExpr;
+ L11C11_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L11C11_bitwiseOrExpr -> L11C11_bitwiseXorExpr;
+ L11C11_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L11C11_bitwiseXorExpr -> L11C11_bitwiseAndExpr;
+ L11C11_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L11C11_bitwiseAndExpr -> L11C11_equalityExpr;
+ L11C11_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L11C11_equalityExpr -> L11C11_relationalExpr;
+ L11C11_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L11C11_relationalExpr -> L11C11_shiftExpr;
+ L11C11_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L11C11_shiftExpr -> L11C11_additiveExpr;
+ L11C11_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L11C11_additiveExpr -> L11C11_multiplicativeExpr;
+ L11C11_castExpr [color="lightgreen",label="castExpr"];
+ L11C11_multiplicativeExpr -> L11C11_castExpr;
+ L11C11_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L11C11_castExpr -> L11C11_prefixUnaryExpr;
+ L11C11_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L11C11_prefixUnaryExpr -> L11C11_postfixUnaryExpr;
+ L11C11_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L11C11_postfixUnaryExpr -> L11C11_atomicExpr;
+ L11C11_constant [color="lightgreen",label="constant"];
+ L11C11_atomicExpr -> L11C11_constant;
  L11C11 [color="lightblue",label="STRING_LIT: \"Faculty of %d is: %d\""];
- L11C4_printfCall -> L11C11
+ L11C11_constant -> L11C11
  L11C33 [color="lightblue",label="COMMA: ,"];
- L11C4_printfCall -> L11C33
+ L11C11_argLst -> L11C33
  L11C35_assignExpr [color="lightgreen",label="assignExpr"];
- L11C4_printfCall -> L11C35_assignExpr;
+ L11C11_argLst -> L11C35_assignExpr;
  L11C35_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L11C35_assignExpr -> L11C35_ternaryExpr;
  L11C35_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -525,9 +561,9 @@ digraph {
  L11C35 [color="lightblue",label="IDENTIFIER: input"];
  L11C35_atomicExpr -> L11C35
  L11C40 [color="lightblue",label="COMMA: ,"];
- L11C4_printfCall -> L11C40
+ L11C11_argLst -> L11C40
  L11C42_assignExpr [color="lightgreen",label="assignExpr"];
- L11C4_printfCall -> L11C42_assignExpr;
+ L11C11_argLst -> L11C42_assignExpr;
  L11C42_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L11C42_assignExpr -> L11C42_ternaryExpr;
  L11C42_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -561,7 +597,7 @@ digraph {
  L11C42 [color="lightblue",label="IDENTIFIER: faculty"];
  L11C42_atomicExpr -> L11C42
  L11C49 [color="lightblue",label="RPAREN: )"];
- L11C4_printfCall -> L11C49
+ L11C4_fctCall -> L11C49
  L11C50 [color="lightblue",label="SEMICOLON: ;"];
  L11C4_stmt -> L11C50
  L12C0 [color="lightblue",label="RBRACE: }"];

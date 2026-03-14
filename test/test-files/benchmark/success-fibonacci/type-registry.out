@@ -5,3 +5,4 @@ f<int>()
 f<int>(int)
 int
 invalid
+string

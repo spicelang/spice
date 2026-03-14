@@ -61,8 +61,7 @@ fallthroughStmt: FALLTHROUGH;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: printfCall | panicCall | sysCall;
-printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
+builtinCall: panicCall | sysCall;
 panicCall: PANIC LPAREN assignExpr RPAREN;
 sysCall: SYSCALL LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 
@@ -148,7 +147,6 @@ ALIAS: 'alias';
 UNSAFE: 'unsafe';
 NIL: 'nil';
 MAIN: 'main';
-PRINTF: 'printf';
 PANIC: 'panic';
 SYSCALL: 'syscall';
 CAST: 'cast';

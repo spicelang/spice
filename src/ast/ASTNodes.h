@@ -1416,32 +1416,11 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
 
   // Other methods
-  GET_CHILDREN(printfCall, panicCall, sysCall);
+  GET_CHILDREN(panicCall, sysCall);
 
   // Public members
-  PrintfCallNode *printfCall = nullptr;
   PanicCallNode *panicCall = nullptr;
   SysCallNode *sysCall = nullptr;
-};
-
-// ======================================================== PrintfCallNode =======================================================
-
-class PrintfCallNode final : public ExprNode {
-public:
-  // Constructors
-  using ExprNode::ExprNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrintfCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
-
-  // Other methods
-  GET_CHILDREN(args);
-  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
-
-  // Public members
-  std::vector<AssignExprNode *> args;
-  std::string templatedString;
 };
 
 // ======================================================== PanicCallNode ========================================================

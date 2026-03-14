@@ -1,6 +1,8 @@
 bool
+dyn
 f()
 f<int>()
 int
 invalid
 long
+string

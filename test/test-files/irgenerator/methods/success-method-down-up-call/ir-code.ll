@@ -25,9 +25,6 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
   ret void
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
-
 define private noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
@@ -54,6 +51,9 @@ if.exit.L18:                                      ; preds = %if.then.L18, %1
   %10 = load i32, ptr %test.addr2, align 4
   ret i32 %10
 }
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

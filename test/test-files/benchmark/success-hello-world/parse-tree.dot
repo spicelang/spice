@@ -58,18 +58,54 @@ digraph {
  L2C4_prefixUnaryExpr -> L2C4_postfixUnaryExpr;
  L2C4_atomicExpr [color="lightgreen",label="atomicExpr"];
  L2C4_postfixUnaryExpr -> L2C4_atomicExpr;
- L2C4_builtinCall [color="lightgreen",label="builtinCall"];
- L2C4_atomicExpr -> L2C4_builtinCall;
- L2C4_printfCall [color="lightgreen",label="printfCall"];
- L2C4_builtinCall -> L2C4_printfCall;
- L2C4 [color="lightblue",label="PRINTF: printf"];
- L2C4_printfCall -> L2C4
+ L2C4_value [color="lightgreen",label="value"];
+ L2C4_atomicExpr -> L2C4_value;
+ L2C4_fctCall [color="lightgreen",label="fctCall"];
+ L2C4_value -> L2C4_fctCall;
+ L2C4 [color="lightblue",label="IDENTIFIER: printf"];
+ L2C4_fctCall -> L2C4
  L2C10 [color="lightblue",label="LPAREN: ("];
- L2C4_printfCall -> L2C10
+ L2C4_fctCall -> L2C10
+ L2C11_argLst [color="lightgreen",label="argLst"];
+ L2C4_fctCall -> L2C11_argLst;
+ L2C11_assignExpr [color="lightgreen",label="assignExpr"];
+ L2C11_argLst -> L2C11_assignExpr;
+ L2C11_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L2C11_assignExpr -> L2C11_ternaryExpr;
+ L2C11_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L2C11_ternaryExpr -> L2C11_logicalOrExpr;
+ L2C11_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L2C11_logicalOrExpr -> L2C11_logicalAndExpr;
+ L2C11_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L2C11_logicalAndExpr -> L2C11_bitwiseOrExpr;
+ L2C11_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L2C11_bitwiseOrExpr -> L2C11_bitwiseXorExpr;
+ L2C11_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L2C11_bitwiseXorExpr -> L2C11_bitwiseAndExpr;
+ L2C11_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L2C11_bitwiseAndExpr -> L2C11_equalityExpr;
+ L2C11_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L2C11_equalityExpr -> L2C11_relationalExpr;
+ L2C11_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L2C11_relationalExpr -> L2C11_shiftExpr;
+ L2C11_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L2C11_shiftExpr -> L2C11_additiveExpr;
+ L2C11_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L2C11_additiveExpr -> L2C11_multiplicativeExpr;
+ L2C11_castExpr [color="lightgreen",label="castExpr"];
+ L2C11_multiplicativeExpr -> L2C11_castExpr;
+ L2C11_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L2C11_castExpr -> L2C11_prefixUnaryExpr;
+ L2C11_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L2C11_prefixUnaryExpr -> L2C11_postfixUnaryExpr;
+ L2C11_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L2C11_postfixUnaryExpr -> L2C11_atomicExpr;
+ L2C11_constant [color="lightgreen",label="constant"];
+ L2C11_atomicExpr -> L2C11_constant;
  L2C11 [color="lightblue",label="STRING_LIT: \"Hello World!\""];
- L2C4_printfCall -> L2C11
+ L2C11_constant -> L2C11
  L2C25 [color="lightblue",label="RPAREN: )"];
- L2C4_printfCall -> L2C25
+ L2C4_fctCall -> L2C25
  L2C26 [color="lightblue",label="SEMICOLON: ;"];
  L2C4_stmt -> L2C26
  L3C0 [color="lightblue",label="RBRACE: }"];

@@ -14,10 +14,10 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %4
 }
 
+declare i1 @_Z6isTruev()
+
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
-
-declare i1 @_Z6isTruev()
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

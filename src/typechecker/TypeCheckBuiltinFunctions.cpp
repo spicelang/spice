@@ -11,8 +11,6 @@
 namespace spice::compiler {
 
 std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
-  if (node->printfCall)
-    return visitPrintfCall(node->printfCall);
   if (node->panicCall)
     return visitPanicCall(node->panicCall);
   if (node->sysCall)
@@ -21,23 +19,90 @@ std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
   return nullptr;                      // LCOV_EXCL_LINE
 }
 
-std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
+std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
+  HANDLE_UNRESOLVED_TYPE_ER(argType)
+  argType = argType.removeReferenceWrapper();
+
+  // Check if arg is of type array
+  if (!argType.isErrorObj())
+    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
+}
+
+std::any TypeChecker::visitSysCall(SysCallNode *node) {
+  // Check if the syscall number if of type short
+  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(node->args.front())).type;
+  if (!sysCallNumberType.is(TY_SHORT))
+    SOFT_ERROR_ER(node->args.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
+
+  // Check if the syscall number is out of range
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->hasCompileTimeValue(manIdx)) {
+    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
+    if (sysCallNumber < 0 || sysCallNumber > 439)
+      SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
+  }
+
+  // Check if too many syscall args are given
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->args.size() > 6)
+    SOFT_ERROR_ER(node->args.front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
+
+  // Visit children
+  for (size_t i = 1; i < node->args.size(); i++)
+    visit(node->args.at(i));
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
+    return visitBuiltinPrintfCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF)
+    return visitBuiltinSizeOfCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF)
+    return visitBuiltinAlignOfCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
+    return visitBuiltinTypeIdCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
+    return visitBuiltinLenCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
+    return visitBuiltinIsSameCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
+    return visitBuiltinImplementsInterfaceCall(node);
+
+  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
+  return nullptr;                                          // LCOV_EXCL_LINE
+}
+
+std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF);
+
+  // Retrieve templated string
+  assert(node->hasArgs);
+  const AssignExprNode *firstArg = node->argLst->args.front();
+  assert(firstArg->getEvaluatedSymbolType(manIdx).is(TY_STRING) && firstArg->hasCompileTimeValue(manIdx));
+  const size_t stringOffset = firstArg->getCompileTimeValue(manIdx).stringValueOffset;
+  const std::string templatedString = resourceManager.compileTimeStringValues.at(stringOffset);
+
   // Check if assignment types match placeholder types
   size_t placeholderCount = 0;
-  size_t index = node->templatedString.find_first_of('%');
-  while (index != std::string::npos && index != node->templatedString.size() - 1) {
+  size_t index = templatedString.find_first_of('%');
+  while (index != std::string::npos && index != templatedString.size() - 1) {
     // Check if there is another assignExpr
-    if (node->args.size() <= placeholderCount)
+    if (node->argLst->args.size() - 1 <= placeholderCount)
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
     // Get next assignment
-    AssignExprNode *assignment = node->args.at(placeholderCount);
+    const AssignExprNode *assignment = node->argLst->args.at(placeholderCount + 1);
     // Visit assignment
-    QualType argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    QualType argType = assignment->getEvaluatedSymbolType(manIdx);
     HANDLE_UNRESOLVED_TYPE_ER(argType)
     argType = argType.removeReferenceWrapper();
 
-    switch (node->templatedString.at(index + 1)) {
+    switch (templatedString.at(index + 1)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName(false))
@@ -87,73 +152,17 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     default:
       SOFT_ERROR_ER(node, PRINTF_TYPE_ERROR, "The placeholder string contains an invalid placeholder")
     }
-    index = node->templatedString.find_first_of('%', index + 2); // We can also skip the following char
+    index = templatedString.find_first_of('%', index + 2); // We can also skip the following char
   }
 
   // Check if the number of placeholders matches the number of args
-  if (placeholderCount < node->args.size())
+  if (placeholderCount < node->argLst->args.size() - 1)
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
 }
 
-std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
-  HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = argType.removeReferenceWrapper();
-
-  // Check if arg is of type array
-  if (!argType.isErrorObj())
-    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
-}
-
-std::any TypeChecker::visitSysCall(SysCallNode *node) {
-  // Check if the syscall number if of type short
-  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(node->args.front())).type;
-  if (!sysCallNumberType.is(TY_SHORT))
-    SOFT_ERROR_ER(node->args.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
-
-  // Check if the syscall number is out of range
-  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->hasCompileTimeValue(manIdx)) {
-    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
-    if (sysCallNumber < 0 || sysCallNumber > 439)
-      SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
-  }
-
-  // Check if too many syscall args are given
-  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->args.size() > 6)
-    SOFT_ERROR_ER(node->args.front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
-
-  // Visit children
-  for (size_t i = 1; i < node->args.size(); i++)
-    visit(node->args.at(i));
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
-}
-
-std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF)
-    return visitBuiltinCallSizeOf(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF)
-    return visitBuiltinCallAlignOf(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
-    return visitBuiltinCallTypeId(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
-    return visitBuiltinCallLen(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
-    return visitBuiltinCallIsSame(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
-    return visitBuiltinCallImplementsInterface(node);
-
-  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
-  return nullptr;                                          // LCOV_EXCL_LINE
-}
-
-std::any TypeChecker::visitBuiltinCallSizeOf(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinSizeOfCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF);
 
   // Check if arguments are given
@@ -175,7 +184,7 @@ std::any TypeChecker::visitBuiltinCallSizeOf(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
-std::any TypeChecker::visitBuiltinCallAlignOf(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinAlignOfCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF);
 
   // Check if arguments are given
@@ -197,7 +206,7 @@ std::any TypeChecker::visitBuiltinCallAlignOf(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
-std::any TypeChecker::visitBuiltinCallTypeId(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinTypeIdCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID);
 
   // Check if arguments are given
@@ -219,7 +228,7 @@ std::any TypeChecker::visitBuiltinCallTypeId(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
-std::any TypeChecker::visitBuiltinCallLen(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
 
   // Check if arguments are given
@@ -247,7 +256,7 @@ std::any TypeChecker::visitBuiltinCallLen(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
-std::any TypeChecker::visitBuiltinCallIsSame(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinIsSameCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME);
 
   // Check if arguments are given
@@ -273,7 +282,7 @@ std::any TypeChecker::visitBuiltinCallIsSame(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
 }
 
-std::any TypeChecker::visitBuiltinCallImplementsInterface(FctCallNode *node) const {
+std::any TypeChecker::visitBuiltinImplementsInterfaceCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE);
 
   // Check if arguments are given
