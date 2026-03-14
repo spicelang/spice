@@ -121,8 +121,6 @@ std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node)
 
 std::any ParallelizableASTVisitor::visitPrintfCall(const PrintfCallNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitLenCall(const LenCallNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitPanicCall(const PanicCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitSysCall(const SysCallNode *node) { return visitChildren(node); }

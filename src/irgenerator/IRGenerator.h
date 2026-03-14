@@ -89,7 +89,6 @@ public:
   // Builtin functions
   std::any visitBuiltinCall(const BuiltinCallNode *node) override;
   std::any visitPrintfCall(const PrintfCallNode *node) override;
-  std::any visitLenCall(const LenCallNode *node) override;
   std::any visitPanicCall(const PanicCallNode *node) override;
   std::any visitSysCall(const SysCallNode *node) override;
   // Expressions
@@ -142,7 +141,8 @@ public:
 
 private:
   // Private builtin function handlers
-  std::any visitNewBuiltinCall(const FctCallNode *node) const;
+  std::any visitNewBuiltinCall(const FctCallNode *node);
+  std::any visitBuiltinLenCall(const FctCallNode *node);
 
   // Private methods
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;

@@ -1,0 +1,7 @@
+f<int> main() {
+    len<int>(5); // Template type
+    len(); // Too less arguments
+    len(1, 5); // Too many arguments
+    double d;
+    len(d); // Wrong type
+}

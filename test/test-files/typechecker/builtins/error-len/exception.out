@@ -1,0 +1,26 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:5:
+Builtin function argument count mismatch: This builtin does not take template types
+
+2  len<int>(5); // Template type
+   ^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:3:5:
+Builtin function argument count mismatch: This builtin does take exactly one argument
+
+3  len(); // Too less argume
+   ^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Builtin function argument count mismatch: This builtin does take exactly one argument
+
+4  len(1, 5); // Too many argume
+   ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:6:9:
+Expected array type: The len builtin can only work on arrays or strings
+
+6  len(d); // Wrong type
+       ^

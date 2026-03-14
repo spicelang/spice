@@ -6,6 +6,7 @@
 #include <driver/Driver.h>
 #include <global/TypeRegistry.h>
 #include <llvm/IR/InlineAsm.h>
+#include <typechecker/TypeChecker.h>
 
 #include <llvm/IR/Module.h>
 
@@ -14,8 +15,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
   if (node->printfCall)
     return visit(node->printfCall);
-  if (node->lenCall)
-    return visit(node->lenCall);
   if (node->panicCall)
     return visit(node->panicCall);
   if (node->sysCall)
@@ -70,23 +69,6 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
   return LLVMExprResult{.value = callInst};
-}
-
-std::any IRGenerator::visitLenCall(const LenCallNode *node) {
-  // Check if the length is fixed and known via the symbol type
-  QualType symbolType = node->assignExpr->getEvaluatedSymbolType(manIdx);
-  symbolType = symbolType.removeReferenceWrapper();
-
-  llvm::Value *lengthValue;
-  if (symbolType.is(TY_STRING)) {
-    llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
-    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr));
-  } else {
-    assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
-    // Return length value
-    lengthValue = builder.getInt64(symbolType.getArraySize());
-  }
-  return LLVMExprResult{.value = lengthValue};
 }
 
 std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
@@ -174,14 +156,31 @@ std::any IRGenerator::visitSysCall(const SysCallNode *node) {
   return LLVMExprResult{.value = result};
 }
 
-std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) const {
+std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
   if (node->hasCompileTimeValue(manIdx)) {
     llvm::Constant *value = getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
     return LLVMExprResult{.constant = value};
   }
 
-  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
-  return nullptr;                                          // LCOV_EXCL_LINE
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
+    return visitBuiltinLenCall(node);
+
+  assert_fail("This builtin call is not implemented yet or must be perfomed at compile time"); // LCOV_EXCL_LINE
+  return nullptr;                                                                              // LCOV_EXCL_LINE
+}
+
+std::any IRGenerator::visitBuiltinLenCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
+
+  // Check if the length is fixed and known via the symbol type
+  const AssignExprNode *argNode = node->argLst->args.front();
+  QualType symbolType = argNode->getEvaluatedSymbolType(manIdx);
+  symbolType = symbolType.removeReferenceWrapper();
+  assert(symbolType.is(TY_STRING));
+
+  llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
+  llvm::Value *lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(argNode));
+  return LLVMExprResult{.value = lengthValue};
 }
 
 } // namespace spice::compiler
