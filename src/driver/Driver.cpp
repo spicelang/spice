@@ -65,7 +65,7 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
     // Set output path and dir
     if (shouldExecute) {
       cliOptions.execute = true;
-      const long millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      const uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
       cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     } else if (!cliOptions.outputPath.empty()) {

@@ -185,7 +185,7 @@ std::any TypeChecker::visitBuiltinCallSizeOf(FctCallNode *node) const {
   } else { // Size of value
     type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
-  const long typeSize = sourceFile->targetMachine->createDataLayout().getTypeAllocSize(type);
+  const int64_t typeSize = sourceFile->targetMachine->createDataLayout().getTypeAllocSize(type);
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeSize});
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
@@ -207,7 +207,7 @@ std::any TypeChecker::visitBuiltinCallAlignOf(FctCallNode *node) const {
   } else { // Align of value
     type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
-  const long typeAlignment = sourceFile->targetMachine->createDataLayout().getABITypeAlign(type).value();
+  const int64_t typeAlignment = sourceFile->targetMachine->createDataLayout().getABITypeAlign(type).value();
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeAlignment});
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
@@ -229,8 +229,8 @@ std::any TypeChecker::visitBuiltinCallTypeId(FctCallNode *node) const {
   } else { // typeid of value
     qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
   }
-  const long typeId = TypeRegistry::getTypeHash(*qualType.getType());
-  node->data.at(manIdx).setCompileTimeValue({.longValue = typeId});
+  const uint64_t typeId = TypeRegistry::getTypeHash(*qualType.getType());
+  node->data.at(manIdx).setCompileTimeValue({.longValue = std::bit_cast<int64_t>(typeId)});
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
