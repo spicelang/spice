@@ -13,8 +13,6 @@ namespace spice::compiler {
 std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
   if (node->printfCall)
     return visitPrintfCall(node->printfCall);
-  if (node->lenCall)
-    return visitLenCall(node->lenCall);
   if (node->panicCall)
     return visitPanicCall(node->panicCall);
   if (node->sysCall)
@@ -99,22 +97,6 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_INT), manIdx)};
 }
 
-std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
-  HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = argType.removeReferenceWrapper();
-
-  // Check if arg is of type array
-  if (!argType.isArray() && !argType.is(TY_STRING))
-    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
-
-  // If we want to use the len builtin on a string, we need to import the string runtime module
-  if (argType.is(TY_STRING) && !sourceFile->isStringRT())
-    sourceFile->requestRuntimeModule(STRING_RT);
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
-}
-
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
   QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -160,6 +142,8 @@ std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
     return visitBuiltinCallAlignOf(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
     return visitBuiltinCallTypeId(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
+    return visitBuiltinCallLen(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
     return visitBuiltinCallIsSame(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
@@ -231,6 +215,34 @@ std::any TypeChecker::visitBuiltinCallTypeId(FctCallNode *node) const {
   }
   const uint64_t typeId = TypeRegistry::getTypeHash(*qualType.getType());
   node->data.at(manIdx).setCompileTimeValue({.longValue = std::bit_cast<int64_t>(typeId)});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinCallLen(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
+
+  // Check if arguments are given
+  if (node->hasTemplateTypes)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take template types");
+  if (!node->hasArgs || node->argLst->args.size() != 1)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does take exactly one argument");
+
+  // Directly set compile time value here, so that compile time ifs can be evaluated.
+  QualType argType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
+  argType = argType.removeReferenceWrapper();
+
+  // Check if arg is of type array
+  if (!argType.isArray() && !argType.is(TY_STRING))
+    SOFT_ERROR_ER(node->argLst->args.front(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+
+  if (argType.is(TY_ARRAY)) {
+    node->data.at(manIdx).setCompileTimeValue({.longValue = argType.getArraySize()});
+  } else {
+    // If we want to use the len builtin on a string, we need to import the string runtime module
+    if (!sourceFile->isStringRT())
+      sourceFile->requestRuntimeModule(STRING_RT);
+  }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }

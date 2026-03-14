@@ -884,8 +884,6 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
 
   if (ctx->printfCall()) {
     builtinCallNode->printfCall = std::any_cast<PrintfCallNode *>(visit(ctx->printfCall()));
-  } else if (ctx->lenCall()) {
-    builtinCallNode->lenCall = std::any_cast<LenCallNode *>(visit(ctx->lenCall()));
   } else if (ctx->panicCall()) {
     builtinCallNode->panicCall = std::any_cast<PanicCallNode *>(visit(ctx->panicCall()));
   } else if (ctx->sysCall()) {
@@ -910,15 +908,6 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   fetchChildrenIntoVector(printfCallNode->args, ctx->assignExpr());
 
   return concludeNode(printfCallNode);
-}
-
-std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
-  const auto lenCallNode = createNode<LenCallNode>(ctx);
-
-  // Visit children
-  lenCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
-
-  return concludeNode(lenCallNode);
 }
 
 std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {

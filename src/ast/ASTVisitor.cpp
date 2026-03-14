@@ -109,8 +109,6 @@ std::any ASTVisitor::visitBuiltinCall(BuiltinCallNode *node) { return visitChild
 
 std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitPanicCall(PanicCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSysCall(SysCallNode *node) { return visitChildren(node); }
