@@ -2,19 +2,25 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:2:5:
-Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+Builtin function signature mismatch: This builtin expects either template types or arguments, but got none
 
 2  typeid(); // No template typ
    ^^^^^^^^
 
 [Error|Semantic] ./source.spice:3:5:
-Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+Builtin function signature mismatch: This builtin expects either template types or arguments, but got both
 
-3  typeid<double, int>(); // Too many templa
-   ^^^^^^^^^^^^^^^^^^^^^
+3  typeid<short>(8s); // Template types 
+   ^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
-Builtin function argument count mismatch: This builtin does either take exactly one template type or argument
+Builtin function template type count mismatch: This builtin expects between 0 and 1 template type(s) template type(s), but got 2
 
-4  typeid(1, 2); // Too many args
+4  typeid<double, int>(); // Too many templa
+   ^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:5:5:
+Builtin function argument count mismatch: This builtin expects between 0 and 1 argument(s) argument(s), but got 2
+
+5  typeid(1, 2); // Too many args
    ^^^^^^^^^^^^

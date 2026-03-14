@@ -514,7 +514,7 @@ CompileTimeValue ValueNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool FctCallNode::hasCompileTimeValue(size_t manIdx) const {
-  return BUILTIN_FUNCTIONS.contains(fqFunctionName) && data.at(manIdx).compileTimeValueSet;
+  return BUILTIN_FUNCTIONS_MAP.contains(fqFunctionName) && data.at(manIdx).compileTimeValueSet;
 }
 
 CompileTimeValue FctCallNode::getCompileTimeValue(size_t manIdx) const { return data.at(manIdx).compileTimeValue; }
@@ -524,8 +524,9 @@ void FctCallNode::setCompileTimeValue(const CompileTimeValue &value, size_t manI
 }
 
 bool FctCallNode::returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const {
-  // The panic builtin is considered a function terminator
-  return fqFunctionName == BUILTIN_FCT_NAME_PANIC;
+  // Some builtin functions terminate the control flow, e.g. panic
+  const auto it = BUILTIN_FUNCTIONS_MAP.find(fqFunctionName);
+  return it != BUILTIN_FUNCTIONS_MAP.end() && it->second.isFunctionTerminator;
 }
 
 /**

@@ -107,7 +107,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
-      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+      assert(!templateType.is(TY_INVALID));
 
       // Abort if the type is unresolved
       if (templateType.is(TY_UNRESOLVED))
@@ -122,7 +122,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Check if this is a builtin call
-  for (const std::string &builtinFctName : BUILTIN_FUNCTIONS | std::views::keys)
+  for (const auto &[builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
       return visitBuiltinCall(node);
 

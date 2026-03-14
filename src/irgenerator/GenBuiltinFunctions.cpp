@@ -22,10 +22,10 @@ std::any IRGenerator::visitBuiltinCall(const FctCallNode *node) {
   }
 
   // If we need to perform runtime actions, call the specified IRGenerator delegate
-  assert(BUILTIN_FUNCTIONS.contains(node->fqFunctionName));
-  const auto &[_, irGeneratorVisitMethod] = BUILTIN_FUNCTIONS.find(node->fqFunctionName)->second;
-  assert(irGeneratorVisitMethod != nullptr);
-  return (this->*irGeneratorVisitMethod)(node);
+  assert(BUILTIN_FUNCTIONS_MAP.contains(node->fqFunctionName) && "Builtin function not implemented!");
+  const BuiltinFunctionInfo &info = BUILTIN_FUNCTIONS_MAP.find(node->fqFunctionName)->second;
+  assert(info.irGeneratorVisitMethod != nullptr);
+  return (this->*info.irGeneratorVisitMethod)(node);
 }
 
 std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {

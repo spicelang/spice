@@ -2,19 +2,19 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:2:5:
-Builtin function argument count mismatch: This builtin does not take template types
+Builtin function template type count mismatch: This builtin expects no template type(s), but got 1
 
 2  len<int>(5); // Template type
    ^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:3:5:
-Builtin function argument count mismatch: This builtin does take exactly one argument
+Builtin function argument count mismatch: This builtin expects 1 argument(s), but got 0
 
 3  len(); // Too less argume
    ^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
-Builtin function argument count mismatch: This builtin does take exactly one argument
+Builtin function argument count mismatch: This builtin expects 1 argument(s), but got 2
 
 4  len(1, 5); // Too many argume
    ^^^^^^^^^

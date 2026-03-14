@@ -1,5 +1,9 @@
 f<int> main() {
     sizeof(); // No template types and no args
+    sizeof<int>("str"); // Template types and args
     sizeof<double, int>(); // Too many template types
     sizeof(1, 2); // Too many args
+    sizeof<dyn>(); // Dyn type not allowed
+    dyn x;
+    sizeof(x); // Dyn type not allowed
 }

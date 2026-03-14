@@ -58,7 +58,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if this is a builtin call
-  for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
+  for (const auto &[builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
       return visitBuiltinCall(node);
 
