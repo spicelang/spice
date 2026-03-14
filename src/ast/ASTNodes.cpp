@@ -6,7 +6,7 @@
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/TypeChecker.h>
+#include <typechecker/Builtins.h>
 
 namespace spice::compiler {
 
@@ -514,8 +514,7 @@ CompileTimeValue ValueNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool FctCallNode::hasCompileTimeValue(size_t manIdx) const {
-  const auto lambda = [&](const BuiltinFunctionInfo &info) { return info.name == fqFunctionName && info.hasConstantValue; };
-  return data.at(manIdx).compileTimeValueSet && std::ranges::any_of(BUILTIN_FUNCTIONS, lambda);
+  return BUILTIN_FUNCTIONS.contains(fqFunctionName) && data.at(manIdx).compileTimeValueSet;
 }
 
 CompileTimeValue FctCallNode::getCompileTimeValue(size_t manIdx) const { return data.at(manIdx).compileTimeValue; }

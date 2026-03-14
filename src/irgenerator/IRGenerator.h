@@ -134,14 +134,14 @@ public:
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions);
 
-private:
-  // Private builtin function handlers
-  std::any visitNewBuiltinCall(const FctCallNode *node);
+  // Builtin function handlers
+  std::any visitBuiltinCall(const FctCallNode *node);
   std::any visitBuiltinPrintfCall(const FctCallNode *node);
   std::any visitBuiltinLenCall(const FctCallNode *node);
   std::any visitBuiltinPanicCall(const FctCallNode *node);
   std::any visitBuiltinSyscallCall(const FctCallNode *node);
 
+private:
   // Private methods
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;

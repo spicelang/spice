@@ -5,7 +5,7 @@
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/TypeChecker.h>
+#include <typechecker/Builtins.h>
 
 #include <llvm/IR/Module.h>
 
@@ -60,7 +60,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   // Check if this is a builtin call
   for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
-      return visitNewBuiltinCall(node);
+      return visitBuiltinCall(node);
 
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
 

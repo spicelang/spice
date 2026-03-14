@@ -10,6 +10,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/Builtins.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeMatcher.h>
@@ -121,9 +122,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Check if this is a builtin call
-  for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
+  for (const std::string &builtinFctName : BUILTIN_FUNCTIONS | std::views::keys)
     if (node->fqFunctionName == builtinFctName)
-      return visitNewBuiltinCall(node);
+      return visitBuiltinCall(node);
 
   // Retrieve entry of the first fragment
   const std::string &firstFrag = node->functionNameFragments.front();

@@ -6,32 +6,17 @@
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <typechecker/Builtins.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
 
-std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
-    return visitBuiltinPrintfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF)
-    return visitBuiltinSizeOfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF)
-    return visitBuiltinAlignOfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
-    return visitBuiltinTypeIdCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
-    return visitBuiltinLenCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
-    return visitBuiltinPanicCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL)
-    return visitBuiltinSyscallCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
-    return visitBuiltinIsSameCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
-    return visitBuiltinImplementsInterfaceCall(node);
-
-  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
-  return nullptr;                                          // LCOV_EXCL_LINE
+std::any TypeChecker::visitBuiltinCall(FctCallNode *node) const {
+  // Call specified TypeChecker delegate
+  assert(BUILTIN_FUNCTIONS.contains(node->fqFunctionName));
+  const auto &[typeCheckerVisitMethod, _] = BUILTIN_FUNCTIONS.find(node->fqFunctionName)->second;
+  assert(typeCheckerVisitMethod != nullptr);
+  return (this->*typeCheckerVisitMethod)(node);
 }
 
 std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {

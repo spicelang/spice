@@ -9,24 +9,24 @@
 namespace spice::compiler {
 
 // Constants
-static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
-static constexpr const char *const ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
-static constexpr const char *const ATTR_CORE_DARWIN_LINKER_FLAG = "core.darwin.linker.flag";
-static constexpr const char *const ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
-static constexpr const char *const ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
-static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
-static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
-static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
-static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
-static constexpr const char *const ATTR_CORE_COMPILER_FIXED_TYPE_ID = "core.compiler.fixedTypeId";
-static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
-static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
-static constexpr const char *const ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
-static constexpr const char *const ATTR_TEST = "test";
-static constexpr const char *const ATTR_TEST_NAME = "test.name";
-static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
-static constexpr const char *const ATTR_ASYNC = "async";
-static constexpr const char *const ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
+static constexpr auto ATTR_CORE_LINKER_FLAG = "core.linker.flag";
+static constexpr auto ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
+static constexpr auto ATTR_CORE_DARWIN_LINKER_FLAG = "core.darwin.linker.flag";
+static constexpr auto ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
+static constexpr auto ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
+static constexpr auto ATTR_CORE_LINKER_DLL = "core.linker.dll";
+static constexpr auto ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
+static constexpr auto ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
+static constexpr auto ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
+static constexpr auto ATTR_CORE_COMPILER_FIXED_TYPE_ID = "core.compiler.fixedTypeId";
+static constexpr auto ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
+static constexpr auto ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+static constexpr auto ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
+static constexpr auto ATTR_TEST = "test";
+static constexpr auto ATTR_TEST_NAME = "test.name";
+static constexpr auto ATTR_TEST_SKIP = "test.skip";
+static constexpr auto ATTR_ASYNC = "async";
+static constexpr auto ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
 static constexpr CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
 
