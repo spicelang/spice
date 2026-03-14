@@ -630,10 +630,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (node->value)
     return visit(node->value);
 
-  // Check for builtin calls
-  if (node->builtinCall)
-    return visit(node->builtinCall);
-
   // Check for assign expression within parentheses
   if (node->assignExpr)
     return visit(node->assignExpr);

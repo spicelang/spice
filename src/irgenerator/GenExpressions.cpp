@@ -863,10 +863,6 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   if (node->assignExpr)
     return visit(node->assignExpr);
 
-  // Check for builtin calls
-  if (node->builtinCall)
-    return visit(node->builtinCall);
-
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());
 

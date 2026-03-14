@@ -117,10 +117,6 @@ std::any ParallelizableASTVisitor::visitFallthroughStmt(const FallthroughStmtNod
 
 std::any ParallelizableASTVisitor::visitAssertStmt(const AssertStmtNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node) { return visitChildren(node); }
-
-std::any ParallelizableASTVisitor::visitSysCall(const SysCallNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitAssignExpr(const AssignExprNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitTernaryExpr(const TernaryExprNode *node) { return visitChildren(node); }

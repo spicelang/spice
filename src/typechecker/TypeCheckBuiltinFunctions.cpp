@@ -10,39 +10,6 @@
 
 namespace spice::compiler {
 
-std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
-  if (node->sysCall)
-    return visitSysCall(node->sysCall);
-  assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
-  return nullptr;                      // LCOV_EXCL_LINE
-}
-
-std::any TypeChecker::visitSysCall(SysCallNode *node) {
-  // Check if the syscall number if of type short
-  const QualType sysCallNumberType = std::any_cast<ExprResult>(visit(node->args.front())).type;
-  if (!sysCallNumberType.is(TY_SHORT))
-    SOFT_ERROR_ER(node->args.front(), INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
-
-  // Check if the syscall number is out of range
-  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->hasCompileTimeValue(manIdx)) {
-    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
-    if (sysCallNumber < 0 || sysCallNumber > 439)
-      SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
-  }
-
-  // Check if too many syscall args are given
-  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->args.size() > 6)
-    SOFT_ERROR_ER(node->args.front(), TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
-
-  // Visit children
-  for (size_t i = 1; i < node->args.size(); i++)
-    visit(node->args.at(i));
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
-}
-
 std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
   if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
     return visitBuiltinPrintfCall(node);
@@ -56,6 +23,8 @@ std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
     return visitBuiltinLenCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
     return visitBuiltinPanicCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL)
+    return visitBuiltinSyscallCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
     return visitBuiltinIsSameCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
@@ -261,6 +230,35 @@ std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
     SOFT_ERROR_ER(assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinSyscallCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL);
+
+  // Check if arguments are given
+  if (!node->hasArgs)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin takes 1 to 6 arguments");
+
+  // Check if the syscall number if of type short
+  const AssignExprNode *sysCallNumberExpr = node->argLst->args.front();
+  const QualType sysCallNumberType = sysCallNumberExpr->getEvaluatedSymbolType(manIdx);
+  if (!sysCallNumberType.is(TY_SHORT))
+    SOFT_ERROR_ER(sysCallNumberExpr, INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")
+
+  // Check if the syscall number is out of range
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->hasCompileTimeValue(manIdx)) {
+    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
+    if (sysCallNumber < 0 || sysCallNumber > 439)
+      SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
+  }
+
+  // Check if too many syscall args are given
+  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+  if (node->argLst->args.size() > 6)
+    SOFT_ERROR_ER(node, TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitBuiltinIsSameCall(FctCallNode *node) const {
