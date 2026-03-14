@@ -10,6 +10,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/Builtins.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeMatcher.h>
@@ -106,7 +107,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
-      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+      assert(!templateType.is(TY_INVALID));
 
       // Abort if the type is unresolved
       if (templateType.is(TY_UNRESOLVED))
@@ -121,9 +122,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Check if this is a builtin call
-  for (const auto [builtinFctName, _] : BUILTIN_FUNCTIONS)
+  for (const auto &[builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
-      return visitNewBuiltinCall(node);
+      return visitBuiltinCall(node);
 
   // Retrieve entry of the first fragment
   const std::string &firstFrag = node->functionNameFragments.front();

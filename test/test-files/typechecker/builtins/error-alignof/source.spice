@@ -1,5 +1,9 @@
 f<int> main() {
     alignof(); // No template types and no args
+    alignof<int*>(67l); // Template types and args
     alignof<double, int>(); // Too many template types
     alignof(1, 2); // Too many args
+    alignof<dyn>(); // Dyn type not allowed
+    dyn x;
+    alignof(x); // Dyn type not allowed
 }

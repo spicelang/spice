@@ -6,32 +6,46 @@
 #include <ast/ASTNodes.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <typechecker/Builtins.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
 
-std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
-    return visitBuiltinPrintfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF)
-    return visitBuiltinSizeOfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF)
-    return visitBuiltinAlignOfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID)
-    return visitBuiltinTypeIdCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
-    return visitBuiltinLenCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
-    return visitBuiltinPanicCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL)
-    return visitBuiltinSyscallCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
-    return visitBuiltinIsSameCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
-    return visitBuiltinImplementsInterfaceCall(node);
+std::any TypeChecker::visitBuiltinCall(FctCallNode *node) const {
+  assert(BUILTIN_FUNCTIONS_MAP.contains(node->fqFunctionName) && "Builtin function not implemented!");
+  const auto &info = BUILTIN_FUNCTIONS_MAP.find(node->fqFunctionName)->second;
 
-  assert_fail("This builtin call is not implemented yet"); // LCOV_EXCL_LINE
-  return nullptr;                                          // LCOV_EXCL_LINE
+  const auto buildErrorMessage = [](unsigned int min, unsigned int max, unsigned int actual, const char *suffix) {
+    std::string expectedStr;
+    if (min == max)
+      expectedStr = min == 0 ? "no" : std::to_string(min);
+    else
+      expectedStr = "between " + std::to_string(min) + " and " + std::to_string(max) + " " + suffix;
+    return "This builtin expects " + expectedStr + " " + suffix + ", but got " + std::to_string(actual);
+  };
+
+  // Do basic checks of template types and args, based on the builtin function info
+  const size_t numTemplateTypes = node->hasTemplateTypes ? node->templateTypeLst->dataTypes.size() : 0;
+  if (numTemplateTypes < info.minTemplateTypes || numTemplateTypes > info.maxTemplateTypes) {
+    const auto msg = buildErrorMessage(info.minTemplateTypes, info.maxTemplateTypes, numTemplateTypes, "template type(s)");
+    SOFT_ERROR_ER(node, BUILTIN_TEMPLATE_TYPE_COUNT_MISMATCH, msg);
+  }
+
+  const size_t numArgs = node->hasArgs ? node->argLst->args.size() : 0;
+  if (numArgs < info.minArgTypes || numArgs > info.maxArgTypes) {
+    const auto msg = buildErrorMessage(info.minArgTypes, info.maxArgTypes, numArgs, "argument(s)");
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, msg);
+  }
+
+  if (info.allTemplateTypesOrAllArgTypes) {
+    if (numTemplateTypes > 0 && numArgs > 0)
+      SOFT_ERROR_ER(node, BUILTIN_SIGNATURE_MISMATCH, "This builtin expects either template types or arguments, but got both");
+    if (numTemplateTypes == 0 && numArgs == 0)
+      SOFT_ERROR_ER(node, BUILTIN_SIGNATURE_MISMATCH, "This builtin expects either template types or arguments, but got none");
+  }
+
+  // If specified, call to TypeChecker delegate to execute further checks
+  return info.typeCheckerVisitMethod != nullptr ? (this->*info.typeCheckerVisitMethod)(node) : nullptr;
 }
 
 std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
@@ -122,19 +136,18 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinSizeOfCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_SIZEOF);
 
-  // Check if arguments are given
-  const bool hasExactlyOneTemplateType = node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() == 1;
-  const bool hasExactlyOneArg = node->hasArgs && node->argLst->args.size() == 1;
-  if (!hasExactlyOneTemplateType && !hasExactlyOneArg)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does either take exactly one template type or argument");
-
   // Directly set compile time value here, so that compile time ifs can be evaluated.
-  llvm::Type *type;
-  if (hasExactlyOneTemplateType) { // Size of type
-    type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-  } else { // Size of value
-    type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  QualType qualType;
+  if (node->hasTemplateTypes) { // Align of type
+    qualType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  } else { // Align of value
+    qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
   }
+
+  if (qualType.isOneOf({TY_UNRESOLVED, TY_DYN}))
+    SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Cannot use sizeof on a dyn or unresolved type");
+
+  llvm::Type *type = qualType.toLLVMType(sourceFile);
   const int64_t typeSize = sourceFile->targetMachine->createDataLayout().getTypeAllocSize(type);
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeSize});
 
@@ -144,19 +157,18 @@ std::any TypeChecker::visitBuiltinSizeOfCall(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinAlignOfCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF);
 
-  // Check if arguments are given
-  const bool hasExactlyOneTemplateType = node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() == 1;
-  const bool hasExactlyOneArg = node->hasArgs && node->argLst->args.size() == 1;
-  if (!hasExactlyOneTemplateType && !hasExactlyOneArg)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does either take exactly one template type or argument");
-
   // Directly set compile time value here, so that compile time ifs can be evaluated.
-  llvm::Type *type;
-  if (hasExactlyOneTemplateType) { // Align of type
-    type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  QualType qualType;
+  if (node->hasTemplateTypes) { // Align of type
+    qualType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
   } else { // Align of value
-    type = node->argLst->args.front()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+    qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
   }
+
+  if (qualType.isOneOf({TY_UNRESOLVED, TY_DYN}))
+    SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Cannot use alignof on a dyn or unresolved type");
+
+  llvm::Type *type = qualType.toLLVMType(sourceFile);
   const int64_t typeAlignment = sourceFile->targetMachine->createDataLayout().getABITypeAlign(type).value();
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeAlignment});
 
@@ -166,15 +178,9 @@ std::any TypeChecker::visitBuiltinAlignOfCall(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinTypeIdCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_TYPEID);
 
-  // Check if arguments are given
-  const bool hasExactlyOneTemplateType = node->hasTemplateTypes && node->templateTypeLst->dataTypes.size() == 1;
-  const bool hasExactlyOneArg = node->hasArgs && node->argLst->args.size() == 1;
-  if (!hasExactlyOneTemplateType && !hasExactlyOneArg)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does either take exactly one template type or argument");
-
   // Directly set compile time value here, so that compile time ifs can be evaluated.
   QualType qualType;
-  if (hasExactlyOneTemplateType) { // typeid of type
+  if (node->hasTemplateTypes) { // typeid of type
     qualType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
   } else { // typeid of value
     qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
@@ -187,12 +193,6 @@ std::any TypeChecker::visitBuiltinTypeIdCall(FctCallNode *node) const {
 
 std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
-
-  // Check if arguments are given
-  if (node->hasTemplateTypes)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take template types");
-  if (!node->hasArgs || node->argLst->args.size() != 1)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does take exactly one argument");
 
   // Directly set compile time value here, so that compile time ifs can be evaluated.
   QualType argType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
@@ -216,10 +216,7 @@ std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_PANIC);
 
-  // Check if arguments are given
-  if (!node->hasArgs || node->argLst->args.size() != 1)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin takes exactly one argument");
-
+  assert(node->hasArgs);
   const AssignExprNode *assignExpr = node->argLst->args.front();
   QualType argType = assignExpr->getEvaluatedSymbolType(manIdx);
   HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -235,10 +232,6 @@ std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinSyscallCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL);
 
-  // Check if arguments are given
-  if (!node->hasArgs)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin takes 1 to 6 arguments");
-
   // Check if the syscall number if of type short
   const AssignExprNode *sysCallNumberExpr = node->argLst->args.front();
   const QualType sysCallNumberType = sysCallNumberExpr->getEvaluatedSymbolType(manIdx);
@@ -253,24 +246,11 @@ std::any TypeChecker::visitBuiltinSyscallCall(FctCallNode *node) const {
       SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
   }
 
-  // Check if too many syscall args are given
-  // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->argLst->args.size() > 6)
-    SOFT_ERROR_ER(node, TOO_MANY_SYSCALL_ARGS, "There are no syscalls that support more than 6 arguments")
-
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitBuiltinIsSameCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME);
-
-  // Check if arguments are given
-  if (node->hasArgs)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take any arguments");
-
-  // Check that the function is called with two or more template types
-  if (!node->hasTemplateTypes || node->templateTypeLst->dataTypes.size() < 2)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin needs to be called with at least two template types");
 
   // Directly set compile time value here, so that compile time ifs can be evaluated.
   node->setCompileTimeValue({.boolValue = true}, manIdx);
@@ -289,14 +269,6 @@ std::any TypeChecker::visitBuiltinIsSameCall(FctCallNode *node) const {
 
 std::any TypeChecker::visitBuiltinImplementsInterfaceCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE);
-
-  // Check if arguments are given
-  if (node->hasArgs)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin does not take any arguments");
-
-  // Check that the function is called with exactly two or more template types
-  if (!node->hasTemplateTypes || node->templateTypeLst->dataTypes.size() != 2)
-    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin needs to be called with exactly two template types");
 
   const QualType interfaceType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
   const QualType structType = node->templateTypeLst->dataTypes.back()->getEvaluatedSymbolType(manIdx);

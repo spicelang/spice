@@ -24,25 +24,6 @@ enum TypeCheckerMode : bool {
   TC_MODE_POST,
 };
 
-struct BuiltinFunctionInfo {
-  const char *name;
-  bool hasConstantValue;
-};
-static constexpr auto BUILTIN_FCT_NAME_PRINTF = "printf";
-static constexpr auto BUILTIN_FCT_NAME_SIZEOF = "sizeof";
-static constexpr auto BUILTIN_FCT_NAME_ALIGNOF = "alignof";
-static constexpr auto BUILTIN_FCT_NAME_TYPEID = "typeid";
-static constexpr auto BUILTIN_FCT_NAME_LEN = "len";
-static constexpr auto BUILTIN_FCT_NAME_PANIC = "panic";
-static constexpr auto BUILTIN_FCT_NAME_SYSCALL = "syscall";
-static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
-static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
-static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
-    {BUILTIN_FCT_NAME_PRINTF, false},  {BUILTIN_FCT_NAME_SIZEOF, true},  {BUILTIN_FCT_NAME_ALIGNOF, true},
-    {BUILTIN_FCT_NAME_TYPEID, true},   {BUILTIN_FCT_NAME_LEN, true},     {BUILTIN_FCT_NAME_PANIC, false},
-    {BUILTIN_FCT_NAME_SYSCALL, false}, {BUILTIN_FCT_NAME_IS_SAME, true}, {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
-};
-
 /**
  * Jobs:
  * - Ensure that all actual types match the expected types
@@ -142,16 +123,8 @@ public:
   std::any visitCustomDataType(CustomDataTypeNode *node) override;
   std::any visitFunctionDataType(FunctionDataTypeNode *node) override;
 
-private:
-  // Private members
-  OpRuleManager opRuleManager = OpRuleManager(this);
-  const TypeCheckerMode typeCheckerMode;
-  std::vector<CompilerWarning> &warnings;
-  TypeMapping typeMapping;
-  bool typeCheckedMainFct = false;
-
-  // Private builtin function handlers
-  std::any visitNewBuiltinCall(FctCallNode *node) const;
+  // Builtin function handlers
+  std::any visitBuiltinCall(FctCallNode *node) const;
   std::any visitBuiltinPrintfCall(FctCallNode *node) const;
   std::any visitBuiltinSizeOfCall(FctCallNode *node) const;
   std::any visitBuiltinAlignOfCall(FctCallNode *node) const;
@@ -161,6 +134,14 @@ private:
   std::any visitBuiltinSyscallCall(FctCallNode *node) const;
   std::any visitBuiltinIsSameCall(FctCallNode *node) const;
   std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
+
+private:
+  // Private members
+  OpRuleManager opRuleManager = OpRuleManager(this);
+  const TypeCheckerMode typeCheckerMode;
+  std::vector<CompilerWarning> &warnings;
+  TypeMapping typeMapping;
+  bool typeCheckedMainFct = false;
 
   // Private methods
   bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const;

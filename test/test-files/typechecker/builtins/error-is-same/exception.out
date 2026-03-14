@@ -2,13 +2,13 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:2:5:
-Builtin function argument count mismatch: This builtin does not take any arguments
+Builtin function argument count mismatch: This builtin expects no argument(s), but got 1
 
 2  __is_same<int, int>(true); // With args
    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:3:5:
-Builtin function argument count mismatch: This builtin needs to be called with at least two template types
+Builtin function template type count mismatch: This builtin expects between 2 and 4294967295 template type(s) template type(s), but got 1
 
 3  __is_same<double>(); // Too less templa
    ^^^^^^^^^^^^^^^^^^^

@@ -1,35 +1,31 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "global/GlobalResourceManager.h"
 
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
+#include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
-#include <llvm/IR/InlineAsm.h>
+#include <typechecker/Builtins.h>
 #include <typechecker/TypeChecker.h>
 
+#include <llvm/IR/InlineAsm.h>
 #include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
-std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
+std::any IRGenerator::visitBuiltinCall(const FctCallNode *node) {
+  // If we have a compile time value, but the computation is still there, we can simply use this constant value
   if (node->hasCompileTimeValue(manIdx)) {
     llvm::Constant *value = getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
     return LLVMExprResult{.constant = value};
   }
 
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
-    return visitBuiltinPrintfCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
-    return visitBuiltinLenCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
-    return visitBuiltinPanicCall(node);
-  if (node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL)
-    return visitBuiltinSyscallCall(node);
-
-  assert_fail("This builtin call is not implemented yet or must be performed at compile time"); // LCOV_EXCL_LINE
-  return nullptr;                                                                               // LCOV_EXCL_LINE
+  // If we need to perform runtime actions, call the specified IRGenerator delegate
+  assert(BUILTIN_FUNCTIONS_MAP.contains(node->fqFunctionName) && "Builtin function not implemented!");
+  const BuiltinFunctionInfo &info = BUILTIN_FUNCTIONS_MAP.find(node->fqFunctionName)->second;
+  assert(info.irGeneratorVisitMethod != nullptr);
+  return (this->*info.irGeneratorVisitMethod)(node);
 }
 
 std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
