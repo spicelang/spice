@@ -60,10 +60,6 @@ continueStmt: CONTINUE INT_LIT?;
 fallthroughStmt: FALLTHROUGH;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
-// Builtin functions
-builtinCall: sysCall;
-sysCall: SYSCALL LPAREN assignExpr (COMMA assignExpr)* RPAREN;
-
 // Expression loop
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;
@@ -80,7 +76,7 @@ multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | CAST LESS dataType GREATER LPAREN assignExpr RPAREN;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
 postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
-atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | LPAREN assignExpr RPAREN;
 
 // Values
 value: fctCall | arrayInitialization | structInstantiation | lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
@@ -146,7 +142,6 @@ ALIAS: 'alias';
 UNSAFE: 'unsafe';
 NIL: 'nil';
 MAIN: 'main';
-SYSCALL: 'syscall';
 CAST: 'cast';
 EXT: 'ext';
 TRUE: 'true';

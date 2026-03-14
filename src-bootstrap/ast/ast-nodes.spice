@@ -632,38 +632,6 @@ public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 
-// ========================================================= BuiltinCallNode ======================================================
-
-public type ASTBuiltinCallNode struct/*: IVisitable*/ {
-    compose public ASTExprNode node
-}
-
-public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTExprNode(codeLoc);
-}
-
-// ========================================================= PanicCallNode =======================================================
-
-public type ASTPanicCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTPanicCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
-// ========================================================== SysCallNode ========================================================
-
-public type ASTSysCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTSysCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
 // ========================================================= AssignExprNode =======================================================
 
 public type ASTAssignExprNode struct/*: IVisitable*/ {

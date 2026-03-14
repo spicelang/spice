@@ -951,17 +951,6 @@ f<ASTAssertStmtNode*> Parser.parseAssertStmt() {
     return this.concludeNode(assertStmtNode);
 }
 
-f<ASTPanicCallNode*> Parser.parsePanicCall() {
-    dyn panicCallNode = this.createNode<ASTPanicCallNode>();
-
-    this.lexer.expect(TokenType::PANIC);
-    this.lexer.expect(TokenType::LPAREN);
-    this.parseAssignExpr();
-    this.lexer.expect(TokenType::RPAREN);
-
-    return this.concludeNode(panicCallNode);
-}
-
 f<ASTAssignExprNode*> Parser.parseAssignExpr() {
     dyn assignExprNode = this.createNode<ASTAssignExprNode>();
 
@@ -1203,8 +1192,6 @@ f<ASTAtomicExprNode*> Parser.parseAtomicExpr() {
         }
     } else if this.currentTokenIsOneOf(optionsConstant, sizeof(optionsConstant)) {
         this.parseConstant();
-    } else if this.currentTokenIs(TokenType::PANIC) {
-        this.parsePanicCall();
     } else if this.currentTokenIs(TokenType::LPAREN) {
         this.lexer.expect(TokenType::LPAREN);
         this.parseAssignExpr();

@@ -879,27 +879,6 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   return concludeNode(assertStmtNode);
 }
 
-std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
-  const auto builtinCallNode = createNode<BuiltinCallNode>(ctx);
-
-  if (ctx->sysCall()) {
-    builtinCallNode->sysCall = std::any_cast<SysCallNode *>(visit(ctx->sysCall()));
-  } else {
-    assert_fail("Unknown builtin call"); // GCOV_EXCL_LINE
-  }
-
-  return concludeNode(builtinCallNode);
-}
-
-std::any ASTBuilder::visitSysCall(SpiceParser::SysCallContext *ctx) {
-  const auto sysCallNode = createNode<SysCallNode>(ctx);
-
-  // Visit children
-  fetchChildrenIntoVector(sysCallNode->args, ctx->assignExpr());
-
-  return concludeNode(sysCallNode);
-}
-
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   const auto assignExprNode = createNode<AssignExprNode>(ctx);
 
@@ -1191,8 +1170,6 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
         atomicExprNode->fqIdentifier += fragment;
       }
     }
-  } else if (ctx->builtinCall()) {
-    atomicExprNode->builtinCall = std::any_cast<BuiltinCallNode *>(visit(ctx->builtinCall()));
   } else if (ctx->assignExpr()) {
     atomicExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
   } else {

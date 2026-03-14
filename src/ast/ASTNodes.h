@@ -1404,42 +1404,6 @@ public:
   std::string expressionString;
 };
 
-// ======================================================== BuiltinCallNode ======================================================
-
-class BuiltinCallNode final : public ExprNode {
-public:
-  // Constructors
-  using ExprNode::ExprNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBuiltinCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
-
-  // Other methods
-  GET_CHILDREN(sysCall);
-
-  // Public members
-  SysCallNode *sysCall = nullptr;
-};
-
-// ========================================================= SysCallNode =========================================================
-
-class SysCallNode final : public ExprNode {
-public:
-  // Constructors
-  using ExprNode::ExprNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSysCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSysCall(this); }
-
-  // Other methods
-  GET_CHILDREN(args);
-
-  // Public members
-  std::vector<AssignExprNode *> args;
-};
-
 // ======================================================= AssignExprNode ========================================================
 
 class AssignExprNode final : public ExprNode {
@@ -1888,14 +1852,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
 
   // Other methods
-  GET_CHILDREN(constant, value, assignExpr, builtinCall);
+  GET_CHILDREN(constant, value, assignExpr);
   void customItemsInitialization(const size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
   ConstantNode *constant = nullptr;
   ValueNode *value = nullptr;
   AssignExprNode *assignExpr = nullptr;
-  BuiltinCallNode *builtinCall = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   std::vector<VarAccessData> data; // Only set if identifier is set as well

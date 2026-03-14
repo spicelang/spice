@@ -57,8 +57,6 @@ class ReturnStmtNode;
 class BreakStmtNode;
 class ContinueStmtNode;
 class FallthroughStmtNode;
-class BuiltinCallNode;
-class SysCallNode;
 class AssignExprNode;
 class TernaryExprNode;
 class LogicalOrExprNode;
@@ -148,8 +146,6 @@ public:
   virtual std::any visitContinueStmt(const ContinueStmtNode *node);
   virtual std::any visitFallthroughStmt(const FallthroughStmtNode *node);
   virtual std::any visitAssertStmt(const AssertStmtNode *node);
-  virtual std::any visitBuiltinCall(const BuiltinCallNode *node);
-  virtual std::any visitSysCall(const SysCallNode *node);
   virtual std::any visitAssignExpr(const AssignExprNode *node);
   virtual std::any visitTernaryExpr(const TernaryExprNode *node);
   virtual std::any visitLogicalOrExpr(const LogicalOrExprNode *node);

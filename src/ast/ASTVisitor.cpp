@@ -105,10 +105,6 @@ std::any ASTVisitor::visitFallthroughStmt(FallthroughStmtNode *node) { return vi
 
 std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitBuiltinCall(BuiltinCallNode *node) { return visitChildren(node); }
-
-std::any ASTVisitor::visitSysCall(SysCallNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitAssignExpr(AssignExprNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitTernaryExpr(TernaryExprNode *node) { return visitChildren(node); }

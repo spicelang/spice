@@ -13,48 +13,6 @@
 
 namespace spice::compiler {
 
-std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
-  if (node->sysCall)
-    return visit(node->sysCall);
-  assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
-  return nullptr;                      // LCOV_EXCL_LINE
-}
-
-std::any IRGenerator::visitSysCall(const SysCallNode *node) {
-  // Determine the required number of operands.
-  // (We assume at least one argument is provided: the syscall number.)
-  const auto requiredRegs = static_cast<uint8_t>(node->args.size());
-  assert(requiredRegs >= 1 && requiredRegs <= 6);
-
-  // Create the asm and constraint strings based on the required number of registers.
-  const std::string asmString = getSysCallAsmString(requiredRegs);
-  const std::string constraints = getSysCallConstraintString(requiredRegs);
-
-  // Create the LLVM function type for the inline asm with only the needed operands.
-  llvm::Type *int64Ty = builder.getInt64Ty();
-  const std::vector argTypes(requiredRegs, int64Ty);
-  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
-  llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
-
-  // Build the argument list (each provided argument is converted to i64).
-  std::vector<llvm::Value *> argValues;
-  argValues.reserve(requiredRegs);
-  for (uint8_t i = 0; i < requiredRegs; i++) {
-    const AssignExprNode *argNode = node->args.at(i);
-    const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
-    assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
-    if (argType.isOneOf({TY_PTR, TY_STRING}))
-      argValues.push_back(builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty()));
-    else
-      argValues.push_back(builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty()));
-  }
-
-  // Generate the call using only the required number of arguments.
-  llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
-
-  return LLVMExprResult{.value = result};
-}
-
 std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
   if (node->hasCompileTimeValue(manIdx)) {
     llvm::Constant *value = getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
@@ -67,6 +25,8 @@ std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
     return visitBuiltinLenCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
     return visitBuiltinPanicCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL)
+    return visitBuiltinSyscallCall(node);
 
   assert_fail("This builtin call is not implemented yet or must be performed at compile time"); // LCOV_EXCL_LINE
   return nullptr;                                                                               // LCOV_EXCL_LINE
@@ -142,6 +102,8 @@ std::any IRGenerator::visitBuiltinLenCall(const FctCallNode *node) {
 }
 
 std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PANIC);
+
   llvm::PointerType *ptrTy = builder.getPtrTy();
 
   // Get value for stderr
@@ -191,6 +153,44 @@ std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
   builder.CreateUnreachable();
 
   return nullptr;
+}
+
+std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL);
+
+  // Determine the required number of operands.
+  // (We assume at least one argument is provided: the syscall number)
+  assert(node->hasArgs);
+  const auto requiredRegs = static_cast<uint8_t>(node->argLst->args.size());
+  assert(requiredRegs >= 1 && requiredRegs <= 6);
+
+  // Create the asm and constraint strings based on the required number of registers.
+  const std::string asmString = getSysCallAsmString(requiredRegs);
+  const std::string constraints = getSysCallConstraintString(requiredRegs);
+
+  // Create the LLVM function type for the inline asm with only the needed operands.
+  llvm::Type *int64Ty = builder.getInt64Ty();
+  const std::vector argTypes(requiredRegs, int64Ty);
+  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
+  llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
+
+  // Build the argument list (each provided argument is converted to i64).
+  std::vector<llvm::Value *> argValues;
+  argValues.reserve(requiredRegs);
+  for (uint8_t i = 0; i < requiredRegs; i++) {
+    const AssignExprNode *argNode = node->argLst->args.at(i);
+    const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
+    assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
+    if (argType.isOneOf({TY_PTR, TY_STRING}))
+      argValues.push_back(builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty()));
+    else
+      argValues.push_back(builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty()));
+  }
+
+  // Generate the call using only the required number of arguments.
+  llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
+
+  return LLVMExprResult{.value = result};
 }
 
 } // namespace spice::compiler
