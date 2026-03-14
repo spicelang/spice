@@ -1,4 +1,6 @@
+dyn
 f()
 f<int>()
 int
 invalid
+string

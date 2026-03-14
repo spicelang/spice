@@ -380,20 +380,56 @@ digraph {
  L7C4_prefixUnaryExpr -> L7C4_postfixUnaryExpr;
  L7C4_atomicExpr [color="lightgreen",label="atomicExpr"];
  L7C4_postfixUnaryExpr -> L7C4_atomicExpr;
- L7C4_builtinCall [color="lightgreen",label="builtinCall"];
- L7C4_atomicExpr -> L7C4_builtinCall;
- L7C4_printfCall [color="lightgreen",label="printfCall"];
- L7C4_builtinCall -> L7C4_printfCall;
- L7C4 [color="lightblue",label="PRINTF: printf"];
- L7C4_printfCall -> L7C4
+ L7C4_value [color="lightgreen",label="value"];
+ L7C4_atomicExpr -> L7C4_value;
+ L7C4_fctCall [color="lightgreen",label="fctCall"];
+ L7C4_value -> L7C4_fctCall;
+ L7C4 [color="lightblue",label="IDENTIFIER: printf"];
+ L7C4_fctCall -> L7C4
  L7C10 [color="lightblue",label="LPAREN: ("];
- L7C4_printfCall -> L7C10
+ L7C4_fctCall -> L7C10
+ L7C11_argLst [color="lightgreen",label="argLst"];
+ L7C4_fctCall -> L7C11_argLst;
+ L7C11_assignExpr [color="lightgreen",label="assignExpr"];
+ L7C11_argLst -> L7C11_assignExpr;
+ L7C11_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L7C11_assignExpr -> L7C11_ternaryExpr;
+ L7C11_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L7C11_ternaryExpr -> L7C11_logicalOrExpr;
+ L7C11_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L7C11_logicalOrExpr -> L7C11_logicalAndExpr;
+ L7C11_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L7C11_logicalAndExpr -> L7C11_bitwiseOrExpr;
+ L7C11_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L7C11_bitwiseOrExpr -> L7C11_bitwiseXorExpr;
+ L7C11_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L7C11_bitwiseXorExpr -> L7C11_bitwiseAndExpr;
+ L7C11_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L7C11_bitwiseAndExpr -> L7C11_equalityExpr;
+ L7C11_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L7C11_equalityExpr -> L7C11_relationalExpr;
+ L7C11_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L7C11_relationalExpr -> L7C11_shiftExpr;
+ L7C11_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L7C11_shiftExpr -> L7C11_additiveExpr;
+ L7C11_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L7C11_additiveExpr -> L7C11_multiplicativeExpr;
+ L7C11_castExpr [color="lightgreen",label="castExpr"];
+ L7C11_multiplicativeExpr -> L7C11_castExpr;
+ L7C11_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L7C11_castExpr -> L7C11_prefixUnaryExpr;
+ L7C11_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L7C11_prefixUnaryExpr -> L7C11_postfixUnaryExpr;
+ L7C11_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L7C11_postfixUnaryExpr -> L7C11_atomicExpr;
+ L7C11_constant [color="lightgreen",label="constant"];
+ L7C11_atomicExpr -> L7C11_constant;
  L7C11 [color="lightblue",label="STRING_LIT: \"Result: %d\""];
- L7C4_printfCall -> L7C11
+ L7C11_constant -> L7C11
  L7C23 [color="lightblue",label="COMMA: ,"];
- L7C4_printfCall -> L7C23
+ L7C11_argLst -> L7C23
  L7C25_assignExpr [color="lightgreen",label="assignExpr"];
- L7C4_printfCall -> L7C25_assignExpr;
+ L7C11_argLst -> L7C25_assignExpr;
  L7C25_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L7C25_assignExpr -> L7C25_ternaryExpr;
  L7C25_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -473,7 +509,7 @@ digraph {
  L7C32 [color="lightblue",label="RPAREN: )"];
  L7C25_fctCall -> L7C32
  L7C33 [color="lightblue",label="RPAREN: )"];
- L7C4_printfCall -> L7C33
+ L7C4_fctCall -> L7C33
  L7C34 [color="lightblue",label="SEMICOLON: ;"];
  L7C4_stmt -> L7C34
  L8C0 [color="lightblue",label="RBRACE: }"];

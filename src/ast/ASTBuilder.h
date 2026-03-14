@@ -90,7 +90,6 @@ public:
   std::any visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
-  std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
   std::any visitPanicCall(SpiceParser::PanicCallContext *ctx) override;
   std::any visitSysCall(SpiceParser::SysCallContext *ctx) override;
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;

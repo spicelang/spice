@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "global/GlobalResourceManager.h"
 
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
@@ -13,62 +14,12 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
-  if (node->printfCall)
-    return visit(node->printfCall);
   if (node->panicCall)
     return visit(node->panicCall);
   if (node->sysCall)
     return visit(node->sysCall);
   assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
   return nullptr;                      // LCOV_EXCL_LINE
-}
-
-std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
-  // Retrieve printf function
-  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
-
-  // Push the template string as first argument
-  std::vector<llvm::Value *> printfArgs;
-  llvm::Constant *templateString = createGlobalStringConst("printf.str.", node->templatedString, node->codeLoc);
-  printfArgs.push_back(templateString);
-
-  // Collect replacement arguments
-  for (const AssignExprNode *arg : node->args) {
-    // Retrieve type of argument
-    const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
-
-    // Re-map some values
-    llvm::Value *argVal;
-    if (argSymbolType.isArray()) {
-      llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(0)};
-      llvm::Type *argType = argSymbolType.toLLVMType(sourceFile);
-      argVal = insertInBoundsGEP(argType, argValPtr, indices);
-    } else if (argSymbolType.getBase().isStringObj()) {
-      llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Type *argBaseType = argSymbolType.getBase().toLLVMType(sourceFile);
-      argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
-      argVal = insertLoad(builder.getPtrTy(), argValPtr);
-    } else {
-      argVal = resolveValue(arg);
-    }
-
-    // Extend all integer types lower than 32 bit to 32 bit
-    if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL}))
-      argVal = builder.CreateIntCast(argVal, builder.getInt32Ty(), argSymbolType.removeReferenceWrapper().isSigned());
-
-    printfArgs.push_back(argVal);
-  }
-
-  // Call printf function
-  llvm::CallInst *callInst = builder.CreateCall(printfFct, printfArgs);
-
-  // Add noundef attribute to return value and all arguments
-  callInst->addRetAttr(llvm::Attribute::NoUndef);
-  for (size_t i = 0; i < printfArgs.size(); i++)
-    callInst->addParamAttr(i, llvm::Attribute::NoUndef);
-
-  return LLVMExprResult{.value = callInst};
 }
 
 std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
@@ -162,11 +113,68 @@ std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
     return LLVMExprResult{.constant = value};
   }
 
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_PRINTF)
+    return visitBuiltinPrintfCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
     return visitBuiltinLenCall(node);
 
   assert_fail("This builtin call is not implemented yet or must be perfomed at compile time"); // LCOV_EXCL_LINE
   return nullptr;                                                                              // LCOV_EXCL_LINE
+}
+
+std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
+  // Retrieve templated string
+  assert(node->hasArgs);
+  const AssignExprNode *firstArg = node->argLst->args.front();
+  assert(firstArg->getEvaluatedSymbolType(manIdx).is(TY_STRING) && firstArg->hasCompileTimeValue(manIdx));
+  const size_t stringOffset = firstArg->getCompileTimeValue(manIdx).stringValueOffset;
+  const std::string templatedString = resourceManager.compileTimeStringValues.at(stringOffset);
+
+  // Push the template string as first argument
+  std::vector<llvm::Value *> printfArgs;
+  llvm::Constant *templateString = createGlobalStringConst("printf.str.", templatedString, node->codeLoc);
+  printfArgs.push_back(templateString);
+
+  // Collect replacement arguments
+  for (size_t argIdx = 1; argIdx < node->argLst->args.size(); argIdx++) {
+    const AssignExprNode *arg = node->argLst->args.at(argIdx);
+    // Retrieve type of argument
+    const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
+
+    // Re-map some values
+    llvm::Value *argVal;
+    if (argSymbolType.isArray()) {
+      // ToDo: Check if GEP can be removed
+      llvm::Value *argValPtr = resolveAddress(arg);
+      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(0)};
+      llvm::Type *argType = argSymbolType.toLLVMType(sourceFile);
+      argVal = insertInBoundsGEP(argType, argValPtr, indices);
+    } else if (argSymbolType.getBase().isStringObj()) {
+      llvm::Value *argValPtr = resolveAddress(arg);
+      llvm::Type *argBaseType = argSymbolType.getBase().toLLVMType(sourceFile);
+      argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
+      argVal = insertLoad(builder.getPtrTy(), argValPtr);
+    } else {
+      argVal = resolveValue(arg);
+    }
+
+    // Extend all integer types lower than 32 bit to 32 bit
+    if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL}))
+      argVal = builder.CreateIntCast(argVal, builder.getInt32Ty(), argSymbolType.removeReferenceWrapper().isSigned());
+
+    printfArgs.push_back(argVal);
+  }
+
+  // Call printf function
+  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
+  llvm::CallInst *callInst = builder.CreateCall(printfFct, printfArgs);
+
+  // Add noundef attribute to return value and all arguments
+  callInst->addRetAttr(llvm::Attribute::NoUndef);
+  for (size_t i = 0; i < printfArgs.size(); i++)
+    callInst->addParamAttr(i, llvm::Attribute::NoUndef);
+
+  return LLVMExprResult{.value = callInst};
 }
 
 std::any IRGenerator::visitBuiltinLenCall(const FctCallNode *node) {

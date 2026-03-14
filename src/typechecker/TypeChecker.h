@@ -28,6 +28,7 @@ struct BuiltinFunctionInfo {
   const char *name;
   bool hasConstantValue;
 };
+static constexpr auto BUILTIN_FCT_NAME_PRINTF = "printf";
 static constexpr auto BUILTIN_FCT_NAME_SIZEOF = "sizeof";
 static constexpr auto BUILTIN_FCT_NAME_ALIGNOF = "alignof";
 static constexpr auto BUILTIN_FCT_NAME_TYPEID = "typeid";
@@ -35,6 +36,7 @@ static constexpr auto BUILTIN_FCT_NAME_LEN = "len";
 static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
+    {BUILTIN_FCT_NAME_PRINTF, false},
     {BUILTIN_FCT_NAME_SIZEOF, true},
     {BUILTIN_FCT_NAME_ALIGNOF, true},
     {BUILTIN_FCT_NAME_TYPEID, true},
@@ -113,7 +115,6 @@ public:
   std::any visitFallthroughStmt(FallthroughStmtNode *node) override;
   // Builtin functions
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
-  std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitPanicCall(PanicCallNode *node) override;
   std::any visitSysCall(SysCallNode *node) override;
   // Expressions
@@ -157,12 +158,13 @@ private:
 
   // Private builtin function handlers
   std::any visitNewBuiltinCall(FctCallNode *node) const;
-  std::any visitBuiltinCallSizeOf(FctCallNode *node) const;
-  std::any visitBuiltinCallAlignOf(FctCallNode *node) const;
-  std::any visitBuiltinCallTypeId(FctCallNode *node) const;
-  std::any visitBuiltinCallLen(FctCallNode *node) const;
-  std::any visitBuiltinCallIsSame(FctCallNode *node) const;
-  std::any visitBuiltinCallImplementsInterface(FctCallNode *node) const;
+  std::any visitBuiltinPrintfCall(FctCallNode *node) const;
+  std::any visitBuiltinSizeOfCall(FctCallNode *node) const;
+  std::any visitBuiltinAlignOfCall(FctCallNode *node) const;
+  std::any visitBuiltinTypeIdCall(FctCallNode *node) const;
+  std::any visitBuiltinLenCall(FctCallNode *node) const;
+  std::any visitBuiltinIsSameCall(FctCallNode *node) const;
+  std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
 
   // Private methods
   bool visitOrdinaryFctCall(FctCallNode *node, std::string fqFunctionName) const;

@@ -75,7 +75,6 @@ public:
   std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitFallthroughStmt(FallthroughStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitBuiltinCall(BuiltinCallNode *ctx) override { return buildNode(ctx); }
-  std::any visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
   std::any visitPanicCall(PanicCallNode *ctx) override { return buildNode(ctx); }
   std::any visitSysCall(SysCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAssignExpr(AssignExprNode *ctx) override { return buildNode(ctx); }

@@ -642,28 +642,6 @@ public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 
-// ========================================================= PrintfCallNode =======================================================
-
-public type ASTPrintfCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTPrintfCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
-// ========================================================== LenCallNode ========================================================
-
-public type ASTLenCallNode struct/*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-public p ASTLenCallNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-
 // ========================================================= PanicCallNode =======================================================
 
 public type ASTPanicCallNode struct/*: IVisitable*/ {

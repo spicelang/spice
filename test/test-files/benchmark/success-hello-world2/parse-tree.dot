@@ -178,20 +178,56 @@ digraph {
  L6C8_prefixUnaryExpr -> L6C8_postfixUnaryExpr;
  L6C8_atomicExpr [color="lightgreen",label="atomicExpr"];
  L6C8_postfixUnaryExpr -> L6C8_atomicExpr;
- L6C8_builtinCall [color="lightgreen",label="builtinCall"];
- L6C8_atomicExpr -> L6C8_builtinCall;
- L6C8_printfCall [color="lightgreen",label="printfCall"];
- L6C8_builtinCall -> L6C8_printfCall;
- L6C8 [color="lightblue",label="PRINTF: printf"];
- L6C8_printfCall -> L6C8
+ L6C8_value [color="lightgreen",label="value"];
+ L6C8_atomicExpr -> L6C8_value;
+ L6C8_fctCall [color="lightgreen",label="fctCall"];
+ L6C8_value -> L6C8_fctCall;
+ L6C8 [color="lightblue",label="IDENTIFIER: printf"];
+ L6C8_fctCall -> L6C8
  L6C14 [color="lightblue",label="LPAREN: ("];
- L6C8_printfCall -> L6C14
+ L6C8_fctCall -> L6C14
+ L6C15_argLst [color="lightgreen",label="argLst"];
+ L6C8_fctCall -> L6C15_argLst;
+ L6C15_assignExpr [color="lightgreen",label="assignExpr"];
+ L6C15_argLst -> L6C15_assignExpr;
+ L6C15_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L6C15_assignExpr -> L6C15_ternaryExpr;
+ L6C15_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L6C15_ternaryExpr -> L6C15_logicalOrExpr;
+ L6C15_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L6C15_logicalOrExpr -> L6C15_logicalAndExpr;
+ L6C15_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L6C15_logicalAndExpr -> L6C15_bitwiseOrExpr;
+ L6C15_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L6C15_bitwiseOrExpr -> L6C15_bitwiseXorExpr;
+ L6C15_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L6C15_bitwiseXorExpr -> L6C15_bitwiseAndExpr;
+ L6C15_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L6C15_bitwiseAndExpr -> L6C15_equalityExpr;
+ L6C15_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L6C15_equalityExpr -> L6C15_relationalExpr;
+ L6C15_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L6C15_relationalExpr -> L6C15_shiftExpr;
+ L6C15_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L6C15_shiftExpr -> L6C15_additiveExpr;
+ L6C15_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L6C15_additiveExpr -> L6C15_multiplicativeExpr;
+ L6C15_castExpr [color="lightgreen",label="castExpr"];
+ L6C15_multiplicativeExpr -> L6C15_castExpr;
+ L6C15_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L6C15_castExpr -> L6C15_prefixUnaryExpr;
+ L6C15_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L6C15_prefixUnaryExpr -> L6C15_postfixUnaryExpr;
+ L6C15_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L6C15_postfixUnaryExpr -> L6C15_atomicExpr;
+ L6C15_constant [color="lightgreen",label="constant"];
+ L6C15_atomicExpr -> L6C15_constant;
  L6C15 [color="lightblue",label="STRING_LIT: \"%c\""];
- L6C8_printfCall -> L6C15
+ L6C15_constant -> L6C15
  L6C19 [color="lightblue",label="COMMA: ,"];
- L6C8_printfCall -> L6C19
+ L6C15_argLst -> L6C19
  L6C21_assignExpr [color="lightgreen",label="assignExpr"];
- L6C8_printfCall -> L6C21_assignExpr;
+ L6C15_argLst -> L6C21_assignExpr;
  L6C21_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L6C21_assignExpr -> L6C21_ternaryExpr;
  L6C21_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
@@ -455,7 +491,7 @@ digraph {
  L6C81 [color="lightblue",label="RPAREN: )"];
  L6C21_castExpr -> L6C81
  L6C82 [color="lightblue",label="RPAREN: )"];
- L6C8_printfCall -> L6C82
+ L6C8_fctCall -> L6C82
  L6C83 [color="lightblue",label="SEMICOLON: ;"];
  L6C8_stmt -> L6C83
  L7C4 [color="lightblue",label="RBRACE: }"];

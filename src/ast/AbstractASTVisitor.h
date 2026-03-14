@@ -58,7 +58,6 @@ class ContinueStmtNode;
 class FallthroughStmtNode;
 class AssertStmtNode;
 class BuiltinCallNode;
-class PrintfCallNode;
 class PanicCallNode;
 class SysCallNode;
 class AssignExprNode;
@@ -150,7 +149,6 @@ public:
   virtual std::any visitFallthroughStmt(FallthroughStmtNode *node) = 0;
   virtual std::any visitAssertStmt(AssertStmtNode *node) = 0;
   virtual std::any visitBuiltinCall(BuiltinCallNode *node) = 0;
-  virtual std::any visitPrintfCall(PrintfCallNode *node) = 0;
   virtual std::any visitPanicCall(PanicCallNode *node) = 0;
   virtual std::any visitSysCall(SysCallNode *node) = 0;
   virtual std::any visitAssignExpr(AssignExprNode *node) = 0;
