@@ -1416,31 +1416,10 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
 
   // Other methods
-  GET_CHILDREN(panicCall, sysCall);
+  GET_CHILDREN(sysCall);
 
   // Public members
-  PanicCallNode *panicCall = nullptr;
   SysCallNode *sysCall = nullptr;
-};
-
-// ======================================================== PanicCallNode ========================================================
-
-class PanicCallNode final : public ExprNode {
-public:
-  // Constructors
-  using ExprNode::ExprNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPanicCall(this); }
-
-  // Other methods
-  GET_CHILDREN(assignExpr);
-  [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override { return false; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *, size_t) const override { return true; }
-
-  // Public members
-  AssignExprNode *assignExpr = nullptr;
 };
 
 // ========================================================= SysCallNode =========================================================
@@ -2034,6 +2013,7 @@ public:
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
   void setCompileTimeValue(const CompileTimeValue &value, size_t manIdx);
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const override;
   void customItemsInitialization(const size_t manifestationCount) override { data.resize(manifestationCount); }
   [[nodiscard]] bool hasReturnValueReceiver() const;
 

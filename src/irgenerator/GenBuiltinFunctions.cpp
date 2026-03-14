@@ -14,62 +14,10 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
-  if (node->panicCall)
-    return visit(node->panicCall);
   if (node->sysCall)
     return visit(node->sysCall);
   assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
   return nullptr;                      // LCOV_EXCL_LINE
-}
-
-std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
-  llvm::PointerType *ptrTy = builder.getPtrTy();
-
-  // Get value for stderr
-  llvm::Value *stdErr;
-  if (cliOptions.targetTriple.isOSWindows()) {
-    llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
-    stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
-  } else {
-    const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
-    module->getOrInsertGlobal(globalName, ptrTy);
-    llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
-    stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
-    stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
-    stdErrPtr->setAlignment(llvm::MaybeAlign(8));
-    stdErr = insertLoad(ptrTy, stdErrPtr);
-  }
-
-  // Create constant for error message
-  const std::string codeLoc = node->codeLoc.toPrettyString();
-  const std::string templateStr = "Program panicked at " + codeLoc + ": %s\n" + node->getErrorMessage() + "\n";
-  llvm::GlobalVariable *globalString = builder.CreateGlobalString(templateStr, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
-
-  // If the output should be comparable, fix alignment to 4 bytes
-  if (cliOptions.comparableOutput)
-    globalString->setAlignment(llvm::Align(4));
-
-  // Get actual error message
-  llvm::Value *errorObjPtr = resolveAddress(node->assignExpr);
-  llvm::Type *errorObjTy = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
-  llvm::Value *errorMessagePtr = insertStructGEP(errorObjTy, errorObjPtr, 1);
-  llvm::Value *errorMessage = insertLoad(ptrTy, errorMessagePtr);
-
-  // Print the error message to stderr
-  llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
-  builder.CreateCall(fprintfFct, {stdErr, globalString, errorMessage});
-
-  // Cleanup the scope before calling exit()
-  // Unreachable below counts as terminator
-  terminateBlock(node->getNextOuterStmtLst());
-
-  // Generate call to exit()
-  llvm::Function *exitFct = stdFunctionManager.getExitFct();
-  builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
-  // Create unreachable instruction
-  builder.CreateUnreachable();
-
-  return nullptr;
 }
 
 std::any IRGenerator::visitSysCall(const SysCallNode *node) {
@@ -117,9 +65,11 @@ std::any IRGenerator::visitNewBuiltinCall(const FctCallNode *node) {
     return visitBuiltinPrintfCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
     return visitBuiltinLenCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
+    return visitBuiltinPanicCall(node);
 
-  assert_fail("This builtin call is not implemented yet or must be perfomed at compile time"); // LCOV_EXCL_LINE
-  return nullptr;                                                                              // LCOV_EXCL_LINE
+  assert_fail("This builtin call is not implemented yet or must be performed at compile time"); // LCOV_EXCL_LINE
+  return nullptr;                                                                               // LCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
@@ -189,6 +139,58 @@ std::any IRGenerator::visitBuiltinLenCall(const FctCallNode *node) {
   llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
   llvm::Value *lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(argNode));
   return LLVMExprResult{.value = lengthValue};
+}
+
+std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
+  llvm::PointerType *ptrTy = builder.getPtrTy();
+
+  // Get value for stderr
+  llvm::Value *stdErr;
+  if (cliOptions.targetTriple.isOSWindows()) {
+    llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
+    stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
+  } else {
+    const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
+    module->getOrInsertGlobal(globalName, ptrTy);
+    llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
+    stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
+    stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
+    stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+    stdErr = insertLoad(ptrTy, stdErrPtr);
+  }
+
+  // Create constant for error message
+  const std::string codeLoc = node->codeLoc.toPrettyString();
+  const std::string templateStr = "Program panicked at " + codeLoc + ": %s\n" + node->getErrorMessage() + "\n";
+  llvm::GlobalVariable *globalString = builder.CreateGlobalString(templateStr, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+
+  // If the output should be comparable, fix alignment to 4 bytes
+  if (cliOptions.comparableOutput)
+    globalString->setAlignment(llvm::Align(4));
+
+  // Get actual error message
+  assert(node->hasArgs);
+  const AssignExprNode *assignExpr = node->argLst->args.front();
+  llvm::Value *errorObjPtr = resolveAddress(assignExpr);
+  llvm::Type *errorObjTy = assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+  llvm::Value *errorMessagePtr = insertStructGEP(errorObjTy, errorObjPtr, 1);
+  llvm::Value *errorMessage = insertLoad(ptrTy, errorMessagePtr);
+
+  // Print the error message to stderr
+  llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
+  builder.CreateCall(fprintfFct, {stdErr, globalString, errorMessage});
+
+  // Cleanup the scope before calling exit()
+  // Unreachable below counts as terminator
+  terminateBlock(node->getNextOuterStmtLst());
+
+  // Generate call to exit()
+  llvm::Function *exitFct = stdFunctionManager.getExitFct();
+  builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
+  // Create unreachable instruction
+  builder.CreateUnreachable();
+
+  return nullptr;
 }
 
 } // namespace spice::compiler

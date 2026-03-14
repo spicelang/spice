@@ -33,16 +33,14 @@ static constexpr auto BUILTIN_FCT_NAME_SIZEOF = "sizeof";
 static constexpr auto BUILTIN_FCT_NAME_ALIGNOF = "alignof";
 static constexpr auto BUILTIN_FCT_NAME_TYPEID = "typeid";
 static constexpr auto BUILTIN_FCT_NAME_LEN = "len";
+static constexpr auto BUILTIN_FCT_NAME_PANIC = "panic";
 static constexpr auto BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr auto BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr BuiltinFunctionInfo BUILTIN_FUNCTIONS[] = {
-    {BUILTIN_FCT_NAME_PRINTF, false},
-    {BUILTIN_FCT_NAME_SIZEOF, true},
-    {BUILTIN_FCT_NAME_ALIGNOF, true},
-    {BUILTIN_FCT_NAME_TYPEID, true},
-    {BUILTIN_FCT_NAME_LEN, true},
-    {BUILTIN_FCT_NAME_IS_SAME, true},
-    {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
+    {BUILTIN_FCT_NAME_PRINTF, false}, {BUILTIN_FCT_NAME_SIZEOF, true},
+    {BUILTIN_FCT_NAME_ALIGNOF, true}, {BUILTIN_FCT_NAME_TYPEID, true},
+    {BUILTIN_FCT_NAME_LEN, true},     {BUILTIN_FCT_NAME_PANIC, false},
+    {BUILTIN_FCT_NAME_IS_SAME, true}, {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, true},
 };
 
 /**
@@ -115,7 +113,6 @@ public:
   std::any visitFallthroughStmt(FallthroughStmtNode *node) override;
   // Builtin functions
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
-  std::any visitPanicCall(PanicCallNode *node) override;
   std::any visitSysCall(SysCallNode *node) override;
   // Expressions
   std::any visitAssignExpr(AssignExprNode *node) override;
@@ -163,6 +160,7 @@ private:
   std::any visitBuiltinAlignOfCall(FctCallNode *node) const;
   std::any visitBuiltinTypeIdCall(FctCallNode *node) const;
   std::any visitBuiltinLenCall(FctCallNode *node) const;
+  std::any visitBuiltinPanicCall(FctCallNode *node) const;
   std::any visitBuiltinIsSameCall(FctCallNode *node) const;
   std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
 

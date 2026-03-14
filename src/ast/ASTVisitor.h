@@ -62,7 +62,6 @@ public:
   std::any visitFallthroughStmt(FallthroughStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitBuiltinCall(BuiltinCallNode *node) override;
-  std::any visitPanicCall(PanicCallNode *node) override;
   std::any visitSysCall(SysCallNode *node) override;
   std::any visitAssignExpr(AssignExprNode *node) override;
   std::any visitTernaryExpr(TernaryExprNode *node) override;

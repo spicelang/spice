@@ -61,8 +61,7 @@ fallthroughStmt: FALLTHROUGH;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: panicCall | sysCall;
-panicCall: PANIC LPAREN assignExpr RPAREN;
+builtinCall: sysCall;
 sysCall: SYSCALL LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 
 // Expression loop
@@ -147,7 +146,6 @@ ALIAS: 'alias';
 UNSAFE: 'unsafe';
 NIL: 'nil';
 MAIN: 'main';
-PANIC: 'panic';
 SYSCALL: 'syscall';
 CAST: 'cast';
 EXT: 'ext';
