@@ -76,7 +76,6 @@ public:
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override { return buildRule(ctx); }
-  std::any visitPanicCall(SpiceParser::PanicCallContext *ctx) override { return buildRule(ctx); }
   std::any visitSysCall(SpiceParser::SysCallContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override { return buildRule(ctx); }
   std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override { return buildRule(ctx); }

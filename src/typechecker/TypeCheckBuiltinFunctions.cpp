@@ -11,24 +11,10 @@
 namespace spice::compiler {
 
 std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
-  if (node->panicCall)
-    return visitPanicCall(node->panicCall);
   if (node->sysCall)
     return visitSysCall(node->sysCall);
   assert_fail("Unknown builtin call"); // LCOV_EXCL_LINE
   return nullptr;                      // LCOV_EXCL_LINE
-}
-
-std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
-  HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = argType.removeReferenceWrapper();
-
-  // Check if arg is of type array
-  if (!argType.isErrorObj())
-    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
-
-  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitSysCall(SysCallNode *node) {
@@ -68,6 +54,8 @@ std::any TypeChecker::visitNewBuiltinCall(FctCallNode *node) const {
     return visitBuiltinTypeIdCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_LEN)
     return visitBuiltinLenCall(node);
+  if (node->fqFunctionName == BUILTIN_FCT_NAME_PANIC)
+    return visitBuiltinPanicCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IS_SAME)
     return visitBuiltinIsSameCall(node);
   if (node->fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE)
@@ -254,6 +242,25 @@ std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
   }
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PANIC);
+
+  // Check if arguments are given
+  if (!node->hasArgs || node->argLst->args.size() != 1)
+    SOFT_ERROR_ER(node, BUILTIN_ARG_COUNT_MISMATCH, "This builtin takes exactly one argument");
+
+  const AssignExprNode *assignExpr = node->argLst->args.front();
+  QualType argType = assignExpr->getEvaluatedSymbolType(manIdx);
+  HANDLE_UNRESOLVED_TYPE_ER(argType)
+  argType = argType.removeReferenceWrapper();
+
+  // Check if arg is of type array
+  if (!argType.isErrorObj())
+    SOFT_ERROR_ER(assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitBuiltinIsSameCall(FctCallNode *node) const {

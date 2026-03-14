@@ -524,6 +524,11 @@ void FctCallNode::setCompileTimeValue(const CompileTimeValue &value, size_t manI
   data.at(manIdx).setCompileTimeValue(value);
 }
 
+bool FctCallNode::returnsOnAllControlPaths(bool *overrideUnreachable, size_t manIdx) const {
+  // The panic builtin is considered a function terminator
+  return fqFunctionName == BUILTIN_FCT_NAME_PANIC;
+}
+
 /**
  * Check if right above the closest assign expression ancestor is a statement node
  *

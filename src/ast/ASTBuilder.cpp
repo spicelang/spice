@@ -882,24 +882,13 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   const auto builtinCallNode = createNode<BuiltinCallNode>(ctx);
 
-  if (ctx->panicCall()) {
-    builtinCallNode->panicCall = std::any_cast<PanicCallNode *>(visit(ctx->panicCall()));
-  } else if (ctx->sysCall()) {
+  if (ctx->sysCall()) {
     builtinCallNode->sysCall = std::any_cast<SysCallNode *>(visit(ctx->sysCall()));
   } else {
     assert_fail("Unknown builtin call"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(builtinCallNode);
-}
-
-std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
-  const auto panicCallNode = createNode<PanicCallNode>(ctx);
-
-  // Visit children
-  panicCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
-
-  return concludeNode(panicCallNode);
 }
 
 std::any ASTBuilder::visitSysCall(SpiceParser::SysCallContext *ctx) {

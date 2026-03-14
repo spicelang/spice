@@ -88,7 +88,6 @@ public:
   std::any visitFallthroughStmt(const FallthroughStmtNode *node) override;
   // Builtin functions
   std::any visitBuiltinCall(const BuiltinCallNode *node) override;
-  std::any visitPanicCall(const PanicCallNode *node) override;
   std::any visitSysCall(const SysCallNode *node) override;
   // Expressions
   std::any visitAssignExpr(const AssignExprNode *node) override;
@@ -143,6 +142,7 @@ private:
   std::any visitNewBuiltinCall(const FctCallNode *node);
   std::any visitBuiltinPrintfCall(const FctCallNode *node);
   std::any visitBuiltinLenCall(const FctCallNode *node);
+  std::any visitBuiltinPanicCall(const FctCallNode *node);
 
   // Private methods
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;

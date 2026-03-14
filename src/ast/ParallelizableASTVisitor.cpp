@@ -119,8 +119,6 @@ std::any ParallelizableASTVisitor::visitAssertStmt(const AssertStmtNode *node) {
 
 std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitPanicCall(const PanicCallNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitSysCall(const SysCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitAssignExpr(const AssignExprNode *node) { return visitChildren(node); }
