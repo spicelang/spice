@@ -227,14 +227,13 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     assert(structSymbol != nullptr);
 
     // Collect concrete field types
-    llvm::StructType *structType;
+    std::string mangledName;
     std::vector<llvm::Type *> fieldTypes;
     bool isPacked = false;
     if (is(TY_STRUCT)) { // Struct
       const Struct *spiceStruct = structSymbol->getQualType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
-      const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
-      structType = llvm::StructType::create(context, mangledName);
+      mangledName = NameMangling::mangleStruct(*spiceStruct);
 
       const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
       fieldTypes.reserve(totalFieldCount);
@@ -258,16 +257,13 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     } else { // Interface
       const Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
       assert(spiceInterface != nullptr);
-      const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
-      structType = llvm::StructType::create(context, mangledName);
+      mangledName = NameMangling::mangleInterface(*spiceInterface);
 
+      // vtable pointer
       fieldTypes.push_back(llvm::PointerType::get(context, 0));
     }
 
-    // Set field types to struct type
-    structType->setBody(fieldTypes, isPacked);
-
-    return structType;
+    return llvm::StructType::create(context, fieldTypes, mangledName, isPacked);
   }
 
   if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
