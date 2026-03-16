@@ -92,7 +92,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Resolve iterator
-  AssignExprNode *iteratorAssignNode = node->iteratorAssign;
+  ExprNode *iteratorAssignNode = node->iteratorAssign;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
     llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);

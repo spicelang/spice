@@ -92,7 +92,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   args.clear();
   if (node->hasArgs) {
     args.reserve(node->argLst->args.size());
-    for (AssignExprNode *arg : node->argLst->args) {
+    for (ExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
@@ -240,7 +240,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       if (expectedType.is(TY_STRUCT) && actualType.is(TY_STRUCT) && !actualType.isTriviallyCopyable(node)) {
         copyCtor = matchCopyCtor(actualType, node);
         // Insert anonymous symbol to track the dtor call of the copy
-        AssignExprNode *argNode = node->argLst->args.at(argIdx);
+        ExprNode *argNode = node->argLst->args.at(argIdx);
         currentScope->symbolTable.insertAnonymous(actualType, argNode, SIZE_MAX);
       }
 
@@ -441,7 +441,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
-  for (AssignExprNode *arg : node->itemLst->args) {
+  for (ExprNode *arg : node->itemLst->args) {
     const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
     HANDLE_UNRESOLVED_TYPE_ER(itemType)
     if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -520,7 +520,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     const size_t explicitFieldsStartIdx = spiceStruct->scope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst->args.at(i);
+      ExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type

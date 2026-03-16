@@ -47,7 +47,7 @@ std::any TypeChecker::visitField(FieldNode *node) {
   auto fieldType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_QT(fieldType)
 
-  if (TernaryExprNode *defaultValueNode = node->defaultValue) {
+  if (ExprNode *defaultValueNode = node->defaultValue) {
     const QualType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
     HANDLE_UNRESOLVED_TYPE_QT(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))

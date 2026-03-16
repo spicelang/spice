@@ -115,7 +115,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
-    const AssignExprNode *returnExpr = node->assignExpr;
+    const ExprNode *returnExpr = node->assignExpr;
     if (node->calledCopyCtor) {
       // Perform a copy
       llvm::Value *originalAddress = resolveAddress(returnExpr);

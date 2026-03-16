@@ -53,7 +53,7 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
 
   // Retrieve templated string
   assert(node->hasArgs);
-  const AssignExprNode *firstArg = node->argLst->args.front();
+  const ExprNode *firstArg = node->argLst->args.front();
   assert(firstArg->getEvaluatedSymbolType(manIdx).is(TY_STRING) && firstArg->hasCompileTimeValue(manIdx));
   const size_t stringOffset = firstArg->getCompileTimeValue(manIdx).stringValueOffset;
   const std::string templatedString = resourceManager.compileTimeStringValues.at(stringOffset);
@@ -67,7 +67,7 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
     // Get next assignment
-    const AssignExprNode *assignment = node->argLst->args.at(placeholderCount + 1);
+    const ExprNode *assignment = node->argLst->args.at(placeholderCount + 1);
     // Visit assignment
     QualType argType = assignment->getEvaluatedSymbolType(manIdx);
     HANDLE_UNRESOLVED_TYPE_ER(argType)
@@ -217,7 +217,7 @@ std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_PANIC);
 
   assert(node->hasArgs);
-  const AssignExprNode *assignExpr = node->argLst->args.front();
+  const ExprNode *assignExpr = node->argLst->args.front();
   QualType argType = assignExpr->getEvaluatedSymbolType(manIdx);
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
@@ -233,7 +233,7 @@ std::any TypeChecker::visitBuiltinSyscallCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_SYSCALL);
 
   // Check if the syscall number if of type short
-  const AssignExprNode *sysCallNumberExpr = node->argLst->args.front();
+  const ExprNode *sysCallNumberExpr = node->argLst->args.front();
   const QualType sysCallNumberType = sysCallNumberExpr->getEvaluatedSymbolType(manIdx);
   if (!sysCallNumberType.is(TY_SHORT))
     SOFT_ERROR_ER(sysCallNumberExpr, INVALID_SYSCALL_NUMBER_TYPE, "Syscall number must be of type short")

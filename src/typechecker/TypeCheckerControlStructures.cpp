@@ -47,7 +47,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Visit iterator assignment
-  AssignExprNode *iteratorNode = node->iteratorAssign;
+  ExprNode *iteratorNode = node->iteratorAssign;
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
@@ -204,7 +204,8 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
     SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (node->condition->op == AssignExprNode::AssignOp::OP_ASSIGN)
+  const auto *assignExprNode = dynamic_cast<AssignExprNode *>(node->condition);
+  if (assignExprNode && assignExprNode->op == AssignExprNode::AssignOp::OP_ASSIGN)
     sourceFile->compilerOutput.warnings.emplace_back(node->condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 

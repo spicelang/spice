@@ -31,7 +31,7 @@ std::any IRGenerator::visitBuiltinCall(const FctCallNode *node) {
 std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
   // Retrieve templated string
   assert(node->hasArgs);
-  const AssignExprNode *firstArg = node->argLst->args.front();
+  const ExprNode *firstArg = node->argLst->args.front();
   assert(firstArg->getEvaluatedSymbolType(manIdx).is(TY_STRING) && firstArg->hasCompileTimeValue(manIdx));
   const size_t stringOffset = firstArg->getCompileTimeValue(manIdx).stringValueOffset;
   const std::string templatedString = resourceManager.compileTimeStringValues.at(stringOffset);
@@ -43,7 +43,7 @@ std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
 
   // Collect replacement arguments
   for (size_t argIdx = 1; argIdx < node->argLst->args.size(); argIdx++) {
-    const AssignExprNode *arg = node->argLst->args.at(argIdx);
+    const ExprNode *arg = node->argLst->args.at(argIdx);
     // Retrieve type of argument
     const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
 
@@ -87,7 +87,7 @@ std::any IRGenerator::visitBuiltinLenCall(const FctCallNode *node) {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
 
   // Check if the length is fixed and known via the symbol type
-  const AssignExprNode *argNode = node->argLst->args.front();
+  const ExprNode *argNode = node->argLst->args.front();
   QualType symbolType = argNode->getEvaluatedSymbolType(manIdx);
   symbolType = symbolType.removeReferenceWrapper();
   assert(symbolType.is(TY_STRING));
@@ -128,7 +128,7 @@ std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
 
   // Get actual error message
   assert(node->hasArgs);
-  const AssignExprNode *assignExpr = node->argLst->args.front();
+  const ExprNode *assignExpr = node->argLst->args.front();
   llvm::Value *errorObjPtr = resolveAddress(assignExpr);
   llvm::Type *errorObjTy = assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   llvm::Value *errorMessagePtr = insertStructGEP(errorObjTy, errorObjPtr, 1);
@@ -174,7 +174,7 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
   std::vector<llvm::Value *> argValues;
   argValues.reserve(requiredRegs);
   for (uint8_t i = 0; i < requiredRegs; i++) {
-    const AssignExprNode *argNode = node->argLst->args.at(i);
+    const ExprNode *argNode = node->argLst->args.at(i);
     const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
     assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
     if (argType.isOneOf({TY_PTR, TY_STRING}))

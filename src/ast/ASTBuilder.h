@@ -167,6 +167,16 @@ private:
     return node;
   }
 
+  template <typename T>
+  ALWAYS_INLINE ExprNode *concludeExprNode(T* node)
+    requires std::is_base_of_v<ExprNode, T>
+  {
+    // This node is no longer the parent for its children
+    assert(parentStack.top() == node);
+    parentStack.pop();
+    return node;
+  }
+
   ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) const {
     const size_t startIdx = ctx->start->getStartIndex();
     const size_t stopIdx = ctx->stop ? ctx->stop->getStopIndex() : startIdx;
