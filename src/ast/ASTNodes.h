@@ -1464,9 +1464,9 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
-  LogicalOrExprNode *condition = nullptr;
-  LogicalOrExprNode *trueExpr = nullptr;
-  LogicalOrExprNode *falseExpr = nullptr;
+  ExprNode *condition = nullptr;
+  ExprNode *trueExpr = nullptr;
+  ExprNode *falseExpr = nullptr;
   Function *calledCopyCtor = nullptr;
   bool trueSideCallsCopyCtor = false;
   bool falseSideCallsCopyCtor = false;
@@ -1488,7 +1488,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<LogicalAndExprNode *> operands;
+  std::vector<ExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };

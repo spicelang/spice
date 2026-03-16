@@ -225,7 +225,7 @@ CompileTimeValue TernaryExprNode::getCompileTimeValue(size_t manIdx) const {
 
   // Check if the condition always evaluates to 'true'
   if (condition->getCompileTimeValue(manIdx).boolValue) {
-    const LogicalOrExprNode *trueValue = isShortened ? condition : trueExpr;
+    const ExprNode *trueValue = isShortened ? condition : trueExpr;
     assert(trueValue != nullptr);
     return trueValue->getCompileTimeValue(manIdx);
   }
@@ -235,7 +235,7 @@ CompileTimeValue TernaryExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool LogicalOrExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue LogicalOrExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -243,7 +243,7 @@ CompileTimeValue LogicalOrExprNode::getCompileTimeValue(size_t manIdx) const {
     return operands.front()->getCompileTimeValue(manIdx);
 
   // Check if one expression evaluates to 'true'
-  for (const LogicalAndExprNode *op : operands) {
+  for (const ExprNode *op : operands) {
     assert(op->hasCompileTimeValue(manIdx));
     // If one operand evaluates to 'true' the whole expression is 'true'
     if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(manIdx); opCompileTimeValue.boolValue)

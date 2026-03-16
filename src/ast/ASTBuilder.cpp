@@ -899,25 +899,25 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   const auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
-  ternaryExprNode->condition = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
+  ternaryExprNode->condition = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(0)));
   if (ctx->logicalOrExpr().size() == 3) {
-    ternaryExprNode->trueExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
-    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(2)));
+    ternaryExprNode->trueExpr = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(1)));
+    ternaryExprNode->falseExpr = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(2)));
   } else if (ctx->logicalOrExpr().size() == 2) {
     ternaryExprNode->isShortened = true;
-    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+    ternaryExprNode->falseExpr = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(1)));
   }
 
   return concludeNode(ternaryExprNode);
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+  if (ctx->logicalAndExpr().size() == 1)
+    return visit(ctx->logicalAndExpr(0));
+
   const auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
-
-  // Visit children
   fetchChildrenIntoVector(logicalOrExprNode->operands, ctx->logicalAndExpr());
-
-  return concludeNode(logicalOrExprNode);
+  return concludeExprNode(logicalOrExprNode);
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
@@ -926,7 +926,7 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   // Visit children
   fetchChildrenIntoVector(logicalAndExprNode->operands, ctx->bitwiseOrExpr());
 
-  return concludeNode(logicalAndExprNode);
+  return concludeExprNode(logicalAndExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {

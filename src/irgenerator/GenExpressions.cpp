@@ -95,8 +95,8 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   // It is a ternary
   // Retrieve the condition value
   llvm::Value *condValue = resolveValue(node->condition);
-  const LogicalOrExprNode *trueNode = node->isShortened ? node->condition : node->trueExpr;
-  const LogicalOrExprNode *falseNode = node->falseExpr;
+  const ExprNode *trueNode = node->isShortened ? node->condition : node->trueExpr;
+  const ExprNode *falseNode = node->falseExpr;
 
   llvm::Value *resultValue = nullptr;
   llvm::Value *resultPtr = nullptr;
