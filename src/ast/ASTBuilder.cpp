@@ -586,7 +586,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   fieldNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   fieldNode->dataType->setFieldTypeRecursive();
   if (ctx->ternaryExpr())
-    fieldNode->defaultValue = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
+    fieldNode->defaultValue = std::any_cast<ExprNode *>(visit(ctx->ternaryExpr()));
 
   return concludeNode(fieldNode);
 }
@@ -884,7 +884,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 
   // Visit children
   if (ctx->ternaryExpr()) {
-    assignExprNode->ternaryExpr = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
+    assignExprNode->ternaryExpr = std::any_cast<ExprNode *>(visit(ctx->ternaryExpr()));
   } else if (ctx->prefixUnaryExpr()) {
     assignExprNode->lhs = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
     visit(ctx->assignOp());
@@ -897,6 +897,9 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+  if (ctx->logicalOrExpr().size() == 1)
+    return visit(ctx->logicalOrExpr(0));
+
   const auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
   ternaryExprNode->condition = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(0)));
@@ -908,7 +911,7 @@ std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
     ternaryExprNode->falseExpr = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(1)));
   }
 
-  return concludeNode(ternaryExprNode);
+  return concludeExprNode(ternaryExprNode);
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {

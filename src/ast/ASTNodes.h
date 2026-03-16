@@ -1037,7 +1037,7 @@ public:
 
   // Public members
   DataTypeNode *dataType = nullptr;
-  TernaryExprNode *defaultValue = nullptr;
+  ExprNode *defaultValue = nullptr;
   std::string fieldName;
 };
 
@@ -1441,8 +1441,8 @@ public:
 
   // Public members
   PrefixUnaryExprNode *lhs = nullptr;
-  AssignExprNode *rhs = nullptr;
-  TernaryExprNode *ternaryExpr = nullptr;
+  ExprNode *rhs = nullptr;
+  ExprNode *ternaryExpr = nullptr;
   AssignOp op = AssignOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1756,9 +1756,9 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
-  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
+  ExprNode *prefixUnaryExpr = nullptr;
   DataTypeNode *dataType = nullptr;
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   bool isCast = false;
 };
 
