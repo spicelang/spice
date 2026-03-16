@@ -197,7 +197,7 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
     return ternaryExpr->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
-  const AtomicExprNode *atomicExpr = lhs->postfixUnaryExpr ? lhs->postfixUnaryExpr->atomicExpr : nullptr;
+  const AtomicExprNode *atomicExpr = getLhsAtomicNode();
   if (atomicExpr && atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME) {
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
@@ -206,6 +206,16 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   }
 
   return false;
+}
+
+AtomicExprNode *AssignExprNode::getLhsAtomicNode() const {
+  if (auto *atomicNode = dynamic_cast<AtomicExprNode *>(lhs))
+    return atomicNode;
+  if (auto *atomicNode = dynamic_cast<AtomicExprNode *>(lhs->getChildren().back()))
+    return atomicNode;
+  if (auto *atomicNode = dynamic_cast<AtomicExprNode *>(lhs->getChildren().back()->getChildren().front()))
+    return atomicNode;
+  return nullptr;
 }
 
 bool TernaryExprNode::hasCompileTimeValue(size_t manIdx) const {

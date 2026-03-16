@@ -886,7 +886,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   if (ctx->ternaryExpr()) {
     assignExprNode->ternaryExpr = std::any_cast<ExprNode *>(visit(ctx->ternaryExpr()));
   } else if (ctx->prefixUnaryExpr()) {
-    assignExprNode->lhs = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+    assignExprNode->lhs = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
     visit(ctx->assignOp());
     assignExprNode->rhs = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
   } else {
@@ -1104,25 +1104,32 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+  if (!ctx->CAST())
+    return visit(ctx->prefixUnaryExpr());
+
   const auto castExprNode = createNode<CastExprNode>(ctx);
 
+  // Visit children
   if (ctx->dataType()) {
     castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
     castExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
     castExprNode->isCast = true;
   } else {
-    castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+    castExprNode->prefixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
   }
 
   return concludeExprNode(castExprNode);
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  if (!ctx->prefixUnaryExpr())
+    return visit(ctx->postfixUnaryExpr());
+
   const auto prefixUnaryExprNode = createNode<PrefixUnaryExprNode>(ctx);
 
   // Visit children
   if (ctx->postfixUnaryExpr()) {
-    prefixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
+    prefixUnaryExprNode->postfixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->postfixUnaryExpr()));
   } else if (ctx->prefixUnaryExpr()) {
     // Extract operator
     if (ctx->MINUS())
@@ -1140,12 +1147,12 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
     else if (ctx->BITWISE_AND())
       prefixUnaryExprNode->op = PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF;
 
-    prefixUnaryExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+    prefixUnaryExprNode->prefixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
   } else {
     assert_fail("Unknown prefix unary expression type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(prefixUnaryExprNode);
+  return concludeExprNode(prefixUnaryExprNode);
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
@@ -1154,7 +1161,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
   if (ctx->atomicExpr()) {
     postfixUnaryExprNode->atomicExpr = std::any_cast<AtomicExprNode *>(visit(ctx->atomicExpr()));
   } else if (ctx->postfixUnaryExpr()) {
-    postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
+    postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->postfixUnaryExpr()));
 
     // Extract operator
     if (ctx->assignExpr()) {
@@ -1172,7 +1179,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
     assert_fail("Unknown postfix unary expression type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(postfixUnaryExprNode);
+  return concludeExprNode(postfixUnaryExprNode);
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {

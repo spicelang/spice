@@ -17,7 +17,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
   // Assign or compound assign operation
   if (node->op != AssignExprNode::AssignOp::OP_NONE) {
-    const PrefixUnaryExprNode *lhsNode = node->lhs;
+    const ExprNode *lhsNode = node->lhs;
     const ExprNode *rhsNode = node->rhs;
 
     // Normal assignment
@@ -613,7 +613,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
-  const PrefixUnaryExprNode *lhsNode = node->prefixUnaryExpr;
+  const ExprNode *lhsNode = node->prefixUnaryExpr;
   const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -709,7 +709,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     return visit(node->atomicExpr);
 
   // Evaluate lhs
-  const PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
+  const ExprNode *lhsNode = node->postfixUnaryExpr;
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 

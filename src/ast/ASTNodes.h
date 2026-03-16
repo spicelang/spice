@@ -1438,9 +1438,10 @@ public:
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
+  AtomicExprNode *getLhsAtomicNode() const;
 
   // Public members
-  PrefixUnaryExprNode *lhs = nullptr;
+  ExprNode *lhs = nullptr;
   ExprNode *rhs = nullptr;
   ExprNode *ternaryExpr = nullptr;
   AssignOp op = AssignOp::OP_NONE;
@@ -1791,8 +1792,8 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
-  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
-  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
+  ExprNode *prefixUnaryExpr = nullptr;
+  ExprNode *postfixUnaryExpr = nullptr;
   PrefixUnaryOp op = PrefixUnaryOp::OP_NONE;
 };
 
@@ -1826,7 +1827,7 @@ public:
 
   // Public members
   AtomicExprNode *atomicExpr = nullptr;
-  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
+  ExprNode *postfixUnaryExpr = nullptr;
   AssignExprNode *subscriptIndexExpr = nullptr;
   PostfixUnaryOp op = PostfixUnaryOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions

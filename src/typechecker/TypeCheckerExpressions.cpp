@@ -424,7 +424,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     return visit(node->postfixUnaryExpr);
 
   // Visit the right side
-  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
+  ExprNode *rhsNode = node->prefixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(rhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
@@ -484,7 +484,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     return visit(node->atomicExpr);
 
   // Visit left side
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
+  ExprNode *lhsNode = node->postfixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(lhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)
