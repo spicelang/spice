@@ -1,33 +1,35 @@
 ---
+icon: fontawesome/brands/docker
 title: Use with Docker
+tags:
+  - Installation
+  - Docker
 ---
 
 ### Download
 You don't have to pull the image first. You also can skip this step.
-=== "Docker Hub"
+=== ":fontawesome-brands-docker: Docker Hub"
     ```sh
     docker pull chillibits/spice
     ```
-=== "GitHub Container Registry"
+=== ":fontawesome-brands-github: GitHub Container Registry"
     ```sh
     docker pull ghcr.io/spicelang/spice
     ```
 
 ### Use
-=== "Linux - Docker Hub"
+=== ":fontawesome-brands-docker: Docker Hub"
     ```sh
+    # Linux/macOS
     docker run --rm -it -v $(pwd):/spice/out chillibits/spice
-    ```
-=== "Linux - GHCR"
-    ```sh
-    docker run --rm -it -v $(pwd):/spice/out ghcr.io/spicelang/spice
-    ```
-=== "Windows - Docker Hub"
-    ```sh
+    # Windows
     docker run --rm -it -v ${pwd}:/spice/out chillibits/spice
     ```
-=== "Windows - GHCR"
+=== ":fontawesome-brands-github: GitHub Container Registry"
     ```sh
+    # Linux
+    docker run --rm -it -v $(pwd):/spice/out ghcr.io/spicelang/spice
+    # Windows
     docker run --rm -it -v ${pwd}:/spice/out ghcr.io/spicelang/spice
     ```
 

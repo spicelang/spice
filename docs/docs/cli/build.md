@@ -1,5 +1,8 @@
 ---
 title: Build subcommand
+tags:
+  - Command Line Interface
+  - Build
 ---
 
 The `build` subcommand can be used to compile your Spice project to an executable file and save it to the current directory.
