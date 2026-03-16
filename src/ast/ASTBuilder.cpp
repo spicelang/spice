@@ -340,8 +340,8 @@ std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
 
   // Visit children
   forLoopNode->initDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt()));
-  forLoopNode->condAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(0)));
-  forLoopNode->incAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(1)));
+  forLoopNode->condAssign = std::any_cast<ExprNode *>(visit(ctx->assignExpr(0)));
+  forLoopNode->incAssign = std::any_cast<ExprNode *>(visit(ctx->assignExpr(1)));
 
   return nullptr;
 }
@@ -371,7 +371,7 @@ std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
   } else {
     assert_fail("Invalid number of decl statements in foreach loop"); // GCOV_EXCL_LINE
   }
-  foreachLoopNode->iteratorAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  foreachLoopNode->iteratorAssign = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
   return nullptr;
 }
@@ -380,7 +380,7 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   const auto whileLoopNode = createNode<WhileLoopNode>(ctx);
 
   // Visit children
-  whileLoopNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  whileLoopNode->condition = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   whileLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(whileLoopNode);
@@ -391,7 +391,7 @@ std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
 
   // Visit children
   doWhileLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
-  doWhileLoopNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  doWhileLoopNode->condition = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(doWhileLoopNode);
 }
@@ -400,7 +400,7 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   const auto ifStmtNode = createNode<IfStmtNode>(ctx);
 
   // Visit children
-  ifStmtNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  ifStmtNode->condition = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   ifStmtNode->thenBody = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
   if (ctx->elseStmt())
     ifStmtNode->elseStmt = std::any_cast<ElseStmtNode *>(visit(ctx->elseStmt()));
@@ -426,7 +426,7 @@ std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
   const auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
 
   // Visit children
-  switchStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  switchStmtNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   fetchChildrenIntoVector(switchStmtNode->caseBranches, ctx->caseBranch());
   if (ctx->defaultBranch()) {
     switchStmtNode->hasDefaultBranch = true;
@@ -649,7 +649,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   declStmtNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   if (ctx->assignExpr()) {
     declStmtNode->hasAssignment = true;
-    declStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    declStmtNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   }
 
   return concludeNode(declStmtNode);
@@ -659,7 +659,7 @@ std::any ASTBuilder::visitExprStmt(SpiceParser::ExprStmtContext *ctx) {
   const auto exprStmtNode = createNode<ExprStmtNode>(ctx);
 
   // Enrich
-  exprStmtNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  exprStmtNode->expr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(exprStmtNode);
 }
@@ -825,7 +825,7 @@ std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   // Visit children
   if (ctx->assignExpr()) {
     returnStmtNode->hasReturnValue = true;
-    returnStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    returnStmtNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   }
 
   return concludeNode(returnStmtNode);
@@ -874,12 +874,15 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   assertStmtNode->expressionString = inputStream->getText(interval);
 
   // Visit children
-  assertStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  assertStmtNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(assertStmtNode);
 }
 
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+  if (!ctx->assignOp())
+    return visit(ctx->ternaryExpr());
+
   const auto assignExprNode = createNode<AssignExprNode>(ctx);
 
   // Visit children
@@ -888,12 +891,12 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   } else if (ctx->prefixUnaryExpr()) {
     assignExprNode->lhs = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
     visit(ctx->assignOp());
-    assignExprNode->rhs = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    assignExprNode->rhs = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   } else {
     assert_fail("Invalid assign expression"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(assignExprNode);
+  return concludeExprNode(assignExprNode);
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
@@ -1112,7 +1115,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   // Visit children
   if (ctx->dataType()) {
     castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
-    castExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    castExprNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
     castExprNode->isCast = true;
   } else {
     castExprNode->prefixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
@@ -1169,7 +1172,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
     // Extract operator
     if (ctx->assignExpr()) {
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT;
-      postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+      postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
     } else if (ctx->IDENTIFIER()) {
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS;
       postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER(), false);
@@ -1214,7 +1217,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       }
     }
   } else if (ctx->assignExpr()) {
-    atomicExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    atomicExprNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   } else {
     assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
   }
@@ -1402,7 +1405,7 @@ std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
     lambdaExprNode->hasParams = true;
     lambdaExprNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
   }
-  lambdaExprNode->lambdaExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  lambdaExprNode->lambdaExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(lambdaExprNode);
 }

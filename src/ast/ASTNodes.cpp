@@ -547,6 +547,8 @@ bool FctCallNode::returnsOnAllControlPaths(bool *overrideUnreachable, size_t man
 bool FctCallNode::hasReturnValueReceiver() const {
   const ASTNode *node = parent;
   while (!node->isAssignExpr()) {
+    if (node->isExprStmt())
+      return false;
     // As soon as we have a node with more than one child, we know that the return value is used
     if (node->getChildren().size() > 1)
       return true;

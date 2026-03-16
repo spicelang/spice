@@ -492,7 +492,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   switch (node->op) {
   case PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT: {
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->subscriptIndexExpr;
+    ExprNode *indexAssignExpr = node->subscriptIndexExpr;
     const auto index = std::any_cast<ExprResult>(visit(indexAssignExpr));
     HANDLE_UNRESOLVED_TYPE_ER(index.type)
 

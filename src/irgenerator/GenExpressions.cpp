@@ -715,7 +715,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   switch (node->op) {
   case PostfixUnaryExprNode::PostfixUnaryOp::OP_SUBSCRIPT: {
-    const AssignExprNode *indexExpr = node->subscriptIndexExpr;
+    const ExprNode *indexExpr = node->subscriptIndexExpr;
 
     // Check if we need to generate a call to an overloaded operator function
     if (conversionManager.callsOverloadedOpFct(node, 0)) {

@@ -142,13 +142,13 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Get arg values
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> args = node->argLst->args;
+    const std::vector<ExprNode *> args = node->argLst->args;
     argValues.reserve(args.size());
     const QualTypeList paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
-      AssignExprNode *argNode = args.at(i);
+      ExprNode *argNode = args.at(i);
       const auto &[copyCtor] = node->argLst->argInfos.at(i);
 
       const QualType &expectedSTy = paramSTypes.at(i);
@@ -350,7 +350,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
   bool canBeConstant = true;
   std::vector<LLVMExprResult> itemResults;
   itemResults.reserve(node->actualSize);
-  for (const AssignExprNode *itemNode : node->itemLst->args) {
+  for (const ExprNode *itemNode : node->itemLst->args) {
     auto item = std::any_cast<LLVMExprResult>(visit(itemNode));
     canBeConstant &= item.constant != nullptr;
     item.node = itemNode;
@@ -423,7 +423,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Visit struct field values
   std::vector<LLVMExprResult> fieldValueResults;
   fieldValueResults.reserve(spiceStruct->fieldTypes.size());
-  for (const AssignExprNode *fieldValueNode : node->fieldLst->args) {
+  for (const ExprNode *fieldValueNode : node->fieldLst->args) {
     auto fieldValue = std::any_cast<LLVMExprResult>(visit(fieldValueNode));
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);

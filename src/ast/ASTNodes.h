@@ -639,8 +639,8 @@ public:
 
   // Public members
   DeclStmtNode *initDecl = nullptr;
-  AssignExprNode *condAssign = nullptr;
-  AssignExprNode *incAssign = nullptr;
+  ExprNode *condAssign = nullptr;
+  ExprNode *incAssign = nullptr;
   StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
@@ -663,7 +663,7 @@ public:
   // Public members
   DeclStmtNode *idxVarDecl = nullptr;
   DeclStmtNode *itemVarDecl = nullptr;
-  AssignExprNode *iteratorAssign = nullptr;
+  ExprNode *iteratorAssign = nullptr;
   StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
   Function *getIteratorFct = nullptr;
@@ -691,7 +691,7 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
-  AssignExprNode *condition = nullptr;
+  ExprNode *condition = nullptr;
   StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
@@ -714,7 +714,7 @@ public:
 
   // Public members
   StmtLstNode *body = nullptr;
-  AssignExprNode *condition = nullptr;
+  ExprNode *condition = nullptr;
   Scope *bodyScope = nullptr;
 };
 
@@ -737,7 +737,7 @@ public:
   // Public members
   bool compileThenBranch = true;
   bool compileElseBranch = true;
-  AssignExprNode *condition = nullptr;
+  ExprNode *condition = nullptr;
   StmtLstNode *thenBody = nullptr;
   ElseStmtNode *elseStmt = nullptr;
   Scope *thenBodyScope = nullptr;
@@ -782,7 +782,7 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   std::vector<CaseBranchNode *> caseBranches;
   DefaultBranchNode *defaultBranch = nullptr;
   bool hasDefaultBranch = false;
@@ -974,7 +974,7 @@ public:
   GET_CHILDREN(args);
 
   // Public members
-  std::vector<AssignExprNode *> args;
+  std::vector<ExprNode *> args;
   std::vector<ArgInfo> argInfos;
 };
 
@@ -1096,7 +1096,7 @@ public:
 
   // Public members
   DataTypeNode *dataType = nullptr;
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   bool hasAssignment = false;
   bool isFctParam = false;
   bool isForEachItem = false;
@@ -1123,7 +1123,7 @@ public:
   [[nodiscard]] bool isExprStmt() const override { return true; }
 
   // Public members
-  AssignExprNode *expr = nullptr;
+  ExprNode *expr = nullptr;
 };
 
 // ======================================================= QualifierLstNode ======================================================
@@ -1327,7 +1327,7 @@ public:
   [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   QualType returnType;
   Function *calledCopyCtor = nullptr;
   bool hasReturnValue = false;
@@ -1400,7 +1400,7 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   std::string expressionString;
 };
 
@@ -1828,7 +1828,7 @@ public:
   // Public members
   ExprNode *atomicExpr = nullptr;
   ExprNode *postfixUnaryExpr = nullptr;
-  AssignExprNode *subscriptIndexExpr = nullptr;
+  ExprNode *subscriptIndexExpr = nullptr;
   PostfixUnaryOp op = PostfixUnaryOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   std::string identifier;                           // Only set when operator is member access
@@ -1859,7 +1859,7 @@ public:
   // Public members
   ConstantNode *constant = nullptr;
   ValueNode *value = nullptr;
-  AssignExprNode *assignExpr = nullptr;
+  ExprNode *assignExpr = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   std::vector<VarAccessData> data; // Only set if identifier is set as well
@@ -2109,7 +2109,7 @@ public:
   GET_CHILDREN(paramLst, lambdaExpr);
 
   // Public members
-  AssignExprNode *lambdaExpr = nullptr;
+  ExprNode *lambdaExpr = nullptr;
 };
 
 // ======================================================= DataTypeNode ==========================================================
