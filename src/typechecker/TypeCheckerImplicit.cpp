@@ -16,6 +16,7 @@
 namespace spice::compiler {
 
 static const char *const FCT_NAME_DEALLOC = "sDealloc";
+static const char *const FCT_NAME_DELETE = "sDelete";
 
 /**
  * Create a default struct method
@@ -357,11 +358,20 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
 
+    const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
-      const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       FunctionManager::match(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+      continue;
+    }
+
+    // Deallocate / delete heap fields
+    if (fieldType.isHeap()) {
+      if (fieldType.isPtrTo(TY_STRUCT) && !fieldType.getContained().isTriviallyDestructible(nullptr))
+        implicitlyCallDelete(fieldNode, fieldType.getContained());
+      else
+        implicitlyCallDeallocate(fieldNode);
     }
   }
 }
@@ -455,6 +465,28 @@ void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) const {
 }
 
 /**
+ * Prepare the generation of a call to the delete function for a heap-allocated variable
+ *
+ * @param node Current AST node for error messages
+ * @param structType Struct type of the variable to delete, required to find the correct delete function
+ */
+void TypeChecker::implicitlyCallDelete(const ASTNode *node, const QualType &structType) const {
+  assert(structType.is(TY_STRUCT));
+  const SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
+  assert(memoryRT != nullptr);
+  Scope *matchScope = memoryRT->globalScope.get();
+  // Set delete function to used
+  const QualType thisType(TY_DYN);
+  const QualType importedStructType = mapLocalTypeToImportedScopeType(matchScope, structType);
+  QualType ptrRefType = importedStructType.toPtr(node).toRef(node);
+  ptrRefType.makeHeap();
+  const ArgList args = {{ptrRefType, false /* we always have the field as storage */}};
+  Function *deleteFct = FunctionManager::match(matchScope, FCT_NAME_DELETE, thisType, args, {}, true, node);
+  assert(deleteFct != nullptr);
+  deleteFct->used = true;
+}
+
+/**
  * Consider calls to destructors for the given scope
  *
  * @param node StmtLstNode for the current scope
@@ -475,8 +507,9 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
   std::ranges::stable_sort(vars, comp);
   // Call the dtor of each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
+    const QualType &varType = var->getQualType();
     // Check if we have a heap-allocated pointer
-    if (var->getQualType().isHeap() && var->getQualType().isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE})) {
+    if (varType.isHeap() && varType.isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE})) {
       // The memory runtime is ignored, because it manually allocates to avoid circular dependencies.
       // Same goes for the string runtime.
       if (sourceFile->isMemoryRT() || sourceFile->isStringRT())
@@ -485,11 +518,17 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
       if (!var->getLifecycle().isInOwningState())
         continue;
 
-      implicitlyCallDeallocate(node); // Required to request the memory runtime
+      // If it is a non-trivially-destructible struct, we need to call sDelete, otherwise we can call sDealloc
+      if (varType.isPtrTo(TY_STRUCT) && !varType.getContained().isTriviallyDestructible(node)) {
+        implicitlyCallDelete(node, varType.getContained());
+      } else {
+        implicitlyCallDeallocate(node);
+      }
+
       node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
     }
     // Only generate dtor call for structs and if not omitted
-    if (!var->getQualType().is(TY_STRUCT) || var->omitDtorCall)
+    if (!varType.is(TY_STRUCT) || var->omitDtorCall)
       continue;
     // Variable must be either initialized or a struct field
     if (!var->getLifecycle().isInitialized() && var->scope->type != ScopeType::STRUCT)

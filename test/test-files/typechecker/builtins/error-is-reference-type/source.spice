@@ -1,0 +1,5 @@
+f<int> main() {
+    __is_reference_type(); // Too less template types
+    __is_reference_type<int, double>(); // Too many template types
+    __is_reference_type(12); // Too many arguments
+}

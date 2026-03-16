@@ -188,7 +188,7 @@ private:
   void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
                               const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
-  void generateDeallocCall(llvm::Value *variableAddress) const;
+  void generateDeallocOrDeleteCall(llvm::Value *variableAddress, const QualType &varType) const;
   llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
   llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);
   void generateCtorBodyPreamble(Scope *bodyScope);

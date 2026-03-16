@@ -56,6 +56,13 @@ public p Stack.ctor(const Stack<T>& original) {
     this.size = original.size;
 }
 
+public p Stack.dtor() {
+    // Free the allocated memory
+    unsafe {
+        sDealloc(cast<heap byte*>(this.contents));
+    }
+}
+
 /**
  * Add an item to the stack
  */

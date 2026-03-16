@@ -61,6 +61,13 @@ public p Queue.ctor(const Queue<T>& original) {
     this.idxBack = original.idxBack;
 }
 
+public p Queue.dtor() {
+    // Free the allocated memory
+    unsafe {
+        sDealloc(cast<heap byte*>(this.contents));
+    }
+}
+
 /**
  * Add an item at the end of the queue
  */

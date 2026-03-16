@@ -1,39 +1,24 @@
-import "std/bindings/gtk/gtk4";
-import "std/os/env";
-
-p btnClick(GtkWidget widget) {
-    gPrint("Hello World!\n");
+f<int> main() {
+    heap int* i = nil<heap int*>;
+    int* iRaw = nil<int*>;
+    sDelete(i);
+    //sDelete(iRaw);
 }
 
-p quit(GtkWidget widget, GtkWindow window) {
-    window.destroy();
+/*type Type struct {
+    int i = 42
 }
 
-p activate(GtkApplication app, GPointer data) {
-    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
-    String filePathString = String(spiceStdDir.unwrap());
-    filePathString += "/../test/test-files/std/bindings/gtk4-with-builder/window.ui";
-
-    GtkBuilder builder;
-    Result<bool> result = builder.addFromFile(filePathString.getRaw());
-    result.unwrap();
-    dyn window = builder.getObject<GtkWindow>("window");
-    window.setApplication(app);
-
-    dyn button1 = builder.getObject<GtkButton>("button1");
-    button1.setOnClickCallback(btnClick);
-
-    dyn button2 = builder.getObject<GtkButton>("button2");
-    button2.setOnClickCallback(btnClick);
-
-    dyn quitButton = builder.getObject<GtkButton>("quit");
-    quitButton.setOnClickCallback(quit, window);
-
-    window.setVisible();
+public p Type.ctor() {
+    printf("Ctor called!\n");
+}
+public p Type.ctor(const Type& other) {
+    printf("Copy ctor called!\n");
+}
+public p Type.dtor() {
+    printf("Dtor called!\n");
 }
 
-f<int> main(int argc, string[] argv) {
-    dyn app = GtkApplication("com.spicelang.Example");
-    app.setActivateCallback(activate);
-    return app.run(argc, argv);
-}
+f<int> main() {
+   heap Type* tPtr = sNew<Type>();
+}*/

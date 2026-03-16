@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:5:
+Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 0
+
+2  __is_pointer_type(); // Too less templa
+   ^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:3:5:
+Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 2
+
+3  __is_pointer_type<int, double>(); // Too many templa
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 0
+
+4  __is_pointer_type(12); // Too many argume
+   ^^^^^^^^^^^^^^^^^^^^^

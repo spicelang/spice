@@ -64,6 +64,13 @@ public p Deque.ctor(const Deque<T>& original) {
     this.idxBack = original.idxBack;
 }
 
+public p Deque.dtor() {
+    // Free the allocated memory
+    unsafe {
+        sDealloc(cast<heap byte*>(this.contents));
+    }
+}
+
 /**
  * Add an item at the back of the deque
  */

@@ -63,6 +63,13 @@ public p Vector.ctor(const Vector<T>& original) {
     this.size = original.size;
 }
 
+public p Vector.dtor() {
+    // Free the allocated memory
+    unsafe {
+        sDealloc(cast<heap byte*>(this.contents));
+    }
+}
+
 /**
  * Checks if the vector contains any items at the moment
  *

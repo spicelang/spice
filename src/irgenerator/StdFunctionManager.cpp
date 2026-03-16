@@ -111,6 +111,15 @@ llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
   return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
 }
 
+llvm::Function *StdFunctionManager::getDeleteXPtrRefFct(const QualType &x) const {
+  const ParamList paramLst = {{x.toPtr(nullptr).toRef(nullptr), false}};
+  const std::vector templateTypes = {GenericType(x)};
+  Function function("sDelete", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, templateTypes, nullptr);
+  function.typeMapping[x.getSubType()] = x;
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
+}
+
 llvm::Function *StdFunctionManager::getIterateFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(sourceFile);
