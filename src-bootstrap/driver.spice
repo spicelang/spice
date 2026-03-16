@@ -306,8 +306,8 @@ p Driver.addBuildSubcommand() {
     const p(const string&) outputContainerCallback = p(const string& outputContainer) {
         if outputContainer == OUTPUT_CONTAINER_EXECUTABLE {
             this.cliOptions.outputContainer = OutputContainer::EXECUTABLE;
-        } else if outputContainer == OUTPUT_CONTAINER_OBJECT_FILES {
-            this.cliOptions.outputContainer = OutputContainer::OBJECT_FILES;
+        } else if outputContainer == OUTPUT_CONTAINER_OBJECT_FILE {
+            this.cliOptions.outputContainer = OutputContainer::OBJECT_FILE;
         } else if outputContainer == OUTPUT_CONTAINER_STATIC_LIBRARY {
             this.cliOptions.buildMode = OutputContainer::STATIC_LIBRARY;
         } else if outputContainer == OUTPUT_CONTAINER_SHARED_LIBRARY {

@@ -1,7 +1,3 @@
-f<string> unusedReturnValue() {
-    return "unused";
-}
-
 f<int> main() {
-    unusedReturnValue();
+    printf("Hello World!");
 }
