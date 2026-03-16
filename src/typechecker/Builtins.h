@@ -41,6 +41,11 @@ static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
 // Undocumented builtins (intended to be primarily used via std wrapper functions)
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr std::string_view BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_POINTER_TYPE = "__is_pointer_type";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_REFERENCE_TYPE = "__is_reference_type";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE = "__is_trivially_constructible";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE = "__is_trivially_copyable";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "__is_trivially_destructible";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -67,7 +72,7 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinAlignOfCall,
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
-          .allTemplateTypesOrAllArgTypes = true,
+            .allTemplateTypesOrAllArgTypes = true,
         },
     },
     BuiltinFunctionEntry{
@@ -76,7 +81,7 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeIdCall,
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
-          .allTemplateTypesOrAllArgTypes = true,
+            .allTemplateTypesOrAllArgTypes = true,
         },
     },
     BuiltinFunctionEntry{
@@ -122,6 +127,46 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinImplementsInterfaceCall,
             .minTemplateTypes = 2,
             .maxTemplateTypes = 2,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_POINTER_TYPE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsPointerTypeCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_REFERENCE_TYPE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsReferenceTypeCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyConstructibleCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyCopyableCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyDestructibleCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
         },
     },
 };

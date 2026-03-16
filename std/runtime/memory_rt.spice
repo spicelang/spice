@@ -114,6 +114,35 @@ public f<heap T*> sMove<T>(heap T*& oldPtr) {
 
 /**
  * Allocates memory for a new instance of the given type on the heap.
+ *
+ * @param ptr The pointer to the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<T*> sPlacementNew<T>(heap byte* ptr) {
+    unsafe {
+        // Construct new instance of T in the heap-allocated memory
+        ptr.ctor();
+        return cast<T*>(ptr);
+    }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ *
+ * @param ptr The pointer to the heap-allocated memory
+ * @param val The value to put into the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
+    unsafe {
+        // Construct new instance of T in the heap-allocated memory
+        ptr.ctor(val);
+        return cast<T*>(ptr);
+    }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
  * Note: This function panics if the allocation fails.
  *
  * @return A pointer to the heap-allocated instance
@@ -122,7 +151,11 @@ public f<heap T*> sNew<T>() {
     unsafe {
         // Allocate memory for the instance
         Result<heap byte*> res = sAlloc(sizeof<T>());
-        return cast<heap T*>(res.unwrap());
+        result = cast<heap T*>(res.unwrap());
+        // Construct new instance of T in the heap-allocated memory
+        if !__is_trivially_constructible<T>() {
+            result.ctor();
+        }
     }
 }
 
@@ -138,33 +171,27 @@ public f<heap T*> sNew<T>(const T& val) {
         // Allocate memory for the instance
         Result<heap byte*> res = sAlloc(sizeof<T>());
         result = cast<heap T*>(res.unwrap());
-        // Copy the value into the heap-allocated memory
-        sCopy(cast<heap byte*>(&val), cast<heap byte*>(result), sizeof<T>());
+        // Construct new instance of T in the heap-allocated memory
+        if !__is_trivially_constructible<T>() {
+            result.ctor(val);
+        } else {
+            // Copy the value into the heap-allocated memory
+            sCopy(cast<heap byte*>(&val), cast<heap byte*>(result), sizeof<T>());
+        }
     }
 }
 
 /**
- * Allocates memory for a new instance of the given type on the heap.
- *
- * @param ptr The pointer to the heap-allocated memory
- * @param val The value to put into the heap-allocated memory
- * @return A pointer to the heap-allocated instance
- */
-public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
-    unsafe {
-        // Copy the value into the heap-allocated memory
-        sCopy(cast<heap byte*>(&val), ptr, sizeof<T>());
-        return cast<T*>(ptr);
-    }
-}
-
-/**
- * Destroys the given object by calling its dtor if available
+ * Destroys the given object by calling its dtor if not trivially destructible.
+ * Note: Only call this function is the object was constructed before
+ * Note: Only call this function if the object is heap-allocated
  *
  * @param obj The object to destroy
  */
-public p sDestruct<T>(T& obj) {
-    obj.dtor();
+public p sDestruct<T>(heap T*& ptr) {
+    if !__is_trivially_destructible<T>() {
+        ptr.dtor();
+    }
 }
 
 /**
@@ -185,7 +212,8 @@ public p sDealloc(heap byte*& ptr) {
  * @param ptr The pointer to the heap-allocated instance
  */
 public p sDelete<T>(heap T*& ptr) {
-    sDestruct(*ptr);
+    if ptr == nil<heap byte*> { return; }
+    sDestruct(ptr);
     unsafe {
         sDealloc(cast<heap byte*&>(ptr));
     }

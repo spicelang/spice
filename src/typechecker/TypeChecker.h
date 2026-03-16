@@ -134,6 +134,11 @@ public:
   std::any visitBuiltinSyscallCall(FctCallNode *node) const;
   std::any visitBuiltinIsSameCall(FctCallNode *node) const;
   std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
+  std::any visitBuiltinIsPointerTypeCall(FctCallNode *node) const;
+  std::any visitBuiltinIsReferenceTypeCall(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyConstructibleCall(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyCopyableCall(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyDestructibleCall(FctCallNode *node) const;
 
 private:
   // Private members
@@ -174,6 +179,7 @@ private:
   Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const;
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const;
   void implicitlyCallDeallocate(const ASTNode *node) const;
+  void implicitlyCallDelete(const ASTNode *node, const QualType &structType) const;
   void doScopeCleanup(StmtLstNode *node) const;
 };
 

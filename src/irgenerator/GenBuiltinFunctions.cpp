@@ -50,11 +50,7 @@ std::any IRGenerator::visitBuiltinPrintfCall(const FctCallNode *node) {
     // Re-map some values
     llvm::Value *argVal;
     if (argSymbolType.isArray()) {
-      // ToDo: Check if GEP can be removed
-      llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(0)};
-      llvm::Type *argType = argSymbolType.toLLVMType(sourceFile);
-      argVal = insertInBoundsGEP(argType, argValPtr, indices);
+      argVal = resolveAddress(arg); // The array decays to a pointer
     } else if (argSymbolType.getBase().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Type *argBaseType = argSymbolType.getBase().toLLVMType(sourceFile);

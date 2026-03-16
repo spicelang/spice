@@ -63,9 +63,12 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   for (auto [entry, dtor] : dtorFunctionsToCall)
     generateCtorOrDtorCall(entry, dtor, {});
 
-  // Deallocate all heap variables that go out of scope and are currently owned
-  for (const SymbolTableEntry *entry : heapVarsToFree)
-    generateDeallocCall(entry->getAddress());
+  // Delete all heap variables that go out of scope and are currently owned
+  for (const SymbolTableEntry *entry : heapVarsToFree) {
+    const QualType &varType = entry->getQualType();
+    assert(varType.isHeap() && varType.isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE}));
+    generateDeallocOrDeleteCall(entry->getAddress(), varType);
+  }
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
@@ -179,16 +182,22 @@ void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function
   generateProcDeclAndCall(ctorOrDtor, argValues);
 }
 
-void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
+void IRGenerator::generateDeallocOrDeleteCall(llvm::Value *variableAddress, const QualType &varType) const {
   // Abort if the address is not set. This can happen when leaving the scope of a dtor, which already freed the heap memory
   if (!variableAddress)
     return;
 
-  // In case of string runtime, call free manually. Otherwise, use the memory_rt implementation of sDealloc()
   if (sourceFile->isStringRT()) {
+    // In case of string runtime, call free manually
+    // Note: Here we assume, that no objects from the string runtime require destruction and simply deallocate them.
     llvm::Function *freeFct = stdFunctionManager.getFreeFct();
     builder.CreateCall(freeFct, variableAddress);
+  } else if (varType.isPtrTo(TY_STRUCT) && !varType.getContained().isTriviallyDestructible(nullptr)) {
+    // If the type needs to be destructed, call sDelete() of the memory runtime
+    llvm::Function *deleteFct = stdFunctionManager.getDeleteXPtrRefFct(varType.getContained());
+    builder.CreateCall(deleteFct, variableAddress);
   } else {
+    // Otherwise, we can call sDealloc() of the memory runtime
     llvm::Function *deallocFct = stdFunctionManager.getDeallocBytePtrRefFct();
     builder.CreateCall(deallocFct, variableAddress);
   }
@@ -596,8 +605,8 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
       llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
-      // Call dealloc function
-      generateDeallocCall(fieldAddress);
+      // Call dealloc or delete function
+      generateDeallocOrDeleteCall(fieldAddress, fieldType);
     }
   }
 }

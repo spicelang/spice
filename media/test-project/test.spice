@@ -1,4 +1,24 @@
 f<int> main() {
-    dyn x;
-    printf("%d", sizeof(x));
+    heap int* i = nil<heap int*>;
+    int* iRaw = nil<int*>;
+    sDelete(i);
+    //sDelete(iRaw);
 }
+
+/*type Type struct {
+    int i = 42
+}
+
+public p Type.ctor() {
+    printf("Ctor called!\n");
+}
+public p Type.ctor(const Type& other) {
+    printf("Copy ctor called!\n");
+}
+public p Type.dtor() {
+    printf("Dtor called!\n");
+}
+
+f<int> main() {
+   heap Type* tPtr = sNew<Type>();
+}*/
