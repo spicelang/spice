@@ -1508,7 +1508,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseOrExprNode *> operands;
+  std::vector<ExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
@@ -1528,7 +1528,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseXorExprNode *> operands;
+  std::vector<ExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
@@ -1548,7 +1548,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<BitwiseAndExprNode *> operands;
+  std::vector<ExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
@@ -1568,7 +1568,7 @@ public:
   GET_CHILDREN(operands);
 
   // Public members
-  std::vector<EqualityExprNode *> operands;
+  std::vector<ExprNode *> operands;
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 };
@@ -1600,7 +1600,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<RelationalExprNode *> operands;
+  std::vector<ExprNode *> operands;
   EqualityOp op = EqualityOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1631,7 +1631,7 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
 
   // Public members
-  std::vector<ShiftExprNode *> operands;
+  std::vector<ExprNode *> operands;
   RelationalOp op = RelationalOp::OP_NONE;
 };
 
@@ -1665,7 +1665,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<AdditiveExprNode *> operands;
+  std::vector<ExprNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1699,7 +1699,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<MultiplicativeExprNode *> operands;
+  std::vector<ExprNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
@@ -1734,7 +1734,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  std::vector<CastExprNode *> operands;
+  std::vector<ExprNode *> operands;
   OpQueue opQueue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };

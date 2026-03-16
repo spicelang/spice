@@ -255,7 +255,7 @@ CompileTimeValue LogicalOrExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool LogicalAndExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue LogicalAndExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -263,7 +263,7 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue(size_t manIdx) const {
     return operands.front()->getCompileTimeValue(manIdx);
 
   // Check if all expressions evaluate to 'true'
-  for (const BitwiseOrExprNode *op : operands) {
+  for (const ExprNode *op : operands) {
     assert(op->hasCompileTimeValue(manIdx));
     // If one operand evaluates to 'false' the whole expression is 'false'
     if (const CompileTimeValue opCompileTimeValue = op->getCompileTimeValue(manIdx); !opCompileTimeValue.boolValue)
@@ -275,7 +275,7 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool BitwiseOrExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue BitwiseOrExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -293,7 +293,7 @@ CompileTimeValue BitwiseOrExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool BitwiseXorExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue BitwiseXorExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -311,7 +311,7 @@ CompileTimeValue BitwiseXorExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool BitwiseAndExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const EqualityExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue BitwiseAndExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -329,7 +329,7 @@ CompileTimeValue BitwiseAndExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool EqualityExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const RelationalExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue EqualityExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -347,7 +347,7 @@ CompileTimeValue EqualityExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool RelationalExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const ShiftExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue RelationalExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -369,7 +369,7 @@ CompileTimeValue RelationalExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool ShiftExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const AdditiveExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue ShiftExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -394,7 +394,7 @@ CompileTimeValue ShiftExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool AdditiveExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue AdditiveExprNode::getCompileTimeValue(size_t manIdx) const {
@@ -419,7 +419,7 @@ CompileTimeValue AdditiveExprNode::getCompileTimeValue(size_t manIdx) const {
 }
 
 bool MultiplicativeExprNode::hasCompileTimeValue(size_t manIdx) const {
-  return std::ranges::all_of(operands, [=](const CastExprNode *node) { return node->hasCompileTimeValue(manIdx); });
+  return std::ranges::all_of(operands, [=](const ExprNode *node) { return node->hasCompileTimeValue(manIdx); });
 }
 
 CompileTimeValue MultiplicativeExprNode::getCompileTimeValue(size_t manIdx) const {

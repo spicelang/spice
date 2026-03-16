@@ -916,11 +916,17 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
     return visit(ctx->logicalAndExpr(0));
 
   const auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
+
+  // Visit children
   fetchChildrenIntoVector(logicalOrExprNode->operands, ctx->logicalAndExpr());
+
   return concludeExprNode(logicalOrExprNode);
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+  if (ctx->bitwiseOrExpr().size() == 1)
+    return visit(ctx->bitwiseOrExpr(0));
+
   const auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
 
   // Visit children
@@ -930,33 +936,45 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+  if (ctx->bitwiseXorExpr().size() == 1)
+    return visit(ctx->bitwiseXorExpr(0));
+
   const auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
 
   // Visit children
   fetchChildrenIntoVector(bitwiseOrExprNode->operands, ctx->bitwiseXorExpr());
 
-  return concludeNode(bitwiseOrExprNode);
+  return concludeExprNode(bitwiseOrExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+  if (ctx->bitwiseAndExpr().size() == 1)
+    return visit(ctx->bitwiseAndExpr(0));
+
   const auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
 
   // Visit children
   fetchChildrenIntoVector(bitwiseXorExprNode->operands, ctx->bitwiseAndExpr());
 
-  return concludeNode(bitwiseXorExprNode);
+  return concludeExprNode(bitwiseXorExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+  if (ctx->equalityExpr().size() == 1)
+    return visit(ctx->equalityExpr(0));
+
   const auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
 
   // Visit children
   fetchChildrenIntoVector(bitwiseAndExprNode->operands, ctx->equalityExpr());
 
-  return concludeNode(bitwiseAndExprNode);
+  return concludeExprNode(bitwiseAndExprNode);
 }
 
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+  if (ctx->relationalExpr().size() == 1)
+    return visit(ctx->relationalExpr(0));
+
   const auto equalityExprNode = createNode<EqualityExprNode>(ctx);
 
   // Visit children
@@ -968,10 +986,13 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   else if (ctx->NOT_EQUAL())
     equalityExprNode->op = EqualityExprNode::EqualityOp::OP_NOT_EQUAL;
 
-  return concludeNode(equalityExprNode);
+  return concludeExprNode(equalityExprNode);
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+  if (ctx->shiftExpr().size() == 1)
+    return visit(ctx->shiftExpr(0));
+
   const auto relationalExprNode = createNode<RelationalExprNode>(ctx);
 
   // Visit children
@@ -987,10 +1008,13 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   else if (ctx->GREATER_EQUAL())
     relationalExprNode->op = RelationalExprNode::RelationalOp::OP_GREATER_EQUAL;
 
-  return concludeNode(relationalExprNode);
+  return concludeExprNode(relationalExprNode);
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+  if (ctx->additiveExpr().size() == 1)
+    return visit(ctx->additiveExpr(0));
+
   const auto shiftExprNode = createNode<ShiftExprNode>(ctx);
 
   // Visit children
@@ -1021,10 +1045,13 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   }
   assert(!seenFirstLess && !seenFirstGreater);
 
-  return concludeNode(shiftExprNode);
+  return concludeExprNode(shiftExprNode);
 }
 
 std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+  if (ctx->multiplicativeExpr().size() == 1)
+    return visit(ctx->multiplicativeExpr(0));
+
   const auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
 
   // Visit children
@@ -1043,10 +1070,13 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
       assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(additiveExprNode);
+  return concludeExprNode(additiveExprNode);
 }
 
 std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+  if (ctx->castExpr().size() == 1)
+    return visit(ctx->castExpr(0));
+
   const auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
 
   // Visit children
@@ -1067,7 +1097,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
       assert_fail("Invalid terminal symbol for multiplicative expression"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(multiplicativeExprNode);
+  return concludeExprNode(multiplicativeExprNode);
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
@@ -1081,7 +1111,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
     castExprNode->prefixUnaryExpr = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
   }
 
-  return concludeNode(castExprNode);
+  return concludeExprNode(castExprNode);
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
