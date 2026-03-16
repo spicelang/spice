@@ -12,10 +12,21 @@ on:
       - docs/**
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   docs-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Setup GitHub pages
+        uses: actions/configure-pages@v5
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -30,6 +41,15 @@ jobs:
           sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
           pip install -r docs/requirements.txt
 
-      - name: Build and deploy
+      - name: Build
         working-directory: docs
-        run: mkdocs gh-deploy --force
+        run: zensical build --clean
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/site
+
+      - name: Deploy
+        uses: actions/deploy-pages@v4
+        id: docs
