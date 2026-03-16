@@ -10,10 +10,8 @@ digraph {
  L1C15_StmtLstNode -> L2C5_ExprStmtNode;
  L2C5_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L2C5_ExprStmtNode -> L2C5_AssignExprNode;
- L2C5_PostfixUnaryExprNode [color="lightgreen",label="PostfixUnaryExprNode"];
- L2C5_AssignExprNode -> L2C5_PostfixUnaryExprNode;
  L2C5_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
- L2C5_PostfixUnaryExprNode -> L2C5_AtomicExprNode;
+ L2C5_AssignExprNode -> L2C5_AtomicExprNode;
  L2C5_ValueNode [color="lightgreen",label="ValueNode"];
  L2C5_AtomicExprNode -> L2C5_ValueNode;
  L2C5_FctCallNode [color="lightgreen",label="FctCallNode"];
@@ -22,10 +20,8 @@ digraph {
  L2C5_FctCallNode -> L2C12_ArgLstNode;
  L2C12_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L2C12_ArgLstNode -> L2C12_AssignExprNode;
- L2C12_PostfixUnaryExprNode [color="lightgreen",label="PostfixUnaryExprNode"];
- L2C12_AssignExprNode -> L2C12_PostfixUnaryExprNode;
  L2C12_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
- L2C12_PostfixUnaryExprNode -> L2C12_AtomicExprNode;
+ L2C12_AssignExprNode -> L2C12_AtomicExprNode;
  L2C12_ConstantNode [color="lightgreen",label="ConstantNode"];
  L2C12_AtomicExprNode -> L2C12_ConstantNode;
 }

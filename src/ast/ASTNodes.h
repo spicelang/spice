@@ -1826,7 +1826,7 @@ public:
   void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
-  AtomicExprNode *atomicExpr = nullptr;
+  ExprNode *atomicExpr = nullptr;
   ExprNode *postfixUnaryExpr = nullptr;
   AssignExprNode *subscriptIndexExpr = nullptr;
   PostfixUnaryOp op = PostfixUnaryOp::OP_NONE;

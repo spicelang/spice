@@ -1156,10 +1156,13 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+  if (!ctx->postfixUnaryExpr())
+    return visit(ctx->atomicExpr());
+
   const auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
 
   if (ctx->atomicExpr()) {
-    postfixUnaryExprNode->atomicExpr = std::any_cast<AtomicExprNode *>(visit(ctx->atomicExpr()));
+    postfixUnaryExprNode->atomicExpr = std::any_cast<ExprNode *>(visit(ctx->atomicExpr()));
   } else if (ctx->postfixUnaryExpr()) {
     postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->postfixUnaryExpr()));
 
@@ -1216,7 +1219,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(atomicExprNode);
+  return concludeExprNode(atomicExprNode);
 }
 
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
