@@ -1,5 +1,8 @@
 ---
 title: Uninstall subcommand
+tags:
+  - Command Line Interface
+  - Uninstall
 ---
 
 The `uninstall` subcommand can be used to delete an installed executable again.

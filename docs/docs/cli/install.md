@@ -1,5 +1,8 @@
 ---
 title: Install subcommand
+tags:
+  - Command Line Interface
+  - Install
 ---
 
 The `install` subcommand can be used to compile your Spice project to an executable file and copy it to a binary directory in the PATH variable.

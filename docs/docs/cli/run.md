@@ -1,5 +1,8 @@
 ---
 title: Run subcommand
+tags:
+  - Command Line Interface
+  - Run
 ---
 
 The `run` subcommand can be used to compile your Spice project to an executable file and run it immediately.

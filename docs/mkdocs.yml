@@ -22,6 +22,7 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.action.view
+    - content.tabs.link
     - announce.dismiss
   palette:
     - media: "(prefers-color-scheme)"  # System preference

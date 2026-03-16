@@ -1,5 +1,8 @@
 ---
 title: Test subcommand
+tags:
+  - Command Line Interface
+  - Test
 ---
 
 The `test` subcommand can be used to run individual tests or the whole test suite.
