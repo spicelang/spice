@@ -1,0 +1,56 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:5:
+Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 0
+
+4  __get_build_var("test"); // No template typ
+   ^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:5:5:
+Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 2
+
+5  __get_build_var<int, double>("test"); // Too many templa
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:6:5:
+Builtin function argument count mismatch: This builtin expects between 1 and 2 argument(s) argument(s), but got 0
+
+6  __get_build_var<int>(); // No args
+   ^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:7:5:
+Builtin function argument count mismatch: This builtin expects between 1 and 2 argument(s) argument(s), but got 3
+
+7  __get_build_var<bool>("1", false, true); // Too many args
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:8:21:
+Builtin function signature mismatch: Build var type must be string, int or bool
+
+8  __get_build_var<int*>("foo", nil<int*>);
+                   ^^^^
+
+[Error|Semantic] ./source.spice:9:26:
+Builtin function argument type mismatch: Build var name must be a string
+
+9  _get_build_var<int>(123); // Var name no st
+                       ^^^
+
+[Error|Semantic] ./source.spice:10:36:
+Builtin function argument type mismatch: Default value type must be the same as the requested type
+
+10  _var<string>("foo", 123); // Default type m
+                        ^^^
+
+[Error|Semantic] ./source.spice:11:5:
+Builtin function argument type mismatch: Error while parsing the provided value to the requested type
+
+11  __get_build_var<int>("foo"); // Error while par
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:12:29:
+Builtin function argument type mismatch: Build var with this name was not provided
+
+12  t_build_var<string>("non-existing-var"); // Build var not 
+                        ^^^^^^^^^^^^^^^^^^

@@ -134,6 +134,7 @@ public:
   std::any visitBuiltinSyscallCall(FctCallNode *node) const;
   std::any visitBuiltinIsSameCall(FctCallNode *node) const;
   std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
+  std::any visitBuiltinGetBuildVarCall(FctCallNode *node) const;
 
 private:
   // Private members

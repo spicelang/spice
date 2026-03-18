@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <typechecker/Builtins.h>
@@ -276,6 +277,59 @@ std::any TypeChecker::visitBuiltinImplementsInterfaceCall(FctCallNode *node) con
   node->setCompileTimeValue({.boolValue = value}, manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinGetBuildVarCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_GET_BUILD_VAR);
+
+  const DataTypeNode *requestedTypeNode = node->templateTypeLst->dataTypes.front();
+  const QualType requestedType = requestedTypeNode->getEvaluatedSymbolType(manIdx);
+  if (!requestedType.isOneOf({TY_STRING, TY_INT, TY_BOOL}))
+    SOFT_ERROR_ER(requestedTypeNode, BUILTIN_SIGNATURE_MISMATCH, "Build var type must be string, int or bool")
+
+  const ExprNode *varNameNode = node->argLst->args.at(0);
+  const QualType varNameType = varNameNode->getEvaluatedSymbolType(manIdx);
+  if (!varNameType.is(TY_STRING))
+    SOFT_ERROR_ER(varNameNode, BUILTIN_ARG_TYPE_MISMATCH, "Build var name must be a string")
+
+  const bool hasDefaultValue = node->argLst->args.size() == 2;
+  CompileTimeValue defaultValue;
+  if (hasDefaultValue) {
+    const ExprNode *defaultValueNode = node->argLst->args.at(1);
+    const QualType defaultValueType = defaultValueNode->getEvaluatedSymbolType(manIdx);
+    if (!defaultValueType.matches(requestedType, false, true, true))
+      SOFT_ERROR_ER(defaultValueNode, BUILTIN_ARG_TYPE_MISMATCH, "Default value type must be the same as the requested type")
+    defaultValue = defaultValueNode->getCompileTimeValue(manIdx);
+  }
+
+  const size_t stringValueOffset = varNameNode->getCompileTimeValue(manIdx).stringValueOffset;
+  const std::string &varName = resourceManager.compileTimeStringValues.at(stringValueOffset);
+  const auto it = cliOptions.buildVars.find(varName);
+  if (it != cliOptions.buildVars.end()) {
+    try {
+      if (requestedType.is(TY_STRING)) {
+        const size_t value = resourceManager.compileTimeStringValues.size();
+        resourceManager.compileTimeStringValues.push_back(it->second);
+        node->setCompileTimeValue({.stringValueOffset = value}, manIdx);
+      } else if (requestedType.is(TY_INT)) {
+        const int value = std::stoi(it->second);
+        node->setCompileTimeValue({.intValue = value}, manIdx);
+      } else if (requestedType.is(TY_BOOL)) {
+        const bool value = it->second == "true";
+        node->setCompileTimeValue({.boolValue = value}, manIdx);
+      }
+    } catch (const std::invalid_argument &) {
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, "Error while parsing the provided value to the requested type")
+    } catch (const std::out_of_range &) {
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, "Error while parsing the provided value to the requested type")
+    }
+  } else {
+    if (!hasDefaultValue)
+      SOFT_ERROR_ER(varNameNode, BUILTIN_ARG_TYPE_MISMATCH, "Build var with this name was not provided");
+    node->setCompileTimeValue(defaultValue, manIdx);
+  }
+
+  return ExprResult{node->setEvaluatedSymbolType(requestedType, manIdx)};
 }
 
 } // namespace spice::compiler

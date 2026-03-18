@@ -44,7 +44,7 @@ void TestUtil::parseTestArgs(const std::filesystem::path &sourceCodePath, std::v
   const std::string argString = CommonUtil::trim(firstLine.substr(colonPos + 1));
   for (const std::string &arg : CommonUtil::split(argString)) {
     const std::string trimmedArg = CommonUtil::trim(arg);
-    if (trimmedArg.length() > 0)
+    if (!trimmedArg.empty())
       args.push_back(trimmedArg);
   }
 }

@@ -1,0 +1,8 @@
+// TEST: -b git-hash=69b759385b4a84d1fd8d8a8ed38c8e9def98b9f8 -b built-by=ghactions -b version=0.25.0 -b ci-run
+
+f<int> main() {
+    printf("Git Hash: %s\n", __get_build_var<string>("git-hash"));
+    printf("Built by: %s\n", __get_build_var<string>("built-by"));
+    printf("Version: %s\n", __get_build_var<string>("version"));
+    printf("Is CI run: %s\n", __get_build_var<bool>("ci-run", false) ? "yes" : "no");
+}

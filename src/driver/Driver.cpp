@@ -65,7 +65,8 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
     // Set output path and dir
     if (shouldExecute) {
       cliOptions.execute = true;
-      const uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      const uint64_t millis =
+          duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
       cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     } else if (!cliOptions.outputPath.empty()) {
@@ -345,6 +346,24 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
 
     return true;
   };
+  const auto buildVarCallback = [&](const std::vector<std::string> &inputs) {
+    for (const std::string &input : inputs) {
+      // Skip empty inputs
+      if (input.empty())
+        continue;
+
+      // Parse structure: "key=value". If no value given, save "true" as value.
+      const size_t splitPos = input.find_first_of('=');
+      if (splitPos != std::string::npos) {
+        const std::string key = input.substr(0, splitPos);
+        const std::string value = input.substr(splitPos + 1);
+        cliOptions.buildVars[key] = value;
+      } else {
+        cliOptions.buildVars[input] = "true";
+      }
+    }
+    return true;
+  };
 
   // --build-mode
   subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode: debug (default), release, test");
@@ -352,6 +371,10 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+  // --build-var
+  CLI::Option *buildVarOption = subCmd->add_option_function<std::vector<std::string>>(
+      "--build-var,-b", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
+  buildVarOption->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
   // --ignore-cache
   subCmd->add_flag<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
   // --use-lifetime-markers

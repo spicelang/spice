@@ -1,0 +1,13 @@
+// TEST: -b foo=bar -b bool-var -b "this=is a long value"
+
+f<int> main() {
+    __get_build_var("test"); // No template types
+    __get_build_var<int, double>("test"); // Too many template types
+    __get_build_var<int>(); // No args
+    __get_build_var<bool>("1", false, true); // Too many args
+    __get_build_var<int*>("foo", nil<int*>); // Invalid requested type
+    __get_build_var<int>(123); // Var name no string
+    __get_build_var<string>("foo", 123); // Default type mismatch
+    __get_build_var<int>("foo"); // Error while parsing
+    __get_build_var<string>("non-existing-var"); // Build var not provided
+}
