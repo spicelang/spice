@@ -1,5 +1,8 @@
 // TEST: -b foo=bar -b bool-var -b "this=is a long value"
 
+f<string> getName() { return "name"; }
+f<string> getDefaultValue() { return "default value"; }
+
 f<int> main() {
     __get_build_var("test"); // No template types
     __get_build_var<int, double>("test"); // Too many template types
@@ -10,4 +13,6 @@ f<int> main() {
     __get_build_var<string>("foo", 123); // Default type mismatch
     __get_build_var<int>("foo"); // Error while parsing
     __get_build_var<string>("non-existing-var"); // Build var not provided
+    __get_build_var<string>(getName()); // Name not known at compile time
+    __get_build_var<string>("name", getDefaultValue()); // Default value not known at compile time
 }

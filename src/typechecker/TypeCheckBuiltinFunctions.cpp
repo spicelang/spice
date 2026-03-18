@@ -291,6 +291,8 @@ std::any TypeChecker::visitBuiltinGetBuildVarCall(FctCallNode *node) const {
   const QualType varNameType = varNameNode->getEvaluatedSymbolType(manIdx);
   if (!varNameType.is(TY_STRING))
     SOFT_ERROR_ER(varNameNode, BUILTIN_ARG_TYPE_MISMATCH, "Build var name must be a string")
+  if (!varNameNode->hasCompileTimeValue(manIdx))
+    SOFT_ERROR_ER(varNameNode, EXPECTED_COMPILE_TIME_VALUE, "Var name must be known at compile time")
 
   const bool hasDefaultValue = node->argLst->args.size() == 2;
   CompileTimeValue defaultValue;
@@ -299,6 +301,8 @@ std::any TypeChecker::visitBuiltinGetBuildVarCall(FctCallNode *node) const {
     const QualType defaultValueType = defaultValueNode->getEvaluatedSymbolType(manIdx);
     if (!defaultValueType.matches(requestedType, false, true, true))
       SOFT_ERROR_ER(defaultValueNode, BUILTIN_ARG_TYPE_MISMATCH, "Default value type must be the same as the requested type")
+    if (!defaultValueNode->hasCompileTimeValue(manIdx))
+      SOFT_ERROR_ER(defaultValueNode, EXPECTED_COMPILE_TIME_VALUE, "Default value must be known at compile time")
     defaultValue = defaultValueNode->getCompileTimeValue(manIdx);
   }
 

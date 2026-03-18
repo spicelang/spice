@@ -1,5 +1,5 @@
+const string SPICE_VERSION = __get_build_var<string>("SPICE_VERSION", "dev");
+
 f<int> main() {
-    dyn valueFoo = __get_build_var<string>("foo", "default");
-    dyn valueBar = __get_build_var<int>("bar", 0);
-    printf("foo: %s, bar: %d", valueFoo, valueBar);
+    printf("%s", SPICE_VERSION);
 }

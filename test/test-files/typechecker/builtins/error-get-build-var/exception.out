@@ -1,56 +1,68 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./source.spice:4:5:
+[Error|Semantic] ./source.spice:7:5:
 Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 0
 
-4  __get_build_var("test"); // No template typ
+7  __get_build_var("test"); // No template typ
    ^^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:5:5:
+[Error|Semantic] ./source.spice:8:5:
 Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 2
 
-5  __get_build_var<int, double>("test"); // Too many templa
+8  __get_build_var<int, double>("test"); // Too many templa
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:6:5:
+[Error|Semantic] ./source.spice:9:5:
 Builtin function argument count mismatch: This builtin expects between 1 and 2 argument(s) argument(s), but got 0
 
-6  __get_build_var<int>(); // No args
+9  __get_build_var<int>(); // No args
    ^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:7:5:
+[Error|Semantic] ./source.spice:10:5:
 Builtin function argument count mismatch: This builtin expects between 1 and 2 argument(s) argument(s), but got 3
 
-7  __get_build_var<bool>("1", false, true); // Too many args
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10  __get_build_var<bool>("1", false, true); // Too many args
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:8:21:
+[Error|Semantic] ./source.spice:11:21:
 Builtin function signature mismatch: Build var type must be string, int or bool
 
-8  __get_build_var<int*>("foo", nil<int*>);
-                   ^^^^
+11  __get_build_var<int*>("foo", nil<int*>);
+                    ^^^^
 
-[Error|Semantic] ./source.spice:9:26:
+[Error|Semantic] ./source.spice:12:26:
 Builtin function argument type mismatch: Build var name must be a string
 
-9  _get_build_var<int>(123); // Var name no st
-                       ^^^
-
-[Error|Semantic] ./source.spice:10:36:
-Builtin function argument type mismatch: Default value type must be the same as the requested type
-
-10  _var<string>("foo", 123); // Default type m
+12  _get_build_var<int>(123); // Var name no st
                         ^^^
 
-[Error|Semantic] ./source.spice:11:5:
+[Error|Semantic] ./source.spice:13:36:
+Builtin function argument type mismatch: Default value type must be the same as the requested type
+
+13  _var<string>("foo", 123); // Default type m
+                        ^^^
+
+[Error|Semantic] ./source.spice:14:5:
 Builtin function argument type mismatch: Error while parsing the provided value to the requested type
 
-11  __get_build_var<int>("foo"); // Error while par
+14  __get_build_var<int>("foo"); // Error while par
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:12:29:
+[Error|Semantic] ./source.spice:15:29:
 Builtin function argument type mismatch: Build var with this name was not provided
 
-12  t_build_var<string>("non-existing-var"); // Build var not 
+15  t_build_var<string>("non-existing-var"); // Build var not 
                         ^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:16:29:
+Expected compile time value: Var name must be known at compile time
+
+16  t_build_var<string>(getName()); // Name not known
+                        ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:17:37:
+Expected compile time value: Default value must be known at compile time
+
+17  var<string>("name", getDefaultValue()); // Default value 
+                        ^^^^^^^^^^^^^^^^^

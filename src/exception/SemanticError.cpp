@@ -222,6 +222,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Expected a struct type";
   case EXPECTED_INTERFACE_TYPE:
     return "Expected an interface type";
+  case EXPECTED_COMPILE_TIME_VALUE:
+    return "Expected compile time value";
   case ALIAS_WITH_TEMPLATE_LIST:
     return "Alias with template list";
   case INTERFACE_WITH_TEMPLATE_LIST:
