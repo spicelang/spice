@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(Spice)
 
-# Set constants
+project(Spice
+    DESCRIPTION "Spice Programming Language"
+    HOMEPAGE_URL "https://www.spicelang.com"
+    LANGUAGES CXX
+)
+
+# CMake settings
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Set LLVM_DIR
 set(LLVM_DIR $ENV{LLVM_DIR})
 
-# Include cli options parsing
+# Include cmake options parsing
 include(Options.cmake)
 
 # Include conditional settings

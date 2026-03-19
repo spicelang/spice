@@ -1,36 +1,31 @@
-# Set ANTLR grammar
-antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/../src/Spice.g4 VISITOR PACKAGE spice::compiler)
+################ spicetest executable ################
 
 set(SOURCES
+        # Test fixture
         main.cpp
-        driver/TestDriver.cpp
         TestRunner.cpp
+        driver/TestDriver.cpp
         util/TestUtil.cpp
+        # Unit tests
         unittest/UnitBlockAllocator.cpp
         unittest/UnitCommonUtil.cpp
         unittest/UnitFileUtil.cpp
         unittest/UnitSystemUtil.cpp
-        unittest/UnitDriver.cpp)
-
-add_executable(spicetest ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
-
-# Enable pedantic warnings
-target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
-
-# Include Antlr components
-include_directories(
-        ${ANTLR_Spice_OUTPUT_DIR}
-        ../lib/antlr4/runtime/Cpp/runtime/src
+        unittest/UnitDriver.cpp
 )
 
+add_executable(spicetest ${SOURCES})
+# Link with spicecore, gtest, gmock, antlr and llvm
+target_link_libraries(spicetest PUBLIC spicecore gtest gmock ${LLVM_LIBS})
+# Enable pedantic warnings
+target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
+# Add test for IDEs
 add_test(NAME spicetest COMMAND spicetest)
-target_link_libraries(spicetest PUBLIC spicecore gtest gmock antlr4_static ${LLVM_LIBS})
 
-# Test files symlink
+# Symlinks
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)
+file(CREATE_LINK ${CMAKE_SOURCE_DIR}/src-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/bootstrap SYMBOLIC)
 
-# Bootstrap compiler symlink
-file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/../src-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/bootstrap SYMBOLIC)
+################# spicetest_leakcheck ################
 
-# Add leak check target
-add_custom_target(spicetestleakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spicetest DEPENDS spicetest)
+add_custom_target(spicetest_leakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spicetest DEPENDS spicetest)

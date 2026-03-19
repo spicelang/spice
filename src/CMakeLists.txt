@@ -1,9 +1,7 @@
-# Set ANTLR grammar
-antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
+#################### libspicecore ####################
 
 set(SOURCES
         # Global source files
-        main.cpp
         CompilerPass.cpp
         SourceFile.cpp
         # Global resource
@@ -103,19 +101,23 @@ set(SOURCES
         util/RawStringOStream.cpp
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+# Initialize ANTLR
+antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
+# Create libspicecore library
+add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+# Link ANTLR publicly
+target_link_libraries(spicecore PUBLIC antlr4_static)
+# Include ANTLR components
+target_include_directories(spicecore SYSTEM PUBLIC ${ANTLR4_INCLUDE_DIRS} ${ANTLR_Spice_OUTPUT_DIR})
 
+################## spice executable ##################
+
+add_executable(spice main.cpp)
+# Link with spicecore, antlr and llvm
+target_link_libraries(spice PRIVATE spicecore ${LLVM_LIBS})
 # Enable pedantic warnings
 target_compile_options(spice PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
 
-# Include Antlr components
-include_directories(
-        ${ANTLR_Spice_OUTPUT_DIR}
-        ../lib/antlr4/runtime/Cpp/runtime/src
-)
+################### spice_leakcheck ##################
 
-target_link_libraries(spice antlr4_static ${LLVM_LIBS})
-add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
-
-# Add leak check target
-add_custom_target(spiceleakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spice DEPENDS spice)
+add_custom_target(spice_leakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spice DEPENDS spice)
