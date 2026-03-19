@@ -19,7 +19,7 @@ set(SOURCES
 )
 
 add_executable(spicetest ${SOURCES})
-# Link with spicecore, gtest, gmock, antlr and llvm
+# Link with spicecore, gtest, gmock and llvm
 target_link_libraries(spicetest PRIVATE spicecore GTest::gtest GTest::gmock ${LLVM_LIBS})
 # Enable pedantic warnings
 target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)

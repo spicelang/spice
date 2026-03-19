@@ -1,5 +1,6 @@
 # Initialize ANTLR
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+add_definitions(-DANTLR4CPP_STATIC)
 include(ExternalAntlr4Cpp)
 set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antlr-4.13.2-complete.jar)
 find_package(ANTLR REQUIRED)
@@ -112,10 +113,20 @@ set(SOURCES
 antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
 # Create libspicecore library
 add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
-# Link ANTLR publicly
+# Add the current directory as include dir
+target_include_directories(spicecore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# Link ANTLR
 target_link_libraries(spicecore PUBLIC antlr4_static)
-# Include ANTLR components
-target_include_directories(spicecore SYSTEM PUBLIC ${ANTLR4_INCLUDE_DIRS} ${ANTLR_Spice_OUTPUT_DIR})
+# Add include directories
+target_include_directories(spicecore
+    SYSTEM PUBLIC
+        ${ANTLR4_INCLUDE_DIRS}
+        ${ANTLR_Spice_OUTPUT_DIR}
+        ${LLVM_INCLUDE_DIRS}
+)
+# Add LLVM compile definitions
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+target_compile_definitions(spicecore PRIVATE ${LLVM_DEFINITIONS_LIST})
 # Enable pedantic warnings
 target_compile_options(spicecore PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
 
