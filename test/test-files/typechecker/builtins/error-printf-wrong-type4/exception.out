@@ -1,8 +1,0 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
-
-[Error|Semantic] ./source.spice:5:18:
-Types of printf call not matching: The placeholder string expects pointer, array or string, but got NotAPointer
-
-5  printf("%p", nonPtr);
-                ^^^^^^

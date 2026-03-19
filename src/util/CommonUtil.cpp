@@ -100,7 +100,7 @@ std::string CommonUtil::demangleTypeName(const char *mangledName) {
     std::string result(demangled);
     free(demangled);
     return result;
-  }
+  } // LCOV_EXCL_LINE - False positive
   return mangledName;
 }
 

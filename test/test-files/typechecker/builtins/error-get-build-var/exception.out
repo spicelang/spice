@@ -66,3 +66,9 @@ Expected compile time value: Default value must be known at compile time
 
 17  var<string>("name", getDefaultValue()); // Default value 
                         ^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:18:5:
+Builtin function argument type mismatch: Error while parsing the provided value to the requested type
+
+18  __get_build_var<int>("invalid"); // Parsing error
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

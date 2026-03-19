@@ -1,8 +1,0 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
-
-[Error|Semantic] ./source.spice:2:18:
-Types of printf call not matching: The placeholder string expects int, short, long, byte or bool, but got double
-
-2  printf("%d", 6.23456);
-                ^^^^^^^

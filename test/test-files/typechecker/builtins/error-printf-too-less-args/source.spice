@@ -1,3 +1,0 @@
-f<int> main() {
-    printf("Test: %d, %f", 3);
-}
