@@ -84,14 +84,15 @@ void execTestCase(const TestCase &testCase) {
       /* disableVerifier= */ false,
       /* testMode= */ true,
       /* comparableOutput= */ true,
+      /* buildVars= */ {},
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
 #if defined(__clang__) && defined(__apple_build_version__)
   // some std types for Apple Clang are smaller than for GCC and Clang
-  static_assert(sizeof(CliOptions) == 288, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 312, "CliOptions struct size changed");
 #else
-  static_assert(sizeof(CliOptions) == 392, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 440, "CliOptions struct size changed");
 #endif
 
   // Parse test args

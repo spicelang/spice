@@ -1,3 +1,5 @@
+// TEST: -b SPICE_VERSION=0.25.0 -b SPICE_TARGET_OS=linux -b SPICE_TARGET_ARCH=amd64 -b SPICE_GIT_HASH=69b759385b4a84d1fd8d8a8ed38c8e9def98b9f8 -b SPICE_BUILT_BY=ghactions
+
 import "std/data/vector";
 
 import "bootstrap/util/common-util";

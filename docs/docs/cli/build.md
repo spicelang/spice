@@ -43,6 +43,7 @@ You can apply following options to the `build` subcommand:
 | `-m`         | `--build-mode`            | Controls the build mode. <br> Valid values: `debug` (default), `release` and `test`.                                 |
 | `-lto`       | -                         | Enable link-time-optimization                                                                                        |
 | `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc.                                                             |
+| `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                                           |
 | -            | `--sanitize`              | Enable instrumentation for sanitizer. <br> Valid values: `none` (default), `address`, `thread`, `memory` and `type`. |
 | -            | `--static`                | Produce stand-alone executable by linking statically                                                                 |
 | -            | `--no-entry`              | Do not require or generate main function (useful for web assembly target)                                            |

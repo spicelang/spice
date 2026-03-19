@@ -39,5 +39,6 @@ You can apply following options to the `install` subcommand:
 | `-o`         | `--output`                | Set path for executable output.                                                                |
 | `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz` |
 | `-m`         | `--build-mode`            | Controls the build mode. <br> Valid values: `debug` (default) and `release`                    |
+| `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                     |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                    |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |

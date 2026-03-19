@@ -109,6 +109,7 @@ struct CliOptions {
   bool disableVerifier = false;
   bool testMode = false;
   bool comparableOutput = false;
+  std::map<std::string, std::string> buildVars;
 };
 
 /**

@@ -41,6 +41,7 @@ static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
 // Undocumented builtins (intended to be primarily used via std wrapper functions)
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr std::string_view BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
+static constexpr std::string_view BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_var";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -67,7 +68,7 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinAlignOfCall,
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
-          .allTemplateTypesOrAllArgTypes = true,
+            .allTemplateTypesOrAllArgTypes = true,
         },
     },
     BuiltinFunctionEntry{
@@ -76,7 +77,7 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeIdCall,
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
-          .allTemplateTypesOrAllArgTypes = true,
+            .allTemplateTypesOrAllArgTypes = true,
         },
     },
     BuiltinFunctionEntry{
@@ -124,7 +125,16 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .maxTemplateTypes = 2,
         },
     },
-};
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_GET_BUILD_VAR,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinGetBuildVarCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+            .minArgTypes = 1,
+            .maxArgTypes = 2,
+        },
+    }};
 
 static const std::unordered_map<std::string_view, BuiltinFunctionInfo> BUILTIN_FUNCTIONS_MAP = [] {
   std::unordered_map<std::string_view, BuiltinFunctionInfo> map;

@@ -6,12 +6,6 @@ import "std/text/stringstream";
 import "bootstrap/source-file-intf";
 import "bootstrap/bindings/llvm/llvm" as llvm;
 
-const string SPICE_VERSION = "0.22.5";
-const string SPICE_TARGET_OS = "linux";
-const string SPICE_TARGET_ARCH = "amd64";
-const string SPICE_GIT_HASH = "45fa32083223a49e07259661d3a7130326bb0bfe";
-const string SPICE_BUILT_BY = "GitHub Actions";
-
 /**
  * Split the given haystack by the needle and return the last fragment
  *
@@ -52,11 +46,17 @@ public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sour
  * @return Version info string
  */
 public f<String> buildVersionInfo() {
+    const string version = __get_build_var<string>("SPICE_VERSION", "dev");
+    const string targetOs = __get_build_var<string>("SPICE_TARGET_OS", "dev");
+    const string targetArch = __get_build_var<string>("SPICE_TARGET_ARCH", "dev");
+    const string gitHash = __get_build_var<string>("SPICE_GIT_HASH", "dev");
+    const string builtBy = __get_build_var<string>("SPICE_BUILT_BY", "dev");
+
     StringStream versionString;
-    versionString << "Spice version: " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << endl();
-    versionString << "Git hash:      " << SPICE_GIT_HASH << endl();
+    versionString << "Spice version: " << version << " " << targetOs << "/" << targetArch << endl();
+    versionString << "Git hash:      " << gitHash << endl();
     versionString << "LLVM version:  " << llvm::getVersionString() << endl();
-    versionString << "built by:      " << SPICE_BUILT_BY << endl() << endl();
+    versionString << "built by:      " << builtBy << endl() << endl();
     versionString << "(c) Marc Auberer 2021-2026";
     String str = versionString.str();
     return str;

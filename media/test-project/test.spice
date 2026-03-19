@@ -1,3 +1,5 @@
+const string SPICE_VERSION = __get_build_var<string>("SPICE_VERSION", "dev");
+
 f<int> main() {
-    printf("Hello World!");
+    printf("%s", SPICE_VERSION);
 }
