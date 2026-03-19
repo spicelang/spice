@@ -141,7 +141,7 @@ static const std::unordered_map<std::string_view, BuiltinFunctionInfo> BUILTIN_F
   for (const auto &[name, info] : BUILTIN_FUNCTIONS)
     map.emplace(name, info);
   return map;
-}();
+}(); // LCOV_EXCL_LINE - Coverage tool false positive
 
 // Validate builtins at compile time
 static consteval bool validateBuiltins() {

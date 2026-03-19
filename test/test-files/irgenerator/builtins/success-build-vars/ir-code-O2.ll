@@ -7,15 +7,20 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [10 x i8] c"ghactions\00", align 4
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"Version: %s\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [7 x i8] c"0.25.0\00", align 4
-@printf.str.3 = private unnamed_addr constant [15 x i8] c"Is CI run: %s\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [18 x i8] c"Build number: %d\0A\00", align 4
+@printf.str.4 = private unnamed_addr constant [15 x i8] c"Is CI run: %s\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [4 x i8] c"yes\00", align 4
+@printf.str.5 = private unnamed_addr constant [15 x i8] c"Is signed: %s\0A\00", align 4
+@anon.string.6 = private unnamed_addr constant [3 x i8] c"no\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #0 {
   %1 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr noundef nonnull @anon.string.0)
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, ptr noundef nonnull @anon.string.1)
   %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, ptr noundef nonnull @anon.string.2)
-  %4 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr noundef nonnull @anon.string.3)
+  %4 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 noundef 12)
+  %5 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, ptr noundef nonnull @anon.string.3)
+  %6 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, ptr noundef nonnull @anon.string.6)
   ret i32 0
 }
 

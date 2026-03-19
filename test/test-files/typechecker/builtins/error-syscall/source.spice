@@ -1,0 +1,5 @@
+f<int> main() {
+    syscall('c'); // Invalid syscall number type
+    syscall(-1s); // Syscall number too small
+    syscall(450s); // Syscall number too large
+}

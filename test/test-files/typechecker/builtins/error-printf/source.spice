@@ -1,0 +1,14 @@
+type NotAPointer struct {}
+
+f<int> main() {
+    printf("Test: %d, %f", 3); // Too less args
+    printf("Test", 3); // Too many args
+    printf("This is a string: %c", "test"); // Wrong value type for placeholder 1
+    printf("%d", 6.23456); // Wrong value type for placeholder 2
+    printf("%f", true); // Wrong value type for placeholder 3
+    dyn integer = 1;
+    printf("%s", &integer); // Wrong value type for placeholder 4
+    NotAPointer nonPtr = NotAPointer {};
+    printf("%p", nonPtr); // Wrong value type for placeholder 5
+    printf("%y", 23); // Invalid placeholder
+}

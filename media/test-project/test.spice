@@ -1,5 +1,3 @@
-const string SPICE_VERSION = __get_build_var<string>("SPICE_VERSION", "dev");
-
 f<int> main() {
-    printf("%s", SPICE_VERSION);
+    printf("%y", 23); // Invalid placeholder
 }

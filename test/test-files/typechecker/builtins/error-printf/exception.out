@@ -1,0 +1,50 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:5:
+Printf arg number not matching template string: The placeholder string contains more placeholders than arguments
+
+4  printf("Test: %d, %f", 3); // Too less args
+   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:5:5:
+Printf arg number not matching template string: The placeholder string contains less placeholders than arguments
+
+5  printf("Test", 3); // Too many args
+   ^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:6:36:
+Types of printf call not matching: The placeholder string expects char, but got string
+
+6  s is a string: %c", "test"); // Wrong value ty
+                       ^^^^^^
+
+[Error|Semantic] ./source.spice:7:18:
+Types of printf call not matching: The placeholder string expects int, short, long, byte or bool, but got double
+
+7  printf("%d", 6.23456); // Wrong value ty
+                ^^^^^^^
+
+[Error|Semantic] ./source.spice:8:18:
+Types of printf call not matching: The placeholder string expects double, but got bool
+
+8  printf("%f", true); // Wrong value ty
+                ^^^^
+
+[Error|Semantic] ./source.spice:10:18:
+Types of printf call not matching: The placeholder string expects string, String, char* or char[], but got int*
+
+10  printf("%s", &integer); // Wrong value ty
+                 ^^^^^^^^
+
+[Error|Semantic] ./source.spice:12:18:
+Types of printf call not matching: The placeholder string expects pointer, array or string, but got NotAPointer
+
+12  printf("%p", nonPtr); // Wrong value ty
+                 ^^^^^^
+
+[Error|Semantic] ./source.spice:13:5:
+Types of printf call not matching: The placeholder string contains an invalid placeholder
+
+13  printf("%y", 23); // Invalid placeho
+    ^^^^^^^^^^^^^^^^
