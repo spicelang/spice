@@ -13,27 +13,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Set LLVM_DIR
-set(LLVM_DIR $ENV{LLVM_DIR})
-
-# Include cmake options parsing
-include(Options.cmake)
-
-# Include conditional settings
+# Set more CMake settings conditionally
 include(Conditionals.cmake)
 
-# Find ANTLR
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
-add_definitions(-DANTLR4CPP_STATIC)
-include(ExternalAntlr4Cpp)
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.13.2-complete.jar)
-find_package(ANTLR REQUIRED)
-message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
-
-# Find Google Test and Google Mock
-add_subdirectory(lib/googletest)
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+# Parse CMake args
+include(Options.cmake)
 
 # Find LLVM
 find_package(LLVM REQUIRED CONFIG)

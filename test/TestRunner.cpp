@@ -238,6 +238,7 @@ void execTestCase(const TestCase &testCase) {
       // Prepare and run linker
       resourceManager.linker.prepare();
       resourceManager.linker.run();
+      resourceManager.linker.cleanup();
     }
 
     // Check type registry output

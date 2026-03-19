@@ -1,3 +1,7 @@
+# Initialize GTest
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(GTest REQUIRED)
+
 ################ spicetest executable ################
 
 set(SOURCES
@@ -16,7 +20,7 @@ set(SOURCES
 
 add_executable(spicetest ${SOURCES})
 # Link with spicecore, gtest, gmock, antlr and llvm
-target_link_libraries(spicetest PUBLIC spicecore gtest gmock ${LLVM_LIBS})
+target_link_libraries(spicetest PRIVATE spicecore GTest::gtest GTest::gmock ${LLVM_LIBS})
 # Enable pedantic warnings
 target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
 # Add test for IDEs
