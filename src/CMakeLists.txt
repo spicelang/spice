@@ -42,7 +42,7 @@ set(SOURCES
         typechecker/TypeCheckerTopLevelDefinitionsCheck.cpp
         typechecker/TypeCheckerControlStructures.cpp
         typechecker/TypeCheckerStatements.cpp
-        typechecker/TypeCheckBuiltinFunctions.cpp
+        typechecker/TypeCheckerBuiltinFunctions.cpp
         typechecker/TypeCheckerExpressions.cpp
         typechecker/TypeCheckerValues.cpp
         typechecker/TypeCheckMeta.cpp
