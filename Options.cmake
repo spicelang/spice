@@ -48,6 +48,7 @@ execute_process(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE SPICE_GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
 )
 if (NOT SPICE_GIT_HASH)
     set(SPICE_GIT_HASH "dev" CACHE STRING "Spice Git hash")
@@ -105,7 +106,7 @@ if (SPICE_PROF_COMPILE)
     message(STATUS "Spice: Profiler build for Spice is enabled.")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -fno-omit-frame-pointer -O0")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g -fno-omit-frame-pointer -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -g -fno-omit-frame-pointer -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -fno-omit-frame-pointer -O0")
 else ()
     message(STATUS "Spice: Profiler build for Spice is disabled.")
 endif ()
