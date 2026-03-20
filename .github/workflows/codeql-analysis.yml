@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Configure selected GCC version as default
@@ -66,9 +66,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build Test target
         env:

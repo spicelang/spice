@@ -23,6 +23,11 @@ builds:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
 
+upx:
+  - enabled: true
+    compress: best
+    lzma: true
+
 dockers_v2:
   - images:
       - "chillibits/spice"
@@ -67,6 +72,7 @@ nfpms:
       - apk
       - deb
       - rpm
+      - archlinux
     dependencies:
       - build-essential
       - clang
