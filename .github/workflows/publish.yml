@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Configure selected GCC version as default
@@ -63,9 +63,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build compiler
         env:
@@ -104,7 +102,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Configure selected GCC version as default
@@ -144,9 +142,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build compiler
         env:
@@ -183,7 +179,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Setup latest GCC
@@ -265,7 +261,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Setup Mold
@@ -294,9 +290,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build compiler
         env:
@@ -368,6 +362,11 @@ jobs:
           username: chillibits
           password: ${{ secrets.DOCKER_HUB_SECRET }}
 
+      - name: Setup UPX
+        run: |
+          sudo apt-get update
+          sudo apt-get install upx
+
       - name: Download all artifacts of compiler build
         uses: actions/download-artifact@v8
         with:
@@ -388,6 +387,9 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
       - uses: actions/upload-artifact@v7
         with:

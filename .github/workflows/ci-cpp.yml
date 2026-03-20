@@ -7,14 +7,6 @@ on:
       - 'docs/**'
       - 'media/**'
       - '**.md'
-#  pull_request:
-#    branches:
-#      - main
-#      - feature/**
-#    paths-ignore:
-#      - 'docs/**'
-#      - 'media/**'
-#      - '**.md'
 
 env:
   LLVM_VERSION: "llvmorg-22.1.1"
@@ -33,7 +25,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Configure selected GCC version as default
@@ -81,9 +73,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build test target
 #        if: github.event_name != 'pull_request'
@@ -92,7 +82,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest
 
 #      - name: Build Test target
@@ -102,7 +92,7 @@ jobs:
 #        run: |
 #          mkdir ./build
 #          cd ./build
-#          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_PROF_COMPILE=ON -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+#          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -DSPICE_PROF_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
 #          cmake --build . --target spicetest
 
       - name: Run Test target
@@ -156,7 +146,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Configure selected GCC version as default
@@ -196,9 +186,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build test target
         env:
@@ -206,7 +194,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest
 
       - name: Run Test target
@@ -231,7 +219,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Setup Ninja
@@ -280,7 +268,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -GNinja -Wattributes ..
           cmake --build . --target spicetest
 
       - name: Run Test target
@@ -309,7 +297,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: zulu
-          java-version: 21
+          java-version: 25
           java-package: jre
 
       - name: Setup Mold
@@ -339,13 +327,11 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
-        run: |
-          chmod +x setup-libs.sh
-          ./setup-libs.sh
+        run: ./setup-libs.sh
 
       - name: Build test target
         env:
@@ -353,7 +339,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest
 
       - name: Run Test target
