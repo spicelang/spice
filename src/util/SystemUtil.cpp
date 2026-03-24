@@ -51,14 +51,8 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
   while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
     result << buffer.data();
 
-#if OS_UNIX
-  const int exitCode = pclose(pipe) / 256;
-#elif OS_WINDOWS
-  const int exitCode = _pclose(pipe);
-#else
-#error "Unsupported platform"
-#endif
-  return {result.str(), exitCode};
+  const int status = pclose(pipe);
+  return {result.str(), transformStatusToExitCode(status)};
 }
 
 /**
@@ -75,7 +69,8 @@ bool SystemUtil::isCommandAvailable(const std::string &cmd) {
 #else
 #error "Unsupported platform"
 #endif
-  return std::system(checkCmd.c_str()) == 0;
+  const int status = std::system(checkCmd.c_str());
+  return transformStatusToExitCode(status) == EXIT_SUCCESS;
 }
 
 /**
@@ -251,6 +246,31 @@ size_t SystemUtil::getSystemPageSize() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return static_cast<size_t>(si.dwPageSize);
+#else
+#error "Unsupported platform"
+#endif
+}
+
+/**
+ * Transform pclose status to process exit code.
+ * The implementation is OS dependent.
+ *
+ * @param status Result of pclose
+ * @return Process exit code
+ */
+int SystemUtil::transformStatusToExitCode(int status) {
+#if OS_UNIX
+  // Invalid status -> invalid exit code
+  if (status == -1)
+    return -1;
+  // process terminated by signal
+  if (WIFSIGNALED(status))
+    return 128 + WTERMSIG(status);
+  // Process terminated normally
+  assert(WIFEXITED(status));
+  return WEXITSTATUS(status);
+#elif OS_WINDOWS
+  return status;
 #else
 #error "Unsupported platform"
 #endif

@@ -34,6 +34,7 @@ public:
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
   static size_t getSystemPageSize();
+  static int transformStatusToExitCode(int status);
 };
 
 } // namespace spice::compiler

@@ -222,9 +222,10 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Do linking and conclude compilation
-    const bool needsNormalRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsNormalRunForOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsNormalRunForExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
     const bool needsDebuggerRun = TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
-    if (needsNormalRun || needsDebuggerRun) {
+    if (needsNormalRunForOutput || needsNormalRunForExitCode || needsDebuggerRun) {
       // Emit main source file object if not done already
       if (!objectFilesEmitted)
         mainSourceFile->runObjectEmitter();
@@ -253,8 +254,9 @@ void execTestCase(const TestCase &testCase) {
       return cacheStats.str();
     });
 
-    // Check if the execution output matches the expected output
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&] {
+    const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
+    if (checkExecutionOutput || checkExecutionExitCode) {
       const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
       // Execute binary
       std::stringstream cmd;
@@ -263,20 +265,22 @@ void execTestCase(const TestCase &testCase) {
       cmd << TestUtil::getDefaultExecutableName();
       if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-      const auto [output, exitCode] = SystemUtil::exec(cmd.str(), true);
+      const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+
+      // Check if the execution output matches the expected output
+      const auto getActualOutput = [&] { return output; };
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, getActualOutput);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one
       // If no exit code ref file exists, check against 0
-      if (TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&] { return std::to_string(exitCode); })) {
-        EXPECT_NE(0, exitCode) << "Program exited with zero exit code, but expected erroneous exit code";
-      } else {
+      const auto getActualExitCode = [&] { return std::to_string(exitCode); };
+      const bool refExists = TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, getActualExitCode);
+      if (!refExists) {
         EXPECT_EQ(0, exitCode) << "Program exited with non-zero exit code";
       }
 #endif
-
-      return output;
-    });
+    }
 
     // Check if the debugger output matches the expected output
     // GCOV_EXCL_START
