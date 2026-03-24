@@ -78,7 +78,7 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
             -DLLVM_ENABLE_RTTI=ON \
-            -DLLVM_BUILD_TOOLS=OFF
+            -DLLVM_BUILD_TOOLS=OFF \
             ../llvm
           cmake --build .
 
@@ -291,16 +291,16 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_ENABLE_RTTI=ON \
-            -DLLVM_BUILD_TOOLS=OFF \
+          cmake -GNinja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_C_COMPILER=gcc `
+            -DCMAKE_CXX_COMPILER=g++ `
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" `
+            -DLLVM_ENABLE_RTTI=ON `
+            -DLLVM_BUILD_TOOLS=OFF `
             ../llvm
           cmake --build .
 
@@ -322,12 +322,12 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -Wattributes \
+          cmake -GNinja `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+            -DSPICE_BUILT_BY="ghactions" `
+            -Wattributes `
             ..
           cmake --build . --target spicetest
 
