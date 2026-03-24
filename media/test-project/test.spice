@@ -1,16 +1,10 @@
-f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d\n", mandatoryArg);
-    printf("Optional: %d\n", optionalArg);
-    return 0.1;
-}
+import "std/bindings/gtk4";
 
-f<double> calledFunction(string testString) {
-    printf("String: %s", testString);
-    return 0.3;
-}
-
-f<int> main() {
-    dyn res = calledFunction(1, false);
-    printf("Result: %f\n", res);
-    res = calledFunction("test");
+f<int> main(int argc, string[] argv) {
+    GtkApplication app = GtkApplication("com.example.GtkApp", GApplicationFlags::Default);
+    GtkWindow window = app.newWindow();
+    //window.setTitle("Test Window");
+    //window.setDefaultSize(400, 300);
+    //window.present();
+    return app.run(argc, argv);
 }

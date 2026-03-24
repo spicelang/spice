@@ -1658,6 +1658,13 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     llvm::Value *indices[1] = {builder.getInt32(0)};
     return {.value = builder.CreateInBoundsGEP(builder.getInt8Ty(), rhsP(), indices)};
   }
+  case COMB(TY_PTR, TY_FUNCTION): // fallthrough
+  case COMB(TY_PTR, TY_PROCEDURE): {
+    assert(lhsSTy.isPtrTo(TY_BYTE));
+    llvm::Value *fctPtrPtr = irGenerator->insertStructGEP(irGenerator->llvmTypes.fatPtrType, rhsP(), 0);
+    llvm::Value *fctPtr = irGenerator->insertLoad(builder.getPtrTy(), fctPtrPtr);
+    return {.value = fctPtr};
+  }
   default:                                                                 // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
   }

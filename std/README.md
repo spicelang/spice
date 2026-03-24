@@ -2,6 +2,9 @@
 This subdirectory is contained within every installation of Spice. It contains common functionality, which can be made use of, by
 importing it via `import "std/..."`.
 
+## Bindings
+The package `std/bindings` offers Spice bindings for common external libraries.
+
 ## Data
 The package `std/data` offers common data structures for organizing data, etc.
 

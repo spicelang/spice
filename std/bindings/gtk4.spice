@@ -1,0 +1,91 @@
+#![core.compiler.warnings.ignore]
+#![core.linker.flag = "`pkg-config --cflags --libs gtk4`"]
+
+// ===== Enums =====
+public type GApplicationFlags enum {
+    Default = 0,
+    IsService = 1,
+    IsLauncher = 2,
+    HandlesOpen = 4,
+    HandlesCommandLine = 8,
+    SendEnvironment = 16,
+    NonUnique = 32,
+    CanOverrideAppId = 64,
+    AllowReplacement = 128,
+    Replace = 256
+}
+
+public type GConnectFlags enum {
+    Default = 0,
+    After = 1,
+    Swapped = 2
+}
+
+// ===== External type definitions =====
+type GPointer alias byte*;
+type GChar alias char;
+type GCallback alias byte*;
+type GClosure alias byte;
+type GClosureNotify alias byte*;
+type GULong alias unsigned long;
+type GType alias GULong;
+type GApplication alias byte;
+type ExtGtkApplicationRef alias byte*;
+type ExtGtkWindowRef alias byte*;
+type ExtGtkWidgetRef alias byte*;
+
+// ===== External function declarations =====
+ext f<ExtGtkApplicationRef> gtk_application_new(string /*application_id*/, GApplicationFlags /*flags*/);
+ext f<ExtGtkWidgetRef> gtk_application_window_new(ExtGtkApplicationRef /*application*/);
+ext p gtk_window_set_title(ExtGtkWindowRef /*window*/, string /*title*/);
+ext p gtk_window_set_default_size(ExtGtkWindowRef /*window*/, int /*width*/, int /*height*/);
+ext p gtk_window_present(ExtGtkWindowRef /*window*/);
+ext f<int> g_application_run(GApplication* /*application*/, int /*argc*/, string[] /*argv*/);
+ext f<GULong> g_signal_connect_data(GPointer /*instance*/, const GChar* /*detailed_signal*/, GCallback /*c_handler*/, GPointer /*data*/, GClosureNotify /*destroy_data*/, GConnectFlags /*connect_flags*/);
+ext p g_object_unref(GPointer /*object*/);
+
+// ===== GtkWindow =====
+public type GtkWindow struct {
+    ExtGtkWidgetRef self
+}
+
+public p GtkWindow.setTitle(string title) {
+    gtk_window_set_title(cast<ExtGtkWindowRef>(this.self), title);
+}
+
+public p GtkWindow.setDefaultSize(int width, int height) {
+    gtk_window_set_default_size(cast<ExtGtkWindowRef>(this.self), width, height);
+}
+
+public p GtkWindow.present() {
+    gtk_window_present(cast<ExtGtkWindowRef>(this.self));
+}
+
+// ===== GtkApplication =====
+public type GtkApplication struct {
+    ExtGtkApplicationRef self
+}
+
+public p GtkApplication.ctor(string applicationId, GApplicationFlags flags) {
+    this.self = gtk_application_new(applicationId, flags);
+    p(ExtGtkApplicationRef, GPointer) activateCallback = p(ExtGtkApplicationRef app, GPointer userData) {
+        printf("Callback called!\n");
+    };
+    GCallback activateCallbackRaw;
+    unsafe {
+        activateCallbackRaw = cast<GCallback>(activateCallback);
+    }
+    g_signal_connect_data(this.self, cast<const GChar*>("activate"), activateCallbackRaw, nil<GPointer>, nil<GClosureNotify>, GConnectFlags::Default);
+}
+
+public p GtkApplication.dtor() {
+    g_object_unref(this.self);
+}
+
+public f<int> GtkApplication.run(int argc, string[] argv) {
+    return g_application_run(cast<GApplication*>(this.self), argc, argv);
+}
+
+public f<GtkWindow> GtkApplication.newWindow() {
+    return GtkWindow{gtk_application_window_new(this.self)};
+}

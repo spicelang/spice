@@ -669,6 +669,11 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
     return lhsType;
   }
+  // Allow casts p()/f<>() -> byte*
+  if (lhsType.isPtrTo(TY_BYTE) && rhsType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
+    return lhsType;
+  }
   // Check primitive type combinations
   return validateBinaryOperation(node, CAST_OP_RULES, std::size(CAST_OP_RULES), "(cast)", lhsType, rhsType, true);
 }
