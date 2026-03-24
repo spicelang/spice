@@ -9,7 +9,7 @@ on:
       - '**.md'
 
 env:
-  LLVM_VERSION: "llvmorg-22.1.1"
+  LLVM_VERSION: "llvmorg-22.1.2"
   GCC_VERSION: "14"
 
 jobs:
@@ -69,7 +69,17 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -82,7 +92,15 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_DEV_COMPILE=ON \
+            -DSPICE_RUN_COVERAGE=ON \
+            -Wattributes \
+            ..
           cmake --build . --target spicetest
 
 #      - name: Build Test target
@@ -92,7 +110,16 @@ jobs:
 #        run: |
 #          mkdir ./build
 #          cd ./build
-#          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -DSPICE_PROF_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+#          cmake -GNinja \
+#            -DCMAKE_BUILD_TYPE=Debug \
+#            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+#            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+#            -DSPICE_BUILT_BY="ghactions" \
+#            -DSPICE_DEV_COMPILE=ON \
+#            -DSPICE_PROF_COMPILE=ON \
+#            -DSPICE_RUN_COVERAGE=ON \
+#            -Wattributes \
+#            ..
 #          cmake --build . --target spicetest
 
       - name: Run Test target
@@ -182,7 +209,17 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -194,7 +231,14 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_DEV_COMPILE=ON \
+            -Wattributes \
+            ..
           cmake --build . --target spicetest
 
       - name: Run Test target
@@ -247,7 +291,17 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -268,7 +322,13 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -GNinja -Wattributes ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -Wattributes \
+            ..
           cmake --build . --target spicetest
 
       - name: Run Test target
@@ -327,7 +387,14 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -339,7 +406,14 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_DEV_COMPILE=ON \
+            -Wattributes \
+            ..
           cmake --build . --target spicetest
 
       - name: Run Test target

@@ -7,7 +7,7 @@ on:
       - '*'
 
 env:
-  LLVM_VERSION: "llvmorg-22.1.1"
+  LLVM_VERSION: "llvmorg-22.1.2"
   GCC_VERSION: "14"
 
 jobs:
@@ -59,7 +59,19 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -Wno-dev \
+            -Wattributes \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -71,7 +83,16 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_ALL_TARGETS=ON -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_ALL_TARGETS=ON \
+            -DSPICE_LINK_STATIC=ON \
+            -DSPICE_LTO=ON \
+            -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
           cmake --build . --target spice
 
       - name: Process build output
@@ -138,7 +159,19 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -Wno-dev \
+            -Wattributes \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -150,7 +183,16 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_ALL_TARGETS=ON -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_ALL_TARGETS=ON \
+            -DSPICE_LINK_STATIC=ON \
+            -DSPICE_LTO=ON \
+            -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
           cmake --build . --target spice
 
       - name: Process build output
@@ -221,7 +263,19 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -Wno-dev \
+            -Wattributes \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -236,7 +290,15 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_ALL_TARGETS=ON -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_ALL_TARGETS=ON \
+            -DSPICE_LINK_STATIC=ON \
+            -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
           cmake --build . --target spice
 
       - name: Process build output
@@ -286,7 +348,19 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \  
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -Wno-dev \
+            -Wattributes \
+            ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -298,7 +372,15 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_ALL_TARGETS=ON -DSPICE_LTO=ON -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_ALL_TARGETS=ON \
+            -DSPICE_LTO=ON \
+            -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
           cmake --build . --target spice
 
       - name: Process build output
