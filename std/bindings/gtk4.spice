@@ -68,18 +68,17 @@ public type GtkApplication struct {
 
 public p GtkApplication.ctor(string applicationId, GApplicationFlags flags) {
     this.self = gtk_application_new(applicationId, flags);
-    p(ExtGtkApplicationRef, GPointer) activateCallback = p(ExtGtkApplicationRef app, GPointer userData) {
-        printf("Callback called!\n");
-    };
-    GCallback activateCallbackRaw;
-    unsafe {
-        activateCallbackRaw = cast<GCallback>(activateCallback);
-    }
-    g_signal_connect_data(this.self, cast<const GChar*>("activate"), activateCallbackRaw, nil<GPointer>, nil<GClosureNotify>, GConnectFlags::Default);
 }
 
 public p GtkApplication.dtor() {
     g_object_unref(this.self);
+}
+
+public p GtkApplication.setActivateCallback(p(GtkApplication) callback) {
+    unsafe {
+        GCallback activateCallbackRaw = cast<GCallback>(callback);
+        g_signal_connect_data(this.self, cast<const GChar*>("activate"), activateCallbackRaw, nil<GPointer>, nil<GClosureNotify>, GConnectFlags::Default);
+    }
 }
 
 public f<int> GtkApplication.run(int argc, string[] argv) {

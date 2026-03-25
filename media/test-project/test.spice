@@ -2,9 +2,11 @@ import "std/bindings/gtk4";
 
 f<int> main(int argc, string[] argv) {
     GtkApplication app = GtkApplication("com.example.GtkApp", GApplicationFlags::Default);
-    GtkWindow window = app.newWindow();
-    //window.setTitle("Test Window");
-    //window.setDefaultSize(400, 300);
-    //window.present();
+    app.setActivateCallback(p(GtkApplication app) {
+        GtkWindow window = app.newWindow();
+        window.setTitle("Spice UI");
+        window.setDefaultSize(800, 600);
+        window.present();
+    });
     return app.run(argc, argv);
 }
