@@ -102,8 +102,6 @@ jobs:
             -Wattributes \
             ..
           cmake --build . --target spicetest
-          lscpu
-          cat /proc/cpuinfo
 
 #      - name: Build Test target
 #        if: github.event_name == 'pull_request'
@@ -133,9 +131,7 @@ jobs:
           LLVM_BUILD_INCLUDE_DIR: ${{ github.workspace }}/llvm/build/include
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
-        run: |
-          objdump -d ./spicetest | grep -E "avx|ymm|zmm"
-          ./spicetest --is-github-actions
+        run: ./spicetest --is-github-actions
 
 #      - name: Run Test target with Valgrind
 #        if: github.event_name == 'pull_request'
