@@ -460,7 +460,15 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Retrieve struct name
   const auto [aliasedEntry, isAlias] = rootScope->symbolTable.lookupWithAliasResolution(node->fqStructName);
-  const std::string &structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
+  std::string structName = isAlias ? aliasedEntry->getQualType().getSubType() : node->fqStructName;
+
+  // Check if the struct type is generic
+  const QualType *genericType = rootScope->lookupGenericTypeStrict(structName);
+  if (genericType && typeMapping.contains(structName)) {
+    const QualType &replacementType = typeMapping.at(structName);
+    if (replacementType.is(TY_STRUCT))
+      structName = replacementType.getSubType();
+  }
 
   // Retrieve struct
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
