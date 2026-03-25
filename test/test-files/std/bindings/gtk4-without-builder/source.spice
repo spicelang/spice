@@ -1,0 +1,36 @@
+import "std/bindings/gtk4";
+
+p btnYesClick(GtkWidget widget) {
+    gPrint("Hello World!\n");
+}
+
+p destroyWindow(GtkWidget widget, GtkWindow window) {
+    window.destroy();
+}
+
+p activate(GtkApplication app, GPointer data) {
+    dyn window = app.newWindow();
+    window.setTitle("Do you want to continue");
+    window.setDefaultSize(350, 140);
+    {
+        dyn box = GtkBox(GtkOrientation::Horizontal);
+        box.setHAlign(GtkAlign::Center);
+        box.setVAlign(GtkAlign::Center);
+        window.setChild(box);
+
+        dyn btnCancel = GtkButton("Cancel");
+        btnCancel.setOnClickCallback(destroyWindow, window);
+        box.append(btnCancel);
+
+        dyn btnYes = GtkButton("Yes");
+        btnYes.setOnClickCallback(btnYesClick);
+        box.append(btnYes);
+    }
+    window.present();
+}
+
+f<int> main(int argc, string[] argv) {
+    dyn app = GtkApplication("com.spicelang.Example");
+    app.setActivateCallback(activate);
+    return app.run(argc, argv);
+}

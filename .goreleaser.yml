@@ -79,6 +79,8 @@ nfpms:
       - lld
     suggests:
       - mold
+      - libgtk-4-dev
+      - libgtkmm-4.0-dev
     contents:
       - src: std
         dst: /usr/lib/spice/std
