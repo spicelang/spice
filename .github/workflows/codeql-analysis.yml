@@ -92,7 +92,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_LINK_STATIC=OFF \
-            -DSPICE_DEV_COMPILE=ON \
             -Wattributes \
             ..
           cmake --build . --target spicetest
