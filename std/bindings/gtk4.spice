@@ -1,6 +1,8 @@
 #![core.compiler.warnings.ignore]
 #![core.linker.flag = "`pkg-config --cflags --libs gtk4`"]
 
+type T dyn;
+
 // ===== Enums =====
 public type GApplicationFlags enum {
     Default = 0,
@@ -21,6 +23,20 @@ public type GConnectFlags enum {
     Swapped = 2
 }
 
+public type GtkOrientation enum {
+    Horizontal = 0,
+    Vertical = 1
+}
+
+public type GtkAlign enum {
+    Fill = 0,
+    Start = 1,
+    End = 2,
+    Center = 3,
+    BaselineFill = 4,
+    BaselineCenter = 5
+}
+
 // ===== External type definitions =====
 type GPointer alias byte*;
 type GChar alias char;
@@ -33,6 +49,8 @@ type GApplication alias byte;
 type ExtGtkApplicationRef alias byte*;
 type ExtGtkWindowRef alias byte*;
 type ExtGtkWidgetRef alias byte*;
+type ExtGtkBoxRef alias byte*;
+type ExtGtkButtonref alias byte*;
 
 // ===== External function declarations =====
 ext f<ExtGtkApplicationRef> gtk_application_new(string /*application_id*/, GApplicationFlags /*flags*/);
@@ -40,13 +58,87 @@ ext f<ExtGtkWidgetRef> gtk_application_window_new(ExtGtkApplicationRef /*applica
 ext p gtk_window_set_title(ExtGtkWindowRef /*window*/, string /*title*/);
 ext p gtk_window_set_default_size(ExtGtkWindowRef /*window*/, int /*width*/, int /*height*/);
 ext p gtk_window_present(ExtGtkWindowRef /*window*/);
+ext p gtk_window_close(ExtGtkWindowRef /*window*/);
+ext p gtk_window_destroy(ExtGtkWindowRef /*window*/);
+ext f<ExtGtkWidgetRef> gtk_box_new(GtkOrientation /*orientation*/, int /*spacing*/);
+ext p gtk_box_append(ExtGtkBoxRef /*box*/, ExtGtkWidgetRef /*widget*/);
+ext p gtk_widget_set_halign(ExtGtkWidgetRef /*widget*/, GtkAlign /*align*/);
+ext p gtk_widget_set_valign(ExtGtkWidgetRef /*widget*/, GtkAlign /*align*/);
+ext p gtk_window_set_child(ExtGtkWindowRef /*window*/, ExtGtkWidgetRef /*widget*/);
+ext f<ExtGtkWidgetRef> gtk_button_new_with_label(string /*label*/);
 ext f<int> g_application_run(GApplication* /*application*/, int /*argc*/, string[] /*argv*/);
 ext f<GULong> g_signal_connect_data(GPointer /*instance*/, const GChar* /*detailed_signal*/, GCallback /*c_handler*/, GPointer /*data*/, GClosureNotify /*destroy_data*/, GConnectFlags /*connect_flags*/);
 ext p g_object_unref(GPointer /*object*/);
+ext p g_print(const GChar* /*string*/);
+
+// ===== Convenience wrappers =====
+
+inline p g_signal_connect(GPointer instance, string signal, GCallback callback, GPointer data) {
+    g_signal_connect_data(instance, cast<const GChar*>(signal), callback, data, nil<GClosureNotify>, GConnectFlags::Default);
+}
+
+// ===== GtkWidget =====
+public type GtkWidget struct {
+    ExtGtkWidgetRef self
+}
+
+public p GtkWidget.setHAlign(GtkAlign align) {
+    gtk_widget_set_halign(this.self, align);
+}
+
+public p GtkWidget.setVAlign(GtkAlign align) {
+    gtk_widget_set_valign(this.self, align);
+}
+
+// ===== GtkButton =====
+public type GtkButton struct {
+    compose GtkWidget widget
+}
+
+public p GtkButton.ctor(string label) {
+    this.self = gtk_button_new_with_label(label);
+}
+
+public p GtkButton.setOnClickCallback(p(GtkWidget) callback) {
+    unsafe {
+        g_signal_connect(this.self, "clicked", cast<GCallback>(callback), nil<GPointer>);
+    }
+}
+
+public p GtkButton.setOnClickCallback<T>(p(GtkWidget, T) callback, T data) {
+    unsafe {
+        g_signal_connect(this.self, "clicked", cast<GCallback>(callback), cast<GPointer>(data.self));
+    }
+}
+
+// ===== GtkBox =====
+public type GtkBox struct {
+    compose GtkWidget widget
+}
+
+public p GtkBox.ctor(GtkOrientation orientation, int spacing = 7) {
+    this.self = gtk_box_new(orientation, spacing);
+}
+
+public p GtkBox.setHAlign(GtkAlign align) {
+    this.widget.setHAlign(align);
+}
+
+public p GtkBox.setVAlign(GtkAlign align) {
+    this.widget.setVAlign(align);
+}
+
+public p GtkBox.append(GtkWidget widget) {
+    gtk_box_append(this.self, widget.self);
+}
+
+public p GtkBox.append(GtkButton button) {
+    this.append(button.widget);
+}
 
 // ===== GtkWindow =====
 public type GtkWindow struct {
-    ExtGtkWidgetRef self
+    compose GtkWidget widget
 }
 
 public p GtkWindow.setTitle(string title) {
@@ -61,12 +153,28 @@ public p GtkWindow.present() {
     gtk_window_present(cast<ExtGtkWindowRef>(this.self));
 }
 
+public p GtkWindow.close() {
+    gtk_window_close(cast<ExtGtkWindowRef>(this.self));
+}
+
+public p GtkWindow.destroy() {
+    gtk_window_destroy(cast<ExtGtkWindowRef>(this.self));
+}
+
+public p GtkWindow.setChild(GtkWidget widget) {
+    gtk_window_set_child(cast<ExtGtkWindowRef>(this.self), widget.self);
+}
+
+public p GtkWindow.setChild(GtkBox box) {
+    this.setChild(box.widget);
+}
+
 // ===== GtkApplication =====
 public type GtkApplication struct {
     ExtGtkApplicationRef self
 }
 
-public p GtkApplication.ctor(string applicationId, GApplicationFlags flags) {
+public p GtkApplication.ctor(string applicationId, GApplicationFlags flags = GApplicationFlags::Default) {
     this.self = gtk_application_new(applicationId, flags);
 }
 
@@ -74,10 +182,9 @@ public p GtkApplication.dtor() {
     g_object_unref(this.self);
 }
 
-public p GtkApplication.setActivateCallback(p(GtkApplication) callback) {
+public p GtkApplication.setActivateCallback(p(GtkApplication, GPointer) callback, GPointer data = nil<GPointer>) {
     unsafe {
-        GCallback activateCallbackRaw = cast<GCallback>(callback);
-        g_signal_connect_data(this.self, cast<const GChar*>("activate"), activateCallbackRaw, nil<GPointer>, nil<GClosureNotify>, GConnectFlags::Default);
+        g_signal_connect(this.self, "activate", cast<GCallback>(callback), data);
     }
 }
 
@@ -86,5 +193,13 @@ public f<int> GtkApplication.run(int argc, string[] argv) {
 }
 
 public f<GtkWindow> GtkApplication.newWindow() {
-    return GtkWindow{gtk_application_window_new(this.self)};
+    return GtkWindow{
+        GtkWidget{gtk_application_window_new(this.self)}
+    };
+}
+
+// ===== Free standing functions =====
+
+public p gPrint(string value) {
+    g_print(cast<const GChar*>(value));
 }
