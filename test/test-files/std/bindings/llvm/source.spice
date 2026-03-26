@@ -1,4 +1,4 @@
-import "bootstrap/bindings/llvm/llvm" as llvm;
+import "std/bindings/llvm/llvm" as llvm;
 import "std/data/vector";
 
 f<int> main() {

@@ -8,7 +8,7 @@ import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
-import "bootstrap/bindings/llvm/llvm" as llvm;
+import "std/bindings/llvm/llvm" as llvm;
 
 public type VTableData struct {
     llvm::StructType* typeInfoType = nil<llvm::StructType*>

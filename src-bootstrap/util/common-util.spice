@@ -4,7 +4,7 @@ import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/source-file-intf";
-import "bootstrap/bindings/llvm/llvm" as llvm;
+import "std/bindings/llvm/llvm" as llvm;
 
 /**
  * Split the given haystack by the needle and return the last fragment

@@ -15,7 +15,7 @@ import "bootstrap/linker/external-linker-interface";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
-import "bootstrap/bindings/llvm/llvm" as llvm;
+import "std/bindings/llvm/llvm" as llvm;
 import "bootstrap/source-file";
 import "bootstrap/driver";
 
