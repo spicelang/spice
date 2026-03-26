@@ -5,7 +5,7 @@ import "std/text/stringstream";
 import "bootstrap/source-file-intf";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope-intf";
-import "bootstrap/bindings/llvm/llvm" as llvm;
+import "std/bindings/llvm/llvm" as llvm;
 
 public type IType interface {
     // Getters and setters on type parts

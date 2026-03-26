@@ -1,4 +1,4 @@
-import "std/bindings/gtk4";
+import "std/bindings/gtk/gtk4";
 
 p btnYesClick(GtkWidget widget) {
     gPrint("Hello World!\n");
