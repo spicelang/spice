@@ -33,6 +33,12 @@ template <typename T, typename BaseT> constexpr bool is_vector_of_derived_from_v
 // Fail with an assertion error message
 #define assert_fail(msg) assert(false && (msg))
 
+#ifdef NDEBUG
+#define SPICE_DEBUG false
+#else
+#define SPICE_DEBUG true
+#endif
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif

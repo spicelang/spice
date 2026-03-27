@@ -9,10 +9,10 @@ import "std/io/filepath";
 import "std/text/string-ext";
 import "std/time/time";
 import "std/type/type-conversion";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "util/common-util";
-import "bindings/llvm/llvm" as llvm;
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";

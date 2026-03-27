@@ -1,10 +1,10 @@
 // Std imports
 import "std/data/vector";
 import "std/text/stringstream";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/source-file-intf";
-import "std/bindings/llvm/llvm" as llvm;
 
 /**
  * Split the given haystack by the needle and return the last fragment

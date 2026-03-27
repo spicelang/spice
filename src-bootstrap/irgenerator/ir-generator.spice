@@ -3,7 +3,7 @@ import "std/data/vector";
 import "std/data/stack";
 
 // Own imports
-import "bindings/llvm/llvm" as llvm;
+import "src/bindings/llvm/llvm" as llvm;
 
 type CommonLLVMTypes struct {
     llvm::StructType fatPtrType
