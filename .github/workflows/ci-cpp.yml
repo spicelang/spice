@@ -43,7 +43,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build graphviz pipx uuid-dev
+          sudo apt-get install ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev
 
 #      - name: Setup Valgrind
 #        if: github.event_name == 'pull_request'
@@ -189,7 +189,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build graphviz uuid-dev
+          sudo apt-get install ninja-build graphviz uuid-dev libcurl4-openssl-dev
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -268,6 +268,9 @@ jobs:
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
+
+      - name: Setup Dependencies
+        run: vcpkg install curl[openssl]
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
