@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Offical Documentation
+    url: https://www.spicelang.com/language/hello-world
+    about: Find a detailed language documentation here.
+  - name: Playground to create a reproducer
+    url: https://spice.compiler-explorer.com
+    about: Please provide a reproducer to your issues. Create one here.
