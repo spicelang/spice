@@ -269,9 +269,6 @@ jobs:
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
 
-      - name: Setup Dependencies
-        run: vcpkg install curl[openssl]
-
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
