@@ -3,7 +3,11 @@ import "std/io/file";
 import "std/math/fct";
 
 #![core.compiler.warnings.ignore]
-#![core.linker.flag = "`pkg-config --cflags --libs libcurl`"]
+#![
+    core.linux.linker.flag = "`pkg-config --cflags --libs libcurl`",
+    core.darwin.linker.flag = "`pkg-config --cflags --libs libcurl`",
+    core.windows.linker.flag = "-lcurl"
+]
 
 // ===== Global constants =====
 public const unsigned long CURL_GLOBAL_SSL       = 1ul; // 1 << 0
