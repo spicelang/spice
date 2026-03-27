@@ -1,0 +1,617 @@
+import "std/type/type-conversion";
+import "std/io/file";
+import "std/math/fct";
+
+#![core.compiler.warnings.ignore]
+#![core.linker.flag = "`pkg-config --cflags --libs libcurl`"]
+
+// ===== Global constants =====
+public const unsigned long CURL_GLOBAL_SSL       = 1ul; // 1 << 0
+public const unsigned long CURL_GLOBAL_WIN32     = 2ul; // 1 << 1
+public const unsigned long CURL_GLOBAL_ALL       = 3ul; // CURL_GLOBAL_SSL | CURL_GLOBAL_WIN32
+public const unsigned long CURL_GLOBAL_NOTHING   = 0ul;
+public const unsigned long CURL_GLOBAL_DEFAULT   = 3ul; // CURL_GLOBAL_ALL
+public const unsigned long CURL_GLOBAL_ACK_EINTR = 4ul; // 1 << 2
+
+// ===== Enums =====
+type CurlCode enum {
+    OK = 0,
+    UNSUPPORTED_PROTOCOL = 1,
+    FAILED_INIT = 2,
+    URL_MALFORMAT = 3,
+    NOT_BUILT_IN = 4,
+    COULDNT_RESOLVE_PROXY = 5,
+    COULDNT_RESOLVE_HOST = 6,
+    COULDNT_CONNECT = 7,
+    WEIRD_SERVER_REPLY = 8,
+    REMOTE_ACCESS_DENIED = 9,
+    FTP_ACCEPT_FAILED = 10,
+    FTP_WEIRD_PASS_REPLY = 11,
+    FTP_ACCEPT_TIMEOUT = 12,
+    FTP_WEIRD_PASV_REPLY = 13,
+    FTP_WEIRD_227_FORMAT = 14,
+    FTP_CANT_GET_HOST = 15,
+    HTTP2 = 16,
+    FTP_COULDNT_SET_TYPE = 17,
+    PARTIAL_FILE = 18,
+    FTP_COULDNT_RETR_FILE = 19,
+    OBSOLETE20 = 20, // Not used
+    QUOTE_ERROR = 21,
+    HTTP_RETURNED_ERROR = 22,
+    WRITE_ERROR = 23,
+    OBSOLETE24 = 24, // Not used
+    UPLOAD_FAILED = 25,
+    READ_ERROR = 26,
+    OUT_OF_MEMORY = 27,
+    OPERATION_TIMEDOUT = 28,
+    OBSOLETE29 = 29, // Not used
+    FTP_PORT_FAILED = 30,
+    FTP_COULDNT_USE_REST = 31,
+    OBSOLETE32 = 32, // Not used
+    RANGE_ERROR = 33,
+    HTTP_POST_ERROR = 34,
+    SSL_CONNECT_ERROR = 35,
+    BAD_DOWNLOAD_RESUME = 36,
+    FILE_COULDNT_READ_FILE = 37,
+    LDAP_CANNOT_BIND = 38,
+    LDAP_SEARCH_FAILED = 39,
+    OBSOLETE40 = 40, // Not used
+    FUNCTION_NOT_FOUND = 41,
+    ABORTED_BY_CALLBACK = 42,
+    BAD_FUNCTION_ARGUMENT = 43,
+    OBSOLETE44 = 44, // Not used
+    INTERFACE_FAILED = 45,
+    OBSOLETE46 = 46, // Not used
+    TOO_MANY_REDIRECTS = 47,
+    UNKNOWN_OPTION = 48,
+    SETOPT_OPTION_SYNTAX = 49,
+    OBSOLETE50 = 50, // Not used
+    OBSOLETE51 = 51, // Not used
+    GOT_NOTHING = 52,
+    SSL_ENGINE_NOTFOUND = 53,
+    SSL_ENGINE_SETFAILED = 54,
+    SEND_ERROR = 55,
+    RECV_ERROR = 56,
+    OBSOLETE57 = 57, // Not used
+    SSL_CERTPROBLEM = 58,
+    SSL_CIPHER = 59,
+    PEER_FAILED_VERIFICATION = 60,
+    BAD_CONTENT_ENCODING = 61,
+    OBSOLETE62 = 62, // Not used
+    FILESIZE_EXCEEDED = 63,
+    USE_SSL_FAILED = 64,
+    SEND_FAIL_REWIND = 65,
+    SSL_ENGINE_INITFAILED = 66,
+    LOGIN_DENIED = 67,
+    TFTP_NOTFOUND = 68,
+    TFTP_PERM = 69,
+    REMOTE_DISK_FULL = 70,
+    TFTP_ILLEGAL = 71,
+    TFTP_UNKNOWNID = 72,
+    REMOTE_FILE_EXISTS = 73,
+    TFTP_NOSUCHUSER = 74,
+    OBSOLETE75 = 75, // Not used
+    OBSOLETE76 = 76, // Not used
+    SSL_CACERT_BADFILE = 77,
+    REMOTE_FILE_NOT_FOUND = 78,
+    SSH = 79,
+    SSL_SHUTDOWN_FAILED = 80,
+    AGAIN = 81,
+    SSL_CRL_BADFILE = 82,
+    SSL_ISSUER_ERROR = 83,
+    FTP_PRET_FAILED = 84,
+    RTSP_CSEQ_ERROR = 85,
+    RTSP_SESSION_ERROR = 86,
+    FTP_BAD_FILE_LIST = 87,
+    CHUNK_FAILED = 88,
+    NO_CONNECTION_AVAILABLE = 89,
+    SSL_PINNEDPUBKEYNOTMATCH = 90,
+    SSL_INVALIDCERTSTATUS = 91,
+    HTTP2_STREAM = 92,
+    RECURSIVE_API_CALL = 93,
+    AUTH_ERROR = 94,
+    HTTP3 = 95,
+    QUIC_CONNECT_ERROR = 96,
+    PROXY = 97,
+    SSL_CLIENTCERT = 98,
+    UNRECOVERABLE_POLL = 99
+}
+
+type CurlOption enum {
+    WRITEDATA = 10001,
+    URL = 10002,
+    PORT = 3,
+    PROXY = 10004,
+    USERPWD = 10005,
+    PROXYUSERPWD = 10006,
+    RANGE = 10007,
+
+    READDATA = 10009,
+    ERRORBUFFER = 10010,
+    WRITEFUNCTION = 20011,
+    READFUNCTION = 20012,
+    TIMEOUT = 13,
+    INFILESIZE = 14,
+    POSTFIELDS = 10015,
+    REFERER = 10016,
+    FTPPORT = 10017,
+    USERAGENT = 10018,
+    LOW_SPEED_LIMIT = 19,
+    LOW_SPEED_TIME = 20,
+    RESUME_FROM = 21,
+    COOKIE = 10022,
+    HTTPHEADER = 10023,
+    HTTPPOST = 10024,
+    SSLCERT = 10025,
+    KEYPASSWD = 10026,
+    CRLF = 27,
+    QUOTE = 10028,
+    HEADERDATA = 10029,
+
+    COOKIEFILE = 10031,
+    SSLVERSION = 32,
+    TIMECONDITION = 33,
+    TIMEVALUE = 34,
+
+    CUSTOMREQUEST = 10036,
+    STDERR = 10037,
+    POSTQUOTE = 10039,
+    OBSOLETE40 = 10040, // Not used
+
+    VERBOSE = 41,
+    HEADER = 42,
+    NOPROGRESS = 43,
+    NOBODY = 44,
+    FAILONERROR = 45,
+    UPLOAD = 46,
+    POST = 47,
+    DIRLISTONLY = 48,
+
+    APPEND = 50,
+    NETRC = 51,
+    FOLLOWLOCATION = 52,
+    TRANSFERTEXT = 53,
+    PUT = 54,
+
+    PROGRESSFUNCTION = 20056,
+    XFERINFODATA = 10057,
+
+    AUTOREFERER = 58,
+    PROXYPORT = 59,
+    POSTFIELDSIZE = 60,
+    HTTPPROXYTUNNEL = 61,
+    INTERFACE = 10062,
+    KRBLEVEL = 10063,
+    SSL_VERIFYPEER = 64,
+    CAINFO = 10065,
+
+    MAXREDIRS = 68,
+    FILETIME = 69,
+    TELNETOPTIONS = 10070,
+    MAXCONNECTS = 71,
+    OBSOLETE72 = 72, // Not used
+
+    FRESH_CONNECT = 74,
+    FORBID_REUSE = 75,
+    RANDOM_FILE = 10076,
+    EGDSOCKET = 10077,
+    CONNECTTIMEOUT = 78,
+    HEADERFUNCTION = 20079,
+    HTTPGET = 80,
+    SSL_VERIFYHOST = 81,
+    COOKIEJAR = 10082,
+    SSL_CIPHER_LIST = 10083,
+    HTTP_VERSION = 84,
+    FTP_USE_EPSV = 85,
+    SSLCERTTYPE = 10086,
+    SSLKEY = 10087,
+    SSLKEYTYPE = 10088,
+    SSLENGINE = 10089,
+    SSLENGINE_DEFAULT = 90,
+    DNS_USE_GLOBAL_CACHE = 91,
+    DNS_CACHE_TIMEOUT = 92,
+    PREQUOTE = 10093,
+    DEBUGFUNCTION = 20094,
+    DEBUGDATA = 10095,
+    COOKIESESSION = 96,
+    CAPATH = 10097,
+    BUFFERSIZE = 98,
+    NOSIGNAL = 99,
+    SHARE = 100100,
+
+    PROXYTYPE = 101,
+    ACCEPT_ENCODING = 100102,
+    PRIVATE = 100103,
+    HTTP200ALIASES = 100104,
+    UNRESTRICTED_AUTH = 105,
+    FTP_USE_EPRT = 106,
+    HTTPAUTH = 107,
+    SSL_CTX_FUNCTION = 200108,
+    SSL_CTX_DATA = 100109,
+    FTP_CREATE_MISSING_DIRS = 110,
+    PROXYAUTH = 111,
+    SERVER_RESPONSE_TIMEOUT = 112,
+    IPRESOLVE = 113,
+    MAXFILESIZE = 114,
+    INFILESIZE_LARGE = 300115,
+    RESUME_FROM_LARGE = 300116,
+    MAXFILESIZE_LARGE = 300117,
+    NETRC_FILE = 100118,
+    USE_SSL = 119,
+    POSTFIELDSIZE_LARGE = 300120,
+    TCP_NODELAY = 121,
+
+    FTPSSLAUTH = 129,
+    IOCTLFUNCTION = 200130,
+    IOCTLDATA = 100131,
+
+    FTP_ACCOUNT = 100134,
+    COOKIELIST = 100135,
+    IGNORE_CONTENT_LENGTH = 136,
+    FTP_SKIP_PASV_IP = 137,
+    FTP_FILEMETHOD = 138,
+    LOCALPORT = 139,
+    LOCALPORTRANGE = 140,
+    CONNECT_ONLY = 141,
+
+    CONV_FROM_NETWORK_FUNCTION = 200142,
+    CONV_TO_NETWORK_FUNCTION = 200143,
+    CONV_FROM_UTF8_FUNCTION = 200144,
+
+    MAX_SEND_SPEED_LARGE = 300145,
+    MAX_RECV_SPEED_LARGE = 300146,
+
+    FTP_ALTERNATIVE_TO_USER = 100147,
+    SOCKOPTFUNCTION = 200148,
+    SOCKOPTDATA = 100149,
+
+    SSL_SESSIONID_CACHE = 150,
+    SSH_AUTH_TYPES = 151,
+    SSH_PUBLIC_KEYFILE = 100152,
+    SSH_PRIVATE_KEYFILE = 100153,
+    FTP_SSL_CCC = 154,
+
+    TIMEOUT_MS = 155,
+    CONNECTTIMEOUT_MS = 156,
+
+    HTTP_TRANSFER_DECODING = 157,
+    HTTP_CONTENT_DECODING = 158,
+
+    NEW_FILE_PERMS = 159,
+    NEW_DIRECTORY_PERMS = 160,
+
+    POSTREDIR = 161,
+
+    SSH_HOST_PUBLIC_KEY_MD5 = 100162,
+
+    OPENSOCKETFUNCTION = 200163,
+    OPENSOCKETDATA = 100164,
+
+    COPYPOSTFIELDS = 100165,
+    PROXY_TRANSFER_MODE = 166,
+
+    SEEKFUNCTION = 200167,
+    SEEKDATA = 100168,
+
+    CRLFILE = 100169,
+    ISSUERCERT = 100170,
+
+    ADDRESS_SCOPE = 171,
+    CERTINFO = 172,
+
+    USERNAME = 100173,
+    PASSWORD = 100174,
+    PROXYUSERNAME = 100175,
+    PROXYPASSWORD = 100176,
+
+    NOPROXY = 100177,
+
+    TFTP_BLKSIZE = 178,
+
+    SOCKS5_GSSAPI_SERVICE = 100179,
+    SOCKS5_GSSAPI_NEC = 180,
+
+    PROTOCOLS = 181,
+    REDIR_PROTOCOLS = 182,
+
+    SSH_KNOWNHOSTS = 100183,
+    SSH_KEYFUNCTION = 200184,
+    SSH_KEYDATA = 100185,
+
+    MAIL_FROM = 100186,
+    MAIL_RCPT = 100187,
+
+    FTP_USE_PRET = 188,
+
+    RTSP_REQUEST = 189,
+    RTSP_SESSION_ID = 100190,
+    RTSP_STREAM_URI = 100191,
+    RTSP_TRANSPORT = 100192,
+    RTSP_CLIENT_CSEQ = 193,
+    RTSP_SERVER_CSEQ = 194,
+
+    INTERLEAVEDATA = 100195,
+    INTERLEAVEFUNCTION = 200196,
+
+    WILDCARDMATCH = 197,
+
+    CHUNK_BGN_FUNCTION = 200198,
+    CHUNK_END_FUNCTION = 200199,
+    FNMATCH_FUNCTION = 200200,
+    CHUNK_DATA = 100201,
+    FNMATCH_DATA = 100202,
+
+    RESOLVE = 100203,
+
+    TLSAUTH_USERNAME = 100204,
+    TLSAUTH_PASSWORD = 100205,
+    TLSAUTH_TYPE = 100206,
+
+    TRANSFER_ENCODING = 207,
+
+    CLOSESOCKETFUNCTION = 200208,
+    CLOSESOCKETDATA = 100209,
+
+    GSSAPI_DELEGATION = 210,
+
+    DNS_SERVERS = 100211,
+    ACCEPTTIMEOUT_MS = 212,
+
+    TCP_KEEPALIVE = 213,
+    TCP_KEEPIDLE = 214,
+    TCP_KEEPINTVL = 215,
+
+    SSL_OPTIONS = 216,
+
+    MAIL_AUTH = 100217,
+
+    SASL_IR = 218,
+
+    XFERINFOFUNCTION = 200219,
+
+    XOAUTH2_BEARER = 100220,
+
+    DNS_INTERFACE = 100221,
+    DNS_LOCAL_IP4 = 100222,
+    DNS_LOCAL_IP6 = 100223,
+
+    LOGIN_OPTIONS = 100224,
+
+    SSL_ENABLE_NPN = 225,
+    SSL_ENABLE_ALPN = 226,
+
+    EXPECT_100_TIMEOUT_MS = 227,
+
+    PROXYHEADER = 100228,
+    HEADEROPT = 229,
+
+    PINNEDPUBLICKEY = 100230,
+
+    UNIX_SOCKET_PATH = 100231,
+
+    SSL_VERIFYSTATUS = 232,
+    SSL_FALSESTART = 233,
+
+    PATH_AS_IS = 234,
+
+    PROXY_SERVICE_NAME = 100235,
+    SERVICE_NAME = 100236,
+
+    PIPEWAIT = 237,
+
+    DEFAULT_PROTOCOL = 100238,
+
+    STREAM_WEIGHT = 239,
+    STREAM_DEPENDS = 100240,
+    STREAM_DEPENDS_E = 100241,
+
+    TFTP_NO_OPTIONS = 242,
+
+    CONNECT_TO = 100243,
+
+    TCP_FASTOPEN = 244,
+
+    KEEP_SENDING_ON_ERROR = 245,
+
+    PROXY_CAINFO = 100246,
+    PROXY_CAPATH = 100247,
+    PROXY_SSL_VERIFYPEER = 248,
+    PROXY_SSL_VERIFYHOST = 249,
+    PROXY_SSLVERSION = 250,
+
+    PROXY_TLSAUTH_USERNAME = 100251,
+    PROXY_TLSAUTH_PASSWORD = 100252,
+    PROXY_TLSAUTH_TYPE = 100253,
+
+    PROXY_SSLCERT = 100254,
+    PROXY_SSLCERTTYPE = 100255,
+    PROXY_SSLKEY = 100256,
+    PROXY_SSLKEYTYPE = 100257,
+    PROXY_KEYPASSWD = 100258,
+
+    PROXY_SSL_CIPHER_LIST = 100259,
+
+    PROXY_CRLFILE = 100260,
+
+    PROXY_SSL_OPTIONS = 261,
+
+    PRE_PROXY = 100262,
+
+    PROXY_PINNEDPUBLICKEY = 100263,
+
+    ABSTRACT_UNIX_SOCKET = 100264,
+
+    SUPPRESS_CONNECT_HEADERS = 265,
+
+    REQUEST_TARGET = 100266,
+
+    SOCKS5_AUTH = 267,
+
+    SSH_COMPRESSION = 268,
+
+    MIMEPOST = 100269,
+
+    TIMEVALUE_LARGE = 300270,
+
+    HAPPY_EYEBALLS_TIMEOUT_MS = 271,
+
+    RESOLVER_START_FUNCTION = 200272,
+    RESOLVER_START_DATA = 100273,
+
+    HAPROXYPROTOCOL = 274,
+
+    DNS_SHUFFLE_ADDRESSES = 275,
+
+    TLS13_CIPHERS = 100276,
+    PROXY_TLS13_CIPHERS = 100277,
+
+    DISALLOW_USERNAME_IN_URL = 278,
+
+    DOH_URL = 100279,
+
+    UPLOAD_BUFFERSIZE = 280,
+
+    UPKEEP_INTERVAL_MS = 281,
+
+    CURLU = 100282,
+
+    TRAILERFUNCTION = 200283,
+    TRAILERDATA = 100284,
+
+    HTTP09_ALLOWED = 285,
+
+    ALTSVC_CTRL = 286,
+    ALTSVC = 100287,
+
+    MAXAGE_CONN = 288,
+
+    SASL_AUTHZID = 100289,
+
+    MAIL_RCPT_ALLOWFAILS = 290,
+
+    SSLCERT_BLOB = 400291,
+    SSLKEY_BLOB = 400292,
+    PROXY_SSLCERT_BLOB = 400293,
+    PROXY_SSLKEY_BLOB = 400294,
+    ISSUERCERT_BLOB = 400295,
+
+    PROXY_ISSUERCERT = 100296,
+    PROXY_ISSUERCERT_BLOB = 400297,
+
+    SSL_EC_CURVES = 100298,
+
+    HSTS_CTRL = 299,
+    HSTS = 100300,
+
+    HSTSREADFUNCTION = 200301,
+    HSTSREADDATA = 100302,
+    HSTSWRITEFUNCTION = 200303,
+    HSTSWRITEDATA = 100304,
+
+    AWS_SIGV4 = 100305,
+
+    DOH_SSL_VERIFYPEER = 306,
+    DOH_SSL_VERIFYHOST = 307,
+    DOH_SSL_VERIFYSTATUS = 308,
+
+    CAINFO_BLOB = 400309,
+    PROXY_CAINFO_BLOB = 400310,
+
+    SSH_HOST_PUBLIC_KEY_SHA256 = 100311,
+
+    PREREQFUNCTION = 200312,
+    PREREQDATA = 100313,
+
+    MAXLIFETIME_CONN = 314,
+
+    MIME_OPTIONS = 315,
+
+    SSH_HOSTKEYFUNCTION = 200316,
+    SSH_HOSTKEYDATA = 100317,
+
+    PROTOCOLS_STR = 100318,
+    REDIR_PROTOCOLS_STR = 100319,
+
+    WS_OPTIONS = 320,
+
+    CA_CACHE_TIMEOUT = 321,
+
+    QUICK_EXIT = 322,
+
+    HAPROXY_CLIENT_IP = 100323
+}
+
+// ===== External type definitions =====
+type ExtCurlRef alias byte*;
+type CurlOffT alias long;
+
+// ===== External function declarations =====
+ext p curl_global_init(long /*flags*/);
+ext f<ExtCurlRef> curl_easy_init();
+ext f<CurlCode> curl_easy_setopt(ExtCurlRef /*curl*/, CurlOption /*option*/, ...);
+ext f<CurlCode> curl_easy_perform(ExtCurlRef /*curl*/);
+ext p curl_easy_cleanup(ExtCurlRef /*curl*/);
+ext p curl_global_cleanup();
+
+// ===== Generic type defs =====
+
+type OptT long|string|FilePtr;
+
+// ===== CurlClient =====
+public type CurlClient struct {
+    ExtCurlRef self
+}
+
+public p CurlClient.ctor(unsigned long globalInitFlags = CURL_GLOBAL_DEFAULT) {
+    curl_global_init(globalInitFlags);
+    this.self = curl_easy_init();
+}
+
+public p CurlClient.dtor() {
+    curl_easy_cleanup(this.self);
+    curl_global_cleanup();
+}
+
+inline f<bool> CurlClient.isValid() {
+    return this.self != nil<ExtCurlRef>;
+}
+
+inline p CurlClient.setOption<OptT>(CurlOption option, OptT value) {
+    curl_easy_setopt(this.self, option, value);
+}
+
+inline f<CurlCode> CurlClient.run() {
+    return curl_easy_perform(this.self);
+}
+
+public f<Result<string>> CurlClient.downloadFile(string url, string outputPath, bool withProgress = false) {
+    // Check if we have a valid curl object
+    if !this.isValid() {
+        return err<string>("Curl initialization failed");
+    }
+
+    // Create + open output file
+    const Result<File> fileRes = openFile(outputPath, MODE_READ_WRITE_OVERWRITE);
+    if fileRes.isErr() {
+        return err<string>(fileRes.getErr());
+    }
+    const File file = fileRes.unwrap();
+
+    // Set necessary options to CURL
+    this.setOption(CurlOption::URL, url);
+    this.setOption(CurlOption::FOLLOWLOCATION, 1ul);
+    this.setOption(CurlOption::WRITEDATA, file.getRawHandle());
+    if withProgress {
+        this.setOption(CurlOption::NOPROGRESS, 0ul);
+    }
+
+    // Download file
+    const CurlCode res = this.run();
+    file.close();
+    if res != CurlCode::OK {
+        return err<string>("Curl returned with error code");
+    }
+
+    // Success
+    return ok<string>(outputPath);
+}
