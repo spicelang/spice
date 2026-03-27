@@ -1,5 +1,9 @@
 #![core.compiler.warnings.ignore]
-#![core.linker.flag = "`pkg-config --cflags --libs gtk4`"]
+#![
+    core.linux.linker.flag = "`pkg-config --cflags --libs gtk4`",
+    core.darwin.linker.flag = "`pkg-config --cflags --libs gtk4`",
+    core.windows.linker.flag = "-lgtk4"
+]
 
 type T dyn;
 

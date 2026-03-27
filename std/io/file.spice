@@ -59,7 +59,7 @@ const int SEEK_END = 2;
 
 const int EOF = -1;
 
-type FilePtr alias byte*;
+public type FilePtr alias byte*;
 
 // Link external functions
 ext f<FilePtr> fopen(string /*file path*/, string /*mode*/);
@@ -191,6 +191,15 @@ public f<unsigned long> File.getSize() {
  */
 public inline f<bool> File.isEOF() {
     return this.isEOF;
+}
+
+/**
+ * Get raw file handle
+ *
+ * @return File handle
+ */
+public const f<FilePtr> File.getRawHandle() {
+    return this.filePtr;
 }
 
 /**

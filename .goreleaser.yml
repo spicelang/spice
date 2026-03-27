@@ -74,16 +74,38 @@ nfpms:
       - rpm
       - archlinux
     dependencies:
-      - build-essential
       - clang
       - lld
     suggests:
       - mold
-      - libgtk-4-dev
-      - libgtkmm-4.0-dev
     contents:
       - src: std
         dst: /usr/lib/spice/std
+    overrides:
+      apk:
+        dependencies:
+          - build-base
+          - gtk4-dev
+          - gtkmm4.0-dev
+          - curl-dev
+      deb:
+        dependencies:
+          - build-essential
+          - libgtk-4-dev
+          - libgtkmm-4.0-dev
+          - libcurl4-openssl-dev
+      rpm:
+        dependencies:
+          - glibc-devel
+          - gtk4-devel
+          - gtkmm4.0-devel
+          - libcurl-devel
+      archlinux:
+        dependencies:
+          - base-devel
+          - gtk4
+          - gtkmm-4.0
+          - curl
 
 release:
   name_template: "v{{ .Tag }}"
