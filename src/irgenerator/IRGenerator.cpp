@@ -392,7 +392,7 @@ void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueB
 
 void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const {
   // Skip the verifying step if the verifier was disabled manually or debug info is emitted
-  if (cliOptions.disableVerifier || cliOptions.instrumentation.generateDebugInfo)
+  if (cliOptions.disableVerifier)
     return;
 
   // Verify function
@@ -404,7 +404,7 @@ void IRGenerator::verifyFunction(const llvm::Function *fct, const CodeLoc &codeL
 
 void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
   // Skip the verifying step if the verifier was disabled manually or debug info is emitted
-  if (cliOptions.disableVerifier || cliOptions.instrumentation.generateDebugInfo)
+  if (cliOptions.disableVerifier)
     return;
 
   // Verify module

@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -8,7 +9,6 @@ import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
-import "std/bindings/llvm/llvm" as llvm;
 
 public type VTableData struct {
     llvm::StructType* typeInfoType = nil<llvm::StructType*>

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <util/GlobalDefinitions.h>
+
 #include <llvm/TargetParser/Triple.h>
 
 #include "../../lib/cli11/CLI11.hpp"
@@ -65,19 +67,19 @@ const char *const OUTPUT_CONTAINER_SHARED_LIBRARY = "dylib";
  */
 struct CliOptions {
   std::filesystem::path mainSourceFile; // e.g. ./main.spice
-  llvm::Triple targetTriple; // In format: <arch><sub>-<vendor>-<sys>-<abi>
+  llvm::Triple targetTriple;            // In format: <arch><sub>-<vendor>-<sys>-<abi>
   std::string targetArch = TARGET_UNKNOWN;
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
   bool isNativeTarget = true;
   bool useCPUFeatures = true;
   bool execute = false;
-  std::filesystem::path cacheDir; // Where the cache files go. Should always be a temp directory
-  std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
-  std::filesystem::path outputPath; // Where the output binary goes.
-  BuildMode buildMode = BuildMode::DEBUG; // Default build mode is debug
+  std::filesystem::path cacheDir;                                // Where the cache files go. Should always be a temp directory
+  std::filesystem::path outputDir = "./";                        // Where the object files go. Should always be a temp directory
+  std::filesystem::path outputPath;                              // Where the output binary goes.
+  BuildMode buildMode = BuildMode::DEBUG;                        // Default build mode is debug
   OutputContainer outputContainer = OutputContainer::EXECUTABLE; // Default output container is executable
-  unsigned short compileJobCount = 0; // 0 for auto
+  unsigned short compileJobCount = 0;                            // 0 for auto
   bool ignoreCache = false;
   std::string llvmArgs;
   bool printDebugOutput = false;
@@ -106,7 +108,7 @@ struct CliOptions {
     bool generateDebugInfo = false;
     Sanitizer sanitizer = Sanitizer::NONE;
   } instrumentation;
-  bool disableVerifier = false;
+  bool disableVerifier = !SPICE_DEBUG;
   bool testMode = false;
   bool comparableOutput = false;
   std::map<std::string, std::string> buildVars;

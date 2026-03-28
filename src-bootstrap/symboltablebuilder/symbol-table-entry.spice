@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/stack";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -7,7 +8,6 @@ import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/reader/code-loc";
-import "std/bindings/llvm/llvm" as llvm;
 
 public type SymbolTableEntry struct {
     // Public fields

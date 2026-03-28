@@ -4,6 +4,7 @@ import "std/data/vector";
 import "std/data/unordered-map";
 import "std/time/timer";
 import "std/io/filepath";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -15,7 +16,6 @@ import "bootstrap/linker/external-linker-interface";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
-import "std/bindings/llvm/llvm" as llvm;
 import "bootstrap/source-file";
 import "bootstrap/driver";
 

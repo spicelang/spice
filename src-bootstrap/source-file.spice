@@ -9,6 +9,7 @@ import "std/data/vector";
 import "std/data/stack";
 import "std/io/filepath";
 import "std/time/timer";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/driver";
@@ -16,7 +17,6 @@ import "bootstrap/global/global-resource-manager-intf";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/source-file-intf";
 import "bootstrap/ast/ast-nodes";
-import "std/bindings/llvm/llvm" as llvm;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
