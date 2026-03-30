@@ -25,7 +25,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Setup GitHub pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Checkout
         uses: actions/checkout@v6
