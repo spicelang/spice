@@ -1,5 +1,0 @@
-// TEST: --disable-verifier
-
-f<int> main() {
-    printf("Hello World!");
-}
