@@ -169,6 +169,15 @@ void Driver::enrich() const {
   if (sanitizer == Sanitizer::TYPE)
     cliOptions.useTBAAMetadata = true;
 
+  // Infer build vars from other options
+  const auto boolToString = [](bool input) { return input ? "true" : "false"; };
+  cliOptions.buildVars["spice.is_debug"] = boolToString(cliOptions.buildMode == BuildMode::DEBUG);
+  cliOptions.buildVars["spice.is_release"] = boolToString(cliOptions.buildMode == BuildMode::RELEASE);
+  cliOptions.buildVars["spice.is_test"] = boolToString(cliOptions.buildMode == BuildMode::TEST);
+  cliOptions.buildVars["spice.link_static"] = boolToString(cliOptions.staticLinking);
+  cliOptions.buildVars["spice.is_native_target"] = boolToString(cliOptions.isNativeTarget);
+  cliOptions.buildVars["spice.target_triple"] = cliOptions.targetTriple.str();
+
   // Prevent incompatible option combinations
   if (cliOptions.staticLinking && cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY)
     throw CliError(INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library");
@@ -200,7 +209,7 @@ void Driver::addBuildSubcommand() {
   subCmd->allow_non_standard_option_names();
   subCmd->configurable();
   subCmd->callback([&] {
-    shouldCompile = true; // Requires the source file to be compiled
+    shouldCompile = true;
   });
 
   addCompileSubcommandOptions(subCmd);
@@ -262,7 +271,7 @@ void Driver::addRunSubcommand() {
   subCmd->alias("r");
   subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
-    shouldCompile = shouldExecute = true; // Requires the source file to be compiled
+    shouldCompile = shouldExecute = true;
   });
 
   addCompileSubcommandOptions(subCmd);
@@ -281,10 +290,10 @@ void Driver::addTestSubcommand() {
   subCmd->alias("t");
   subCmd->allow_non_standard_option_names();
   subCmd->callback([&] {
-    shouldCompile = shouldExecute = true;   // Requires the source file to be compiled
-    cliOptions.buildMode = BuildMode::TEST; // Set build mode to test
-    cliOptions.generateTestMain = true;     // An alternative entry function is generated
-    cliOptions.noEntryFct = true;           // To not have two main functions, disable normal main
+    shouldCompile = shouldExecute = true;
+    cliOptions.buildMode = BuildMode::TEST;
+    cliOptions.generateTestMain = true; // An alternative entry function is generated
+    cliOptions.noEntryFct = true;       // To not have two main functions, disable normal main
   });
 
   addCompileSubcommandOptions(subCmd);
@@ -453,8 +462,8 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
 void Driver::ensureNotDockerized() {
   const char *envValue = std::getenv(ENV_VAR_DOCKERIZED);
   if (envValue != nullptr && std::strcmp(envValue, "true") == 0) { // LCOV_EXCL_START
-    auto errorMsg = "This feature is not supported in a containerized environment. Please use the standalone version of Spice.";
-    throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, errorMsg);
+    const auto msg = "This feature is not supported in a containerized environment. Please use the standalone version of Spice.";
+    throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, msg);
   } // LCOV_EXCL_STOP
 }
 
