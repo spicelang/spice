@@ -1,7 +1,9 @@
 // Std imports
+import "std/data/map";
 import "std/text/print";
 import "std/os/cmd";
 import "std/os/env";
+import "std/os/os";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
@@ -56,7 +58,7 @@ public type OutputContainer enum {
     OBJECT_FILE = 1,    // On Linux and macOS .o files and on Windows .obj files
     STATIC_LIBRARY = 2, // On Linux and macOS .a files and on Windows .lib files
     SHARED_LIBRARY = 3, // On Linux .so, on Windows .dll and on macOS .dylib files
-    COUNT
+    MAX
 }
 const string OUTPUT_CONTAINER_EXECUTABLE = "exec";
 const string OUTPUT_CONTAINER_OBJECT_FILE = "obj";
@@ -113,9 +115,10 @@ public type CliOptions struct {
     public bool generateTestMain = false
     public bool staticLinking = false
     public InstrumentationSettings instrumentation
-    public bool disableVerifier = false
+    public bool disableVerifier = !__get_build_var<bool>("spice.is_release")
     public bool testMode = false
     public bool comparableOutput = false
+    public Map<String, String> buildVars
 }
 
 /**
@@ -287,7 +290,7 @@ public p Driver.runBinary() {
     FilePath executablePath = this.cliOptions.outputPath;
     executablePath.makeNative();
     const int exitCode = execCmd(executablePath.toString());
-    if exitCode != 0 {
+    if exitCode != EXIT_CODE_SUCCESS {
         panic(Error("Your Spice executable exited with non-zero exit code"));
     }
 }
@@ -299,6 +302,9 @@ p Driver.addBuildSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.addSubcommand("build", "Builds your Spice program and emits an executable");
     subCmd.addAlias("b");
+    subCmd.setCallback(p() {
+        this.shouldCompile = true;
+    });
 
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
@@ -351,6 +357,10 @@ p Driver.addRunSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.addSubcommand("run", "Builds your Spice program and runs it immediately");
     subCmd.addAlias("r");
+    subCmd.setCallback(p() {
+        this.shouldCompile = true;
+        this.shouldExecute = true;
+    });
 
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
@@ -366,6 +376,14 @@ p Driver.addTestSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.addSubcommand("test", "Builds your Spice program and runs all enclosed tests");
     subCmd.addAlias("t");
+    subCmd.setCallback(p() {
+        this.shouldCompile = true;
+        this.shouldExecute = true;
+        this.cliOptions.buildMode = BuildMode::TEST;
+        this.cliOptions.generateTestMain = true; // An alternative entry function is generated
+        this.cliOptions.noEntryFct = true;       // To not have two main functions, disable normal main
+        this.ensureNotDockerized();
+    });
 
     this.addCompileSubcommandOptions(subCmd);
     this.addInstrumentationOptions(subCmd);
@@ -381,6 +399,11 @@ p Driver.addInstallSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
     subCmd.addAlias("i");
+    subCmd.setCallback(p() {
+        this.shouldCompile = true;
+        this.shouldInstall = true;
+        this.ensureNotDockerized();
+    });
 
     this.addCompileSubcommandOptions(subCmd);
 }
@@ -392,6 +415,10 @@ p Driver.addUninstallSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.addSubcommand("uninstall", "Uninstalls a Spice program from the system");
     subCmd.addAlias("u");
+    subCmd.setCallback(p() {
+        this.shouldUninstall = true;
+        this.ensureNotDockerized();
+    });
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
@@ -406,6 +433,24 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
             panic(Error("Invalid build mode"));
         }
     };
+    const p(const string&) buildVarCallback = p(const string& buildVar) {
+        String input = String(buildVar);
+
+        // Skip empty inputs
+        if input.isEmpty() {
+            return;
+        }
+
+        // Parse structure: "key=value". If no value given, save "true" as value.
+        const long splitPos = input.find('=');
+        if splitPos != -1 {
+            const String key = input.getSubstring(0, splitPos);
+            const String value = input.getSubstring(splitPos + 1);
+            //this.cliOptions.buildVars.insert(key, value);
+        } else {
+            //this.cliOptions.buildVars.insert(input, "true");
+        }
+    };
 
     // --build-mode
     CliOption<string>& buildModeOption = subCmd.addOption("--build-mode", buildModeCallback, "Build mode: debug (default), release, test");
@@ -416,6 +461,9 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --jobs
     CliOption<int>& jobsOption = subCmd.addOption("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
     jobsOption.addAlias("-j");
+    // --build-var
+    CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
+    buildVarOption.addAlias("-b");
     // --ignore-cache
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
     // --use-lifetime-markers
