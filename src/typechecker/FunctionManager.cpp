@@ -155,13 +155,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   const auto pred = [&](const Arg &arg) { return arg.first.hasAnyGenericParts(); };
   const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
 
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  const FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<const Function *> matches;
-  for (const auto &[defCodeLocStr, m] : functionRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const FunctionManifestationList manifestations = m;
+  for (const auto &[defCodeLocStr, manifestations] : matchScope->functions) {
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
@@ -221,18 +217,14 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
   }
   lookupCacheMisses++;
 
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<Function *> matches;
-  for (const auto &[fctId, m] : functionRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const FunctionManifestationList manifestations = m;
+  for (const auto &[fctId, manifestations] :  matchScope->functions) {
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
-      // Skip generic substantiations to prevent double matching of a function
-      if (presetFunction.isGenericSubstantiation())
+      // Skip generic and newly inserted substantiations to prevent double matching of a function
+      if (presetFunction.isGenericSubstantiation() || presetFunction.isNewlyInserted)
         continue;
 
       // Copy the function to be able to substantiate types
@@ -280,6 +272,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       substantiatedFunction->genericPreset = &matchScope->functions.at(fctId).at(signature);
       substantiatedFunction->alreadyTypeChecked = false;
       substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
+      substantiatedFunction->isNewlyInserted = true; // To not iterate over it in the same matching
 
       // Copy function entry
       const std::string newScopeName = substantiatedFunction->getScopeName();
@@ -325,6 +318,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
     throw SemanticError(callNode, FUNCTION_AMBIGUITY, errorMessage.str());
   }
   Function *matchedFunction = matches.front();
+  matchedFunction->isNewlyInserted = false;
 
   // Insert into cache
   lookupCache[cacheKey] = matchedFunction;
