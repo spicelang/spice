@@ -22,7 +22,7 @@ size_t FunctionManager::lookupCacheMisses = 0;
 Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
   const std::string fctId = baseFunction.name + ":" + baseFunction.declNode->codeLoc.toPrettyLineAndColumn();
-  insertScope->functions.insert({fctId, FunctionManifestationList()});
+  insertScope->functions.emplace(fctId, FunctionManifestationList());
 
   // Collect substantiations
   std::vector<Function> manifestations;
@@ -236,7 +236,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
         const QualType &templateType = templateTypeHints.at(i);
-        typeMapping.insert({typeName, templateType});
+        typeMapping.emplace(typeName, templateType);
       }
 
       bool forceSubstantiation = false;

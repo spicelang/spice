@@ -94,7 +94,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateBaseType : newBaseType;
       assert(newMappingType.is(TY_GENERIC) || newMappingType.is(TY_INVALID) ||
              newMappingType.getQualifiers().isSigned != newMappingType.getQualifiers().isUnsigned);
-      typeMapping.insert({genericTypeName, newMappingType});
+      typeMapping.emplace(genericTypeName, newMappingType);
 
       return true; // The type was successfully matched, by enriching the type mapping
     }

@@ -344,7 +344,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = structDiType;
 
     // Insert into cache
-    structTypeCache.insert({hashKey, structDiType});
+    structTypeCache.emplace(hashKey, structDiType);
 
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
@@ -399,7 +399,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = interfaceDiType;
 
     // Insert into cache
-    structTypeCache.insert({hashKey, interfaceDiType});
+    structTypeCache.emplace(hashKey, interfaceDiType);
 
     break;
   }

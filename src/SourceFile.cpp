@@ -617,7 +617,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
 
   // Add the dependency
   sourceFile->isMainFile = false;
-  dependencies.insert({dependencyName, sourceFile});
+  dependencies.emplace(dependencyName, sourceFile);
 
   // Add the dependant
   sourceFile->dependants.push_back(this);
@@ -751,7 +751,7 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     std::string newName = importName;
     newName += SCOPE_ACCESS_TOKEN;
     newName += originalName;
-    exportedNameRegistry.insert({newName, {newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry}});
+    exportedNameRegistry.emplace(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
     // Add the shortened name, considering the name collision
     const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
     addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);

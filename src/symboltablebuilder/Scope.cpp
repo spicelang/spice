@@ -21,7 +21,7 @@ Scope::Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const C
  * @return Child scope (heap allocated)
  */
 Scope *Scope::createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
-  children.insert({scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, declCodeLoc)});
+  children.emplace(scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, declCodeLoc));
   return children.at(scopeName).get();
 }
 
@@ -50,7 +50,7 @@ Scope *Scope::copyChildScope(const std::string &oldName, const std::string &newN
   // Create copy
   const std::shared_ptr<Scope> newScope = children.at(oldName)->deepCopyScope();
   // Save copy under new name
-  children.insert({newName, newScope});
+  children.emplace(newName, newScope);
   return newScope.get();
 }
 
@@ -124,7 +124,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
  */
 void Scope::insertGenericType(const std::string &typeName, const GenericType &genericType) {
   assert(!genericTypes.contains(typeName));
-  genericTypes.insert({typeName, genericType});
+  genericTypes.emplace(typeName, genericType);
 }
 
 /**

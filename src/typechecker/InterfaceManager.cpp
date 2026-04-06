@@ -20,7 +20,7 @@ size_t InterfaceManager::lookupCacheMisses = 0;
 
 Interface *InterfaceManager::insert(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
-  insertScope->interfaces.insert({spiceInterface.declNode->codeLoc, InterfaceManifestationList()});
+  insertScope->interfaces.emplace(spiceInterface.declNode->codeLoc, InterfaceManifestationList());
 
   // Save substantiation in declaration node
   Interface *substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);
