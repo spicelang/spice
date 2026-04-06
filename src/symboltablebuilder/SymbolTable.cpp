@@ -26,7 +26,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
     orderIndex = std::ranges::count_if(symbols, [](const auto &entry) { return !entry.second.anonymous; });
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
   assert(!symbols.contains(name));
-  symbols.insert({name, SymbolTableEntry(name, QualType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
+  symbols.emplace(name, SymbolTableEntry(name, QualType(TY_INVALID), scope, declNode, orderIndex, isGlobal));
   // Set entry to declared
   SymbolTableEntry *entry = &symbols.at(name);
   entry->updateState(DECLARED, declNode);
@@ -78,7 +78,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode
 SymbolTableEntry *SymbolTable::copySymbol(const std::string &originalName, const std::string &newName) {
   SymbolTableEntry *entryToCopy = lookupStrict(originalName);
   assert(entryToCopy != nullptr);
-  auto [it, success] = symbols.insert({newName, *entryToCopy});
+  auto [it, success] = symbols.emplace(newName, *entryToCopy);
   assert(success);
   return &it->second;
 }

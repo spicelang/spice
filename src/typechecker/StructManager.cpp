@@ -21,7 +21,7 @@ size_t StructManager::lookupCacheMisses = 0;
 Struct *StructManager::insert(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
   const std::string structId = spiceStruct.name + ":" + spiceStruct.declNode->codeLoc.toPrettyLineAndColumn();
-  insertScope->structs.insert({structId, StructManifestationList()});
+  insertScope->structs.emplace(structId, StructManifestationList());
 
   // Save substantiation in declaration node
   Struct *substantiation = insertSubstantiation(insertScope, spiceStruct, spiceStruct.declNode);

@@ -66,7 +66,7 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
 
   // Create the new source file if it does not exist yet
   if (!sourceFiles.contains(filePathStr))
-    sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile)});
+    sourceFiles.emplace(filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile));
 
   return sourceFiles.at(filePathStr).get();
 }

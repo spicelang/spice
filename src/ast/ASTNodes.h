@@ -403,7 +403,7 @@ public:
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
   std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
     if (!defaultFctManifestations.contains(fctName))
-      defaultFctManifestations.insert({fctName, {}});
+      defaultFctManifestations.emplace(fctName, std::vector<Function *>());
     return &defaultFctManifestations.at(fctName);
   }
   [[nodiscard]] bool isStructDef() const override { return true; }
