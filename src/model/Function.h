@@ -85,6 +85,7 @@ public:
   bool used = false;
   bool implicitDefault = false;
   bool isVirtual = false;
+  bool isNewlyInserted = false;
   llvm::Function *llvmFunction = nullptr;
   size_t vtableIndex = 0;
 };
