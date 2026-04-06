@@ -21,8 +21,9 @@ Scope::Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const C
  * @return Child scope (heap allocated)
  */
 Scope *Scope::createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
-  children.emplace(scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, declCodeLoc));
-  return children.at(scopeName).get();
+  const auto &[scope, inserted] = children.emplace(scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, declCodeLoc));
+  assert(inserted);
+  return scope->second.get();
 }
 
 /**
@@ -78,9 +79,8 @@ std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
  * @return Child scope
  */
 Scope *Scope::getChildScope(const std::string &scopeName) const {
-  if (!children.empty() && children.contains(scopeName))
-    return children.at(scopeName).get();
-  return nullptr;
+  const auto it = children.find(scopeName);
+  return it != children.end() ? it->second.get() : nullptr;
 }
 
 /**
@@ -135,7 +135,8 @@ void Scope::insertGenericType(const std::string &typeName, const GenericType &ge
  * @return Generic type
  */
 GenericType *Scope::lookupGenericTypeStrict(const std::string &typeName) {
-  return genericTypes.contains(typeName) ? &genericTypes.at(typeName) : nullptr;
+  const auto it = genericTypes.find(typeName);
+  return it != genericTypes.end() ? &it->second : nullptr;
 }
 
 /**

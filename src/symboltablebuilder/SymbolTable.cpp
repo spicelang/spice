@@ -147,11 +147,11 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &symbolName) {
   if (symbolName.empty())
     return nullptr;
   // Check if a symbol with this name exists in this scope
-  if (symbols.contains(symbolName))
-    return &symbols.at(symbolName);
+  if (const auto it = symbols.find(symbolName); it != symbols.end())
+    return &it->second;
   // Check if a capture with this name exists in this scope
-  if (captures.contains(symbolName))
-    return captures.at(symbolName).capturedSymbol;
+  if (const auto it = captures.find(symbolName); it != captures.end())
+    return it->second.capturedSymbol;
   // Otherwise, return a nullptr
   return nullptr;
 }
@@ -255,8 +255,9 @@ Capture *SymbolTable::lookupCapture(const std::string &name) { // NOLINT(misc-no
  */
 Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
   // If available in the current scope, return it
-  if (captures.contains(name))
-    return &captures.at(name);
+  const auto it = captures.find(name);
+  if (it != captures.end())
+    return &it->second;
   // Otherwise, return nullptr
   return nullptr;
 }

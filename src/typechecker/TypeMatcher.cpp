@@ -48,8 +48,9 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
     const std::string &genericTypeName = candidateBaseType.getSubType();
 
     // Check if we know the concrete type for that generic type name already
-    if (typeMapping.contains(genericTypeName)) { // This is a known generic type
-      QualType knownConcreteType = typeMapping.at(genericTypeName);
+    const auto it = typeMapping.find(genericTypeName);
+    if (it != typeMapping.end()) { // This is a known generic type
+      QualType knownConcreteType = it->second;
 
       // Merge qualifiers of candidate type and known concrete type together
       const TypeQualifiers mergedQualifiers = knownConcreteType.getQualifiers().merge(candidateType.getQualifiers());

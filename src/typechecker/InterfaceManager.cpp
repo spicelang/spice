@@ -60,15 +60,15 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
                                    const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
-  if (lookupCache.contains(cacheKey)) {
+  if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {
     lookupCacheHits++;
-    return lookupCache.at(cacheKey);
+    return it->second;
   }
   lookupCacheMisses++;
 
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
   std::vector<Interface *> matches;
-  for (const auto &[defCodeLocStr, manifestations] : matchScope->interfaces) {
+  for (auto &[defCodeLocStr, manifestations] : matchScope->interfaces) {
     for (const auto &[mangledName, presetInterface] : manifestations) {
       // Skip generic and newly inserted substantiations to prevent double matching of an interface
       if (presetInterface.isGenericSubstantiation() || presetInterface.isNewlyInserted)
@@ -100,15 +100,16 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
       // Check if it needs to be substantiated
       if (presetInterface.templateTypes.empty()) {
         assert(matchScope->interfaces.contains(defCodeLocStr) && matchScope->interfaces.at(defCodeLocStr).contains(mangledName));
-        matches.push_back(&matchScope->interfaces.at(defCodeLocStr).at(mangledName));
-        matches.back()->used = true;
+        Interface *match = &matchScope->interfaces.at(defCodeLocStr).at(mangledName);
+        match->used = true;
+        matches.push_back(match);
         continue; // Match was successful -> match the next interface
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (manifestations.contains(candidate.getSignature())) {
-        matches.push_back(&matchScope->interfaces.at(defCodeLocStr).at(candidate.getSignature()));
-        matches.back()->used = true;
+      if (auto it = manifestations.find(candidate.getSignature()); it != manifestations.end()) {
+        it->second.used = true;
+        matches.push_back(&it->second);
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
