@@ -64,15 +64,15 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
                              const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, qt, reqTemplateTypes);
-  if (lookupCache.contains(cacheKey)) {
+  if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {
     lookupCacheHits++;
-    return lookupCache.at(cacheKey);
+    return it->second;
   }
   lookupCacheMisses++;
 
   // Loop over struct registry to find structs, that match the requirements of the instantiation
   std::vector<Struct *> matches;
-  for (const auto &[structId, manifestations] : matchScope->structs) {
+  for (auto &[structId, manifestations] : matchScope->structs) {
     for (const auto &[mangledName, presetStruct] : manifestations) {
       // Skip generic and newly inserted substantiations to prevent double matching of a struct
       if (presetStruct.isGenericSubstantiation() || presetStruct.isNewlyInserted)
@@ -104,15 +104,16 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       // Check if it needs to be substantiated
       if (presetStruct.templateTypes.empty()) {
         assert(matchScope->structs.contains(structId) && matchScope->structs.at(structId).contains(mangledName));
-        matches.push_back(&matchScope->structs.at(structId).at(mangledName));
-        matches.back()->used = true;
+        Struct *match = &matchScope->structs.at(structId).at(mangledName);
+        match->used = true;
+        matches.push_back(match);
         continue; // Match was successful -> match the next struct
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (manifestations.contains(candidate.getSignature())) {
-        matches.push_back(&matchScope->structs.at(structId).at(candidate.getSignature()));
-        matches.back()->used = true;
+      if (const auto it = manifestations.find(candidate.getSignature()); it != manifestations.end()) {
+        it->second.used = true;
+        matches.push_back(&it->second);
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

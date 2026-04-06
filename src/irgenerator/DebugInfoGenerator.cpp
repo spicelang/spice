@@ -321,8 +321,9 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
   case TY_STRUCT: {
     // Do cache lookup
     const size_t hashKey = std::hash<QualType>{}(ty);
-    if (structTypeCache.contains(hashKey))
-      return structTypeCache.at(hashKey);
+    const auto it = structTypeCache.find(hashKey);
+    if (it != structTypeCache.end())
+      return it->second;
 
     // Cache miss, generate struct type
     const Struct *spiceStruct = ty.getStruct(node);
@@ -373,8 +374,9 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
   case TY_INTERFACE: {
     // Do cache lookup
     const size_t hashKey = std::hash<QualType>{}(ty);
-    if (structTypeCache.contains(hashKey))
-      return structTypeCache.at(hashKey);
+    const auto it = structTypeCache.find(hashKey);
+    if (it != structTypeCache.end())
+      return it->second;
 
     // Cache miss, generate interface type
     const Interface *spiceInterface = ty.getInterface(node);

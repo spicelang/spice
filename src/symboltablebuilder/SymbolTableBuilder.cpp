@@ -666,11 +666,12 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
 
 std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
   // Check if this attribute exists
-  if (!ATTR_CONFIGS.contains(node->key))
+  const auto it = ATTR_CONFIGS.find(node->key);
+  if (it == ATTR_CONFIGS.end())
     throw SemanticError(node, UNKNOWN_ATTR, "Unknown attribute '" + node->key + "'");
 
   // Check if the target is correct
-  const auto &[target, type] = ATTR_CONFIGS.at(node->key);
+  const auto &[target, type] = it->second;
   if ((node->target & target) == 0)
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 

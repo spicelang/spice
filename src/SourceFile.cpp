@@ -663,12 +663,12 @@ void SourceFile::addNameRegistryEntry(const std::string &symbolName, uint64_t ty
 }
 
 const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &symbolName) const {
-  if (!exportedNameRegistry.contains(symbolName))
+  const auto it = exportedNameRegistry.find(symbolName);
+  if (it == exportedNameRegistry.end())
     return nullptr;
 
   // Resolve registry entry for the given name
-  assert(exportedNameRegistry.contains(symbolName));
-  const NameRegistryEntry *entry = &exportedNameRegistry.at(symbolName);
+  const NameRegistryEntry *entry = &it->second;
 
   // Mark the import entry as used
   if (entry->importEntry != nullptr)
@@ -720,7 +720,8 @@ const SourceFile *SourceFile::getRootSourceFile() const { // NOLINT(misc-no-recu
 bool SourceFile::isRT(RuntimeModule runtimeModule) const {
   assert(IDENTIFYING_TOP_LEVEL_NAMES.contains(runtimeModule));
   const char *topLevelName = IDENTIFYING_TOP_LEVEL_NAMES.at(runtimeModule);
-  if (!exportedNameRegistry.contains(topLevelName))
+  const auto it = exportedNameRegistry.find(topLevelName);
+  if (it == exportedNameRegistry.end())
     return false;
   return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
 }

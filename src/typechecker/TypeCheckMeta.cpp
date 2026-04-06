@@ -277,7 +277,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (const QualType *genericType = rootScope->lookupGenericTypeStrict(firstFragment)) {
     assert(!isImported);
     // Take the concrete replacement type for the name of this generic type if available
-    const QualType &symbolType = typeMapping.contains(firstFragment) ? typeMapping.at(firstFragment) : *genericType;
+    const auto it = typeMapping.find(firstFragment);
+    const QualType &symbolType = it != typeMapping.end() ? it->second : *genericType;
 
     // Check if the replacement requires a runtime module
     if (symbolType.is(TY_STRUCT))

@@ -146,9 +146,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, {});
-  if (lookupCache.contains(cacheKey)) {
+  if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {
     lookupCacheHits++;
-    return lookupCache.at(cacheKey);
+    return it->second;
   }
   lookupCacheMisses++;
 
@@ -211,15 +211,15 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
-  if (lookupCache.contains(cacheKey)) {
+  if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {
     lookupCacheHits++;
-    return lookupCache.at(cacheKey);
+    return it->second;
   }
   lookupCacheMisses++;
 
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<Function *> matches;
-  for (const auto &[fctId, manifestations] :  matchScope->functions) {
+  for (auto &[fctId, manifestations] :  matchScope->functions) {
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
@@ -254,16 +254,17 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty() && !forceSubstantiation) {
         assert(matchScope->functions.contains(fctId) && matchScope->functions.at(fctId).contains(signature));
-        matches.push_back(&matchScope->functions.at(fctId).at(signature));
-        matches.back()->used = true;
+        Function *match = &matchScope->functions.at(fctId).at(signature);
+        match->used = true;
+        matches.push_back(match);
         continue; // Match was successful -> match the next function
       }
 
       // Check if we already have this manifestation and can simply re-use it
       const std::string newSignature = candidate.getSignature(true, true, false);
-      if (matchScope->functions.at(fctId).contains(newSignature)) {
-        matches.push_back(&matchScope->functions.at(fctId).at(newSignature));
-        matches.back()->used = true;
+      if (const auto it = manifestations.find(newSignature); it != manifestations.end()) {
+        it->second.used = true;
+        matches.push_back(&it->second);
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
