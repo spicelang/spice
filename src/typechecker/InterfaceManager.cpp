@@ -66,16 +66,12 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
   }
   lookupCacheMisses++;
 
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
   std::vector<Interface *> matches;
-  for (const auto &[defCodeLocStr, m] : interfaceRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const InterfaceManifestationList manifestations = m;
+  for (const auto &[defCodeLocStr, manifestations] : matchScope->interfaces) {
     for (const auto &[mangledName, presetInterface] : manifestations) {
-      // Skip generic substantiations to prevent double matching of an interface
-      if (presetInterface.isGenericSubstantiation())
+      // Skip generic and newly inserted substantiations to prevent double matching of an interface
+      if (presetInterface.isGenericSubstantiation() || presetInterface.isNewlyInserted)
         continue;
 
       // Copy the interface to be able to substantiate types
@@ -120,6 +116,7 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
       Interface *substantiatedInterface = insertSubstantiation(matchScope, candidate, presetInterface.declNode);
       substantiatedInterface->genericPreset = &matchScope->interfaces.at(defCodeLocStr).at(mangledName);
       substantiatedInterface->declNode->getInterfaceManifestations()->push_back(substantiatedInterface);
+      substantiatedInterface->isNewlyInserted = true; // To not iterate over it in the same matching
 
       // Copy interface entry
       const std::string &newSignature = substantiatedInterface->getSignature();
@@ -153,11 +150,13 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
   // Check if more than one interface matches the requirements
   if (matches.size() > 1)
     throw SemanticError(node, INTERFACE_AMBIGUITY, "Multiple interfaces match the requested signature");
+  Interface *matchedInterface = matches.front();
+  matchedInterface->isNewlyInserted = false;
 
   // Insert into cache
-  lookupCache[cacheKey] = matches.front();
+  lookupCache[cacheKey] = matchedInterface;
 
-  return matches.front();
+  return matchedInterface;
 }
 
 /**

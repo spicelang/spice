@@ -70,16 +70,12 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
   }
   lookupCacheMisses++;
 
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  StructRegistry structRegistry = matchScope->structs;
   // Loop over struct registry to find structs, that match the requirements of the instantiation
   std::vector<Struct *> matches;
-  for (const auto &[structId, m] : structRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const StructManifestationList manifestations = m;
+  for (const auto &[structId, manifestations] : matchScope->structs) {
     for (const auto &[mangledName, presetStruct] : manifestations) {
-      // Skip generic substantiations to prevent double matching of a struct
-      if (presetStruct.isGenericSubstantiation())
+      // Skip generic and newly inserted substantiations to prevent double matching of a struct
+      if (presetStruct.isGenericSubstantiation() || presetStruct.isNewlyInserted)
         continue;
 
       // Copy the struct to be able to substantiate types
@@ -124,6 +120,7 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       Struct *substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
       substantiatedStruct->genericPreset = &matchScope->structs.at(structId).at(mangledName);
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
+      substantiatedStruct->isNewlyInserted = true; // To not iterate over it in the same matching
 
       // Copy struct entry
       const std::string newSignature = substantiatedStruct->getSignature();
@@ -194,11 +191,13 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
   // Check if more than one struct matches the requirements
   if (matches.size() > 1)
     throw SemanticError(node, STRUCT_AMBIGUITY, "Multiple structs match the requested signature");
+  Struct *matchedStruct = matches.front();
+  matchedStruct->isNewlyInserted = false;
 
   // Insert into cache
-  lookupCache[cacheKey] = matches.front();
+  lookupCache[cacheKey] = matchedStruct;
 
-  return matches.front();
+  return matchedStruct;
 }
 
 /**

@@ -51,6 +51,7 @@ public:
     llvm::Constant *vtable = nullptr;
   } vTableData;
   bool used = false;
+  bool isNewlyInserted = false;
 };
 
 } // namespace spice::compiler
