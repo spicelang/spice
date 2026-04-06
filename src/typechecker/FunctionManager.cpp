@@ -155,13 +155,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   const auto pred = [&](const Arg &arg) { return arg.first.hasAnyGenericParts(); };
   const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && std::ranges::none_of(reqArgs, pred);
 
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  const FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<const Function *> matches;
-  for (const auto &[defCodeLocStr, m] : functionRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const FunctionManifestationList manifestations = m;
+  for (const auto &[defCodeLocStr, manifestations] : matchScope->functions) {
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
