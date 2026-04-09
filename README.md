@@ -10,7 +10,7 @@
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img alt="CodeQL status" src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
     <a target="_blank" href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/spicelang/spice"></a>
-    <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img alt="Discord server" src="https://dcbadge.vercel.app/api/server/D6sCsJyWPg?style=flat"></a>
+    <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img alt="Discord server" src="https://dcbadge.limes.pink/api/server/D6sCsJyWPg?style=flat"></a>
   </p>
 </p>
 
