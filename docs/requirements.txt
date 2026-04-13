@@ -1,2 +1,2 @@
 lunr==0.8.0
-zensical==0.0.31
+zensical==0.0.32
