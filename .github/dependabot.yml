@@ -12,7 +12,7 @@ updates:
     reviewers:
       - spicelang/compiler-team
     assignees:
-      - spicelang/compiler-team
+      - marcauberer
 
   # GitHub Actions
   - package-ecosystem: github-actions
@@ -26,7 +26,7 @@ updates:
     reviewers:
       - spicelang/compiler-team
     assignees:
-      - spicelang/compiler-team
+      - marcauberer
 
   # Python
   - package-ecosystem: pip
@@ -40,4 +40,4 @@ updates:
     reviewers:
       - spicelang/documentation-team
     assignees:
-      - spicelang/documentation-team
+      - marcauberer
