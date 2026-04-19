@@ -126,7 +126,7 @@ TEST(BlockAllocatorTest, BlockAllocatorOOM) {
         ASSERT_EQ(i, nodes.at(i)->codeLoc.line);
         ASSERT_EQ(1, nodes.at(i)->codeLoc.col);
       }
-      FAIL(); // LCOV_EXCL_LINE - Should not reach this point
+      FAIL();
     } catch (CompilerError &ce) {
       std::stringstream ss;
       ss << "[Error|Compiler]:\n";
