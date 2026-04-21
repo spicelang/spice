@@ -9,7 +9,7 @@ on:
       - '**.md'
 
 env:
-  LLVM_VERSION: "llvmorg-22.1.3"
+  LLVM_VERSION: "llvmorg-22.1.4"
   GCC_VERSION: "14"
 
 jobs:
