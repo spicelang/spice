@@ -105,6 +105,12 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
                       falseType.getName(true))
 
+  // The result type must be a reference if one of true/false branch is of reference type. Otherwise,
+  // the copy ctor is not called correctly
+  QualType resultType = trueType.isRef() ? trueType : falseType;
+  // Infer the const-ness from the more restrictive operand
+  resultType.makeConst(trueType.isConst() || falseType.isConst());
+
   // If there is an anonymous symbol attached to left or right, remove it,
   // since the result takes over the ownership of any destructible object.
   bool removedAnonymousSymbols = false;
@@ -126,7 +132,6 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   }
 
   // Create a new anonymous symbol for the result if required
-  const QualType &resultType = trueType;
   SymbolTableEntry *anonymousSymbol = nullptr;
   const bool calledCopyCtor = node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor;
   if (removedAnonymousSymbols || calledCopyCtor || resultType.isRef())

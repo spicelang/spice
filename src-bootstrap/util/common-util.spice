@@ -58,6 +58,5 @@ public f<String> buildVersionInfo() {
     versionString << "LLVM version:  " << llvm::getVersionString() << endl();
     versionString << "built by:      " << builtBy << endl() << endl();
     versionString << "(c) Marc Auberer 2021-2026";
-    String str = versionString.str();
-    return str;
+    return versionString.str();
 }

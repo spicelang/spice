@@ -1,0 +1,21 @@
+type Test struct {}
+
+p Test.ctor() { printf("Ctor!\n"); }
+p Test.ctor(const Test& _) { printf("Copy ctor!\n"); }
+p Test.dtor() { printf("Dtor!\n"); }
+
+f<Test> foo(const Test &t) {
+    Test copy = t; // Copy ctor call
+    // The following ternery has a left side of type "Test"
+    // and a right side of type "const Test&". The result
+    // type of the ternary itself must be "const Test&".
+    return false ? copy : t; // Return causes another copy ctor call
+    // Dtor call on copy
+}
+
+f<int> main() {
+    Test t; // Ctor call
+    foo(t);
+    // Dtor call on return value of foo()
+    // Dtor call on t
+}
