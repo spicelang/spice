@@ -47,7 +47,7 @@ public p Lifecycle.addEvent(const LifecycleEvent& event) {
  * @return Current state
  */
 public f<LifecycleState> Lifecycle.getCurrentState() {
-    if (this.events.isEmpty()) { return LifecycleState::DEAD; }
+    if this.events.isEmpty() { return LifecycleState::DEAD; }
     return this.events.back().state;
 }
 
@@ -57,7 +57,7 @@ public f<LifecycleState> Lifecycle.getCurrentState() {
  * @return Current state name
  */
 public f<string> Lifecycle.getCurrentStateName() {
-    switch (this.getCurrentState()) {
+    switch this.getCurrentState() {
         case LifecycleState::DECLARED: { return "declared"; }
         case LifecycleState::INITIALIZED: { return "initialized"; }
         default: { return "dead"; }

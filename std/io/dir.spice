@@ -152,7 +152,7 @@ public f<bool> dirExists(string path) {
     DirStream* dirStream = opendir(path);
 
     // Return empty array if stream result is nil
-    if (dirStream == nil<DirStream*>) { return; }
+    if dirStream == nil<DirStream*> { return; }
 
     dyn dirEntry = &DirEntry{};
     while (dirEntry = readdir(dirStream)) != nil<DirEntry*> {

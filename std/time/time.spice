@@ -70,7 +70,7 @@ public f<int> getCurrentYear() {
     // Subtract full years until remaining days fit into the current year
     while true {
         const int daysInYear = isLeapYear(year) ? 366 : 365;
-        if (days < daysInYear) {
+        if days < daysInYear {
             break;
         }
         days -= daysInYear;
