@@ -135,6 +135,9 @@ public:
   std::any visitBuiltinIsSameCall(FctCallNode *node) const;
   std::any visitBuiltinImplementsInterfaceCall(FctCallNode *node) const;
   std::any visitBuiltinGetBuildVarCall(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyConstructible(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyCopyable(FctCallNode *node) const;
+  std::any visitBuiltinIsTriviallyDestructible(FctCallNode *node) const;
 
 private:
   // Private members

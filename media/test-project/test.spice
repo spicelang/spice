@@ -1,28 +1,15 @@
-import "std/bindings/libcurl/libcurl";
-import "std/io/file";
+/*import "std/data/vector";
 
 f<int> main() {
-    const string url = "https://example.com/file.html";
-    const string outputPath = "./file.html";
+    Vector<String> vec;
+    vec.pushBack(String("Test"));
+}*/
 
-    CurlClient client;
-    Result<string> res = client.downloadFile(url, outputPath);
-    if res.isErr() {
-        Error& err = res.getErr();
-        err.toPanic();
-    }
-    assert fileExists(outputPath);
-    assert isFileReadable(outputPath);
-
-    Result<String> fileContentRes = readFile(outputPath);
-    if fileContentRes.isErr() {
-        Error& err = fileContentRes.getErr();
-        err.toPanic();
-    }
-    const String fileContent = fileContentRes.unwrap();
-    assert fileContent.contains("Example");
-
-    deleteFile(outputPath);
-
-    printf("All assertions passed!\n");
+f<int> main() {
+    printf("Trivially constructible: %d\n", __is_trivially_constructible<int>());
+    printf("Trivially constructible: %d\n", __is_trivially_constructible<String>());
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<int>());
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<String>());
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<int>());
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<String>());
 }

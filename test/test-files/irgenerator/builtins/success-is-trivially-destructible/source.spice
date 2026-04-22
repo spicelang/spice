@@ -1,0 +1,4 @@
+f<int> main() {
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<int>());
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<String>());
+}

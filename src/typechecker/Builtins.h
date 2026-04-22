@@ -42,6 +42,9 @@ static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr std::string_view BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr std::string_view BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_var";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE = "__is_trivially_constructible";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE = "__is_trivially_copyable";
+static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "__is_trivially_destructible";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -134,7 +137,32 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .minArgTypes = 1,
             .maxArgTypes = 2,
         },
-    }};
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyConstructible,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyCopyable,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyDestructible,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+        },
+    },
+};
 
 static const std::unordered_map<std::string_view, BuiltinFunctionInfo> BUILTIN_FUNCTIONS_MAP = [] {
   std::unordered_map<std::string_view, BuiltinFunctionInfo> map;
