@@ -1,0 +1,4 @@
+f<int> main() {
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<int>());
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<String>());
+}

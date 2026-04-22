@@ -1,0 +1,4 @@
+f<int> main() {
+    printf("Trivially constructible: %d\n", __is_trivially_constructible<int>());
+    printf("Trivially constructible: %d\n", __is_trivially_constructible<String>());
+}

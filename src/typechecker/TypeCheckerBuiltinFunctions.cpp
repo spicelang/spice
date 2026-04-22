@@ -336,4 +336,34 @@ std::any TypeChecker::visitBuiltinGetBuildVarCall(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(requestedType, manIdx)};
 }
 
+std::any TypeChecker::visitBuiltinIsTriviallyConstructible(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE);
+
+  const QualType type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  const bool value = type.isTriviallyConstructible(node);
+  node->setCompileTimeValue({.boolValue = value}, manIdx);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinIsTriviallyCopyable(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE);
+
+  const QualType type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  const bool value = type.isTriviallyCopyable(node);
+  node->setCompileTimeValue({.boolValue = value}, manIdx);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinIsTriviallyDestructible(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE);
+
+  const QualType type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  const bool value = type.isTriviallyDestructible(node);
+  node->setCompileTimeValue({.boolValue = value}, manIdx);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
 } // namespace spice::compiler
