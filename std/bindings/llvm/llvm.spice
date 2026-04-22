@@ -1190,8 +1190,8 @@ public p PassBuilder.clearPasses() {
 
 public p PassBuilder.buildCustomPipeline() {
     this.pipelineDescription.clear();
-    for (unsigned int i = 0; i < this.passes.getSize(); i++) {
-        if (i > 0) { this.pipelineDescription += ','; }
+    for unsigned int i = 0; i < this.passes.getSize(); i++ {
+        if i > 0 { this.pipelineDescription += ','; }
         this.pipelineDescription += this.passes.get(i);
     }
 }

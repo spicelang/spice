@@ -30,8 +30,8 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
   */
 public f<heap byte*> sAllocUnsafe(unsigned long size) {
     heap byte* ptr = malloc(size);
-    if ptr != nil<heap byte*> { return ptr; }
-    panic(Error("OOM occurred in sAllocUnsafe!"));
+    if ptr == nil<heap byte*> { panic(Error("OOM occurred in sAllocUnsafe!")); }
+    return ptr;
 }
 
 /**
@@ -43,7 +43,6 @@ public f<heap byte*> sAllocUnsafe(unsigned long size) {
   * @return A pointer to the reallocated block, or an error if the reallocation failed.
   */
 public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
-    if ptr == nil<heap byte*> { return err<heap byte*>("Original pointer is nil!"); }
     if size == 0l { return err<heap byte*>("Size is 0!"); }
     heap byte* newPtr = realloc(ptr, size);
     return newPtr != nil<heap byte*> ? ok(newPtr) : err<heap byte*>("OOM occurred in sRealloc!");
@@ -59,12 +58,9 @@ public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
   * @return A pointer to the reallocated block, or an error if the reallocation failed.
   */
 public f<heap byte*> sReallocUnsafe(heap byte* ptr, unsigned long size) {
-    if ptr == nil<heap byte*> { panic(Error("Original pointer is nil!")); }
     if size == 0l { panic(Error("Size is 0!")); }
     heap byte* newPtr = realloc(ptr, size);
-    if newPtr == nil<heap byte*> {
-        panic(Error("OOM occurred in sReallocUnsafe!"));
-    }
+    if newPtr == nil<heap byte*> { panic(Error("OOM occurred in sReallocUnsafe!")); }
     return newPtr;
 }
 
@@ -164,7 +160,9 @@ public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
  * @param obj The object to destroy
  */
 public p sDestruct<T>(T& obj) {
-    obj.dtor();
+    if !__is_trivially_destructible<T>() {
+        obj.dtor();
+    }
 }
 
 /**

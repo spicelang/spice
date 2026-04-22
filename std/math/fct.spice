@@ -136,7 +136,7 @@ public f<double> sin<Numeric>(Numeric x) {
     double res = 0.0;
     double term = 0.0 + xRad;
     double k = 1.0;
-    while (res + term != res) {
+    while res + term != res {
         res += term;
         k += 2.0;
         term *= -xRad * xRad / k / (k - 1);
@@ -159,7 +159,7 @@ public f<double> cos<Numeric>(Numeric x) {
     double res = 0.0;
     double term = 1.0;
     double k = 0.0;
-    while (res + term != res) {
+    while res + term != res {
         res += term;
         k += 2.0;
         term *= -xRad * xRad / k / (k - 1);
@@ -175,7 +175,7 @@ public f<double> cos<Numeric>(Numeric x) {
  */
 public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
     Numeric fac = cast<Numeric>(1);
-    for (int i = 1; i <= input; i++) {
+    for int i = 1; i <= input; i++ {
         fac *= i;
     }
     return fac;
