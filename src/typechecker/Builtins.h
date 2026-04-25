@@ -45,6 +45,8 @@ static constexpr std::string_view BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE = "__is_trivially_constructible";
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE = "__is_trivially_copyable";
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "__is_trivially_destructible";
+static constexpr std::string_view BUILTIN_FCT_NAME_NEW = "__new";
+static constexpr std::string_view BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_new";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -160,6 +162,27 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyDestructible,
             .minTemplateTypes = 1,
             .maxTemplateTypes = 1,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_NEW,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinNewCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinNewCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_PLACEMENT_NEW,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPlacementNewCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPlacementNewCall,
+            .minTemplateTypes = 1,
+            .maxTemplateTypes = 1,
+            .minArgTypes = 1,
+            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
         },
     },
 };

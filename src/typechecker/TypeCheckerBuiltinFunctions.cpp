@@ -7,7 +7,9 @@
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/Builtins.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
@@ -364,6 +366,49 @@ std::any TypeChecker::visitBuiltinIsTriviallyDestructible(FctCallNode *node) con
   node->setCompileTimeValue({.boolValue = value}, manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_NEW);
+
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+
+  if (templateType.is(TY_STRUCT)) {
+    Scope *bodyScope = templateType.getBodyScope();
+    Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, data.args, {}, false, node);
+    if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
+      SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
+    data.callee = ctor;
+  }
+
+  QualType returnType = templateType.toPtr(node);
+  returnType.makeHeap();
+  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PLACEMENT_NEW);
+
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+
+  // Validate first arg is a byte pointer
+  const QualType ptrArgType = data.args.front().first.removeReferenceWrapper();
+  if (!ptrArgType.isPtr() || !ptrArgType.getContained().removeReferenceWrapper().is(TY_BYTE))
+    SOFT_ERROR_ER(node->argLst->args.front(), BUILTIN_ARG_TYPE_MISMATCH,
+                  "__placement_new expects a 'byte*' as its first argument")
+
+  if (templateType.is(TY_STRUCT)) {
+    Scope *bodyScope = templateType.getBodyScope();
+    const ArgList ctorArgs(data.args.begin() + 1, data.args.end());
+    Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, ctorArgs, {}, false, node);
+    if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
+      SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
+    data.callee = ctor;
+  }
+
+  return ExprResult{node->setEvaluatedSymbolType(templateType.toPtr(node), manIdx)};
 }
 
 } // namespace spice::compiler

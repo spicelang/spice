@@ -138,6 +138,8 @@ public:
   std::any visitBuiltinIsTriviallyConstructible(FctCallNode *node) const;
   std::any visitBuiltinIsTriviallyCopyable(FctCallNode *node) const;
   std::any visitBuiltinIsTriviallyDestructible(FctCallNode *node) const;
+  std::any visitBuiltinNewCall(FctCallNode *node) const;
+  std::any visitBuiltinPlacementNewCall(FctCallNode *node) const;
 
 private:
   // Private members
