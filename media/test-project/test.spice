@@ -1,15 +1,6 @@
-/*import "std/data/vector";
+import "std/data/vector";
 
 f<int> main() {
     Vector<String> vec;
     vec.pushBack(String("Test"));
-}*/
-
-f<int> main() {
-    printf("Trivially constructible: %d\n", __is_trivially_constructible<int>());
-    printf("Trivially constructible: %d\n", __is_trivially_constructible<String>());
-    printf("Trivially copyable: %d\n", __is_trivially_copyable<int>());
-    printf("Trivially copyable: %d\n", __is_trivially_copyable<String>());
-    printf("Trivially destructible: %d\n", __is_trivially_destructible<int>());
-    printf("Trivially destructible: %d\n", __is_trivially_destructible<String>());
 }

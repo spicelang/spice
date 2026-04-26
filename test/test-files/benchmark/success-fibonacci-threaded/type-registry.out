@@ -30,6 +30,7 @@ long
 long*
 p()
 p()
+p(const Error&)
 p(const Thread&)
 p(int,string)
 p(p())

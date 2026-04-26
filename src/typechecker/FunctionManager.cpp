@@ -191,14 +191,6 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
   return !matches.empty() ? matches.front() : nullptr;
 }
 
-bool FunctionManager::existsByName(Scope *matchScope, const std::string &reqName) {
-  for (const auto &[defCodeLocStr, manifestations] : matchScope->functions)
-    for (const auto &[signature, presetFunction] : manifestations)
-      if (presetFunction.name == reqName)
-        return true;
-  return false;
-}
-
 /**
  * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown.
