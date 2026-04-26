@@ -541,7 +541,8 @@ bool FunctionManager::hasCtor(const Scope *matchScope, bool lookForCopyCtor) {
         continue;
       // If we don't search for a copy ctor and got none -> we found one
       // If we search for a copy ctor and got one -> we found one
-      const bool isCopyCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isConstRef();
+      const bool isCopyCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isConstRef() &&
+                              function.paramList.at(0).qualType.getBase() == function.thisType;
       if (isCopyCtor == lookForCopyCtor)
         return true;
     }
