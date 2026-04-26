@@ -392,12 +392,16 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
 
   FctCallNode::FctCallData &data = node->data.at(manIdx);
   const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  if (!templateType.is(TY_STRUCT))
+    SOFT_ERROR_ER(node, BUILTIN_SIGNATURE_MISMATCH, "The placement_new builtin only works for struct types")
 
-  // Validate first arg is a byte pointer
+  // Validate first arg is a byte pointer or a heap pointer to the template type
   const QualType ptrArgType = data.args.front().first.removeReferenceWrapper();
-  if (!ptrArgType.isPtr() || !ptrArgType.getContained().removeReferenceWrapper().is(TY_BYTE))
+  const bool isBytePtr = ptrArgType.isPtrTo(TY_BYTE);
+  const bool isStructPtr = ptrArgType.isPtr() && ptrArgType.getContained() == templateType;
+  if (!isBytePtr && !isStructPtr)
     SOFT_ERROR_ER(node->argLst->args.front(), BUILTIN_ARG_TYPE_MISMATCH,
-                  "__placement_new expects a 'byte*' as its first argument")
+                  "__placement_new expects a 'byte*' or 'T*' as its first argument")
 
   if (templateType.is(TY_STRUCT)) {
     Scope *bodyScope = templateType.getBodyScope();
