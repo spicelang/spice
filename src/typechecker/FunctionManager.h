@@ -44,6 +44,9 @@ public:
                                               const ArgList &reqArgs, bool strictQualifierMatching);
   static Function *match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
                          const QualTypeList &templateTypeHints, bool strictQualifierMatching, const ASTNode *callNode);
+  [[nodiscard]] static bool hasAnyNonCopyCtor(const Scope *matchScope);
+  [[nodiscard]] static bool hasCopyCtor(const Scope *matchScope);
+  [[nodiscard]] static bool hasDtor(const Scope *matchScope);
   static void cleanup();
   [[nodiscard]] static std::string dumpLookupCacheStatistics();
 
@@ -70,6 +73,7 @@ private:
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(const Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
                                             const QualTypeList &templateTypes);
+  [[nodiscard]] static bool hasCtor(const Scope *matchScope, bool lookForCopyCtor);
 };
 
 } // namespace spice::compiler

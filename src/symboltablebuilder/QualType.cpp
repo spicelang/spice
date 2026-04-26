@@ -338,8 +338,7 @@ bool QualType::isTriviallyConstructible(const ASTNode *node) const {
   if (is(TY_STRUCT)) {
     // If the struct has a ctor, it is a non-trivially constructible one
     const Struct *spiceStruct = getStruct(node);
-    const Function *ctor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, {}, true);
-    if (ctor != nullptr)
+    if (FunctionManager::hasAnyNonCopyCtor(spiceStruct->scope))
       return false;
 
     // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
@@ -384,9 +383,7 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
   if (is(TY_STRUCT)) {
     // If the struct has a copy ctor, it is a non-trivially copyable one
     const Struct *spiceStruct = getStruct(node);
-    const std::vector args = {Arg(toConstRef(node), false)};
-    const Function *copyCtor = FunctionManager::lookup(spiceStruct->scope, CTOR_FUNCTION_NAME, *this, args, true);
-    if (copyCtor != nullptr)
+    if (FunctionManager::hasCopyCtor(spiceStruct->scope))
       return false;
 
     // Check if all member types are trivially copyable
@@ -417,8 +414,7 @@ bool QualType::isTriviallyDestructible(const ASTNode *node) const {
   if (is(TY_STRUCT)) {
     // If the struct has a dtor, it is a non-trivially destructible one
     const Struct *spiceStruct = getStruct(node);
-    const Function *dtor = FunctionManager::lookup(spiceStruct->scope, DTOR_FUNCTION_NAME, *this, {}, true);
-    if (dtor != nullptr)
+    if (FunctionManager::hasDtor(spiceStruct->scope))
       return false;
 
     // Check if all member types are trivially destructible
