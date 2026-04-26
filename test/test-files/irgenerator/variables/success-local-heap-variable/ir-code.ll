@@ -6,26 +6,25 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca i32, align 4
   %i = alloca ptr, align 8
   %j = alloca ptr, align 8
   store i32 0, ptr %result, align 4
+  %1 = call ptr @_Z12sAllocUnsafem(i64 4)
   store i32 123, ptr %1, align 4
-  %2 = call noundef ptr @_Z4sNewIiEPiRKi(ptr noundef %1)
-  store ptr %2, ptr %i, align 8
+  store ptr %1, ptr %i, align 8
+  %2 = load ptr, ptr %i, align 8
+  store ptr %2, ptr %j, align 8
   %3 = load ptr, ptr %i, align 8
-  store ptr %3, ptr %j, align 8
-  %4 = load ptr, ptr %i, align 8
-  %5 = load i32, ptr %4, align 4
-  %6 = load ptr, ptr %j, align 8
-  %7 = load i32, ptr %6, align 4
-  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5, i32 noundef %7)
+  %4 = load i32, ptr %3, align 4
+  %5 = load ptr, ptr %j, align 8
+  %6 = load i32, ptr %5, align 4
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4, i32 noundef %6)
   call void @_Z8sDeallocRPh(ptr %j)
-  %9 = load i32, ptr %result, align 4
-  ret i32 %9
+  %8 = load i32, ptr %result, align 4
+  ret i32 %8
 }
 
-declare ptr @_Z4sNewIiEPiRKi(ptr)
+declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1

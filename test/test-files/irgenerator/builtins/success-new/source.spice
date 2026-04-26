@@ -1,0 +1,17 @@
+type Point struct {
+    int x
+    int y
+}
+
+p Point.ctor(int x, int y) {
+    this.x = x;
+    this.y = y;
+}
+
+f<int> main() {
+    heap int* i = __new<int>();
+    *i = 42;
+    printf("%d\n", *i);
+    heap Point* storage = __new<Point>(3, 5);
+    printf("%d %d\n", storage.x, storage.y);
+}

@@ -154,7 +154,9 @@ public p Vector.removeAt(unsigned long index) {
         }
     }
     // Destroy the last element
-    sDestruct(this.contents[this.size - 1]);
+    unsafe {
+        sDestruct(this.contents[this.size - 1]);
+    }
     // Decrement the size
     this.size--;
 }

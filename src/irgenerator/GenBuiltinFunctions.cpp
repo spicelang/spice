@@ -199,7 +199,7 @@ std::any IRGenerator::visitBuiltinNewCall(const FctCallNode *node) {
   llvm::Type *llvmType = templateType.toLLVMType(sourceFile);
   const uint64_t typeSize = module->getDataLayout().getTypeAllocSize(llvmType);
   llvm::Function *allocFct = stdFunctionManager.getAllocUnsafeLongFct();
-  llvm::Value *heapPtr = builder.CreateCall(allocFct, {builder.getInt64(typeSize)});
+  llvm::Value *targetPtr = builder.CreateCall(allocFct, {builder.getInt64(typeSize)});
 
   // Call the constructor if one was resolved during type checking
   if (const Function *ctor = data.callee) {
@@ -214,10 +214,14 @@ std::any IRGenerator::visitBuiltinNewCall(const FctCallNode *node) {
           ctorArgValues.push_back(resolveValue(argNode));
       }
     }
-    generateCtorOrDtorCall(heapPtr, ctor, ctorArgValues);
+    generateCtorOrDtorCall(targetPtr, ctor, ctorArgValues);
+  } else {
+    const std::vector<ExprNode *> &args = node->argLst->args;
+    llvm::Value *initVal = node->hasArgs ? resolveValue(args.front()) : getDefaultValueForSymbolType(templateType);
+    insertStore(initVal, targetPtr);
   }
 
-  return LLVMExprResult{.value = heapPtr};
+  return LLVMExprResult{.value = targetPtr};
 }
 
 std::any IRGenerator::visitBuiltinPlacementNewCall(const FctCallNode *node) {
@@ -240,6 +244,11 @@ std::any IRGenerator::visitBuiltinPlacementNewCall(const FctCallNode *node) {
         ctorArgValues.push_back(resolveValue(argNode));
     }
     generateCtorOrDtorCall(targetPtr, ctor, ctorArgValues);
+  } else {
+    const QualType &templateType = data.templateTypes.front();
+    const std::vector<ExprNode *> &args = node->argLst->args;
+    llvm::Value *initVal = args.size() > 1 ? resolveValue(args.at(1)) : getDefaultValueForSymbolType(templateType);
+    insertStore(initVal, targetPtr);
   }
 
   return LLVMExprResult{.value = targetPtr};

@@ -27,6 +27,11 @@ public p Thread.ctor(p() threadRoutine) {
     this.threadRoutine = threadRoutine;
 }
 
+public p Thread.ctor(const Thread& other) {
+    this.threadRoutine = other.threadRoutine;
+    this.threadId = other.threadId;
+}
+
 /**
  * Start the thread
  */

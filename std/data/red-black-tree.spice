@@ -21,7 +21,16 @@ type Node<K, V> struct {
     heap Node<K, V>* childRight
 }
 
-p Node.ctor(Node<K, V>& other) {
+p Node.ctor(const K& key, const V& value, NodeColor color, Node<K, V>* parent = nil<Node<K, V>*>, heap Node<K, V>* childLeft = nil<heap Node<K, V>*>, heap Node<K, V>* childRight = nil<heap Node<K, V>*>) {
+    this.key = key;
+    this.value = value;
+    this.color = color;
+    this.parent = parent;
+    this.childLeft = childLeft;
+    this.childRight = childRight;
+}
+
+p Node.ctor(const Node<K, V>& other) {
     panic(Error("This copy ctor should never be called!"));
 }
 
@@ -66,14 +75,7 @@ public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
  */
 public p RedBlackTree.insert(const K& key, const V& value) {
     // Create the new node
-    heap Node<K, V>* newNode = __new<Node<K, V>>(Node<K, V>{
-        key,
-        value,
-        NodeColor::RED,
-        nil<Node<K, V>*>,
-        nil<heap Node<K, V>*>,
-        nil<heap Node<K, V>*>
-    });
+    heap Node<K, V>* newNode = __new<Node<K, V>>(key, value, NodeColor::RED);
 
     // Search for the correct position
     Node<K, V>* y = nil<Node<K, V>*>;

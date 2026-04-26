@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:10:24:
+Builtin function argument type mismatch: Expected no or 1 argument for __new on primitive type, got 2
+
+10  heap int* intPtr = __new<int>(123, 321); // Should error: t
+                       ^^^^^^^^^^^^^^^^^^^^

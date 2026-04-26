@@ -7,6 +7,7 @@
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/Builtins.h>
 #include <typechecker/FunctionManager.h>
@@ -380,6 +381,15 @@ std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
     if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
       SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
     data.callee = ctor;
+  } else if (data.args.size() > 1) {
+    const auto msg = "Expected no or 1 argument for __new on primitive type, got " + std::to_string(data.args.size());
+    SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+  } else if (data.args.size() == 1) {
+    const QualType argType = data.args.front().first.removeReferenceWrapper().toNonConst();
+    if (!templateType.matches(argType, false, false, true)) {
+      const auto msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+    }
   }
 
   QualType returnType = templateType.toPtr(node);
@@ -392,8 +402,6 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
 
   FctCallNode::FctCallData &data = node->data.at(manIdx);
   const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
-  if (!templateType.is(TY_STRUCT))
-    SOFT_ERROR_ER(node, BUILTIN_SIGNATURE_MISMATCH, "The placement_new builtin only works for struct types")
 
   // Validate first arg is a byte pointer or a heap pointer to the template type
   const QualType ptrArgType = data.args.front().first.removeReferenceWrapper();
@@ -410,6 +418,15 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
     if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
       SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
     data.callee = ctor;
+  } else if (data.args.size() > 2) {
+    const auto msg = "Expected 1 or 2 arguments for __placement_new, got " + std::to_string(data.args.size());
+    SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+  } else if (data.args.size() == 2) {
+    const QualType argType = data.args.back().first.removeReferenceWrapper().toNonConst();
+    if (!templateType.matches(argType, false, false, true)) {
+      const auto msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+    }
   }
 
   return ExprResult{node->setEvaluatedSymbolType(templateType.toPtr(node), manIdx)};

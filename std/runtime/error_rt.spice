@@ -23,6 +23,11 @@ public p Error.ctor(string message) {
     this.message = message;
 }
 
+public p Error.ctor(const Error& other) {
+    this.code = other.code;
+    this.message = other.message;
+}
+
 /**
  * Prints the error message to the console.
  */
