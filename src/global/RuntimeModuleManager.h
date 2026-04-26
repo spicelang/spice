@@ -42,8 +42,6 @@ const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPP
     {"sCopy", MEMORY_RT},
     {"sCopyUnsafe", MEMORY_RT},
     {"sMove", MEMORY_RT},
-    {"sNew", MEMORY_RT},
-    {"sPlacementNew", MEMORY_RT},
     {"sDestruct", MEMORY_RT},
     {"sDealloc", MEMORY_RT},
     {"sDelete", MEMORY_RT},

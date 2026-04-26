@@ -66,7 +66,7 @@ public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
  */
 public p RedBlackTree.insert(const K& key, const V& value) {
     // Create the new node
-    heap Node<K, V>* newNode = sNew(Node<K, V>{
+    heap Node<K, V>* newNode = __new<Node<K, V>>(Node<K, V>{
         key,
         value,
         NodeColor::RED,

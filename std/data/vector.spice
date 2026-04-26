@@ -49,7 +49,7 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Fill in the default values
     for int index = 0; index < initAllocItems; index++ {
         unsafe {
-            this.contents[index] = defaultValue;
+            __placement_new<T>(&this.contents[index], defaultValue);
         }
     }
     this.size = initAllocItems;
@@ -92,7 +92,8 @@ public p Vector.pushBack<T>(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[this.size++] = item;
+        __placement_new<T>(&this.contents[this.size], item);
+        this.size++;
     }
 }
 
@@ -152,6 +153,8 @@ public p Vector.removeAt(unsigned long index) {
             this.contents[i] = this.contents[i + 1];
         }
     }
+    // Destroy the last element
+    sDestruct(this.contents[this.size - 1]);
     // Decrement the size
     this.size--;
 }

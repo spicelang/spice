@@ -1,7 +1,7 @@
 // TEST: --sanitizer=address -g
 
 f<int> main() {
-    heap int* iPtr = sNew<int>();
+    heap int* iPtr = __new<int>();
     *iPtr = 123;
     unsafe {
         sDealloc(cast<heap byte*>(iPtr));

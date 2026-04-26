@@ -21,9 +21,9 @@ type TestStruct struct {
 
 // As local variable
 f<int> foo() {
-    heap int* ptr = sNew<int>();
+    heap int* ptr = __new<int>();
     *ptr = 5;
-    return ptr;
+    return *ptr;
 }
 ```
 
