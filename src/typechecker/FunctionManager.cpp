@@ -219,7 +219,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
 
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<Function *> matches;
-  for (auto &[fctId, manifestations] :  matchScope->functions) {
+  for (auto &[fctId, manifestations] : matchScope->functions) {
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
@@ -531,6 +531,34 @@ uint64_t FunctionManager::getCacheKey(const Scope *scope, const std::string &nam
   }
   hashCombine64(hash, hashVector(templateTypes));
   return hash;
+}
+
+bool FunctionManager::hasCtor(const Scope *matchScope, bool lookForCopyCtor) {
+  for (const auto &manifestations : matchScope->functions | std::views::values) {
+    for (const auto &function : manifestations | std::views::values) {
+      // If it is no ctor, skip it
+      if (function.name != CTOR_FUNCTION_NAME)
+        continue;
+      // If we don't search for a copy ctor and got none -> we found one
+      // If we search for a copy ctor and got one -> we found one
+      const bool isCopyCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isConstRef();
+      if (isCopyCtor == lookForCopyCtor)
+        return true;
+    }
+  }
+  return false;
+}
+
+bool FunctionManager::hasAnyNonCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, false); }
+
+bool FunctionManager::hasCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, true); }
+
+bool FunctionManager::hasDtor(const Scope *matchScope) {
+  for (const auto &manifestations : matchScope->functions | std::views::values)
+    for (const auto &function : manifestations | std::views::values)
+      if (function.name == DTOR_FUNCTION_NAME)
+        return true;
+  return false;
 }
 
 /**
