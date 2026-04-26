@@ -12,3 +12,9 @@ Builtin function argument type mismatch: __placement_new expects a 'byte*' or 'T
 
 12  ement_new<MyStruct>(&i); // Should error: 
                         ^^
+
+[Error|Semantic] ./source.spice:14:5:
+Missing mandatory copy ctor: No matching constructor found for type 'MyStruct'
+
+14  __placement_new<MyStruct>(s); // Should error: n
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

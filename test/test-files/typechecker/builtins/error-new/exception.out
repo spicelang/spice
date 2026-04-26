@@ -6,3 +6,9 @@ Builtin function argument type mismatch: Expected no or 1 argument for __new on 
 
 10  heap int* intPtr = __new<int>(123, 321); // Should error: t
                        ^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:11:5:
+Missing mandatory copy ctor: No matching constructor found for type 'MyStruct'
+
+11  __new<MyStruct>(); // Should error: n
+    ^^^^^^^^^^^^^^^^^
