@@ -140,6 +140,8 @@ public:
   std::any visitBuiltinLenCall(const FctCallNode *node);
   std::any visitBuiltinPanicCall(const FctCallNode *node);
   std::any visitBuiltinSyscallCall(const FctCallNode *node);
+  std::any visitBuiltinNewCall(const FctCallNode *node);
+  std::any visitBuiltinPlacementNewCall(const FctCallNode *node);
 
 private:
   // Private methods

@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:11:5:
+Builtin function argument type mismatch: Expected 1 or 2 arguments for __placement_new, got 3
+
+11  __placement_new<int>(&i, 123, 321); // Should error: t
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:12:31:
+Builtin function argument type mismatch: __placement_new expects a 'byte*' or 'T*' as its first argument
+
+12  ement_new<MyStruct>(&i); // Should error: 
+                        ^^
+
+[Error|Semantic] ./source.spice:14:5:
+No matching ctor found: No matching constructor found for type 'MyStruct'
+
+14  __placement_new<MyStruct>(s); // Should error: n
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

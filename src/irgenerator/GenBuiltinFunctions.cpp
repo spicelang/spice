@@ -189,4 +189,69 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
   return LLVMExprResult{.value = result};
 }
 
+std::any IRGenerator::visitBuiltinNewCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_NEW);
+
+  const FctCallNode::FctCallData &data = node->data.at(manIdx);
+  const QualType &templateType = data.templateTypes.front();
+
+  // Allocate sizeof(T) bytes on the heap
+  llvm::Type *llvmType = templateType.toLLVMType(sourceFile);
+  const uint64_t typeSize = module->getDataLayout().getTypeAllocSize(llvmType);
+  llvm::Function *allocFct = stdFunctionManager.getAllocUnsafeLongFct();
+  llvm::Value *targetPtr = builder.CreateCall(allocFct, {builder.getInt64(typeSize)});
+
+  // Call the constructor if one was resolved during type checking
+  if (const Function *ctor = data.callee) {
+    std::vector<llvm::Value *> ctorArgValues;
+    if (node->hasArgs) {
+      const QualTypeList paramTypes = ctor->getParamTypes();
+      for (size_t i = 0; i < node->argLst->args.size(); i++) {
+        const ExprNode *argNode = node->argLst->args.at(i);
+        if (paramTypes.at(i).isRef())
+          ctorArgValues.push_back(resolveAddress(argNode));
+        else
+          ctorArgValues.push_back(resolveValue(argNode));
+      }
+    }
+    generateCtorOrDtorCall(targetPtr, ctor, ctorArgValues);
+  } else {
+    const std::vector<ExprNode *> &args = node->argLst->args;
+    llvm::Value *initVal = node->hasArgs ? resolveValue(args.front()) : getDefaultValueForSymbolType(templateType);
+    insertStore(initVal, targetPtr);
+  }
+
+  return LLVMExprResult{.value = targetPtr};
+}
+
+std::any IRGenerator::visitBuiltinPlacementNewCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PLACEMENT_NEW);
+
+  const FctCallNode::FctCallData &data = node->data.at(manIdx);
+
+  // Resolve the target address from the first argument (the byte* pointer)
+  llvm::Value *targetPtr = resolveValue(node->argLst->args.front());
+
+  // Call the constructor if one was resolved during type checking
+  if (const Function *ctor = data.callee) {
+    std::vector<llvm::Value *> ctorArgValues;
+    const QualTypeList paramTypes = ctor->getParamTypes();
+    for (size_t i = 1; i < node->argLst->args.size(); i++) {
+      const ExprNode *argNode = node->argLst->args.at(i);
+      if (paramTypes.at(i - 1).isRef())
+        ctorArgValues.push_back(resolveAddress(argNode));
+      else
+        ctorArgValues.push_back(resolveValue(argNode));
+    }
+    generateCtorOrDtorCall(targetPtr, ctor, ctorArgValues);
+  } else {
+    const QualType &templateType = data.templateTypes.front();
+    const std::vector<ExprNode *> &args = node->argLst->args;
+    llvm::Value *initVal = args.size() > 1 ? resolveValue(args.at(1)) : getDefaultValueForSymbolType(templateType);
+    insertStore(initVal, targetPtr);
+  }
+
+  return LLVMExprResult{.value = targetPtr};
+}
+
 } // namespace spice::compiler

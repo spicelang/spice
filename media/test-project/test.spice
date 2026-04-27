@@ -1,15 +1,11 @@
-/*import "std/data/vector";
+import "std/data/vector" as vec;
+import "std/data/pair" as pair;
 
 f<int> main() {
-    Vector<String> vec;
-    vec.pushBack(String("Test"));
-}*/
+    vec::Vector<pair::Pair<int, string>> pairVector = vec::Vector<pair::Pair<int, string>>();
+    pairVector.pushBack(pair::Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(pair::Pair<int, string>(1, "World"));
 
-f<int> main() {
-    printf("Trivially constructible: %d\n", __is_trivially_constructible<int>());
-    printf("Trivially constructible: %d\n", __is_trivially_constructible<String>());
-    printf("Trivially copyable: %d\n", __is_trivially_copyable<int>());
-    printf("Trivially copyable: %d\n", __is_trivially_copyable<String>());
-    printf("Trivially destructible: %d\n", __is_trivially_destructible<int>());
-    printf("Trivially destructible: %d\n", __is_trivially_destructible<String>());
+    pair::Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());
 }

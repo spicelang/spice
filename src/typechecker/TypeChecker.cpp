@@ -195,4 +195,12 @@ void TypeChecker::softError(const ASTNode *node, const SemanticErrorType errorTy
   resourceManager.errorManager.addSoftError(node, errorType, message);
 }
 
+bool TypeChecker::isCopyCtorCall(const FctCallNode *node, const QualType &thisType) const {
+  const FctCallNode::FctCallData &data = node->data.at(manIdx);
+  if (data.args.size() != 2)
+    return false;
+  const QualType &secondArgType = data.args.back().first.removeReferenceWrapper().toNonConst();
+  return thisType.matches(secondArgType, false, false, true);
+}
+
 } // namespace spice::compiler

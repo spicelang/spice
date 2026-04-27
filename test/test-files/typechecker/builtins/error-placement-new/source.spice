@@ -1,0 +1,15 @@
+type MyStruct struct {
+    int x
+}
+
+p MyStruct.ctor(int x) {
+    this.x = x;
+}
+
+f<int> main() {
+    int i;
+    __placement_new<int>(&i, 123, 321); // Should error: too many arguments
+    __placement_new<MyStruct>(&i); // Should error: argument type 'int' does not match template type 'MyStruct'
+    heap MyStruct* s = __new<MyStruct>(1);
+    __placement_new<MyStruct>(s); // Should error: no arguments for non-trivially constructible type
+}

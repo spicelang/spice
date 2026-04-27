@@ -1,0 +1,12 @@
+type MyStruct struct {
+    int x
+}
+
+p MyStruct.ctor(int x) {
+    this.x = x;
+}
+
+f<int> main() {
+    heap int* intPtr = __new<int>(123, 321); // Should error: too many arguments
+    __new<MyStruct>(); // Should error: no arguments for non-trivially constructible type
+}

@@ -30,7 +30,7 @@ public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Fill in the default values
     for unsigned long index = 0l; index < initAllocItems; index++ {
         unsafe {
-            this.contents[index] = defaultValue;
+            __placement_new<T>(&this.contents[index], defaultValue);
         }
     }
     this.size = initAllocItems;
@@ -72,7 +72,7 @@ public p Queue.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[this.idxBack++] = item;
+        __placement_new<T>(&this.contents[this.idxBack++], item);
     }
 
     // Increase size

@@ -7,7 +7,10 @@
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <symboltablebuilder/QualType.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/Builtins.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
@@ -364,6 +367,83 @@ std::any TypeChecker::visitBuiltinIsTriviallyDestructible(FctCallNode *node) con
   node->setCompileTimeValue({.boolValue = value}, manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_NEW);
+
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+
+  if (templateType.is(TY_STRUCT)) {
+    Scope *bodyScope = templateType.getBodyScope();
+    Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, data.args, {}, false, node);
+    if (ctor == nullptr) {
+      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching constructor found for type '" + templateType.getName(false) + "'")
+      if (copyCtorCall && !templateType.isTriviallyCopyable(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching copy constructor found for type '" + templateType.getName(false) + "'")
+    }
+    data.callee = ctor;
+  } else if (data.args.size() > 1) {
+    const auto msg = "Expected no or 1 argument for __new on primitive type, got " + std::to_string(data.args.size());
+    SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+  } else if (data.args.size() == 1) {
+    const QualType argType = data.args.front().first.removeReferenceWrapper().toNonConst();
+    if (!templateType.matches(argType, false, false, true)) {
+      const auto msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+    }
+  }
+
+  QualType returnType = templateType.toPtr(node);
+  returnType.makeHeap();
+  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_PLACEMENT_NEW);
+
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
+  const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+
+  // Validate first arg is a byte pointer or a heap pointer to the template type
+  const QualType ptrArgType = data.args.front().first.removeReferenceWrapper();
+  const bool isBytePtr = ptrArgType.isPtrTo(TY_BYTE);
+  const bool isStructPtr = ptrArgType.isPtr() && ptrArgType.getContained() == templateType;
+  if (!isBytePtr && !isStructPtr)
+    SOFT_ERROR_ER(node->argLst->args.front(), BUILTIN_ARG_TYPE_MISMATCH,
+                  "__placement_new expects a 'byte*' or 'T*' as its first argument")
+
+  if (templateType.is(TY_STRUCT)) {
+    Scope *bodyScope = templateType.getBodyScope();
+    const ArgList ctorArgs(data.args.begin() + 1, data.args.end());
+    Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, ctorArgs, {}, false, node);
+    if (ctor == nullptr) {
+      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching constructor found for type '" + templateType.getName(false) + "'")
+      if (copyCtorCall && !templateType.isTriviallyCopyable(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching copy constructor found for type '" + templateType.getName(false) + "'")
+    }
+    data.callee = ctor;
+  } else if (data.args.size() > 2) {
+    const auto msg = "Expected 1 or 2 arguments for __placement_new, got " + std::to_string(data.args.size());
+    SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+  } else if (data.args.size() == 2) {
+    const QualType argType = data.args.back().first.removeReferenceWrapper().toNonConst();
+    if (!templateType.matches(argType, false, false, true)) {
+      const auto msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+      SOFT_ERROR_ER(node, BUILTIN_ARG_TYPE_MISMATCH, msg)
+    }
+  }
+
+  return ExprResult{node->setEvaluatedSymbolType(templateType.toPtr(node), manIdx)};
 }
 
 } // namespace spice::compiler

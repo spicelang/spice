@@ -6,8 +6,14 @@ type T dyn;
  */
 public type Node<T> struct {
     T value
-    heap Node<T>* childLeft = nil<heap Node<T>*>
-    heap Node<T>* childRight = nil<heap Node<T>*>
+    heap Node<T>* childLeft
+    heap Node<T>* childRight
+}
+
+public p Node.ctor(const T& value, heap Node<T>* childLeft = nil<heap Node<T>*>, heap Node<T>* childRight = nil<heap Node<T>*>) {
+    this.value = value;
+    this.childLeft = childLeft;
+    this.childRight = childRight;
 }
 
 /**
@@ -31,7 +37,7 @@ public type BinaryTree<T> struct {
  */
 public p BinaryTree.insert<T>(const T& value) {
     // Create the new node
-    heap Node<T>* newNode = sNew(Node<T>{value, nil<heap Node<T>*>, nil<heap Node<T>*>});
+    heap Node<T>* newNode = __new<Node<T>>(value, nil<heap Node<T>*>, nil<heap Node<T>*>);
 
     // Insert the new node
     if this.rootNode == nil<heap Node<T>*> {
