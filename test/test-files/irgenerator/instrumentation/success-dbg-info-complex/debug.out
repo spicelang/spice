@@ -1,4 +1,4 @@
-GNU gdb (Ubuntu 15.0.50.20240403-0ubuntu1) 15.0.50.20240403-git
+GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1
 Copyright (C) 2024 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
@@ -28,4 +28,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 172651) exited normally]
+[Inferior 1 (process 189391) exited normally]
