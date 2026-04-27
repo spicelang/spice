@@ -72,8 +72,7 @@ public p Queue.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.idxBack], item);
-        this.idxBack++;
+        __placement_new<T>(&this.contents[this.idxBack++], item);
     }
 
     // Increase size

@@ -92,8 +92,7 @@ public p Vector.pushBack<T>(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.size], item);
-        this.size++;
+        __placement_new<T>(&this.contents[this.size++], item);
     }
 }
 

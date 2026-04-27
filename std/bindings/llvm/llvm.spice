@@ -584,10 +584,6 @@ public p Value.ctor() {
     this.self = nil<LLVMValueRef>;
 }
 
-public p Value.ctor(const Value& other) {
-    this.self = other.self;
-}
-
 public p Value.dump() {
     LLVMDumpValue(this.self);
 }
