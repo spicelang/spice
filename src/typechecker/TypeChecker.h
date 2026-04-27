@@ -181,6 +181,7 @@ private:
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const;
   void implicitlyCallDeallocate(const ASTNode *node) const;
   void doScopeCleanup(StmtLstNode *node) const;
+  bool isCopyCtorCall(const FctCallNode *node, const QualType &thisType) const;
 };
 
 } // namespace spice::compiler

@@ -378,8 +378,15 @@ std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
   if (templateType.is(TY_STRUCT)) {
     Scope *bodyScope = templateType.getBodyScope();
     Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, data.args, {}, false, node);
-    if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
-      SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
+    if (ctor == nullptr) {
+      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching constructor found for type '" + templateType.getName(false) + "'")
+      if (copyCtorCall && !templateType.isTriviallyCopyable(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching copy constructor found for type '" + templateType.getName(false) + "'")
+    }
     data.callee = ctor;
   } else if (data.args.size() > 1) {
     const auto msg = "Expected no or 1 argument for __new on primitive type, got " + std::to_string(data.args.size());
@@ -415,8 +422,15 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
     Scope *bodyScope = templateType.getBodyScope();
     const ArgList ctorArgs(data.args.begin() + 1, data.args.end());
     Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, ctorArgs, {}, false, node);
-    if (ctor == nullptr && !templateType.isTriviallyConstructible(node))
-      SOFT_ERROR_ER(node, COPY_CTOR_REQUIRED, "No matching constructor found for type '" + templateType.getName(false) + "'")
+    if (ctor == nullptr) {
+      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching constructor found for type '" + templateType.getName(false) + "'")
+      if (copyCtorCall && !templateType.isTriviallyCopyable(node))
+        SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
+                      "No matching copy constructor found for type '" + templateType.getName(false) + "'")
+    }
     data.callee = ctor;
   } else if (data.args.size() > 2) {
     const auto msg = "Expected 1 or 2 arguments for __placement_new, got " + std::to_string(data.args.size());
