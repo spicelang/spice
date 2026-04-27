@@ -1,4 +1,14 @@
+type Test struct {
+    int& a
+}
+
+type TestHeap struct {
+    heap int* a
+}
+
 f<int> main() {
     printf("Trivially destructible: %d\n", __is_trivially_destructible<int>());
     printf("Trivially destructible: %d\n", __is_trivially_destructible<String>());
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<Test>());
+    printf("Trivially destructible: %d\n", __is_trivially_destructible<TestHeap>());
 }

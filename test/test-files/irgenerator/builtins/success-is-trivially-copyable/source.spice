@@ -1,4 +1,14 @@
+type Test struct {
+    int& a
+}
+
+type TestHeap struct {
+    heap int* a
+}
+
 f<int> main() {
     printf("Trivially copyable: %d\n", __is_trivially_copyable<int>());
     printf("Trivially copyable: %d\n", __is_trivially_copyable<String>());
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<Test>());
+    printf("Trivially copyable: %d\n", __is_trivially_copyable<TestHeap>());
 }

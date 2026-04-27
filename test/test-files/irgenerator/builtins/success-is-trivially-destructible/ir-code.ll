@@ -3,6 +3,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [28 x i8] c"Trivially destructible: %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [28 x i8] c"Trivially destructible: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [28 x i8] c"Trivially destructible: %d\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [28 x i8] c"Trivially destructible: %d\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
@@ -10,8 +12,10 @@ define dso_local noundef i32 @main() #0 {
   store i32 0, ptr %result, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef 1)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef 0)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef 1)
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef 0)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: nofree nounwind

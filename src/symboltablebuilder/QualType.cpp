@@ -371,10 +371,6 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
   if (qualifiers.isHeap)
     return false;
 
-  // References can't be copied at all
-  if (isRef())
-    return false;
-
   // In case of an array, the item type is determining the copy triviality
   if (isArray())
     return getBase().isTriviallyCopyable(node);
