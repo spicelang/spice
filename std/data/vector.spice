@@ -64,17 +64,18 @@ public p Vector.ctor(const Vector<T>& original) {
 }
 
 public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
-    // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
     assert itemSize > 0l;
-    unsafe {
-        Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-        this.contents = cast<heap T*>(allocResult.unwrap());
+    if newValue.capacity != this.capacity {
+        unsafe {
+            Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
+            this.contents = cast<heap T*>(allocResult.unwrap());
+        }
+        this.capacity = newValue.capacity;
     }
-    this.capacity = newValue.capacity;
     this.size = newValue.size;
     unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), newValue.size);
+        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
     }
 }
 

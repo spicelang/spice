@@ -84,6 +84,7 @@ public p operator=(String& this, const String& newValue) {
         // Allocate space
         unsigned long requiredBytes = newValue.capacity + 1l; // +1 because of null terminator
         this.contents = realloc(this.contents, requiredBytes);
+        this.checkForOOM();
 
         // Copy the contents from the given string
         memcpy(this.contents, newValue.contents, newValue.length + 1l); // +1 because of null terminator
