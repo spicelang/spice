@@ -25,6 +25,9 @@
       - any-glob-to-any-file:
           - 'docs/**/*'
           - 'media/specs/**/*'
+          - 'AGENTS.md'
+          - 'README.md'
+          - 'SECURITY.md'
 
 'ci':
   - changed-files:
