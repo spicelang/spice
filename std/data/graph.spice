@@ -156,7 +156,7 @@ p GraphDFSIterator.advance() {
         // push neighbors in reverse order for natural DFS order
         if this.graph.adjList.contains(*v) {
             const Vector<Vertex<T>*>& neighbors = this.graph.adjList.get(*v);
-            for unsigned long i = neighbors.getSize() - 1ul; i-- >= 0ul; 0 {
+            for unsigned long i = neighbors.getSize(); i-- > 0ul; 0 {
                 Vertex<T>* n = neighbors[i];
                 if !this.visited.contains(*n) {
                     this.stack.push(n);
