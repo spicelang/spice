@@ -1,0 +1,145 @@
+import "std/data/graph";
+import "std/text/stringstream";
+
+f<int> main() {
+    // Empty directed graph
+    Graph<int> g1;
+    assert g1.isDirected();
+    assert !g1.hasCycles();
+    assert g1.isDAG();
+
+    // Empty undirected graph
+    Graph<int> g2 = Graph<int>(false);
+    assert !g2.isDirected();
+    assert !g2.hasCycles();
+    assert !g2.isDAG();
+
+    // Adding vertices preserves values and produces equal vertices on equal payload
+    Vertex<int>& v1 = g1.addVertex(10);
+    Vertex<int>& v2 = g1.addVertex(20);
+    Vertex<int>& v3 = g1.addVertex(30);
+    Vertex<int>& v4 = g1.addVertex(40);
+    Vertex<int>& v5 = g1.addVertex(50);
+    assert v1.getValue() == 10;
+    assert v2.getValue() == 20;
+    assert v3.getValue() == 30;
+    assert v4.getValue() == 40;
+    assert v5.getValue() == 50;
+    assert v1 == Vertex<int>(10);
+    assert !(v1 == v2);
+
+    // Build a connected DAG:
+    //   10 -> 20 -> 40
+    //    \    \-> 50
+    //     -> 30 -> 50
+    g1.addEdge(v1, v2);
+    g1.addEdge(v1, v3);
+    g1.addEdge(v2, v4);
+    g1.addEdge(v2, v5);
+    g1.addEdge(v3, v5);
+
+    // BFS from v1 visits 10, 20, 30, 40, 50 (FIFO)
+    int bfsCount = 0;
+    int[5] bfsOrder = [0, 0, 0, 0, 0];
+    foreach unsigned long idx, const Vertex<int>& v : g1.bfs(&v1) {
+        assert idx == cast<unsigned long>(bfsCount);
+        bfsOrder[bfsCount] = v.getValue();
+        bfsCount++;
+    }
+    assert bfsCount == 5;
+    assert bfsOrder[0] == 10;
+    assert bfsOrder[1] == 20;
+    assert bfsOrder[2] == 30;
+    assert bfsOrder[3] == 40;
+    assert bfsOrder[4] == 50;
+
+    // DFS from v1 visits 10, 20, 40, 50, 30 (LIFO with reverse-pushed neighbors)
+    int dfsCount = 0;
+    int[5] dfsOrder = [0, 0, 0, 0, 0];
+    foreach unsigned long idx, const Vertex<int>& v : g1.dfs(&v1) {
+        assert idx == cast<unsigned long>(dfsCount);
+        dfsOrder[dfsCount] = v.getValue();
+        dfsCount++;
+    }
+    assert dfsCount == 5;
+    assert dfsOrder[0] == 10;
+    assert dfsOrder[1] == 20;
+    assert dfsOrder[2] == 40;
+    assert dfsOrder[3] == 50;
+    assert dfsOrder[4] == 30;
+
+    // Disconnected graph: BFS without a start vertex still walks every component
+    Graph<int> g3;
+    Vertex<int>& a = g3.addVertex(1);
+    Vertex<int>& b = g3.addVertex(2);
+    Vertex<int>& c = g3.addVertex(3);
+    Vertex<int>& d = g3.addVertex(4);
+    g3.addEdge(a, b);
+    g3.addEdge(c, d);
+
+    int bfsTotal = 0;
+    int bfsVisited = 0;
+    foreach const Vertex<int>& v : g3.bfs() {
+        bfsTotal += v.getValue();
+        bfsVisited++;
+    }
+    assert bfsVisited == 4;
+    assert bfsTotal == 10;
+
+    // DFS without a start vertex also walks every component
+    int dfsTotal = 0;
+    int dfsVisited = 0;
+    foreach const Vertex<int>& v : g3.dfs() {
+        dfsTotal += v.getValue();
+        dfsVisited++;
+    }
+    assert dfsVisited == 4;
+    assert dfsTotal == 10;
+
+    // The default iterator (foreach over the graph itself) is DFS
+    int defaultTotal = 0;
+    int defaultVisited = 0;
+    foreach const Vertex<int>& v : g3 {
+        defaultTotal += v.getValue();
+        defaultVisited++;
+    }
+    assert defaultVisited == 4;
+    assert defaultTotal == 10;
+
+    // BFS starting from the second component visits that component first,
+    // then falls back to the unvisited component via pushNextComponent
+    int orderedSum = 0;
+    int firstSeen = -1;
+    foreach const Vertex<int>& v : g3.bfs(&c) {
+        if firstSeen == -1 { firstSeen = v.getValue(); }
+        orderedSum += v.getValue();
+    }
+    assert firstSeen == 3;
+    assert orderedSum == 10;
+
+    // toGraphviz: directed, single edge — output is fully deterministic
+    Graph<int> g4;
+    Vertex<int>& x = g4.addVertex(1);
+    Vertex<int>& y = g4.addVertex(2);
+    g4.addEdge(x, y);
+    StringStream ss1;
+    g4.toGraphviz(ss1);
+    assert ss1.str() == "digraph G {\n  \"1\";\n  \"2\";\n  \"1\" -> \"2\";\n}";
+
+    // toGraphviz: undirected uses "graph" keyword and "--" edge separator
+    Graph<int> g5 = Graph<int>(false);
+    Vertex<int>& vp = g5.addVertex(7);
+    Vertex<int>& vq = g5.addVertex(8);
+    g5.addEdge(vp, vq);
+    StringStream ss2;
+    g5.toGraphviz(ss2);
+    assert ss2.str() == "graph G {\n  \"7\";\n  \"8\";\n  \"7\" -- \"8\";\n}";
+
+    // toGraphviz: empty graph emits header and closing brace
+    Graph<int> g6;
+    StringStream ss3;
+    g6.toGraphviz(ss3);
+    assert ss3.str() == "digraph G {\n}";
+
+    printf("All assertions passed!\n");
+}
