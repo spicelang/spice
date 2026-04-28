@@ -81,8 +81,8 @@ public f<bool> Set.isEmpty() {
  */
 public f<LinkedList<V>> Set.toLinkedList() {
     result = LinkedList<V>();
-    foreach Pair<V, bool>& bucket : this.tree {
-        result.append(entry.key);
+    foreach Pair<V, bool>& entry : this.tree {
+        result.pushBack(entry.getFirst());
     }
 }
 
@@ -141,7 +141,7 @@ public inline p SetIterator.next() {
  * @param it SetIterator
  */
 public inline p operator++<V>(SetIterator<V>& it) {
-    this.rbtIterator.next();
+    it.rbtIterator.next();
 }
 
 /**

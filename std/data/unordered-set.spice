@@ -85,8 +85,8 @@ public f<bool> UnorderedSet.isEmpty() {
  */
 public f<LinkedList<V>> UnorderedSet.toLinkedList() {
     result = LinkedList<V>();
-    foreach Pair<V, bool>& bucket : this.hashTable {
-        result.append(entry.key);
+    foreach Pair<V, bool>& entry : this.hashTable {
+        result.pushBack(entry.getFirst());
     }
 }
 
@@ -145,7 +145,7 @@ public inline p UnorderedSetIterator.next() {
  * @param it UnorderedSetIterator
  */
 public inline p operator++<V>(UnorderedSetIterator<V>& it) {
-    this.htIterator.next();
+    it.htIterator.next();
 }
 
 /**

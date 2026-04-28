@@ -51,38 +51,45 @@ public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
     // Abort if the index is out of bounds
     if idx < 0 || idx > this.size { panic(Error("Access index out of bound")); }
 
-    heap Node<T>* newNode = this.createNode(value);
     if idx == 0 {
         this.pushFront(value);
-    } else if idx == this.size {
-        this.pushBack(value);
-    } else {
-        heap Node<T>* curr = this.tail;
-        for unsigned long i = 0l; i < idx - 1l; i++ {
-            curr = curr.next;
-        }
-        newNode.next = curr.next;
-        newNode.prev = curr;
-        curr.next.prev = newNode;
-        curr.next = newNode;
-        this.size++;
+        return;
     }
+    if idx == this.size {
+        this.pushBack(value);
+        return;
+    }
+    heap Node<T>* newNode = this.createNode(value);
+    heap Node<T>* curr = this.tail;
+    for unsigned long i = 0l; i < idx - 1l; i++ {
+        curr = curr.next;
+    }
+    newNode.next = curr.next;
+    newNode.prev = curr;
+    curr.next.prev = newNode;
+    curr.next = newNode;
+    this.size++;
 }
 
 public p DoublyLinkedList.remove(const T& valueToRemove) {
     Node<T>* curr = this.tail;
     while curr != nil<Node<T>*> {
         if curr.value == valueToRemove {
-            if curr == this.tail {
-                this.tail = curr.next;
+            if curr == this.tail && curr == this.head {
+                this.tail = nil<heap Node<T>*>;
+                this.head = nil<Node<T>*>;
+            } else if curr == this.tail {
+                this.tail = sMove(curr.next);
                 this.tail.prev = nil<Node<T>*>;
             } else if curr == this.head {
                 this.head = curr.prev;
                 this.head.next = nil<heap Node<T>*>;
+                curr.next = nil<heap Node<T>*>;
             } else {
                 curr.next.prev = curr.prev;
-                curr.prev.next = curr.next;
+                curr.prev.next = sMove(curr.next);
             }
+            sDelete(curr);
             this.size--;
             break;
         }
@@ -98,16 +105,21 @@ public p DoublyLinkedList.removeAt(unsigned long idx) {
     for unsigned long i = 0l; i < idx; i++ {
         curr = curr.next;
     }
-    if curr == this.tail {
-        this.tail = curr.next;
+    if curr == this.tail && curr == this.head {
+        this.tail = nil<heap Node<T>*>;
+        this.head = nil<Node<T>*>;
+    } else if curr == this.tail {
+        this.tail = sMove(curr.next);
         this.tail.prev = nil<Node<T>*>;
     } else if curr == this.head {
         this.head = curr.prev;
         this.head.next = nil<heap Node<T>*>;
+        curr.next = nil<heap Node<T>*>;
     } else {
         curr.next.prev = curr.prev;
-        curr.prev.next = curr.next;
+        curr.prev.next = sMove(curr.next);
     }
+    sDelete(curr);
     this.size--;
 }
 
