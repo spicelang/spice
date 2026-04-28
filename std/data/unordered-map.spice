@@ -162,7 +162,7 @@ public inline p UnorderedMapIterator.next() {
  * @param it UnorderedMapIterator
  */
 public inline p operator++<K, V>(UnorderedMapIterator<K, V>& it) {
-    this.htIterator.next();
+    it.htIterator.next();
 }
 
 /**

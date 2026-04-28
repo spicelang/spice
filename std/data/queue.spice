@@ -103,6 +103,7 @@ public p Queue.push(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<T&> Queue.pop() {
+    if this.isEmpty() { panic(Error("The queue is empty")); }
     this.size--;
     unsafe {
         return this.contents[this.idxFront++];
@@ -129,7 +130,7 @@ public f<T&> Queue.front() {
 public f<T&> Queue.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
-        return this.contents[this.idxBack];
+        return this.contents[this.idxBack - 1];
     }
 }
 

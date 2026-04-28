@@ -47,7 +47,7 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
     // Fill in the default values
-    for int index = 0; index < initAllocItems; index++ {
+    for unsigned long index = 0ul; index < initAllocItems; index++ {
         unsafe {
             __placement_new<T>(&this.contents[index], defaultValue);
         }

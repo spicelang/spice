@@ -150,14 +150,14 @@ public f<T&> Deque.popFront() {
 public f<T&> Deque.popBack() {
     if this.isEmpty() { panic(Error("Deque is empty")); }
 
+    // Adjust indices and size
+    this.idxBack = this.idxBack - 1 + this.capacity;
+    this.idxBack %= this.capacity;
+
     // Get item value
     unsafe {
         result = this.contents[this.idxBack];
     }
-
-    // Adjust indices and size
-    this.idxBack = this.idxBack - 1 + this.capacity;
-    this.idxBack %= this.capacity;
     this.size--;
 }
 
@@ -181,7 +181,7 @@ public f<T&> Deque.front() {
 public f<T&> Deque.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
-        return this.contents[this.idxBack - 1];
+        return this.contents[(this.idxBack - 1 + this.capacity) % this.capacity];
     }
 }
 

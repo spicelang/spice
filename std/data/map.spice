@@ -157,7 +157,7 @@ public inline p MapIterator.next() {
  * @param it MapIterator
  */
 public inline p operator++<K, V>(MapIterator<K, V>& it) {
-    this.htIterator.next();
+    it.rbtIterator.next();
 }
 
 /**

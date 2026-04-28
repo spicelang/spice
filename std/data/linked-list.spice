@@ -83,7 +83,7 @@ public p LinkedList.pushFront(const T& value) {
  */
 public p LinkedList.insertAt(unsigned long idx, const T& value) {
     // Abort if the index is out of bounds
-    if idx < 0l || idx >= this.size { return; }
+    if idx > this.size { return; }
 
     // Create new node
     heap Node<T>* newNode = this.createNode(value);
@@ -100,6 +100,9 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
         }
         newNode.next = curr.next; // Link the next node to the new one
         curr.next = newNode; // Link the new node to the previous one
+        if idx == this.size {
+            this.head = newNode; // Update head when appending
+        }
     }
     this.size++;
 }
@@ -226,7 +229,7 @@ public inline f<bool> LinkedList.isEmpty() {
  */
 public f<T&> LinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
-    if idx < 0 || idx >= this.size {
+    if idx >= this.size {
         panic(Error("Access index out of bound"));
     }
 
