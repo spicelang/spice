@@ -13,8 +13,6 @@
 
 namespace spice::compiler {
 
-static constexpr size_t DEFAULT_OP_IDX = 0;
-
 OpRuleConversionManager::OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator)
     : builder(sourceFile->builder), irGenerator(irGenerator), stdFunctionManager(irGenerator->stdFunctionManager) {}
 

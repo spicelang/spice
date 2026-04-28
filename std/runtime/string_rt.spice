@@ -61,18 +61,32 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String& value) {
-    this.length = value.length;
-    this.capacity = value.capacity;
+public p String.ctor(const String& original) {
+    this.length = original.length;
+    this.capacity = original.capacity;
 
     unsafe {
         // Allocate space
-        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        unsigned long requiredBytes = original.capacity + 1l; // +1 because of null terminator
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
 
-        // Copy the contents from the other string
-        memcpy(this.contents, value.contents, value.length + 1l); // +1 because of null terminator
+        // Copy the contents from the original string
+        memcpy(this.contents, original.contents, original.length + 1l); // +1 because of null terminator
+    }
+}
+
+public p operator=(String& this, const String& newValue) {
+    this.length = newValue.length;
+    this.capacity = newValue.capacity;
+
+    unsafe {
+        // Allocate space
+        unsigned long requiredBytes = newValue.capacity + 1l; // +1 because of null terminator
+        this.contents = realloc(this.contents, requiredBytes);
+
+        // Copy the contents from the given string
+        memcpy(this.contents, newValue.contents, newValue.length + 1l); // +1 because of null terminator
     }
 }
 

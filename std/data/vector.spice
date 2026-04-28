@@ -63,6 +63,21 @@ public p Vector.ctor(const Vector<T>& original) {
     this.size = original.size;
 }
 
+public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
+    // Allocate space for the initial number of elements
+    const unsigned long itemSize = sizeof<T>();
+    assert itemSize > 0l;
+    unsafe {
+        Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
+        this.contents = cast<heap T*>(allocResult.unwrap());
+    }
+    this.capacity = newValue.capacity;
+    this.size = newValue.size;
+    unsafe {
+        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), newValue.size);
+    }
+}
+
 /**
  * Checks if the vector contains any items at the moment
  *
