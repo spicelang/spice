@@ -600,10 +600,10 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker);
 
   // Public methods
-  std::pair<QualType, Function *> getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+  std::pair<QualType, Function *> getAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
                                                       bool isDecl = false, bool isReturn = false,
                                                       const char *errMsgPrefix = "") const;
-  QualType getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+  QualType getFieldAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                     bool isDecl = false) const;
   ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
@@ -657,7 +657,8 @@ private:
   // Private methods
   static QualType getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
                                             bool isReturn);
-
+  std::pair<QualType, Function *> performStructAssign(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                      const QualType &rhsType, bool isDecl, bool isReturn) const;
   static QualType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                          const QualType &lhs);
   static QualType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,
