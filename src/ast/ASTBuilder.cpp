@@ -128,18 +128,20 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
   const auto fctNameNode = createNode<FctNameNode>(ctx);
 
   // Extract function name
+  std::stringstream fqName;
   if (ctx->TYPE_IDENTIFIER()) {
     const std::string typeIdentifier = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
     fctNameNode->structName = typeIdentifier;
-    fctNameNode->fqName = typeIdentifier + MEMBER_ACCESS_TOKEN;
+    fqName << typeIdentifier << MEMBER_ACCESS_TOKEN;
     fctNameNode->nameFragments.push_back(typeIdentifier);
   }
   if (ctx->IDENTIFIER()) {
     const std::string fctIdentifier = getIdentifier(ctx->IDENTIFIER(), false);
     fctNameNode->name = fctIdentifier;
-    fctNameNode->fqName += fctIdentifier;
+    fqName << fctIdentifier;
     fctNameNode->nameFragments.push_back(fctIdentifier);
   }
+  fctNameNode->fqName = fqName.str();
 
   // Visit children
   if (ctx->overloadableOp())
@@ -760,11 +762,13 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   const auto attrNode = createNode<AttrNode>(ctx);
 
   // Extract key
-  for (const TerminalNode *keyFragment : ctx->IDENTIFIER()) {
-    if (!attrNode->key.empty())
-      attrNode->key += MEMBER_ACCESS_TOKEN;
-    attrNode->key += keyFragment->getSymbol()->getText();
+  std::stringstream key;
+  for (size_t i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    if (i > 0)
+      key << MEMBER_ACCESS_TOKEN;
+    key << ctx->IDENTIFIER(i)->getText();
   }
+  attrNode->key = key.str();
 
   // Visit children
   if (ctx->constant()) {
@@ -793,25 +797,22 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
   if (ctx->constant()) {
     caseConstantNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
   } else if (!ctx->TYPE_IDENTIFIER().empty()) {
-    for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-      const auto terminal = dynamic_cast<TerminalNode *>(subTree);
+    std::stringstream fqIdentifier;
+    for (size_t i = 0; i < ctx->children.size(); i++) {
+      const auto terminal = dynamic_cast<TerminalNode *>(ctx->children[i]);
       if (!terminal)
         continue;
 
-      if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const size_t terminalType = terminal->getSymbol()->getType();
+      if (terminalType == SpiceParser::IDENTIFIER || terminalType == SpiceParser::TYPE_IDENTIFIER) {
         const std::string fragment = getIdentifier(terminal, false);
         caseConstantNode->identifierFragments.push_back(fragment);
-        if (!caseConstantNode->fqIdentifier.empty())
-          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-        caseConstantNode->fqIdentifier += fragment;
-      } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-        const std::string fragment = getIdentifier(terminal, false);
-        caseConstantNode->identifierFragments.push_back(fragment);
-        if (!caseConstantNode->fqIdentifier.empty())
-          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-        caseConstantNode->fqIdentifier += fragment;
+        if (fqIdentifier.rdbuf()->in_avail() > 0)
+          fqIdentifier << SCOPE_ACCESS_TOKEN;
+        fqIdentifier << fragment;
       }
     }
+    caseConstantNode->fqIdentifier = fqIdentifier.str();
   } else {
     assert_fail("Unknown case constant type"); // GCOV_EXCL_LINE
   }
@@ -1197,25 +1198,22 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   } else if (ctx->value()) {
     atomicExprNode->value = std::any_cast<ValueNode *>(visit(ctx->value()));
   } else if (!ctx->IDENTIFIER().empty() || !ctx->TYPE_IDENTIFIER().empty()) {
+    std::stringstream fqIdentifier;
     for (ParserRuleContext::ParseTree *subTree : ctx->children) {
       const auto terminal = dynamic_cast<TerminalNode *>(subTree);
       if (!terminal)
         continue;
 
-      if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-        std::string fragment = getIdentifier(terminal, false);
+      const size_t terminalType = terminal->getSymbol()->getType();
+      if (terminalType == SpiceParser::IDENTIFIER || terminalType == SpiceParser::TYPE_IDENTIFIER) {
+        const std::string fragment = getIdentifier(terminal, false);
         atomicExprNode->identifierFragments.push_back(fragment);
-        if (!atomicExprNode->fqIdentifier.empty())
-          atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-        atomicExprNode->fqIdentifier += fragment;
-      } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-        std::string fragment = getIdentifier(terminal, false);
-        atomicExprNode->identifierFragments.push_back(fragment);
-        if (!atomicExprNode->fqIdentifier.empty())
-          atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-        atomicExprNode->fqIdentifier += fragment;
+        if (fqIdentifier.rdbuf()->in_avail() > 0)
+          fqIdentifier << SCOPE_ACCESS_TOKEN;
+        fqIdentifier << fragment;
       }
     }
+    atomicExprNode->fqIdentifier = fqIdentifier.str();
   } else if (ctx->assignExpr()) {
     atomicExprNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   } else {
@@ -1292,6 +1290,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
   const auto fctCallNode = createNode<FctCallNode>(ctx);
 
+  std::stringstream fqFunctionName;
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto terminal = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
     if (!terminal)
@@ -1300,17 +1299,18 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
     if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = terminal->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
-      fctCallNode->fqFunctionName += fragment;
+      fqFunctionName << fragment;
     } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = terminal->toString();
       fctCallNode->functionNameFragments.push_back(fragment);
-      fctCallNode->fqFunctionName += fragment;
+      fqFunctionName << fragment;
     } else if (terminal->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS) {
-      fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
+      fqFunctionName << SCOPE_ACCESS_TOKEN;
     } else if (terminal->getSymbol()->getType() == SpiceParser::DOT) {
-      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
+      fqFunctionName << MEMBER_ACCESS_TOKEN;
     }
   }
+  fctCallNode->fqFunctionName = fqFunctionName.str();
 
   // Visit children
   if (ctx->typeLst()) {
@@ -1339,6 +1339,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   const auto structInstantiationNode = createNode<StructInstantiationNode>(ctx);
 
   // Enrich
+  std::stringstream fqStructName;
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto terminal = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
     if (!terminal)
@@ -1347,13 +1348,14 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
     if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = terminal->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
-      structInstantiationNode->fqStructName += fragment + SCOPE_ACCESS_TOKEN;
+      fqStructName << fragment << SCOPE_ACCESS_TOKEN;
     } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = terminal->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
-      structInstantiationNode->fqStructName += fragment;
+      fqStructName << fragment;
     }
   }
+  structInstantiationNode->fqStructName = fqStructName.str();
 
   // Visit children
   if (ctx->typeLst()) {
@@ -1438,7 +1440,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
       std::string sizeVarName;
       if (terminal->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
-        hardCodedSize = std::stoi(terminal->getSymbol()->getText());
+        hardCodedSize = std::stoi(terminal->getText());
         i++; // Consume INT_LIT
       } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
         hasSize = true;
@@ -1491,6 +1493,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   const auto customDataTypeNode = createNode<CustomDataTypeNode>(ctx);
 
   // Enrich
+  std::stringstream fqTypeName;
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     const auto terminal = dynamic_cast<TerminalNode *>(subTree);
     if (!terminal)
@@ -1499,13 +1502,14 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
     if (terminal->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       const std::string fragment = terminal->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
-      customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
+      fqTypeName << fragment << SCOPE_ACCESS_TOKEN;
     } else if (terminal->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = terminal->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
-      customDataTypeNode->fqTypeName += fragment;
+      fqTypeName << fragment;
     }
   }
+  customDataTypeNode->fqTypeName = fqTypeName.str();
 
   // Visit children
   if (ctx->typeLst())

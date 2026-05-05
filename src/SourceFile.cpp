@@ -86,7 +86,7 @@ void SourceFile::runLexer() {
 
   // Calculate cache key
   std::stringstream cacheKeyString;
-  cacheKeyString << std::hex << std::hash<std::string>{}(antlrCtx.tokenStream->getText());
+  cacheKeyString << std::hex << std::hash<std::string>{}(absolute(filePath).generic_string());
   cacheKey = cacheKeyString.str();
 
   // Try to load from cache
