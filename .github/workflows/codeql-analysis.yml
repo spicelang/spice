@@ -8,7 +8,7 @@ on:
 
 env:
   LLVM_VERSION: "llvmorg-22.1.5"
-  GCC_VERSION: "14"
+  GCC_VERSION: "16"
 
 jobs:
   analyze-cpp:
@@ -25,22 +25,20 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Configure selected GCC version as default
+      - name: Setup Dependencies
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build graphviz pipx uuid-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
-
-      - name: Setup Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build graphviz pipx uuid-dev
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

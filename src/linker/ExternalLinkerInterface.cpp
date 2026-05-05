@@ -17,9 +17,6 @@ ExternalLinkerInterface::ExternalLinkerInterface(const CliOptions &cliOptions)
     : outputPath(cliOptions.outputPath), cliOptions(cliOptions) {}
 
 void ExternalLinkerInterface::prepare() {
-  // Set target to linker
-  addLinkerFlag("--target=" + cliOptions.targetTriple.str());
-
   // Static linking
   if (cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
     addLinkerFlag("-shared");
@@ -104,7 +101,13 @@ void ExternalLinkerInterface::link() const {
   const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
   commandBuilder << linkerInvokerPath;
   const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
-  commandBuilder << " -fuse-ld=" << linkerPath;
+  const bool isGccInvoker = std::string_view(linkerInvokerName) == "gcc";
+  // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
+  if (!isGccInvoker || std::string_view(linkerName) != "ld")
+    commandBuilder << " -fuse-ld=" << linkerPath;
+  // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
+  if (!isGccInvoker)
+    commandBuilder << " --target=" << cliOptions.targetTriple.str();
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
     commandBuilder << " " << linkerFlag;
