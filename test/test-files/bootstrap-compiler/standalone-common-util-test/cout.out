@@ -14,7 +14,7 @@ Circular error message:
 Version info:
 Spice version: 0.25.0 linux/amd64
 Git hash:      69b759385b4a84d1fd8d8a8ed38c8e9def98b9f8
-LLVM version:  22.1.4
+LLVM version:  22.1.5
 built by:      ghactions
 
 (c) Marc Auberer 2021-2026
