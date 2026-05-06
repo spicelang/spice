@@ -13,6 +13,7 @@ set(SOURCES
         # Unit tests
         unittest/UnitBlockAllocator.cpp
         unittest/UnitCommonUtil.cpp
+        unittest/UnitCompileCache.cpp
         unittest/UnitFileUtil.cpp
         unittest/UnitSystemUtil.cpp
         unittest/UnitDriver.cpp
