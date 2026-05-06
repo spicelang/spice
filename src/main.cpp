@@ -37,7 +37,7 @@ bool compileProject(const CliOptions &cliOptions) {
     // Link the target executable (link object files to executable/library)
     if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE) {
       resourceManager.linker.prepare();
-      resourceManager.linker.run();
+      resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
       resourceManager.linker.cleanup();
     }
 

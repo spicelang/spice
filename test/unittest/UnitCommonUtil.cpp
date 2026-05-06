@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
-// LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 
 #include <util/CommonUtil.h>
+
+// LCOV_EXCL_START
 
 namespace spice::testing {
 
