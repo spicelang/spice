@@ -184,6 +184,9 @@ public:
   CompilerOutput compilerOutput;
   SourceFile *parent;
   std::string cacheKey;
+  std::vector<std::filesystem::path> cachedObjectFilePaths;
+  std::vector<std::string> sourceLinkerFlags;
+  std::vector<std::filesystem::path> sourceAdditionalSourcePaths;
   EntryNode *ast = nullptr;
   std::unique_ptr<Scope> globalScope;
   llvm::LLVMContext context;

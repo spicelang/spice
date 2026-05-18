@@ -28,6 +28,8 @@ public:
   void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
   void requestLibMathLinkage();
+  [[nodiscard]] const std::vector<std::string> &getLinkerFlags() const { return linkerFlags; }
+  [[nodiscard]] const std::vector<std::filesystem::path> &getLinkedFiles() const { return linkedFiles; }
 
   // Public members
   std::filesystem::path outputPath;
