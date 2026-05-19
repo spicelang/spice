@@ -42,6 +42,9 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
 
+  // Discard value names if not required
+  context.setDiscardValueNames(!cliOptions.namesForIRValues);
+
   // Search after the selected target
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);

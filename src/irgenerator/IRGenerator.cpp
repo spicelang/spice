@@ -60,10 +60,7 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   return nullptr;
 }
 
-llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName) {
-  if (!cliOptions.namesForIRValues)
-    varName = "";
-
+llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
     llvm::AllocaInst *allocaInst = builder.CreateAlloca(llvmType, nullptr, varName);
     allocaInst->setDebugLoc(llvm::DebugLoc());
@@ -103,7 +100,7 @@ llvm::AllocaInst *IRGenerator::insertAlloca(const QualType &qualType, const std:
 llvm::LoadInst *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile,
                                         const std::string &varName) const {
   assert(ptr->getType()->isPointerTy());
-  return builder.CreateLoad(llvmType, ptr, isVolatile, cliOptions.namesForIRValues ? varName : "");
+  return builder.CreateLoad(llvmType, ptr, isVolatile, varName);
 }
 
 llvm::LoadInst *IRGenerator::insertLoad(const QualType &qualType, llvm::Value *ptr, bool isVolatile, const std::string &varName) {
@@ -126,7 +123,7 @@ void IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, const QualType
 }
 
 llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
-                                            std::string varName) const {
+                                            const std::string &varName) const {
   assert(basePtr->getType()->isPointerTy());
   assert(!indices.empty());
   assert(std::ranges::all_of(indices, [](const llvm::Value *index) {
@@ -134,18 +131,13 @@ llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *baseP
     return indexType->isIntegerTy(32) || indexType->isIntegerTy(64);
   }));
 
-  if (!cliOptions.namesForIRValues)
-    varName.clear();
-
   // Insert GEP
   return builder.CreateInBoundsGEP(type, basePtr, indices, varName);
 }
 
-llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned int index, std::string varName) const {
+llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned int index,
+                                          const std::string &varName) const {
   assert(basePtr->getType()->isPointerTy());
-
-  if (!cliOptions.namesForIRValues)
-    varName.clear();
 
   // If we use index 0 we can use the base pointer directly
   if (index == 0)
