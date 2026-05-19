@@ -115,7 +115,7 @@ public:
   std::any visitDataType(const DataTypeNode *node) override;
 
   // Public methods
-  llvm::AllocaInst *insertAlloca(llvm::Type *llvmType, std::string varName = "");
+  llvm::AllocaInst *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::AllocaInst *insertAlloca(const QualType &qualType, const std::string &varName = "");
   llvm::LoadInst *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false,
                              const std::string &varName = "") const;
@@ -124,8 +124,8 @@ public:
   llvm::StoreInst *insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
   void insertStore(llvm::Value *val, llvm::Value *ptr, const QualType &qualType, bool isVolatile = false);
   llvm::Value *insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
-                                 std::string varName = "") const;
-  llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
+                                 const std::string &varName = "") const;
+  llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, const std::string &varName = "") const;
   llvm::Value *resolveValue(const ExprNode *node);
   llvm::Value *resolveValue(const ExprNode *node, LLVMExprResult &exprResult);
   llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult);

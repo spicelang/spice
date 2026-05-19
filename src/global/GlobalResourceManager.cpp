@@ -44,9 +44,12 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     cpuFeatures = features.getString();
   }
 
-  // Create lto module
-  if (cliOptions.useLTO)
+  if (cliOptions.useLTO) {
+    // Discard value names if not required
+    ltoContext.setDiscardValueNames(!cliOptions.namesForIRValues);
+    // Create lto module
     ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, ltoContext);
+  }
 }
 
 GlobalResourceManager::~GlobalResourceManager() {
