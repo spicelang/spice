@@ -53,6 +53,20 @@ public p Mutex.ctor(const Mutex& _other) {
 }
 
 /**
+ * Assignment for Mutex. Spice falls back to the copy constructor for plain
+ * struct assignment, which would unconditionally allocate a new pthread_mutex_t
+ * and leak the receiver's existing handle. A Mutex owns a unique resource, so
+ * the only meaningful "copy" is a fresh independent mutex — and the receiver
+ * already is one. We therefore keep the receiver's handle in place and only
+ * lazily initialize if it was previously destroyed or never set up.
+ */
+public p operator=(Mutex& this, const Mutex& _other) {
+    if this.handle == nil<heap byte*> {
+        this.ctor();
+    }
+}
+
+/**
  * Destroy the underlying pthread mutex and release its storage.
  */
 public p Mutex.dtor() {
