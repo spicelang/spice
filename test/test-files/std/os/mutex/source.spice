@@ -1,0 +1,66 @@
+import "std/os/mutex";
+import "std/os/thread";
+
+// Shared state for the concurrent test. Bundling counter + mutex into a struct
+// lets the async worker capture a single `this` pointer (per the async capture
+// rules) and still access both fields.
+type Shared struct {
+    Mutex m
+    int counter = 0
+}
+
+p Shared.runWorkers() {
+    p() worker = p() [[async]] {
+        for int i = 0; i < 10000; i++ {
+            LockGuard _ = LockGuard(this.m);
+            this.counter++;
+        }
+    };
+    Thread t1 = Thread(worker);
+    Thread t2 = Thread(worker);
+    Thread t3 = Thread(worker);
+    Thread t4 = Thread(worker);
+    t1.run();
+    t2.run();
+    t3.run();
+    t4.run();
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+}
+
+f<int> main() {
+    Mutex m;
+
+    // 1. acquire/release round-trip
+    m.acquire();
+    m.release();
+    printf("acquire/release ok\n");
+
+    // 2. tryAcquire reports true on a free mutex, false on a held one
+    assert m.tryAcquire();
+    assert !m.tryAcquire();
+    m.release();
+    printf("tryAcquire ok\n");
+
+    // 3. LockGuard releases at end of scope
+    {
+        LockGuard _ = LockGuard(m);
+        assert !m.tryAcquire();
+    }
+    assert m.tryAcquire();
+    m.release();
+    printf("LockGuard ok\n");
+
+    // 4. Concurrent increments stay consistent under the lock.
+    // With four threads each doing 10000 increments under a shared mutex,
+    // the final count must be exactly 40000 — anything less indicates lost
+    // updates and a broken mutex.
+    Shared s;
+    s.runWorkers();
+    assert s.counter == 40000;
+    printf("counter = %d\n", s.counter);
+
+    printf("All assertions passed!\n");
+}

@@ -1,32 +1,99 @@
-import "std/time/delay";
-import "std/os/cpu";
+#![core.linker.flag = "-pthread"]
+
+// Link external functions
+// We intentionally do not use memory_rt here to avoid pulling in extra runtime
+// machinery for a low-level primitive.
+ext f<heap byte*> malloc(unsigned long);
+ext p free(heap byte*);
+
+ext f<int> pthread_mutex_init(heap byte* /*mutex*/, byte* /*attr*/);
+ext f<int> pthread_mutex_destroy(heap byte* /*mutex*/);
+ext f<int> pthread_mutex_lock(heap byte* /*mutex*/);
+ext f<int> pthread_mutex_unlock(heap byte* /*mutex*/);
+ext f<int> pthread_mutex_trylock(heap byte* /*mutex*/);
+
+// pthread_mutex_t is an opaque, platform-specific struct (40 bytes on glibc/Linux x86_64,
+// 64 bytes on macOS, smaller on FreeBSD). Allocate enough storage for the largest known
+// layout so the same binding works across supported platforms.
+const unsigned long PTHREAD_MUTEX_SIZE = 64ul;
 
 /**
- * Mutex for reserving a resource for exclusive access. This is useful for improving thread-safety
+ * Mutex for reserving a resource for exclusive access between threads.
+ *
+ * Backed by a POSIX `pthread_mutex_t`. Calls to `acquire` block until the mutex
+ * is available; `release` wakes up another waiting thread, if any. A `Mutex`
+ * owns the underlying pthread handle and is not safe to share by shallow copy —
+ * use a reference (`Mutex&`) when passing across functions.
  */
 public type Mutex struct {
-	bool occupied = false
+    heap byte* handle
 }
 
 /**
- * Acquire the mutex
+ * Initialize a fresh, unlocked mutex.
+ */
+public p Mutex.ctor() {
+    this.handle = malloc(PTHREAD_MUTEX_SIZE);
+    if this.handle == nil<heap byte*> {
+        panic(Error("Mutex: failed to allocate pthread_mutex_t storage"));
+    }
+    if pthread_mutex_init(this.handle, nil<byte*>) != 0 {
+        free(this.handle);
+        this.handle = nil<heap byte*>;
+        panic(Error("Mutex: pthread_mutex_init failed"));
+    }
+}
+
+/**
+ * Copy-construct a fresh, unlocked mutex. The original mutex is not aliased,
+ * since pthread_mutex_t handles cannot be safely shared via shallow copy.
+ */
+public p Mutex.ctor(const Mutex& _other) {
+    this.ctor();
+}
+
+/**
+ * Destroy the underlying pthread mutex and release its storage.
+ */
+public p Mutex.dtor() {
+    if this.handle != nil<heap byte*> {
+        pthread_mutex_destroy(this.handle);
+        free(this.handle);
+        this.handle = nil<heap byte*>;
+    }
+}
+
+/**
+ * Block until the mutex is acquired by the calling thread.
  */
 public p Mutex.acquire() {
-	while this.occupied {
-		yield();
-	}
-	this.occupied = true;
+    if pthread_mutex_lock(this.handle) != 0 {
+        panic(Error("Mutex: pthread_mutex_lock failed"));
+    }
 }
 
 /**
- * Release the mutex
+ * Release the mutex, allowing another waiting thread to acquire it.
  */
 public p Mutex.release() {
-	this.occupied = false;
+    if pthread_mutex_unlock(this.handle) != 0 {
+        panic(Error("Mutex: pthread_mutex_unlock failed"));
+    }
 }
 
 /**
- * LockGuard is a RAII wrapper for Mutex
+ * Try to acquire the mutex without blocking.
+ *
+ * @return true if the mutex was acquired, false if another thread holds it
+ */
+public f<bool> Mutex.tryAcquire() {
+    return pthread_mutex_trylock(this.handle) == 0;
+}
+
+/**
+ * LockGuard is a RAII wrapper for Mutex: acquires on construction and releases
+ * on destruction, ensuring the mutex is freed even when the protected scope
+ * exits via an early return or a panic.
  */
 public type LockGuard struct {
     Mutex& mutex
