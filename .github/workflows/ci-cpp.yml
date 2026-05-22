@@ -259,19 +259,23 @@ jobs:
           java-version: 25
           java-package: jre
 
+      - name: Setup TLS certificates for CMake/curl
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://curl.se/ca/cacert.pem -OutFile C:\cacert.pem
+          echo "SSL_CERT_FILE=C:\cacert.pem" >> $env:GITHUB_ENV
+          echo "CURL_CA_BUNDLE=C:\cacert.pem" >> $env:GITHUB_ENV
+
       - name: Setup latest GCC
         shell: pwsh
         run: |
           choco uninstall mingw --all-versions
           choco uninstall llvm --all-versions
-          Remove-Item -Recurse -Force C:/Strawberry
-          echo "Uninstalling done."
+          Remove-Item -Recurse -Force C:/Strawberry -ErrorAction SilentlyContinue
           Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/16.1.0posix-14.0.0-ucrt-r1/winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r1.7z -OutFile mingw64.7z
-          echo "Downloading done."
           7z x mingw64.7z -oC:\ -aoa
-          echo "Unpacking done."
           Copy-Item -Path C:\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\bin\make.exe
-          echo "All done."
+          echo "C:\mingw64\bin" | Out-File -Append -FilePath $env:GITHUB_PATH
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -293,9 +297,6 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
-          setx /M PATH "C:\mingw64\bin;%PATH%"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `
@@ -323,10 +324,9 @@ jobs:
       - name: Build test target
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+          CMAKE_TLS_VERIFY: "1"
+          SSL_CERT_FILE: "C:\cacert.pem"
         run: |
-          setx /M PATH "C:\mingw64\bin;%PATH%"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `
@@ -347,9 +347,6 @@ jobs:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: |
-          setx /M PATH "C:\mingw64\bin;%PATH%"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           ./spicetest --is-github-actions
 
   build-macos-aarch64:
