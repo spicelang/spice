@@ -128,7 +128,7 @@ target_include_directories(spicecore
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 target_compile_definitions(spicecore PRIVATE ${LLVM_DEFINITIONS_LIST})
 # Enable pedantic warnings
-target_compile_options(spicecore PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
+target_compile_options(spicecore PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
 
 ################## spice executable ##################
 
@@ -136,7 +136,7 @@ add_executable(spice main.cpp)
 # Link with spicecore, antlr and llvm
 target_link_libraries(spice PRIVATE spicecore ${LLVM_LIBS})
 # Enable pedantic warnings
-target_compile_options(spice PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas)
+target_compile_options(spice PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
 
 ################### spice_leakcheck ##################
 
