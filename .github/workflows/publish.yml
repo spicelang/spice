@@ -282,7 +282,7 @@ jobs:
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
           CMAKE_TLS_VERIFY: "1"
-          SSL_CERT_FILE: "C:\cacert.pem"
+          SSL_CERT_FILE: "C:\\cacert.pem"
         run: |
           mkdir ./build
           cd ./build
