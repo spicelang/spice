@@ -1,0 +1,5 @@
+acquire/release ok
+tryAcquire ok
+LockGuard ok
+counter = 40000
+All assertions passed!

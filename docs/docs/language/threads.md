@@ -100,4 +100,94 @@ are finished.
 
 ## Mutexes
 
-ToDo
+When multiple threads share state, you need a way to make sure that only one thread modifies it at a time.
+The `std/os/mutex` module provides a `Mutex` type for this. It is backed by a POSIX `pthread_mutex_t` under the hood,
+so calls to `acquire()` block (the OS scheduler parks the thread) until the mutex becomes available, rather than
+busy-waiting on the CPU.
+
+### Basic usage
+
+```spice
+import "std/os/mutex";
+
+f<int> main() {
+    Mutex m;
+
+    m.acquire();      // Block until we hold the mutex
+    // critical section: only one thread can be here at a time
+    m.release();      // Hand it off to the next waiter
+}
+```
+
+The mutex initializes itself when constructed and destroys the underlying pthread handle in its destructor —
+no explicit `init`/`destroy` calls are required.
+
+If you only want to take the mutex when it is immediately available, use `tryAcquire()`:
+
+```spice
+if m.tryAcquire() {
+    // we got the lock without blocking
+    m.release();
+} else {
+    // someone else holds it; do something else
+}
+```
+
+### LockGuard (RAII)
+
+Forgetting to call `release()` — for example because an early `return` or a `panic` skips the call — leaves the
+mutex permanently locked. The `LockGuard` type avoids that: it acquires the mutex in its constructor and releases
+it in its destructor, so the mutex is freed when the guard goes out of scope, no matter how the scope exits.
+
+```spice
+import "std/os/mutex";
+
+p criticalWork(Mutex& m) {
+    LockGuard _ = LockGuard(m);
+    // critical section
+    // ...
+    // m is released automatically when this scope ends
+}
+```
+
+This is the recommended way to use a mutex unless you really need fine-grained control over when the lock is
+released.
+
+### Sharing a mutex across threads
+
+A `Mutex` owns its underlying pthread handle, so you should not pass it by value across threads — always share it
+by reference, typically by placing it inside a struct whose pointer the thread routine captures.
+
+```spice
+import "std/os/mutex";
+import "std/os/thread";
+
+type Counter struct {
+    Mutex m
+    int value = 0
+}
+
+p Counter.incrementMany(int n) {
+    p() worker = p() [[async]] {
+        for int i = 0; i < n; i++ {
+            LockGuard _ = LockGuard(this.m);
+            this.value++;
+        }
+    };
+    Thread t1 = Thread(worker);
+    Thread t2 = Thread(worker);
+    t1.run();
+    t2.run();
+    t1.join();
+    t2.join();
+}
+
+f<int> main() {
+    Counter c;
+    c.incrementMany(10000);
+    printf("counter = %d\n", c.value); // always 20000
+}
+```
+
+Because both threads increment `this.value` under the same `LockGuard`, no updates are lost. Without the mutex,
+the read-modify-write of `this.value++` would race and the final count would be less than `20000`.
