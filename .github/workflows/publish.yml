@@ -8,7 +8,7 @@ on:
 
 env:
   LLVM_VERSION: "llvmorg-22.1.6"
-  GCC_VERSION: "14"
+  GCC_VERSION: "16"
 
 jobs:
   build-compiler-linux-x86:
@@ -26,22 +26,20 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Configure selected GCC version as default
+      - name: Setup Dependencies
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
-
-      - name: Setup Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -126,22 +124,20 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Configure selected GCC version as default
+      - name: Setup Dependencies
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
-
-      - name: Setup Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -224,20 +220,6 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Setup latest GCC
-        shell: pwsh
-        run: |
-          choco uninstall mingw --all-versions
-          choco uninstall llvm --all-versions
-          Remove-Item -Recurse -Force C:/Strawberry
-          echo "Uninstalling done."
-          Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/15.1.0posix-13.0.0-ucrt-r4/winlibs-x86_64-posix-seh-gcc-15.1.0-mingw-w64ucrt-13.0.0-r4.7z -OutFile mingw64.7z
-          echo "Downloading done."
-          7z x mingw64.7z -oC:\mingw64
-          echo "Unpacking done."
-          Copy-Item -Path C:\mingw64\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\mingw64\bin\make.exe
-          echo "All done."
-
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
@@ -258,9 +240,6 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
-          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `
@@ -284,10 +263,9 @@ jobs:
       - name: Build compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+          CMAKE_TLS_VERIFY: "1"
+          SSL_CERT_FILE: "C:\\cacert.pem"
         run: |
-          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `

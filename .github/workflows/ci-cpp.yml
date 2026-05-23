@@ -10,7 +10,7 @@ on:
 
 env:
   LLVM_VERSION: "llvmorg-22.1.6"
-  GCC_VERSION: "14"
+  GCC_VERSION: "16"
 
 jobs:
   build-linux-x86:
@@ -28,22 +28,20 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Configure selected GCC version as default
+      - name: Setup Dependencies
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
-
-      - name: Setup Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev
 
 #      - name: Setup Valgrind
 #        if: github.event_name == 'pull_request'
@@ -174,22 +172,20 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Configure selected GCC version as default
+      - name: Setup Dependencies
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 100
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build graphviz uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
-
-      - name: Setup Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build graphviz uuid-dev libcurl4-openssl-dev
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -283,9 +279,6 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
-          setx /M PATH "%PATH%;C:\mingw64\bin"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `
@@ -313,10 +306,9 @@ jobs:
       - name: Build test target
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+          CMAKE_TLS_VERIFY: "1"
+          SSL_CERT_FILE: "C:\\cacert.pem"
         run: |
-          setx /M PATH "%PATH%;C:\mingw64\bin"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           mkdir ./build
           cd ./build
           cmake -GNinja `
@@ -337,9 +329,6 @@ jobs:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: |
-          setx /M PATH "%PATH%;C:\mingw64\bin"
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo "Adding MinGW to path done."
           ./spicetest --is-github-actions
 
   build-macos-aarch64:
