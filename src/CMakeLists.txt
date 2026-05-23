@@ -6,12 +6,6 @@ set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antlr-4.13.2-complet
 find_package(ANTLR REQUIRED)
 message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
 
-# ANTLR-generated lexer/parser uses std::call_once; on MinGW the libstdc++
-# once_flag helpers (__get_once_callable / __get_once_call) are only pulled in
-# when the threading library is linked, and the upstream antlr4 runtime only
-# links Threads on Unix hosts.
-find_package(Threads REQUIRED)
-
 #################### libspicecore ####################
 
 set(SOURCES
@@ -121,8 +115,8 @@ antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
 add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 # Add the current directory as include dir
 target_include_directories(spicecore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-# Link ANTLR and threads
-target_link_libraries(spicecore PUBLIC antlr4_static Threads::Threads)
+# Link ANTLR
+target_link_libraries(spicecore PUBLIC antlr4_static)
 # Add include directories
 target_include_directories(spicecore
     SYSTEM PUBLIC
