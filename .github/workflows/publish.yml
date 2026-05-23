@@ -226,7 +226,7 @@ jobs:
           choco uninstall mingw --all-versions
           choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry -ErrorAction SilentlyContinue
-          Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/16.1.0posix-14.0.0-ucrt-r1/winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r1.7z -OutFile mingw64.7z
+          Invoke-WebRequest https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-14.0.0-ucrt-r7/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.7z -OutFile mingw64.7z
           7z x mingw64.7z -oC:\ -aoa
           Copy-Item -Path C:\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\bin\make.exe
           echo "C:\mingw64\bin" | Out-File -Append -FilePath $env:GITHUB_PATH
