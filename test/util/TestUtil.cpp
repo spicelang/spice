@@ -225,6 +225,13 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
+  if (testDriverCliOptions.skipSanitizerTests) {
+    std::vector<std::string> testArgs;
+    parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
+    for (const std::string &arg : testArgs)
+      if (arg.starts_with("--sanitizer"))
+        return true;
+  }
 #ifdef OS_WINDOWS
   if (exists(testCase.testPath / CTL_SKIP_WINDOWS))
     return true;

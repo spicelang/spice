@@ -17,6 +17,7 @@ struct TestDriverCliOptions {
   bool runBenchmarks = false;
   bool enableLeakDetection = false;
   bool isGitHubActions = false;
+  bool skipSanitizerTests = false;
   bool isVerbose = false;
 };
 
