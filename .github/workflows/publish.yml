@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets-nozlib
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -64,6 +64,8 @@ jobs:
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_ENABLE_ZLIB=OFF \
+            -DLLVM_ENABLE_ZSTD=OFF \
             -Wno-dev \
             -Wattributes \
             ../llvm
@@ -141,7 +143,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets
+          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets-nozlib
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -159,6 +161,8 @@ jobs:
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_ENABLE_ZLIB=OFF \
+            -DLLVM_ENABLE_ZSTD=OFF \
             -Wno-dev \
             -Wattributes \
             ../llvm
