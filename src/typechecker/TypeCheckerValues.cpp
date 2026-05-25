@@ -537,12 +537,18 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const ExprResult expected = {expectedField->getQualType(), expectedField};
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue(manIdx);
 
+      // Capture anonymous info up front: getFieldAssignResultType may delete the anonymous entry (temp stealing
+      // in performStructAssign), turning fieldResult.entry into a dangling pointer.
+      const bool rhsIsAnonymous = fieldResult.entry != nullptr && fieldResult.entry->anonymous;
+      const std::string rhsEntryName = rhsIsAnonymous ? fieldResult.entry->name : std::string();
+
       // Check if actual type matches expected type
       (void)opRuleManager.getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
 
-      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous) {
-        currentScope->symbolTable.deleteAnonymous(fieldResult.entry->name);
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
+      // Safe to call even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
+      if (rhsIsAnonymous) {
+        currentScope->symbolTable.deleteAnonymous(rhsEntryName);
         fieldResult.entry = nullptr;
       }
     }
