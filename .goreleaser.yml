@@ -107,6 +107,30 @@ nfpms:
           - gtkmm-4.0
           - curl
 
+homebrew_casks:
+  - name: spice
+    binaries:
+      - spice
+    homepage: https://www.spicelang.com
+    description: Spice programming language.
+    license: MIT
+    repository:
+      owner: spicelang
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    commit_author:
+      name: spicelang-bot
+      email: noreply@spicelang.com
+    hooks:
+      post:
+        install: |
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice"]
+    caveats: |
+      The Spice standard library is staged alongside the binary in the cask's
+      staged path. If the compiler cannot locate it automatically, set:
+        export SPICE_STD_DIR="$(brew --caskroom)/spice/{{ .Version }}/std"
+
 release:
   name_template: "v{{ .Tag }}"
   prerelease: auto

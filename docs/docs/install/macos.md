@@ -7,8 +7,22 @@ tags:
 ---
 
 ### Install from package manager
-!!! info "Upcoming feature"
-    As for now, this is not supported. We are working on a package manager distribution for macOS.
+The recommended installation method on macOS is via [Homebrew](https://brew.sh). Spice is distributed as a cask from
+the official Spice tap.
+
+```sh
+brew tap spicelang/tap
+brew install --cask spice
+```
+
+To upgrade to the latest release later, run:
+```sh
+brew upgrade --cask spice
+```
+
+!!! info "Apple Silicon only"
+    The Homebrew cask currently only ships an ARM64 (Apple Silicon) build. On Intel Macs, please use the archive file
+    below or build from source.
 
 ### Install from archive file
 Currently, it is only possible to install spice on macOS via the tar.gz archive, uploaded to the GitHub release.
