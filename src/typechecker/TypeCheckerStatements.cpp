@@ -43,6 +43,11 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
     auto [rhsTy, rhsEntry] = rhs;
 
+    // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+    // in performStructAssign), turning rhsEntry into a dangling pointer.
+    const bool rhsIsAnonymous = rhsEntry != nullptr && rhsEntry->anonymous;
+    const std::string rhsEntryName = rhsIsAnonymous ? rhsEntry->name : std::string();
+
     // Visit data type
     localVarType = std::any_cast<QualType>(visit(node->dataType));
 
@@ -63,9 +68,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = QualType(TY_UNRESOLVED);
     }
 
-    // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it
-    if (!localVarType.isRef() && rhsEntry != nullptr && rhsEntry->anonymous)
-      currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+    // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it.
+    // Safe to call even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
+    if (!localVarType.isRef() && rhsIsAnonymous)
+      currentScope->symbolTable.deleteAnonymous(rhsEntryName);
   } else {
     // Visit data type
     localVarType = std::any_cast<QualType>(visit(node->dataType));
@@ -124,6 +130,11 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   const auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
   HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
+  // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+  // in performStructAssign), turning rhs.entry into a dangling pointer.
+  const bool rhsIsAnonymous = rhs.entry != nullptr && rhs.entry->anonymous;
+  const std::string rhsEntryName = rhsIsAnonymous ? rhs.entry->name : std::string();
+
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
   auto [_, copyCtor] = opRuleManager.getAssignResultType(node->assignExpr, returnResult, rhs, false, true, ERROR_MSG_RETURN);
@@ -131,9 +142,10 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Check if the dtor call on the return value can be skipped
   if (rhs.entry != nullptr) {
-    if (rhs.entry->anonymous) {
-      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
+    if (rhsIsAnonymous) {
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
+      // Safe even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
+      currentScope->symbolTable.deleteAnonymous(rhsEntryName);
     } else {
       // Otherwise omit the destructor call, because the caller destructs the value
       rhs.entry->omitDtorCall = true;
