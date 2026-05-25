@@ -23,13 +23,15 @@ void TestDriver::createInterface() {
 
 void TestDriver::addOptions() {
   // --update-refs
-  app.add_flag<bool>("--update-refs,-u", testDriverCliOptions.updateRefs, "Update test reference files");
+  app.add_flag<bool>("--update-refs", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
-  app.add_flag<bool>("--run-benchmarks,-b", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
+  app.add_flag<bool>("--run-benchmarks", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
   // --leak-detection
-  app.add_flag<bool>("--leak-detection,-l", testDriverCliOptions.enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
+  app.add_flag<bool>("--leak-detection", testDriverCliOptions.enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
   // --is-github-actions
-  app.add_flag<bool>("--is-github-actions,-gh", testDriverCliOptions.isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
+  app.add_flag<bool>("--is-github-actions", testDriverCliOptions.isGitHubActions, "Skip tests that are not supported to run on GitHub Actions");
+  // --skip-sanitizer-tests
+  app.add_flag<bool>("--skip-sanitizer-tests", testDriverCliOptions.skipSanitizerTests, "Skip tests that exercise Spice language sanitizers (e.g. ASAN, TSAN, MSAN, TYSAN)");
   // --verbose
   app.add_flag<bool>("--verbose", testDriverCliOptions.isVerbose, "Print debug output for the test runner");
 }

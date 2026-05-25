@@ -100,4 +100,4 @@ jobs:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
           ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1:abort_on_error=1:print_summary=1"
-        run: ./spicetest --is-github-actions
+        run: ./spicetest --is-github-actions --skip-sanitizer-tests
