@@ -14,6 +14,13 @@ type TargetVarOrCallbackInt int&|p(const int&);
 type TargetVarOrCallbackFilePath FilePath&|p(const FilePath&);
 type TargetVarOrCallbackBool bool&|p(const bool&);
 
+// Type tags used by the positional argument registry to dispatch to
+// the per-type option vectors below.
+const unsigned int POSITIONAL_TAG_STRING = 0u;
+const unsigned int POSITIONAL_TAG_STRING_OBJ = 1u;
+const unsigned int POSITIONAL_TAG_INT = 2u;
+const unsigned int POSITIONAL_TAG_FILEPATH = 3u;
+
 public type CliSubcommand struct {
     String name
     String description
@@ -28,6 +35,11 @@ public type CliSubcommand struct {
     Vector<CliOption<String>> stringObjOptions
     Vector<CliOption<int>> intOptions
     Vector<CliOption<FilePath>> filePathOptions
+    // Positional argument registry preserving registration order across types.
+    // Each entry pairs a type tag (POSITIONAL_TAG_*) with the index into the
+    // matching per-type option vector.
+    Vector<unsigned int> positionalTypeTags
+    Vector<unsigned int> positionalIndices
     bool allowUnknownOptions = false
 }
 
@@ -53,6 +65,10 @@ f<bool> CliSubcommand.nameOrAliasMatches(const String& name, const Vector<String
 public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 1) {
     // Check if we have any arguments
     if argc == layer {
+        if !this.positionalTypeTags.isEmpty() {
+            printf("Missing required positional argument(s).\n");
+            return EXIT_CODE_ERROR;
+        }
         if this.callback != nil<p()> {
             p() rc = this.callback;
             rc();
@@ -62,6 +78,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
     }
 
+    unsigned int positionalConsumed = 0u;
     for unsigned int argNo = layer; argNo < argc; argNo++ {
         string arg = argv[argNo];
 
@@ -82,8 +99,9 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             return EXIT_CODE_SUCCESS;
         }
 
-        // Check for options
+        // Check for options (positional options are matched separately below)
         foreach const CliOption<bool>& boolOption : this.boolOptions {
+            if boolOption.isPositional() { continue; }
             if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
                 bool value = true;
                 boolOption.setTargetValue(value);
@@ -92,6 +110,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
+            if stringOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
@@ -106,6 +125,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
+            if stringObjOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
@@ -121,6 +141,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<int>& intOption : this.intOptions {
+            if intOption.isPositional() { continue; }
             if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
@@ -136,6 +157,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
+            if filePathOption.isPositional() { continue; }
             if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
                 // get the argument value
                 argNo++;
@@ -151,6 +173,13 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
 
+        // Treat the argument as the next unconsumed positional, if any remain
+        if positionalConsumed < cast<unsigned int>(this.positionalTypeTags.getSize()) {
+            this.applyPositional(positionalConsumed, arg);
+            positionalConsumed++;
+            continue;
+        }
+
         // We could not match the argument
         if !this.allowUnknownOptions {
             printf("Unknown argument: %s\n", arg);
@@ -158,7 +187,57 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
     }
 
+    // Ensure all positional arguments were supplied
+    if positionalConsumed < cast<unsigned int>(this.positionalTypeTags.getSize()) {
+        printf("Missing required positional argument(s).\n");
+        return EXIT_CODE_ERROR;
+    }
+
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
+}
+
+f<const String&> CliSubcommand.getPositionalName(unsigned int slot) {
+    unsigned int typeTag = this.positionalTypeTags.get(slot);
+    unsigned int idx = this.positionalIndices.get(slot);
+    if typeTag == POSITIONAL_TAG_STRING {
+        const CliOption<string>& opt = this.stringOptions.get(idx);
+        return opt.getName();
+    } else if typeTag == POSITIONAL_TAG_STRING_OBJ {
+        const CliOption<String>& opt = this.stringObjOptions.get(idx);
+        return opt.getName();
+    } else if typeTag == POSITIONAL_TAG_INT {
+        const CliOption<int>& opt = this.intOptions.get(idx);
+        return opt.getName();
+    }
+    const CliOption<FilePath>& opt = this.filePathOptions.get(idx);
+    return opt.getName();
+}
+
+// Assigns `value` to the positional option registered at slot `slot`,
+// dispatching on the recorded type tag.
+p CliSubcommand.applyPositional(unsigned int slot, string value) {
+    unsigned int typeTag = this.positionalTypeTags.get(slot);
+    unsigned int idx = this.positionalIndices.get(slot);
+    if typeTag == POSITIONAL_TAG_STRING {
+        const CliOption<string>& opt = this.stringOptions.get(idx);
+        opt.setTargetValue(value);
+        opt.callCallback(value);
+    } else if typeTag == POSITIONAL_TAG_STRING_OBJ {
+        const CliOption<String>& opt = this.stringObjOptions.get(idx);
+        String parsedArg = String(value);
+        opt.setTargetValue(parsedArg);
+        opt.callCallback(parsedArg);
+    } else if typeTag == POSITIONAL_TAG_INT {
+        const CliOption<int>& opt = this.intOptions.get(idx);
+        int parsedArg = toInt(value);
+        opt.setTargetValue(parsedArg);
+        opt.callCallback(parsedArg);
+    } else if typeTag == POSITIONAL_TAG_FILEPATH {
+        const CliOption<FilePath>& opt = this.filePathOptions.get(idx);
+        FilePath parsedArg = FilePath(value);
+        opt.setTargetValue(parsedArg);
+        opt.callCallback(parsedArg);
+    }
 }
 
 public const f<const String&> CliSubcommand.getName() {
@@ -208,25 +287,45 @@ public f<CliSubcommand&> CliSubcommand.addSubcommand(const String& name, const S
 #[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackString>(StrOrConstStrObjRef name, TargetVarOrCallbackString output, StrOrConstStrObjRef description) {
     this.stringOptions.pushBack(CliOption<string>(name, output, description));
-    return this.stringOptions.back();
+    CliOption<string>& opt = this.stringOptions.back();
+    if opt.isPositional() {
+        this.positionalTypeTags.pushBack(POSITIONAL_TAG_STRING);
+        this.positionalIndices.pushBack(cast<unsigned int>(this.stringOptions.getSize() - 1l));
+    }
+    return opt;
 }
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackStringObj>(StrOrConstStrObjRef name, TargetVarOrCallbackStringObj output, StrOrConstStrObjRef description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, output, description));
-    return this.stringObjOptions.back();
+    CliOption<String>& opt = this.stringObjOptions.back();
+    if opt.isPositional() {
+        this.positionalTypeTags.pushBack(POSITIONAL_TAG_STRING_OBJ);
+        this.positionalIndices.pushBack(cast<unsigned int>(this.stringObjOptions.getSize() - 1l));
+    }
+    return opt;
 }
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackInt>(StrOrConstStrObjRef name, TargetVarOrCallbackInt output, StrOrConstStrObjRef description) {
     this.intOptions.pushBack(CliOption<int>(name, output, description));
-    return this.intOptions.back();
+    CliOption<int>& opt = this.intOptions.back();
+    if opt.isPositional() {
+        this.positionalTypeTags.pushBack(POSITIONAL_TAG_INT);
+        this.positionalIndices.pushBack(cast<unsigned int>(this.intOptions.getSize() - 1l));
+    }
+    return opt;
 }
 
 #[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackFilePath>(StrOrConstStrObjRef name, TargetVarOrCallbackFilePath output, StrOrConstStrObjRef description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, output, description));
-    return this.filePathOptions.back();
+    CliOption<FilePath>& opt = this.filePathOptions.back();
+    if opt.isPositional() {
+        this.positionalTypeTags.pushBack(POSITIONAL_TAG_FILEPATH);
+        this.positionalIndices.pushBack(cast<unsigned int>(this.filePathOptions.getSize() - 1l));
+    }
+    return opt;
 }
 
 #[ignoreUnusedReturnValue]
@@ -255,8 +354,13 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
         subcommand += " " + argv[i];
     }
 
-    // Print usage
-    printf("%s\n\nUsage: %s [options]\n", this.description, subcommand);
+    // Print usage, including any positional arguments in declaration order
+    StringStream usage;
+    usage << "Usage: " << subcommand << " [options]";
+    for unsigned int i = 0u; i < cast<unsigned int>(this.positionalTypeTags.getSize()); i++ {
+        usage << " <" << this.getPositionalName(i) << ">";
+    }
+    printf("%s\n\n%s\n", this.description, usage.str());
     // Print subcommands
     if !this.subcommands.isEmpty() {
         printf("\nSubcommands:\n");
@@ -265,13 +369,39 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
         }
     }
 
-    // Print options
-    if this.stringOptions.getSize() + this.stringObjOptions.getSize() + this.intOptions.getSize() + this.filePathOptions.getSize() > 0 {
+    // Print positional arguments
+    if !this.positionalTypeTags.isEmpty() {
+        printf("\nPositional arguments:\n");
+        for unsigned int i = 0u; i < cast<unsigned int>(this.positionalTypeTags.getSize()); i++ {
+            unsigned int typeTag = this.positionalTypeTags.get(i);
+            unsigned int idx = this.positionalIndices.get(i);
+            if typeTag == POSITIONAL_TAG_STRING {
+                CliOption<string>& sOpt = this.stringOptions.get(idx);
+                sOpt.printHelpItem();
+            } else if typeTag == POSITIONAL_TAG_STRING_OBJ {
+                CliOption<String>& soOpt = this.stringObjOptions.get(idx);
+                soOpt.printHelpItem();
+            } else if typeTag == POSITIONAL_TAG_INT {
+                CliOption<int>& iOpt = this.intOptions.get(idx);
+                iOpt.printHelpItem();
+            } else if typeTag == POSITIONAL_TAG_FILEPATH {
+                CliOption<FilePath>& fOpt = this.filePathOptions.get(idx);
+                fOpt.printHelpItem();
+            }
+        }
+    }
+
+    // Print options (only the non-positional ones)
+    long nonPositionalOptionCount = this.stringOptions.getSize() + this.stringObjOptions.getSize()
+        + this.intOptions.getSize() + this.filePathOptions.getSize() - this.positionalTypeTags.getSize();
+    if nonPositionalOptionCount > 0 {
         printf("\nOptions:\n");
         foreach const CliOption<string>& option : this.stringOptions {
+            if option.isPositional() { continue; }
             option.printHelpItem();
         }
         foreach const CliOption<int>& option : this.intOptions {
+            if option.isPositional() { continue; }
             option.printHelpItem();
         }
     }

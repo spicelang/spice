@@ -77,7 +77,7 @@ public p CliOption.callCallback(const T& value) {
     }
 }
 
-public f<bool> CliOption.isPositional() {
+public const f<bool> CliOption.isPositional() {
     if this.name.startsWith("-") {
         return false;
     }
@@ -92,13 +92,17 @@ public f<bool> CliOption.isPositional() {
 public p CliOption.printHelpItem() {
     // Print name and aliases
     StringStream ss;
-    ss << "  " << this.name;
-    foreach const String& optionAlias : this.aliases {
-        ss << ',' << optionAlias;
-    }
-    // For all options, that are not bool flags, print an additional placeholder
-    if sizeof<T>() > 1 {
-        ss << " <value>";
+    if this.isPositional() {
+        ss << "  <" << this.name << ">";
+    } else {
+        ss << "  " << this.name;
+        foreach const String& optionAlias : this.aliases {
+            ss << ',' << optionAlias;
+        }
+        // For all options, that are not bool flags, print an additional placeholder
+        if sizeof<T>() > 1 {
+            ss << " <value>";
+        }
     }
     printFixedWidth(ss.str(), 35, true);
     // Description
