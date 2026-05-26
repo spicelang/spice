@@ -2,6 +2,9 @@
 
 #include "SourceFile.h"
 
+#include <queue>
+#include <unordered_set>
+
 #include <ast/ASTBuilder.h>
 #include <driver/Driver.h>
 #include <exception/AntlrThrowingErrorListener.h>
@@ -87,14 +90,10 @@ void SourceFile::runLexer() {
   antlrCtx.lexer->addErrorListener(antlrCtx.lexerErrorHandler.get());
   antlrCtx.tokenStream = std::make_unique<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
-  // Calculate cache key
-  std::stringstream cacheKeyString;
-  cacheKeyString << std::hex << std::hash<std::string>{}(antlrCtx.tokenStream->getText());
-  cacheKey = cacheKeyString.str();
-
-  // Try to load from cache
-  if (!cliOptions.ignoreCache)
-    restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
+  // Pre-compute a local cache key so the field is populated for cycle-aware fallbacks.
+  // The final key (which folds in transitive dependency cache keys) is computed at the end
+  // of runImportCollector, once every dependency's cache key has been finalized.
+  cacheKey = resourceManager.cacheManager.computeCacheKey(antlrCtx.tokenStream->getText());
 
   previousStage = LEXER;
   timer.stop();
@@ -215,12 +214,35 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   importCollector.visit(ast);
 
   previousStage = IMPORT_COLLECTOR;
-  timer.stop();
 
   // Run first part of pipeline for the imported source file
   for (SourceFile *sourceFile : dependencies | std::views::values)
     sourceFile->runFrontEnd();
 
+  // Now that every transitive dependency has its final cache key, fold them into our own
+  // cache key. This way any change to a dependency invalidates the cache entry of every
+  // dependent (and transitively of the dependents' dependents), avoiding stale object files.
+  std::vector<std::string> transitiveDepCacheKeys;
+  std::unordered_set<std::string> visited;
+  std::queue<const SourceFile *> worklist;
+  for (const SourceFile *dep : dependencies | std::views::values)
+    worklist.push(dep);
+  while (!worklist.empty()) {
+    const SourceFile *dep = worklist.front();
+    worklist.pop();
+    if (!visited.insert(dep->cacheKey).second)
+      continue;
+    transitiveDepCacheKeys.push_back(dep->cacheKey);
+    for (const SourceFile *transitive : dep->dependencies | std::views::values)
+      worklist.push(transitive);
+  }
+  cacheKey = resourceManager.cacheManager.computeCacheKey(antlrCtx.tokenStream->getText(), transitiveDepCacheKeys);
+
+  // Try to load from the cache. Deferred from runLexer so that dep cache keys can participate.
+  if (!cliOptions.ignoreCache)
+    restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
+
+  timer.stop();
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
 }
 
@@ -517,8 +539,18 @@ void SourceFile::runObjectEmitter() {
 }
 
 void SourceFile::concludeCompilation() {
-  // Skip if restored from the cache or this stage has already been done
-  if (restoredFromCache || previousStage >= FINISHED)
+  // Handle cache-restored files: register all cached objects with linker
+  if (restoredFromCache) {
+    for (const auto &objectFilePath : cachedObjectFilePaths)
+      resourceManager.linker.addFileToLinkage(objectFilePath);
+    for (const auto &flag : sourceLinkerFlags)
+      resourceManager.linker.addLinkerFlag(flag);
+    for (const auto &path : sourceAdditionalSourcePaths)
+      resourceManager.linker.addAdditionalSourcePath(path);
+    return;
+  }
+
+  if (previousStage >= FINISHED)
     return;
 
   // Cache the source file
@@ -704,6 +736,9 @@ void SourceFile::checkForSoftErrors() const {
 }
 
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache (no scope tree available)
+  if (restoredFromCache)
+    return;
   // Print warnings for all dependencies
   for (SourceFile *sourceFile : dependencies | std::views::values)
     if (!sourceFile->isStdFile)
@@ -755,7 +790,8 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     std::string newName = importName;
     newName += SCOPE_ACCESS_TOKEN;
     newName += originalName;
-    exportedNameRegistry.emplace(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
+    exportedNameRegistry.emplace(newName,
+                                 NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
     // Add the shortened name, considering the name collision
     const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
     addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);

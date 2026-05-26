@@ -2,6 +2,7 @@
 
 #include "ExternalLinkerInterface.h"
 
+#include <algorithm>
 #include <iostream>
 
 #include <driver/Driver.h>
@@ -197,14 +198,20 @@ void ExternalLinkerInterface::archive() const {
  *
  * @param path Path to the object file
  */
-void ExternalLinkerInterface::addFileToLinkage(const std::filesystem::path &path) { linkedFiles.push_back(path); }
+void ExternalLinkerInterface::addFileToLinkage(const std::filesystem::path &path) {
+  if (std::ranges::find(linkedFiles, path) == linkedFiles.end())
+    linkedFiles.push_back(path);
+}
 
 /**
  * Add another linker flag for the call to the linker executable
  *
  * @param flag Linker flag
  */
-void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
+void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) {
+  if (std::ranges::find(linkerFlags, flag) == linkerFlags.end())
+    linkerFlags.push_back(flag);
+}
 
 /**
  * Add another source file to compile and link in (C or C++)
