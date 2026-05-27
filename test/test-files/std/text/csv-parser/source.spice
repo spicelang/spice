@@ -1,0 +1,68 @@
+import "std/text/csv-parser";
+import "std/data/vector";
+
+f<int> main() {
+    CsvParser parser;
+
+    // Simple single-line parsing
+    Vector<String> fields = parser.parseLine(String("a,b,c"));
+    assert fields.getSize() == 3;
+    assert fields.get(0) == String("a");
+    assert fields.get(1) == String("b");
+    assert fields.get(2) == String("c");
+
+    // Quoted field containing a delimiter
+    fields = parser.parseLine(String("one,\"two,still two\",three"));
+    assert fields.getSize() == 3;
+    assert fields.get(0) == String("one");
+    assert fields.get(1) == String("two,still two");
+    assert fields.get(2) == String("three");
+
+    // Escaped quotes (doubled)
+    fields = parser.parseLine(String("\"He said \"\"hi\"\"\",ok"));
+    assert fields.getSize() == 2;
+    assert fields.get(0) == String("He said \"hi\"");
+    assert fields.get(1) == String("ok");
+
+    // Empty fields are preserved
+    fields = parser.parseLine(String(",,x,"));
+    assert fields.getSize() == 4;
+    assert fields.get(0) == String("");
+    assert fields.get(1) == String("");
+    assert fields.get(2) == String("x");
+    assert fields.get(3) == String("");
+
+    // Multi-row document with CRLF, quoted newline and trailing LF
+    String document = String("name,age,city\r\n");
+    document += "Alice,30,\"New York\"\r\n";
+    document += "Bob,25,\"Line1\nLine2\"\n";
+    Vector<Vector<String>> rows = parser.parse(document);
+    assert rows.getSize() == 3;
+
+    Vector<String>& header = rows.get(0);
+    assert header.getSize() == 3;
+    assert header.get(0) == String("name");
+    assert header.get(2) == String("city");
+
+    Vector<String>& alice = rows.get(1);
+    assert alice.get(0) == String("Alice");
+    assert alice.get(1) == String("30");
+    assert alice.get(2) == String("New York");
+
+    Vector<String>& bob = rows.get(2);
+    assert bob.get(0) == String("Bob");
+    assert bob.get(2) == String("Line1\nLine2");
+
+    // Empty input produces zero rows
+    rows = parser.parse(String(""));
+    assert rows.getSize() == 0;
+
+    // Custom delimiter (semicolon)
+    CsvParser semicolonParser = CsvParser(';');
+    fields = semicolonParser.parseLine(String("x;y;z"));
+    assert fields.getSize() == 3;
+    assert fields.get(0) == String("x");
+    assert fields.get(2) == String("z");
+
+    printf("All assertions passed!");
+}

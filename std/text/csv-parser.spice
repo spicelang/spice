@@ -1,0 +1,133 @@
+import "std/data/vector";
+
+// Default control characters (RFC 4180)
+const char DEFAULT_DELIMITER = ',';
+const char DEFAULT_QUOTE     = '"';
+
+/**
+ * Parser for CSV (comma-separated values) input.
+ *
+ * Supports quoted fields, embedded delimiters/newlines and escaped quotes
+ * (by doubling, e.g. `""` inside a quoted field yields a single `"`).
+ * Both `\n` and `\r\n` are accepted as line terminators.
+ */
+public type CsvParser struct {
+    char delimiter
+    char quote
+}
+
+public p CsvParser.ctor(char delimiter = DEFAULT_DELIMITER, char quote = DEFAULT_QUOTE) {
+    this.delimiter = delimiter;
+    this.quote = quote;
+}
+
+/**
+ * Parses a single CSV record into its fields. Newlines inside the input are
+ * preserved as part of the field they appear in.
+ *
+ * @param input Single CSV record (without trailing line terminator)
+ * @return Parsed fields
+ */
+public f<Vector<String>> CsvParser.parseLine(const String& input) {
+    result = Vector<String>();
+    const unsigned long length = input.getLength();
+
+    String field;
+    bool inQuotes = false;
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = input[i];
+        if inQuotes {
+            if c == this.quote {
+                // Handle escaped quote (doubled quote)
+                if i + 1l < length && input[i + 1l] == this.quote {
+                    field += this.quote;
+                    i++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                field += c;
+            }
+        } else {
+            if c == this.quote {
+                inQuotes = true;
+            } else if c == this.delimiter {
+                result.pushBack(field);
+                field = String();
+            } else {
+                field += c;
+            }
+        }
+    }
+    result.pushBack(field);
+}
+
+/**
+ * Parses a whole CSV document into rows, where each row is a vector of fields.
+ *
+ * An optional trailing line terminator is not treated as an additional empty
+ * record. Empty input yields an empty result.
+ *
+ * @param input Full CSV document
+ * @return Parsed rows
+ */
+public f<Vector<Vector<String>>> CsvParser.parse(const String& input) {
+    result = Vector<Vector<String>>();
+    const unsigned long length = input.getLength();
+    if length == 0l { return result; }
+
+    // We pre-allocate the current row inside `result` and write fields through
+    // a reference. This avoids relying on copying a non-empty Vector<String>.
+    Vector<String> emptyRow;
+    result.pushBack(emptyRow);
+
+    String field;
+    bool inQuotes = false;
+    // Tracks whether the current row has been touched since the last record terminator.
+    // Prevents a trailing newline from emitting a spurious empty record.
+    bool rowOpen = false;
+
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = input[i];
+        if inQuotes {
+            if c == this.quote {
+                if i + 1l < length && input[i + 1l] == this.quote {
+                    field += this.quote;
+                    i++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                field += c;
+            }
+            continue;
+        }
+        if c == '\r' { continue; }
+        rowOpen = true;
+        if c == this.quote {
+            inQuotes = true;
+        } else if c == this.delimiter {
+            Vector<String>& currentRow = result.back();
+            currentRow.pushBack(field);
+            field = String();
+        } else if c == '\n' {
+            Vector<String>& currentRow = result.back();
+            currentRow.pushBack(field);
+            field = String();
+            // Start a new row
+            Vector<String> nextRow;
+            result.pushBack(nextRow);
+            rowOpen = false;
+        } else {
+            field += c;
+        }
+    }
+
+    if rowOpen {
+        Vector<String>& currentRow = result.back();
+        currentRow.pushBack(field);
+    } else {
+        // Drop the trailing empty row created after the last terminator
+        result.removeAt(result.getSize() - 1l);
+    }
+}
