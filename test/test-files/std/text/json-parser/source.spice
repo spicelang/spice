@@ -111,5 +111,21 @@ f<int> main() {
     Result<JsonValue*> trailRes = parseJson(String("42 garbage"));
     assert !trailRes.isOk();
 
+    // Incomplete number literals must be rejected
+    Result<JsonValue*> bareMinusRes = parseJson(String("-"));
+    assert !bareMinusRes.isOk();
+    Result<JsonValue*> trailingDotRes = parseJson(String("1."));
+    assert !trailingDotRes.isOk();
+    Result<JsonValue*> bareExpRes = parseJson(String("1e"));
+    assert !bareExpRes.isOk();
+    Result<JsonValue*> bareExpSignRes = parseJson(String("1e+"));
+    assert !bareExpSignRes.isOk();
+
+    // Unescaped control characters inside strings must be rejected
+    Result<JsonValue*> rawNewlineRes = parseJson(String("\"a\nb\""));
+    assert !rawNewlineRes.isOk();
+    Result<JsonValue*> rawTabRes = parseJson(String("\"a\tb\""));
+    assert !rawTabRes.isOk();
+
     printf("All assertions passed!");
 }

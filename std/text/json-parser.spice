@@ -228,27 +228,41 @@ f<JsonValue*> JsonParser.parseNumber() {
     if this.pos < this.input.getLength() && this.input[this.pos] == '-' {
         this.pos++;
     }
+    // Integer part: at least one digit required
+    const unsigned long intStart = this.pos;
     while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
         this.pos++;
     }
+    if this.pos == intStart {
+        this.fail("Invalid number literal");
+        return nil<JsonValue*>;
+    }
+    // Optional fraction: '.' followed by at least one digit
     if this.pos < this.input.getLength() && this.input[this.pos] == '.' {
         this.pos++;
+        const unsigned long fracStart = this.pos;
         while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
             this.pos++;
         }
+        if this.pos == fracStart {
+            this.fail("Invalid number literal");
+            return nil<JsonValue*>;
+        }
     }
+    // Optional exponent: 'e'/'E' [+/-] followed by at least one digit
     if this.pos < this.input.getLength() && (this.input[this.pos] == 'e' || this.input[this.pos] == 'E') {
         this.pos++;
         if this.pos < this.input.getLength() && (this.input[this.pos] == '+' || this.input[this.pos] == '-') {
             this.pos++;
         }
+        const unsigned long expStart = this.pos;
         while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
             this.pos++;
         }
-    }
-    if this.pos == start {
-        this.fail("Invalid number literal");
-        return nil<JsonValue*>;
+        if this.pos == expStart {
+            this.fail("Invalid number literal");
+            return nil<JsonValue*>;
+        }
     }
     const String numberStr = this.input.getSubstring(start, this.pos - start);
     return __new<JsonValue>(toDouble(numberStr.getRaw()));
@@ -302,6 +316,11 @@ f<String> JsonParser.parseStringLiteral() {
                 return literal;
             }
             continue;
+        }
+        // RFC 8259: unescaped control characters (U+0000..U+001F) are not allowed in strings
+        if cast<int>(c) < 0x20 {
+            this.fail("Unescaped control character in string");
+            return literal;
         }
         literal += c;
         this.pos++;
