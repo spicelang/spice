@@ -85,5 +85,16 @@ f<int> main() {
     Result<XmlNode*> noRootRes = parseXml(String("   "));
     assert !noRootRes.isOk();
 
+    // XML declaration is only legal at the very start of the document
+    Result<XmlNode*> declAfterCommentRes = parseXml(String("<!--x--><?xml version=\"1.0\"?><root/>"));
+    assert !declAfterCommentRes.isOk();
+    Result<XmlNode*> declAfterPiRes = parseXml(String("<?other?><?xml version=\"1.0\"?><root/>"));
+    assert !declAfterPiRes.isOk();
+    // ...and a normal prolog with the declaration first still works
+    Result<XmlNode*> prologRes = parseXml(String("<?xml version=\"1.0\"?><!-- c --><root/>"));
+    assert prologRes.isOk();
+    XmlNode* prologRoot = prologRes.unwrap();
+    assert prologRoot.getName() == String("root");
+
     printf("All assertions passed!");
 }

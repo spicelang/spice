@@ -210,12 +210,13 @@ f<bool> XmlParser.startsWith(string literal) {
 }
 
 // Skip everything between the document start and the root element (XML
-// declaration, processing instructions, comments and whitespace).
+// declaration, processing instructions, comments and whitespace). The XML
+// declaration (if present) must appear at the very beginning of the document
+// before any whitespace, comments or other processing instructions.
 p XmlParser.skipProlog() {
-    this.skipMisc();
-    if this.hasError { return; }
     if this.startsWith("<?xml") {
-        // XML declaration: skip until '?>'
+        // XML declaration: only valid as the first thing in the document.
+        // Consume up to and including the terminating '?>'.
         this.pos += 5l;
         while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
             this.pos++;
@@ -225,12 +226,15 @@ p XmlParser.skipProlog() {
             return;
         }
         this.pos += 2l; // consume '?>'
-        this.skipMisc();
     }
+    this.skipMisc();
 }
 
 // Skip whitespace, comments and processing instructions ("misc" in the
 // XML grammar). Used between the prolog, root element and document end.
+// PI targets matching `[xX][mM][lL]` are reserved by the XML spec; in
+// particular `<?xml ...?>` is only legal as the document's XML declaration,
+// not as a generic PI, so we reject it here.
 p XmlParser.skipMisc() {
     while true {
         this.skipWhitespace();
@@ -248,6 +252,10 @@ p XmlParser.skipMisc() {
             continue;
         }
         if this.startsWith("<?") {
+            if this.isReservedXmlPiTarget(this.pos + 2l) {
+                this.fail("XML declaration is only allowed at the document start");
+                return;
+            }
             this.pos += 2l;
             while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
                 this.pos++;
@@ -261,6 +269,20 @@ p XmlParser.skipMisc() {
         }
         break;
     }
+}
+
+// True when the PI target starting at `offset` is the reserved name `xml`
+// (case-insensitive, terminated by whitespace or '?>').
+f<bool> XmlParser.isReservedXmlPiTarget(unsigned long offset) {
+    if offset + 3l > this.input.getLength() { return false; }
+    const char c0 = this.input[offset];
+    const char c1 = this.input[offset + 1l];
+    const char c2 = this.input[offset + 2l];
+    const bool isXml = (c0 == 'x' || c0 == 'X') && (c1 == 'm' || c1 == 'M') && (c2 == 'l' || c2 == 'L');
+    if !isXml { return false; }
+    if offset + 3l == this.input.getLength() { return true; }
+    const char terminator = this.input[offset + 3l];
+    return isWhitespace(terminator) || terminator == '?';
 }
 
 f<bool> XmlParser.isNameStart(char c) {
