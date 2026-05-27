@@ -1,0 +1,412 @@
+import "std/data/vector";
+import "std/text/analysis";
+import "std/type/type-conversion";
+
+/**
+ * Tag for the variant stored inside a JsonValue.
+ */
+public type JsonValueKind enum {
+    JSON_NULL,
+    JSON_BOOL,
+    JSON_NUMBER,
+    JSON_STRING,
+    JSON_ARRAY,
+    JSON_OBJECT
+}
+
+/**
+ * Represents a single JSON value.
+ *
+ * Composite values (arrays and objects) own their children as heap pointers,
+ * so a JsonValue is always reached via `heap JsonValue*` once it has been
+ * parsed. Numbers are stored as `double`; integers are representable up to
+ * 2^53. Object fields preserve insertion order.
+ */
+public type JsonValue struct {
+    JsonValueKind kind
+    bool boolValue
+    double numberValue
+    String stringValue
+    Vector<JsonValue*> arrayItems
+    Vector<String> objectKeys
+    Vector<JsonValue*> objectValues
+}
+
+public p JsonValue.ctor() {
+    this.kind = JsonValueKind::JSON_NULL;
+}
+
+public p JsonValue.ctor(bool value) {
+    this.kind = JsonValueKind::JSON_BOOL;
+    this.boolValue = value;
+}
+
+public p JsonValue.ctor(double value) {
+    this.kind = JsonValueKind::JSON_NUMBER;
+    this.numberValue = value;
+}
+
+public p JsonValue.ctor(const String& value) {
+    this.kind = JsonValueKind::JSON_STRING;
+    this.stringValue = value;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+public f<JsonValueKind> JsonValue.getKind() { return this.kind; }
+public f<bool> JsonValue.isNull()   { return this.kind == JsonValueKind::JSON_NULL; }
+public f<bool> JsonValue.isBool()   { return this.kind == JsonValueKind::JSON_BOOL; }
+public f<bool> JsonValue.isNumber() { return this.kind == JsonValueKind::JSON_NUMBER; }
+public f<bool> JsonValue.isString() { return this.kind == JsonValueKind::JSON_STRING; }
+public f<bool> JsonValue.isArray()  { return this.kind == JsonValueKind::JSON_ARRAY; }
+public f<bool> JsonValue.isObject() { return this.kind == JsonValueKind::JSON_OBJECT; }
+
+// --- Scalar accessors (panic on wrong kind) --------------------------------
+
+public f<bool> JsonValue.getBool() {
+    assert this.kind == JsonValueKind::JSON_BOOL;
+    return this.boolValue;
+}
+
+public f<double> JsonValue.getNumber() {
+    assert this.kind == JsonValueKind::JSON_NUMBER;
+    return this.numberValue;
+}
+
+public f<const String&> JsonValue.getString() {
+    assert this.kind == JsonValueKind::JSON_STRING;
+    return this.stringValue;
+}
+
+// --- Array operations ------------------------------------------------------
+
+public f<unsigned long> JsonValue.getArraySize() {
+    assert this.kind == JsonValueKind::JSON_ARRAY;
+    return this.arrayItems.getSize();
+}
+
+public f<JsonValue*> JsonValue.getArrayItem(unsigned long idx) {
+    assert this.kind == JsonValueKind::JSON_ARRAY;
+    return this.arrayItems.get(idx);
+}
+
+public f<JsonValue*> JsonValue.getArrayItem(unsigned int idx) {
+    return this.getArrayItem(cast<unsigned long>(idx));
+}
+
+// --- Object operations -----------------------------------------------------
+
+public f<unsigned long> JsonValue.getObjectSize() {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    return this.objectKeys.getSize();
+}
+
+public f<bool> JsonValue.hasField(string key) {
+    if this.kind != JsonValueKind::JSON_OBJECT { return false; }
+    const String keyStr = String(key);
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        if this.objectKeys.get(i) == keyStr { return true; }
+    }
+    return false;
+}
+
+public f<JsonValue*> JsonValue.getField(string key) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    const String keyStr = String(key);
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        if this.objectKeys.get(i) == keyStr {
+            return this.objectValues.get(i);
+        }
+    }
+    panic(Error("JSON object has no such field"));
+}
+
+// --- Parser ----------------------------------------------------------------
+
+/**
+ * Recursive-descent JSON parser.
+ *
+ * Use `parseJson` for one-shot parsing; the struct is exposed mainly so the
+ * parser state (position, error message) can be inspected when needed.
+ */
+public type JsonParser struct {
+    String input
+    unsigned long pos
+    String errorMessage
+    bool hasError
+}
+
+public p JsonParser.ctor(const String& input) {
+    this.input = input;
+    this.pos = 0l;
+    this.hasError = false;
+}
+
+public f<Result<JsonValue*>> JsonParser.parse() {
+    this.skipWhitespace();
+    JsonValue* value = this.parseValue();
+    if this.hasError {
+        return err<JsonValue*>(Error(this.errorMessage.getRaw()));
+    }
+    this.skipWhitespace();
+    if this.pos < this.input.getLength() {
+        return err<JsonValue*>(Error("Trailing data after JSON value"));
+    }
+    return ok(value);
+}
+
+/**
+ * Parse a JSON document.
+ *
+ * On success returns the root JsonValue (heap-allocated; the caller owns it).
+ * On failure returns an error describing the first problem encountered.
+ */
+public f<Result<JsonValue*>> parseJson(const String& input) {
+    JsonParser parser = JsonParser(input);
+    return parser.parse();
+}
+
+// --- Internal parser helpers ----------------------------------------------
+
+f<JsonValue*> JsonParser.parseValue() {
+    this.skipWhitespace();
+    if this.pos >= this.input.getLength() {
+        this.fail("Unexpected end of input");
+        return nil<JsonValue*>;
+    }
+    const char c = this.input[this.pos];
+    if c == '{' { return this.parseObject(); }
+    if c == '[' { return this.parseArray(); }
+    if c == '"' { return this.parseStringValue(); }
+    if c == 't' || c == 'f' { return this.parseBool(); }
+    if c == 'n' { return this.parseNull(); }
+    if c == '-' || isDigit(c) { return this.parseNumber(); }
+    this.fail("Unexpected character in JSON input");
+    return nil<JsonValue*>;
+}
+
+p JsonParser.skipWhitespace() {
+    while this.pos < this.input.getLength() && isWhitespace(this.input[this.pos]) {
+        this.pos++;
+    }
+}
+
+p JsonParser.fail(string msg) {
+    if !this.hasError {
+        this.errorMessage = String(msg);
+        this.hasError = true;
+    }
+}
+
+f<bool> JsonParser.matchLiteral(string literal) {
+    const unsigned long ll = getRawLength(literal);
+    if this.pos + ll > this.input.getLength() { return false; }
+    for unsigned long i = 0l; i < ll; i++ {
+        if this.input[this.pos + i] != literal[i] { return false; }
+    }
+    this.pos += ll;
+    return true;
+}
+
+f<JsonValue*> JsonParser.parseNull() {
+    if this.matchLiteral("null") {
+        return __new<JsonValue>();
+    }
+    this.fail("Expected 'null'");
+    return nil<JsonValue*>;
+}
+
+f<JsonValue*> JsonParser.parseBool() {
+    if this.matchLiteral("true") { return __new<JsonValue>(true); }
+    if this.matchLiteral("false") { return __new<JsonValue>(false); }
+    this.fail("Expected 'true' or 'false'");
+    return nil<JsonValue*>;
+}
+
+f<JsonValue*> JsonParser.parseNumber() {
+    const unsigned long start = this.pos;
+    if this.pos < this.input.getLength() && this.input[this.pos] == '-' {
+        this.pos++;
+    }
+    // Integer part: at least one digit required
+    const unsigned long intStart = this.pos;
+    while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
+        this.pos++;
+    }
+    if this.pos == intStart {
+        this.fail("Invalid number literal");
+        return nil<JsonValue*>;
+    }
+    // Optional fraction: '.' followed by at least one digit
+    if this.pos < this.input.getLength() && this.input[this.pos] == '.' {
+        this.pos++;
+        const unsigned long fracStart = this.pos;
+        while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
+            this.pos++;
+        }
+        if this.pos == fracStart {
+            this.fail("Invalid number literal");
+            return nil<JsonValue*>;
+        }
+    }
+    // Optional exponent: 'e'/'E' [+/-] followed by at least one digit
+    if this.pos < this.input.getLength() && (this.input[this.pos] == 'e' || this.input[this.pos] == 'E') {
+        this.pos++;
+        if this.pos < this.input.getLength() && (this.input[this.pos] == '+' || this.input[this.pos] == '-') {
+            this.pos++;
+        }
+        const unsigned long expStart = this.pos;
+        while this.pos < this.input.getLength() && isDigit(this.input[this.pos]) {
+            this.pos++;
+        }
+        if this.pos == expStart {
+            this.fail("Invalid number literal");
+            return nil<JsonValue*>;
+        }
+    }
+    const String numberStr = this.input.getSubstring(start, this.pos - start);
+    return __new<JsonValue>(toDouble(numberStr.getRaw()));
+}
+
+f<JsonValue*> JsonParser.parseStringValue() {
+    const String s = this.parseStringLiteral();
+    if this.hasError { return nil<JsonValue*>; }
+    return __new<JsonValue>(s);
+}
+
+f<String> JsonParser.parseStringLiteral() {
+    String literal;
+    if this.pos >= this.input.getLength() || this.input[this.pos] != '"' {
+        this.fail("Expected '\"'");
+        return literal;
+    }
+    this.pos++; // consume opening quote
+    while this.pos < this.input.getLength() {
+        const char c = this.input[this.pos];
+        if c == '"' {
+            this.pos++; // consume closing quote
+            return literal;
+        }
+        if c == '\\' {
+            this.pos++;
+            if this.pos >= this.input.getLength() {
+                this.fail("Unterminated escape sequence");
+                return literal;
+            }
+            const char esc = this.input[this.pos];
+            this.pos++;
+            if esc == '"' {
+                literal += '"';
+            } else if esc == '\\' {
+                literal += '\\';
+            } else if esc == '/' {
+                literal += '/';
+            } else if esc == 'n' {
+                literal += '\n';
+            } else if esc == 'r' {
+                literal += '\r';
+            } else if esc == 't' {
+                literal += '\t';
+            } else if esc == 'b' {
+                literal += '\b';
+            } else if esc == 'f' {
+                literal += '\f';
+            } else {
+                this.fail("Unsupported escape sequence");
+                return literal;
+            }
+            continue;
+        }
+        // RFC 8259: unescaped control characters (U+0000..U+001F) are not allowed in strings
+        if cast<int>(c) < 0x20 {
+            this.fail("Unescaped control character in string");
+            return literal;
+        }
+        literal += c;
+        this.pos++;
+    }
+    this.fail("Unterminated string literal");
+    return literal;
+}
+
+f<JsonValue*> JsonParser.parseArray() {
+    this.pos++; // consume '['
+    heap JsonValue* arr = __new<JsonValue>();
+    arr.kind = JsonValueKind::JSON_ARRAY;
+    this.skipWhitespace();
+    if this.pos < this.input.getLength() && this.input[this.pos] == ']' {
+        this.pos++;
+        return arr;
+    }
+    while true {
+        this.skipWhitespace();
+        JsonValue* item = this.parseValue();
+        if this.hasError { return nil<JsonValue*>; }
+        arr.arrayItems.pushBack(item);
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() {
+            this.fail("Unterminated array");
+            return nil<JsonValue*>;
+        }
+        const char c = this.input[this.pos];
+        if c == ',' {
+            this.pos++;
+            continue;
+        }
+        if c == ']' {
+            this.pos++;
+            return arr;
+        }
+        this.fail("Expected ',' or ']' in array");
+        return nil<JsonValue*>;
+    }
+    return nil<JsonValue*>;
+}
+
+f<JsonValue*> JsonParser.parseObject() {
+    this.pos++; // consume '{'
+    heap JsonValue* obj = __new<JsonValue>();
+    obj.kind = JsonValueKind::JSON_OBJECT;
+    this.skipWhitespace();
+    if this.pos < this.input.getLength() && this.input[this.pos] == '}' {
+        this.pos++;
+        return obj;
+    }
+    while true {
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() || this.input[this.pos] != '"' {
+            this.fail("Expected string key in object");
+            return nil<JsonValue*>;
+        }
+        const String key = this.parseStringLiteral();
+        if this.hasError { return nil<JsonValue*>; }
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() || this.input[this.pos] != ':' {
+            this.fail("Expected ':' in object");
+            return nil<JsonValue*>;
+        }
+        this.pos++; // consume ':'
+        this.skipWhitespace();
+        JsonValue* value = this.parseValue();
+        if this.hasError { return nil<JsonValue*>; }
+        obj.objectKeys.pushBack(key);
+        obj.objectValues.pushBack(value);
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() {
+            this.fail("Unterminated object");
+            return nil<JsonValue*>;
+        }
+        const char c = this.input[this.pos];
+        if c == ',' {
+            this.pos++;
+            continue;
+        }
+        if c == '}' {
+            this.pos++;
+            return obj;
+        }
+        this.fail("Expected ',' or '}' in object");
+        return nil<JsonValue*>;
+    }
+    return nil<JsonValue*>;
+}
