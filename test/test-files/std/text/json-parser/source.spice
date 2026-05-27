@@ -1,0 +1,115 @@
+import "std/text/json-parser";
+
+f<int> main() {
+    // null / true / false
+    Result<JsonValue*> nullRes = parseJson(String("null"));
+    assert nullRes.isOk();
+    JsonValue* n = nullRes.unwrap();
+    assert n.isNull();
+
+    Result<JsonValue*> trueRes = parseJson(String("true"));
+    JsonValue* t = trueRes.unwrap();
+    assert t.isBool();
+    assert t.getBool() == true;
+
+    Result<JsonValue*> falseRes = parseJson(String(" false "));
+    JsonValue* falseVal = falseRes.unwrap();
+    assert falseVal.isBool();
+    assert falseVal.getBool() == false;
+
+    // Numbers
+    Result<JsonValue*> intRes = parseJson(String("42"));
+    JsonValue* i = intRes.unwrap();
+    assert i.isNumber();
+    assert i.getNumber() == 42.0;
+
+    Result<JsonValue*> negRes = parseJson(String("-3.5"));
+    JsonValue* neg = negRes.unwrap();
+    assert neg.getNumber() == -3.5;
+
+    Result<JsonValue*> expRes = parseJson(String("1.5e2"));
+    JsonValue* e = expRes.unwrap();
+    assert e.getNumber() == 150.0;
+
+    // Strings with escapes
+    Result<JsonValue*> strRes = parseJson(String("\"hello\\nworld\""));
+    JsonValue* s = strRes.unwrap();
+    assert s.isString();
+    assert s.getString() == String("hello\nworld");
+
+    Result<JsonValue*> quoteRes = parseJson(String("\"a\\\"b\""));
+    JsonValue* q = quoteRes.unwrap();
+    assert q.getString() == String("a\"b");
+
+    // Array
+    Result<JsonValue*> arrRes = parseJson(String("[1, 2, 3]"));
+    JsonValue* arr = arrRes.unwrap();
+    assert arr.isArray();
+    assert arr.getArraySize() == 3;
+    JsonValue* a0 = arr.getArrayItem(0);
+    JsonValue* a1 = arr.getArrayItem(1);
+    JsonValue* a2 = arr.getArrayItem(2);
+    assert a0.getNumber() == 1.0;
+    assert a1.getNumber() == 2.0;
+    assert a2.getNumber() == 3.0;
+
+    // Empty array and object
+    Result<JsonValue*> emptyArrRes = parseJson(String("[]"));
+    JsonValue* emptyArr = emptyArrRes.unwrap();
+    assert emptyArr.isArray();
+    assert emptyArr.getArraySize() == 0;
+
+    Result<JsonValue*> emptyObjRes = parseJson(String("{}"));
+    JsonValue* emptyObj = emptyObjRes.unwrap();
+    assert emptyObj.isObject();
+    assert emptyObj.getObjectSize() == 0;
+
+    // Object with mixed value kinds and nesting
+    String doc = String("{\n");
+    doc += "  \"name\": \"Alice\",\n";
+    doc += "  \"age\": 30,\n";
+    doc += "  \"admin\": true,\n";
+    doc += "  \"nickname\": null,\n";
+    doc += "  \"tags\": [\"a\", \"b\"],\n";
+    doc += "  \"address\": { \"city\": \"NYC\", \"zip\": \"10001\" }\n";
+    doc += "}";
+    Result<JsonValue*> objRes = parseJson(doc);
+    assert objRes.isOk();
+    JsonValue* obj = objRes.unwrap();
+    assert obj.isObject();
+    assert obj.getObjectSize() == 6;
+    assert obj.hasField("name");
+    assert !obj.hasField("missing");
+
+    JsonValue* nameField = obj.getField("name");
+    assert nameField.getString() == String("Alice");
+
+    JsonValue* ageField = obj.getField("age");
+    assert ageField.getNumber() == 30.0;
+
+    JsonValue* adminField = obj.getField("admin");
+    assert adminField.getBool() == true;
+
+    JsonValue* nicknameField = obj.getField("nickname");
+    assert nicknameField.isNull();
+
+    JsonValue* tagsField = obj.getField("tags");
+    assert tagsField.isArray();
+    assert tagsField.getArraySize() == 2;
+    JsonValue* tag0 = tagsField.getArrayItem(0);
+    assert tag0.getString() == String("a");
+
+    JsonValue* addrField = obj.getField("address");
+    assert addrField.isObject();
+    JsonValue* cityField = addrField.getField("city");
+    assert cityField.getString() == String("NYC");
+
+    // Malformed input surfaces an error
+    Result<JsonValue*> badRes = parseJson(String("{\"x\":}"));
+    assert !badRes.isOk();
+
+    Result<JsonValue*> trailRes = parseJson(String("42 garbage"));
+    assert !trailRes.isOk();
+
+    printf("All assertions passed!");
+}
