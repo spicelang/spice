@@ -1,0 +1,100 @@
+import "std/text/xml-parser";
+
+f<int> main() {
+    // Minimal self-closing root element
+    Result<XmlNode*> emptyRes = parseXml(String("<root/>"));
+    assert emptyRes.isOk();
+    XmlNode* empty = emptyRes.unwrap();
+    assert empty.isElement();
+    assert empty.getName() == String("root");
+    assert empty.getChildCount() == 0;
+    assert empty.getAttributeCount() == 0;
+
+    // Element with attributes (both quote styles, predefined entities)
+    Result<XmlNode*> attrRes = parseXml(String("<a x=\"1\" y='two &amp; three'/>"));
+    XmlNode* a = attrRes.unwrap();
+    assert a.getAttributeCount() == 2;
+    assert a.hasAttribute("x");
+    assert a.hasAttribute("y");
+    assert !a.hasAttribute("missing");
+    assert a.getAttribute("x") == String("1");
+    assert a.getAttribute("y") == String("two & three");
+
+    // Text content with character references
+    Result<XmlNode*> textRes = parseXml(String("<msg>hi &lt;there&gt; &#65;</msg>"));
+    XmlNode* msg = textRes.unwrap();
+    assert msg.getName() == String("msg");
+    assert msg.getInnerText() == String("hi <there> A");
+
+    // Nested document with XML declaration, comments, children and CDATA
+    String doc = String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    doc += "<!-- header comment -->\n";
+    doc += "<book id=\"42\">\n";
+    doc += "  <title>Spice</title>\n";
+    doc += "  <author>Marc</author>\n";
+    doc += "  <tags>\n";
+    doc += "    <tag>lang</tag>\n";
+    doc += "    <tag>systems</tag>\n";
+    doc += "  </tags>\n";
+    doc += "  <body><![CDATA[<not parsed as XML>]]></body>\n";
+    doc += "</book>\n";
+    Result<XmlNode*> bookRes = parseXml(doc);
+    assert bookRes.isOk();
+    XmlNode* book = bookRes.unwrap();
+    assert book.getName() == String("book");
+    assert book.getAttribute("id") == String("42");
+
+    XmlNode* title = book.findChild("title");
+    assert title != nil<XmlNode*>;
+    assert title.getInnerText() == String("Spice");
+
+    XmlNode* author = book.findChild("author");
+    assert author.getInnerText() == String("Marc");
+
+    XmlNode* tags = book.findChild("tags");
+    assert tags != nil<XmlNode*>;
+    XmlNode* firstTag = tags.findChild("tag");
+    assert firstTag.getInnerText() == String("lang");
+
+    // Count only element-kind children of <tags>
+    unsigned long elementChildren = 0l;
+    for unsigned long i = 0l; i < tags.getChildCount(); i++ {
+        XmlNode* c = tags.getChild(i);
+        if c.isElement() { elementChildren++; }
+    }
+    assert elementChildren == 2;
+
+    XmlNode* body = book.findChild("body");
+    assert body.getInnerText() == String("<not parsed as XML>");
+
+    assert !book.hasChild("nope");
+
+    // Malformed inputs surface errors
+    Result<XmlNode*> mismatchRes = parseXml(String("<a></b>"));
+    assert !mismatchRes.isOk();
+
+    Result<XmlNode*> dupAttrRes = parseXml(String("<a x='1' x='2'/>"));
+    assert !dupAttrRes.isOk();
+
+    Result<XmlNode*> unknownEntityRes = parseXml(String("<a>&nope;</a>"));
+    assert !unknownEntityRes.isOk();
+
+    Result<XmlNode*> trailingRes = parseXml(String("<a/>garbage"));
+    assert !trailingRes.isOk();
+
+    Result<XmlNode*> noRootRes = parseXml(String("   "));
+    assert !noRootRes.isOk();
+
+    // XML declaration is only legal at the very start of the document
+    Result<XmlNode*> declAfterCommentRes = parseXml(String("<!--x--><?xml version=\"1.0\"?><root/>"));
+    assert !declAfterCommentRes.isOk();
+    Result<XmlNode*> declAfterPiRes = parseXml(String("<?other?><?xml version=\"1.0\"?><root/>"));
+    assert !declAfterPiRes.isOk();
+    // ...and a normal prolog with the declaration first still works
+    Result<XmlNode*> prologRes = parseXml(String("<?xml version=\"1.0\"?><!-- c --><root/>"));
+    assert prologRes.isOk();
+    XmlNode* prologRoot = prologRes.unwrap();
+    assert prologRoot.getName() == String("root");
+
+    printf("All assertions passed!");
+}

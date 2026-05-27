@@ -1,0 +1,558 @@
+import "std/data/vector";
+import "std/text/analysis";
+
+/**
+ * Tag for the variant stored inside an XmlNode.
+ */
+public type XmlNodeKind enum {
+    XML_ELEMENT,
+    XML_TEXT
+}
+
+/**
+ * Represents a node in an XML document.
+ *
+ * Element nodes carry a tag name, ordered attributes and ordered child nodes
+ * (which may themselves be elements or text). Text nodes carry only the
+ * decoded character data. Children are owned as heap pointers so the parsed
+ * tree is reached via `XmlNode*` (`heap` on the root).
+ *
+ * The parser handles a useful subset of XML 1.0: elements with attributes,
+ * self-closing tags, character data with the standard predefined entities
+ * (`&amp; &lt; &gt; &quot; &apos;`) and numeric character references
+ * (`&#NN;` and `&#xNN;`), CDATA sections, comments and an optional XML
+ * declaration / processing instructions (which are skipped). DTDs,
+ * namespaces and external entities are not interpreted.
+ */
+public type XmlNode struct {
+    XmlNodeKind kind
+    String name           // tag name (element) - empty for text nodes
+    String textValue      // decoded character data (text) - empty for elements
+    Vector<String> attributeKeys
+    Vector<String> attributeValues
+    Vector<XmlNode*> children
+}
+
+public p XmlNode.ctor() {
+    this.kind = XmlNodeKind::XML_ELEMENT;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+public f<XmlNodeKind> XmlNode.getKind() { return this.kind; }
+public f<bool> XmlNode.isElement() { return this.kind == XmlNodeKind::XML_ELEMENT; }
+public f<bool> XmlNode.isText()    { return this.kind == XmlNodeKind::XML_TEXT; }
+
+public f<const String&> XmlNode.getName() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.name;
+}
+
+public f<const String&> XmlNode.getText() {
+    assert this.kind == XmlNodeKind::XML_TEXT;
+    return this.textValue;
+}
+
+// --- Attribute operations --------------------------------------------------
+
+public f<unsigned long> XmlNode.getAttributeCount() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.attributeKeys.getSize();
+}
+
+public f<bool> XmlNode.hasAttribute(string name) {
+    if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        if this.attributeKeys.get(i) == nameStr { return true; }
+    }
+    return false;
+}
+
+public f<const String&> XmlNode.getAttribute(string name) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        if this.attributeKeys.get(i) == nameStr {
+            return this.attributeValues.get(i);
+        }
+    }
+    panic(Error("XML element has no such attribute"));
+}
+
+// --- Child operations ------------------------------------------------------
+
+public f<unsigned long> XmlNode.getChildCount() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.children.getSize();
+}
+
+public f<XmlNode*> XmlNode.getChild(unsigned long idx) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.children.get(idx);
+}
+
+public f<XmlNode*> XmlNode.getChild(unsigned int idx) {
+    return this.getChild(cast<unsigned long>(idx));
+}
+
+/**
+ * Find the first child element with the given tag name. Returns nil if none
+ * exists. Text-node children are ignored.
+ */
+public f<XmlNode*> XmlNode.findChild(string name) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        XmlNode* child = this.children.get(i);
+        if child.kind == XmlNodeKind::XML_ELEMENT && child.name == nameStr {
+            return child;
+        }
+    }
+    return nil<XmlNode*>;
+}
+
+public f<bool> XmlNode.hasChild(string name) {
+    return this.findChild(name) != nil<XmlNode*>;
+}
+
+/**
+ * Concatenated text of all direct text-node children, in document order.
+ * Useful for elements like `<title>Hello</title>` where the natural value
+ * is the text content.
+ */
+public f<String> XmlNode.getInnerText() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    String out;
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        XmlNode* child = this.children.get(i);
+        if child.kind == XmlNodeKind::XML_TEXT {
+            out += child.textValue;
+        }
+    }
+    return out;
+}
+
+// --- Parser ----------------------------------------------------------------
+
+/**
+ * Recursive-descent XML parser. Use `parseXml` for one-shot parsing.
+ */
+public type XmlParser struct {
+    String input
+    unsigned long pos
+    String errorMessage
+    bool hasError
+}
+
+public p XmlParser.ctor(const String& input) {
+    this.input = input;
+    this.pos = 0l;
+    this.hasError = false;
+}
+
+public f<Result<XmlNode*>> XmlParser.parse() {
+    this.skipProlog();
+    if this.hasError {
+        return err<XmlNode*>(Error(this.errorMessage.getRaw()));
+    }
+    this.skipWhitespace();
+    if this.pos >= this.input.getLength() || this.input[this.pos] != '<' {
+        return err<XmlNode*>(Error("Expected root element"));
+    }
+    XmlNode* root = this.parseElement();
+    if this.hasError {
+        return err<XmlNode*>(Error(this.errorMessage.getRaw()));
+    }
+    this.skipMisc();
+    if this.hasError {
+        return err<XmlNode*>(Error(this.errorMessage.getRaw()));
+    }
+    if this.pos < this.input.getLength() {
+        return err<XmlNode*>(Error("Trailing data after root element"));
+    }
+    return ok(root);
+}
+
+/**
+ * Parse an XML document and return the root element.
+ *
+ * On success returns the root XmlNode (heap-allocated; the caller owns it).
+ * On failure returns an error describing the first problem encountered.
+ */
+public f<Result<XmlNode*>> parseXml(const String& input) {
+    XmlParser parser = XmlParser(input);
+    return parser.parse();
+}
+
+// --- Internal parser helpers ----------------------------------------------
+
+p XmlParser.skipWhitespace() {
+    while this.pos < this.input.getLength() && isWhitespace(this.input[this.pos]) {
+        this.pos++;
+    }
+}
+
+p XmlParser.fail(string msg) {
+    if !this.hasError {
+        this.errorMessage = String(msg);
+        this.hasError = true;
+    }
+}
+
+f<bool> XmlParser.startsWith(string literal) {
+    const unsigned long ll = getRawLength(literal);
+    if this.pos + ll > this.input.getLength() { return false; }
+    for unsigned long i = 0l; i < ll; i++ {
+        if this.input[this.pos + i] != literal[i] { return false; }
+    }
+    return true;
+}
+
+// Skip everything between the document start and the root element (XML
+// declaration, processing instructions, comments and whitespace). The XML
+// declaration (if present) must appear at the very beginning of the document
+// before any whitespace, comments or other processing instructions.
+p XmlParser.skipProlog() {
+    if this.startsWith("<?xml") {
+        // XML declaration: only valid as the first thing in the document.
+        // Consume up to and including the terminating '?>'.
+        this.pos += 5l;
+        while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
+            this.pos++;
+        }
+        if this.pos + 1l >= this.input.getLength() {
+            this.fail("Unterminated XML declaration");
+            return;
+        }
+        this.pos += 2l; // consume '?>'
+    }
+    this.skipMisc();
+}
+
+// Skip whitespace, comments and processing instructions ("misc" in the
+// XML grammar). Used between the prolog, root element and document end.
+// PI targets matching `[xX][mM][lL]` are reserved by the XML spec; in
+// particular `<?xml ...?>` is only legal as the document's XML declaration,
+// not as a generic PI, so we reject it here.
+p XmlParser.skipMisc() {
+    while true {
+        this.skipWhitespace();
+        if this.startsWith("<!--") {
+            this.pos += 4l;
+            while this.pos + 2l < this.input.getLength() &&
+                  !(this.input[this.pos] == '-' && this.input[this.pos + 1l] == '-' && this.input[this.pos + 2l] == '>') {
+                this.pos++;
+            }
+            if this.pos + 2l >= this.input.getLength() {
+                this.fail("Unterminated comment");
+                return;
+            }
+            this.pos += 3l; // consume '-->'
+            continue;
+        }
+        if this.startsWith("<?") {
+            if this.isReservedXmlPiTarget(this.pos + 2l) {
+                this.fail("XML declaration is only allowed at the document start");
+                return;
+            }
+            this.pos += 2l;
+            while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
+                this.pos++;
+            }
+            if this.pos + 1l >= this.input.getLength() {
+                this.fail("Unterminated processing instruction");
+                return;
+            }
+            this.pos += 2l; // consume '?>'
+            continue;
+        }
+        break;
+    }
+}
+
+// True when the PI target starting at `offset` is the reserved name `xml`
+// (case-insensitive, terminated by whitespace or '?>').
+f<bool> XmlParser.isReservedXmlPiTarget(unsigned long offset) {
+    if offset + 3l > this.input.getLength() { return false; }
+    const char c0 = this.input[offset];
+    const char c1 = this.input[offset + 1l];
+    const char c2 = this.input[offset + 2l];
+    const bool isXml = (c0 == 'x' || c0 == 'X') && (c1 == 'm' || c1 == 'M') && (c2 == 'l' || c2 == 'L');
+    if !isXml { return false; }
+    if offset + 3l == this.input.getLength() { return true; }
+    const char terminator = this.input[offset + 3l];
+    return isWhitespace(terminator) || terminator == '?';
+}
+
+f<bool> XmlParser.isNameStart(char c) {
+    return isAlpha(c) || c == '_' || c == ':';
+}
+
+f<bool> XmlParser.isNameChar(char c) {
+    return isAlphaNum(c) || c == '_' || c == ':' || c == '-' || c == '.';
+}
+
+f<String> XmlParser.readName() {
+    const unsigned long start = this.pos;
+    if this.pos >= this.input.getLength() || !this.isNameStart(this.input[this.pos]) {
+        this.fail("Expected name");
+        return String();
+    }
+    this.pos++;
+    while this.pos < this.input.getLength() && this.isNameChar(this.input[this.pos]) {
+        this.pos++;
+    }
+    return this.input.getSubstring(start, this.pos - start);
+}
+
+f<String> XmlParser.readAttributeValue() {
+    String out;
+    if this.pos >= this.input.getLength() {
+        this.fail("Expected attribute value");
+        return out;
+    }
+    const char quote = this.input[this.pos];
+    if quote != '"' && quote != '\'' {
+        this.fail("Expected quoted attribute value");
+        return out;
+    }
+    this.pos++; // consume opening quote
+    while this.pos < this.input.getLength() && this.input[this.pos] != quote {
+        const char c = this.input[this.pos];
+        if c == '<' {
+            this.fail("Unescaped '<' in attribute value");
+            return out;
+        }
+        if c == '&' {
+            const String decoded = this.readEntity();
+            if this.hasError { return out; }
+            out += decoded;
+            continue;
+        }
+        out += c;
+        this.pos++;
+    }
+    if this.pos >= this.input.getLength() {
+        this.fail("Unterminated attribute value");
+        return out;
+    }
+    this.pos++; // consume closing quote
+    return out;
+}
+
+// Read a single '&...;' entity reference, advance past the trailing ';', and
+// return its decoded value. Supports the five predefined XML entities and
+// numeric character references (&#NN; / &#xNN;) for ASCII code points only.
+f<String> XmlParser.readEntity() {
+    String out;
+    this.pos++; // consume '&'
+    const unsigned long start = this.pos;
+    while this.pos < this.input.getLength() && this.input[this.pos] != ';' {
+        this.pos++;
+    }
+    if this.pos >= this.input.getLength() {
+        this.fail("Unterminated entity reference");
+        return out;
+    }
+    const String name = this.input.getSubstring(start, this.pos - start);
+    this.pos++; // consume ';'
+    if name == String("lt")   { out += '<';  return out; }
+    if name == String("gt")   { out += '>';  return out; }
+    if name == String("amp")  { out += '&';  return out; }
+    if name == String("quot") { out += '"';  return out; }
+    if name == String("apos") { out += '\''; return out; }
+    if name.getLength() >= 2l && name[0] == '#' {
+        int codepoint = 0;
+        unsigned long digitStart = 1l;
+        int base = 10;
+        if name.getLength() >= 3l && (name[1] == 'x' || name[1] == 'X') {
+            digitStart = 2l;
+            base = 16;
+        }
+        if digitStart >= name.getLength() {
+            this.fail("Invalid numeric character reference");
+            return out;
+        }
+        for unsigned long i = digitStart; i < name.getLength(); i++ {
+            const char d = name[i];
+            int digit = -1;
+            if isDigit(d) {
+                digit = cast<int>(d) - cast<int>('0');
+            } else if base == 16 && d >= 'a' && d <= 'f' {
+                digit = cast<int>(d) - cast<int>('a') + 10;
+            } else if base == 16 && d >= 'A' && d <= 'F' {
+                digit = cast<int>(d) - cast<int>('A') + 10;
+            }
+            if digit < 0 || digit >= base {
+                this.fail("Invalid numeric character reference");
+                return out;
+            }
+            codepoint = codepoint * base + digit;
+        }
+        if codepoint < 0 || codepoint > 0x7F {
+            this.fail("Numeric character reference out of supported range");
+            return out;
+        }
+        out += cast<char>(codepoint);
+        return out;
+    }
+    this.fail("Unknown entity reference");
+    return out;
+}
+
+p XmlParser.parseAttributes(XmlNode* element) {
+    while true {
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() { return; }
+        const char c = this.input[this.pos];
+        if c == '>' || c == '/' { return; }
+        const String attrName = this.readName();
+        if this.hasError { return; }
+        this.skipWhitespace();
+        if this.pos >= this.input.getLength() || this.input[this.pos] != '=' {
+            this.fail("Expected '=' in attribute");
+            return;
+        }
+        this.pos++; // consume '='
+        this.skipWhitespace();
+        const String attrValue = this.readAttributeValue();
+        if this.hasError { return; }
+        for unsigned long i = 0l; i < element.attributeKeys.getSize(); i++ {
+            if element.attributeKeys.get(i) == attrName {
+                this.fail("Duplicate attribute name");
+                return;
+            }
+        }
+        element.attributeKeys.pushBack(attrName);
+        element.attributeValues.pushBack(attrValue);
+    }
+}
+
+p XmlParser.parseChildren(XmlNode* element) {
+    while true {
+        if this.pos >= this.input.getLength() {
+            this.fail("Unterminated element");
+            return;
+        }
+        if this.startsWith("</") {
+            this.pos += 2l;
+            const String closeName = this.readName();
+            if this.hasError { return; }
+            if closeName != element.name {
+                this.fail("Mismatched closing tag");
+                return;
+            }
+            this.skipWhitespace();
+            if this.pos >= this.input.getLength() || this.input[this.pos] != '>' {
+                this.fail("Expected '>' in closing tag");
+                return;
+            }
+            this.pos++; // consume '>'
+            return;
+        }
+        if this.startsWith("<!--") {
+            this.pos += 4l;
+            while this.pos + 2l < this.input.getLength() &&
+                  !(this.input[this.pos] == '-' && this.input[this.pos + 1l] == '-' && this.input[this.pos + 2l] == '>') {
+                this.pos++;
+            }
+            if this.pos + 2l >= this.input.getLength() {
+                this.fail("Unterminated comment");
+                return;
+            }
+            this.pos += 3l;
+            continue;
+        }
+        if this.startsWith("<![CDATA[") {
+            this.pos += 9l;
+            const unsigned long start = this.pos;
+            while this.pos + 2l < this.input.getLength() &&
+                  !(this.input[this.pos] == ']' && this.input[this.pos + 1l] == ']' && this.input[this.pos + 2l] == '>') {
+                this.pos++;
+            }
+            if this.pos + 2l >= this.input.getLength() {
+                this.fail("Unterminated CDATA section");
+                return;
+            }
+            const String content = this.input.getSubstring(start, this.pos - start);
+            this.pos += 3l; // consume ']]>'
+            XmlNode* cdataNode = __new<XmlNode>();
+            cdataNode.kind = XmlNodeKind::XML_TEXT;
+            cdataNode.textValue = content;
+            element.children.pushBack(cdataNode);
+            continue;
+        }
+        if this.startsWith("<?") {
+            this.pos += 2l;
+            while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
+                this.pos++;
+            }
+            if this.pos + 1l >= this.input.getLength() {
+                this.fail("Unterminated processing instruction");
+                return;
+            }
+            this.pos += 2l;
+            continue;
+        }
+        if this.input[this.pos] == '<' {
+            XmlNode* child = this.parseElement();
+            if this.hasError { return; }
+            element.children.pushBack(child);
+            continue;
+        }
+        String text;
+        while this.pos < this.input.getLength() && this.input[this.pos] != '<' {
+            const char c = this.input[this.pos];
+            if c == '&' {
+                const String decoded = this.readEntity();
+                if this.hasError { return; }
+                text += decoded;
+                continue;
+            }
+            text += c;
+            this.pos++;
+        }
+        XmlNode* textNode = __new<XmlNode>();
+        textNode.kind = XmlNodeKind::XML_TEXT;
+        textNode.textValue = text;
+        element.children.pushBack(textNode);
+    }
+}
+
+f<XmlNode*> XmlParser.parseElement() {
+    if this.pos >= this.input.getLength() || this.input[this.pos] != '<' {
+        this.fail("Expected '<'");
+        return nil<XmlNode*>;
+    }
+    this.pos++; // consume '<'
+    const String name = this.readName();
+    if this.hasError { return nil<XmlNode*>; }
+    XmlNode* element = __new<XmlNode>();
+    element.kind = XmlNodeKind::XML_ELEMENT;
+    element.name = name;
+    this.parseAttributes(element);
+    if this.hasError { return nil<XmlNode*>; }
+    if this.pos >= this.input.getLength() {
+        this.fail("Unterminated start tag");
+        return nil<XmlNode*>;
+    }
+    if this.input[this.pos] == '/' {
+        // Self-closing tag '<name ... />'
+        this.pos++;
+        if this.pos >= this.input.getLength() || this.input[this.pos] != '>' {
+            this.fail("Expected '>' after '/' in self-closing tag");
+            return nil<XmlNode*>;
+        }
+        this.pos++; // consume '>'
+        return element;
+    }
+    if this.input[this.pos] != '>' {
+        this.fail("Expected '>' in start tag");
+        return nil<XmlNode*>;
+    }
+    this.pos++; // consume '>'
+    this.parseChildren(element);
+    if this.hasError { return nil<XmlNode*>; }
+    return element;
+}
