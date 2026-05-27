@@ -401,86 +401,55 @@ f<String> XmlParser.readEntity() {
     return out;
 }
 
-// Parse a single element. Attributes and children are parsed inline rather
-// than in helper methods because passing the in-progress XmlNode pointer
-// through another method on this parser triggers a codegen issue that
-// corrupts the node.
-f<XmlNode*> XmlParser.parseElement() {
-    if this.pos >= this.input.getLength() || this.input[this.pos] != '<' {
-        this.fail("Expected '<'");
-        return nil<XmlNode*>;
-    }
-    this.pos++; // consume '<'
-    const String name = this.readName();
-    if this.hasError { return nil<XmlNode*>; }
-    XmlNode* element = __new<XmlNode>();
-    element.kind = XmlNodeKind::XML_ELEMENT;
-    element.name = name;
-    // Attribute list (inlined for the same reason as the body, see comment above)
+p XmlParser.parseAttributes(XmlNode* element) {
     while true {
         this.skipWhitespace();
-        if this.pos >= this.input.getLength() {
-            this.fail("Unterminated start tag");
-            return nil<XmlNode*>;
-        }
-        const char ac = this.input[this.pos];
-        if ac == '>' || ac == '/' { break; }
+        if this.pos >= this.input.getLength() { return; }
+        const char c = this.input[this.pos];
+        if c == '>' || c == '/' { return; }
         const String attrName = this.readName();
-        if this.hasError { return nil<XmlNode*>; }
+        if this.hasError { return; }
         this.skipWhitespace();
         if this.pos >= this.input.getLength() || this.input[this.pos] != '=' {
             this.fail("Expected '=' in attribute");
-            return nil<XmlNode*>;
+            return;
         }
         this.pos++; // consume '='
         this.skipWhitespace();
         const String attrValue = this.readAttributeValue();
-        if this.hasError { return nil<XmlNode*>; }
+        if this.hasError { return; }
         for unsigned long i = 0l; i < element.attributeKeys.getSize(); i++ {
             if element.attributeKeys.get(i) == attrName {
                 this.fail("Duplicate attribute name");
-                return nil<XmlNode*>;
+                return;
             }
         }
         element.attributeKeys.pushBack(attrName);
         element.attributeValues.pushBack(attrValue);
     }
-    if this.input[this.pos] == '/' {
-        // Self-closing tag '<name ... />'
-        this.pos++;
-        if this.pos >= this.input.getLength() || this.input[this.pos] != '>' {
-            this.fail("Expected '>' after '/' in self-closing tag");
-            return nil<XmlNode*>;
-        }
-        this.pos++; // consume '>'
-        return element;
-    }
-    if this.input[this.pos] != '>' {
-        this.fail("Expected '>' in start tag");
-        return nil<XmlNode*>;
-    }
-    this.pos++; // consume '>'
-    // Children of the element
+}
+
+p XmlParser.parseChildren(XmlNode* element) {
     while true {
         if this.pos >= this.input.getLength() {
             this.fail("Unterminated element");
-            return nil<XmlNode*>;
+            return;
         }
         if this.startsWith("</") {
             this.pos += 2l;
             const String closeName = this.readName();
-            if this.hasError { return nil<XmlNode*>; }
+            if this.hasError { return; }
             if closeName != element.name {
                 this.fail("Mismatched closing tag");
-                return nil<XmlNode*>;
+                return;
             }
             this.skipWhitespace();
             if this.pos >= this.input.getLength() || this.input[this.pos] != '>' {
                 this.fail("Expected '>' in closing tag");
-                return nil<XmlNode*>;
+                return;
             }
             this.pos++; // consume '>'
-            return element;
+            return;
         }
         if this.startsWith("<!--") {
             this.pos += 4l;
@@ -490,7 +459,7 @@ f<XmlNode*> XmlParser.parseElement() {
             }
             if this.pos + 2l >= this.input.getLength() {
                 this.fail("Unterminated comment");
-                return nil<XmlNode*>;
+                return;
             }
             this.pos += 3l;
             continue;
@@ -504,7 +473,7 @@ f<XmlNode*> XmlParser.parseElement() {
             }
             if this.pos + 2l >= this.input.getLength() {
                 this.fail("Unterminated CDATA section");
-                return nil<XmlNode*>;
+                return;
             }
             const String content = this.input.getSubstring(start, this.pos - start);
             this.pos += 3l; // consume ']]>'
@@ -521,24 +490,23 @@ f<XmlNode*> XmlParser.parseElement() {
             }
             if this.pos + 1l >= this.input.getLength() {
                 this.fail("Unterminated processing instruction");
-                return nil<XmlNode*>;
+                return;
             }
             this.pos += 2l;
             continue;
         }
         if this.input[this.pos] == '<' {
             XmlNode* child = this.parseElement();
-            if this.hasError { return nil<XmlNode*>; }
+            if this.hasError { return; }
             element.children.pushBack(child);
             continue;
         }
-        // Otherwise: character data until the next '<'
         String text;
         while this.pos < this.input.getLength() && this.input[this.pos] != '<' {
             const char c = this.input[this.pos];
             if c == '&' {
                 const String decoded = this.readEntity();
-                if this.hasError { return nil<XmlNode*>; }
+                if this.hasError { return; }
                 text += decoded;
                 continue;
             }
@@ -550,5 +518,41 @@ f<XmlNode*> XmlParser.parseElement() {
         textNode.textValue = text;
         element.children.pushBack(textNode);
     }
-    return nil<XmlNode*>;
+}
+
+f<XmlNode*> XmlParser.parseElement() {
+    if this.pos >= this.input.getLength() || this.input[this.pos] != '<' {
+        this.fail("Expected '<'");
+        return nil<XmlNode*>;
+    }
+    this.pos++; // consume '<'
+    const String name = this.readName();
+    if this.hasError { return nil<XmlNode*>; }
+    XmlNode* element = __new<XmlNode>();
+    element.kind = XmlNodeKind::XML_ELEMENT;
+    element.name = name;
+    this.parseAttributes(element);
+    if this.hasError { return nil<XmlNode*>; }
+    if this.pos >= this.input.getLength() {
+        this.fail("Unterminated start tag");
+        return nil<XmlNode*>;
+    }
+    if this.input[this.pos] == '/' {
+        // Self-closing tag '<name ... />'
+        this.pos++;
+        if this.pos >= this.input.getLength() || this.input[this.pos] != '>' {
+            this.fail("Expected '>' after '/' in self-closing tag");
+            return nil<XmlNode*>;
+        }
+        this.pos++; // consume '>'
+        return element;
+    }
+    if this.input[this.pos] != '>' {
+        this.fail("Expected '>' in start tag");
+        return nil<XmlNode*>;
+    }
+    this.pos++; // consume '>'
+    this.parseChildren(element);
+    if this.hasError { return nil<XmlNode*>; }
+    return element;
 }
