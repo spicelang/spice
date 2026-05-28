@@ -146,3 +146,26 @@ public p Token.ctor(TokenType tokenType, string text, const CodeLoc& codeLoc) {
 public p Token.print() {
     printf("Token(type=%d, text=\"%s\", line=%d, col: %d)\n", this.tokenType, this.text, this.codeLoc.line, this.codeLoc.col);
 }
+
+#[test, test.name="Token Smoke test"]
+public f<bool> testTokenSmoke() {
+    // Construct via type-only constructor
+    Token t1 = Token(TokenType::PLUS);
+    assert t1.tokenType == TokenType::PLUS;
+
+    // Construct via full constructor (string overload)
+    CodeLoc loc = CodeLoc(5l, 10l, "input.spice");
+    Token t2 = Token(TokenType::IDENTIFIER, "myVar", loc);
+    assert t2.tokenType == TokenType::IDENTIFIER;
+    assert t2.text == "myVar";
+    assert t2.codeLoc.line == 5l;
+    assert t2.codeLoc.col == 10l;
+    assert t2.codeLoc.sourceFilePath == "input.spice";
+
+    // Construct via full constructor (String overload)
+    Token t3 = Token(TokenType::STRING_LIT, String("hello"), loc);
+    assert t3.tokenType == TokenType::STRING_LIT;
+    assert t3.text == "hello";
+
+    return true;
+}

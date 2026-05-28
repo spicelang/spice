@@ -1,0 +1,7 @@
+import "bootstrap/exception/cli-error";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testCliErrorSmoke();
+    printf("All assertions passed!");
+}

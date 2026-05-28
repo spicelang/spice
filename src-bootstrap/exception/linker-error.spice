@@ -1,9 +1,6 @@
 // Std imports
 import "std/text/stringstream";
 
-// Own imports
-import "bootstrap/util/code-loc";
-
 public type LinkerErrorType enum {
     LINKER_INVOKER_NOT_FOUND,
     LINKER_NOT_FOUND,
@@ -42,4 +39,14 @@ f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
         case LinkerErrorType::LINKER_ERROR: { return "Linker error occurred"; }
         default: { panic(Error("Unknown error")); }
     }
+}
+
+#[test, test.name="LinkerError Smoke test"]
+public f<bool> testLinkerErrorSmoke() {
+    LinkerError err1 = LinkerError(LinkerErrorType::LINKER_INVOKER_NOT_FOUND, "");
+    assert err1.errorMessage == "[Error|Linker] Linker invoker not found: ";
+
+    LinkerError err2 = LinkerError(LinkerErrorType::LINKER_ERROR, "exit code 1");
+    assert err2.errorMessage == "[Error|Linker] Linker error occurred: exit code 1";
+    return true;
 }

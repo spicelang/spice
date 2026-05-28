@@ -1,0 +1,7 @@
+import "bootstrap/lexer/token";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testTokenSmoke();
+    printf("All assertions passed!");
+}
