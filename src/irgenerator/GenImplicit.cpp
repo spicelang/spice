@@ -591,14 +591,10 @@ void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction)
     // Call move ctor for struct fields if available, otherwise fall back to copy or shallow copy
     if (fieldType.is(TY_STRUCT)) {
       Scope *matchScope = fieldType.getBodyScope();
-      // First try to find a move ctor (non-const ref param). The lookup with a non-const ref arg
-      // can return either the move or the copy ctor (lookup allows constify), so verify the
-      // returned candidate's param qualifier matches what we asked for.
-      const ArgList moveArgs = {{fieldType.toNonConst().toRef(nullptr), false /* we have the field as storage */}};
-      const Function *moveCtor = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, moveArgs, true);
-      const bool moveCtorIsActuallyMove = moveCtor != nullptr && !moveCtor->paramList.empty() &&
-                                          !moveCtor->paramList.front().qualType.isConstRef();
-      if (moveCtorIsActuallyMove) {
+      // First try to find a move ctor (non-const ref param). We scan the manifestations directly via
+      // findMoveCtor rather than FunctionManager::lookup with a non-const ref arg, because lookup permits
+      // const-param-to-non-const-arg "constify" matching and may return the copy ctor as a false positive.
+      if (const Function *moveCtor = FunctionManager::findMoveCtor(matchScope)) {
         generateCtorOrDtorCall(fieldSymbol, moveCtor, {originalFieldAddress});
         continue;
       }

@@ -540,10 +540,11 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       generateDefaultCopyCtor(copyCtorFunc);
 
-    // Generate default move ctor if required
-    const ArgList moveArgs = {{thisType.toNonConst().toRef(node), false /* always non-temporary */}};
-    const Function *moveCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, thisType, moveArgs, true);
-    if (moveCtorFunc != nullptr && moveCtorFunc->implicitDefault)
+    // Generate default move ctor if required. We can't use FunctionManager::lookup with a non-const ref arg
+    // here, because the lookup permits const-param-to-non-const-arg matching ("constify") and may return the
+    // copy ctor as a false positive. findMoveCtor scans the manifestations directly and only matches the
+    // strict move ctor signature.
+    if (const Function *moveCtorFunc = FunctionManager::findMoveCtor(currentScope); moveCtorFunc && moveCtorFunc->implicitDefault)
       generateDefaultMoveCtor(moveCtorFunc);
 
     // Generate default dtor if required

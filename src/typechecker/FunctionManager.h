@@ -47,6 +47,7 @@ public:
   [[nodiscard]] static bool hasAnyNonCopyCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasCopyCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasMoveCtor(const Scope *matchScope);
+  [[nodiscard]] static Function *findMoveCtor(Scope *matchScope);
   [[nodiscard]] static bool hasDtor(const Scope *matchScope);
   static void cleanup();
   [[nodiscard]] static std::string dumpLookupCacheStatistics();

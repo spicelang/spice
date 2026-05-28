@@ -604,6 +604,21 @@ bool FunctionManager::hasCopyCtor(const Scope *matchScope) { return hasCtor(matc
 
 bool FunctionManager::hasMoveCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::MOVE); }
 
+Function *FunctionManager::findMoveCtor(Scope *matchScope) {
+  for (auto &manifestations : matchScope->functions | std::views::values) {
+    for (auto &function : manifestations | std::views::values) {
+      if (function.name != CTOR_FUNCTION_NAME)
+        continue;
+      const bool isMoveCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isRef() &&
+                              !function.paramList.at(0).qualType.isConstRef() &&
+                              function.paramList.at(0).qualType.getBase() == function.thisType;
+      if (isMoveCtor)
+        return &function;
+    }
+  }
+  return nullptr;
+}
+
 bool FunctionManager::hasDtor(const Scope *matchScope) {
   for (const auto &manifestations : matchScope->functions | std::views::values)
     for (const auto &function : manifestations | std::views::values)

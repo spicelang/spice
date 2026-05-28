@@ -230,10 +230,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       assert(manifestation->areAllFieldsInitialized() == nullptr);
     }
 
-    // Check default move ctor body if required
-    const ArgList moveArgs = {{structType.toRef(node), false /* always non-temporary */}};
-    const Function *moveCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, moveArgs, true);
-    if (moveCtorFunc != nullptr && moveCtorFunc->implicitDefault) {
+    // Check default move ctor body if required. findMoveCtor scans the manifestations directly to avoid the
+    // constify-based false-positive that FunctionManager::lookup with a non-const ref arg can produce.
+    if (const Function *moveCtorFunc = FunctionManager::findMoveCtor(currentScope); moveCtorFunc && moveCtorFunc->implicitDefault) {
       createMoveCtorBodyPreamble(moveCtorFunc->bodyScope);
       assert(manifestation->areAllFieldsInitialized() == nullptr);
     }

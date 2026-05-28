@@ -209,12 +209,13 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
-  // Abort if the struct already has a user-defined move constructor
-  const QualType structType = spiceStruct.entry->getQualType();
-  const ArgList lookupArgs = {{structType.toNonConst().toRef(node), false}};
-  const Function *moveCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, structType, lookupArgs, true);
-  if (moveCtor != nullptr)
+  // Abort if the struct already has a user-defined move constructor.
+  // We can't just call FunctionManager::lookup with a non-const ref arg here, since the lookup permits
+  // const-param-to-non-const-arg matching ("constify") and would return the copy ctor (if one exists) as
+  // a false positive. Instead, check the function manifestations directly for a single-self-non-const-ref ctor.
+  if (FunctionManager::hasMoveCtor(structScope))
     return;
+  const QualType structType = spiceStruct.entry->getQualType();
 
   // Check if we have fields, that require us to do anything in the move ctor
   const size_t fieldCount = structScope->getFieldCount();
@@ -227,13 +228,14 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
     if (fieldType.hasAnyGenericParts() && !spiceStruct.typeMapping.empty())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, spiceStruct.typeMapping, fieldSymbol->declNode);
 
-    // If the field is of type struct, check if this struct has a move ctor that has to be called
+    // If the field is of type struct, check whether the field's struct has its own move ctor. We use
+    // findMoveCtor (a direct scan of the manifestations) rather than FunctionManager::match here for two
+    // reasons: (1) match permits const-param-to-non-const-arg "constify" matching and would return the
+    // field's copy ctor as a false positive, and (2) match populates the lookup cache, which would inflate
+    // the per-struct cache-miss counts even for structs that have nothing to do with move ctors.
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      // Lookup move ctor function
-      const ArgList args = {{fieldType.toNonConst().toRef(node), false}};
-      const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
-      moveCtorRequired |= ctorFct != nullptr;
+      moveCtorRequired |= FunctionManager::findMoveCtor(bodyScope) != nullptr;
     }
 
     // If we have an owning heap pointer, we transfer ownership of the heap storage
@@ -243,8 +245,12 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
     }
   }
 
-  // If we don't have any fields, that require us to do anything in the move ctor, we can skip it
-  if (!moveCtorRequired && !node->emitVTable)
+  // If we don't have any fields that require us to do anything special in the move ctor, we can skip it.
+  // Unlike the copy ctor we do NOT generate a default move ctor just because the struct emits a vtable - the
+  // vtable pointer is part of the struct layout and gets shallow-copied along with everything else, no
+  // special move handling needed. Users that want to move a vtable-bearing struct fall back to the default
+  // copy ctor.
+  if (!moveCtorRequired)
     return;
 
   // Create the default move ctor function
@@ -412,16 +418,16 @@ void TypeChecker::createMoveCtorBodyPreamble(const Scope *bodyScope) const {
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
 
     if (fieldType.is(TY_STRUCT)) {
-      const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
-      // Match move ctor function, create the concrete manifestation and set it to used. The matcher's tie-break
-      // (see FunctionManager::match) prefers the move ctor over a copy ctor for a non-const ref argument.
+      // Find a move ctor on the field's struct. We use findMoveCtor rather than FunctionManager::match to
+      // avoid a constify-based false positive returning the copy ctor. findMoveCtor doesn't mark the
+      // function as used, so do that explicitly to ensure the inner move ctor's body is actually emitted.
       Scope *matchScope = fieldType.getBodyScope();
-      const ArgList args = {{fieldType.toNonConst().toRef(fieldNode), false}};
-      const Function *moveCtorFct = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
-      // Only update the body scope when we actually selected a move ctor (param is non-const ref)
-      if (moveCtorFct != nullptr && !moveCtorFct->paramList.empty() &&
-          !moveCtorFct->paramList.front().qualType.isConstRef())
+      if (Function *moveCtorFct = FunctionManager::findMoveCtor(matchScope)) {
+        moveCtorFct->used = true;
+        if (moveCtorFct->entry)
+          moveCtorFct->entry->used = true;
         fieldSymbol->updateType(fieldType.getWithBodyScope(moveCtorFct->thisType.getBodyScope()), true);
+      }
     }
 
     fieldSymbol->updateState(INITIALIZED, fieldSymbol->declNode);
