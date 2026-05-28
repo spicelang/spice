@@ -58,7 +58,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
 
   // Visit children
   if (ctx->topLevelDefAttr())
-    mainFctDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    mainFctDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
   if (ctx->paramLst()) {
     mainFctDefNode->takesArgs = true;
     mainFctDefNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
@@ -73,7 +73,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
-    fctDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    fctDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
     // Tell the attributes that they are function attributes
     for (AttrNode *attr : fctDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
@@ -102,7 +102,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
-    procDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    procDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
     // Tell the attributes that they are function attributes
     for (AttrNode *attr : procDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
@@ -159,7 +159,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
-    structDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    structDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are struct attributes
     for (AttrNode *attr : structDefNode->attrs->attrLst->attributes)
@@ -194,7 +194,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
-    interfaceDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    interfaceDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are struct attributes
     for (AttrNode *attr : interfaceDefNode->attrs->attrLst->attributes)
@@ -288,7 +288,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Visit children
   if (ctx->topLevelDefAttr()) {
-    extDeclNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
+    extDeclNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
 
     // Tell the attributes that they are ext decl attributes
     for (AttrNode *attr : extDeclNode->attrs->attrLst->attributes)
@@ -728,7 +728,7 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
 }
 
 std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) {
-  const auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
+  const auto fctAttrNode = createNode<TopLevelDefAttrNode>(ctx);
 
   // Visit children
   fctAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));

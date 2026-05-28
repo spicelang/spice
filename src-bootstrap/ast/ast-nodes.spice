@@ -519,14 +519,14 @@ public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// =================================================== TopLevelDefinitionAttrNode ================================================
+// =================================================== TopLevelDefAttrNode ================================================
 
-public type ASTTopLevelDefinitionAttrNode struct/*: IVisitable*/ {
+public type ASTTopLevelDefAttrNode struct/*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
-public p ASTTopLevelDefinitionAttrNode.ctor(CodeLoc codeLoc) {
+public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
@@ -985,12 +985,12 @@ public f<bool> testASTNodesSmoke() {
     qual.qualifierType = QualifierType::CONST;
     assert qual.qualifierType == QualifierType::CONST;
 
-    // TypeLstWithEllipsisNode (newly mirrored from C++)
+    // TypeLstWithEllipsisNode
     ASTTypeLstWithEllipsisNode typeLstEllipsis = ASTTypeLstWithEllipsisNode(loc);
     assert typeLstEllipsis.node.codeLoc.line == 3l;
 
-    // TopLevelDefinitionAttrNode (renamed to match C++)
-    ASTTopLevelDefinitionAttrNode tlAttr = ASTTopLevelDefinitionAttrNode(loc);
+    // TopLevelDefAttrNode
+    ASTTopLevelDefAttrNode tlAttr = ASTTopLevelDefAttrNode(loc);
     assert tlAttr.node.codeLoc.line == 3l;
 
     return true;

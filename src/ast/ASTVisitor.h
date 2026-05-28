@@ -51,7 +51,7 @@ public:
   std::any visitQualifierLst(QualifierLstNode *node) override;
   std::any visitQualifier(QualifierNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
-  std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *node) override;
+  std::any visitTopLevelDefinitionAttr(TopLevelDefAttrNode *node) override;
   std::any visitLambdaAttr(LambdaAttrNode *node) override;
   std::any visitAttrLst(AttrLstNode *node) override;
   std::any visitAttr(AttrNode *node) override;

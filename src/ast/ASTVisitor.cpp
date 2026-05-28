@@ -85,7 +85,7 @@ std::any ASTVisitor::visitQualifier(QualifierNode *node) { return visitChildren(
 
 std::any ASTVisitor::visitModAttr(ModAttrNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitTopLevelDefinitionAttr(TopLevelDefAttrNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitLambdaAttr(LambdaAttrNode *node) { return visitChildren(node); }
 
