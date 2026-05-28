@@ -34,7 +34,7 @@ public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
         }
     }
     this.size = initAllocItems;
-
+    this.idxBack = initAllocItems % this.capacity;
 }
 
 public p Queue.ctor(unsigned int initAllocItems) {
@@ -53,12 +53,16 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
 
 public p Queue.ctor(const Queue<T>& original) {
     this.ctor(original.capacity);
+    // Copy elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
+        for unsigned long i = 0l; i < original.size; i++ {
+            const unsigned long srcIdx = (original.idxFront + i) % original.capacity;
+            this.contents[i] = original.contents[srcIdx];
+        }
     }
     this.size = original.size;
-    this.idxFront = original.idxFront;
-    this.idxBack = original.idxBack;
+    this.idxFront = 0l;
+    this.idxBack = original.size % this.capacity;
 }
 
 public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
@@ -70,12 +74,16 @@ public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
         }
         this.capacity = newValue.capacity;
     }
-    this.size = newValue.size;
-    this.idxFront = newValue.idxFront;
-    this.idxBack = newValue.idxBack;
+    // Copy elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+        for unsigned long i = 0l; i < newValue.size; i++ {
+            const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
+            this.contents[i] = newValue.contents[srcIdx];
+        }
     }
+    this.size = newValue.size;
+    this.idxFront = 0l;
+    this.idxBack = newValue.size % this.capacity;
 }
 
 /**
@@ -89,8 +97,10 @@ public p Queue.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.idxBack++], item);
+        __placement_new<T>(&this.contents[this.idxBack], item);
     }
+    this.idxBack++;
+    this.idxBack %= this.capacity;
 
     // Increase size
     this.size++;
@@ -106,8 +116,10 @@ public f<T&> Queue.pop() {
     if this.isEmpty() { panic(Error("The queue is empty")); }
     this.size--;
     unsafe {
-        return this.contents[this.idxFront++];
+        result = this.contents[this.idxFront];
     }
+    this.idxFront++;
+    this.idxFront %= this.capacity;
 }
 
 /**
@@ -130,7 +142,7 @@ public f<T&> Queue.front() {
 public f<T&> Queue.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
-        return this.contents[this.idxBack - 1];
+        return this.contents[(this.idxBack - 1l + this.capacity) % this.capacity];
     }
 }
 
@@ -217,10 +229,20 @@ p Queue.resize(unsigned long itemCount) {
     const unsigned long itemSize = sizeof<T>();
     unsafe {
         // Allocate a new chunk of memory with the requested size
-        heap byte*& oldAddress = cast<heap byte*>(this.contents);
-        Result<heap byte*> allocResult = sRealloc(oldAddress, itemSize * itemCount);
+        unsigned long newSize = itemSize * itemCount;
+        Result<heap byte*> allocResult = sAlloc(newSize);
+        // Take ownership of the old pointer to free it at the end of the scope
+        heap T* oldAddress = this.contents;
         this.contents = cast<heap T*>(allocResult.unwrap());
+        // Copy data over to new memory chunk in logical order
+        for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
+            unsigned long oldIndex = this.idxFront + newIndex;
+            oldIndex %= this.capacity;
+            this.contents[newIndex] = oldAddress[oldIndex];
+        }
     }
-    // Set new capacity
+    // Set new capacity and normalize indices
     this.capacity = itemCount;
+    this.idxFront = 0l;
+    this.idxBack = this.size % itemCount;
 }
