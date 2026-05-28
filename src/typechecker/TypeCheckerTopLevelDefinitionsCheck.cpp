@@ -230,6 +230,14 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       assert(manifestation->areAllFieldsInitialized() == nullptr);
     }
 
+    // Check default move ctor body if required
+    const ArgList moveArgs = {{structType.toRef(node), false /* always non-temporary */}};
+    const Function *moveCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, moveArgs, true);
+    if (moveCtorFunc != nullptr && moveCtorFunc->implicitDefault) {
+      createMoveCtorBodyPreamble(moveCtorFunc->bodyScope);
+      assert(manifestation->areAllFieldsInitialized() == nullptr);
+    }
+
     // Check default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)

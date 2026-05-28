@@ -1,0 +1,7 @@
+a: value=42 valid=1
+copy
+b: value=42 valid=1
+a after copy: value=42 valid=1
+move
+c: value=42 valid=1
+b after move: value=0 valid=0

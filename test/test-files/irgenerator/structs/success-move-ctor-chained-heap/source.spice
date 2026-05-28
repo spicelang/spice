@@ -1,0 +1,25 @@
+// Chained moves: moving from one IntBox to a new one, then again to a third.
+// Verifies that ownership is correctly transferred along the chain and that
+// each intermediate is left in the moved-from state.
+
+type IntBox struct {
+    heap int* storage
+}
+
+p IntBox.ctor(int v) {
+    this.storage = __new<int>(v);
+}
+
+f<int> main() {
+    IntBox a = IntBox(123);
+    printf("a.storage is null: %d\n", a.storage == nil<heap int*>);
+
+    IntBox b = IntBox(a);
+    printf("a.storage is null: %d\n", a.storage == nil<heap int*>);
+    printf("b.storage is null: %d\n", b.storage == nil<heap int*>);
+
+    IntBox c = IntBox(b);
+    printf("b.storage is null: %d\n", b.storage == nil<heap int*>);
+    printf("c.storage is null: %d\n", c.storage == nil<heap int*>);
+    printf("c holds %d\n", *c.storage);
+}

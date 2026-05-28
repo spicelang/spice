@@ -540,6 +540,12 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       generateDefaultCopyCtor(copyCtorFunc);
 
+    // Generate default move ctor if required
+    const ArgList moveArgs = {{thisType.toNonConst().toRef(node), false /* always non-temporary */}};
+    const Function *moveCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, thisType, moveArgs, true);
+    if (moveCtorFunc != nullptr && moveCtorFunc->implicitDefault)
+      generateDefaultMoveCtor(moveCtorFunc);
+
     // Generate default dtor if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, thisType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)

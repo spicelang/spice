@@ -1,0 +1,29 @@
+// A struct that defines only a move ctor (in addition to a no-args ctor) and
+// no copy ctor. Verifies that the move ctor is recognized and selected when
+// the argument is a non-const lvalue. The struct has no heap fields and the
+// only struct-field-with-ctor is itself, so no copy ctor is auto-generated.
+
+type Resource struct {
+    int id
+    int origin
+}
+
+p Resource.ctor(int id) {
+    this.id = id;
+    this.origin = id;
+}
+
+p Resource.ctor(Resource& other) {
+    this.id = other.id;
+    this.origin = -other.origin;
+    other.id = 0;
+}
+
+f<int> main() {
+    Resource r = Resource(42);
+    printf("r.id=%d r.origin=%d\n", r.id, r.origin);
+
+    Resource r2 = Resource(r);
+    printf("r2.id=%d r2.origin=%d\n", r2.id, r2.origin);
+    printf("r.id (after move)=%d\n", r.id);
+}

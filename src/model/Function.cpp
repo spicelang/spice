@@ -156,6 +156,10 @@ std::string Function::getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc &stru
   return "default_copy" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }
 
+std::string Function::getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc &structCodeLoc) {
+  return "default_move" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
+}
+
 std::string Function::getSymbolTableEntryNameDefaultDtor(const CodeLoc &structCodeLoc) {
   return "default_" + std::string(DTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }

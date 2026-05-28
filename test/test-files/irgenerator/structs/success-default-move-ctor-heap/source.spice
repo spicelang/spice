@@ -1,0 +1,33 @@
+// The compiler synthesizes a default move ctor when a struct owns a heap
+// pointer and no user-defined move ctor is present. The synthesized ctor
+// transfers ownership of the heap storage to the destination and nulls the
+// source's pointer so the source's dtor will not free the storage.
+
+type IntBox struct {
+    heap int* storage
+}
+
+p IntBox.ctor(int v) {
+    this.storage = __new<int>(v);
+}
+
+f<int> getValue(const IntBox& box) {
+    return *box.storage;
+}
+
+f<bool> isMovedFrom(const IntBox& box) {
+    return box.storage == nil<heap int*>;
+}
+
+f<int> main() {
+    IntBox a = IntBox(7);
+    printf("a holds %d\n", getValue(a));
+    printf("a was moved-from: %d\n", isMovedFrom(a));
+
+    // Trigger the synthesized move ctor by an explicit ctor call with a
+    // non-const lvalue argument. Overload resolution picks the move ctor
+    // over the auto-generated copy ctor because the argument is non-const.
+    IntBox b = IntBox(a);
+    printf("b holds %d\n", getValue(b));
+    printf("a was moved-from: %d\n", isMovedFrom(a));
+}

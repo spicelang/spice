@@ -2,6 +2,8 @@
 
 #include "FunctionManager.h"
 
+#include <limits>
+
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <model/GenericType.h>
@@ -310,6 +312,39 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
   if (matches.empty())
     return nullptr;
 
+  // Tie-breaking: if multiple candidates match, prefer the candidate whose param qualifiers most closely match
+  // the argument qualifiers. This resolves the typical copy-vs-move ctor ambiguity where both a `const T&`
+  // (copy) and a `T&` (move) ctor match a non-const lvalue argument - we prefer the non-const-ref candidate
+  // (move) since it requires no constification. When the argument is const, we prefer the const-ref candidate
+  // (copy) since binding to a non-const ref would require const-loss.
+  if (matches.size() > 1) {
+    constexpr int CONSTIFY_PENALTY = 1;
+    constexpr int CONST_LOSS_PENALTY = 100;
+    const auto scoreSpecificity = [&](const Function *f) {
+      int penalty = 0;
+      for (size_t i = 0; i < std::min(reqArgs.size(), f->paramList.size()); i++) {
+        const QualType &paramType = f->paramList.at(i).qualType;
+        const QualType &argType = reqArgs.at(i).first;
+        const bool paramIsConst = paramType.removeReferenceWrapper().isConst();
+        const bool argIsConst = argType.removeReferenceWrapper().isConst();
+        if (paramIsConst && !argIsConst)
+          penalty += CONSTIFY_PENALTY;
+        else if (!paramIsConst && argIsConst)
+          penalty += CONST_LOSS_PENALTY;
+      }
+      return penalty;
+    };
+    int bestScore = std::numeric_limits<int>::max();
+    for (const Function *m : matches)
+      bestScore = std::min(bestScore, scoreSpecificity(m));
+    std::vector<Function *> filtered;
+    filtered.reserve(matches.size());
+    for (Function *m : matches)
+      if (scoreSpecificity(m) == bestScore)
+        filtered.push_back(m);
+    matches = std::move(filtered);
+  }
+
   // Check if more than one function matches the requirements
   if (matches.size() > 1) {
     std::stringstream errorMessage;
@@ -533,26 +568,41 @@ uint64_t FunctionManager::getCacheKey(const Scope *scope, const std::string &nam
   return hash;
 }
 
-bool FunctionManager::hasCtor(const Scope *matchScope, bool lookForCopyCtor) {
+bool FunctionManager::hasCtor(const Scope *matchScope, CtorKind kind) {
   for (const auto &manifestations : matchScope->functions | std::views::values) {
     for (const auto &function : manifestations | std::views::values) {
       // If it is no ctor, skip it
       if (function.name != CTOR_FUNCTION_NAME)
         continue;
-      // If we don't search for a copy ctor and got none -> we found one
-      // If we search for a copy ctor and got one -> we found one
-      const bool isCopyCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isConstRef() &&
-                              function.paramList.at(0).qualType.getBase() == function.thisType;
-      if (isCopyCtor == lookForCopyCtor)
-        return true;
+      // Classify the ctor based on its parameter list
+      const bool singleSelfRefParam = function.paramList.size() == 1 && function.paramList.at(0).qualType.isRef() &&
+                                      function.paramList.at(0).qualType.getBase() == function.thisType;
+      const bool isCopyCtor = singleSelfRefParam && function.paramList.at(0).qualType.isConstRef();
+      const bool isMoveCtor = singleSelfRefParam && !function.paramList.at(0).qualType.isConstRef();
+      switch (kind) {
+      case CtorKind::COPY:
+        if (isCopyCtor)
+          return true;
+        break;
+      case CtorKind::MOVE:
+        if (isMoveCtor)
+          return true;
+        break;
+      case CtorKind::ANY_NON_COPY_NON_MOVE:
+        if (!isCopyCtor && !isMoveCtor)
+          return true;
+        break;
+      }
     }
   }
   return false;
 }
 
-bool FunctionManager::hasAnyNonCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, false); }
+bool FunctionManager::hasAnyNonCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::ANY_NON_COPY_NON_MOVE); }
 
-bool FunctionManager::hasCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, true); }
+bool FunctionManager::hasCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::COPY); }
+
+bool FunctionManager::hasMoveCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::MOVE); }
 
 bool FunctionManager::hasDtor(const Scope *matchScope) {
   for (const auto &manifestations : matchScope->functions | std::views::values)

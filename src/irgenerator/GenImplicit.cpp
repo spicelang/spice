@@ -562,6 +562,87 @@ void IRGenerator::generateDefaultCopyCtor(const Function *copyCtorFunction) {
   generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
+void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction) {
+  // Retrieve struct scope
+  Scope *structScope = moveCtorFunction->bodyScope->parent;
+  assert(structScope != nullptr);
+
+  // Get struct address
+  const SymbolTableEntry *thisEntry = moveCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  assert(thisEntry != nullptr);
+  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  assert(thisPtrPtr != nullptr);
+  llvm::Value *thisPtr = nullptr;
+  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
+
+  // Retrieve the value of the original (source) struct, which is the only function parameter
+  llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t fieldIdx = 0; fieldIdx < fieldCount; fieldIdx++) {
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+
+    // Retrieve the address of the original field (move source)
+    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, fieldIdx);
+
+    const QualType &fieldType = fieldSymbol->getQualType();
+
+    // Call move ctor for struct fields if available, otherwise fall back to copy or shallow copy
+    if (fieldType.is(TY_STRUCT)) {
+      Scope *matchScope = fieldType.getBodyScope();
+      // First try to find a move ctor (non-const ref param). The lookup with a non-const ref arg
+      // can return either the move or the copy ctor (lookup allows constify), so verify the
+      // returned candidate's param qualifier matches what we asked for.
+      const ArgList moveArgs = {{fieldType.toNonConst().toRef(nullptr), false /* we have the field as storage */}};
+      const Function *moveCtor = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, moveArgs, true);
+      const bool moveCtorIsActuallyMove = moveCtor != nullptr && !moveCtor->paramList.empty() &&
+                                          !moveCtor->paramList.front().qualType.isConstRef();
+      if (moveCtorIsActuallyMove) {
+        generateCtorOrDtorCall(fieldSymbol, moveCtor, {originalFieldAddress});
+        continue;
+      }
+      // No move ctor: fall back to copy ctor for non-trivially copyable types
+      if (!fieldType.isTriviallyCopyable(nullptr)) {
+        const ArgList copyArgs = {{fieldType.toConstRef(nullptr), false}};
+        const Function *copyCtor = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, copyArgs, false);
+        assert(copyCtor != nullptr);
+        generateCtorOrDtorCall(fieldSymbol, copyCtor, {originalFieldAddress});
+        continue;
+      }
+    }
+
+    // Retrieve the address of the new field (move dest)
+    if (!thisPtr)
+      thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
+    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+
+    // For owning heap fields, transfer ownership: copy the pointer to the destination, and null out the source
+    if (fieldType.isHeap()) {
+      assert(fieldType.isPtr());
+
+      // Load original heap address
+      llvm::Value *originalHeapAddress = insertLoad(builder.getPtrTy(), originalFieldAddress);
+      // Store it in the destination field
+      insertStore(originalHeapAddress, fieldAddress);
+      // Null out the source field so its dtor does not free the storage
+      insertStore(llvm::Constant::getNullValue(builder.getPtrTy()), originalFieldAddress);
+
+      continue;
+    }
+
+    // Shallow copy non-heap, non-struct (or trivially copyable struct) fields
+    llvm::Type *type = fieldType.toLLVMType(sourceFile);
+    generateShallowCopy(originalFieldAddress, type, fieldAddress, false);
+  }
+}
+
+void IRGenerator::generateDefaultMoveCtor(const Function *moveCtorFunction) {
+  assert(moveCtorFunction->implicitDefault && moveCtorFunction->name == CTOR_FUNCTION_NAME);
+  const std::function<void()> generateBody = [&] { generateMoveCtorBodyPreamble(moveCtorFunction); };
+  generateImplicitProcedure(generateBody, moveCtorFunction);
+}
+
 void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
   // Retrieve struct scope
   Scope *structScope = dtorFunction->bodyScope->parent;
