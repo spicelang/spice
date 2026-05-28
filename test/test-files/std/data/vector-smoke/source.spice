@@ -1,0 +1,57 @@
+import "std/data/vector";
+
+f<int> main() {
+    Vector<int> v;
+    assert v.isEmpty();
+    assert v.getSize() == 0;
+    assert v.getCapacity() == 5;
+
+    // pushBack and indexed access
+    v.pushBack(10);
+    v.pushBack(20);
+    v.pushBack(30);
+    assert v.getSize() == 3;
+    assert v[0] == 10;
+    assert v[1] == 20;
+    assert v[2] == 30;
+    assert v.front() == 10;
+    assert v.back() == 30;
+
+    // get() variants
+    assert v.get(0u) == 10;
+    assert v.get(2l) == 30;
+
+    // removeAt(middle)
+    v.removeAt(1l);
+    assert v.getSize() == 2;
+    assert v[0] == 10;
+    assert v[1] == 30;
+
+    // clear
+    v.clear();
+    assert v.isEmpty();
+    assert v.getSize() == 0;
+
+    // ctor(capacity)
+    Vector<int> v2 = Vector<int>(20l);
+    assert v2.getCapacity() == 20;
+    assert v2.isEmpty();
+
+    // ctor(count, default) starts full with default
+    Vector<int> v3 = Vector<int>(4l, 99);
+    assert v3.getSize() == 4;
+    assert v3.isFull();
+    assert v3[0] == 99;
+    assert v3[3] == 99;
+
+    // Equality
+    Vector<int> a;
+    Vector<int> b;
+    a.pushBack(1); a.pushBack(2); a.pushBack(3);
+    b.pushBack(1); b.pushBack(2); b.pushBack(3);
+    assert a == b;
+    b.pushBack(4);
+    assert a != b;
+
+    printf("Vector smoke tests passed!\n");
+}

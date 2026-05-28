@@ -1,0 +1,28 @@
+import "std/data/binary-tree";
+
+f<int> main() {
+    BinaryTree<int> t;
+    assert !t.contains(1);
+
+    t.insert(5);
+    t.insert(3);
+    t.insert(7);
+    assert t.contains(5);
+    assert t.contains(3);
+    assert t.contains(7);
+    assert !t.contains(4);
+
+    t.delete(3);
+    assert !t.contains(3);
+    assert t.contains(5);
+    assert t.contains(7);
+
+    t.delete(5);
+    assert !t.contains(5);
+    assert t.contains(7);
+
+    t.delete(7);
+    assert !t.contains(7);
+
+    printf("BinaryTree smoke tests passed!\n");
+}

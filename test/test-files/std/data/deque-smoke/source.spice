@@ -1,0 +1,48 @@
+import "std/data/deque";
+
+f<int> main() {
+    Deque<int> d;
+    assert d.isEmpty();
+    assert d.getSize() == 0;
+    assert d.getCapacity() == 5;
+
+    // pushBack
+    d.pushBack(1);
+    d.pushBack(2);
+    d.pushBack(3);
+    assert d.getSize() == 3;
+    assert d.front() == 1;
+    assert d.back() == 3;
+
+    // pushFront
+    d.pushFront(0);
+    d.pushFront(-1);
+    assert d.getSize() == 5;
+    assert d.front() == -1;
+    assert d.back() == 3;
+
+    // popFront then popBack drain in opposite directions
+    assert d.popFront() == -1;
+    assert d.popBack() == 3;
+    assert d.popFront() == 0;
+    assert d.popBack() == 2;
+    assert d.popFront() == 1;
+    assert d.isEmpty();
+
+    // ctor(count, default)
+    Deque<int> d2 = Deque<int>(3l, 7);
+    assert d2.getSize() == 3;
+    assert d2.front() == 7;
+    assert d2.back() == 7;
+
+    // Equality (treat data after idxFront..idxBack region)
+    Deque<int> a;
+    Deque<int> b;
+    a.pushBack(1); a.pushBack(2); a.pushBack(3);
+    b.pushBack(1); b.pushBack(2); b.pushBack(3);
+    assert a == b;
+    b.pushBack(4);
+    assert a != b;
+
+    printf("Deque smoke tests passed!\n");
+}

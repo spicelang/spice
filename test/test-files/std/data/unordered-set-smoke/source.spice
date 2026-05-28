@@ -1,0 +1,35 @@
+import "std/data/unordered-set";
+
+f<int> main() {
+    UnorderedSet<int> s;
+    assert s.isEmpty();
+    assert s.getSize() == 0ul;
+
+    s.insert(1);
+    s.insert(2);
+    s.insert(3);
+    assert s.getSize() == 3ul;
+    assert s.contains(1);
+    assert s.contains(2);
+    assert s.contains(3);
+    assert !s.contains(99);
+
+    // Insert duplicate is a no-op for size
+    s.insert(2);
+    assert s.getSize() == 3ul;
+
+    // remove
+    s.remove(2);
+    assert s.getSize() == 2ul;
+    assert !s.contains(2);
+
+    // remove non-existent
+    s.remove(99);
+    assert s.getSize() == 2ul;
+
+    // clear
+    s.clear();
+    assert s.isEmpty();
+
+    printf("UnorderedSet smoke tests passed!\n");
+}

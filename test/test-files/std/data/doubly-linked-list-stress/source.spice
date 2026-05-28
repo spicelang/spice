@@ -1,0 +1,83 @@
+import "std/data/doubly-linked-list";
+
+f<int> main() {
+    // 1. Large pushBack: order preserved
+    DoublyLinkedList<int> l1;
+    for int i = 0; i < 500; i++ { l1.pushBack(i); }
+    assert l1.getSize() == 500ul;
+    assert l1.getFront() == 0;
+    assert l1.getBack() == 499;
+    for unsigned long i = 0ul; i < 500ul; i++ {
+        assert l1.get(i) == cast<int>(i);
+    }
+
+    // 2. Large pushFront: order reversed
+    DoublyLinkedList<int> l2;
+    for int i = 0; i < 200; i++ { l2.pushFront(i); }
+    assert l2.getSize() == 200ul;
+    assert l2.getFront() == 199;
+    assert l2.getBack() == 0;
+    for unsigned long i = 0ul; i < 200ul; i++ {
+        assert l2.get(i) == 199 - cast<int>(i);
+    }
+
+    // 3. insertAt at front, middle, back
+    DoublyLinkedList<int> l3;
+    for int i = 0; i < 4; i++ { l3.pushBack(i); }
+    l3.insertAt(0ul, -1);
+    l3.insertAt(3ul, 99);
+    l3.insertAt(l3.getSize(), 999);
+    assert l3.getSize() == 7ul;
+    assert l3.get(0ul) == -1;
+    assert l3.get(3ul) == 99;
+    assert l3.get(6ul) == 999;
+
+    // 4. removeAt at various positions
+    l3.removeAt(0ul);
+    l3.removeAt(2ul);
+    l3.removeAt(l3.getSize() - 1ul);
+    assert l3.getSize() == 4ul;
+    for unsigned long i = 0ul; i < 4ul; i++ {
+        assert l3.get(i) == cast<int>(i);
+    }
+
+    // 5. remove(value): first match only
+    DoublyLinkedList<int> l4;
+    l4.pushBack(1); l4.pushBack(2); l4.pushBack(3); l4.pushBack(2); l4.pushBack(5);
+    l4.remove(2);
+    assert l4.getSize() == 4ul;
+    assert l4.get(0ul) == 1;
+    assert l4.get(1ul) == 3;
+    assert l4.get(2ul) == 2;
+    assert l4.get(3ul) == 5;
+    l4.remove(42);
+    assert l4.getSize() == 4ul;
+
+    // 6. removeFront / removeBack drain
+    DoublyLinkedList<int> l5;
+    for int i = 0; i < 10; i++ { l5.pushBack(i); }
+    while !l5.isEmpty() { l5.removeFront(); }
+    assert l5.getSize() == 0ul;
+    for int i = 0; i < 10; i++ { l5.pushBack(i); }
+    while !l5.isEmpty() { l5.removeBack(); }
+    assert l5.getSize() == 0ul;
+
+    // 7. Alternating pushFront/pushBack: order [neg..., pos...]
+    DoublyLinkedList<int> l6;
+    for int i = 0; i < 100; i++ {
+        l6.pushBack(i);
+        l6.pushFront(-i - 1);
+    }
+    assert l6.getSize() == 200ul;
+    assert l6.getFront() == -100;
+    assert l6.getBack() == 99;
+    int frontVal = -100;
+    while !l6.isEmpty() {
+        assert l6.getFront() == frontVal;
+        l6.removeFront();
+        frontVal++;
+    }
+    assert frontVal == 100;
+
+    printf("DoublyLinkedList stress tests passed!\n");
+}

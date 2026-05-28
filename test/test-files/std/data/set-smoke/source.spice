@@ -1,0 +1,35 @@
+import "std/data/set";
+
+f<int> main() {
+    Set<int> s;
+    assert s.isEmpty();
+    assert s.getSize() == 0ul;
+
+    s.insert(3);
+    s.insert(1);
+    s.insert(2);
+    assert s.getSize() == 3ul;
+    assert s.contains(1);
+    assert s.contains(2);
+    assert s.contains(3);
+    assert !s.contains(99);
+
+    // Insert duplicate
+    s.insert(2);
+    assert s.getSize() == 3ul;
+
+    // remove
+    s.remove(2);
+    assert !s.contains(2);
+    assert s.getSize() == 2ul;
+
+    // remove non-existent
+    s.remove(99);
+    assert s.getSize() == 2ul;
+
+    // clear
+    s.clear();
+    assert s.isEmpty();
+
+    printf("Set smoke tests passed!\n");
+}

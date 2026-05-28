@@ -1,0 +1,57 @@
+import "std/data/unordered-set";
+
+f<int> main() {
+    // 1. Large fill
+    UnorderedSet<int> s1;
+    for int i = 0; i < 1000; i++ { s1.insert(i); }
+    assert s1.getSize() == 1000ul;
+    for int i = 0; i < 1000; i++ { assert s1.contains(i); }
+
+    // 2. Duplicates are absorbed
+    for int i = 0; i < 1000; i++ { s1.insert(i); }
+    assert s1.getSize() == 1000ul;
+
+    // 3. Remove a stripe
+    for int i = 0; i < 1000; i += 5 { s1.remove(i); }
+    for int i = 0; i < 1000; i++ {
+        if i % 5 == 0 { assert !s1.contains(i); }
+        else { assert s1.contains(i); }
+    }
+
+    // 4. Iteration covers all surviving values exactly once
+    int seen = 0;
+    int sum = 0;
+    foreach const int& v : s1 {
+        seen++;
+        sum += v;
+    }
+    int expectedSum = 0;
+    int expectedCount = 0;
+    for int i = 0; i < 1000; i++ {
+        if i % 5 != 0 {
+            expectedSum += i;
+            expectedCount++;
+        }
+    }
+    assert seen == expectedCount;
+    assert sum == expectedSum;
+
+    // 5. Heavy collisions
+    UnorderedSet<int> s2 = UnorderedSet<int>(8l);
+    for int i = 0; i < 200; i++ { s2.insert(i); }
+    assert s2.getSize() == 200ul;
+    for int i = 0; i < 200; i++ { assert s2.contains(i); }
+    for int i = 0; i < 200; i += 4 { s2.remove(i); }
+    assert s2.getSize() == 150ul;
+
+    // 6. toLinkedList returns all values
+    UnorderedSet<int> s3;
+    s3.insert(10); s3.insert(20); s3.insert(30);
+    LinkedList<int> ll = s3.toLinkedList();
+    assert ll.getSize() == 3ul;
+    int total = 0;
+    foreach int v : ll { total += v; }
+    assert total == 60;
+
+    printf("UnorderedSet stress tests passed!\n");
+}

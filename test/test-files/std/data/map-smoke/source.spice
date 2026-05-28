@@ -1,0 +1,38 @@
+import "std/data/map";
+
+f<int> main() {
+    Map<int, int> m;
+    assert m.isEmpty();
+    assert m.getSize() == 0ul;
+
+    m.insert(3, 30);
+    m.insert(1, 10);
+    m.insert(2, 20);
+    assert m.getSize() == 3ul;
+    assert m[1] == 10;
+    assert m[2] == 20;
+    assert m[3] == 30;
+    assert m.contains(2);
+    assert !m.contains(99);
+
+    // Mutate value via [] assignment
+    m[2] = 222;
+    assert m[2] == 222;
+
+    // getSafe
+    Result<int> ok = m.getSafe(1);
+    assert ok.isOk();
+    Result<int> miss = m.getSafe(99);
+    assert miss.isErr();
+
+    // remove
+    m.remove(2);
+    assert m.getSize() == 2ul;
+    assert !m.contains(2);
+
+    // clear
+    m.clear();
+    assert m.isEmpty();
+
+    printf("Map smoke tests passed!\n");
+}

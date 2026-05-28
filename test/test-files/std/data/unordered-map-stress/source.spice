@@ -1,0 +1,60 @@
+import "std/data/unordered-map";
+import "std/data/pair";
+
+f<int> main() {
+    // 1. Large fill, then verify all entries
+    UnorderedMap<int, int> m1;
+    for int i = 0; i < 1000; i++ { m1.upsert(i, i * 2); }
+    assert m1.getSize() == 1000ul;
+    for int i = 0; i < 1000; i++ {
+        assert m1.contains(i);
+        assert m1[i] == i * 2;
+    }
+
+    // 2. Update half via [] assignment
+    for int i = 0; i < 500; i++ { m1[i] = -i; }
+    for int i = 0; i < 500; i++ { assert m1[i] == -i; }
+    for int i = 500; i < 1000; i++ { assert m1[i] == i * 2; }
+
+    // 3. Remove every third key
+    int removed = 0;
+    for int i = 0; i < 1000; i++ {
+        if i % 3 == 0 {
+            m1.remove(i);
+            removed++;
+        }
+    }
+    assert m1.getSize() == cast<unsigned long>(1000 - removed);
+
+    // 4. Iteration covers all surviving keys exactly once
+    int count = 0;
+    int keySum = 0;
+    foreach Pair<int&, int&> entry : m1 {
+        count++;
+        keySum += entry.getFirst();
+    }
+    assert count == 1000 - removed;
+    // Sum of 0..999 minus sum of multiples of 3 in that range
+    int expectedSumAll = 999 * 1000 / 2;
+    int expectedSumRemoved = 0;
+    for int i = 0; i < 1000; i++ {
+        if i % 3 == 0 { expectedSumRemoved += i; }
+    }
+    assert keySum == expectedSumAll - expectedSumRemoved;
+
+    // 5. Many collisions
+    UnorderedMap<int, int> m2 = UnorderedMap<int, int>(8l);
+    for int i = 0; i < 200; i++ { m2.upsert(i, i); }
+    assert m2.getSize() == 200ul;
+    for int i = 0; i < 200; i++ {
+        assert m2[i] == i;
+    }
+
+    // 6. Clear then reuse
+    m2.clear();
+    assert m2.isEmpty();
+    m2.upsert(42, 42);
+    assert m2[42] == 42;
+
+    printf("UnorderedMap stress tests passed!\n");
+}

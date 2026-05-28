@@ -1,0 +1,53 @@
+import "std/data/linked-list";
+
+f<int> main() {
+    LinkedList<int> l;
+    assert l.isEmpty();
+    assert l.getSize() == 0ul;
+
+    // pushBack, pushFront
+    l.pushBack(2);
+    l.pushBack(3);
+    l.pushFront(1);
+    assert l.getSize() == 3ul;
+    assert l.getFront() == 1;
+    assert l.getBack() == 3;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 2;
+    assert l.get(2ul) == 3;
+
+    // insertAt middle
+    l.insertAt(1ul, 99);
+    assert l.getSize() == 4ul;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 99;
+    assert l.get(2ul) == 2;
+    assert l.get(3ul) == 3;
+
+    // removeAt middle
+    l.removeAt(2ul);
+    assert l.getSize() == 3ul;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 99;
+    assert l.get(2ul) == 3;
+
+    // remove(value)
+    l.remove(99);
+    assert l.getSize() == 2ul;
+    assert l.getFront() == 1;
+    assert l.getBack() == 3;
+
+    // removeFront, removeBack
+    l.removeFront();
+    assert l.getFront() == 3;
+    l.removeBack();
+    assert l.isEmpty();
+
+    // clear
+    l.pushBack(1); l.pushBack(2); l.pushBack(3);
+    l.clear();
+    assert l.isEmpty();
+    assert l.getSize() == 0ul;
+
+    printf("LinkedList smoke tests passed!\n");
+}

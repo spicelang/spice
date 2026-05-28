@@ -1,0 +1,40 @@
+import "std/data/unordered-map";
+
+f<int> main() {
+    UnorderedMap<int, int> m;
+    assert m.isEmpty();
+    assert m.getSize() == 0ul;
+
+    m.upsert(1, 10);
+    m.upsert(2, 20);
+    m.upsert(3, 30);
+    assert m.getSize() == 3ul;
+    assert m[1] == 10;
+    assert m[2] == 20;
+    assert m[3] == 30;
+    assert m.contains(1);
+    assert !m.contains(99);
+
+    // Upsert overwrites
+    m.upsert(2, 222);
+    assert m.getSize() == 3ul;
+    assert m[2] == 222;
+
+    // getSafe
+    Result<int> ok = m.getSafe(1);
+    assert ok.isOk();
+    assert ok.unwrap() == 10;
+    Result<int> miss = m.getSafe(99);
+    assert miss.isErr();
+
+    // remove
+    m.remove(1);
+    assert m.getSize() == 2ul;
+    assert !m.contains(1);
+
+    // clear
+    m.clear();
+    assert m.isEmpty();
+
+    printf("UnorderedMap smoke tests passed!\n");
+}

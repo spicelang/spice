@@ -1,0 +1,51 @@
+import "std/data/queue";
+
+f<int> main() {
+    // Default ctor: empty queue with INITIAL_CAPACITY=5
+    Queue<int> q;
+    assert q.isEmpty();
+    assert !q.isFull();
+    assert q.getSize() == 0;
+    assert q.getCapacity() == 5;
+
+    // push/front/back/getSize
+    q.push(1);
+    q.push(2);
+    q.push(3);
+    assert q.getSize() == 3;
+    assert !q.isEmpty();
+    assert q.front() == 1;
+    assert q.back() == 3;
+
+    // pop returns FIFO order
+    assert q.pop() == 1;
+    assert q.pop() == 2;
+    assert q.front() == 3;
+    assert q.back() == 3;
+    assert q.pop() == 3;
+    assert q.isEmpty();
+
+    // ctor(capacity) reserves up front, but starts empty
+    Queue<int> q2 = Queue<int>(16l);
+    assert q2.getCapacity() == 16;
+    assert q2.isEmpty();
+
+    // ctor(count, default) starts full with the default value
+    Queue<short> q3 = Queue<short>(4l, 7s);
+    assert q3.getSize() == 4;
+    assert q3.isFull();
+    assert q3.front() == 7s;
+    assert q3.back() == 7s;
+
+    // Equality compares contents in logical order
+    Queue<int> a;
+    Queue<int> b;
+    a.push(10); a.push(20); a.push(30);
+    b.push(10); b.push(20); b.push(30);
+    assert a == b;
+    assert !(a != b);
+    b.pop();
+    assert a != b;
+
+    printf("Queue smoke tests passed!\n");
+}

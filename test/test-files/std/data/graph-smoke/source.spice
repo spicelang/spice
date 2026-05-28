@@ -1,0 +1,45 @@
+import "std/data/graph";
+
+f<int> main() {
+    // Empty directed graph: no cycles, is a DAG
+    Graph<int> g1;
+    assert g1.isDirected();
+    assert g1.isDAG();
+    assert !g1.hasCycles();
+
+    // Empty undirected graph: not a DAG (because undirected)
+    Graph<int> g2 = Graph<int>(false);
+    assert !g2.isDirected();
+    assert !g2.isDAG();
+
+    // Add vertices and basic edges
+    Vertex<int>& a = g1.addVertex(1);
+    Vertex<int>& b = g1.addVertex(2);
+    Vertex<int>& c = g1.addVertex(3);
+    assert a.getValue() == 1;
+    assert b.getValue() == 2;
+    assert c.getValue() == 3;
+
+    // Vertex equality based on payload
+    assert a == Vertex<int>(1);
+    assert !(a == b);
+
+    g1.addEdge(a, b);
+    g1.addEdge(b, c);
+
+    // BFS visits all vertices reachable from a
+    int count = 0;
+    foreach const Vertex<int>& v : g1.bfs(&a) {
+        count++;
+    }
+    assert count == 3;
+
+    // DFS also visits all
+    count = 0;
+    foreach const Vertex<int>& v : g1.dfs(&a) {
+        count++;
+    }
+    assert count == 3;
+
+    printf("Graph smoke tests passed!\n");
+}

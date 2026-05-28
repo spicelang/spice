@@ -1,0 +1,42 @@
+import "std/data/doubly-linked-list";
+
+f<int> main() {
+    DoublyLinkedList<int> l;
+    assert l.isEmpty();
+    assert l.getSize() == 0ul;
+
+    l.pushBack(2);
+    l.pushBack(3);
+    l.pushFront(1);
+    assert l.getSize() == 3ul;
+    assert l.getFront() == 1;
+    assert l.getBack() == 3;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 2;
+    assert l.get(2ul) == 3;
+
+    l.insertAt(1ul, 99);
+    assert l.getSize() == 4ul;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 99;
+    assert l.get(2ul) == 2;
+    assert l.get(3ul) == 3;
+
+    l.removeAt(2ul);
+    assert l.getSize() == 3ul;
+    assert l.get(0ul) == 1;
+    assert l.get(1ul) == 99;
+    assert l.get(2ul) == 3;
+
+    l.remove(99);
+    assert l.getSize() == 2ul;
+    assert l.getFront() == 1;
+    assert l.getBack() == 3;
+
+    l.removeFront();
+    assert l.getFront() == 3;
+    l.removeBack();
+    assert l.isEmpty();
+
+    printf("DoublyLinkedList smoke tests passed!\n");
+}

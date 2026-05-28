@@ -1,0 +1,58 @@
+import "std/data/set";
+
+f<int> main() {
+    // 1. Sorted, reverse, mixed insertion
+    Set<int> sorted;
+    Set<int> reverse;
+    for int i = 0; i < 200; i++ {
+        sorted.insert(i);
+        reverse.insert(199 - i);
+    }
+    assert sorted.getSize() == 200ul;
+    assert reverse.getSize() == 200ul;
+    for int i = 0; i < 200; i++ {
+        assert sorted.contains(i);
+        assert reverse.contains(i);
+    }
+
+    // 2. Iteration in sorted order
+    int previous = -1;
+    int count = 0;
+    foreach const int& v : sorted {
+        assert v > previous;
+        previous = v;
+        count++;
+    }
+    assert count == 200;
+
+    // 3. Duplicates absorbed
+    for int i = 0; i < 200; i++ { sorted.insert(i); }
+    assert sorted.getSize() == 200ul;
+
+    // 4. Removals leave sorted ordering intact
+    Set<int> s4;
+    for int i = 0; i < 100; i++ { s4.insert(i); }
+    for int i = 0; i < 100; i += 5 { s4.remove(i); }
+    previous = -1;
+    int seen = 0;
+    foreach const int& v : s4 {
+        assert v > previous;
+        previous = v;
+        seen++;
+        assert v % 5 != 0;
+    }
+    int expected = 100;
+    for int i = 0; i < 100; i += 5 { expected--; }
+    assert seen == expected;
+
+    // 5. toLinkedList returns sorted values
+    Set<int> s5;
+    s5.insert(5); s5.insert(1); s5.insert(3); s5.insert(4); s5.insert(2);
+    LinkedList<int> ll = s5.toLinkedList();
+    assert ll.getSize() == 5ul;
+    for unsigned long i = 0ul; i < 5ul; i++ {
+        assert ll.get(i) == cast<int>(i) + 1;
+    }
+
+    printf("Set stress tests passed!\n");
+}

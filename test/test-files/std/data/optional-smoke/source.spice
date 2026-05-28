@@ -1,0 +1,44 @@
+import "std/data/optional";
+
+f<int> main() {
+    // Empty optional
+    Optional<int> o1 = Optional<int>();
+    assert !o1.isPresent();
+
+    // Optional with value
+    Optional<int> o2 = Optional<int>(42);
+    assert o2.isPresent();
+    assert o2.get() == 42;
+
+    // set value into empty
+    o1.set(7);
+    assert o1.isPresent();
+    assert o1.get() == 7;
+
+    // clear
+    o2.clear();
+    assert !o2.isPresent();
+
+    // orElse on absent returns default
+    int fallback = 99;
+    int& fallbackResult = o2.orElse(fallback);
+    assert fallbackResult == 99;
+
+    // orElse on present returns the value
+    o2.set(123);
+    int defaultUnused = -1;
+    assert o2.orElse(defaultUnused) == 123;
+
+    // Equality
+    Optional<int> a = Optional<int>(5);
+    Optional<int> b = Optional<int>(5);
+    Optional<int> c = Optional<int>(6);
+    Optional<int> empty1 = Optional<int>();
+    Optional<int> empty2 = Optional<int>();
+    assert a == b;
+    assert a != c;
+    assert empty1 == empty2;
+    assert a != empty1;
+
+    printf("Optional smoke tests passed!\n");
+}

@@ -1,0 +1,110 @@
+import "std/data/deque";
+
+f<int> main() {
+    // 1. Both ends used heavily without resize
+    Deque<int> d1;
+    d1.pushBack(0);
+    d1.pushFront(-1);
+    d1.pushBack(1);
+    d1.pushFront(-2);
+    d1.pushBack(2);
+    assert d1.getSize() == 5;
+    assert d1.popFront() == -2;
+    assert d1.popFront() == -1;
+    assert d1.popBack() == 2;
+    assert d1.popBack() == 1;
+    assert d1.popFront() == 0;
+    assert d1.isEmpty();
+
+    // 2. Force wrap then resize via pushBack
+    Deque<int> d2;
+    for int i = 0; i < 5; i++ { d2.pushBack(i); } // [0,1,2,3,4], full
+    d2.popFront(); d2.popFront(); // idxFront=2
+    d2.pushBack(5); d2.pushBack(6); // wrapped: data spans [2..4] then [0..1]
+    assert d2.getSize() == 5;
+    d2.pushBack(7); // resize while wrapped
+    assert d2.getSize() == 6;
+    for int expected = 2; expected <= 7; expected++ {
+        assert d2.popFront() == expected;
+    }
+
+    // 3. Force wrap then resize via pushFront
+    Deque<int> d3;
+    for int i = 0; i < 5; i++ { d3.pushBack(i); }
+    d3.popBack(); d3.popBack(); // [0,1,2]
+    d3.pushFront(-1); d3.pushFront(-2); // wrap on the front side
+    assert d3.getSize() == 5;
+    d3.pushFront(-3); // resize while wrapped
+    assert d3.getSize() == 6;
+    assert d3.popFront() == -3;
+    assert d3.popFront() == -2;
+    assert d3.popFront() == -1;
+    assert d3.popFront() == 0;
+    assert d3.popFront() == 1;
+    assert d3.popFront() == 2;
+
+    // 4. Copy ctor of a wrapped deque
+    Deque<int> d4;
+    for int i = 0; i < 5; i++ { d4.pushBack(i); }
+    d4.popFront(); d4.popFront(); d4.popFront();
+    d4.pushBack(10); d4.pushBack(11); d4.pushBack(12); // wrapped
+    Deque<int> d5 = Deque<int>(d4);
+    assert d5.getSize() == 5;
+    assert d5.popFront() == 3;
+    assert d5.popFront() == 4;
+    assert d5.popFront() == 10;
+    assert d5.popFront() == 11;
+    assert d5.popFront() == 12;
+    // Original unaffected
+    assert d4.getSize() == 5;
+    assert d4.front() == 3;
+
+    // 5. operator= over wrapped source
+    Deque<int> d6;
+    d6.pushBack(99);
+    d6 = d4;
+    assert d6.getSize() == 5;
+    assert d6.popFront() == 3;
+    assert d6.popFront() == 4;
+    assert d6.popFront() == 10;
+
+    // 6. Large alternating push at both ends, then drain
+    Deque<int> d7;
+    for int i = 0; i < 500; i++ {
+        d7.pushBack(i);
+        d7.pushFront(-i - 1);
+    }
+    assert d7.getSize() == 1000;
+    assert d7.front() == -500;
+    assert d7.back() == 499;
+    int frontVal = -500;
+    while !d7.isEmpty() {
+        assert d7.popFront() == frontVal;
+        frontVal++;
+    }
+    assert frontVal == 500;
+
+    // 7. Pre-filled ctor
+    Deque<long> d8 = Deque<long>(6l, 42l);
+    assert d8.getSize() == 6;
+    for int i = 0; i < 6; i++ {
+        assert d8.popFront() == 42l;
+    }
+    assert d8.isEmpty();
+    // Reusable after drain
+    d8.pushBack(1l);
+    assert d8.front() == 1l;
+
+    // 8. reserve and pack
+    Deque<int> d9;
+    d9.pushBack(1); d9.pushBack(2);
+    d9.reserve(100l);
+    assert d9.getCapacity() >= 100;
+    assert d9.getSize() == 2;
+    d9.pack();
+    assert d9.getCapacity() == 2;
+    assert d9.popFront() == 1;
+    assert d9.popFront() == 2;
+
+    printf("Deque stress tests passed!\n");
+}

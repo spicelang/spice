@@ -85,7 +85,7 @@ public f<bool> UnorderedSet.isEmpty() {
  */
 public f<LinkedList<V>> UnorderedSet.toLinkedList() {
     result = LinkedList<V>();
-    foreach Pair<V, bool>& entry : this.hashTable {
+    foreach Pair<const V&, bool&> entry : this.hashTable {
         result.pushBack(entry.getFirst());
     }
 }

@@ -1,0 +1,26 @@
+import "std/data/triple";
+
+f<int> main() {
+    Triple<int, int, int> t = Triple<int, int, int>(1, 2, 3);
+    assert t.getFirst() == 1;
+    assert t.getSecond() == 2;
+    assert t.getThird() == 3;
+
+    int newFirst = 10;
+    int newSecond = 20;
+    int newThird = 30;
+    t.setFirst(newFirst);
+    t.setSecond(newSecond);
+    t.setThird(newThird);
+    assert t.getFirst() == 10;
+    assert t.getSecond() == 20;
+    assert t.getThird() == 30;
+
+    Triple<int, int, int> u = Triple<int, int, int>(10, 20, 30);
+    assert t == u;
+    int diff = 99;
+    u.setThird(diff);
+    assert t != u;
+
+    printf("Triple smoke tests passed!\n");
+}

@@ -1,0 +1,48 @@
+import "std/data/pair";
+
+f<int> main() {
+    // 1. Various type combinations
+    Pair<int, char> ic = Pair<int, char>(7, 'a');
+    assert ic.getFirst() == 7;
+    assert ic.getSecond() == 'a';
+
+    Pair<long, double> ld = Pair<long, double>(42l, 3.14);
+    assert ld.getFirst() == 42l;
+    assert ld.getSecond() == 3.14;
+
+    Pair<short, bool> sb = Pair<short, bool>(99s, true);
+    assert sb.getFirst() == 99s;
+    assert sb.getSecond() == true;
+
+    // 2. Nested pairs
+    Pair<int, int> inner1 = Pair<int, int>(1, 2);
+    Pair<int, int> inner2 = Pair<int, int>(3, 4);
+    Pair<Pair<int, int>, Pair<int, int>> nested = Pair<Pair<int, int>, Pair<int, int>>(inner1, inner2);
+    Pair<int, int>& first = nested.getFirst();
+    Pair<int, int>& second = nested.getSecond();
+    assert first.getFirst() == 1;
+    assert first.getSecond() == 2;
+    assert second.getFirst() == 3;
+    assert second.getSecond() == 4;
+
+    // 3. Many mutations preserve equality
+    Pair<int, int> a = Pair<int, int>(0, 0);
+    Pair<int, int> b = Pair<int, int>(0, 0);
+    for int i = 0; i < 1000; i++ {
+        a.setFirst(i);
+        a.setSecond(i * 2);
+        b.setFirst(i);
+        b.setSecond(i * 2);
+        assert a == b;
+    }
+
+    // 4. Equality with mismatched fields
+    Pair<int, int> p1 = Pair<int, int>(5, 10);
+    Pair<int, int> p2 = Pair<int, int>(5, 11);
+    Pair<int, int> p3 = Pair<int, int>(6, 10);
+    assert p1 != p2;
+    assert p1 != p3;
+    assert p2 != p3;
+
+    printf("Pair stress tests passed!\n");
+}

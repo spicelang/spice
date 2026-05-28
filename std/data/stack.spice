@@ -50,8 +50,9 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
 
 public p Stack.ctor(const Stack<T>& original) {
     this.ctor(original.capacity);
+    const unsigned long itemSize = sizeof<T>();
     unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
+        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), itemSize * original.size);
     }
     this.size = original.size;
 }
