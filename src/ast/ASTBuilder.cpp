@@ -1252,19 +1252,23 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
 std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   const auto constantNode = createNode<ConstantNode>(ctx);
 
+  // Detect an optional leading minus sign for numeric literals
+  const bool isNegative = ctx->MINUS() != nullptr;
+
   // Enrich
   if (ctx->DOUBLE_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_DOUBLE;
-    constantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+    const double value = std::stod(ctx->DOUBLE_LIT()->toString());
+    constantNode->compileTimeValue.doubleValue = isNegative ? -value : value;
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_INT;
-    constantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT());
+    constantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT(), isNegative);
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_SHORT;
-    constantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT());
+    constantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT(), isNegative);
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_LONG;
-    constantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT());
+    constantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT(), isNegative);
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_CHAR;
     constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
@@ -1609,13 +1613,15 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   return nullptr;
 }
 
-int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
-  const NumericParserCallback<int32_t> cb = [](const std::string &substr, short base, bool isSigned) -> int32_t {
+int32_t ASTBuilder::parseInt(TerminalNode *terminal, bool isNegative) {
+  const NumericParserCallback<int32_t> cb = [isNegative](const std::string &substr, short base, bool isSigned) -> int32_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT32_MAX : UINT32_MAX;
     const int64_t lowerLimit = isSigned ? INT32_MIN : 0;
-    // Parse number and check for limits
-    const int64_t number = std::stoll(substr, nullptr, base);
+    // Parse number, apply sign and check for limits
+    int64_t number = std::stoll(substr, nullptr, base);
+    if (isNegative)
+      number = -number;
     if (number < lowerLimit || number > upperLimit)
       throw std::out_of_range("Number out of range");
     return static_cast<int32_t>(number);
@@ -1623,13 +1629,15 @@ int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
   return parseNumeric(terminal, cb);
 }
 
-int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
-  const NumericParserCallback<int16_t> cb = [](const std::string &substr, short base, bool isSigned) -> int16_t {
+int16_t ASTBuilder::parseShort(TerminalNode *terminal, bool isNegative) {
+  const NumericParserCallback<int16_t> cb = [isNegative](const std::string &substr, short base, bool isSigned) -> int16_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT16_MAX : UINT16_MAX;
     const int64_t lowerLimit = isSigned ? INT16_MIN : 0;
-    // Parse number and check for limits
-    const int64_t number = std::stoll(substr, nullptr, base);
+    // Parse number, apply sign and check for limits
+    int64_t number = std::stoll(substr, nullptr, base);
+    if (isNegative)
+      number = -number;
     if (number < lowerLimit || number > upperLimit)
       throw std::out_of_range("Number out of range");
     return static_cast<int16_t>(number);
@@ -1637,9 +1645,21 @@ int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
   return parseNumeric(terminal, cb);
 }
 
-int64_t ASTBuilder::parseLong(TerminalNode *terminal) {
-  const NumericParserCallback<int64_t> cb = [](const std::string &substr, short base, bool isSigned) -> int64_t {
-    return isSigned ? std::stoll(substr, nullptr, base) : static_cast<int64_t>(std::stoull(substr, nullptr, base));
+int64_t ASTBuilder::parseLong(TerminalNode *terminal, bool isNegative) {
+  const NumericParserCallback<int64_t> cb = [isNegative](const std::string &substr, short base, bool isSigned) -> int64_t {
+    // Parse the magnitude as unsigned so values like 2^63 (the absolute value of INT64_MIN) fit
+    const uint64_t magnitude = std::stoull(substr, nullptr, base);
+    if (isNegative) {
+      constexpr uint64_t maxNegMagnitude = static_cast<uint64_t>(INT64_MAX) + 1; // 2^63
+      if (magnitude > maxNegMagnitude)
+        throw std::out_of_range("Number out of range");
+      if (magnitude == maxNegMagnitude)
+        return INT64_MIN;
+      return -static_cast<int64_t>(magnitude);
+    }
+    if (isSigned && magnitude > static_cast<uint64_t>(INT64_MAX))
+      throw std::out_of_range("Number out of range");
+    return static_cast<int64_t>(magnitude);
   };
   return parseNumeric(terminal, cb);
 }

@@ -1,24 +1,6 @@
-import "std/io/cli-parser";
+f<int> main() {
+    int one = 1-2;
+    printf("%d", one);
 
-type CliOptions struct {
-    string input = ""
-    string output = ""
-    int count = 0
-    bool verbose = false
-}
-
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-
-    CliOptions options;
-    parser.addOption("input", options.input, "Input file path");
-    parser.addOption("output", options.output, "Output file path");
-    parser.addOption("count", options.count, "Number of times");
-    parser.addFlag("--verbose", options.verbose, "Verbose output");
-
-    result = parser.parse(argc, argv);
-
-    printf("input=%s output=%s count=%d verbose=%d\n",
-        options.input, options.output, options.count, options.verbose);
+    printf("All assertions passed!");
 }
