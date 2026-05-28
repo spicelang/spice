@@ -1,0 +1,72 @@
+import "std/data/binary-tree";
+
+f<int> main() {
+    // 1. Many insertions in pseudo-random order
+    BinaryTree<int> t1;
+    // 16 values in a non-monotonic order to exercise both branches at each level
+    int[16] order = [50, 25, 75, 10, 30, 60, 90, 5, 15, 27, 35, 55, 65, 85, 95, 1];
+    for int i = 0; i < 16; i++ { t1.insert(order[i]); }
+    for int i = 0; i < 16; i++ { assert t1.contains(order[i]); }
+    // Values that were never inserted are absent
+    int[5] absent = [2, 11, 26, 56, 100];
+    for int i = 0; i < 5; i++ { assert !t1.contains(absent[i]); }
+
+    // 2. Insert sorted ascending → degenerate to right-skewed tree
+    BinaryTree<int> t2;
+    for int i = 0; i < 50; i++ { t2.insert(i); }
+    for int i = 0; i < 50; i++ { assert t2.contains(i); }
+    assert !t2.contains(-1);
+    assert !t2.contains(50);
+
+    // 3. Insert sorted descending → degenerate to left-skewed tree
+    BinaryTree<int> t3;
+    for int i = 49; i >= 0; i-- { t3.insert(i); }
+    for int i = 0; i < 50; i++ { assert t3.contains(i); }
+
+    // 4. Delete leaf nodes
+    BinaryTree<int> t4;
+    t4.insert(10); t4.insert(5); t4.insert(15); t4.insert(3); t4.insert(7);
+    t4.delete(3); // leaf
+    assert !t4.contains(3);
+    assert t4.contains(5);
+    assert t4.contains(7);
+
+    // 5. Delete node with one child
+    t4.delete(7); // leaf
+    t4.delete(5); // now has no children since 3 and 7 are gone
+    assert !t4.contains(5);
+    assert t4.contains(10);
+    assert t4.contains(15);
+
+    // 6. Delete root with two children
+    BinaryTree<int> t5;
+    t5.insert(50); t5.insert(25); t5.insert(75); t5.insert(10); t5.insert(30); t5.insert(60); t5.insert(90);
+    t5.delete(50); // root with two children
+    assert !t5.contains(50);
+    assert t5.contains(25);
+    assert t5.contains(75);
+    assert t5.contains(10);
+    assert t5.contains(30);
+    assert t5.contains(60);
+    assert t5.contains(90);
+
+    // 7. Delete every inserted value, all become absent
+    BinaryTree<int> t6;
+    int[8] values = [50, 30, 70, 20, 40, 60, 80, 35];
+    for int i = 0; i < 8; i++ { t6.insert(values[i]); }
+    int[8] deleteOrder = [50, 30, 70, 20, 40, 60, 80, 35];
+    for int i = 0; i < 8; i++ {
+        t6.delete(deleteOrder[i]);
+        assert !t6.contains(deleteOrder[i]);
+    }
+    // All values now absent
+    for int i = 0; i < 8; i++ { assert !t6.contains(values[i]); }
+
+    // 8. Delete non-existent value is harmless
+    BinaryTree<int> t7;
+    t7.insert(1);
+    t7.delete(99);
+    assert t7.contains(1);
+
+    printf("BinaryTree stress tests passed!\n");
+}

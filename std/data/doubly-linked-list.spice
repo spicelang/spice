@@ -60,7 +60,7 @@ public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
         return;
     }
     heap Node<T>* newNode = this.createNode(value);
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx - 1l; i++ {
         curr = curr.next;
     }

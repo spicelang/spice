@@ -1,0 +1,46 @@
+import "std/data/hash-table";
+
+f<int> main() {
+    HashTable<int, int> ht;
+    assert ht.isEmpty();
+    assert ht.getSize() == 0ul;
+
+    // upsert and get
+    ht.upsert(1, 100);
+    ht.upsert(2, 200);
+    ht.upsert(3, 300);
+    assert ht.getSize() == 3ul;
+    assert !ht.isEmpty();
+    assert ht.get(1) == 100;
+    assert ht.get(2) == 200;
+    assert ht.get(3) == 300;
+    assert ht.contains(1);
+    assert ht.contains(2);
+    assert !ht.contains(99);
+
+    // upsert overwrites
+    ht.upsert(1, 111);
+    assert ht.getSize() == 3ul;
+    assert ht.get(1) == 111;
+
+    // getSafe returns Result
+    Result<int> ok = ht.getSafe(2);
+    assert ok.isOk();
+    assert ok.unwrap() == 200;
+    Result<int> miss = ht.getSafe(99);
+    assert miss.isErr();
+
+    // remove
+    ht.remove(2);
+    assert ht.getSize() == 2ul;
+    assert !ht.contains(2);
+    assert ht.contains(1);
+    assert ht.contains(3);
+
+    // clear
+    ht.clear();
+    assert ht.isEmpty();
+    assert ht.getSize() == 0ul;
+
+    printf("HashTable smoke tests passed!\n");
+}

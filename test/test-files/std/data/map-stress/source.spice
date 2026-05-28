@@ -1,0 +1,70 @@
+import "std/data/map";
+import "std/data/pair";
+
+f<int> main() {
+    // 1. Inserts in sorted and reverse order yield same content
+    Map<int, int> sorted;
+    Map<int, int> reverse;
+    for int i = 0; i < 200; i++ {
+        sorted.insert(i, i * 7);
+        reverse.insert(199 - i, (199 - i) * 7);
+    }
+    assert sorted.getSize() == 200ul;
+    assert reverse.getSize() == 200ul;
+    for int i = 0; i < 200; i++ {
+        assert sorted[i] == i * 7;
+        assert reverse[i] == i * 7;
+    }
+
+    // Non-monotonic insertion exercise (distinct keys)
+    Map<int, int> mixed;
+    int[10] mixedOrder = [97, 13, 199, 0, 156, 42, 88, 71, 105, 24];
+    for int j = 0; j < 10; j++ { mixed.insert(mixedOrder[j], mixedOrder[j] * 7); }
+    assert mixed.getSize() == 10ul;
+    for int j = 0; j < 10; j++ {
+        assert mixed[mixedOrder[j]] == mixedOrder[j] * 7;
+    }
+
+    // 2. Iteration yields keys in sorted order
+    int previousKey = -1;
+    int count = 0;
+    foreach Pair<int&, int&> entry : sorted {
+        int currentKey = entry.getFirst();
+        assert currentKey > previousKey;
+        previousKey = currentKey;
+        assert entry.getSecond() == currentKey * 7;
+        count++;
+    }
+    assert count == 200;
+
+    // Same expectation for reverse-built map
+    previousKey = -1;
+    foreach Pair<int&, int&> entry : reverse {
+        assert entry.getFirst() > previousKey;
+        previousKey = entry.getFirst();
+    }
+
+    // 3. Removals across positions; remaining keys retain order
+    Map<int, int> m4;
+    for int i = 0; i < 100; i++ { m4.insert(i, i); }
+    for int i = 0; i < 100; i += 3 { m4.remove(i); }
+    previousKey = -1;
+    int remainingCount = 0;
+    foreach Pair<int&, int&> entry : m4 {
+        assert entry.getFirst() > previousKey;
+        previousKey = entry.getFirst();
+        assert entry.getFirst() % 3 != 0;
+        remainingCount++;
+    }
+    int expectedRemaining = 100;
+    for int i = 0; i < 100; i += 3 { expectedRemaining--; }
+    assert remainingCount == expectedRemaining;
+
+    // 4. Re-insert after clear
+    m4.clear();
+    assert m4.isEmpty();
+    m4.insert(42, 42);
+    assert m4[42] == 42;
+
+    printf("Map stress tests passed!\n");
+}

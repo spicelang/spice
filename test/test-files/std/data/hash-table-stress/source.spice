@@ -1,0 +1,77 @@
+import "std/data/hash-table";
+import "std/data/pair";
+
+f<int> main() {
+    // 1. Large insertion: lots of values, ensure all are retrievable
+    HashTable<int, int> ht1;
+    for int i = 0; i < 1000; i++ { ht1.upsert(i, i * i); }
+    assert ht1.getSize() == 1000ul;
+    for int i = 0; i < 1000; i++ {
+        assert ht1.contains(i);
+        assert ht1.get(i) == i * i;
+    }
+
+    // 2. Update existing keys
+    for int i = 0; i < 1000; i++ { ht1.upsert(i, -i); }
+    assert ht1.getSize() == 1000ul;
+    for int i = 0; i < 1000; i++ {
+        assert ht1.get(i) == -i;
+    }
+
+    // 3. Remove half then verify state
+    for int i = 0; i < 500; i++ { ht1.remove(i * 2); }
+    assert ht1.getSize() == 500ul;
+    for int i = 0; i < 1000; i++ {
+        if i % 2 == 0 {
+            assert !ht1.contains(i);
+        } else {
+            assert ht1.contains(i);
+            assert ht1.get(i) == -i;
+        }
+    }
+
+    // 4. Clear then refill
+    ht1.clear();
+    assert ht1.isEmpty();
+    for int i = 0; i < 100; i++ { ht1.upsert(i, i + 1000); }
+    assert ht1.getSize() == 100ul;
+    assert ht1.get(50) == 1050;
+
+    // 5. Collisions: small bucket count forces many keys per bucket
+    HashTable<int, int> ht2 = HashTable<int, int>(8l);
+    for int i = 0; i < 200; i++ { ht2.upsert(i, i * 3); }
+    assert ht2.getSize() == 200ul;
+    for int i = 0; i < 200; i++ {
+        assert ht2.get(i) == i * 3;
+    }
+    // Remove keys that all collide into a few buckets
+    for int i = 0; i < 200; i += 8 { ht2.remove(i); }
+    for int i = 0; i < 200; i++ {
+        if i % 8 == 0 { assert !ht2.contains(i); }
+        else { assert ht2.get(i) == i * 3; }
+    }
+
+    // 6. Remove non-existent key is a no-op
+    HashTable<int, int> ht3;
+    ht3.upsert(1, 1);
+    ht3.remove(42);
+    assert ht3.getSize() == 1ul;
+    assert ht3.contains(1);
+
+    // 7. Iteration visits every entry exactly once
+    HashTable<int, int> ht4;
+    for int i = 1; i <= 50; i++ { ht4.upsert(i, i * 10); }
+    int sumKeys = 0;
+    int sumVals = 0;
+    int count = 0;
+    foreach Pair<int&, int&> entry : ht4 {
+        sumKeys += entry.getFirst();
+        sumVals += entry.getSecond();
+        count++;
+    }
+    assert count == 50;
+    assert sumKeys == 50 * 51 / 2;
+    assert sumVals == sumKeys * 10;
+
+    printf("HashTable stress tests passed!\n");
+}

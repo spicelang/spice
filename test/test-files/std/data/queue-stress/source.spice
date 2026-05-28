@@ -1,0 +1,138 @@
+import "std/data/queue";
+
+f<int> main() {
+    // 1. Wrap without resize: capacity stays at INITIAL_CAPACITY=5
+    Queue<int> q1;
+    q1.push(1); q1.push(2); q1.push(3);
+    assert q1.pop() == 1;
+    assert q1.pop() == 2;
+    q1.push(4); q1.push(5); q1.push(6); // idxBack wraps
+    assert q1.getSize() == 4;
+    assert q1.front() == 3;
+    assert q1.back() == 6;
+    assert q1.pop() == 3;
+    assert q1.pop() == 4;
+    assert q1.pop() == 5;
+    assert q1.pop() == 6;
+    assert q1.isEmpty();
+
+    // 2. Resize triggered while wrapped: logical order preserved
+    Queue<int> q2;
+    for int i = 0; i < 5; i++ { q2.push(i); }
+    q2.pop(); q2.pop();
+    q2.push(5); q2.push(6); // wrapped (data spans [2..4] then [0..1])
+    assert q2.getSize() == 5;
+    q2.push(7); // triggers resize while wrapped
+    assert q2.getSize() == 6;
+    for int expected = 2; expected <= 7; expected++ {
+        assert q2.pop() == expected;
+    }
+    assert q2.isEmpty();
+
+    // 3. Copy ctor of wrapped queue preserves logical order
+    Queue<int> q3;
+    for int i = 0; i < 5; i++ { q3.push(i); }
+    q3.pop(); q3.pop(); q3.pop();
+    q3.push(10); q3.push(11); q3.push(12);
+    Queue<int> q4 = Queue<int>(q3);
+    assert q4.getSize() == 5;
+    assert q4.pop() == 3;
+    assert q4.pop() == 4;
+    assert q4.pop() == 10;
+    assert q4.pop() == 11;
+    assert q4.pop() == 12;
+    // Original is unaffected
+    assert q3.getSize() == 5;
+    assert q3.front() == 3;
+
+    // 4. operator= over a wrapped source
+    Queue<int> q5;
+    q5.push(99); q5.push(100);
+    q5 = q3;
+    assert q5.getSize() == 5;
+    assert q5.pop() == 3;
+    assert q5.pop() == 4;
+    assert q5.pop() == 10;
+    assert q5.pop() == 11;
+    assert q5.pop() == 12;
+    assert q5.isEmpty();
+
+    // 5. Large-N push then pop: multiple resizes
+    Queue<int> q6;
+    for int i = 0; i < 1000; i++ { q6.push(i); }
+    assert q6.getSize() == 1000;
+    assert q6.front() == 0;
+    assert q6.back() == 999;
+    for int expected = 0; expected < 1000; expected++ {
+        assert q6.pop() == expected;
+    }
+    assert q6.isEmpty();
+
+    // 6. Push-twice-pop-once for 1000 iterations: net +1 per iter, FIFO order maintained
+    Queue<int> q7;
+    int seq = 0;
+    for int i = 0; i < 1000; i++ {
+        q7.push(seq++);
+        q7.push(seq++);
+        assert q7.pop() == i; // pops 0, 1, 2, ...
+    }
+    assert q7.getSize() == 1000;
+    int expectedFront = 1000;
+    while !q7.isEmpty() {
+        assert q7.pop() == expectedFront;
+        expectedFront++;
+    }
+    assert expectedFront == 2000;
+
+    // 7. reserve grows the capacity but doesn't change contents
+    Queue<int> q8;
+    q8.push(1); q8.push(2); q8.push(3);
+    q8.reserve(100l);
+    assert q8.getCapacity() >= 100;
+    assert q8.getSize() == 3;
+    assert q8.pop() == 1;
+    assert q8.pop() == 2;
+    assert q8.pop() == 3;
+
+    // 7b. Self-assignment on a wrapped queue must preserve contents
+    Queue<int> q8b;
+    for int i = 0; i < 5; i++ { q8b.push(i); }
+    q8b.pop(); q8b.pop();
+    q8b.push(5); q8b.push(6);  // wrapped: [2, 3, 4, 5, 6]
+    q8b = q8b;
+    assert q8b.getSize() == 5;
+    assert q8b.pop() == 2;
+    assert q8b.pop() == 3;
+    assert q8b.pop() == 4;
+    assert q8b.pop() == 5;
+    assert q8b.pop() == 6;
+
+    // 8. pack shrinks capacity to size; pack on empty queue is a no-op crash check
+    Queue<int> qEmpty;
+    qEmpty.pack();
+    assert qEmpty.isEmpty();
+
+    Queue<int> q9;
+    for int i = 0; i < 10; i++ { q9.push(i); }
+    for int i = 0; i < 7; i++ { q9.pop(); }
+    assert q9.getSize() == 3;
+    q9.pack();
+    assert q9.getCapacity() == 3;
+    assert q9.pop() == 7;
+    assert q9.pop() == 8;
+    assert q9.pop() == 9;
+
+    // 9. Pre-filled ctor + drain
+    Queue<long> q10 = Queue<long>(8l, 42l);
+    assert q10.getSize() == 8;
+    assert q10.isFull();
+    for int i = 0; i < 8; i++ {
+        assert q10.pop() == 42l;
+    }
+    assert q10.isEmpty();
+    // Queue must still be usable after drain
+    q10.push(1l);
+    assert q10.front() == 1l;
+
+    printf("Queue stress tests passed!\n");
+}

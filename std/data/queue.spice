@@ -34,7 +34,7 @@ public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
         }
     }
     this.size = initAllocItems;
-    this.idxBack = initAllocItems % this.capacity;
+    this.idxBack = this.capacity == 0l ? 0l : initAllocItems % this.capacity;
 }
 
 public p Queue.ctor(unsigned int initAllocItems) {
@@ -62,10 +62,13 @@ public p Queue.ctor(const Queue<T>& original) {
     }
     this.size = original.size;
     this.idxFront = 0l;
-    this.idxBack = original.size % this.capacity;
+    this.idxBack = this.capacity == 0l ? 0l : original.size % this.capacity;
 }
 
 public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
+    // Self-assignment: leave the queue as is; normalizing in place would
+    // overwrite source slots before the wrapped index reads them.
+    if &this == &newValue { return; }
     const long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         unsafe {
@@ -83,7 +86,7 @@ public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
     }
     this.size = newValue.size;
     this.idxFront = 0l;
-    this.idxBack = newValue.size % this.capacity;
+    this.idxBack = this.capacity == 0l ? 0l : newValue.size % this.capacity;
 }
 
 /**
@@ -244,5 +247,5 @@ p Queue.resize(unsigned long itemCount) {
     // Set new capacity and normalize indices
     this.capacity = itemCount;
     this.idxFront = 0l;
-    this.idxBack = this.size % itemCount;
+    this.idxBack = itemCount == 0l ? 0l : this.size % itemCount;
 }

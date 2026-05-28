@@ -1,0 +1,34 @@
+import "std/data/triple";
+
+f<int> main() {
+    // 1. Mixed types
+    Triple<int, char, double> mixed = Triple<int, char, double>(1, 'a', 2.5);
+    assert mixed.getFirst() == 1;
+    assert mixed.getSecond() == 'a';
+    assert mixed.getThird() == 2.5;
+
+    // 2. Equality cases
+    Triple<int, int, int> a = Triple<int, int, int>(1, 2, 3);
+    Triple<int, int, int> b = Triple<int, int, int>(1, 2, 3);
+    Triple<int, int, int> c = Triple<int, int, int>(1, 2, 4);
+    Triple<int, int, int> d = Triple<int, int, int>(0, 2, 3);
+    assert a == b;
+    assert a != c;
+    assert a != d;
+
+    // 3. Stress mutations
+    Triple<int, int, int> e = Triple<int, int, int>(0, 0, 0);
+    for int i = 0; i < 500; i++ {
+        int v1 = i;
+        int v2 = i * 2;
+        int v3 = i * 3;
+        e.setFirst(v1);
+        e.setSecond(v2);
+        e.setThird(v3);
+        assert e.getFirst() == i;
+        assert e.getSecond() == i * 2;
+        assert e.getThird() == i * 3;
+    }
+
+    printf("Triple stress tests passed!\n");
+}

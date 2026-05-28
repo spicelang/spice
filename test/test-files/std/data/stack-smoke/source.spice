@@ -1,0 +1,46 @@
+import "std/data/stack";
+
+f<int> main() {
+    Stack<int> s;
+    assert s.isEmpty();
+    assert !s.isFull();
+    assert s.getSize() == 0;
+    assert s.getCapacity() == 5;
+
+    // push/top/getSize
+    s.push(1);
+    s.push(2);
+    s.push(3);
+    assert s.getSize() == 3;
+    assert s.top() == 3;
+    assert !s.isEmpty();
+
+    // pop returns LIFO order
+    assert s.pop() == 3;
+    assert s.pop() == 2;
+    assert s.top() == 1;
+    assert s.pop() == 1;
+    assert s.isEmpty();
+
+    // ctor(capacity)
+    Stack<int> s2 = Stack<int>(16l);
+    assert s2.getCapacity() == 16;
+    assert s2.isEmpty();
+
+    // ctor(count, default) starts full
+    Stack<char> s3 = Stack<char>(3l, 'x');
+    assert s3.getSize() == 3;
+    assert s3.isFull();
+    assert s3.top() == 'x';
+
+    // Equality
+    Stack<int> a;
+    Stack<int> b;
+    a.push(10); a.push(20); a.push(30);
+    b.push(10); b.push(20); b.push(30);
+    assert a == b;
+    b.pop();
+    assert a != b;
+
+    printf("Stack smoke tests passed!\n");
+}

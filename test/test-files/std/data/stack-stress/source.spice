@@ -1,0 +1,80 @@
+import "std/data/stack";
+
+f<int> main() {
+    // 1. Large push then pop: multiple resizes, LIFO order
+    Stack<int> s1;
+    for int i = 0; i < 1000; i++ { s1.push(i); }
+    assert s1.getSize() == 1000;
+    assert s1.top() == 999;
+    for int expected = 999; expected >= 0; expected-- {
+        assert s1.pop() == expected;
+    }
+    assert s1.isEmpty();
+
+    // 2. Alternating push/pop keeps stack small but exercises top many times
+    Stack<int> s2;
+    int seq = 0;
+    for int i = 0; i < 500; i++ {
+        s2.push(seq++);
+        s2.push(seq++);
+        assert s2.top() == seq - 1;
+        assert s2.pop() == seq - 1;
+    }
+    assert s2.getSize() == 500;
+    for int i = 499; i >= 0; i-- {
+        assert s2.pop() == 2 * i;
+    }
+    assert s2.isEmpty();
+
+    // 3. Copy ctor
+    Stack<int> s3;
+    for int i = 1; i <= 6; i++ { s3.push(i * 10); }
+    Stack<int> s4 = Stack<int>(s3);
+    assert s4.getSize() == 6;
+    for int expected = 60; expected >= 10; expected -= 10 {
+        assert s4.pop() == expected;
+    }
+    // Original untouched
+    assert s3.getSize() == 6;
+    assert s3.top() == 60;
+
+    // 4. operator=
+    Stack<int> s5;
+    s5.push(999);
+    s5 = s3;
+    assert s5.getSize() == 6;
+    for int expected = 60; expected >= 10; expected -= 10 {
+        assert s5.pop() == expected;
+    }
+
+    // 5. Pre-filled ctor
+    Stack<int> s6 = Stack<int>(8l, -1);
+    assert s6.isFull();
+    assert s6.getSize() == 8;
+    while !s6.isEmpty() {
+        assert s6.pop() == -1;
+    }
+
+    // 6. pack shrinks capacity to size
+    Stack<int> s7;
+    for int i = 0; i < 20; i++ { s7.push(i); }
+    for int i = 0; i < 15; i++ { s7.pop(); }
+    assert s7.getSize() == 5;
+    s7.pack();
+    assert s7.getCapacity() == 5;
+    assert s7.top() == 4;
+    assert s7.pop() == 4;
+    assert s7.pop() == 3;
+
+    // 7. Deep push/pop cycles don't leak invariants
+    Stack<int> s8;
+    for int round = 0; round < 100; round++ {
+        for int i = 0; i < 50; i++ { s8.push(round * 50 + i); }
+        for int i = 49; i >= 0; i-- {
+            assert s8.pop() == round * 50 + i;
+        }
+        assert s8.isEmpty();
+    }
+
+    printf("Stack stress tests passed!\n");
+}

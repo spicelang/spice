@@ -1,0 +1,93 @@
+import "std/data/vector";
+
+f<int> main() {
+    // 1. Large pushBack: multiple resizes, indexed access preserves order
+    Vector<int> v1;
+    for int i = 0; i < 1000; i++ { v1.pushBack(i * 3); }
+    assert v1.getSize() == 1000;
+    for unsigned long i = 0l; i < 1000l; i++ {
+        assert v1[i] == cast<int>(i) * 3;
+    }
+    assert v1.front() == 0;
+    assert v1.back() == 2997;
+
+    // 2. removeAt(0) shifts everything left; removeAt(last) just shrinks
+    Vector<int> v2;
+    for int i = 0; i < 10; i++ { v2.pushBack(i); }
+    v2.removeAt(0l);
+    assert v2.getSize() == 9;
+    assert v2[0] == 1;
+    assert v2[8] == 9;
+    v2.removeAt(8l);
+    assert v2.getSize() == 8;
+    assert v2.back() == 8;
+    v2.removeAt(3l);
+    assert v2.getSize() == 7;
+    assert v2[3] == 5; // was at index 4 before remove
+
+    // 3. Copy ctor preserves contents independently
+    Vector<int> v3;
+    for int i = 1; i <= 7; i++ { v3.pushBack(i * 10); }
+    Vector<int> v4 = Vector<int>(v3);
+    assert v4.getSize() == 7;
+    assert v4 == v3;
+    v4.pushBack(80);
+    assert v4.getSize() == 8;
+    assert v3.getSize() == 7;
+    assert v3.back() == 70;
+
+    // 4. operator=
+    Vector<int> v5;
+    v5.pushBack(-1);
+    v5 = v3;
+    assert v5.getSize() == 7;
+    assert v5 == v3;
+
+    // 5. reserve and pack
+    Vector<int> v6;
+    v6.pushBack(1); v6.pushBack(2);
+    v6.reserve(200l);
+    assert v6.getCapacity() >= 200;
+    assert v6.getSize() == 2;
+    v6.pack();
+    assert v6.getCapacity() == 2;
+    assert v6[0] == 1;
+    assert v6[1] == 2;
+
+    // 6. clear lets vector be refilled without state corruption
+    Vector<int> v7;
+    for int i = 0; i < 50; i++ { v7.pushBack(i); }
+    v7.clear();
+    assert v7.isEmpty();
+    for int i = 100; i < 150; i++ { v7.pushBack(i); }
+    assert v7.getSize() == 50;
+    assert v7.front() == 100;
+    assert v7.back() == 149;
+
+    // 7. Pre-filled ctor then mutate via index
+    Vector<int> v8 = Vector<int>(5l, 0);
+    for unsigned long i = 0l; i < 5l; i++ {
+        v8[i] = cast<int>(i) * 11;
+    }
+    for unsigned long i = 0l; i < 5l; i++ {
+        assert v8[i] == cast<int>(i) * 11;
+    }
+
+    // 8. Iteration via foreach
+    Vector<int> v9;
+    for int i = 0; i < 100; i++ { v9.pushBack(i); }
+    int sum = 0;
+    foreach int item : v9 { sum += item; }
+    assert sum == 99 * 100 / 2;
+
+    // 9. Iteration with index
+    int idxSum = 0;
+    int valSum = 0;
+    foreach unsigned long idx, int item : v9 {
+        idxSum += cast<int>(idx);
+        valSum += item;
+    }
+    assert idxSum == valSum;
+
+    printf("Vector stress tests passed!\n");
+}

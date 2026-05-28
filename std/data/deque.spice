@@ -56,15 +56,22 @@ public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
 
 public p Deque.ctor(const Deque<T>& original) {
     this.ctor(original.capacity);
+    // Copy elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), original.size);
+        for unsigned long i = 0l; i < original.size; i++ {
+            const unsigned long srcIdx = (original.idxFront + i) % original.capacity;
+            this.contents[i] = original.contents[srcIdx];
+        }
     }
     this.size = original.size;
-    this.idxFront = original.idxFront;
-    this.idxBack = original.idxBack;
+    this.idxFront = 0l;
+    this.idxBack = this.capacity == 0l ? 0l : original.size % this.capacity;
 }
 
 public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
+    // Self-assignment: leave the deque as is; normalizing in place would
+    // overwrite source slots before the wrapped index reads them.
+    if &this == &newValue { return; }
     const long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         unsafe {
@@ -73,12 +80,16 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
         }
         this.capacity = newValue.capacity;
     }
-    this.size = newValue.size;
-    this.idxFront = newValue.idxFront;
-    this.idxBack = newValue.idxBack;
+    // Copy elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+        for unsigned long i = 0l; i < newValue.size; i++ {
+            const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
+            this.contents[i] = newValue.contents[srcIdx];
+        }
     }
+    this.size = newValue.size;
+    this.idxFront = 0l;
+    this.idxBack = this.capacity == 0l ? 0l : newValue.size % this.capacity;
 }
 
 /**

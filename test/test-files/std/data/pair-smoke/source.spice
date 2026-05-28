@@ -1,0 +1,20 @@
+import "std/data/pair";
+
+f<int> main() {
+    Pair<int, int> pair = Pair<int, int>(1, 2);
+    assert pair.getFirst() == 1;
+    assert pair.getSecond() == 2;
+
+    pair.setFirst(10);
+    pair.setSecond(20);
+    assert pair.getFirst() == 10;
+    assert pair.getSecond() == 20;
+
+    Pair<int, int> other = Pair<int, int>(10, 20);
+    assert pair == other;
+    assert !(pair != other);
+    other.setSecond(99);
+    assert pair != other;
+
+    printf("Pair smoke tests passed!\n");
+}
