@@ -5,7 +5,7 @@ import "std/data/vector";
 //import "bootstrap/ast/abstract-ast-visitor";
 import "bootstrap/reader/code-loc";
 import "bootstrap/ast/ast-node-intf";
-//import "bootstrap/symboltablebuilder/type";
+//import "bootstrap/symboltablebuilder/qual-type";
 //import "bootstrap/model/function";
 
 /*public type IVisitable interface {
@@ -34,8 +34,7 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
         assert child != nil<ASTNode*>;
         child.resizeToNumberOfManifestations(manifestationCount);
     }
-    // Do custom work
-    this.customItemsInitialization(manifestationCount);
+    // Do custom work (override in subclasses to add per-node behavior)
 }
 
 // ========================================================== EntryNode ==========================================================
@@ -74,24 +73,11 @@ public p ASTStmtNode.ctor(CodeLoc codeLoc) {
 
 public type ASTExprNode struct/*: IVisitable*/ {
     compose public ASTNode node
-    QualTypeList symbolTypes
+    // ToDo: QualTypeList symbolTypes (blocked on qual-type.spice compiling)
 }
 
 public p ASTExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
-}
-
-public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
-    // Resize children
-    Vector<ASTNode*> children/* = this.getChildren()*/;
-    foreach ASTNode* child : children {
-        assert child != nil<ASTNode*>;
-        child.resizeToNumberOfManifestations(manifestationCount);
-    }
-    // Reserve this node
-    this.symbolTypes.resize(manifestationCount); // ToDo: Default initializer
-    // Do custom work
-    this.customItemsInitialization(manifestationCount);
 }
 
 // ======================================================== MainFctDefNode =======================================================
@@ -379,6 +365,17 @@ public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
+// ==================================================== TypeLstWithEllipsisNode ==================================================
+
+public type ASTTypeLstWithEllipsisNode struct/*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
+public p ASTTypeLstWithEllipsisNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+
 // ======================================================== TypeAltsLstNode ======================================================
 
 public type ASTTypeAltsLstNode struct/*: IVisitable*/ {
@@ -522,14 +519,14 @@ public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
-// ====================================================== TopLevelDefAttrNode ====================================================
+// =================================================== TopLevelDefinitionAttrNode ================================================
 
-public type ASTTopLevelDefAttrNode struct/*: IVisitable*/ {
+public type ASTTopLevelDefinitionAttrNode struct/*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
-public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
+public p ASTTopLevelDefinitionAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 
@@ -909,42 +906,92 @@ public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
 // ========================================================== DataTypeNode =======================================================
 
 public type ASTDataTypeNode struct/*: IVisitable*/ {
-    compose public ExprNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ExprNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================== BaseDataTypeNode =====================================================
 
 public type ASTBaseDataTypeNode struct/*: IVisitable*/ {
-    compose public ExprNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ExprNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ======================================================= CustomDataTypeNode ====================================================
 
 public type ASTCustomDataTypeNode struct/*: IVisitable*/ {
-    compose public ExprNode node
+    compose public ASTExprNode node
 }
 
 public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ExprNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
 }
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
 public type ASTFunctionDataTypeNode struct/*: IVisitable*/ {
-    compose public ExprNode node
+    compose public ASTExprNode node
 
 }
 
 public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {
-    this.node = ExprNode(codeLoc);
+    this.node = ASTExprNode(codeLoc);
+}
+
+#[test, test.name="ASTNodes Smoke test"]
+public f<bool> testASTNodesSmoke() {
+    const CodeLoc loc = CodeLoc(3l, 7l, "ast.spice");
+
+    // Base node
+    ASTNode base = ASTNode(loc);
+    assert base.codeLoc.line == 3l;
+    assert base.codeLoc.col == 7l;
+    assert base.parent == nil<ASTNode*>;
+
+    // Stmt node composes a base node + carries the 'unreachable' flag
+    ASTStmtNode stmt = ASTStmtNode(loc);
+    assert stmt.node.codeLoc.line == 3l;
+    assert !stmt.unreachable;
+    stmt.unreachable = true;
+    assert stmt.unreachable;
+
+    // Expression node composes a base node
+    ASTExprNode expr = ASTExprNode(loc);
+    assert expr.node.codeLoc.col == 7l;
+
+    // Top-level def node composes a base node
+    ASTTopLevelDefNode topDef = ASTTopLevelDefNode(loc);
+    assert topDef.node.codeLoc.line == 3l;
+
+    // Function-def base composes a top-level def
+    ASTFctDefBaseNode fctBase = ASTFctDefBaseNode(loc);
+    assert fctBase.node.node.codeLoc.line == 3l;
+
+    // FctDef composes the FctDef-base
+    ASTFctDefNode fctDef = ASTFctDefNode(loc);
+    assert fctDef.node.node.node.codeLoc.line == 3l;
+
+    // QualifierNode carries a QualifierType
+    ASTQualifierNode qual = ASTQualifierNode(loc);
+    assert qual.qualifierType == QualifierType::NONE;
+    qual.qualifierType = QualifierType::CONST;
+    assert qual.qualifierType == QualifierType::CONST;
+
+    // TypeLstWithEllipsisNode (newly mirrored from C++)
+    ASTTypeLstWithEllipsisNode typeLstEllipsis = ASTTypeLstWithEllipsisNode(loc);
+    assert typeLstEllipsis.node.codeLoc.line == 3l;
+
+    // TopLevelDefinitionAttrNode (renamed to match C++)
+    ASTTopLevelDefinitionAttrNode tlAttr = ASTTopLevelDefinitionAttrNode(loc);
+    assert tlAttr.node.codeLoc.line == 3l;
+
+    return true;
 }

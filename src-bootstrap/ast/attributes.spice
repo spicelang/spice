@@ -7,6 +7,7 @@ import "bootstrap/ast/ast-nodes";
 // Constants
 public const string ATTR_CORE_LINKER_FLAG = "core.linker.flag";
 public const string ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
+public const string ATTR_CORE_DARWIN_LINKER_FLAG = "core.darwin.linker.flag";
 public const string ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
 public const string ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
 public const string ATTR_CORE_LINKER_DLL = "core.linker.dll";
@@ -23,11 +24,51 @@ public const string ATTR_TEST_SKIP = "test.skip";
 public const string ATTR_ASYNC = "async";
 public const string ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
-// Structs
-type AttrConfigValue struct {
-    unsigned byte target
-    AttrType attrType
+// Enums mirror AttrNode::AttrTarget and AttrNode::AttrType from src/ast/ASTNodes.h
+public type AttrTarget enum {
+    TARGET_INVALID = 0,
+    TARGET_MODULE = 1,
+    TARGET_STRUCT = 2,
+    TARGET_INTERFACE = 4,
+    TARGET_FCT_PROC = 8,
+    TARGET_EXT_DECL = 16,
+    TARGET_LAMBDA = 32
 }
 
-// Data
-// ToDo
+public type AttrType enum {
+    ATTR_TYPE_INVALID,
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_INT
+}
+
+// Structs
+public type AttrConfigValue struct {
+    public unsigned byte target
+    public AttrType attrType
+}
+
+#[test, test.name="Attributes Smoke test"]
+public f<bool> testAttributesSmoke() {
+    // Attribute name constants
+    assert ATTR_CORE_LINKER_FLAG == "core.linker.flag";
+    assert ATTR_CORE_DARWIN_LINKER_FLAG == "core.darwin.linker.flag";
+    assert ATTR_TEST == "test";
+    assert ATTR_TEST_NAME == "test.name";
+    assert ATTR_IGNORE_UNUSED_RETURN_VALUE == "ignoreUnusedReturnValue";
+
+    // AttrTarget is a bitmask (powers of 2)
+    assert AttrTarget::TARGET_MODULE == AttrTarget::TARGET_MODULE;
+    assert AttrTarget::TARGET_STRUCT != AttrTarget::TARGET_MODULE;
+    assert AttrTarget::TARGET_LAMBDA != AttrTarget::TARGET_FCT_PROC;
+
+    // AttrType distinct values
+    assert AttrType::TYPE_STRING != AttrType::TYPE_BOOL;
+    assert AttrType::ATTR_TYPE_INVALID != AttrType::TYPE_INT;
+
+    // Build a config value
+    AttrConfigValue cfg = AttrConfigValue{cast<byte>(8), AttrType::TYPE_STRING};
+    assert cfg.attrType == AttrType::TYPE_STRING;
+
+    return true;
+}
