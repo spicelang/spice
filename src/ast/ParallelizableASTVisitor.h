@@ -47,7 +47,7 @@ class ExprStmtNode;
 class QualifierLstNode;
 class QualifierNode;
 class ModAttrNode;
-class TopLevelDefinitionAttrNode;
+class TopLevelDefAttrNode;
 class LambdaAttrNode;
 class AttrLstNode;
 class AttrNode;
@@ -136,7 +136,7 @@ public:
   virtual std::any visitQualifierLst(const QualifierLstNode *node);
   virtual std::any visitQualifier(const QualifierNode *node);
   virtual std::any visitModAttr(const ModAttrNode *node);
-  virtual std::any visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node);
+  virtual std::any visitTopLevelDefinitionAttr(const TopLevelDefAttrNode *node);
   virtual std::any visitLambdaAttr(const LambdaAttrNode *node);
   virtual std::any visitAttrLst(const AttrLstNode *node);
   virtual std::any visitAttr(const AttrNode *node);

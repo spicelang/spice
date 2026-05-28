@@ -95,7 +95,7 @@ std::any ParallelizableASTVisitor::visitQualifier(const QualifierNode *node) { r
 
 std::any ParallelizableASTVisitor::visitModAttr(const ModAttrNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) {
+std::any ParallelizableASTVisitor::visitTopLevelDefinitionAttr(const TopLevelDefAttrNode *node) {
   return visitChildren(node);
 }
 

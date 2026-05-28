@@ -65,7 +65,7 @@ public:
   std::any visitQualifierLst(QualifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitQualifier(QualifierNode *ctx) override { return buildNode(ctx); }
   std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }
-  std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitTopLevelDefinitionAttr(TopLevelDefAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitLambdaAttr(LambdaAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
   std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }

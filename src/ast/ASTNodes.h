@@ -289,7 +289,7 @@ public:
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
-  TopLevelDefinitionAttrNode *attrs = nullptr;
+  TopLevelDefAttrNode *attrs = nullptr;
   ParamLstNode *paramLst = nullptr;
   StmtLstNode *body = nullptr;
   bool takesArgs = false;
@@ -334,7 +334,7 @@ public:
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
-  TopLevelDefinitionAttrNode *attrs = nullptr;
+  TopLevelDefAttrNode *attrs = nullptr;
   QualifierLstNode *qualifierLst = nullptr;
   FctNameNode *name;
   TypeLstNode *templateTypeLst = nullptr;
@@ -410,7 +410,7 @@ public:
   [[nodiscard]] bool isStructDef() const override { return true; }
 
   // Public members
-  TopLevelDefinitionAttrNode *attrs = nullptr;
+  TopLevelDefAttrNode *attrs = nullptr;
   QualifierLstNode *qualifierLst = nullptr;
   TypeLstNode *templateTypeLst = nullptr;
   TypeLstNode *interfaceTypeLst = nullptr;
@@ -443,7 +443,7 @@ public:
   std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
 
   // Public members
-  TopLevelDefinitionAttrNode *attrs = nullptr;
+  TopLevelDefAttrNode *attrs = nullptr;
   QualifierLstNode *qualifierLst = nullptr;
   TypeLstNode *templateTypeLst = nullptr;
   std::vector<SignatureNode *> signatures;
@@ -571,7 +571,7 @@ public:
   }
 
   // Public members
-  TopLevelDefinitionAttrNode *attrs = nullptr;
+  TopLevelDefAttrNode *attrs = nullptr;
   DataTypeNode *returnType = nullptr;
   TypeLstWithEllipsisNode *argTypeLst = nullptr;
   bool hasArgs = false;
@@ -1193,9 +1193,9 @@ public:
   AttrLstNode *attrLst = nullptr;
 };
 
-// =================================================== TopLevelDefinitionAttrNode ================================================
+// ====================================================== TopLevelDefAttrNode ====================================================
 
-class TopLevelDefinitionAttrNode final : public ASTNode {
+class TopLevelDefAttrNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;

@@ -80,7 +80,7 @@ public:
   std::any visitDeclStmt(const DeclStmtNode *node) override;
   std::any visitQualifierLst(const QualifierLstNode *node) override;
   std::any visitModAttr(const ModAttrNode *node) override;
-  std::any visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) override;
+  std::any visitTopLevelDefinitionAttr(const TopLevelDefAttrNode *node) override;
   std::any visitCaseConstant(const CaseConstantNode *node) override;
   std::any visitReturnStmt(const ReturnStmtNode *node) override;
   std::any visitBreakStmt(const BreakStmtNode *node) override;

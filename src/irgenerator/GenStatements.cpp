@@ -98,7 +98,7 @@ std::any IRGenerator::visitModAttr(const ModAttrNode *node) {
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) {
+std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefAttrNode *node) {
   return nullptr; // Noop
 }
 
