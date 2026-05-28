@@ -312,38 +312,8 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
   if (matches.empty())
     return nullptr;
 
-  // Tie-breaking: if multiple candidates match, prefer the candidate whose param qualifiers most closely match
-  // the argument qualifiers. This resolves the typical copy-vs-move ctor ambiguity where both a `const T&`
-  // (copy) and a `T&` (move) ctor match a non-const lvalue argument - we prefer the non-const-ref candidate
-  // (move) since it requires no constification. When the argument is const, we prefer the const-ref candidate
-  // (copy) since binding to a non-const ref would require const-loss.
-  if (matches.size() > 1) {
-    constexpr int CONSTIFY_PENALTY = 1;
-    constexpr int CONST_LOSS_PENALTY = 100;
-    const auto scoreSpecificity = [&](const Function *f) {
-      int penalty = 0;
-      for (size_t i = 0; i < std::min(reqArgs.size(), f->paramList.size()); i++) {
-        const QualType &paramType = f->paramList.at(i).qualType;
-        const QualType &argType = reqArgs.at(i).first;
-        const bool paramIsConst = paramType.removeReferenceWrapper().isConst();
-        const bool argIsConst = argType.removeReferenceWrapper().isConst();
-        if (paramIsConst && !argIsConst)
-          penalty += CONSTIFY_PENALTY;
-        else if (!paramIsConst && argIsConst)
-          penalty += CONST_LOSS_PENALTY;
-      }
-      return penalty;
-    };
-    int bestScore = std::numeric_limits<int>::max();
-    for (const Function *m : matches)
-      bestScore = std::min(bestScore, scoreSpecificity(m));
-    std::vector<Function *> filtered;
-    filtered.reserve(matches.size());
-    for (Function *m : matches)
-      if (scoreSpecificity(m) == bestScore)
-        filtered.push_back(m);
-    matches = std::move(filtered);
-  }
+  // Tie-breaking: if multiple candidates match, narrow them by qualifier specificity (see breakOverloadTie).
+  breakOverloadTie(matches, reqArgs);
 
   // Check if more than one function matches the requirements
   if (matches.size() > 1) {
@@ -542,6 +512,51 @@ const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Functi
       return &templateType;
   }
   return nullptr;
+}
+
+/**
+ * Narrow a multi-match overload set by preferring the candidate whose parameter qualifiers most closely match
+ * the argument qualifiers. This resolves the typical copy-vs-move ctor ambiguity where both a `const T&`
+ * (copy) and a `T&` (move) ctor match a non-const lvalue argument - we prefer the non-const-ref candidate
+ * (move) since it requires no constification. When the argument is const, we prefer the const-ref candidate
+ * (copy) since binding to a non-const ref would require const-loss.
+ *
+ * Modifies `matches` in place, removing any candidate that scores worse than the best one. A no-op if there
+ * are fewer than two candidates.
+ *
+ * @param matches Candidate list to narrow
+ * @param reqArgs Argument list from the call site
+ */
+void FunctionManager::breakOverloadTie(std::vector<Function *> &matches, const ArgList &reqArgs) {
+  if (matches.size() < 2)
+    return;
+
+  constexpr int CONSTIFY_PENALTY = 1;
+  constexpr int CONST_LOSS_PENALTY = 100;
+  const auto scoreSpecificity = [&](const Function *f) {
+    int penalty = 0;
+    for (size_t i = 0; i < std::min(reqArgs.size(), f->paramList.size()); i++) {
+      const QualType &paramType = f->paramList.at(i).qualType;
+      const QualType &argType = reqArgs.at(i).first;
+      const bool paramIsConst = paramType.removeReferenceWrapper().isConst();
+      const bool argIsConst = argType.removeReferenceWrapper().isConst();
+      if (paramIsConst && !argIsConst)
+        penalty += CONSTIFY_PENALTY;
+      else if (!paramIsConst && argIsConst)
+        penalty += CONST_LOSS_PENALTY;
+    }
+    return penalty;
+  };
+
+  int bestScore = std::numeric_limits<int>::max();
+  for (const Function *m : matches)
+    bestScore = std::min(bestScore, scoreSpecificity(m));
+  std::vector<Function *> filtered;
+  filtered.reserve(matches.size());
+  for (Function *m : matches)
+    if (scoreSpecificity(m) == bestScore)
+      filtered.push_back(m);
+  matches = std::move(filtered);
 }
 
 /**

@@ -76,6 +76,7 @@ private:
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(const Scope *scope, const std::string &name, const QualType &thisType,
                                             const ArgList &args, const QualTypeList &templateTypes);
+  static void breakOverloadTie(std::vector<Function *> &matches, const ArgList &reqArgs);
   enum class CtorKind : uint8_t { ANY_NON_COPY_NON_MOVE, COPY, MOVE };
   [[nodiscard]] static bool hasCtor(const Scope *matchScope, CtorKind kind);
 };
