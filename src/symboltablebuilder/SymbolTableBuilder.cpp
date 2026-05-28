@@ -8,6 +8,7 @@
 #include <driver/Driver.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <model/Function.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
@@ -602,8 +603,9 @@ std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
     }
   }
 
-  // Add signature entry to symbol table
-  node->entry = currentScope->insert(node->methodName, node);
+  // Add signature entry to symbol table. We append the code location to disambiguate overloaded signatures
+  // (e.g. an interface declaring `getName()` and `getName(bool)`).
+  node->entry = currentScope->insert(Function::getSymbolTableEntryName(node->methodName, node->codeLoc), node);
 
   return nullptr;
 }
