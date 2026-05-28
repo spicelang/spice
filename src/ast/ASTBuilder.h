@@ -183,9 +183,9 @@ private:
     return {ctx->start, startIdx, stopIdx, sourceFile};
   }
 
-  int32_t parseInt(TerminalNode *terminal);
-  int16_t parseShort(TerminalNode *terminal);
-  int64_t parseLong(TerminalNode *terminal);
+  int32_t parseInt(TerminalNode *terminal, bool isNegative = false);
+  int16_t parseShort(TerminalNode *terminal, bool isNegative = false);
+  int64_t parseLong(TerminalNode *terminal, bool isNegative = false);
   int8_t parseChar(TerminalNode *terminal) const;
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb);

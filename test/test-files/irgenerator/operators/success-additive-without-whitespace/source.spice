@@ -1,0 +1,39 @@
+f<int> main() {
+    // Use runtime values to prevent the constant folder from short-circuiting these checks,
+    // so we actually exercise lexing/parsing of subtractions without whitespace.
+    int one = 1;
+    int two = 2;
+    int three = 3;
+    int five = 5;
+    int seven = 7;
+    int ten = 10;
+
+    // Without whitespace, the lexer used to consume `-2` as a single INT_LIT and turn `1-2`
+    // into two adjacent integer literals (`1` and `-2`) that the parser couldn't combine.
+    assert one-two == -1;
+    assert five-three == 2;
+    assert ten-two-three == 5;
+
+    // Same expressions with whitespace must still work.
+    assert one - two == -1;
+    assert ten - two - three == 5;
+
+    // Mixed identifier/literal forms with and without whitespace.
+    assert seven-2 == 5;
+    assert 9-two == 7;
+
+    // Subtracting a negative literal must produce an addition.
+    assert one - -2 == 3;
+    assert one-(-2) == 3;
+
+    // Negative literals at the limits of their types must still parse, even though the lexer
+    // no longer treats the leading minus as part of the literal token.
+    int intMin = -2147483648;
+    assert intMin == -2147483647 - 1;
+    long longMin = -9223372036854775808l;
+    assert longMin == -9223372036854775807l - 1l;
+    short shortMin = -32768s;
+    assert shortMin == -32767s - 1s;
+
+    printf("All assertions passed!");
+}
