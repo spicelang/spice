@@ -65,10 +65,13 @@ public p Deque.ctor(const Deque<T>& original) {
     }
     this.size = original.size;
     this.idxFront = 0l;
-    this.idxBack = original.size % this.capacity;
+    this.idxBack = this.capacity == 0l ? 0l : original.size % this.capacity;
 }
 
 public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
+    // Self-assignment: leave the deque as is; normalizing in place would
+    // overwrite source slots before the wrapped index reads them.
+    if &this == &newValue { return; }
     const long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         unsafe {
@@ -86,7 +89,7 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
     }
     this.size = newValue.size;
     this.idxFront = 0l;
-    this.idxBack = newValue.size % this.capacity;
+    this.idxBack = this.capacity == 0l ? 0l : newValue.size % this.capacity;
 }
 
 /**

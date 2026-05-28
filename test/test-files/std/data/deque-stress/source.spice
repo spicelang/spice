@@ -95,6 +95,19 @@ f<int> main() {
     d8.pushBack(1l);
     assert d8.front() == 1l;
 
+    // 7b. Self-assignment on a wrapped deque must preserve contents
+    Deque<int> d6b;
+    for int i = 0; i < 5; i++ { d6b.pushBack(i); }
+    d6b.popFront(); d6b.popFront();
+    d6b.pushBack(5); d6b.pushBack(6);  // wrapped: [2, 3, 4, 5, 6]
+    d6b = d6b;
+    assert d6b.getSize() == 5;
+    assert d6b.popFront() == 2;
+    assert d6b.popFront() == 3;
+    assert d6b.popFront() == 4;
+    assert d6b.popFront() == 5;
+    assert d6b.popFront() == 6;
+
     // 8. reserve and pack
     Deque<int> d9;
     d9.pushBack(1); d9.pushBack(2);

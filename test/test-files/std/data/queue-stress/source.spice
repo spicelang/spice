@@ -94,7 +94,24 @@ f<int> main() {
     assert q8.pop() == 2;
     assert q8.pop() == 3;
 
-    // 8. pack shrinks capacity to size
+    // 7b. Self-assignment on a wrapped queue must preserve contents
+    Queue<int> q8b;
+    for int i = 0; i < 5; i++ { q8b.push(i); }
+    q8b.pop(); q8b.pop();
+    q8b.push(5); q8b.push(6);  // wrapped: [2, 3, 4, 5, 6]
+    q8b = q8b;
+    assert q8b.getSize() == 5;
+    assert q8b.pop() == 2;
+    assert q8b.pop() == 3;
+    assert q8b.pop() == 4;
+    assert q8b.pop() == 5;
+    assert q8b.pop() == 6;
+
+    // 8. pack shrinks capacity to size; pack on empty queue is a no-op crash check
+    Queue<int> qEmpty;
+    qEmpty.pack();
+    assert qEmpty.isEmpty();
+
     Queue<int> q9;
     for int i = 0; i < 10; i++ { q9.push(i); }
     for int i = 0; i < 7; i++ { q9.pop(); }
