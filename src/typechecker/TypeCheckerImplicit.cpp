@@ -209,11 +209,29 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
+  // Skip generic struct presets - we only synthesize a default move ctor for fully substantiated structs.
+  // Reason: each manifestation gets its own scope (deep-copied from the generic), and the implicit move ctor
+  // body's preamble writes to field lifecycle state via bodyScope->parent. If we created the move ctor on the
+  // generic struct, the deep-copied Function in the manifestation's scope would still carry a bodyScope pointer
+  // into the generic struct's scope, causing the preamble to update fields in the wrong scope.
+  if (!spiceStruct.isFullySubstantiated())
+    return;
+
   // Abort if the struct already has a user-defined move constructor.
   // We can't just call FunctionManager::lookup with a non-const ref arg here, since the lookup permits
   // const-param-to-non-const-arg matching ("constify") and would return the copy ctor (if one exists) as
   // a false positive. Instead, check the function manifestations directly for a single-self-non-const-ref ctor.
   if (FunctionManager::hasMoveCtor(structScope))
+    return;
+
+  // Abort if the struct has a user-defined copy ctor. Reason: in Spice the move-vs-copy tie-breaker picks the
+  // non-const-ref (move) candidate for non-const lvalue arguments, so silently auto-generating a move ctor on
+  // top of a user-defined copy ctor would change the behavior of existing `T b = T(a)` call sites (a's heap
+  // contents would be stolen instead of deep-copied). Users that want a default move ctor in addition to their
+  // own copy ctor can write an empty `p T.ctor(T& other) {}` to opt in. We still synthesize the default move
+  // ctor when only the auto-generated copy ctor exists (heap-owning struct with no user ctors) - the user did
+  // not write any binding semantics in that case, so picking move for non-const lvalues is fine.
+  if (FunctionManager::hasUserCopyCtor(structScope))
     return;
   const QualType structType = spiceStruct.entry->getQualType();
 

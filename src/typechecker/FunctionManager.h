@@ -46,6 +46,7 @@ public:
                          const QualTypeList &templateTypeHints, bool strictQualifierMatching, const ASTNode *callNode);
   [[nodiscard]] static bool hasAnyNonCopyCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasCopyCtor(const Scope *matchScope);
+  [[nodiscard]] static bool hasUserCopyCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasMoveCtor(const Scope *matchScope);
   [[nodiscard]] static Function *findMoveCtor(Scope *matchScope);
   [[nodiscard]] static bool hasDtor(const Scope *matchScope);

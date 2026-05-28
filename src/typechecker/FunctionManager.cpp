@@ -602,6 +602,20 @@ bool FunctionManager::hasAnyNonCopyCtor(const Scope *matchScope) { return hasCto
 
 bool FunctionManager::hasCopyCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::COPY); }
 
+bool FunctionManager::hasUserCopyCtor(const Scope *matchScope) {
+  for (const auto &manifestations : matchScope->functions | std::views::values) {
+    for (const auto &function : manifestations | std::views::values) {
+      if (function.name != CTOR_FUNCTION_NAME || function.implicitDefault)
+        continue;
+      const bool isCopyCtor = function.paramList.size() == 1 && function.paramList.at(0).qualType.isConstRef() &&
+                              function.paramList.at(0).qualType.getBase() == function.thisType;
+      if (isCopyCtor)
+        return true;
+    }
+  }
+  return false;
+}
+
 bool FunctionManager::hasMoveCtor(const Scope *matchScope) { return hasCtor(matchScope, CtorKind::MOVE); }
 
 Function *FunctionManager::findMoveCtor(Scope *matchScope) {
