@@ -157,6 +157,12 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Change to struct scope
     changeToScope(manifestation->scope, ScopeType::STRUCT);
 
+    // Mount type mapping for this manifestation, so that the body preamble helpers below can substantiate
+    // generic field types (e.g. `heap T*` on `Vector<T>`). Without this, an auto-generated body preamble that
+    // touches a still-generic field would assert in TypeMatcher::substantiateTypeWithTypeMapping.
+    assert(typeMapping.empty());
+    typeMapping = manifestation->typeMapping;
+
     // Re-visit all default values. This is required, since the type of the default value might vary for different manifestations
     for (const FieldNode *field : node->fields) {
       if (field->defaultValue != nullptr) {
@@ -230,6 +236,13 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       assert(manifestation->areAllFieldsInitialized() == nullptr);
     }
 
+    // Check default move ctor body if required. findMoveCtor scans the manifestations directly to avoid the
+    // constify-based false-positive that FunctionManager::lookup with a non-const ref arg can produce.
+    if (const Function *moveCtorFunc = FunctionManager::findMoveCtor(currentScope); moveCtorFunc && moveCtorFunc->implicitDefault) {
+      createMoveCtorBodyPreamble(moveCtorFunc->bodyScope);
+      assert(manifestation->areAllFieldsInitialized() == nullptr);
+    }
+
     // Check default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
@@ -237,6 +250,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     // Reset field symbols to declared state for the next manifestation
     manifestation->resetFieldSymbolsToDeclared(node);
+
+    // Clear type mapping
+    typeMapping.clear();
 
     // Return to the root scope
     currentScope = rootScope;

@@ -155,6 +155,7 @@ private:
   bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   bool checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node) const;
+  [[nodiscard]] Function *matchMoveCtor(const QualType &thisType, const ASTNode *node) const;
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
@@ -168,9 +169,11 @@ private:
                                  const ParamList &params) const;
   void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
   void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
+  void createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
   void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
   void createCtorBodyPreamble(const Scope *bodyScope) const;
   void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
+  void createMoveCtorBodyPreamble(const Scope *bodyScope) const;
   void createDtorBodyPreamble(const Scope *bodyScope) const;
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node) const;
@@ -178,6 +181,8 @@ private:
                                        const ASTNode *node) const;
   Function *implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) const;
   Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const;
+  Function *implicitlyCallStructMoveCtor(const SymbolTableEntry *entry, const ASTNode *node) const;
+  Function *implicitlyCallStructMoveCtor(const QualType &thisType, const ASTNode *node) const;
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const;
   void implicitlyCallDeallocate(const ASTNode *node) const;
   void doScopeCleanup(StmtLstNode *node) const;

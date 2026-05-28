@@ -1,0 +1,3 @@
+r.id=42 r.origin=42
+r2.id=42 r2.origin=-42
+r.id (after move)=0

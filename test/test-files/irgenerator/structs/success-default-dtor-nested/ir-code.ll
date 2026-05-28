@@ -39,6 +39,20 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 
 declare ptr @_Z12sAllocUnsafem(i64)
 
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
+define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %3 = load ptr, ptr %this, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr %3, ptr %1, i64 8, i1 false)
+  %4 = getelementptr inbounds nuw %struct.Inner, ptr %1, i32 0, i32 1
+  %5 = getelementptr inbounds nuw %struct.Inner, ptr %3, i32 0, i32 1
+  %6 = load ptr, ptr %4, align 8
+  store ptr %6, ptr %5, align 8
+  store ptr null, ptr %4, align 8
+  ret void
+}
+
 define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -82,6 +96,15 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceab
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
   call void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %3, ptr %1)
+  ret void
+}
+
+; Function Attrs: mustprogress noinline nounwind optnone uwtable
+define void @_ZN6Middle4ctorER6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %3 = load ptr, ptr %this, align 8
+  call void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %3, ptr %1)
   ret void
 }
 

@@ -51,6 +51,7 @@ public:
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
   [[nodiscard]] static std::string getSymbolTableEntryNameDefaultCtor(const CodeLoc &structCodeLoc);
   [[nodiscard]] static std::string getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc &structCodeLoc);
+  [[nodiscard]] static std::string getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc &structCodeLoc);
   [[nodiscard]] static std::string getSymbolTableEntryNameDefaultDtor(const CodeLoc &structCodeLoc);
   [[nodiscard]] ALWAYS_INLINE bool isMethod() const { return !thisType.is(TY_DYN); }
   [[nodiscard]] ALWAYS_INLINE bool isFunction() const { return !returnType.is(TY_DYN); }

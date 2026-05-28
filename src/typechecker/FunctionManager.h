@@ -46,6 +46,9 @@ public:
                          const QualTypeList &templateTypeHints, bool strictQualifierMatching, const ASTNode *callNode);
   [[nodiscard]] static bool hasAnyNonCopyCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasCopyCtor(const Scope *matchScope);
+  [[nodiscard]] static bool hasUserCopyCtor(const Scope *matchScope);
+  [[nodiscard]] static bool hasMoveCtor(const Scope *matchScope);
+  [[nodiscard]] static Function *findMoveCtor(Scope *matchScope);
   [[nodiscard]] static bool hasDtor(const Scope *matchScope);
   static void cleanup();
   [[nodiscard]] static std::string dumpLookupCacheStatistics();
@@ -73,7 +76,9 @@ private:
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(const Scope *scope, const std::string &name, const QualType &thisType,
                                             const ArgList &args, const QualTypeList &templateTypes);
-  [[nodiscard]] static bool hasCtor(const Scope *matchScope, bool lookForCopyCtor);
+  static void breakOverloadTie(std::vector<Function *> &matches, const ArgList &reqArgs);
+  enum class CtorKind : uint8_t { ANY_NON_COPY_NON_MOVE, COPY, MOVE };
+  [[nodiscard]] static bool hasCtor(const Scope *matchScope, CtorKind kind);
 };
 
 } // namespace spice::compiler

@@ -1,0 +1,37 @@
+// When both a user-defined copy ctor and a user-defined move ctor exist, the
+// compiler picks the move ctor for non-const lvalue arguments (less
+// constification needed) and the copy ctor for const lvalue arguments.
+
+type Counter struct {
+    int copies
+    int moves
+}
+
+p Counter.ctor() {
+    this.copies = 0;
+    this.moves = 0;
+}
+
+p Counter.ctor(const Counter& other) {
+    this.copies = other.copies + 1;
+    this.moves = other.moves;
+}
+
+p Counter.ctor(Counter& other) {
+    this.copies = other.copies;
+    this.moves = other.moves + 1;
+}
+
+f<int> main() {
+    Counter c;
+    printf("initial: copies=%d moves=%d\n", c.copies, c.moves);
+
+    // Non-const lvalue -> move ctor preferred
+    Counter c2 = Counter(c);
+    printf("after move:  copies=%d moves=%d\n", c2.copies, c2.moves);
+
+    // Const ref -> only the copy ctor matches (move ctor requires non-const)
+    const Counter& cref = c2;
+    Counter c3 = Counter(cref);
+    printf("after copy:  copies=%d moves=%d\n", c3.copies, c3.moves);
+}

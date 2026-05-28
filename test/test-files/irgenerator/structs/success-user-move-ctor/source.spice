@@ -1,0 +1,51 @@
+// A user-defined move ctor takes a non-const reference to the same struct type.
+// It transfers state from the source to the destination, and conventionally
+// leaves the source in a valid-but-empty state. Spice differentiates the move
+// ctor from the copy ctor by the const-qualifier on the parameter.
+
+type Buffer struct {
+    int value
+    bool valid
+}
+
+p Buffer.ctor() {
+    this.value = 0;
+    this.valid = false;
+}
+
+p Buffer.ctor(int v) {
+    this.value = v;
+    this.valid = true;
+}
+
+// Copy ctor: leaves the source intact
+p Buffer.ctor(const Buffer& other) {
+    this.value = other.value;
+    this.valid = other.valid;
+    printf("copy\n");
+}
+
+// Move ctor: steals the value from the source and resets the source
+p Buffer.ctor(Buffer& other) {
+    this.value = other.value;
+    this.valid = other.valid;
+    other.value = 0;
+    other.valid = false;
+    printf("move\n");
+}
+
+f<int> main() {
+    Buffer a = Buffer(42);
+    printf("a: value=%d valid=%d\n", a.value, a.valid);
+
+    // Copy: const ref binds, copy ctor is selected
+    const Buffer& ar = a;
+    Buffer b = Buffer(ar);
+    printf("b: value=%d valid=%d\n", b.value, b.valid);
+    printf("a after copy: value=%d valid=%d\n", a.value, a.valid);
+
+    // Move: non-const ref binds, move ctor is selected
+    Buffer c = Buffer(b);
+    printf("c: value=%d valid=%d\n", c.value, c.valid);
+    printf("b after move: value=%d valid=%d\n", b.value, b.valid);
+}

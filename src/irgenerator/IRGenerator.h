@@ -197,6 +197,8 @@ private:
   void generateDefaultCtor(const Function *ctorFunction);
   void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
+  void generateMoveCtorBodyPreamble(const Function *moveCtorFunction);
+  void generateDefaultMoveCtor(const Function *moveCtorFunction);
   void generateDtorBodyPreamble(const Function *dtorFunction) const;
   void generateDefaultDtor(const Function *dtorFunction);
   void generateTestMain();

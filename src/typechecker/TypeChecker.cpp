@@ -31,9 +31,10 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   if (isPrepare) {
     const std::vector<const Struct *> manifestations = rootScope->getAllStructManifestationsInDeclarationOrder();
     for (const Struct *manifestation : manifestations) {
-      // Check if we need to create a default ctor, copy ctor or dtor
+      // Check if we need to create a default ctor, copy ctor, move ctor or dtor
       createDefaultCtorIfRequired(*manifestation, manifestation->scope);
       createDefaultCopyCtorIfRequired(*manifestation, manifestation->scope);
+      createDefaultMoveCtorIfRequired(*manifestation, manifestation->scope);
       createDefaultDtorIfRequired(*manifestation, manifestation->scope);
     }
   }
@@ -78,6 +79,13 @@ Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *no
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toConstRef(node), false}};
+  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+}
+
+Function *TypeChecker::matchMoveCtor(const QualType &thisType, const ASTNode *node) const {
+  Scope *matchScope = thisType.getBodyScope();
+  assert(matchScope != nullptr);
+  const ArgList args = {{thisType.toNonConst().toRef(node), false}};
   return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
 }
 

@@ -1,0 +1,3 @@
+a: inner.value=99 inner.moveCount=0 tag=7
+b: inner.value=99 inner.moveCount=1 tag=7
+a after move: inner.value=-1 inner.moveCount=-1

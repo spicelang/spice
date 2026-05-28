@@ -1,0 +1,3 @@
+initial: copies=0 moves=0
+after move:  copies=0 moves=1
+after copy:  copies=1 moves=1

@@ -1,0 +1,39 @@
+// When a struct field has a move ctor of its own, the synthesized move ctor
+// of the outer struct calls the field's move ctor for that field. Other
+// fields are shallow-copied.
+
+type Inner struct {
+    int value
+    int moveCount
+}
+
+p Inner.ctor() {
+    this.value = 0;
+    this.moveCount = 0;
+}
+
+// Inner has a user-defined move ctor: increments a counter on move so we can
+// verify the synthesized outer move ctor delegates to it.
+p Inner.ctor(Inner& other) {
+    this.value = other.value;
+    this.moveCount = other.moveCount + 1;
+    other.value = -1;
+    other.moveCount = -1;
+}
+
+type Outer struct {
+    Inner inner
+    int tag
+}
+
+f<int> main() {
+    Outer a;
+    a.inner.value = 99;
+    a.tag = 7;
+    printf("a: inner.value=%d inner.moveCount=%d tag=%d\n", a.inner.value, a.inner.moveCount, a.tag);
+
+    // Triggers the synthesized Outer move ctor, which delegates to Inner.ctor(Inner&)
+    Outer b = Outer(a);
+    printf("b: inner.value=%d inner.moveCount=%d tag=%d\n", b.inner.value, b.inner.moveCount, b.tag);
+    printf("a after move: inner.value=%d inner.moveCount=%d\n", a.inner.value, a.inner.moveCount);
+}

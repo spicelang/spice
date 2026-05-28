@@ -138,7 +138,6 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
  *
  * For generating a default copy ctor, the following conditions need to be met:
  * - No user-defined copy ctor
- * - No user-defined move ctor
  *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
@@ -153,9 +152,6 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, structType, lookupArgs, true);
   if (copyCtor != nullptr)
     return;
-
-  // Abort if the struct has a user-defined move constructor
-  // ToDo: Check for move ctor
 
   // Check if we have fields, that require us to do anything in the ctor
   const size_t fieldCount = structScope->getFieldCount();
@@ -196,6 +192,88 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   // Create the default copy ctor function
   const std::string entryName = Function::getSymbolTableEntryNameDefaultCopyCtor(node->codeLoc);
   const ParamList paramTypes = {{structType.toConstRef(node), false}};
+  createDefaultStructMethod(spiceStruct, entryName, CTOR_FUNCTION_NAME, paramTypes);
+}
+
+/**
+ * Checks if the given struct scope already has a user-defined move constructor and creates a default one if not.
+ *
+ * For generating a default move ctor, the following conditions need to be met:
+ * - No user-defined move ctor
+ * - At least one field requires non-trivial moving (heap pointer or struct field with move ctor)
+ *
+ * @param spiceStruct Struct instance
+ * @param structScope Scope of the struct
+ */
+void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
+  const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
+  assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
+
+  // Skip generic struct presets - we only synthesize a default move ctor for fully substantiated structs.
+  // Reason: each manifestation gets its own scope (deep-copied from the generic), and the implicit move ctor
+  // body's preamble writes to field lifecycle state via bodyScope->parent. If we created the move ctor on the
+  // generic struct, the deep-copied Function in the manifestation's scope would still carry a bodyScope pointer
+  // into the generic struct's scope, causing the preamble to update fields in the wrong scope.
+  if (!spiceStruct.isFullySubstantiated())
+    return;
+
+  // Abort if the struct already has a user-defined move constructor.
+  // We can't just call FunctionManager::lookup with a non-const ref arg here, since the lookup permits
+  // const-param-to-non-const-arg matching ("constify") and would return the copy ctor (if one exists) as
+  // a false positive. Instead, check the function manifestations directly for a single-self-non-const-ref ctor.
+  if (FunctionManager::hasMoveCtor(structScope))
+    return;
+
+  // Abort if the struct has a user-defined copy ctor. Reason: in Spice the move-vs-copy tie-breaker picks the
+  // non-const-ref (move) candidate for non-const lvalue arguments, so silently auto-generating a move ctor on
+  // top of a user-defined copy ctor would change the behavior of existing `T b = T(a)` call sites (a's heap
+  // contents would be stolen instead of deep-copied). Users that want a default move ctor in addition to their
+  // own copy ctor can write an empty `p T.ctor(T& other) {}` to opt in. We still synthesize the default move
+  // ctor when only the auto-generated copy ctor exists (heap-owning struct with no user ctors) - the user did
+  // not write any binding semantics in that case, so picking move for non-const lvalues is fine.
+  if (FunctionManager::hasUserCopyCtor(structScope))
+    return;
+  const QualType structType = spiceStruct.entry->getQualType();
+
+  // Check if we have fields, that require us to do anything in the move ctor
+  const size_t fieldCount = structScope->getFieldCount();
+  bool moveCtorRequired = false;
+  for (size_t i = 0; i < fieldCount; i++) {
+    const SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->declNode != nullptr);
+
+    QualType fieldType = fieldSymbol->getQualType();
+    if (fieldType.hasAnyGenericParts() && !spiceStruct.typeMapping.empty())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, spiceStruct.typeMapping, fieldSymbol->declNode);
+
+    // If the field is of type struct, check whether the field's struct has its own move ctor. We use
+    // findMoveCtor (a direct scan of the manifestations) rather than FunctionManager::match here for two
+    // reasons: (1) match permits const-param-to-non-const-arg "constify" matching and would return the
+    // field's copy ctor as a false positive, and (2) match populates the lookup cache, which would inflate
+    // the per-struct cache-miss counts even for structs that have nothing to do with move ctors.
+    if (fieldType.is(TY_STRUCT)) {
+      Scope *bodyScope = fieldType.getBodyScope();
+      moveCtorRequired |= FunctionManager::findMoveCtor(bodyScope) != nullptr;
+    }
+
+    // If we have an owning heap pointer, we transfer ownership of the heap storage
+    if (fieldType.isHeap()) {
+      assert(fieldType.isPtr());
+      moveCtorRequired = true;
+    }
+  }
+
+  // If we don't have any fields that require us to do anything special in the move ctor, we can skip it.
+  // Unlike the copy ctor we do NOT generate a default move ctor just because the struct emits a vtable - the
+  // vtable pointer is part of the struct layout and gets shallow-copied along with everything else, no
+  // special move handling needed. Users that want to move a vtable-bearing struct fall back to the default
+  // copy ctor.
+  if (!moveCtorRequired)
+    return;
+
+  // Create the default move ctor function
+  const std::string entryName = Function::getSymbolTableEntryNameDefaultMoveCtor(node->codeLoc);
+  const ParamList paramTypes = {{structType.toNonConst().toRef(node), false}};
   createDefaultStructMethod(spiceStruct, entryName, CTOR_FUNCTION_NAME, paramTypes);
 }
 
@@ -338,6 +416,43 @@ void TypeChecker::createCopyCtorBodyPreamble(const Scope *bodyScope) const {
 }
 
 /**
+ * Prepare the generation of the move ctor body preamble. This preamble is used to initialize the VTable, move-construct or
+ * shallow-copy fields and transfer ownership of heap allocations.
+ */
+void TypeChecker::createMoveCtorBodyPreamble(const Scope *bodyScope) const {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->lookupField(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+
+    QualType fieldType = fieldSymbol->getQualType();
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
+
+    if (fieldType.is(TY_STRUCT)) {
+      // Find a move ctor on the field's struct. We use findMoveCtor rather than FunctionManager::match to
+      // avoid a constify-based false positive returning the copy ctor. findMoveCtor doesn't mark the
+      // function as used, so do that explicitly to ensure the inner move ctor's body is actually emitted.
+      Scope *matchScope = fieldType.getBodyScope();
+      if (Function *moveCtorFct = FunctionManager::findMoveCtor(matchScope)) {
+        moveCtorFct->used = true;
+        if (moveCtorFct->entry)
+          moveCtorFct->entry->used = true;
+        fieldSymbol->updateType(fieldType.getWithBodyScope(moveCtorFct->thisType.getBodyScope()), true);
+      }
+    }
+
+    fieldSymbol->updateState(INITIALIZED, fieldSymbol->declNode);
+  }
+}
+
+/**
  * Prepare the generation of the dtor body preamble. This preamble is used to destruct all fields and to free all heap fields.
  */
 void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
@@ -419,6 +534,29 @@ Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entr
  */
 Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const {
   const QualType argType = thisType.removeReferenceWrapper().toConstRef(node);
+  const ArgList args = {{argType, false /* we always have an entry here */}};
+  return implicitlyCallStructMethod(thisType, CTOR_FUNCTION_NAME, args, node);
+}
+
+/**
+ * Prepare the generation of a call to the move ctor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the move ctor call
+ * @param node Current AST node
+ */
+Function *TypeChecker::implicitlyCallStructMoveCtor(const SymbolTableEntry *entry, const ASTNode *node) const {
+  assert(entry != nullptr && entry->getQualType().is(TY_STRUCT));
+  return implicitlyCallStructMoveCtor(entry->getQualType(), node);
+}
+
+/**
+ * Prepare the generation of a call to the move ctor of a given struct
+ *
+ * @param thisType Struct type to call the move ctor on
+ * @param node Current AST node
+ */
+Function *TypeChecker::implicitlyCallStructMoveCtor(const QualType &thisType, const ASTNode *node) const {
+  const QualType argType = thisType.removeReferenceWrapper().toNonConst().toRef(node);
   const ArgList args = {{argType, false /* we always have an entry here */}};
   return implicitlyCallStructMethod(thisType, CTOR_FUNCTION_NAME, args, node);
 }

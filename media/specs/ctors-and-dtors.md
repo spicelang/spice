@@ -7,7 +7,7 @@
 - [x] Generate default dtor
 - [x] Generate default ctor
 - [x] Generate default copy ctor
-- [ ] (Generate default move ctor)
+- [x] (Generate default move ctor)
 - [x] Make the compiler error out when reference fields do not get initialized by all ctors
 
 ## Overview
@@ -63,7 +63,33 @@ p TestStruct.ctor(const TestStruct& other) {
 
 ## Move constructors
 
-ToDo
+A constructor is a move constructor, if it has exactly one parameter that is a non-const reference to the type of the struct.
+The default move constructor is generated for a struct if it has no user-defined move constructor and at least one field needs
+non-trivial moving (either a heap-owning pointer or a struct field that itself has a move ctor).
+
+### Implicit move ctor actions
+
+The move constructor transfers state from the source instance to the new instance. The compiler-generated body performs the
+following steps:
+
+- For each struct field that has a move ctor, call the move ctor on the field (passing the corresponding source field).
+- For each struct field that does not have a move ctor but is non-trivially copyable, call the copy ctor on the field.
+- For each owning heap pointer field, transfer ownership: copy the pointer to the destination and null out the source pointer
+  so the source's dtor does not free the storage.
+- For all other fields, perform a shallow copy from the source.
+
+```spice
+p TestStruct.ctor(TestStruct& other) {
+    // Move-construct field-by-field. For heap-owning fields, ownership is transferred and the source is nulled.
+}
+```
+
+### Overload resolution
+
+When both a copy ctor (`ctor(const T&)`) and a move ctor (`ctor(T&)`) exist on the same struct, overload resolution picks the
+move ctor for non-const lvalue arguments (the candidate that requires no constification of the argument) and picks the copy
+ctor for const arguments (binding a const argument to a non-const reference parameter would require const-loss). Temporaries
+are not bindable to non-const reference parameters, so a temporary argument always selects the copy ctor.
 
 ## Destructors
 
