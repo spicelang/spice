@@ -1646,7 +1646,7 @@ int16_t ASTBuilder::parseShort(TerminalNode *terminal, bool isNegative) {
 }
 
 int64_t ASTBuilder::parseLong(TerminalNode *terminal, bool isNegative) {
-  const NumericParserCallback<int64_t> cb = [isNegative](const std::string &substr, short base, bool /*isSigned*/) -> int64_t {
+  const NumericParserCallback<int64_t> cb = [isNegative](const std::string &substr, short base, bool isSigned) -> int64_t {
     // Parse the magnitude as unsigned so values like 2^63 (the absolute value of INT64_MIN) fit
     const uint64_t magnitude = std::stoull(substr, nullptr, base);
     if (isNegative) {
@@ -1657,6 +1657,8 @@ int64_t ASTBuilder::parseLong(TerminalNode *terminal, bool isNegative) {
         return INT64_MIN;
       return -static_cast<int64_t>(magnitude);
     }
+    if (isSigned && magnitude > static_cast<uint64_t>(INT64_MAX))
+      throw std::out_of_range("Number out of range");
     return static_cast<int64_t>(magnitude);
   };
   return parseNumeric(terminal, cb);
