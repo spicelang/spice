@@ -2,16 +2,16 @@
 import "std/text/stringstream";
 
 // Own imports
-import "bootstrap/util/code-loc";
+import "bootstrap/reader/code-loc";
 
 public type LexerErrorType enum {
     TOKENIZING_FAILED
 }
 
 /**
- * Custom exception for errors, occurring while parsing
+ * Custom exception for errors, occurring while lexing
  */
-public type ParserError struct {
+public type LexerError struct {
     String errorMessage
 }
 
@@ -22,7 +22,7 @@ public type ParserError struct {
  * @param errorType Type of the error
  * @param message Error message suffix
  */
-public p ParserError.ctor(const CodeLoc* codeLoc, const LexerErrorType errorType, const string message) {
+public p LexerError.ctor(const CodeLoc& codeLoc, const LexerErrorType errorType, const string message) {
     StringStream msg;
     msg << "[Error|Lexer] " << codeLoc.toPrettyString() << ": " << this.getMessagePrefix(errorType) << ": " << message;
     this.errorMessage = msg.str();
@@ -34,9 +34,17 @@ public p ParserError.ctor(const CodeLoc* codeLoc, const LexerErrorType errorType
  * @param errorType Type of the error
  * @return Prefix string for the error type
  */
-f<string> ParserError.getMessagePrefix(const LexerErrorType errorType) {
+f<string> LexerError.getMessagePrefix(const LexerErrorType errorType) {
     switch errorType {
         case LexerErrorType::TOKENIZING_FAILED: { return "Tokenizing failed"; }
         default: { panic(Error("Unknown error")); }
     }
+}
+
+#[test, test.name="LexerError Smoke test"]
+public f<bool> testLexerErrorSmoke() {
+    const CodeLoc loc = CodeLoc(7l, 4l, "lex.spice");
+    LexerError err = LexerError(loc, LexerErrorType::TOKENIZING_FAILED, "bad char");
+    assert err.errorMessage == "[Error|Lexer] lex.spice:7:4: Tokenizing failed: bad char";
+    return true;
 }

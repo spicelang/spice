@@ -1,0 +1,7 @@
+import "bootstrap/reader/code-loc";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testCodeLocSmoke();
+    printf("All assertions passed!");
+}

@@ -22,3 +22,18 @@ public type SuperType enum {
     TY_PROCEDURE,
     TY_IMPORT
 }
+
+#[test, test.name="SuperType Smoke test"]
+public f<bool> testSuperTypeSmoke() {
+    // The ordinal values must be stable, since they are used as switch labels in TypeQualifiers etc.
+    assert SuperType::TY_INVALID == SuperType::TY_INVALID;
+    assert SuperType::TY_INT != SuperType::TY_LONG;
+    assert SuperType::TY_DOUBLE != SuperType::TY_STRING;
+
+    // Spot-check a few distinct values
+    SuperType t = SuperType::TY_STRUCT;
+    assert t == SuperType::TY_STRUCT;
+    assert t != SuperType::TY_INTERFACE;
+
+    return true;
+}

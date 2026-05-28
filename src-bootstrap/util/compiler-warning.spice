@@ -20,6 +20,7 @@ public type CompilerWarningType enum {
     SHADOWED_VARIABLE,
     IDENTITY_CAST,
     SINGLE_GENERIC_TYPE_CONDITION,
+    INEFFECTIVE_GENERIC_TYPE_CONDITION,
     BOOL_ASSIGN_AS_CONDITION,
     ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION,
     UNINSTALL_FAILED,
@@ -88,10 +89,29 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::SHADOWED_VARIABLE: { return "Shadowed variable"; }
         case CompilerWarningType::IDENTITY_CAST: { return "Identity cast"; }
         case CompilerWarningType::SINGLE_GENERIC_TYPE_CONDITION: { return "Only one type condition"; }
+        case CompilerWarningType::INEFFECTIVE_GENERIC_TYPE_CONDITION: { return "Ineffective type condition"; }
         case CompilerWarningType::BOOL_ASSIGN_AS_CONDITION: { return "Bool assignment as condition"; }
-        case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rule"; }
+        case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rules"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
         case CompilerWarningType::VERIFIER_DISABLED: { return "Verifier disabled"; }
         default: { panic(Error("Unknown warning")); }
     }
+}
+
+#[test, test.name="CompilerWarning Smoke test"]
+public f<bool> testCompilerWarningSmoke() {
+    // Warning without code location
+    CompilerWarning w1 = CompilerWarning(CompilerWarningType::UNUSED_FUNCTION, "myFunc");
+    assert w1.warningMessage == "[Warning] Unused function: myFunc";
+
+    // Warning with code location
+    CodeLoc loc = CodeLoc(10l, 4l, "main.spice");
+    CompilerWarning w2 = CompilerWarning(loc, CompilerWarningType::SHADOWED_VARIABLE, "x");
+    assert w2.warningMessage == "[Warning] main.spice:10:4: Shadowed variable: x";
+
+    // Newly synced enum value
+    CompilerWarning w3 = CompilerWarning(CompilerWarningType::INEFFECTIVE_GENERIC_TYPE_CONDITION, "T");
+    assert w3.warningMessage == "[Warning] Ineffective type condition: T";
+
+    return true;
 }

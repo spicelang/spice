@@ -5,9 +5,10 @@ import "std/data/vector";
 import "bootstrap/ast/ast-nodes";
 
 type LifecycleState enum {
-    DEAD,
-    DECLARED,
-    INITIALIZED
+    DEAD,         // The symbol is not alive yet (e.g. not declared yet)
+    DECLARED,     // The symbol is declared but hasn't got a value yet
+    INITIALIZED,  // The symbol is initialized with a value
+    MOVED         // The symbol was moved away (can still be accessed, but does not own its memory anymore)
 }
 
 /**
@@ -60,6 +61,7 @@ public f<string> Lifecycle.getCurrentStateName() {
     switch this.getCurrentState() {
         case LifecycleState::DECLARED: { return "declared"; }
         case LifecycleState::INITIALIZED: { return "initialized"; }
+        case LifecycleState::MOVED: { return "moved"; }
         default: { return "dead"; }
     }
 }
@@ -89,4 +91,22 @@ public f<bool> Lifecycle.isDeclared() {
  */
 public f<bool> Lifecycle.isInitialized() {
     return this.getCurrentState() == LifecycleState::INITIALIZED;
+}
+
+/**
+ * Check if the symbol was moved
+ *
+ * @return Moved or not
+ */
+public f<bool> Lifecycle.wasMoved() {
+    return this.getCurrentState() == LifecycleState::MOVED;
+}
+
+/**
+ * Check if the symbol is in an owning state
+ *
+ * @return Owning state or not
+ */
+public f<bool> Lifecycle.isInOwningState() {
+    return this.isDeclared() || this.isInitialized();
 }

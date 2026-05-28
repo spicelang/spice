@@ -1,0 +1,7 @@
+import "bootstrap/exception/parser-error";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testParserErrorSmoke();
+    printf("All assertions passed!");
+}

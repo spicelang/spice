@@ -1,9 +1,6 @@
 // Std imports
 import "std/text/stringstream";
 
-// Own imports
-import "bootstrap/reader/code-loc";
-
 public type CliErrorType enum {
     INCOMPLETE_TARGET_TRIPLE,
     INVALID_TARGET_TRIPLE,
@@ -54,4 +51,17 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::INVALID_SANITIZER: { return "Invalid sanitizer"; }
         default: { panic(Error("Unknown error")); }
     }
+}
+
+#[test, test.name="CliError Smoke test"]
+public f<bool> testCliErrorSmoke() {
+    CliError err1 = CliError(CliErrorType::INVALID_TARGET_TRIPLE, "x86_64-zzz");
+    assert err1.errorMessage == "[Error|CLI] Invalid target triple: x86_64-zzz";
+
+    CliError err2 = CliError(CliErrorType::SOURCE_FILE_MISSING, "main.spice");
+    assert err2.errorMessage == "[Error|CLI] Source file missing: main.spice";
+
+    CliError err3 = CliError(CliErrorType::INVALID_SANITIZER, "asan");
+    assert err3.errorMessage == "[Error|CLI] Invalid sanitizer: asan";
+    return true;
 }

@@ -1,0 +1,7 @@
+import "bootstrap/util/compiler-warning";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testCompilerWarningSmoke();
+    printf("All assertions passed!");
+}

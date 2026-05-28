@@ -1,8 +1,8 @@
 // Std imports
 import "std/text/stringstream";
 
-// Ówn imports
-import "bootstrap/util/code-loc";
+// Own imports
+import "bootstrap/reader/code-loc";
 
 public type ParserErrorType enum {
     PARSING_FAILED,
@@ -10,7 +10,8 @@ public type ParserErrorType enum {
     INVALID_QUALIFIER_COMBINATION,
     INVALID_CHAR_LITERAL,
     INVALID_ATTR_VALUE_TYPE,
-    RESERVED_KEYWORD
+    RESERVED_KEYWORD,
+    RESERVED_TYPENAME
 }
 
 /**
@@ -27,7 +28,7 @@ public type ParserError struct {
  * @param errorType Type of the error
  * @param message Error message suffix
  */
-public p ParserError.ctor(const CodeLoc* codeLoc, const ParserErrorType errorType, const string message) {
+public p ParserError.ctor(const CodeLoc& codeLoc, const ParserErrorType errorType, const string message) {
     StringStream msg;
     msg << "[Error|Parser] " << codeLoc.toPrettyString() << ": " << this.getMessagePrefix(errorType) << ": " << message;
     this.errorMessage = msg.str();
@@ -47,6 +48,18 @@ f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
         case ParserErrorType::INVALID_CHAR_LITERAL: { return "Invalid char literal"; }
         case ParserErrorType::INVALID_ATTR_VALUE_TYPE: { return "Invalid attribute value type"; }
         case ParserErrorType::RESERVED_KEYWORD: { return "Usage of reserved keyword"; }
+        case ParserErrorType::RESERVED_TYPENAME: { return "Usage of reserved typename"; }
         default: { panic(Error("Unknown error")); }
     }
+}
+
+#[test, test.name="ParserError Smoke test"]
+public f<bool> testParserErrorSmoke() {
+    const CodeLoc loc = CodeLoc(2l, 1l, "p.spice");
+    ParserError err = ParserError(loc, ParserErrorType::PARSING_FAILED, "unexpected token");
+    assert err.errorMessage == "[Error|Parser] p.spice:2:1: Parsing failed: unexpected token";
+
+    ParserError err2 = ParserError(loc, ParserErrorType::RESERVED_TYPENAME, "Foo");
+    assert err2.errorMessage == "[Error|Parser] p.spice:2:1: Usage of reserved typename: Foo";
+    return true;
 }
