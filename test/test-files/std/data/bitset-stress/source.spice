@@ -1,0 +1,118 @@
+import "std/data/bitset";
+
+f<int> main() {
+    // 1. Cross-word access: a 200-bit set spans 4 words (64*3 = 192 < 200)
+    BitSet bs = BitSet(200l);
+    assert bs.getSize() == 200l;
+    // Set every 7th bit and verify count + membership
+    unsigned long expected = 0l;
+    for unsigned long i = 0l; i < 200l; i += 7l {
+        bs.set(i);
+        expected++;
+    }
+    assert bs.count() == expected;
+    for unsigned long i = 0l; i < 200l; i++ {
+        assert bs.test(i) == (i % 7l == 0l);
+    }
+
+    // 2. Bits exactly on word boundaries (63, 64, 127, 128, 191, 192)
+    BitSet bnd = BitSet(200l);
+    bnd.set(63l); bnd.set(64l); bnd.set(127l); bnd.set(128l); bnd.set(191l); bnd.set(192l);
+    assert bnd.count() == 6l;
+    assert bnd.test(63l) && bnd.test(64l) && bnd.test(127l);
+    assert bnd.test(128l) && bnd.test(191l) && bnd.test(192l);
+    assert !bnd.test(62l) && !bnd.test(65l) && !bnd.test(193l);
+
+    // 3. Padding invariant: flipAll on a non-word-multiple size must not leak high bits.
+    //    100 bits -> 2 words, 28 padding bits in the last word.
+    BitSet pad = BitSet(100l);
+    pad.flipAll();
+    assert pad.count() == 100l; // exactly numBits, padding stayed zero
+    assert pad.all();
+    pad.flipAll();
+    assert pad.none();
+
+    // setAll on the same odd size
+    pad.setAll();
+    assert pad.count() == 100l;
+    assert pad.all();
+
+    // 4. bitNot respects the padding invariant
+    BitSet src = BitSet(100l);
+    src.set(0l); src.set(50l); src.set(99l);
+    BitSet inv = src.bitNot();
+    assert inv.count() == 97l; // 100 - 3
+    assert !inv.test(0l) && !inv.test(50l) && !inv.test(99l);
+    assert inv.test(1l) && inv.test(98l);
+
+    // 5. Bitwise AND / OR / XOR across multiple words
+    BitSet x = BitSet(130l);
+    BitSet y = BitSet(130l);
+    for unsigned long i = 0l; i < 130l; i += 2l { x.set(i); }   // evens
+    for unsigned long i = 0l; i < 130l; i += 3l { y.set(i); }   // multiples of 3
+
+    BitSet bAnd = x.bitAnd(y); // multiples of 6
+    for unsigned long i = 0l; i < 130l; i++ {
+        assert bAnd.test(i) == (i % 6l == 0l);
+    }
+
+    BitSet bOr = x.bitOr(y);
+    for unsigned long i = 0l; i < 130l; i++ {
+        assert bOr.test(i) == (i % 2l == 0l || i % 3l == 0l);
+    }
+
+    BitSet bXor = x.bitXor(y);
+    for unsigned long i = 0l; i < 130l; i++ {
+        const bool inX = i % 2l == 0l;
+        const bool inY = i % 3l == 0l;
+        assert bXor.test(i) == (inX != inY);
+    }
+
+    // AND/OR/XOR identities: x.bitAnd(x) == x, x.bitOr(x) == x, x.bitXor(x) == empty
+    assert x.bitAnd(x) == x;
+    assert x.bitOr(x) == x;
+    const BitSet xored = x.bitXor(x);
+    assert xored.none();
+
+    // 6. Copy ctor produces an independent deep copy
+    BitSet original = BitSet(75l);
+    original.set(1l); original.set(40l); original.set(74l);
+    BitSet copy = BitSet(original);
+    assert copy == original;
+    copy.set(2l);
+    assert copy != original;     // mutating the copy must not touch the original
+    assert !original.test(2l);
+    assert original.count() == 3l;
+
+    // 7. operator= over differently-sized sets
+    BitSet lhs = BitSet(10l);
+    lhs.set(0l);
+    lhs = original;              // grows the backing storage
+    assert lhs == original;
+    assert lhs.getSize() == 75l;
+    assert lhs.count() == 3l;
+
+    // 7b. Self-assignment must be a no-op
+    lhs = lhs;
+    assert lhs.count() == 3l;
+    assert lhs.test(1l) && lhs.test(40l) && lhs.test(74l);
+
+    // 8. Large set: toggle the whole range on and off
+    BitSet big = BitSet(1000l);
+    for unsigned long i = 0l; i < 1000l; i++ { big.set(i); }
+    assert big.count() == 1000l;
+    assert big.all();
+    for unsigned long i = 0l; i < 1000l; i++ { big.clear(i); }
+    assert big.none();
+
+    // 9. Single-bit set sitting alone in the last (padded) word
+    BitSet last = BitSet(65l); // 2 words, only bit 0 of the 2nd word is valid
+    last.set(64l);
+    assert last.count() == 1l;
+    assert last.test(64l);
+    assert !last.all();
+    last.set(64l, false);
+    assert last.none();
+
+    printf("BitSet stress tests passed!\n");
+}
