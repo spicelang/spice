@@ -1,0 +1,88 @@
+import "std/data/bitset";
+
+f<int> main() {
+    // Default ctor: empty bit set
+    BitSet empty;
+    assert empty.getSize() == 0l;
+    assert empty.count() == 0l;
+    assert empty.none();
+    assert !empty.any();
+    assert empty.all(); // vacuously true
+
+    // ctor(numBits): all bits start cleared
+    BitSet bs = BitSet(10l);
+    assert bs.getSize() == 10l;
+    assert bs.count() == 0l;
+    assert bs.none();
+    assert !bs.all();
+
+    // set/test/clear/flip
+    bs.set(0l);
+    bs.set(3l);
+    bs.set(9l);
+    assert bs.count() == 3l;
+    assert bs.test(0l);
+    assert bs.test(3l);
+    assert bs.test(9l);
+    assert !bs.test(1l);
+    assert bs.any();
+
+    bs.clear(3l);
+    assert !bs.test(3l);
+    assert bs.count() == 2l;
+
+    bs.flip(3l); // back to set
+    assert bs.test(3l);
+    bs.flip(0l); // now cleared
+    assert !bs.test(0l);
+    assert bs.count() == 2l;
+
+    // set(index, value)
+    bs.set(5l, true);
+    assert bs.test(5l);
+    bs.set(5l, false);
+    assert !bs.test(5l);
+
+    // operator[] reads a bit
+    assert bs[3l];
+    assert !bs[0l];
+
+    // setAll / clearAll / flipAll
+    BitSet b2 = BitSet(5l);
+    b2.setAll();
+    assert b2.count() == 5l;
+    assert b2.all();
+    b2.flipAll();
+    assert b2.none();
+    b2.setAll();
+    b2.clearAll();
+    assert b2.none();
+
+    // ctor(numBits, true) starts fully set
+    BitSet b3 = BitSet(7l, true);
+    assert b3.count() == 7l;
+    assert b3.all();
+
+    // toString is MSB-first
+    BitSet b4 = BitSet(4l);
+    b4.set(0l);
+    b4.set(3l);
+    assert b4.toString() == "1001";
+
+    // Equality compares size and contents
+    BitSet a = BitSet(8l);
+    BitSet b = BitSet(8l);
+    a.set(2l); a.set(6l);
+    b.set(2l); b.set(6l);
+    assert a == b;
+    assert !(a != b);
+    b.flip(6l);
+    assert a != b;
+
+    // Different sizes are never equal
+    BitSet c = BitSet(8l);
+    BitSet d = BitSet(9l);
+    assert c != d;
+
+    printf("BitSet smoke tests passed!\n");
+}
