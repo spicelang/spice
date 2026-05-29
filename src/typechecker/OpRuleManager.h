@@ -617,9 +617,9 @@ public:
   QualType getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   static QualType getLogicalOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static QualType getLogicalAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getBitwiseXorResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
+  ExprResult getBitwiseOrResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getBitwiseXorResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
+  ExprResult getBitwiseAndResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
   ExprResult getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   static QualType getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
@@ -637,7 +637,7 @@ public:
   QualType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) const;
   QualType getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) const;
   static QualType getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs);
-  static QualType getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs);
+  ExprResult getPrefixBitwiseNotResultType(ASTNode *node, const ExprResult &lhs) const;
   static QualType getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs);
   static QualType getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs);
   ExprResult getPostfixPlusPlusResultType(ASTNode *node, const ExprResult &lhs) const;

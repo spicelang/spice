@@ -310,7 +310,7 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
     const ExprNode *rhsNode = node->operands[i];
-    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, i - 1);
   }
@@ -336,9 +336,9 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
     const ExprNode *rhsNode = node->operands[i];
-    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
-    result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy);
+    result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy, i - 1);
   }
 
   // Return result
@@ -362,9 +362,9 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
     const ExprNode *rhsNode = node->operands[i];
-    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
-    result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, i - 1);
+    result = conversionManager.getBitwiseAndInst(node, result, lhsSTy, rhs, rhsSTy, i - 1);
   }
 
   // Return result

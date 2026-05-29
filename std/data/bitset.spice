@@ -242,64 +242,41 @@ public f<bool> operator!=(const BitSet& lhs, const BitSet& rhs) {
     return !(lhs == rhs);
 }
 
-/**
- * Returns a new BitSet that is the bitwise AND of this set and the other.
- * Both sets must have the same number of bits.
- *
- * @return Bitwise AND of the two sets
- */
-public f<BitSet> BitSet.bitAnd(const BitSet& other) {
-    if this.numBits != other.numBits { panic(Error("BitSet size mismatch")); }
-    result = BitSet(this.numBits);
+public f<BitSet> operator&(const BitSet& lhs, const BitSet& rhs) {
+    if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
+    result = BitSet(lhs.numBits);
     unsafe {
-        for unsigned long i = 0l; i < this.numWords; i++ {
-            result.words[i] = this.words[i] & other.words[i];
+        for unsigned long i = 0l; i < lhs.numWords; i++ {
+            result.words[i] = lhs.words[i] & rhs.words[i];
         }
     }
 }
 
-/**
- * Returns a new BitSet that is the bitwise OR of this set and the other.
- * Both sets must have the same number of bits.
- *
- * @return Bitwise OR of the two sets
- */
-public f<BitSet> BitSet.bitOr(const BitSet& other) {
-    if this.numBits != other.numBits { panic(Error("BitSet size mismatch")); }
-    result = BitSet(this.numBits);
+public f<BitSet> operator|(const BitSet& lhs, const BitSet& rhs) {
+    if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
+    result = BitSet(lhs.numBits);
     unsafe {
-        for unsigned long i = 0l; i < this.numWords; i++ {
-            result.words[i] = this.words[i] | other.words[i];
+        for unsigned long i = 0l; i < lhs.numWords; i++ {
+            result.words[i] = lhs.words[i] | rhs.words[i];
         }
     }
 }
 
-/**
- * Returns a new BitSet that is the bitwise XOR of this set and the other.
- * Both sets must have the same number of bits.
- *
- * @return Bitwise XOR of the two sets
- */
-public f<BitSet> BitSet.bitXor(const BitSet& other) {
-    if this.numBits != other.numBits { panic(Error("BitSet size mismatch")); }
-    result = BitSet(this.numBits);
+public f<BitSet> operator^(const BitSet& lhs, const BitSet& rhs) {
+    if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
+    result = BitSet(lhs.numBits);
     unsafe {
-        for unsigned long i = 0l; i < this.numWords; i++ {
-            result.words[i] = this.words[i] ^ other.words[i];
+        for unsigned long i = 0l; i < lhs.numWords; i++ {
+            result.words[i] = lhs.words[i] ^ rhs.words[i];
         }
     }
 }
 
-/**
- * Returns a new BitSet that is the bitwise complement of this set.
- *
- * @return Bitwise complement of the set
- */
-public f<BitSet> BitSet.bitNot() {
-    result = BitSet(this.numBits);
+public f<BitSet> operator~(const BitSet& bs) {
+    result = BitSet(bs.numBits);
     unsafe {
-        for unsigned long i = 0l; i < this.numWords; i++ {
-            result.words[i] = ~this.words[i];
+        for unsigned long i = 0l; i < bs.numWords; i++ {
+            result.words[i] = ~bs.words[i];
         }
     }
     result.maskLastWord();

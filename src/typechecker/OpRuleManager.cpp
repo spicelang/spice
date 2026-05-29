@@ -352,28 +352,45 @@ QualType OpRuleManager::getLogicalAndResultType(const ASTNode *node, const ExprR
   return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, std::size(LOGICAL_AND_OP_RULES), "&&", lhsType, rhsType);
 }
 
-QualType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getBitwiseOrResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_BITWISE_OR, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, BITWISE_OR_OP_RULES, std::size(BITWISE_OR_OP_RULES), "|", lhsType, rhsType);
+  return {validateBinaryOperation(node, BITWISE_OR_OP_RULES, std::size(BITWISE_OR_OP_RULES), "|", lhsType, rhsType)};
 }
 
-QualType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getBitwiseXorResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                  size_t opIdx) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_BITWISE_XOR, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, std::size(BITWISE_XOR_OP_RULES), "^", lhsType, rhsType);
+  return {validateBinaryOperation(node, BITWISE_XOR_OP_RULES, std::size(BITWISE_XOR_OP_RULES), "^", lhsType, rhsType)};
 }
 
-QualType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getBitwiseAndResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                  size_t opIdx) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_BITWISE_AND, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, BITWISE_AND_OP_RULES, std::size(BITWISE_AND_OP_RULES), "&", lhsType, rhsType);
+  return {validateBinaryOperation(node, BITWISE_AND_OP_RULES, std::size(BITWISE_AND_OP_RULES), "&", lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -607,11 +624,16 @@ QualType OpRuleManager::getPrefixNotResultType(const ASTNode *node, const ExprRe
   return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, std::size(PREFIX_NOT_OP_RULES), "!", lhsType);
 }
 
-QualType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs) {
+ExprResult OpRuleManager::getPrefixBitwiseNotResultType(ASTNode *node, const ExprResult &lhs) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_BITWISE_NOT, {lhs}, 0);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
 
-  return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, std::size(PREFIX_BITWISE_NOT_OP_RULES), "~", lhsType);
+  return {validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, std::size(PREFIX_BITWISE_NOT_OP_RULES), "~", lhsType)};
 }
 
 QualType OpRuleManager::getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs) {

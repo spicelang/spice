@@ -193,7 +193,7 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
-    currentOperand = {OpRuleManager::getBitwiseOrResultType(node, currentOperand, rhsOperand)};
+    currentOperand = opRuleManager.getBitwiseOrResultType(node, currentOperand, rhsOperand, i - 1);
   }
 
   node->setEvaluatedSymbolType(currentOperand.type, manIdx);
@@ -213,7 +213,7 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
-    currentOperand = {OpRuleManager::getBitwiseXorResultType(node, currentOperand, rhsOperand)};
+    currentOperand = opRuleManager.getBitwiseXorResultType(node, currentOperand, rhsOperand, i - 1);
   }
 
   node->setEvaluatedSymbolType(currentOperand.type, manIdx);
@@ -233,7 +233,7 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
-    currentOperand = {OpRuleManager::getBitwiseAndResultType(node, currentOperand, rhsOperand)};
+    currentOperand = opRuleManager.getBitwiseAndResultType(node, currentOperand, rhsOperand, i - 1);
   }
 
   node->setEvaluatedSymbolType(currentOperand.type, manIdx);
@@ -463,9 +463,12 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_NOT:
     operandType = OpRuleManager::getPrefixNotResultType(node, operand);
     break;
-  case PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT:
-    operandType = OpRuleManager::getPrefixBitwiseNotResultType(node, operand);
+  case PrefixUnaryExprNode::PrefixUnaryOp::OP_BITWISE_NOT: {
+    const ExprResult result = opRuleManager.getPrefixBitwiseNotResultType(node, operand);
+    operandType = result.type;
+    operandEntry = result.entry;
     break;
+  }
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_DEREFERENCE:
     operandType = OpRuleManager::getPrefixMulResultType(node, operand);
     break;
