@@ -15,6 +15,7 @@ public type Lexer struct {
     //compose CompilerPass compilerPass
     Reader reader
     Token curTok
+    Vector<Token> tokenBuffer // Lookahead buffer for tokens that were peeked but not yet consumed
 }
 
 public p Lexer.ctor(const FilePath& filePath) {
@@ -34,13 +35,45 @@ public f<const Token&> Lexer.getToken() {
 }
 
 public p Lexer.advance() {
+    // If we have already peeked ahead, consume the buffered token first
+    if !this.tokenBuffer.isEmpty() {
+        this.curTok = this.tokenBuffer.get(0l);
+        this.tokenBuffer.removeAt(0l);
+        return;
+    }
+
+    // Read and consume next token
+    this.curTok = this.readRawToken();
+}
+
+/**
+ * Look ahead at the k-th upcoming token without consuming it.
+ * k=1 refers to the token directly following the current one.
+ *
+ * @param k One-based lookahead distance
+ * @return The peeked token
+ */
+public f<const Token&> Lexer.peek(unsigned long k) {
+    assert k >= 1l;
+    // Fill the lookahead buffer until it holds at least k tokens
+    while cast<unsigned long>(this.tokenBuffer.getSize()) < k {
+        this.tokenBuffer.pushBack(this.readRawToken());
+    }
+    return this.tokenBuffer.get(k - 1l);
+}
+
+/**
+ * Read the next raw token directly from the reader, skipping leading whitespace.
+ * This does not touch the lookahead buffer and is the single source of truth for
+ * turning characters into tokens.
+ */
+f<Token> Lexer.readRawToken() {
     // Skip any whitespaces
     while isWhitespace(this.reader.getChar()) && !this.reader.isEOF() {
         this.reader.advance();
     }
 
-    // Read and consume next token
-    this.curTok = this.consumeToken();
+    return this.consumeToken();
 }
 
 public p Lexer.expect(TokenType expectedType) {
