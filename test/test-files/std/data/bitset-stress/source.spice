@@ -71,7 +71,8 @@ f<int> main() {
     // AND/OR/XOR identities: x & x == x, x | x == x, x ^ x == empty
     assert (x & x) == x;
     assert (x | x) == x;
-    assert (x ^ x).none();
+    const BitSet xored = x ^ x;
+    assert xored.none();
 
     // 6. Copy ctor produces an independent deep copy
     BitSet original = BitSet(75l);
