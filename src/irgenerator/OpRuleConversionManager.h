@@ -52,7 +52,7 @@ public:
   LLVMExprResult getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,
                                   size_t opIdx);
   LLVMExprResult getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
-                                   QualType rhsSTy);
+                                   QualType rhsSTy, size_t opIdx);
   LLVMExprResult getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs,
                                    QualType rhsSTy, size_t opIdx);
   LLVMExprResult getEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy);
@@ -81,7 +81,7 @@ public:
   LLVMExprResult getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
   LLVMExprResult getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
-  LLVMExprResult getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const;
+  LLVMExprResult getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy);
   LLVMExprResult getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy);
   LLVMExprResult getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy);
   LLVMExprResult getCastInst(const ASTNode *node, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy) const;

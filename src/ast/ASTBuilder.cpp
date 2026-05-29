@@ -1588,6 +1588,14 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
     fctNameNode->name = OP_FCT_SHL;
   else if (ctx->GREATER().size() == 2)
     fctNameNode->name = OP_FCT_SHR;
+  else if (ctx->BITWISE_AND())
+    fctNameNode->name = OP_FCT_BITWISE_AND;
+  else if (ctx->BITWISE_OR())
+    fctNameNode->name = OP_FCT_BITWISE_OR;
+  else if (ctx->BITWISE_XOR())
+    fctNameNode->name = OP_FCT_BITWISE_XOR;
+  else if (ctx->BITWISE_NOT())
+    fctNameNode->name = OP_FCT_BITWISE_NOT;
   else if (ctx->PLUS_EQUAL())
     fctNameNode->name = OP_FCT_PLUS_EQUAL;
   else if (ctx->MINUS_EQUAL())

@@ -438,8 +438,14 @@ LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LL
                                                          LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -454,11 +460,17 @@ LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LL
 }
 
 LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
-                                                          LLVMExprResult &rhs, QualType rhsSTy) {
+                                                          LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -476,8 +488,14 @@ LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, L
                                                           LLVMExprResult &rhs, QualType rhsSTy, size_t opIdx) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -1524,9 +1542,14 @@ LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LL
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) const {
+LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, DEFAULT_OP_IDX);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough

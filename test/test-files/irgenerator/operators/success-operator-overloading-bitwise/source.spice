@@ -1,0 +1,42 @@
+type Flags struct {
+    int bits
+}
+
+f<Flags> operator&(const Flags f1, const Flags f2) {
+    return Flags{f1.bits & f2.bits};
+}
+
+f<Flags> operator|(const Flags f1, const Flags f2) {
+    return Flags{f1.bits | f2.bits};
+}
+
+f<Flags> operator^(const Flags f1, const Flags f2) {
+    return Flags{f1.bits ^ f2.bits};
+}
+
+f<Flags> operator~(const Flags f1) {
+    return Flags{~f1.bits};
+}
+
+f<int> main() {
+    Flags a = Flags{12}; // 0b1100
+    Flags b = Flags{10}; // 0b1010
+
+    Flags both = a & b; // Here we call the overloaded operator
+    assert both.bits == 8; // 0b1000
+
+    Flags either = a | b; // Here we call the overloaded operator
+    assert either.bits == 14; // 0b1110
+
+    Flags exclusive = a ^ b; // Here we call the overloaded operator
+    assert exclusive.bits == 6; // 0b0110
+
+    Flags inverted = ~a; // Here we call the overloaded (unary) operator
+    assert inverted.bits == -13; // bitwise complement of 12
+
+    // Chaining still picks the overloaded operators
+    Flags chained = a & b | exclusive;
+    assert chained.bits == 14;
+
+    printf("All assertions passed!");
+}
