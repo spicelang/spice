@@ -37,10 +37,10 @@ f<int> main() {
     assert pad.count() == 100l;
     assert pad.all();
 
-    // 4. ~ operator respects the padding invariant
+    // 4. bitNot respects the padding invariant
     BitSet src = BitSet(100l);
     src.set(0l); src.set(50l); src.set(99l);
-    BitSet inv = ~src;
+    BitSet inv = src.bitNot();
     assert inv.count() == 97l; // 100 - 3
     assert !inv.test(0l) && !inv.test(50l) && !inv.test(99l);
     assert inv.test(1l) && inv.test(98l);
@@ -51,27 +51,27 @@ f<int> main() {
     for unsigned long i = 0l; i < 130l; i += 2l { x.set(i); }   // evens
     for unsigned long i = 0l; i < 130l; i += 3l { y.set(i); }   // multiples of 3
 
-    BitSet bAnd = x & y; // multiples of 6
+    BitSet bAnd = x.bitAnd(y); // multiples of 6
     for unsigned long i = 0l; i < 130l; i++ {
         assert bAnd.test(i) == (i % 6l == 0l);
     }
 
-    BitSet bOr = x | y;
+    BitSet bOr = x.bitOr(y);
     for unsigned long i = 0l; i < 130l; i++ {
         assert bOr.test(i) == (i % 2l == 0l || i % 3l == 0l);
     }
 
-    BitSet bXor = x ^ y;
+    BitSet bXor = x.bitXor(y);
     for unsigned long i = 0l; i < 130l; i++ {
         const bool inX = i % 2l == 0l;
         const bool inY = i % 3l == 0l;
         assert bXor.test(i) == (inX != inY);
     }
 
-    // AND/OR/XOR identities: x & x == x, x | x == x, x ^ x == empty
-    assert (x & x) == x;
-    assert (x | x) == x;
-    assert (x ^ x).none();
+    // AND/OR/XOR identities: x.bitAnd(x) == x, x.bitOr(x) == x, x.bitXor(x) == empty
+    assert x.bitAnd(x) == x;
+    assert x.bitOr(x) == x;
+    assert x.bitXor(x).none();
 
     // 6. Copy ctor produces an independent deep copy
     BitSet original = BitSet(75l);
