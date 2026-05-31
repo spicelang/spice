@@ -5,7 +5,8 @@ import "std/data/vector";
 //import "bootstrap/ast/abstract-ast-visitor";
 import "bootstrap/reader/code-loc";
 import "bootstrap/ast/ast-node-intf";
-//import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
 //import "bootstrap/model/function";
 
 /*public type IVisitable interface {
@@ -51,8 +52,14 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
         assert child != nil<ASTNode*>;
         child.resizeToNumberOfManifestations(manifestationCount);
     }
-    // Do custom work (override in subclasses to add per-node behavior)
+    // Do custom work – concrete node types override this to resize their per-manifestation fields.
+    this.customItemsInitialization(manifestationCount);
 }
+
+// No-op hook that concrete node types may override to resize per-manifestation data
+// (e.g. symbolTypes, compileThenBranch). Called from resizeToNumberOfManifestations
+// after the recursive child walk.
+public p ASTNode.customItemsInitialization(unsigned long /*manifestationCount*/) {}
 
 // ========================================================== EntryNode ==========================================================
 
@@ -90,11 +97,21 @@ public p ASTStmtNode.ctor(CodeLoc codeLoc) {
 
 public type ASTExprNode struct/*: IVisitable*/ {
     compose public ASTNode node
-    // ToDo: QualTypeList symbolTypes (blocked on qual-type.spice compiling)
+    QualTypeList symbolTypes
 }
 
 public p ASTExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+}
+
+// Resize symbolTypes to hold one QualType per manifestation, then recurse into children.
+// Mirrors C++ ExprNode::resizeToNumberOfManifestations.
+public p ASTExprNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    this.symbolTypes.clear();
+    for unsigned long i = 0l; i < manifestationCount; i++ {
+        this.symbolTypes.pushBack(QualType(SuperType::TY_INVALID));
+    }
+    this.node.resizeToNumberOfManifestations(manifestationCount);
 }
 
 // ======================================================== MainFctDefNode =======================================================
@@ -298,11 +315,24 @@ public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
 
 public type ASTIfStmtNode struct/*: IVisitable*/ {
     compose public ASTStmtNode node
-
+    // Per-manifestation: whether the then/else branches should be compiled for each generic instantiation.
+    // Default is true for both. Mirrors C++ IfStmtNode::compileThenBranch / compileElseBranch.
+    Vector<bool> compileThenBranch
+    Vector<bool> compileElseBranch
 }
 
 public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+}
+
+public p ASTIfStmtNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    this.compileThenBranch.clear();
+    this.compileElseBranch.clear();
+    for unsigned long i = 0l; i < manifestationCount; i++ {
+        this.compileThenBranch.pushBack(true);
+        this.compileElseBranch.pushBack(true);
+    }
+    this.node.resizeToNumberOfManifestations(manifestationCount);
 }
 
 // ========================================================== ElseStmtNode =======================================================
@@ -474,11 +504,22 @@ public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
 
 public type ASTDeclStmtNode struct/*: IVisitable*/ {
     compose public ASTStmtNode node
-
+    // Per-manifestation symbol table entries. Typed as ASTNode* to break the circular dependency
+    // (SymbolTableEntry imports ast-nodes.spice). Mirrors C++ DeclStmtNode::entries.
+    // ToDo: Change to Vector<SymbolTableEntry*> once the circular-import issue is resolved.
+    Vector<ASTNode*> entries
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+}
+
+public p ASTDeclStmtNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    this.entries.clear();
+    for unsigned long i = 0l; i < manifestationCount; i++ {
+        this.entries.pushBack(nil<ASTNode*>());
+    }
+    this.node.resizeToNumberOfManifestations(manifestationCount);
 }
 
 // ========================================================== ExprStmtNode =======================================================
@@ -1009,6 +1050,37 @@ public f<bool> testASTNodesSmoke() {
     // TopLevelDefAttrNode
     ASTTopLevelDefAttrNode tlAttr = ASTTopLevelDefAttrNode(loc);
     assert tlAttr.node.codeLoc.line == 3l;
+
+    return true;
+}
+
+#[test, test.name="ASTNodes resizeToNumberOfManifestations test"]
+public f<bool> testASTNodesResize() {
+    const CodeLoc loc = CodeLoc(1l, 1l, "resize.spice");
+
+    // ExprNode: symbolTypes should be populated per manifestation
+    ASTExprNode expr = ASTExprNode(loc);
+    assert expr.symbolTypes.getSize() == 0l;
+    expr.resizeToNumberOfManifestations(3l);
+    assert expr.symbolTypes.getSize() == 3l;
+
+    // Resizing again replaces the previous values
+    expr.resizeToNumberOfManifestations(1l);
+    assert expr.symbolTypes.getSize() == 1l;
+
+    // IfStmtNode: both branch-enable vectors should be populated
+    ASTIfStmtNode ifStmt = ASTIfStmtNode(loc);
+    assert ifStmt.compileThenBranch.getSize() == 0l;
+    assert ifStmt.compileElseBranch.getSize() == 0l;
+    ifStmt.resizeToNumberOfManifestations(2l);
+    assert ifStmt.compileThenBranch.getSize() == 2l;
+    assert ifStmt.compileElseBranch.getSize() == 2l;
+
+    // DeclStmtNode: entries vector should be populated with nil sentinels
+    ASTDeclStmtNode decl = ASTDeclStmtNode(loc);
+    assert decl.entries.getSize() == 0l;
+    decl.resizeToNumberOfManifestations(4l);
+    assert decl.entries.getSize() == 4l;
 
     return true;
 }
