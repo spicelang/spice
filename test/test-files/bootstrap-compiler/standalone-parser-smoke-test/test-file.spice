@@ -1,0 +1,56 @@
+// Input program for the standalone parser smoke test. It exercises a representative cross-section of
+// the grammar productions the bootstrap parser supports: imports, interfaces, structs (incl. generic),
+// global constants, functions, procedures, control flow (if/else, for, while), declarations, compound
+// assignments, ternary/logical/relational/arithmetic expressions, function calls and casts.
+
+import "std/io";
+
+type Shape interface {
+    f<int> area();
+}
+
+type Rectangle struct {
+    int width
+    int height
+}
+
+type Container<T> struct {
+    T value
+}
+
+const int SCALE = 2;
+
+f<int> max(int a, int b) {
+    if a > b {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+p noop() {
+}
+
+f<int> compute(int n) {
+    int acc = 0;
+    for int i = 0; i < n; i++ {
+        acc += i * SCALE;
+    }
+    int j = 0;
+    while j < n {
+        acc -= j;
+        j++;
+    }
+    bool flag = acc > 0 && n != 0;
+    int picked = flag ? acc : n;
+    return picked;
+}
+
+f<int> main() {
+    int a = 5;
+    int b = 10;
+    int m = max(a, b);
+    int c = compute(m);
+    int d = cast<int>(c);
+    return d;
+}

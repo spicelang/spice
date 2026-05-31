@@ -151,6 +151,15 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
       return lhsType;
   }
+  // Allow baseStruct* = derivedStruct* or baseStruct& = derivedStruct where derivedStruct composes
+  // baseStruct as its first field (and is therefore located at the same address)
+  if (typesCompatible && lhsType.isBase(TY_STRUCT) && rhsType.isBase(TY_STRUCT)) {
+    QualType lhsTypeCopy = lhsType;
+    QualType rhsTypeCopy = rhsType;
+    QualType::unwrapBothWithRefWrappers(lhsTypeCopy, rhsTypeCopy);
+    if (lhsTypeCopy.matchesComposedBaseOfStruct(rhsTypeCopy))
+      return lhsType;
+  }
   // Allow type* = heap type* straight away. This is used for initializing non-owning pointers to heap allocations
   if (lhsType.isPtr() && rhsType.isHeap() && lhsType.matches(rhsType, false, true, true)) {
     TypeQualifiers rhsQualifiers = rhsType.getQualifiers();

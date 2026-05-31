@@ -7,6 +7,7 @@ import "bootstrap/lexer/lexer";
 import "bootstrap/lexer/token";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/util/block-allocator";
+import "bootstrap/util/memory";
 
 // Generic types
 type T dyn;
@@ -15,7 +16,11 @@ public type Parser struct {
     //compose CompilerPass compilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack
-    BlockAllocator<ASTNode> astNodeAlloc // ToDo: Remove and use allocator from resource manager via compilerPass
+    // ToDo: Remove memoryManager + astNodeAlloc and use the allocator from the resource manager via compilerPass.
+    // Until that wiring exists, the parser owns its own memory manager and AST node pool. The memory manager is
+    // declared before the allocator so that it outlives the allocator, which keeps a reference to it.
+    DefaultMemoryManager memoryManager
+    BlockAllocator<ASTNode> astNodeAlloc
     // Number of additional '>' tokens that are still pending due to a previously split SHR ('>>') token.
     // This is needed to close nested generic type lists, since the lexer merges '>>' into a single token.
     unsigned int pendingGreaters = 0
@@ -23,6 +28,8 @@ public type Parser struct {
 
 public p Parser.ctor(Lexer& lexer) {
     this.lexer = lexer;
+    // Wire up the AST node pool with the parser-owned memory manager
+    this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
     // Make sure the current token is a relevant (non-comment) token
     this.skipIgnoredTokens();
 }
@@ -38,24 +45,31 @@ f<T*> Parser.createNode<T>() {
         parent = this.parentStack.top();
     }
 
-    // Create the new node
-    //T* node = this.resourceManager.astNodeAlloc.allocate(T(this.lexer.getCodeLoc()));
-    T* node = this.astNodeAlloc.allocate(T(this.lexer.getCodeLoc()));
+    // Reserve storage in the pool and construct the node in place. We construct in place (instead of
+    // copying a prebuilt node) so that AST nodes may hold non-copyable members such as their children.
+    //T* node = this.resourceManager.astNodeAlloc.reserve<T>();
+    T* node = this.astNodeAlloc.reserve<T>();
+    unsafe {
+        __placement_new<T>(node, this.lexer.getCodeLoc());
+    }
+    // Upcast to the composed ASTNode base. This is what the parent/child book-keeping operates on.
+    ASTNode* nodeBase = node;
 
     // If this is not the entry node, we need to add the new node to its parent
     if !isRootNode {
-        parent.addChild(node);
+        parent.addChild(nodeBase);
     }
 
     // This node is the parent for its children
-    this.parentStack.push(node);
+    this.parentStack.push(nodeBase);
 
     return node;
 }
 
 f<T*> Parser.concludeNode<T>(T* node) {
     assert !this.parentStack.isEmpty();
-    assert this.parentStack.top() == node;
+    ASTNode* nodeBase = node;
+    assert this.parentStack.top() == nodeBase;
     this.parentStack.pop();
     return node;
 }
@@ -121,6 +135,7 @@ f<TokenType> Parser.tokenAt(unsigned long offset) {
         }
         i++;
     }
+    panic(Error("Unreachable")); // The loop above only exits via return
 }
 
 // Close a generic type list. Handles the case where the lexer merged two closing
@@ -191,6 +206,7 @@ f<long> Parser.matchAngleGroup(long offset) {
             return offset;
         }
     }
+    panic(Error("Unreachable")); // The loop above only exits via return
 }
 
 // Skip a balanced group delimited by the given open/close token types, starting at an open token.
@@ -210,6 +226,7 @@ f<long> Parser.matchBalancedGroup(long offset, TokenType openType, TokenType clo
             return offset;
         }
     }
+    panic(Error("Unreachable")); // The loop above only exits via return
 }
 
 // Try to match a dataType at the given offset. Returns the offset right after the dataType, or -1.

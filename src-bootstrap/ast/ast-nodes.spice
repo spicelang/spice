@@ -16,6 +16,7 @@ import "bootstrap/ast/ast-node-intf";
 
 public type ASTNode struct/*: IVisitable*/ {
     ASTNode* parent = nil<ASTNode*>
+    Vector<ASTNode*> children
     CodeLoc codeLoc
 }
 
@@ -23,14 +24,30 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
     this.codeLoc = codeLoc;
 }
 
+// Explicit destructor. AST nodes only ever live inside the BlockAllocator pool and are released via
+// sDestruct(ASTNode*), so their destructor is never reached through normal value destruction. Defining
+// it explicitly makes sure it is generated. The composed 'children' vector only holds non-owning
+// pointers, so it is enough to let the implicitly appended member destruction free the vector storage.
+public p ASTNode.dtor() {}
+
 /*public f<Any> ASTNode.accept(AbstractAstVisitor* _) {
     assert false; // Please override at child level
 }*/
 
+// Register a child node and set its parent to this node.
+public p ASTNode.addChild(ASTNode* child) {
+    assert child != nil<ASTNode*>;
+    child.parent = this;
+    this.children.pushBack(child);
+}
+
+public f<const Vector<ASTNode*>&> ASTNode.getChildren() {
+    return this.children;
+}
+
 public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
     // Resize children
-    Vector<ASTNode*> children/* = this.getChildren()*/;
-    foreach ASTNode* child : children {
+    foreach ASTNode* child : this.children {
         assert child != nil<ASTNode*>;
         child.resizeToNumberOfManifestations(manifestationCount);
     }

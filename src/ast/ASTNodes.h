@@ -738,10 +738,16 @@ public:
   GET_CHILDREN(condition, thenBody, elseStmt);
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
+  void customItemsInitialization(const size_t manifestationCount) override {
+    compileThenBranch.resize(manifestationCount, true);
+    compileElseBranch.resize(manifestationCount, true);
+  }
+  [[nodiscard]] bool doCompileThenBranch(size_t manIdx) const { return compileThenBranch.empty() || compileThenBranch[manIdx]; }
+  [[nodiscard]] bool doCompileElseBranch(size_t manIdx) const { return compileElseBranch.empty() || compileElseBranch[manIdx]; }
 
   // Public members
-  bool compileThenBranch = true;
-  bool compileElseBranch = true;
+  std::vector<bool> compileThenBranch;
+  std::vector<bool> compileElseBranch;
   ExprNode *condition = nullptr;
   StmtLstNode *thenBody = nullptr;
   ElseStmtNode *elseStmt = nullptr;
