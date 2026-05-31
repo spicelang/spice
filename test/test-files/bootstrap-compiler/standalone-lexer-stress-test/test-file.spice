@@ -1,0 +1,754 @@
+// repetition 0 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_0(unsigned long size_0, heap byte*& ptr) { heap byte* p = malloc(size_0); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #0"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 0 spanning some text */
+// repetition 1 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_1(unsigned long size_1, heap byte*& ptr) { heap byte* p = malloc(size_1); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #1"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 1 spanning some text */
+// repetition 2 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_2(unsigned long size_2, heap byte*& ptr) { heap byte* p = malloc(size_2); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #2"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 2 spanning some text */
+// repetition 3 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_3(unsigned long size_3, heap byte*& ptr) { heap byte* p = malloc(size_3); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #3"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 3 spanning some text */
+// repetition 4 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_4(unsigned long size_4, heap byte*& ptr) { heap byte* p = malloc(size_4); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #4"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 4 spanning some text */
+// repetition 5 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_5(unsigned long size_5, heap byte*& ptr) { heap byte* p = malloc(size_5); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #5"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 5 spanning some text */
+// repetition 6 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_6(unsigned long size_6, heap byte*& ptr) { heap byte* p = malloc(size_6); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #6"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 6 spanning some text */
+// repetition 7 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_7(unsigned long size_7, heap byte*& ptr) { heap byte* p = malloc(size_7); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #7"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 7 spanning some text */
+// repetition 8 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_8(unsigned long size_8, heap byte*& ptr) { heap byte* p = malloc(size_8); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #8"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 8 spanning some text */
+// repetition 9 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_9(unsigned long size_9, heap byte*& ptr) { heap byte* p = malloc(size_9); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #9"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 9 spanning some text */
+// repetition 10 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_10(unsigned long size_10, heap byte*& ptr) { heap byte* p = malloc(size_10); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #10"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 10 spanning some text */
+// repetition 11 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_11(unsigned long size_11, heap byte*& ptr) { heap byte* p = malloc(size_11); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #11"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 11 spanning some text */
+// repetition 12 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_12(unsigned long size_12, heap byte*& ptr) { heap byte* p = malloc(size_12); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #12"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 12 spanning some text */
+// repetition 13 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_13(unsigned long size_13, heap byte*& ptr) { heap byte* p = malloc(size_13); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #13"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 13 spanning some text */
+// repetition 14 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_14(unsigned long size_14, heap byte*& ptr) { heap byte* p = malloc(size_14); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #14"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 14 spanning some text */
+// repetition 15 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_15(unsigned long size_15, heap byte*& ptr) { heap byte* p = malloc(size_15); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #15"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 15 spanning some text */
+// repetition 16 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_16(unsigned long size_16, heap byte*& ptr) { heap byte* p = malloc(size_16); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #16"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 16 spanning some text */
+// repetition 17 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_17(unsigned long size_17, heap byte*& ptr) { heap byte* p = malloc(size_17); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #17"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 17 spanning some text */
+// repetition 18 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_18(unsigned long size_18, heap byte*& ptr) { heap byte* p = malloc(size_18); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #18"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 18 spanning some text */
+// repetition 19 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_19(unsigned long size_19, heap byte*& ptr) { heap byte* p = malloc(size_19); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #19"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 19 spanning some text */
+// repetition 20 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_20(unsigned long size_20, heap byte*& ptr) { heap byte* p = malloc(size_20); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #20"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 20 spanning some text */
+// repetition 21 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_21(unsigned long size_21, heap byte*& ptr) { heap byte* p = malloc(size_21); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #21"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 21 spanning some text */
+// repetition 22 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_22(unsigned long size_22, heap byte*& ptr) { heap byte* p = malloc(size_22); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #22"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 22 spanning some text */
+// repetition 23 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_23(unsigned long size_23, heap byte*& ptr) { heap byte* p = malloc(size_23); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #23"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 23 spanning some text */
+// repetition 24 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_24(unsigned long size_24, heap byte*& ptr) { heap byte* p = malloc(size_24); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #24"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 24 spanning some text */
+// repetition 25 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_25(unsigned long size_25, heap byte*& ptr) { heap byte* p = malloc(size_25); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #25"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 25 spanning some text */
+// repetition 26 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_26(unsigned long size_26, heap byte*& ptr) { heap byte* p = malloc(size_26); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #26"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 26 spanning some text */
+// repetition 27 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_27(unsigned long size_27, heap byte*& ptr) { heap byte* p = malloc(size_27); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #27"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 27 spanning some text */
+// repetition 28 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_28(unsigned long size_28, heap byte*& ptr) { heap byte* p = malloc(size_28); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #28"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 28 spanning some text */
+// repetition 29 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_29(unsigned long size_29, heap byte*& ptr) { heap byte* p = malloc(size_29); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #29"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 29 spanning some text */
+// repetition 30 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_30(unsigned long size_30, heap byte*& ptr) { heap byte* p = malloc(size_30); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #30"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 30 spanning some text */
+// repetition 31 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_31(unsigned long size_31, heap byte*& ptr) { heap byte* p = malloc(size_31); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #31"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 31 spanning some text */
+// repetition 32 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_32(unsigned long size_32, heap byte*& ptr) { heap byte* p = malloc(size_32); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #32"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 32 spanning some text */
+// repetition 33 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_33(unsigned long size_33, heap byte*& ptr) { heap byte* p = malloc(size_33); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #33"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 33 spanning some text */
+// repetition 34 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_34(unsigned long size_34, heap byte*& ptr) { heap byte* p = malloc(size_34); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #34"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 34 spanning some text */
+// repetition 35 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_35(unsigned long size_35, heap byte*& ptr) { heap byte* p = malloc(size_35); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #35"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 35 spanning some text */
+// repetition 36 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_36(unsigned long size_36, heap byte*& ptr) { heap byte* p = malloc(size_36); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #36"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 36 spanning some text */
+// repetition 37 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_37(unsigned long size_37, heap byte*& ptr) { heap byte* p = malloc(size_37); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #37"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 37 spanning some text */
+// repetition 38 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_38(unsigned long size_38, heap byte*& ptr) { heap byte* p = malloc(size_38); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #38"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 38 spanning some text */
+// repetition 39 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_39(unsigned long size_39, heap byte*& ptr) { heap byte* p = malloc(size_39); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #39"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 39 spanning some text */
+// repetition 40 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_40(unsigned long size_40, heap byte*& ptr) { heap byte* p = malloc(size_40); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #40"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 40 spanning some text */
+// repetition 41 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_41(unsigned long size_41, heap byte*& ptr) { heap byte* p = malloc(size_41); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #41"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 41 spanning some text */
+// repetition 42 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_42(unsigned long size_42, heap byte*& ptr) { heap byte* p = malloc(size_42); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #42"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 42 spanning some text */
+// repetition 43 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_43(unsigned long size_43, heap byte*& ptr) { heap byte* p = malloc(size_43); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #43"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 43 spanning some text */
+// repetition 44 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_44(unsigned long size_44, heap byte*& ptr) { heap byte* p = malloc(size_44); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #44"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 44 spanning some text */
+// repetition 45 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_45(unsigned long size_45, heap byte*& ptr) { heap byte* p = malloc(size_45); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #45"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 45 spanning some text */
+// repetition 46 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_46(unsigned long size_46, heap byte*& ptr) { heap byte* p = malloc(size_46); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #46"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 46 spanning some text */
+// repetition 47 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_47(unsigned long size_47, heap byte*& ptr) { heap byte* p = malloc(size_47); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #47"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 47 spanning some text */
+// repetition 48 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_48(unsigned long size_48, heap byte*& ptr) { heap byte* p = malloc(size_48); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #48"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 48 spanning some text */
+// repetition 49 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_49(unsigned long size_49, heap byte*& ptr) { heap byte* p = malloc(size_49); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #49"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 49 spanning some text */
+// repetition 50 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_50(unsigned long size_50, heap byte*& ptr) { heap byte* p = malloc(size_50); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #50"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 50 spanning some text */
+// repetition 51 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_51(unsigned long size_51, heap byte*& ptr) { heap byte* p = malloc(size_51); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #51"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 51 spanning some text */
+// repetition 52 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_52(unsigned long size_52, heap byte*& ptr) { heap byte* p = malloc(size_52); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #52"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 52 spanning some text */
+// repetition 53 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_53(unsigned long size_53, heap byte*& ptr) { heap byte* p = malloc(size_53); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #53"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 53 spanning some text */
+// repetition 54 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_54(unsigned long size_54, heap byte*& ptr) { heap byte* p = malloc(size_54); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #54"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 54 spanning some text */
+// repetition 55 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_55(unsigned long size_55, heap byte*& ptr) { heap byte* p = malloc(size_55); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #55"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 55 spanning some text */
+// repetition 56 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_56(unsigned long size_56, heap byte*& ptr) { heap byte* p = malloc(size_56); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #56"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 56 spanning some text */
+// repetition 57 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_57(unsigned long size_57, heap byte*& ptr) { heap byte* p = malloc(size_57); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #57"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 57 spanning some text */
+// repetition 58 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_58(unsigned long size_58, heap byte*& ptr) { heap byte* p = malloc(size_58); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #58"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 58 spanning some text */
+// repetition 59 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_59(unsigned long size_59, heap byte*& ptr) { heap byte* p = malloc(size_59); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #59"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 59 spanning some text */
+// repetition 60 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_60(unsigned long size_60, heap byte*& ptr) { heap byte* p = malloc(size_60); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #60"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 60 spanning some text */
+// repetition 61 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_61(unsigned long size_61, heap byte*& ptr) { heap byte* p = malloc(size_61); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #61"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 61 spanning some text */
+// repetition 62 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_62(unsigned long size_62, heap byte*& ptr) { heap byte* p = malloc(size_62); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #62"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 62 spanning some text */
+// repetition 63 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_63(unsigned long size_63, heap byte*& ptr) { heap byte* p = malloc(size_63); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #63"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 63 spanning some text */
+// repetition 64 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_64(unsigned long size_64, heap byte*& ptr) { heap byte* p = malloc(size_64); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #64"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 64 spanning some text */
+// repetition 65 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_65(unsigned long size_65, heap byte*& ptr) { heap byte* p = malloc(size_65); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #65"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 65 spanning some text */
+// repetition 66 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_66(unsigned long size_66, heap byte*& ptr) { heap byte* p = malloc(size_66); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #66"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 66 spanning some text */
+// repetition 67 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_67(unsigned long size_67, heap byte*& ptr) { heap byte* p = malloc(size_67); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #67"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 67 spanning some text */
+// repetition 68 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_68(unsigned long size_68, heap byte*& ptr) { heap byte* p = malloc(size_68); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #68"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 68 spanning some text */
+// repetition 69 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_69(unsigned long size_69, heap byte*& ptr) { heap byte* p = malloc(size_69); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #69"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 69 spanning some text */
+// repetition 70 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_70(unsigned long size_70, heap byte*& ptr) { heap byte* p = malloc(size_70); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #70"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 70 spanning some text */
+// repetition 71 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_71(unsigned long size_71, heap byte*& ptr) { heap byte* p = malloc(size_71); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #71"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 71 spanning some text */
+// repetition 72 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_72(unsigned long size_72, heap byte*& ptr) { heap byte* p = malloc(size_72); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #72"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 72 spanning some text */
+// repetition 73 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_73(unsigned long size_73, heap byte*& ptr) { heap byte* p = malloc(size_73); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #73"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 73 spanning some text */
+// repetition 74 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_74(unsigned long size_74, heap byte*& ptr) { heap byte* p = malloc(size_74); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #74"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 74 spanning some text */
+// repetition 75 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_75(unsigned long size_75, heap byte*& ptr) { heap byte* p = malloc(size_75); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #75"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 75 spanning some text */
+// repetition 76 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_76(unsigned long size_76, heap byte*& ptr) { heap byte* p = malloc(size_76); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #76"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 76 spanning some text */
+// repetition 77 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_77(unsigned long size_77, heap byte*& ptr) { heap byte* p = malloc(size_77); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #77"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 77 spanning some text */
+// repetition 78 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_78(unsigned long size_78, heap byte*& ptr) { heap byte* p = malloc(size_78); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #78"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 78 spanning some text */
+// repetition 79 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_79(unsigned long size_79, heap byte*& ptr) { heap byte* p = malloc(size_79); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #79"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 79 spanning some text */
+// repetition 80 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_80(unsigned long size_80, heap byte*& ptr) { heap byte* p = malloc(size_80); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #80"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 80 spanning some text */
+// repetition 81 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_81(unsigned long size_81, heap byte*& ptr) { heap byte* p = malloc(size_81); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #81"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 81 spanning some text */
+// repetition 82 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_82(unsigned long size_82, heap byte*& ptr) { heap byte* p = malloc(size_82); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #82"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 82 spanning some text */
+// repetition 83 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_83(unsigned long size_83, heap byte*& ptr) { heap byte* p = malloc(size_83); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #83"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 83 spanning some text */
+// repetition 84 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_84(unsigned long size_84, heap byte*& ptr) { heap byte* p = malloc(size_84); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #84"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 84 spanning some text */
+// repetition 85 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_85(unsigned long size_85, heap byte*& ptr) { heap byte* p = malloc(size_85); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #85"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 85 spanning some text */
+// repetition 86 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_86(unsigned long size_86, heap byte*& ptr) { heap byte* p = malloc(size_86); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #86"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 86 spanning some text */
+// repetition 87 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_87(unsigned long size_87, heap byte*& ptr) { heap byte* p = malloc(size_87); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #87"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 87 spanning some text */
+// repetition 88 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_88(unsigned long size_88, heap byte*& ptr) { heap byte* p = malloc(size_88); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #88"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 88 spanning some text */
+// repetition 89 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_89(unsigned long size_89, heap byte*& ptr) { heap byte* p = malloc(size_89); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #89"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 89 spanning some text */
+// repetition 90 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_90(unsigned long size_90, heap byte*& ptr) { heap byte* p = malloc(size_90); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #90"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 90 spanning some text */
+// repetition 91 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_91(unsigned long size_91, heap byte*& ptr) { heap byte* p = malloc(size_91); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #91"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 91 spanning some text */
+// repetition 92 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_92(unsigned long size_92, heap byte*& ptr) { heap byte* p = malloc(size_92); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #92"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 92 spanning some text */
+// repetition 93 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_93(unsigned long size_93, heap byte*& ptr) { heap byte* p = malloc(size_93); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #93"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 93 spanning some text */
+// repetition 94 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_94(unsigned long size_94, heap byte*& ptr) { heap byte* p = malloc(size_94); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #94"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 94 spanning some text */
+// repetition 95 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_95(unsigned long size_95, heap byte*& ptr) { heap byte* p = malloc(size_95); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #95"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 95 spanning some text */
+// repetition 96 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_96(unsigned long size_96, heap byte*& ptr) { heap byte* p = malloc(size_96); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #96"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 96 spanning some text */
+// repetition 97 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_97(unsigned long size_97, heap byte*& ptr) { heap byte* p = malloc(size_97); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #97"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 97 spanning some text */
+// repetition 98 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_98(unsigned long size_98, heap byte*& ptr) { heap byte* p = malloc(size_98); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #98"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 98 spanning some text */
+// repetition 99 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_99(unsigned long size_99, heap byte*& ptr) { heap byte* p = malloc(size_99); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #99"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 99 spanning some text */
+// repetition 100 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_100(unsigned long size_100, heap byte*& ptr) { heap byte* p = malloc(size_100); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #100"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 100 spanning some text */
+// repetition 101 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_101(unsigned long size_101, heap byte*& ptr) { heap byte* p = malloc(size_101); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #101"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 101 spanning some text */
+// repetition 102 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_102(unsigned long size_102, heap byte*& ptr) { heap byte* p = malloc(size_102); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #102"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 102 spanning some text */
+// repetition 103 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_103(unsigned long size_103, heap byte*& ptr) { heap byte* p = malloc(size_103); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #103"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 103 spanning some text */
+// repetition 104 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_104(unsigned long size_104, heap byte*& ptr) { heap byte* p = malloc(size_104); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #104"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 104 spanning some text */
+// repetition 105 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_105(unsigned long size_105, heap byte*& ptr) { heap byte* p = malloc(size_105); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #105"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 105 spanning some text */
+// repetition 106 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_106(unsigned long size_106, heap byte*& ptr) { heap byte* p = malloc(size_106); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #106"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 106 spanning some text */
+// repetition 107 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_107(unsigned long size_107, heap byte*& ptr) { heap byte* p = malloc(size_107); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #107"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 107 spanning some text */
+// repetition 108 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_108(unsigned long size_108, heap byte*& ptr) { heap byte* p = malloc(size_108); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #108"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 108 spanning some text */
+// repetition 109 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_109(unsigned long size_109, heap byte*& ptr) { heap byte* p = malloc(size_109); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #109"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 109 spanning some text */
+// repetition 110 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_110(unsigned long size_110, heap byte*& ptr) { heap byte* p = malloc(size_110); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #110"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 110 spanning some text */
+// repetition 111 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_111(unsigned long size_111, heap byte*& ptr) { heap byte* p = malloc(size_111); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #111"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 111 spanning some text */
+// repetition 112 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_112(unsigned long size_112, heap byte*& ptr) { heap byte* p = malloc(size_112); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #112"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 112 spanning some text */
+// repetition 113 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_113(unsigned long size_113, heap byte*& ptr) { heap byte* p = malloc(size_113); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #113"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 113 spanning some text */
+// repetition 114 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_114(unsigned long size_114, heap byte*& ptr) { heap byte* p = malloc(size_114); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #114"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 114 spanning some text */
+// repetition 115 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_115(unsigned long size_115, heap byte*& ptr) { heap byte* p = malloc(size_115); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #115"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 115 spanning some text */
+// repetition 116 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_116(unsigned long size_116, heap byte*& ptr) { heap byte* p = malloc(size_116); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #116"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 116 spanning some text */
+// repetition 117 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_117(unsigned long size_117, heap byte*& ptr) { heap byte* p = malloc(size_117); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #117"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 117 spanning some text */
+// repetition 118 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_118(unsigned long size_118, heap byte*& ptr) { heap byte* p = malloc(size_118); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #118"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 118 spanning some text */
+// repetition 119 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_119(unsigned long size_119, heap byte*& ptr) { heap byte* p = malloc(size_119); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #119"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 119 spanning some text */
+// repetition 120 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_120(unsigned long size_120, heap byte*& ptr) { heap byte* p = malloc(size_120); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #120"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 120 spanning some text */
+// repetition 121 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_121(unsigned long size_121, heap byte*& ptr) { heap byte* p = malloc(size_121); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #121"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 121 spanning some text */
+// repetition 122 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_122(unsigned long size_122, heap byte*& ptr) { heap byte* p = malloc(size_122); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #122"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 122 spanning some text */
+// repetition 123 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_123(unsigned long size_123, heap byte*& ptr) { heap byte* p = malloc(size_123); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #123"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 123 spanning some text */
+// repetition 124 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_124(unsigned long size_124, heap byte*& ptr) { heap byte* p = malloc(size_124); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #124"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 124 spanning some text */
+// repetition 125 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_125(unsigned long size_125, heap byte*& ptr) { heap byte* p = malloc(size_125); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #125"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 125 spanning some text */
+// repetition 126 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_126(unsigned long size_126, heap byte*& ptr) { heap byte* p = malloc(size_126); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #126"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 126 spanning some text */
+// repetition 127 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_127(unsigned long size_127, heap byte*& ptr) { heap byte* p = malloc(size_127); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #127"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 127 spanning some text */
+// repetition 128 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_128(unsigned long size_128, heap byte*& ptr) { heap byte* p = malloc(size_128); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #128"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 128 spanning some text */
+// repetition 129 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_129(unsigned long size_129, heap byte*& ptr) { heap byte* p = malloc(size_129); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #129"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 129 spanning some text */
+// repetition 130 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_130(unsigned long size_130, heap byte*& ptr) { heap byte* p = malloc(size_130); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #130"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 130 spanning some text */
+// repetition 131 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_131(unsigned long size_131, heap byte*& ptr) { heap byte* p = malloc(size_131); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #131"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 131 spanning some text */
+// repetition 132 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_132(unsigned long size_132, heap byte*& ptr) { heap byte* p = malloc(size_132); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #132"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 132 spanning some text */
+// repetition 133 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_133(unsigned long size_133, heap byte*& ptr) { heap byte* p = malloc(size_133); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #133"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 133 spanning some text */
+// repetition 134 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_134(unsigned long size_134, heap byte*& ptr) { heap byte* p = malloc(size_134); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #134"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 134 spanning some text */
+// repetition 135 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_135(unsigned long size_135, heap byte*& ptr) { heap byte* p = malloc(size_135); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #135"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 135 spanning some text */
+// repetition 136 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_136(unsigned long size_136, heap byte*& ptr) { heap byte* p = malloc(size_136); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #136"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 136 spanning some text */
+// repetition 137 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_137(unsigned long size_137, heap byte*& ptr) { heap byte* p = malloc(size_137); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #137"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 137 spanning some text */
+// repetition 138 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_138(unsigned long size_138, heap byte*& ptr) { heap byte* p = malloc(size_138); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #138"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 138 spanning some text */
+// repetition 139 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_139(unsigned long size_139, heap byte*& ptr) { heap byte* p = malloc(size_139); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #139"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 139 spanning some text */
+// repetition 140 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_140(unsigned long size_140, heap byte*& ptr) { heap byte* p = malloc(size_140); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #140"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 140 spanning some text */
+// repetition 141 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_141(unsigned long size_141, heap byte*& ptr) { heap byte* p = malloc(size_141); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #141"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 141 spanning some text */
+// repetition 142 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_142(unsigned long size_142, heap byte*& ptr) { heap byte* p = malloc(size_142); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #142"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 142 spanning some text */
+// repetition 143 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_143(unsigned long size_143, heap byte*& ptr) { heap byte* p = malloc(size_143); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #143"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 143 spanning some text */
+// repetition 144 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_144(unsigned long size_144, heap byte*& ptr) { heap byte* p = malloc(size_144); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #144"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 144 spanning some text */
+// repetition 145 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_145(unsigned long size_145, heap byte*& ptr) { heap byte* p = malloc(size_145); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #145"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 145 spanning some text */
+// repetition 146 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_146(unsigned long size_146, heap byte*& ptr) { heap byte* p = malloc(size_146); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #146"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 146 spanning some text */
+// repetition 147 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_147(unsigned long size_147, heap byte*& ptr) { heap byte* p = malloc(size_147); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #147"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 147 spanning some text */
+// repetition 148 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_148(unsigned long size_148, heap byte*& ptr) { heap byte* p = malloc(size_148); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #148"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 148 spanning some text */
+// repetition 149 ----------------------------------------
++ ++ += - -- -= * *= / /= % %= = == != < <= << <<= > >= >> >>= | || & && ^ ^= ~ ! ? : :: ; , . -> ... { } ( ) [ ]
+public f<Result<heap byte*>> doWork_149(unsigned long size_149, heap byte*& ptr) { heap byte* p = malloc(size_149); return p != nil<heap byte*> ? ok(p) : err(nil<heap byte*>, "alloc failed #149"); }
+0xDEADbeef 0b1010_no 0o777 0d1234 42 255 7s 9l 'a' '\n' '\\' "a string with \t escapes"
+/* block comment number 149 spanning some text */
+MyType<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<Vector<int>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> deeplyNested;
+longIdent_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx = 1;
+string big = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ";
+/** A doc comment at the very end of the stress input. */

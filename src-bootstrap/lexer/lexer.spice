@@ -122,12 +122,14 @@ f<Token> Lexer.consumeToken() {
         // Consume number literal
         Token numericLiteral = this.consumeNumberLiteral(codeLoc);
 
-        // Patch token type if suffix is present
+        // Patch token type if suffix is present and consume the suffix character
         const char literalSuffix = this.reader.getChar();
         if literalSuffix == 's' {
             numericLiteral.tokenType = TokenType::SHORT_LIT;
+            this.reader.advance(); // Consume 's'
         } else if literalSuffix == 'l' {
             numericLiteral.tokenType = TokenType::LONG_LIT;
+            this.reader.advance(); // Consume 'l'
         }
 
         return numericLiteral;
@@ -173,7 +175,7 @@ f<Token> Lexer.consumeToken() {
             this.reader.advance(); // Consume '|'
             return Token(TokenType::LOGICAL_OR, "||", codeLoc);
         } else { // '|'
-            return Token(TokenType::BITWISE_OR, "||", codeLoc);
+            return Token(TokenType::BITWISE_OR, "|", codeLoc);
         }
     }
     if curChar == '&' {
@@ -183,7 +185,7 @@ f<Token> Lexer.consumeToken() {
             this.reader.advance(); // Consume '&'
             return Token(TokenType::LOGICAL_AND, "&&", codeLoc);
         } else { // '&'
-            return Token(TokenType::BITWISE_AND, "&&", codeLoc);
+            return Token(TokenType::BITWISE_AND, "&", codeLoc);
         }
     }
     if curChar == '^' {
@@ -366,36 +368,37 @@ f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
     }
 
     // Check for different numeric literal formats
-    if this.reader.getChar() == '0' { // With base prefix
+    if this.reader.getChar() == '0' { // Potentially a base-prefixed literal
         this.reader.advance(); // Consume '0'
         numberStr += '0';
-        // Read and consumenext char, which is the base of the number ('x', 'b', 'o' or 'd')
+        // Peek the character after '0', which is the base of the number ('x', 'b', 'o' or 'd') if present
         const char base = toLower(this.reader.getChar());
-        numberStr += this.reader.getChar();
-        this.reader.advance();
-        // Decide what to do, depending on the base
-        if base == 'x' { // Hexadecimal number
-            this.reader.advance(); // Consume 'x'
-            while isHexDigit(this.reader.getChar()) {
-                numberStr += this.reader.getChar();
-                this.reader.advance();
+        if base == 'x' || base == 'b' || base == 'o' || base == 'd' {
+            numberStr += this.reader.getChar();
+            this.reader.advance(); // Consume the base character
+            // Decide what to do, depending on the base
+            if base == 'x' { // Hexadecimal number
+                while isHexDigit(this.reader.getChar()) {
+                    numberStr += this.reader.getChar();
+                    this.reader.advance();
+                }
+            } else if base == 'b' { // Binary number
+                while isBinDigit(this.reader.getChar()) {
+                    numberStr += this.reader.getChar();
+                    this.reader.advance();
+                }
+            } else if base == 'o' { // Octal number
+                while isOctDigit(this.reader.getChar()) {
+                    numberStr += this.reader.getChar();
+                    this.reader.advance();
+                }
+            } else { // Decimal number with explicit '0d' prefix
+                while isDigit(this.reader.getChar()) {
+                    numberStr += this.reader.getChar();
+                    this.reader.advance();
+                }
             }
-        } else if base == 'b' { // Binary number
-            this.reader.advance(); // Consume 'b'
-            while isBinDigit(this.reader.getChar()) {
-                numberStr += this.reader.getChar();
-                this.reader.advance();
-            }
-        } else if base == 'o' { // Octal number
-            this.reader.advance(); // Consume 'o'
-            while isOctDigit(this.reader.getChar()) {
-                numberStr += this.reader.getChar();
-                this.reader.advance();
-            }
-        } else { // Decimal number
-            if this.reader.getChar() == 'd' {
-                this.reader.advance(); // Consume 'd'
-            }
+        } else { // Bare '0' or decimal number with leading zero
             while isDigit(this.reader.getChar()) {
                 numberStr += this.reader.getChar();
                 this.reader.advance();
@@ -671,6 +674,6 @@ f<Token> Lexer.consumeBlockOrDocComment(const CodeLoc& codeLoc) {
     return Token(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, comment, codeLoc);
 }
 
-f<bool> Lexer.isCurrentTokenIgnored() {
+public f<bool> Lexer.isCurrentTokenIgnored() {
     return this.curTok.tokenType == TokenType::LINE_COMMENT || this.curTok.tokenType == TokenType::BLOCK_COMMENT || this.curTok.tokenType == TokenType::DOC_COMMENT;
 }
