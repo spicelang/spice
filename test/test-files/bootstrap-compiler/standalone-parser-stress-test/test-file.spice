@@ -206,6 +206,20 @@ f<int> fn0(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -226,6 +240,20 @@ f<int> fn1(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -248,6 +276,20 @@ f<int> fn2(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -268,6 +310,20 @@ f<int> fn3(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -290,6 +346,20 @@ f<int> fn4(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -310,6 +380,20 @@ f<int> fn5(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -332,6 +416,20 @@ f<int> fn6(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -352,6 +450,20 @@ f<int> fn7(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -374,6 +486,20 @@ f<int> fn8(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -394,6 +520,20 @@ f<int> fn9(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -416,6 +556,20 @@ f<int> fn10(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -436,6 +590,20 @@ f<int> fn11(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -458,6 +626,20 @@ f<int> fn12(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -478,6 +660,20 @@ f<int> fn13(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -500,6 +696,20 @@ f<int> fn14(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -520,6 +730,20 @@ f<int> fn15(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -542,6 +766,20 @@ f<int> fn16(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -562,6 +800,20 @@ f<int> fn17(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -584,6 +836,20 @@ f<int> fn18(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -604,6 +870,20 @@ f<int> fn19(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -626,6 +906,20 @@ f<int> fn20(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -646,6 +940,20 @@ f<int> fn21(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -668,6 +976,20 @@ f<int> fn22(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -688,6 +1010,20 @@ f<int> fn23(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -710,6 +1046,20 @@ f<int> fn24(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -730,6 +1080,20 @@ f<int> fn25(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -752,6 +1116,20 @@ f<int> fn26(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -772,6 +1150,20 @@ f<int> fn27(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -794,6 +1186,20 @@ f<int> fn28(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -814,6 +1220,20 @@ f<int> fn29(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -836,6 +1256,20 @@ f<int> fn30(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -856,6 +1290,20 @@ f<int> fn31(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -878,6 +1326,20 @@ f<int> fn32(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -898,6 +1360,20 @@ f<int> fn33(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -920,6 +1396,20 @@ f<int> fn34(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -940,6 +1430,20 @@ f<int> fn35(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -962,6 +1466,20 @@ f<int> fn36(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -982,6 +1500,20 @@ f<int> fn37(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -1004,6 +1536,20 @@ f<int> fn38(int a, int b, int c) {
         acc = acc - k * 2 + 1;
         k++;
     }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
+    }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
     return result;
@@ -1024,6 +1570,20 @@ f<int> fn39(int a, int b, int c) {
     while k < acc {
         acc = acc - k * 2 + 1;
         k++;
+    }
+    switch acc % 4 {
+        case 0: {
+            acc += sizeof<int>();
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            acc -= alignof<long>();
+        }
+        default: {
+            acc = 0;
+        }
     }
     bool flag = acc > 0 && a != b || c == 0;
     int result = flag ? acc + a * b - c : acc - a + b * c;
@@ -1064,5 +1624,6 @@ f<int> main() {
             }
         }
     }
+    printf("done %d\n", x);
     return x;
 }

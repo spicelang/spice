@@ -46,11 +46,33 @@ f<int> compute(int n) {
     return picked;
 }
 
+f<int> classify(int n) {
+    switch n {
+        case 0: {
+            return 0;
+        }
+        case 1, 2: {
+            fallthrough;
+        }
+        case 3: {
+            return 1;
+        }
+        default: {
+            return 2;
+        }
+    }
+}
+
 f<int> main() {
     int a = 5;
     int b = 10;
     int m = max(a, b);
     int c = compute(m);
     int d = cast<int>(c);
+    int e = classify(d);
+    // Builtin calls are lexed as dedicated keyword tokens and parsed like function calls
+    int size = sizeof<int>();
+    int alignment = alignof<int>();
+    printf("results: %d %d %d %d\n", c, d, e, size + alignment);
     return d;
 }

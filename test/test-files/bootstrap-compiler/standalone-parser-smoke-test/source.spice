@@ -40,8 +40,8 @@ f<int> main() {
     // -------------------------------------------------------------------------
     // Phase 1: Parse the input and assert the shape of the produced AST.
     //   * The entry node must exist.
-    //   * It must have exactly one child per top-level definition (9 of them:
-    //     1 import, 1 interface, 2 structs, 1 global, 2 functions, 1 proc, 1 main).
+    //   * It must have exactly one child per top-level definition (10 of them:
+    //     1 import, 1 interface, 2 structs, 1 global, 3 functions, 1 proc, 1 main).
     //   * The total node count and tree depth are deterministic for a given input.
     //   * After a complete parse the whole token stream must have been consumed.
     // -------------------------------------------------------------------------
@@ -52,8 +52,8 @@ f<int> main() {
 
     ASTNode* root = entry;
     const Vector<ASTNode*>& topLevelDefs = root.getChildren();
-    assert topLevelDefs.getSize() == 9l;
-    assert countNodes(root) == 623l;
+    assert topLevelDefs.getSize() == 10l;
+    assert countNodes(root) == 919l;
     assert maxDepth(root) == 40l;
     assert lexer.isEOF();
 
@@ -66,8 +66,8 @@ f<int> main() {
     ASTEntryNode* entry2 = parser2.parse();
     ASTNode* root2 = entry2;
     const Vector<ASTNode*>& topLevelDefs2 = root2.getChildren();
-    assert topLevelDefs2.getSize() == 9l;
-    assert countNodes(root2) == 623l;
+    assert topLevelDefs2.getSize() == 10l;
+    assert countNodes(root2) == 919l;
     assert maxDepth(root2) == 40l;
     assert lexer2.isEOF();
 

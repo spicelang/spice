@@ -39,9 +39,10 @@ f<int> main() {
     // -------------------------------------------------------------------------
     // Phase 1: Parse a large input (88 top-level definitions: 2 imports, 20
     // generic structs, 10 interfaces, 15 globals, 40 functions and main) that
-    // deeply nests control flow and expressions. The whole tree is walked, which
-    // exercises both the parser and the resulting node/child book-keeping under
-    // load. The metrics below are deterministic for a given input.
+    // deeply nests control flow and expressions, including switch/case branches
+    // (with fallthrough and default) and builtin calls (sizeof/alignof/printf).
+    // The whole tree is walked, which exercises both the parser and the resulting
+    // node/child book-keeping under load. The metrics below are deterministic.
     // -------------------------------------------------------------------------
     Lexer lexer = Lexer(filePath);
     Parser parser = Parser(lexer);
@@ -51,7 +52,7 @@ f<int> main() {
     ASTNode* root = entry;
     const Vector<ASTNode*>& topLevelDefs = root.getChildren();
     assert topLevelDefs.getSize() == 88l;
-    assert countNodes(root) == 30308l;
+    assert countNodes(root) == 36361l;
     // The deeply nested arithmetic expression and if-cascade produce a tall tree
     assert maxDepth(root) == 502l;
     assert lexer.isEOF();
@@ -66,7 +67,7 @@ f<int> main() {
         Parser runParser = Parser(runLexer);
         ASTEntryNode* runEntry = runParser.parse();
         ASTNode* runRoot = runEntry;
-        assert countNodes(runRoot) == 30308l;
+        assert countNodes(runRoot) == 36361l;
         assert runLexer.isEOF();
     }
 

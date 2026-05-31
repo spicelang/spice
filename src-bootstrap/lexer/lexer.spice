@@ -527,6 +527,18 @@ f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
     if identifier == "else" {
         return Token(TokenType::ELSE, "else", codeLoc);
     }
+    if identifier == "switch" {
+        return Token(TokenType::SWITCH, "switch", codeLoc);
+    }
+    if identifier == "case" {
+        return Token(TokenType::CASE, "case", codeLoc);
+    }
+    if identifier == "default" {
+        return Token(TokenType::DEFAULT, "default", codeLoc);
+    }
+    if identifier == "fallthrough" {
+        return Token(TokenType::FALLTHROUGH, "fallthrough", codeLoc);
+    }
     if identifier == "assert" {
         return Token(TokenType::ASSERT, "assert", codeLoc);
     }

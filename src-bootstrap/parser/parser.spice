@@ -171,6 +171,14 @@ inline f<bool> Parser.isBaseDataTypeKeyword(TokenType tokenType) {
         || tokenType == TokenType::TYPE_STRING || tokenType == TokenType::TYPE_BOOL || tokenType == TokenType::TYPE_DYN;
 }
 
+// Builtin functions (printf, sizeof, ...) are lexed as dedicated keyword tokens. They are otherwise
+// parsed exactly like a regular function call (an optional generic type list followed by an argument
+// list), so the parser accepts these keywords wherever a function name is expected.
+inline f<bool> Parser.isBuiltinFctKeyword(TokenType tokenType) {
+    return tokenType == TokenType::PRINTF || tokenType == TokenType::SIZEOF || tokenType == TokenType::ALIGNOF
+        || tokenType == TokenType::LEN || tokenType == TokenType::PANIC;
+}
+
 inline f<bool> Parser.isConstantStart(TokenType tokenType) {
     return tokenType == TokenType::DOUBLE_LIT || tokenType == TokenType::INT_LIT || tokenType == TokenType::SHORT_LIT
         || tokenType == TokenType::LONG_LIT || tokenType == TokenType::CHAR_LIT || tokenType == TokenType::STRING_LIT
@@ -1660,9 +1668,12 @@ f<ASTFctCallNode*> Parser.parseFctCall() {
         this.expect(TokenType::IDENTIFIER);
         this.expect(TokenType::DOT);
     }
-    // Final name segment
+    // Final name segment. This is either a (type) identifier or a builtin function keyword such as
+    // 'printf' or 'sizeof', which the lexer emits as a dedicated token.
     if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
         this.expect(TokenType::TYPE_IDENTIFIER);
+    } else if this.isBuiltinFctKeyword(this.lexer.getToken().tokenType) {
+        this.expect(this.lexer.getToken().tokenType);
     } else {
         this.expect(TokenType::IDENTIFIER);
     }
