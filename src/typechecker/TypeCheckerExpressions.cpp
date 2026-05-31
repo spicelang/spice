@@ -32,7 +32,20 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     // Take a look at the operator
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
       const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
-      rhsType = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl).first;
+      const auto [assignType, copyCtor] = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl);
+      rhsType = assignType;
+      // If the assignment overwrites an already initialized struct by copying a new value into it, the old value
+      // of the lhs must be destructed first. Otherwise its owning members (heap pointers, strings, ...) would leak.
+      // A non-null copy ctor signals that a real copy (not a move/temporary steal or ref assignment) takes place.
+      // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
+      // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
+      // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
+      if (copyCtor != nullptr && !isDecl && lhs.entry != nullptr && lhs.entry->isInitialized() &&
+          !currentScope->doesAllowUnsafeOperations()) {
+        const QualType lhsSType = lhs.type.removeReferenceWrapper().toNonConst();
+        if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node))
+          node->lhsDtorFct[manIdx] = implicitlyCallStructMethod(lhsSType, DTOR_FUNCTION_NAME, {}, node);
+      }
     } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhs, rhs).type;
     } else if (node->op == AssignExprNode::AssignOp::OP_MINUS_EQUAL) {

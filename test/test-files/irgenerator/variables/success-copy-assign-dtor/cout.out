@@ -1,0 +1,6 @@
+before assign
+dtor: first
+a is now second
+a is still second
+dtor: second
+dtor: second
