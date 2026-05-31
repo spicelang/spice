@@ -1,0 +1,18 @@
+#![core.compiler.keepOnCollision = true]
+// line comment
+/* block comment */
+/** doc comment */
+double int short long byte char string bool dyn
+const signed unsigned inline public heap compose
+f p if else assert for foreach do while
+import break continue return as struct interface
+type enum operator alias unsafe nil main printf
+sizeof alignof len panic ext cast true false
+myIdent _underscore camelCase123 MyType Type_2
+42 255 0xFF 0b1011 0o17 0d99 7s 9l
+'a' '\n' '\\' "hello" "tab\there"
+{ } ( ) [ ] ; , . :: : ? -> ...
++ ++ += - -- -= * *= / /= % %=
+= == != < <= << <<= > >= >> >>=
+| || & && ^ ^= ~ !
+#[test]

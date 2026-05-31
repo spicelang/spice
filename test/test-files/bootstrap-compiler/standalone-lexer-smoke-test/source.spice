@@ -1,0 +1,198 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "bootstrap/lexer/lexer";
+import "bootstrap/lexer/token";
+
+// Asserts that the current token of the lexer has the expected type and text, then advances.
+// Note: the expected text is wrapped in a String to compare String against String. Comparing the
+// 'text' member of an imported struct directly against a 'string' currently confuses the host
+// compiler's operator resolution, so we avoid that pattern here.
+p expectTok(Lexer& lexer, TokenType expectedType, string expectedText) {
+    const Token& token = lexer.getToken();
+    assert token.tokenType == expectedType;
+    assert token.text == String(expectedText);
+    lexer.advance();
+}
+
+f<int> main() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-lexer-smoke-test/test-file.spice";
+    const FilePath filePath = FilePath(filePathString);
+
+    // -------------------------------------------------------------------------
+    // Phase 1: Walk the whole token stream and assert every token type and text.
+    // This exercises every branch of the lexer (all keywords, operators, literal
+    // formats, comments and attribute preambles).
+    // -------------------------------------------------------------------------
+    Lexer lexer = Lexer(filePath);
+    expectTok(lexer, TokenType::MOD_ATTR_PREAMBLE, "#!");
+    expectTok(lexer, TokenType::LBRACKET, "[");
+    expectTok(lexer, TokenType::IDENTIFIER, "core");
+    expectTok(lexer, TokenType::DOT, ".");
+    expectTok(lexer, TokenType::IDENTIFIER, "compiler");
+    expectTok(lexer, TokenType::DOT, ".");
+    expectTok(lexer, TokenType::IDENTIFIER, "keepOnCollision");
+    expectTok(lexer, TokenType::ASSIGN, "=");
+    expectTok(lexer, TokenType::TRUE, "true");
+    expectTok(lexer, TokenType::RBRACKET, "]");
+    expectTok(lexer, TokenType::LINE_COMMENT, "// line comment");
+    expectTok(lexer, TokenType::BLOCK_COMMENT, "/* block comment */");
+    expectTok(lexer, TokenType::DOC_COMMENT, "/** doc comment */");
+    expectTok(lexer, TokenType::TYPE_DOUBLE, "double");
+    expectTok(lexer, TokenType::TYPE_INT, "int");
+    expectTok(lexer, TokenType::TYPE_SHORT, "short");
+    expectTok(lexer, TokenType::TYPE_LONG, "long");
+    expectTok(lexer, TokenType::TYPE_BYTE, "byte");
+    expectTok(lexer, TokenType::TYPE_CHAR, "char");
+    expectTok(lexer, TokenType::TYPE_STRING, "string");
+    expectTok(lexer, TokenType::TYPE_BOOL, "bool");
+    expectTok(lexer, TokenType::TYPE_DYN, "dyn");
+    expectTok(lexer, TokenType::CONST, "const");
+    expectTok(lexer, TokenType::SIGNED, "signed");
+    expectTok(lexer, TokenType::UNSIGNED, "unsigned");
+    expectTok(lexer, TokenType::INLINE, "inline");
+    expectTok(lexer, TokenType::PUBLIC, "public");
+    expectTok(lexer, TokenType::HEAP, "heap");
+    expectTok(lexer, TokenType::COMPOSE, "compose");
+    expectTok(lexer, TokenType::F, "f");
+    expectTok(lexer, TokenType::P, "p");
+    expectTok(lexer, TokenType::IF, "if");
+    expectTok(lexer, TokenType::ELSE, "else");
+    expectTok(lexer, TokenType::ASSERT, "assert");
+    expectTok(lexer, TokenType::FOR, "for");
+    expectTok(lexer, TokenType::FOREACH, "foreach");
+    expectTok(lexer, TokenType::DO, "do");
+    expectTok(lexer, TokenType::WHILE, "while");
+    expectTok(lexer, TokenType::IMPORT, "import");
+    expectTok(lexer, TokenType::BREAK, "break");
+    expectTok(lexer, TokenType::CONTINUE, "continue");
+    expectTok(lexer, TokenType::RETURN, "return");
+    expectTok(lexer, TokenType::AS, "as");
+    expectTok(lexer, TokenType::STRUCT, "struct");
+    expectTok(lexer, TokenType::INTERFACE, "interface");
+    expectTok(lexer, TokenType::TYPE, "type");
+    expectTok(lexer, TokenType::ENUM, "enum");
+    expectTok(lexer, TokenType::OPERATOR, "operator");
+    expectTok(lexer, TokenType::ALIAS, "alias");
+    expectTok(lexer, TokenType::UNSAFE, "unsafe");
+    expectTok(lexer, TokenType::NIL, "nil");
+    expectTok(lexer, TokenType::MAIN, "main");
+    expectTok(lexer, TokenType::PRINTF, "printf");
+    expectTok(lexer, TokenType::SIZEOF, "sizeof");
+    expectTok(lexer, TokenType::ALIGNOF, "alignof");
+    expectTok(lexer, TokenType::LEN, "len");
+    expectTok(lexer, TokenType::PANIC, "panic");
+    expectTok(lexer, TokenType::EXT, "ext");
+    expectTok(lexer, TokenType::CAST, "cast");
+    expectTok(lexer, TokenType::TRUE, "true");
+    expectTok(lexer, TokenType::FALSE, "false");
+    expectTok(lexer, TokenType::IDENTIFIER, "myIdent");
+    expectTok(lexer, TokenType::IDENTIFIER, "_underscore");
+    expectTok(lexer, TokenType::IDENTIFIER, "camelCase123");
+    expectTok(lexer, TokenType::TYPE_IDENTIFIER, "MyType");
+    expectTok(lexer, TokenType::TYPE_IDENTIFIER, "Type_2");
+    expectTok(lexer, TokenType::INT_LIT, "42");
+    expectTok(lexer, TokenType::INT_LIT, "255");
+    expectTok(lexer, TokenType::INT_LIT, "0xFF");
+    expectTok(lexer, TokenType::INT_LIT, "0b1011");
+    expectTok(lexer, TokenType::INT_LIT, "0o17");
+    expectTok(lexer, TokenType::INT_LIT, "0d99");
+    expectTok(lexer, TokenType::SHORT_LIT, "7");
+    expectTok(lexer, TokenType::LONG_LIT, "9");
+    expectTok(lexer, TokenType::CHAR_LIT, "a");
+    expectTok(lexer, TokenType::CHAR_LIT, "n");
+    expectTok(lexer, TokenType::CHAR_LIT, "\\");
+    expectTok(lexer, TokenType::STRING_LIT, "hello");
+    expectTok(lexer, TokenType::STRING_LIT, "tabthere");
+    expectTok(lexer, TokenType::LBRACE, "{");
+    expectTok(lexer, TokenType::RBRACE, "}");
+    expectTok(lexer, TokenType::LPAREN, "(");
+    expectTok(lexer, TokenType::RPAREN, ")");
+    expectTok(lexer, TokenType::LBRACKET, "[");
+    expectTok(lexer, TokenType::RBRACKET, "]");
+    expectTok(lexer, TokenType::SEMICOLON, ";");
+    expectTok(lexer, TokenType::COMMA, ",");
+    expectTok(lexer, TokenType::DOT, ".");
+    expectTok(lexer, TokenType::SCOPE_ACCESS, "::");
+    expectTok(lexer, TokenType::COLON, ":");
+    expectTok(lexer, TokenType::QUESTION_MARK, "?");
+    expectTok(lexer, TokenType::ARROW, "->");
+    expectTok(lexer, TokenType::ELLIPSIS, "...");
+    expectTok(lexer, TokenType::PLUS, "+");
+    expectTok(lexer, TokenType::PLUS_PLUS, "++");
+    expectTok(lexer, TokenType::PLUS_EQUAL, "+=");
+    expectTok(lexer, TokenType::MINUS, "-");
+    expectTok(lexer, TokenType::MINUS_MINUS, "--");
+    expectTok(lexer, TokenType::MINUS_EQUAL, "-=");
+    expectTok(lexer, TokenType::MUL, "*");
+    expectTok(lexer, TokenType::MUL_EQUAL, "*=");
+    expectTok(lexer, TokenType::DIV, "/");
+    expectTok(lexer, TokenType::DIV_EQUAL, "/=");
+    expectTok(lexer, TokenType::REM, "%");
+    expectTok(lexer, TokenType::REM_EQUAL, "%=");
+    expectTok(lexer, TokenType::ASSIGN, "=");
+    expectTok(lexer, TokenType::EQUAL, "==");
+    expectTok(lexer, TokenType::NOT_EQUAL, "!=");
+    expectTok(lexer, TokenType::LESS, "<");
+    expectTok(lexer, TokenType::LESS_EQUAL, "<=");
+    expectTok(lexer, TokenType::SHL, "<<");
+    expectTok(lexer, TokenType::SHL_EQUAL, "<<=");
+    expectTok(lexer, TokenType::GREATER, ">");
+    expectTok(lexer, TokenType::GREATER_EQUAL, ">=");
+    expectTok(lexer, TokenType::SHR, ">>");
+    expectTok(lexer, TokenType::SHR_EQUAL, ">>=");
+    expectTok(lexer, TokenType::BITWISE_OR, "|");
+    expectTok(lexer, TokenType::LOGICAL_OR, "||");
+    expectTok(lexer, TokenType::BITWISE_AND, "&");
+    expectTok(lexer, TokenType::LOGICAL_AND, "&&");
+    expectTok(lexer, TokenType::BITWISE_XOR, "^");
+    expectTok(lexer, TokenType::XOR_EQUAL, "^=");
+    expectTok(lexer, TokenType::BITWISE_NOT, "~");
+    expectTok(lexer, TokenType::NOT, "!");
+    expectTok(lexer, TokenType::FCT_ATTR_PREAMBLE, "#");
+    expectTok(lexer, TokenType::LBRACKET, "[");
+    expectTok(lexer, TokenType::IDENTIFIER, "test");
+    expectTok(lexer, TokenType::RBRACKET, "]");
+    assert lexer.isEOF();
+
+    // -------------------------------------------------------------------------
+    // Phase 2: Exercise the lookahead and helper API of the lexer.
+    // -------------------------------------------------------------------------
+    Lexer lexer2 = Lexer(filePath);
+    // Current token and its code location
+    assert lexer2.getToken().tokenType == TokenType::MOD_ATTR_PREAMBLE;
+    assert lexer2.getCodeLoc().line == 1l;
+    assert lexer2.getCodeLoc().col == 1l;
+    assert !lexer2.isEOF();
+    // The MOD_ATTR_PREAMBLE token is not an ignored (comment) token
+    assert !lexer2.isCurrentTokenIgnored();
+    // Lookahead without consuming
+    assert lexer2.peek(1l).tokenType == TokenType::LBRACKET;
+    const Token& peeked = lexer2.peek(2l);
+    assert peeked.tokenType == TokenType::IDENTIFIER;
+    assert peeked.text == String("core");
+    // peek() must not consume: the current token is still the preamble
+    assert lexer2.getToken().tokenType == TokenType::MOD_ATTR_PREAMBLE;
+    // expect() consumes the current token if its type matches
+    lexer2.expect(TokenType::MOD_ATTR_PREAMBLE);
+    assert lexer2.getToken().tokenType == TokenType::LBRACKET;
+    // expectOneOf() accepts the current token if it is amongst the given types
+    Vector<TokenType> allowed;
+    allowed.pushBack(TokenType::LPAREN);
+    allowed.pushBack(TokenType::LBRACKET);
+    lexer2.expectOneOf(allowed);
+    assert lexer2.getToken().tokenType == TokenType::LBRACKET;
+
+    // -------------------------------------------------------------------------
+    // Phase 3: Verify that comment tokens are reported as ignored tokens.
+    // -------------------------------------------------------------------------
+    Lexer lexer3 = Lexer(filePath);
+    while !lexer3.isEOF() && lexer3.getToken().tokenType != TokenType::LINE_COMMENT {
+        lexer3.advance();
+    }
+    assert lexer3.getToken().tokenType == TokenType::LINE_COMMENT;
+    assert lexer3.isCurrentTokenIgnored();
+
+    printf("All assertions passed!\n");
+}

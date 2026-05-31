@@ -1,0 +1,89 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "bootstrap/lexer/lexer";
+import "bootstrap/lexer/token";
+
+f<FilePath> getStressFilePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-lexer-stress-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+f<int> main() {
+    const FilePath filePath = getStressFilePath();
+
+    // -------------------------------------------------------------------------
+    // Phase 1: Lex the whole (large) input and gather invariants.
+    //   * The exact number of produced tokens is deterministic.
+    //   * No token must be INVALID.
+    //   * Braces, parentheses and brackets must be perfectly balanced.
+    //   * The deeply nested generic type must produce merged '>>' (SHR) tokens.
+    //   * The 2000+ character identifier must be lexed into a single token.
+    // -------------------------------------------------------------------------
+    Lexer lexer = Lexer(filePath);
+    unsigned long total = 0l;
+    unsigned long invalids = 0l;
+    unsigned long shrCount = 0l;
+    unsigned long longestIdentifier = 0l;
+    long braceBalance = 0l;
+    long parenBalance = 0l;
+    long bracketBalance = 0l;
+    while !lexer.isEOF() {
+        const Token& token = lexer.getToken();
+        const TokenType tt = token.tokenType;
+
+        assert tt != TokenType::INVALID;
+        if tt == TokenType::INVALID { invalids++; }
+        if tt == TokenType::SHR { shrCount++; }
+        if tt == TokenType::LBRACE { braceBalance++; }
+        if tt == TokenType::RBRACE { braceBalance--; }
+        if tt == TokenType::LPAREN { parenBalance++; }
+        if tt == TokenType::RPAREN { parenBalance--; }
+        if tt == TokenType::LBRACKET { bracketBalance++; }
+        if tt == TokenType::RBRACKET { bracketBalance--; }
+        if tt == TokenType::IDENTIFIER {
+            const unsigned long length = token.text.getLength();
+            if length > longestIdentifier { longestIdentifier = length; }
+        }
+
+        // Brackets must never close more than they opened
+        assert braceBalance >= 0l;
+        assert parenBalance >= 0l;
+        assert bracketBalance >= 0l;
+
+        total++;
+        lexer.advance();
+    }
+
+    assert total == 18166l;
+    assert invalids == 0l;
+    assert braceBalance == 0l;
+    assert parenBalance == 0l;
+    assert bracketBalance == 0l;
+    // 60 levels of nested generics close with 60 '>' characters -> 30 merged SHR tokens
+    assert shrCount >= 30l;
+    // "longIdent_" (10 chars) + 2000 'x' characters
+    assert longestIdentifier == 2010l;
+
+    // -------------------------------------------------------------------------
+    // Phase 2: Stress the lookahead buffer and verify that peeking a large
+    // window and then consuming it produce exactly the same token sequence.
+    // -------------------------------------------------------------------------
+    Lexer peekLexer = Lexer(filePath);
+    const unsigned long window = 500l;
+    Vector<TokenType> peeked;
+    for unsigned long k = 1l; k <= window; k++ {
+        peeked.pushBack(peekLexer.peek(k).tokenType);
+    }
+    // peek(k) returns the k-th token after the current one, so consuming the
+    // current token first aligns the stream with the recorded lookahead.
+    for unsigned long i = 0l; i < window; i++ {
+        peekLexer.advance();
+        const TokenType expected = peeked.get(i);
+        const TokenType actual = peekLexer.getToken().tokenType;
+        assert actual == expected;
+    }
+
+    printf("All assertions passed!\n");
+}
