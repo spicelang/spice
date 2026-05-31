@@ -1056,10 +1056,10 @@ f<ASTSignatureNode*> Parser.parseSignature() {
         this.consumeGenericClose();
     }
 
-    // Parse paramLst
+    // Parse typeLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        this.parseTypeLst();
     }
     this.expect(TokenType::RPAREN);
 
@@ -1123,18 +1123,25 @@ f<ASTQualifierNode*> Parser.parseQualifier() {
     dyn qualifierNode = this.createNode<ASTQualifierNode>();
 
     if this.currentTokenIs(TokenType::CONST) {
+        this.expect(TokenType::CONST);
         qualifierNode.qualifierType = QualifierType::CONST;
     } else if this.currentTokenIs(TokenType::SIGNED) {
+        this.expect(TokenType::SIGNED);
         qualifierNode.qualifierType = QualifierType::SIGNED;
     } else if this.currentTokenIs(TokenType::UNSIGNED) {
+        this.expect(TokenType::UNSIGNED);
         qualifierNode.qualifierType = QualifierType::UNSIGNED;
     } else if this.currentTokenIs(TokenType::INLINE) {
+        this.expect(TokenType::INLINE);
         qualifierNode.qualifierType = QualifierType::INLINE;
     } else if this.currentTokenIs(TokenType::PUBLIC) {
+        this.expect(TokenType::PUBLIC);
         qualifierNode.qualifierType = QualifierType::PUBLIC;
     } else if this.currentTokenIs(TokenType::HEAP) {
+        this.expect(TokenType::HEAP);
         qualifierNode.qualifierType = QualifierType::HEAP;
     } else if this.currentTokenIs(TokenType::COMPOSE) {
+        this.expect(TokenType::COMPOSE);
         qualifierNode.qualifierType = QualifierType::COMPOSE;
     } else {
         assert false;
