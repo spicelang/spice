@@ -495,6 +495,31 @@ bool QualType::matchesInterfaceImplementedByStruct(const QualType &structType) c
 }
 
 /**
+ * Check if the current (struct) type is a base of the given struct type, embedded via the 'compose'
+ * qualifier. Only first-field compositions are considered, because only those sit at offset 0 and can
+ * therefore be reached without adjusting the pointer value. The check follows the chain of first-field
+ * compositions transitively, so a base that is composed several levels deep is still matched.
+ */
+bool QualType::matchesComposedBaseOfStruct(const QualType &structType) const {
+  if (!is(TY_STRUCT) || !structType.is(TY_STRUCT))
+    return false;
+
+  const Struct *spiceStruct = structType.getStruct(nullptr);
+  if (spiceStruct == nullptr || spiceStruct->fieldTypes.empty())
+    return false;
+
+  // Only the first field is guaranteed to be located at offset 0
+  const QualType &firstField = spiceStruct->fieldTypes.front();
+  if (!firstField.isComposition())
+    return false;
+  // The composed field matches the requested base directly (qualifiers like 'compose' are ignored)
+  if (matches(firstField, false, true, true))
+    return true;
+  // Otherwise follow the composition chain further down
+  return matchesComposedBaseOfStruct(firstField);
+}
+
+/**
  * Check if the current type is the same container type as another type.
  * Container types include arrays, pointers, and references.
  *

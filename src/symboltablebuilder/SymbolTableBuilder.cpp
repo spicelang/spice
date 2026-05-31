@@ -486,15 +486,15 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Visit condition
   visit(node->condition);
 
-  // Visit then body
-  if (node->compileThenBranch)
+  // Visit then body (manifestations do not exist yet, so both branches are always visited here)
+  if (node->doCompileThenBranch(manIdx))
     visit(node->thenBody);
 
   // Leave then body scope
   currentScope = node->thenBodyScope->parent;
 
   // Visit else stmt
-  if (node->compileElseBranch && node->elseStmt)
+  if (node->doCompileElseBranch(manIdx) && node->elseStmt)
     visit(node->elseStmt);
 
   return nullptr;

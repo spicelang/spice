@@ -316,12 +316,12 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
   // If we have a compile time decision, only evaluate the respective branch
-  if (node->compileThenBranch && !node->compileElseBranch) {
+  if (node->doCompileThenBranch(manIdx) && !node->doCompileElseBranch(manIdx)) {
     ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
     visit(node->thenBody);
     return builder.getTrue();
   }
-  if (!node->compileThenBranch && node->compileElseBranch) {
+  if (!node->doCompileThenBranch(manIdx) && node->doCompileElseBranch(manIdx)) {
     if (node->elseStmt)
       visit(node->elseStmt);
     return builder.getFalse();

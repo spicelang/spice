@@ -97,6 +97,7 @@ public:
   [[nodiscard]] bool canBind(const QualType &inputType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &structType) const;
+  [[nodiscard]] bool matchesComposedBaseOfStruct(const QualType &structType) const;
   [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
   [[nodiscard]] bool isSelfReferencingStructType(const QualType *typeToCompareWith = nullptr) const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;

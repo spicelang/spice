@@ -533,6 +533,10 @@ void FunctionManager::breakOverloadTie(std::vector<Function *> &matches, const A
 
   constexpr int CONSTIFY_PENALTY = 1;
   constexpr int CONST_LOSS_PENALTY = 100;
+  // An exact type match is always preferred over a match that required an implicit upcast (struct to
+  // implemented interface, or struct to composed base struct). This keeps e.g. 'f(Derived)' preferred
+  // over 'f(Base)' when called with a Derived, instead of reporting an ambiguity.
+  constexpr int UPCAST_PENALTY = 1000;
   const auto scoreSpecificity = [&](const Function *f) {
     int penalty = 0;
     for (size_t i = 0; i < std::min(reqArgs.size(), f->paramList.size()); i++) {
@@ -544,6 +548,12 @@ void FunctionManager::breakOverloadTie(std::vector<Function *> &matches, const A
         penalty += CONSTIFY_PENALTY;
       else if (!paramIsConst && argIsConst)
         penalty += CONST_LOSS_PENALTY;
+      // Penalize matches that were only possible through an implicit upcast
+      QualType paramBase = paramType;
+      QualType argBase = argType;
+      QualType::unwrapBothWithRefWrappers(paramBase, argBase);
+      if (!paramBase.matches(argBase, true, true, true))
+        penalty += UPCAST_PENALTY;
     }
     return penalty;
   };

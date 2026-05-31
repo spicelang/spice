@@ -1,0 +1,75 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
+import "bootstrap/ast/ast-nodes";
+
+// Recursively count the number of nodes in the AST (including the given root).
+f<long> countNodes(ASTNode* node) {
+    long count = 1l;
+    const Vector<ASTNode*>& children = node.getChildren();
+    foreach ASTNode* child : children {
+        // Every registered child must be a valid node
+        assert child != nil<ASTNode*>;
+        count += countNodes(child);
+    }
+    return count;
+}
+
+// Compute the maximum depth of the AST starting from the given root (a single node has depth 1).
+f<long> maxDepth(ASTNode* node) {
+    long best = 0l;
+    const Vector<ASTNode*>& children = node.getChildren();
+    foreach ASTNode* child : children {
+        const long childDepth = maxDepth(child);
+        if childDepth > best { best = childDepth; }
+    }
+    return best + 1l;
+}
+
+f<FilePath> getSmokeFilePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-parser-smoke-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+f<int> main() {
+    const FilePath filePath = getSmokeFilePath();
+
+    // -------------------------------------------------------------------------
+    // Phase 1: Parse the input and assert the shape of the produced AST.
+    //   * The entry node must exist.
+    //   * It must have exactly one child per top-level definition (10 of them:
+    //     1 import, 1 interface, 2 structs, 1 global, 3 functions, 1 proc, 1 main).
+    //   * The total node count and tree depth are deterministic for a given input.
+    //   * After a complete parse the whole token stream must have been consumed.
+    // -------------------------------------------------------------------------
+    Lexer lexer = Lexer(filePath);
+    Parser parser = Parser(lexer);
+    ASTEntryNode* entry = parser.parse();
+    assert entry != nil<ASTEntryNode*>;
+
+    ASTNode* root = entry;
+    const Vector<ASTNode*>& topLevelDefs = root.getChildren();
+    assert topLevelDefs.getSize() == 10l;
+    assert countNodes(root) == 919l;
+    assert maxDepth(root) == 40l;
+    assert lexer.isEOF();
+
+    // -------------------------------------------------------------------------
+    // Phase 2: The parser must be deterministic and reusable. Parsing the same
+    // input again with a fresh lexer and parser must yield an identical tree.
+    // -------------------------------------------------------------------------
+    Lexer lexer2 = Lexer(filePath);
+    Parser parser2 = Parser(lexer2);
+    ASTEntryNode* entry2 = parser2.parse();
+    ASTNode* root2 = entry2;
+    const Vector<ASTNode*>& topLevelDefs2 = root2.getChildren();
+    assert topLevelDefs2.getSize() == 10l;
+    assert countNodes(root2) == 919l;
+    assert maxDepth(root2) == 40l;
+    assert lexer2.isEOF();
+
+    printf("All assertions passed!\n");
+}

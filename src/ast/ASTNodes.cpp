@@ -96,11 +96,11 @@ bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachabl
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const { // NOLINT(misc-no-recursion)
   // If the condition always evaluates to 'true' the then block must return
-  if (!compileElseBranch)
+  if (!doCompileElseBranch(manIdx))
     return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If the condition always evaluates to 'false' the else block must return
-  if (!compileThenBranch)
+  if (!doCompileThenBranch(manIdx))
     return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 
   // If the condition does not always evaluate to 'true' or 'false' we need to check both branches

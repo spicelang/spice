@@ -10,7 +10,8 @@ type T dyn;
 
 public type BlockAllocator<Base> struct {
     IMemoryManager& memoryManager
-    Vector<heap byte*> memoryBlocks
+    // The heap qualifier is re-applied via a cast wherever a block is allocated, used or freed.
+    Vector<byte*> memoryBlocks
     Vector<Base*> allocatedObjects
     unsigned long blockSize
     unsigned long offsetInBlock = 0l
@@ -26,20 +27,32 @@ public p BlockAllocator.ctor(IMemoryManager& memoryManager, unsigned long blockS
 }
 
 public p BlockAllocator.dtor() {
-    // Destruct all objects
+    // Destruct all objects. We dereference here so that the destructor of the pointed-to object (the
+    // 'Base' value, e.g. ASTNode) runs. Passing the pointer itself would instantiate sDestruct for a
+    // pointer type, which is trivially destructible and would therefore be a no-op.
     foreach Base* ptr : this.allocatedObjects {
-        sDestruct(ptr);
+        sDestruct(*ptr);
     }
     this.allocatedObjects.clear();
 
     // Free all memory blocks
-    foreach heap byte* block : this.memoryBlocks {
-        this.memoryManager.deallocate(block);
+    foreach byte* block : this.memoryBlocks {
+        heap byte* heapBlock;
+        unsafe {
+            heapBlock = cast<heap byte*>(block);
+        }
+        this.memoryManager.deallocate(heapBlock);
     }
     this.memoryBlocks.clear();
 }
 
-public f<T*> BlockAllocator.allocate<T>(const T& obj) {
+/**
+ * Reserve uninitialized, correctly sized storage for an object of type T within the current block
+ * (allocating a new block if required) and return a typed pointer to it. The caller is responsible
+ * for constructing the object in place (e.g. via __placement_new). Returning raw storage instead of
+ * copying a prebuilt object means T does not need to be copyable.
+ */
+public f<T*> BlockAllocator.reserve<T>() {
     // We do not allow allocating objects that exceed the block size
     const unsigned long objSize = sizeof<T>();
     assert objSize <= this.blockSize;
@@ -49,26 +62,38 @@ public f<T*> BlockAllocator.allocate<T>(const T& obj) {
         this.allocateNewBlock();
     }
 
-    // Construct object at the offset address
-    heap byte* destAddr = this.memoryBlocks.back();
+    // Compute the destination address inside the current block. We deliberately operate on a plain
+    // (non-heap) byte* here: a named 'heap byte*' local would be treated as an owning pointer and freed
+    // again at scope exit, double-freeing the block that is owned by 'memoryBlocks'.
+    T* ptr;
     unsafe {
+        byte* destAddr = this.memoryBlocks.back();
         destAddr += this.offsetInBlock;
+        ptr = cast<T*>(destAddr);
     }
-    T* ptr = sPlacementNew<T>(destAddr, obj);
 
-    // Update offset to be ready to store the next object
+    // Track the object so it can be destructed in the allocator's dtor and update the offset to be ready
+    // to store the next object. The object is not constructed yet, but its address is already stable.
+    Base* basePtr = ptr;
+    this.allocatedObjects.pushBack(basePtr);
     this.offsetInBlock += objSize;
     return ptr;
 }
 
 public p BlockAllocator.allocateNewBlock() {
-    // Allocate new block
-    heap byte* ptr = this.memoryManager.allocate(this.blockSize);
-    if ptr == nil<heap byte*> {
+    // Allocate a new block and immediately reinterpret it as a plain byte*. The 'memoryManager.allocate'
+    // result is a 'heap byte*'; binding it to a named local would make it an owning pointer that is freed
+    // again at scope exit. By casting the temporary inline we transfer the raw address into 'memoryBlocks'
+    // without the compiler inserting an auto-free. The block is freed manually in the dtor.
+    byte* rawPtr;
+    unsafe {
+        rawPtr = cast<byte*>(this.memoryManager.allocate(this.blockSize));
+    }
+    if rawPtr == nil<byte*> {
         panic(Error("Could not allocate memory block for BlockAllocator."));
     }
 
     // Store pointer and reset offset
-    this.memoryBlocks.pushBack(ptr);
+    this.memoryBlocks.pushBack(rawPtr);
     this.offsetInBlock = 0l;
 }
