@@ -49,10 +49,18 @@ define dso_local noundef i32 @main() #0 {
   %1 = load i32, ptr %i, align 4
   store i32 %1, ptr %i, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
-  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %t, ptr %t)
+  %2 = icmp eq ptr %t, %t
+  br i1 %2, label %assign.copy.end, label %assign.copy
+
+assign.copy:                                      ; preds = %0
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %t, ptr %t)
+  br label %assign.copy.end
+
+assign.copy.end:                                  ; preds = %assign.copy, %0
+  call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
+  %3 = load i32, ptr %result, align 4
+  ret i32 %3
 }
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }

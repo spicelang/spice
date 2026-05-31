@@ -1448,7 +1448,10 @@ public:
   [[nodiscard]] bool isAssignExpr() const override { return true; }
   [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
   [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
-  void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
+  void customItemsInitialization(const size_t manifestationCount) override {
+    opFct.resize(manifestationCount, {nullptr});
+    lhsDtorFct.resize(manifestationCount, nullptr);
+  }
   AtomicExprNode *getLhsAtomicNode() const;
 
   // Public members
@@ -1457,6 +1460,9 @@ public:
   ExprNode *ternaryExpr = nullptr;
   AssignOp op = AssignOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
+  // Dtor of the left-hand side to call before a copy-assignment overwrites an already initialized value.
+  // Only set for non-declaration copy-assignments of non-trivially-destructible structs (one entry per manifestation).
+  std::vector<const Function *> lhsDtorFct;
 };
 
 // ======================================================= TernaryExprNode =======================================================

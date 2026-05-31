@@ -506,6 +506,22 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
 
+    // If the lhs already holds an initialized, non-trivially-destructible struct, its old value must be
+    // destructed before the copy overwrites it, otherwise its owning members (heap pointers, strings, ...)
+    // would leak. The typechecker only sets a dtor in exactly those cases. To stay correct for a self-
+    // assignment like 'a = a', the destruct + copy are skipped entirely when both sides share the address
+    // (the assignment is a no-op in that case, and destructing first would corrupt the value to copy from).
+    const auto *assignNode = dynamic_cast<const AssignExprNode *>(node);
+    const Function *lhsDtor = assignNode ? assignNode->lhsDtorFct.at(manIdx) : nullptr;
+    llvm::BasicBlock *bCopyEnd = nullptr;
+    if (lhsDtor != nullptr) {
+      llvm::BasicBlock *bCopy = createBlock("assign.copy");
+      bCopyEnd = createBlock("assign.copy.end");
+      insertCondJump(builder.CreateICmpEQ(lhsAddress, rhsAddress), bCopyEnd, bCopy);
+      switchToBlock(bCopy);
+      generateCtorOrDtorCall(lhsAddress, lhsDtor, {});
+    }
+
     const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
     if (rhsSTypeNonRef.isTriviallyCopyable(node)) {
       // Create shallow copy
@@ -525,6 +541,12 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
         const std::string msg = "Cannot copy struct '" + structName + "', as it is not trivially copyable and has no copy ctor";
         throw SemanticError(node, COPY_CTOR_REQUIRED, msg);
       }
+    }
+
+    // Close the self-assignment guard
+    if (bCopyEnd != nullptr) {
+      insertJump(bCopyEnd);
+      switchToBlock(bCopyEnd);
     }
     return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
   }

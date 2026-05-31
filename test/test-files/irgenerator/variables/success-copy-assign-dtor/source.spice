@@ -1,0 +1,26 @@
+// Verifies that copy-assigning to an already initialized struct destructs the previous value first,
+// so its owning members do not leak. Also verifies that self-assignment stays a safe no-op.
+
+type Holder struct {
+    String s
+}
+
+p Holder.ctor(string val) {
+    this.s = String(val);
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.s);
+}
+
+f<int> main() {
+    Holder a = Holder("first");
+    Holder b = Holder("second");
+    printf("before assign\n");
+    // Reassigning must destruct the old value of 'a' ("first") before copying 'b' into it
+    a = b;
+    printf("a is now %s\n", a.s);
+    // Self-assignment must be a safe no-op (no destruct, no corruption)
+    a = a;
+    printf("a is still %s\n", a.s);
+}
