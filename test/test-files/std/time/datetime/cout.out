@@ -1,0 +1,22 @@
+1970-01-01 00:00:00
+2001-09-09 01:46:40
+2023-11-14 22:13:20
+2020-02-29 00:00:00
+2026-06-01 12:30:45
+Roundtrip c: 1700000000
+Roundtrip made: 1780317045
+DOW epoch: 4
+DOW 1700000000: 2
+DaysInMonth 2020-02: 29
+DaysInMonth 2021-02: 28
+DaysInMonth 2021-04: 30
+DaysInMonth 2021-12: 31
+DayOfYear leap: 60
+DayOfYear made: 152
+1970-01-02 00:00:00
+1970-01-01 01:01:01
+1969-12-31 00:00:00
+a before c: 1
+c after a: 1
+a equals a: 1
+a equals c: 0
