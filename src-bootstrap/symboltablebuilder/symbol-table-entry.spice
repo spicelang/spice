@@ -9,6 +9,10 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/reader/code-loc";
 
+// Reserved function names for implicitly generated struct constructors/destructors
+public const string CTOR_FUNCTION_NAME = "ctor";
+public const string DTOR_FUNCTION_NAME = "dtor";
+
 public type SymbolTableEntry struct {
     // Public fields
     public String name

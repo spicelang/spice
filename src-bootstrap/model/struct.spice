@@ -8,6 +8,10 @@ import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/lifecycle";
+
+// Constants
+const string STRUCT_SCOPE_PREFIX = "struct:";
 
 public type Struct struct {
     public compose StructBase structBase
@@ -19,6 +23,34 @@ public p Struct.ctor(const String& name, SymbolTableEntry* entry, IScope* scope,
     this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
     this.fieldTypes = fieldTypes;
     this.interfaceTypes = interfaceTypes;
+}
+
+/**
+ * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the
+ * struct from the parent scope.
+ *
+ * @return Name of the struct scope
+ */
+public f<String> Struct.getScopeName() {
+    String appendix;
+    if this.structBase.isGenericSubstantiation() {
+        appendix = this.structBase.getSignature();
+    } else {
+        appendix = this.structBase.name;
+    }
+    return String(STRUCT_SCOPE_PREFIX) + appendix;
+}
+
+/**
+ * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the
+ * struct from the parent scope.
+ *
+ * @param name Struct name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the struct scope
+ */
+public f<String> Struct.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    return String(STRUCT_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
 }
 
 /**
@@ -34,4 +66,33 @@ public f<bool> Struct.hasReferenceFields() {
         }
     }
     return false;
+}
+
+/**
+ * Check that all fields are in a certain lifecycle state.
+ *
+ * @param state Lifecycle state to check for
+ * @return nil if all fields are in this state, otherwise the first mismatched field symbol
+ */
+public f<SymbolTableEntry*> Struct.areAllFieldsInState(const LifecycleState state) {
+    // ToDo: Iterate the fields via scope.lookupField(i) once IScope exposes it. For now, assume all fields are in state.
+    return nil<SymbolTableEntry*>;
+}
+
+/**
+ * Check that all fields are initialized.
+ *
+ * @return nil if all fields are initialized, otherwise the first uninitialized field symbol
+ */
+public f<SymbolTableEntry*> Struct.areAllFieldsInitialized() {
+    return this.areAllFieldsInState(LifecycleState::INITIALIZED);
+}
+
+/**
+ * Reset the initialization state of all fields to DECLARED.
+ *
+ * @param node AST node to associate with the update
+ */
+public p Struct.resetFieldSymbolsToDeclared(const ASTNode* node) {
+    // ToDo: Reset field symbols via scope.lookupField(i).updateState(DECLARED, node) once IScope exposes lookupField.
 }

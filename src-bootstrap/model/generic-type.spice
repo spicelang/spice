@@ -32,31 +32,57 @@ public p GenericType.ctor(const String& name, const QualTypeList& typeConditions
 /**
  * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
  *
- * @param qualType Qualified type to be checked
+ * @param requestedType Qualified type to be checked
+ * @param substantiation Concrete substantiation of the generic type
  * @param ignoreArraySize Ignore the array size for type comparison
  * @param ignoreQualifiers Ignore the type qualifiers for type comparison
  * @return True or false
  */
-public f<bool> GenericType.checkConditionsOf(const QualType& qualType, bool ignoreArraySize = false, bool ignoreQualifiers = false) {
-    return this.checkTypeConditionOf(qualType, ignoreArraySize, ignoreQualifiers);
+public f<bool> GenericType.checkConditionsOf(const QualType& requestedType, QualType& substantiation, bool ignoreArraySize = false, bool ignoreQualifiers = false) {
+    return this.checkTypeConditionOf(requestedType, substantiation, ignoreArraySize, ignoreQualifiers);
 }
 
 /**
- * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
+ * Checks if the given type matches all type conditions to get a manifestation of the current generic type
  *
- * @param qualType Qualified type to be checked
+ * @param requestedType Qualified type to be checked
+ * @param substantiation Concrete substantiation of the generic type
  * @param ignoreArraySize Ignore the array size for type comparison
  * @param ignoreQualifiers Ignore the type qualifiers for type comparison
  * @return True or false
  */
-f<bool> GenericType.checkConditionOf(const QualType& qualType, bool ignoreArraySize, bool ignoreQualifiers) {
-    // Succeed if no qualType conditions are set
+f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType& substantiation, bool ignoreArraySize, bool ignoreQualifiers) {
+    substantiation = requestedType;
+    // Succeed if there are no type conditions
     if this.typeConditions.isEmpty() {
+        return true;
+    }
+    // Succeed if the given qual type is generic and matches the current one
+    // ToDo: Use a dedicated QualType equality operator once available; matches(...) is used as an approximation here.
+    if requestedType.hasAnyGenericParts() && requestedType.matches(this.qualType, false, false, false) {
         return true;
     }
     // Check type conditions
     foreach const QualType& typeCondition : this.typeConditions {
-        if typeCondition.is(SuperType::TY_DYN) || typeCondition.matches(qualType, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
+        // If we have a dyn type condition, the conditions are fulfilled immediately
+        if typeCondition.is(SuperType::TY_DYN) {
+            return true;
+        }
+        // In situations like this we need to unwrap: requestedType = const int&, typeCondition = int
+        // ToDo: Also unwrap matching pointer/array layers (Type::unwrapBoth) once that helper is available in the bootstrap.
+        QualType typeConditionCopy = typeCondition;
+        QualType requestedTypeCopy = requestedType;
+        // Remove reference wrapper of the condition type if required
+        if typeConditionCopy.isRef() && !requestedTypeCopy.isRef() {
+            typeConditionCopy = typeConditionCopy.removeReferenceWrapper();
+        }
+        // Remove reference wrapper of the requested type if required
+        const QualType conditionBaseType = typeConditionCopy.getBase();
+        if !typeConditionCopy.isRef() && requestedTypeCopy.isRef() && !conditionBaseType.is(SuperType::TY_GENERIC) {
+            requestedTypeCopy = requestedTypeCopy.removeReferenceWrapper();
+        }
+        if typeConditionCopy.matches(requestedTypeCopy, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
+            substantiation = typeCondition;
             return true;
         }
     }

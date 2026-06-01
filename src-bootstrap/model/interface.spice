@@ -10,12 +10,43 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
 
+// Constants
+const string INTERFACE_SCOPE_PREFIX = "interface:";
+
 public type Interface struct {
     public compose StructBase structBase
-    Vector<Function*> methods
+    public Vector<Function*> methods
 }
 
 public p Interface.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const Vector<Function*>& methods, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
     this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
     this.methods = methods;
+}
+
+/**
+ * Retrieve the name of the scope, where signatures are placed. This is used to navigate to the scope of the interface
+ * from the parent scope.
+ *
+ * @return Name of the interface scope
+ */
+public f<String> Interface.getScopeName() {
+    String appendix;
+    if this.structBase.isGenericSubstantiation() {
+        appendix = this.structBase.getSignature();
+    } else {
+        appendix = this.structBase.name;
+    }
+    return String(INTERFACE_SCOPE_PREFIX) + appendix;
+}
+
+/**
+ * Retrieve the name of the scope, where signatures are placed. This is used to navigate to the scope of the interface
+ * from the parent scope.
+ *
+ * @param name Interface name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the interface scope
+ */
+public f<String> Interface.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    return String(INTERFACE_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
 }
