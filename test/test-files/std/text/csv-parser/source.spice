@@ -64,5 +64,54 @@ f<int> main() {
     assert fields.get(0) == String("x");
     assert fields.get(2) == String("z");
 
+    // Serialization: plain fields are emitted verbatim
+    assert parser.serializeField(String("plain")) == String("plain");
+    // Empty fields are quoted so empty records survive a round-trip
+    assert parser.serializeField(String("")) == String("\"\"");
+    // Fields needing quoting (delimiter, quote, newline) are wrapped/escaped
+    assert parser.serializeField(String("a,b")) == String("\"a,b\"");
+    assert parser.serializeField(String("she said \"hi\"")) == String("\"she said \"\"hi\"\"\"");
+    assert parser.serializeField(String("line1\nline2")) == String("\"line1\nline2\"");
+
+    // Serializing a single row joins fields with the delimiter
+    Vector<String> row;
+    row.pushBack(String("Alice"));
+    row.pushBack(String("30"));
+    row.pushBack(String("New York"));
+    assert parser.serializeRow(row) == String("Alice,30,New York");
+
+    // Round-trip: parse -> serialize -> parse yields the same rows
+    String roundTripDoc = String("name,age,city\r\n");
+    roundTripDoc += "Alice,30,\"New York\"\r\n";
+    roundTripDoc += "Bob,25,\"Line1\nLine2\"";
+    Vector<Vector<String>> parsedRows = parser.parse(roundTripDoc);
+    String serialized = parser.serialize(parsedRows);
+    Vector<Vector<String>> reparsedRows = parser.parse(serialized);
+    assert reparsedRows.getSize() == 3;
+    Vector<String>& reHeader = reparsedRows.get(0);
+    Vector<String>& reAlice = reparsedRows.get(1);
+    Vector<String>& reBob = reparsedRows.get(2);
+    assert reHeader.get(2) == String("city");
+    assert reAlice.get(2) == String("New York");
+    assert reBob.get(2) == String("Line1\nLine2");
+
+    // A trailing record of a single empty field must survive the round-trip
+    Vector<Vector<String>> emptyFieldRows;
+    Vector<String> dataRow;
+    dataRow.pushBack(String("a"));
+    emptyFieldRows.pushBack(dataRow);
+    Vector<String> emptyRow;
+    emptyRow.pushBack(String(""));
+    emptyFieldRows.pushBack(emptyRow);
+    Vector<Vector<String>> reEmptyRows = parser.parse(parser.serialize(emptyFieldRows));
+    assert reEmptyRows.getSize() == 2;
+    Vector<String>& reEmptyTrailing = reEmptyRows.get(1);
+    assert reEmptyTrailing.getSize() == 1;
+    assert reEmptyTrailing.get(0) == String("");
+
+    // Custom delimiter is honored during serialization
+    assert semicolonParser.serializeField(String("a;b")) == String("\"a;b\"");
+    assert semicolonParser.serializeField(String("a,b")) == String("a,b");
+
     printf("All assertions passed!");
 }

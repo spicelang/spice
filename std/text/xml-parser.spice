@@ -556,3 +556,122 @@ f<XmlNode*> XmlParser.parseElement() {
     if this.hasError { return nil<XmlNode*>; }
     return element;
 }
+
+// --- Serialization ---------------------------------------------------------
+
+/**
+ * Serializes this node into a compact XML string. Elements without children
+ * are written as self-closing tags. Text content and attribute values are
+ * escaped with the predefined entities, so the result round-trips through
+ * `parseXml`.
+ *
+ * @return Compact XML representation
+ */
+public f<String> XmlNode.serialize() {
+    String out;
+    this.serializeInto(out, false, 0l);
+    return out;
+}
+
+/**
+ * Serializes this node into a human-readable XML string. Elements that
+ * contain child elements are laid out with two-space indentation, one node
+ * per line; elements containing only text are kept on a single line.
+ *
+ * @return Pretty-printed XML representation
+ */
+public f<String> XmlNode.serializePretty() {
+    String out;
+    this.serializeInto(out, true, 0l);
+    return out;
+}
+
+p XmlNode.serializeInto(String& out, bool pretty, unsigned long depth) {
+    if this.kind == XmlNodeKind::XML_TEXT {
+        appendXmlEscapedText(out, this.textValue);
+        return;
+    }
+
+    out += '<';
+    out += this.name;
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        out += ' ';
+        out += this.attributeKeys.get(i);
+        out += "=\"";
+        appendXmlEscapedAttribute(out, this.attributeValues.get(i));
+        out += '"';
+    }
+
+    const unsigned long childCount = this.children.getSize();
+    if childCount == 0l {
+        out += "/>";
+        return;
+    }
+    out += '>';
+
+    // Lay children out on their own lines only when there is structure to show.
+    bool hasElementChild = false;
+    for unsigned long i = 0l; i < childCount; i++ {
+        if this.children.get(i).kind == XmlNodeKind::XML_ELEMENT {
+            hasElementChild = true;
+            break;
+        }
+    }
+    const bool block = pretty && hasElementChild;
+
+    for unsigned long i = 0l; i < childCount; i++ {
+        XmlNode* child = this.children.get(i);
+        if block { appendXmlNewlineIndent(out, depth + 1l); }
+        child.serializeInto(out, pretty, depth + 1l);
+    }
+    if block { appendXmlNewlineIndent(out, depth); }
+
+    out += "</";
+    out += this.name;
+    out += '>';
+}
+
+// Append a newline followed by `depth` levels of two-space indentation.
+p appendXmlNewlineIndent(String& out, unsigned long depth) {
+    out += '\n';
+    for unsigned long i = 0l; i < depth; i++ {
+        out += "  ";
+    }
+}
+
+// Escape character data: '&', '<' and '>' become their predefined entities.
+p appendXmlEscapedText(String& out, const String& text) {
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        if c == '&' {
+            out += "&amp;";
+        } else if c == '<' {
+            out += "&lt;";
+        } else if c == '>' {
+            out += "&gt;";
+        } else {
+            out += c;
+        }
+    }
+}
+
+// Escape an attribute value (delimited by double quotes), additionally
+// escaping the '"' character.
+p appendXmlEscapedAttribute(String& out, const String& value) {
+    const unsigned long length = value.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = value[i];
+        if c == '&' {
+            out += "&amp;";
+        } else if c == '<' {
+            out += "&lt;";
+        } else if c == '>' {
+            out += "&gt;";
+        } else if c == '"' {
+            out += "&quot;";
+        } else {
+            out += c;
+        }
+    }
+}
