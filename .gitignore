@@ -8,7 +8,7 @@ spice
 # Generated output from ANTLR
 /gen
 
-# ANTLR generator jar (downloaded by setup-libs)
+# ANTLR generator jar (downloaded by setup-deps)
 /src/thirdparty/antlr-*-complete.jar
 
 # CLion

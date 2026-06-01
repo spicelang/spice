@@ -83,7 +83,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build test target
 #        if: github.event_name != 'pull_request'
@@ -221,7 +221,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build test target
         env:
@@ -301,7 +301,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: .\setup-libs.bat
+        run: .\setup-deps.bat
 
       - name: Install Graphviz
         run: |
@@ -392,7 +392,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build test target
         env:

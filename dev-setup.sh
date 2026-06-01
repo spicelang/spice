@@ -31,7 +31,7 @@ colored_echo "done."
 
 # Download third-party libs
 colored_echo "[Step 4] Downloading third-party libraries ... "
-sh ./setup-libs.sh > /dev/null 2>&1
+sh ./setup-deps.sh > /dev/null 2>&1
 colored_echo "done."
 
 # Build in dev context

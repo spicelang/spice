@@ -11,7 +11,7 @@ set(ANTLR4_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/antlr4/runtime/Cpp ${CMAKE_BINARY_DIR}/antlr4_runtime EXCLUDE_FROM_ALL)
 set(ANTLR4_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/deps/antlr4/runtime/Cpp/runtime/src)
 
-# Locate the ANTLR code generator jar (downloaded by setup-libs)
+# Locate the ANTLR code generator jar (downloaded by setup-deps)
 set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antlr-4.13.2-complete.jar)
 find_package(ANTLR REQUIRED)
 message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")

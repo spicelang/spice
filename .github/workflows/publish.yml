@@ -74,7 +74,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:
@@ -173,7 +173,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:
@@ -262,7 +262,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: .\setup-libs.bat
+        run: .\setup-deps.bat
 
       - name: Build compiler
         env:
@@ -348,7 +348,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:

@@ -77,7 +77,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build Test target
         env:
