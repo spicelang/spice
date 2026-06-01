@@ -141,17 +141,10 @@ public f<T&> Vector.get(unsigned int index) {
  *
  * @return item at index
  */
-public f<T&> operator[]<T>(Vector<T>& v, unsigned long index) {
-    return v.get(index);
-}
-
-/**
- * Get an item at a certain index
- *
- * @return item at index
- */
-public f<T&> operator[]<T>(Vector<T>& v, unsigned int index) {
-    return v.get(cast<unsigned long>(index));
+public f<T&> operator[]<T, UIntOrULong>(Vector<T>& v, UIntOrULong index) {
+    unsafe {
+        return v.contents[index];
+    }
 }
 
 /**
@@ -192,7 +185,10 @@ public p Vector.removeAt(unsigned int index) {
  * @return item at index 0
  */
 public f<T&> Vector.front() {
-    return this.get(0);
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    unsafe {
+        return this.contents[0];
+    }
 }
 
 /**
@@ -201,7 +197,10 @@ public f<T&> Vector.front() {
  * @return item at index size - 1
  */
 public f<T&> Vector.back() {
-    return this.get(this.size - 1);
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    unsafe {
+        return this.contents[this.size - 1];
+    }
 }
 
 /**
