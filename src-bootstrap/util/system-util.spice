@@ -7,8 +7,8 @@ import "std/io/filepath";
 import "std/iterator/array-iterator";
 
 public type ExecResult struct {
-    String output
-    int exitCode
+    public String output
+    public int exitCode
 }
 
 public type ExternalBinaryFinderResult struct {
@@ -108,6 +108,35 @@ public f<ExternalBinaryFinderResult> findLinker() {
         panic(Error("Unsupported platform"));
     }
     panic(Error("No supported linker found on the system. Supported are: mold, lld, gold and ld"));
+}
+
+/**
+ * Search for a supported archiver on the system and return the executable name or path.
+ * This function may throw a LinkerError if no archiver is found.
+ *
+ * @return Name or path to the archiver executable
+ */
+public f<ExternalBinaryFinderResult> findArchiver() {
+    if isUnixBased() {
+        foreach const string archiverName : ["llvm-ar", "gcc-ar", "ar"] {
+            foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
+                String archiverPath = path + archiverName;
+                if fileExists(archiverPath.getRaw()) {
+                    return ExternalBinaryFinderResult{archiverName, archiverPath};
+                }
+            }
+        }
+    } else if isWindows() {
+        foreach const string archiverName : ["llvm-lib", "lib"] {
+            String checkCmd = archiverName + " -v";
+            if isCommandAvailable(checkCmd.getRaw()) {
+                return ExternalBinaryFinderResult{archiverName, String(archiverName)};
+            }
+        }
+    } else {
+        panic(Error("Unsupported platform"));
+    }
+    panic(Error("No supported archiver found on the system. Supported are: llvm-ar and ar"));
 }
 
 /**
