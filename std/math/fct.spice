@@ -180,3 +180,381 @@ public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
     }
     return fac;
 }
+
+/**
+ * Calculate the square root of the input, using Heron's method.
+ * Note: For negative inputs 0.0 is returned, as the result is not a real number.
+ *
+ * @param x Input number
+ * @return Square root of input
+ */
+public f<double> sqrt(double x) {
+    if x <= 0.0 { return 0.0; }
+    double guess = x;
+    double prev = 0.0;
+    while guess != prev {
+        prev = guess;
+        guess = 0.5 * (guess + x / guess);
+    }
+    return guess;
+}
+
+/**
+ * Calculate the cube root of the input, using Newton's method.
+ *
+ * @param x Input number
+ * @return Cube root of input
+ */
+public f<double> cbrt(double x) {
+    if x == 0.0 { return 0.0; }
+    bool negative = x < 0.0;
+    double a = negative ? -x : x;
+    double guess = a;
+    double prev = 0.0;
+    while guess != prev {
+        prev = guess;
+        guess = (2.0 * guess + a / (guess * guess)) / 3.0;
+    }
+    return negative ? -guess : guess;
+}
+
+/**
+ * Calculate the length of the hypotenuse of a right-angled triangle from its legs.
+ *
+ * @param a Length of the first leg
+ * @param b Length of the second leg
+ * @return Length of the hypotenuse
+ */
+public inline f<double> hypot(double a, double b) {
+    return sqrt(a * a + b * b);
+}
+
+/**
+ * Calculate e raised to the power of the input, using the taylor series:
+ * exp x = 1 + x + x^2/2! + x^3/3! ...
+ *
+ * @param x Input number
+ * @return e raised to the power of input
+ */
+public f<double> exp(double x) {
+    if x < 0.0 { return 1.0 / exp(-x); }
+    double res = 0.0;
+    double term = 1.0;
+    double n = 0.0;
+    while res + term != res {
+        res += term;
+        n += 1.0;
+        term *= x / n;
+    }
+    return res;
+}
+
+/**
+ * Calculate the natural logarithm (base e) of the input.
+ * The input is range reduced via e, before applying the series:
+ * ln x = 2 * (t + t^3/3 + t^5/5 ...) with t = (x-1)/(x+1)
+ * Note: For inputs <= 0 the result 0.0 is returned, as the result is not a real number.
+ *
+ * @param x Input number
+ * @return Natural logarithm of input
+ */
+public f<double> ln(double x) {
+    if x <= 0.0 { return 0.0; }
+    int k = 0;
+    while x > 1.5 {
+        x /= E;
+        k += 1;
+    }
+    while x < 0.5 {
+        x *= E;
+        k -= 1;
+    }
+    double t = (x - 1.0) / (x + 1.0);
+    double tSquared = t * t;
+    double res = 0.0;
+    double term = t;
+    double n = 1.0;
+    double inc = term / n;
+    while res + inc != res {
+        res += inc;
+        term *= tSquared;
+        n += 2.0;
+        inc = term / n;
+    }
+    return 2.0 * res + cast<double>(k);
+}
+
+/**
+ * Calculate the binary logarithm (base 2) of the input.
+ *
+ * @param x Input number
+ * @return Binary logarithm of input
+ */
+public inline f<double> log2(double x) {
+    return ln(x) / LN2;
+}
+
+/**
+ * Calculate the common logarithm (base 10) of the input.
+ *
+ * @param x Input number
+ * @return Common logarithm of input
+ */
+public inline f<double> log10(double x) {
+    return ln(x) / LN10;
+}
+
+/**
+ * Calculate the logarithm of the input to an arbitrary base.
+ *
+ * @param x Input number
+ * @param base Logarithm base
+ * @return Logarithm of input to the given base
+ */
+public inline f<double> log(double x, double base) {
+    return ln(x) / ln(base);
+}
+
+/**
+ * Raise the base to an integer power, using exponentiation by squaring.
+ *
+ * @param base Base number
+ * @param exponent Integer exponent
+ * @return base raised to the power of exponent
+ */
+public f<double> pow(double base, int exponent) {
+    if exponent < 0 {
+        return 1.0 / pow(base, -exponent);
+    }
+    double res = 1.0;
+    double factor = base;
+    int e = exponent;
+    while e > 0 {
+        if e % 2 == 1 {
+            res *= factor;
+        }
+        factor *= factor;
+        e /= 2;
+    }
+    return res;
+}
+
+/**
+ * Raise the base to an arbitrary power, computed as exp(exponent * ln(base)).
+ * Note: For a negative base only integer exponents are defined, otherwise 0.0 is returned.
+ *
+ * @param base Base number
+ * @param exponent Exponent
+ * @return base raised to the power of exponent
+ */
+public f<double> pow(double base, double exponent) {
+    if base > 0.0 {
+        return exp(exponent * ln(base));
+    }
+    if base == 0.0 {
+        return exponent == 0.0 ? 1.0 : 0.0;
+    }
+    // Negative base: only defined for integer exponents
+    int intExponent = trunc(exponent);
+    if cast<double>(intExponent) == exponent {
+        return pow(base, intExponent);
+    }
+    return 0.0;
+}
+
+/**
+ * Calculate the tangent of the input (in degrees).
+ *
+ * @param x Input number in degrees
+ * @return Tangent of input
+ */
+public inline f<double> tan<Numeric>(Numeric x) {
+    return sin(x) / cos(x);
+}
+
+/**
+ * Calculate the arc tangent of the input, returning the result in degrees.
+ * The input is range reduced using the half-angle identity, before applying the series:
+ * atan x = x - x^3/3 + x^5/5 - x^7/7 ...
+ *
+ * @param x Input number
+ * @return Arc tangent of input in degrees
+ */
+public f<double> atan(double x) {
+    bool negative = x < 0.0;
+    if negative { x = -x; }
+    bool inverted = false;
+    if x > 1.0 {
+        x = 1.0 / x;
+        inverted = true;
+    }
+    // Range reduction: atan(x) = 2 * atan(x / (1 + sqrt(1 + x^2)))
+    int reductions = 0;
+    while x > 0.2 {
+        x = x / (1.0 + sqrt(1.0 + x * x));
+        reductions += 1;
+    }
+    double xSquared = x * x;
+    double res = 0.0;
+    double term = x;
+    double n = 1.0;
+    double sign = 1.0;
+    double inc = sign * term / n;
+    while res + inc != res {
+        res += inc;
+        term *= xSquared;
+        n += 2.0;
+        sign = -sign;
+        inc = sign * term / n;
+    }
+    for int i = 0; i < reductions; i++ {
+        res *= 2.0;
+    }
+    if inverted { res = PI_2 - res; }
+    if negative { res = -res; }
+    return radToDeg(res);
+}
+
+/**
+ * Calculate the arc tangent of y/x, returning the result in degrees.
+ * Unlike atan, the signs of both arguments are used to determine the correct quadrant.
+ *
+ * @param y Ordinate (y-coordinate)
+ * @param x Abscissa (x-coordinate)
+ * @return Arc tangent of y/x in degrees
+ */
+public f<double> atan2(double y, double x) {
+    if x > 0.0 { return atan(y / x); }
+    if x < 0.0 {
+        return y >= 0.0 ? atan(y / x) + 180.0 : atan(y / x) - 180.0;
+    }
+    // x == 0.0
+    if y > 0.0 { return 90.0; }
+    if y < 0.0 { return -90.0; }
+    return 0.0;
+}
+
+/**
+ * Calculate the arc sine of the input, returning the result in degrees.
+ * Note: For inputs outside of [-1, 1] the result is clamped to +/- 90 degrees.
+ *
+ * @param x Input number in range [-1, 1]
+ * @return Arc sine of input in degrees
+ */
+public f<double> asin(double x) {
+    if x >= 1.0 { return 90.0; }
+    if x <= -1.0 { return -90.0; }
+    return atan(x / sqrt(1.0 - x * x));
+}
+
+/**
+ * Calculate the arc cosine of the input, returning the result in degrees.
+ * Note: For inputs outside of [-1, 1] the result is clamped to [0, 180] degrees.
+ *
+ * @param x Input number in range [-1, 1]
+ * @return Arc cosine of input in degrees
+ */
+public inline f<double> acos(double x) {
+    return 90.0 - asin(x);
+}
+
+/**
+ * Calculate the hyperbolic sine of the input.
+ *
+ * @param x Input number
+ * @return Hyperbolic sine of input
+ */
+public inline f<double> sinh(double x) {
+    return (exp(x) - exp(-x)) / 2.0;
+}
+
+/**
+ * Calculate the hyperbolic cosine of the input.
+ *
+ * @param x Input number
+ * @return Hyperbolic cosine of input
+ */
+public inline f<double> cosh(double x) {
+    return (exp(x) + exp(-x)) / 2.0;
+}
+
+/**
+ * Calculate the hyperbolic tangent of the input.
+ *
+ * @param x Input number
+ * @return Hyperbolic tangent of input
+ */
+public f<double> tanh(double x) {
+    double pos = exp(x);
+    double neg = exp(-x);
+    return (pos - neg) / (pos + neg);
+}
+
+/**
+ * Calculate the greatest common divisor of two inputs, using the Euclidean algorithm.
+ *
+ * @param input1 First input
+ * @param input2 Second input
+ * @return Greatest common divisor of the inputs
+ */
+public f<WholeNumber> gcd<WholeNumber>(WholeNumber input1, WholeNumber input2) {
+    WholeNumber a = abs(input1);
+    WholeNumber b = abs(input2);
+    while b != cast<WholeNumber>(0) {
+        WholeNumber tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+    return a;
+}
+
+/**
+ * Calculate the least common multiple of two inputs.
+ *
+ * @param input1 First input
+ * @param input2 Second input
+ * @return Least common multiple of the inputs
+ */
+public f<WholeNumber> lcm<WholeNumber>(WholeNumber input1, WholeNumber input2) {
+    if input1 == cast<WholeNumber>(0) || input2 == cast<WholeNumber>(0) {
+        return cast<WholeNumber>(0);
+    }
+    return abs(input1 / gcd(input1, input2) * input2);
+}
+
+/**
+ * Clamp the value to the inclusive range [minValue, maxValue].
+ *
+ * @param value Input value
+ * @param minValue Lower bound
+ * @param maxValue Upper bound
+ * @return Clamped value
+ */
+public inline f<Numeric> clamp<Numeric>(Numeric value, Numeric minValue, Numeric maxValue) {
+    if value < minValue { return minValue; }
+    if value > maxValue { return maxValue; }
+    return value;
+}
+
+/**
+ * Check if two floating point numbers are approximately equal within a default epsilon.
+ *
+ * @param input1 First input
+ * @param input2 Second input
+ * @return true if the inputs are approximately equal
+ */
+public inline f<bool> almostEqual(double input1, double input2) {
+    return abs(input1 - input2) <= 0.000001;
+}
+
+/**
+ * Check if two floating point numbers are approximately equal within the given epsilon.
+ *
+ * @param input1 First input
+ * @param input2 Second input
+ * @param epsilon Maximum allowed absolute difference
+ * @return true if the inputs are approximately equal
+ */
+public inline f<bool> almostEqual(double input1, double input2, double epsilon) {
+    return abs(input1 - input2) <= epsilon;
+}

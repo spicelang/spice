@@ -1,0 +1,93 @@
+import "std/math/fct" as fct;
+
+f<int> main() {
+    // Square root
+    printf("Sqrt (2.0): %f\n", fct::sqrt(2.0));
+    printf("Sqrt (16.0): %f\n", fct::sqrt(16.0));
+    printf("Sqrt (2.25): %f\n", fct::sqrt(2.25));
+    printf("Sqrt (0.0): %f\n", fct::sqrt(0.0));
+
+    // Cube root
+    printf("Cbrt (27.0): %f\n", fct::cbrt(27.0));
+    printf("Cbrt (-8.0): %f\n", fct::cbrt(-8.0));
+    printf("Cbrt (0.0): %f\n", fct::cbrt(0.0));
+
+    // Hypotenuse
+    printf("Hypot (3.0, 4.0): %f\n", fct::hypot(3.0, 4.0));
+
+    // Exponential
+    printf("Exp (0.0): %f\n", fct::exp(0.0));
+    printf("Exp (1.0): %f\n", fct::exp(1.0));
+    printf("Exp (-2.0): %f\n", fct::exp(-2.0));
+    printf("Exp (2.5): %f\n", fct::exp(2.5));
+
+    // Natural logarithm
+    printf("Ln (1.0): %f\n", fct::ln(1.0));
+    printf("Ln (10.0): %f\n", fct::ln(10.0));
+    printf("Ln (0.5): %f\n", fct::ln(0.5));
+
+    // Logarithms with base
+    printf("Log2 (8.0): %f\n", fct::log2(8.0));
+    printf("Log2 (1024.0): %f\n", fct::log2(1024.0));
+    printf("Log10 (1000.0): %f\n", fct::log10(1000.0));
+    printf("Log10 (1.0): %f\n", fct::log10(1.0));
+    printf("Log (81.0, 3.0): %f\n", fct::log(81.0, 3.0));
+
+    // Power (integer exponent)
+    printf("Pow (2.0, 10): %f\n", fct::pow(2.0, 10));
+    printf("Pow (2.0, -2): %f\n", fct::pow(2.0, -2));
+    printf("Pow (5.0, 0): %f\n", fct::pow(5.0, 0));
+    // Power (floating point exponent)
+    printf("Pow (2.0, 0.5): %f\n", fct::pow(2.0, 0.5));
+    printf("Pow (9.0, 0.5): %f\n", fct::pow(9.0, 0.5));
+    printf("Pow (-2.0, 3.0): %f\n", fct::pow(-2.0, 3.0));
+
+    // Tangent (degrees)
+    printf("Tan (0.0): %f\n", fct::tan(0.0));
+    printf("Tan (45.0): %f\n", fct::tan(45.0));
+    printf("Tan (30.0): %f\n", fct::tan(30.0));
+
+    // Arc tangent (degrees)
+    printf("Atan (0.0): %f\n", fct::atan(0.0));
+    printf("Atan (1.0): %f\n", fct::atan(1.0));
+    printf("Atan (0.5): %f\n", fct::atan(0.5));
+
+    // Arc tangent of y/x (degrees)
+    printf("Atan2 (1.0, 1.0): %f\n", fct::atan2(1.0, 1.0));
+    printf("Atan2 (1.0, -1.0): %f\n", fct::atan2(1.0, -1.0));
+    printf("Atan2 (-1.0, -1.0): %f\n", fct::atan2(-1.0, -1.0));
+    printf("Atan2 (1.0, 0.0): %f\n", fct::atan2(1.0, 0.0));
+
+    // Arc sine / arc cosine (degrees)
+    printf("Asin (0.0): %f\n", fct::asin(0.0));
+    printf("Asin (0.5): %f\n", fct::asin(0.5));
+    printf("Asin (1.0): %f\n", fct::asin(1.0));
+    printf("Acos (0.5): %f\n", fct::acos(0.5));
+    printf("Acos (1.0): %f\n", fct::acos(1.0));
+
+    // Hyperbolic functions
+    printf("Sinh (0.0): %f\n", fct::sinh(0.0));
+    printf("Sinh (1.0): %f\n", fct::sinh(1.0));
+    printf("Cosh (0.0): %f\n", fct::cosh(0.0));
+    printf("Cosh (1.0): %f\n", fct::cosh(1.0));
+    printf("Tanh (0.0): %f\n", fct::tanh(0.0));
+    printf("Tanh (1.0): %f\n", fct::tanh(1.0));
+
+    // Greatest common divisor / least common multiple
+    printf("Gcd (48, 36): %d\n", fct::gcd(48, 36));
+    printf("Gcd (17, 5): %d\n", fct::gcd(17, 5));
+    printf("Gcd (0, 5): %d\n", fct::gcd(0, 5));
+    printf("Lcm (4, 6): %d\n", fct::lcm(4, 6));
+    printf("Lcm (21, 6): %d\n", fct::lcm(21, 6));
+
+    // Clamp
+    printf("Clamp (5, 0, 10): %d\n", fct::clamp(5, 0, 10));
+    printf("Clamp (-3, 0, 10): %d\n", fct::clamp(-3, 0, 10));
+    printf("Clamp (15, 0, 10): %d\n", fct::clamp(15, 0, 10));
+    printf("Clamp (5.5, 0.0, 10.0): %f\n", fct::clamp(5.5, 0.0, 10.0));
+
+    // Almost equal
+    printf("AlmostEqual (1.0, 1.0000001): %d\n", fct::almostEqual(1.0, 1.0000001) ? 1 : 0);
+    printf("AlmostEqual (1.0, 1.1): %d\n", fct::almostEqual(1.0, 1.1) ? 1 : 0);
+    printf("AlmostEqual (1.0, 1.01, 0.1): %d\n", fct::almostEqual(1.0, 1.01, 0.1) ? 1 : 0);
+}
