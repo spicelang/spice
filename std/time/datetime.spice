@@ -26,14 +26,13 @@ public type DateTime struct {
  * @return Constructed DateTime
  */
 public f<DateTime> of(int year, int month, int day, int hour, int minute, int second) {
-    DateTime result = DateTime{};
+    result = DateTime{};
     result.year = year;
     result.month = month;
     result.day = day;
     result.hour = hour;
     result.minute = minute;
     result.second = second;
-    return result;
 }
 
 /**
@@ -75,14 +74,13 @@ public f<DateTime> fromUnixSecs(long secs) {
     long doy = doe - (365l * yoe + yoe / 4l - yoe / 100l);                 // [0, 365]
     long mp = (5l * doy + 2l) / 153l;                                      // [0, 11]
 
-    DateTime result = DateTime{};
+    result = DateTime{};
     result.day = cast<int>(doy - (153l * mp + 2l) / 5l + 1l);             // [1, 31]
     result.month = cast<int>(mp < 10l ? mp + 3l : mp - 9l);              // [1, 12]
     result.year = cast<int>(mp >= 10l ? y + 1l : y);
     result.hour = hour;
     result.minute = minute;
     result.second = second;
-    return result;
 }
 
 /**
