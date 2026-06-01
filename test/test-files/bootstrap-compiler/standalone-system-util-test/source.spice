@@ -5,5 +5,15 @@ f<int> main() {
     printf("Graphviz installed: %s\n", isGraphvizInstalled() ? "yes" : "no");
     ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
     assert linkerInvoker.path.contains("clang") || linkerInvoker.path.contains("gcc");
+    ExternalBinaryFinderResult archiver = findArchiver();
+    assert archiver.path.contains("ar");
+
+    // exec() must actually run the command and capture its output and exit code
+    ExecResult echoResult = exec("echo bootstrap");
+    assert echoResult.output.contains("bootstrap");
+    assert echoResult.exitCode == 0;
+    ExecResult failResult = exec("exit 7");
+    assert failResult.exitCode == 7;
+
     printf("All assertions passed!");
 }

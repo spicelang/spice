@@ -6,6 +6,13 @@ import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
 
+// Link external functions
+ext f<FilePtr> popen(string /*command*/, string /*mode*/);
+ext f<int> pclose(FilePtr /*stream*/);
+ext f<int> fgetc(FilePtr /*stream*/);
+
+const int EXEC_EOF = -1;
+
 public type ExecResult struct {
     public String output
     public int exitCode
@@ -17,14 +24,50 @@ public type ExternalBinaryFinderResult struct {
 }
 
 /**
- * Execute external command. Used to execute compiled binaries
+ * Transform the wait status returned by pclose/system into a process exit code.
+ *
+ * @param status Wait status
+ * @return Exit code
+ */
+f<int> transformStatusToExitCode(int status) {
+    if isWindows() {
+        return status;
+    }
+    // Invalid status -> invalid exit code
+    if status == -1 {
+        return -1;
+    }
+    // Process terminated by signal (WIFSIGNALED): low 7 bits are neither 0 nor 0x7f
+    const int termSignal = status & 0x7f;
+    if termSignal != 0 && termSignal != 0x7f {
+        return 128 + termSignal;
+    }
+    // Process terminated normally (WIFEXITED): WEXITSTATUS
+    return (status >> 8) & 0xff;
+}
+
+/**
+ * Execute external command and capture its output and exit code.
  *
  * @param cmd Command to execute
  * @return Result struct
  */
 public f<ExecResult> exec(const string cmd) {
-    // ToDo
-    return ExecResult{};
+    FilePtr pipe = popen(cmd, "r");
+    if pipe == nil<FilePtr> {
+        panic(Error("Failed to execute command"));
+    }
+
+    // Read the whole command output
+    result = ExecResult{};
+    int currentChar = fgetc(pipe);
+    while currentChar != EXEC_EOF {
+        result.output += cast<char>(currentChar);
+        currentChar = fgetc(pipe);
+    }
+
+    const int status = pclose(pipe);
+    result.exitCode = transformStatusToExitCode(status);
 }
 
 /**
