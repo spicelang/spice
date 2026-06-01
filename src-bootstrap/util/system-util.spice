@@ -2,16 +2,11 @@
 import "std/os/os";
 import "std/os/cmd";
 import "std/os/env";
+import "std/os/filesystem";
 import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
-
-// Link external functions
-ext f<FilePtr> popen(string /*command*/, string /*mode*/);
-ext f<int> pclose(FilePtr /*stream*/);
-ext f<int> fgetc(FilePtr /*stream*/);
-
-const int EXEC_EOF = -1;
+import "std/type/type-conversion";
 
 public type ExecResult struct {
     public String output
@@ -24,7 +19,7 @@ public type ExternalBinaryFinderResult struct {
 }
 
 /**
- * Transform the wait status returned by pclose/system into a process exit code.
+ * Transform the wait status returned by the 'system' call into a process exit code.
  *
  * @param status Wait status
  * @return Exit code
@@ -49,25 +44,29 @@ f<int> transformStatusToExitCode(int status) {
 /**
  * Execute external command and capture its output and exit code.
  *
+ * Output (incl. stderr) is redirected to a temporary file so that we can both capture the output
+ * and obtain the real exit code via the standard 'system' call. This avoids the cross-platform
+ * differences between popen and _popen.
+ *
  * @param cmd Command to execute
  * @return Result struct
  */
 public f<ExecResult> exec(const string cmd) {
-    FilePtr pipe = popen(cmd, "r");
-    if pipe == nil<FilePtr> {
-        panic(Error("Failed to execute command"));
-    }
+    // Redirect stdout and stderr to a temporary file
+    const FilePath outputFile = FilePath(getTempDir()) / ("spice-exec-" + toString(getPID()) + ".txt");
+    const String fullCommand = String(cmd) + " > " + outputFile.toString() + " 2>&1";
 
-    // Read the whole command output
+    // Run the command and capture its exit code
     result = ExecResult{};
-    int currentChar = fgetc(pipe);
-    while currentChar != EXEC_EOF {
-        result.output += cast<char>(currentChar);
-        currentChar = fgetc(pipe);
-    }
-
-    const int status = pclose(pipe);
+    const int status = execCmd(fullCommand.getRaw());
     result.exitCode = transformStatusToExitCode(status);
+
+    // Read back the captured output (best effort) and clean up the temporary file
+    const Result<String> outputResult = readFile(outputFile.toString());
+    if outputResult.isOk() {
+        result.output = outputResult.unwrap();
+    }
+    deleteFile(outputFile.toString());
 }
 
 /**
