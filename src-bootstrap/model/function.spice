@@ -1,12 +1,15 @@
 // Std imports
 import "std/data/vector";
-import "std/data/map";
+import "std/text/stringstream";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/model/generic-type";
 
 // Helper structs
@@ -22,20 +25,366 @@ public type NamedParam struct {
 }
 
 // Type aliases
-type ParamList alias Vector<Param>;
-type NamedParamList alias Vector<NamedParam>;
+public type ParamList alias Vector<Param>;
+public type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
-    String name
-    QualType thisType = QualType(SuperType::TY_DYN)
-    QualType returnType = QualType(SuperType::TY_DYN)
-    ParamList paramList
-    Vector<GenericType> templateTypes
-    Map<String, QualType> typeMapping
-    SymbolTableEntry* entry
-    ASTNode* declNode
-    bool genericSubstantiation
-    bool alreadyTypeChecked
-    bool external
-    bool used
+    public String name
+    public QualType thisType = QualType(SuperType::TY_DYN)
+    public QualType returnType = QualType(SuperType::TY_DYN)
+    public ParamList paramList
+    public Vector<GenericType> templateTypes
+    public TypeMapping typeMapping
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public ASTNode* declNode = nil<ASTNode*>
+    public IScope* bodyScope = nil<IScope*>
+    public String predefinedMangledName
+    public String mangleSuffix
+    public Function* genericPreset = nil<Function*>
+    public bool isVararg = false
+    public bool mangleFunctionName = true
+    public bool alreadyTypeChecked = false
+    public bool used = false
+    public bool implicitDefault = false
+    public bool isVirtual = false
+    public bool isNewlyInserted = false
+    public llvm::Function* llvmFunction = nil<llvm::Function*>
+    public unsigned long vtableIndex = 0l
+}
+
+public p Function.ctor(const String& name, SymbolTableEntry* entry, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+    this.name = name;
+    this.entry = entry;
+    this.thisType = thisType;
+    this.returnType = returnType;
+    this.paramList = paramList;
+    this.templateTypes = templateTypes;
+    this.declNode = declNode;
+}
+
+/**
+ * Retrieve the parameter types of the current function
+ *
+ * @return Vector of parameter types
+ */
+public f<QualTypeList> Function.getParamTypes() {
+    result = QualTypeList();
+    foreach const Param& param : this.paramList {
+        result.pushBack(param.qualType);
+    }
+}
+
+/**
+ * Get a string representation of the current function.
+ *
+ * Example:
+ * string Vector<double>.setData<double>(double)
+ *
+ * @param withThisType Include 'this' type in signature
+ * @param withTemplateTypes Include concrete template types in the signature
+ * @return String representation as function signature
+ */
+public f<String> Function.getSignature(bool withThisType = true, bool withTemplateTypes = true) {
+    QualTypeList concreteTemplateTypes;
+    if withTemplateTypes {
+        foreach const GenericType& genericType : this.templateTypes {
+            if genericType.qualType.is(SuperType::TY_GENERIC) && !this.typeMapping.isEmpty() {
+                const String& subType = genericType.qualType.getSubType();
+                assert this.typeMapping.contains(subType);
+                concreteTemplateTypes.pushBack(this.typeMapping.get(subType));
+            } else {
+                concreteTemplateTypes.pushBack(genericType.qualType);
+            }
+        }
+    }
+
+    return this.getSignature(this.name, this.thisType, this.returnType, this.paramList, concreteTemplateTypes, true, withThisType, true);
+}
+
+/**
+ * Get a string representation of the current function.
+ *
+ * @param name Function name
+ * @param thisType This symbol type
+ * @param returnType Return symbol type
+ * @param paramList Param symbol types
+ * @param concreteTemplateTypes Concrete template symbol types
+ * @param withReturnType Include return type in signature
+ * @param withThisType Include 'this' type in signature
+ * @param ignorePublic Not include public modifiers in signature
+ * @return Function signature
+ */
+public f<String> Function.getSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = true) {
+    StringStream signature;
+
+    // Build return type string
+    if withReturnType {
+        if returnType.is(SuperType::TY_DYN) {
+            signature << "p ";
+        } else {
+            signature << "f<";
+            returnType.getName(signature, false, ignorePublic);
+            signature << "> ";
+        }
+    }
+
+    // Build this type string
+    if withThisType && !thisType.is(SuperType::TY_DYN) {
+        const QualType thisBaseType = thisType.getBase();
+        signature << thisBaseType.getSubType();
+        const QualTypeList& thisTemplateTypes = thisType.getTemplateTypes();
+        if !thisTemplateTypes.isEmpty() {
+            signature << "<";
+            for unsigned long i = 0l; i < thisTemplateTypes.getSize(); i = i + 1l {
+                if i > 0l {
+                    signature << ",";
+                }
+                const QualType templateType = thisTemplateTypes.get(i);
+                templateType.getName(signature, false, ignorePublic);
+            }
+            signature << ">";
+        }
+        signature << MEMBER_ACCESS_TOKEN;
+    }
+
+    // Name
+    signature << name;
+
+    // Build template type string
+    if !concreteTemplateTypes.isEmpty() {
+        signature << "<";
+        for unsigned long i = 0l; i < concreteTemplateTypes.getSize(); i = i + 1l {
+            if i > 0l {
+                signature << ",";
+            }
+            const QualType templateType = concreteTemplateTypes.get(i);
+            templateType.getName(signature, false, ignorePublic);
+        }
+        signature << ">";
+    }
+
+    // Parameter type string
+    signature << "(";
+    for unsigned long i = 0l; i < paramList.getSize(); i = i + 1l {
+        if i > 0l {
+            signature << ",";
+        }
+        const Param param = paramList.get(i);
+        param.qualType.getName(signature, false, ignorePublic);
+        if param.isOptional {
+            signature << "?";
+        }
+    }
+    signature << ")";
+
+    return signature.str();
+}
+
+/**
+ * Get the name of the scope, where members and the body of the function live
+ *
+ * @return Scope name
+ */
+public f<String> Function.getScopeName() {
+    return this.getSignature(false, true);
+}
+
+/**
+ * Get the mangled name of the function
+ *
+ * @return Mangled name
+ */
+public f<String> Function.getMangledName() {
+    // Use predefined mangled name if available
+    if !this.predefinedMangledName.isEmpty() {
+        return this.predefinedMangledName;
+    }
+    // Use function name if mangling is disabled
+    if !this.mangleFunctionName {
+        return this.name;
+    }
+    // ToDo: Use NameMangling.mangleFunction(*this) once the name mangling pass is ported. Fall back to the raw name for now.
+    return this.name;
+}
+
+/**
+ * Get the name of the symbol table entry of the function
+ *
+ * @param functionName Function name
+ * @param codeLoc Code location
+ * @return Symbol table entry name
+ */
+public f<String> Function.getSymbolTableEntryName(const String& functionName, const CodeLoc& codeLoc) {
+    return functionName + ":" + codeLoc.toString();
+}
+
+/**
+ * Get the name of the symbol table entry of the default constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
+public f<String> Function.getSymbolTableEntryNameDefaultCtor(const CodeLoc& structCodeLoc) {
+    return "default_" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
+}
+
+/**
+ * Get the name of the symbol table entry of the default copy constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
+public f<String> Function.getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc& structCodeLoc) {
+    return "default_copy" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
+}
+
+/**
+ * Get the name of the symbol table entry of the default move constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
+public f<String> Function.getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc& structCodeLoc) {
+    return "default_move" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
+}
+
+/**
+ * Get the name of the symbol table entry of the default destructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
+public f<String> Function.getSymbolTableEntryNameDefaultDtor(const CodeLoc& structCodeLoc) {
+    return "default_" + DTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
+}
+
+/**
+ * Check if the current function is a method (has a 'this' type)
+ *
+ * @return Method or not
+ */
+public f<bool> Function.isMethod() {
+    return !this.thisType.is(SuperType::TY_DYN);
+}
+
+/**
+ * Check if the current function is a function (has a return type)
+ *
+ * @return Function or not
+ */
+public f<bool> Function.isFunction() {
+    return !this.returnType.is(SuperType::TY_DYN);
+}
+
+/**
+ * Check if the current function is a procedure (has no return type)
+ *
+ * @return Procedure or not
+ */
+public f<bool> Function.isProcedure() {
+    return this.returnType.is(SuperType::TY_DYN);
+}
+
+/**
+ * Check if the current function is a normal function (no method)
+ *
+ * @return Normal function or not
+ */
+public f<bool> Function.isNormalFunction() {
+    return this.isFunction() && !this.isMethod();
+}
+
+/**
+ * Check if the current function is a normal procedure (no method)
+ *
+ * @return Normal procedure or not
+ */
+public f<bool> Function.isNormalProcedure() {
+    return this.isProcedure() && !this.isMethod();
+}
+
+/**
+ * Check if the current function is a method function
+ *
+ * @return Method function or not
+ */
+public f<bool> Function.isMethodFunction() {
+    return this.isFunction() && this.isMethod();
+}
+
+/**
+ * Check if the current function is a method procedure
+ *
+ * @return Method procedure or not
+ */
+public f<bool> Function.isMethodProcedure() {
+    return this.isProcedure() && this.isMethod();
+}
+
+/**
+ * Check if the current function is a virtual method
+ *
+ * @return Virtual method or not
+ */
+public f<bool> Function.isVirtualMethod() {
+    return this.isMethod() && this.isVirtual;
+}
+
+/**
+ * Checks if a function contains optional parameters.
+ * This would imply that the function is not substantiated by its optional parameters yet.
+ *
+ * @return Substantiated params or not
+ */
+public f<bool> Function.hasSubstantiatedParams() {
+    foreach const Param& param : this.paramList {
+        if param.isOptional {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if a function contains template types.
+ * This would imply that the function is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+public f<bool> Function.hasSubstantiatedGenerics() {
+    foreach const GenericType& genericType : this.templateTypes {
+        const String& subType = genericType.qualType.getSubType();
+        if !this.typeMapping.contains(subType) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if a function contains optional parameters or has generic types present.
+ * This would imply that the function is not fully substantiated yet.
+ *
+ * @return Fully substantiated or not
+ */
+public f<bool> Function.isFullySubstantiated() {
+    return this.hasSubstantiatedParams() && this.hasSubstantiatedGenerics();
+}
+
+/**
+ * Returns, if this function is a substantiation of a generic one.
+ *
+ * @return Generic substantiation or not
+ */
+public f<bool> Function.isGenericSubstantiation() {
+    return this.genericPreset != nil<Function*>;
+}
+
+/**
+ * Retrieve the declaration code location of this function
+ *
+ * @return Declaration code location
+ */
+public f<const CodeLoc&> Function.getDeclCodeLoc() {
+    return this.declNode.codeLoc;
 }

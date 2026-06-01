@@ -1,14 +1,17 @@
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/util/common-util";
 
 public type VTableData struct {
     llvm::StructType* typeInfoType = nil<llvm::StructType*>
@@ -29,6 +32,7 @@ public type StructBase struct {
     public StructBase* genericPreset = nil<StructBase*>
     public VTableData vTableData
     public bool used = false
+    public bool isNewlyInserted = false
 }
 
 public p StructBase.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
@@ -39,9 +43,22 @@ public p StructBase.ctor(const String& name, SymbolTableEntry* entry, IScope* sc
     this.declNode = declNode;
 }
 
+/**
+ * Get a string representation of the current struct
+ *
+ * @return String representation as struct signature
+ */
 public f<String> StructBase.getSignature() {
-    // ToDo: Implement
-    return String();
+    QualTypeList templateSymbolTypes;
+    foreach const GenericType& genericType : this.templateTypes {
+        if genericType.qualType.is(SuperType::TY_GENERIC) && !this.typeMapping.isEmpty() {
+            assert this.typeMapping.contains(genericType.qualType.getSubType());
+            templateSymbolTypes.pushBack(this.typeMapping.get(genericType.qualType.getSubType()));
+        } else {
+            templateSymbolTypes.pushBack(genericType.qualType);
+        }
+    }
+    return this.getSignature(this.name, templateSymbolTypes);
 }
 
 /**
@@ -55,12 +72,21 @@ public f<String> StructBase.getSignature() {
  * @return Signature
  */
 public f<String> StructBase.getSignature(const String& name, const QualTypeList& concreteTemplateTypes) {
-    String templateTyStr;
-    if !this.concreteTemplateTypes.isEmpty() {
-
+    // Build template type string
+    StringStream templateTyStr;
+    if !concreteTemplateTypes.isEmpty() {
+        templateTyStr << "<";
+        for unsigned long i = 0l; i < concreteTemplateTypes.getSize(); i = i + 1l {
+            if i > 0l {
+                templateTyStr << ",";
+            }
+            const QualType templateType = concreteTemplateTypes.get(i);
+            templateType.getName(templateTyStr, false, true);
+        }
+        templateTyStr << ">";
     }
-    // ToDo: Implement
-    return String();
+
+    return getLastFragment(name, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
 }
 
 /**
@@ -71,7 +97,7 @@ public f<String> StructBase.getSignature(const String& name, const QualTypeList&
  */
 public f<bool> StructBase.hasSubstantiatedGenerics() {
     foreach const GenericType& genericType : this.templateTypes {
-        if genericType.hasAnyGenericTypes() {
+        if genericType.qualType.hasAnyGenericParts() {
             return false;
         }
     }

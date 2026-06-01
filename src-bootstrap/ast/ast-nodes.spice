@@ -8,6 +8,10 @@ import "bootstrap/ast/ast-node-intf";
 //import "bootstrap/symboltablebuilder/qual-type";
 //import "bootstrap/model/function";
 
+// Access tokens used when building type/function/scope signatures
+public const string MEMBER_ACCESS_TOKEN = ".";
+public const string SCOPE_ACCESS_TOKEN = "::";
+
 /*public type IVisitable interface {
     f<Any> accept(IAbstractAstVisitor*);
 }*/
