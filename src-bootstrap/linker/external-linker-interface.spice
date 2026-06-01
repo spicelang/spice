@@ -1,16 +1,22 @@
 // Std imports
 import "std/data/vector";
 import "std/io/filepath";
+import "std/io/file";
+import "std/os/os";
+import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/driver";
+import "bootstrap/util/system-util";
+import "bootstrap/exception/linker-error";
 
 public type ExternalLinkerInterface struct {
     CliOptions& cliOptions
-    Vector<FilePath> objectFilePaths
-    Vector<String> linkerFlags
-    FilePath outputPath
-    bool linkLibMath = false
+    // The following members are public to be observable from tests
+    public Vector<FilePath> linkedFiles
+    public Vector<String> linkerFlags
+    public FilePath outputPath
+    public bool linkLibMath = false
 }
 
 public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
@@ -18,20 +24,28 @@ public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
     this.outputPath = cliOptions.outputPath;
 }
 
+/**
+ * Prepare the linker for the linking process by assembling the required linker flags
+ */
 public p ExternalLinkerInterface.prepare() {
-    // Set target to linker
-    this.addLinkerFlag("--target=" + this.cliOptions.targetTriple);
-
-    // Static linking
-    if this.cliOptions.staticLinking {
+    // Static or shared linking
+    if this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
+        this.addLinkerFlag("-shared");
+    } else if this.cliOptions.staticLinking {
         this.addLinkerFlag("-static");
     }
 
+    // The following flags only make sense if we want to emit an executable
+    if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE {
+        return;
+    }
+
     // Stripping symbols
-    if !this.cliOptions.generateDebugInfo {
+    if !this.cliOptions.instrumentation.generateDebugInfo && !this.isTargetDarwin() {
         this.addLinkerFlag("-Wl,-s");
     }
 
+    // Sanitizers
     switch this.cliOptions.instrumentation.sanitizer {
         case Sanitizer::ADDRESS: {
             this.addLinkerFlag("-lasan");
@@ -51,7 +65,7 @@ public p ExternalLinkerInterface.prepare() {
     }
 
     // Web Assembly
-    if this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64 {
+    if this.isTargetWasm() {
         this.addLinkerFlag("-nostdlib");
         this.addLinkerFlag("-Wl,--no-entry");
         this.addLinkerFlag("-Wl,--export-all");
@@ -59,20 +73,141 @@ public p ExternalLinkerInterface.prepare() {
 }
 
 /**
- * Start the linking process
+ * Run the linker or archiver, depending on the requested output container
  */
-public p ExternalLinkerInterface.link() {
-
-    // ToDo
+public p ExternalLinkerInterface.run() {
+    switch this.cliOptions.outputContainer {
+        case OutputContainer::EXECUTABLE: {
+            this.link();
+        }
+        case OutputContainer::SHARED_LIBRARY: {
+            this.link();
+        }
+        case OutputContainer::STATIC_LIBRARY: {
+            this.archive();
+        }
+        case OutputContainer::OBJECT_FILE: {
+            // No linking necessary
+        }
+        default: {
+            panic(Error("Unknown output container"));
+        }
+    }
 }
 
 /**
- * Add another object file to be linked when calling 'link()'
- *
- * @param objectFilePath Path to the object file
+ * Cleanup intermediary object files
  */
-public p ExternalLinkerInterface.addObjectFilePath(const FilePath& objectFilePath) {
-    this.objectFilePaths.pushBack(objectFilePath);
+public p ExternalLinkerInterface.cleanup() {
+    // Cleanup is only required if we actually linked/archived and did not dump to files
+    if this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE || this.cliOptions.dump.dumpToFiles {
+        return;
+    }
+    const string objFileExt = isWindows() ? "obj" : "o";
+    foreach const FilePath& path : this.linkedFiles {
+        if path.getExtension() == objFileExt {
+            const bool deleted = deleteFile(path.toString());
+            assert deleted;
+        }
+    }
+}
+
+/**
+ * Link the object files to an executable or shared library
+ */
+p ExternalLinkerInterface.link() {
+    assert !this.outputPath.isEmpty();
+
+    // Build the linker command
+    StringStream commandBuilder;
+    const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
+    commandBuilder << linkerInvoker.path;
+    const ExternalBinaryFinderResult linker = findLinker();
+    const bool isGccInvoker = linkerInvoker.name == "gcc";
+    // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
+    if !isGccInvoker || linker.name != "ld" {
+        commandBuilder << " -fuse-ld=" << linker.path;
+    }
+    // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
+    if !isGccInvoker {
+        commandBuilder << " --target=" << this.cliOptions.targetTriple.value;
+    }
+    // Append linker flags
+    foreach const String& linkerFlag : this.linkerFlags {
+        commandBuilder << " " << linkerFlag;
+    }
+    if this.linkLibMath {
+        commandBuilder << " -lm";
+    }
+    // Append output path
+    commandBuilder << " -o " << this.outputPath.toString();
+    // Append object files
+    foreach const FilePath& objectFilePath : this.linkedFiles {
+        commandBuilder << " " << objectFilePath.toString();
+    }
+    const String command = commandBuilder.str();
+
+    // Print status message
+    if this.cliOptions.printDebugOutput {
+        printf("\nLinking with: %s (invoker) / %s (linker)", linkerInvoker.name, linker.name);
+        printf("\nLinker command: %s", command.getRaw());
+        printf("\nEmitting executable to path: %s\n", this.outputPath.toString());
+    }
+
+    // Call the linker
+    const ExecResult linkResult = exec(command.getRaw());
+
+    // Check for linker error
+    if linkResult.exitCode != 0 {
+        const String msg = "Linker exited with non-zero exit code\nLinker command: " + command;
+        const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
+        panic(Error(error.errorMessage.getRaw()));
+    }
+}
+
+/**
+ * Archive the object files to a static library
+ */
+p ExternalLinkerInterface.archive() {
+    assert !this.outputPath.isEmpty();
+
+    // Build the archiver command
+    StringStream commandBuilder;
+    const ExternalBinaryFinderResult archiver = findArchiver();
+    commandBuilder << archiver.path;
+    // r = insert files into archive; c = create archive if not existing; s = create archive index
+    commandBuilder << " rcs ";
+    commandBuilder << this.outputPath.toString();
+    foreach const FilePath& path : this.linkedFiles {
+        commandBuilder << " " << path.toString();
+    }
+    const String command = commandBuilder.str();
+
+    // Print status message
+    if this.cliOptions.printDebugOutput {
+        printf("\nArchiving with: %s", archiver.name);
+        printf("\nArchiver command: %s", command.getRaw());
+        printf("\nEmitting static library to path: %s\n", this.outputPath.toString());
+    }
+
+    // Call the archiver
+    const ExecResult archiveResult = exec(command.getRaw());
+
+    // Check for archiver error
+    if archiveResult.exitCode != 0 {
+        const String msg = "Archiver exited with non-zero exit code\nArchiver command: " + command;
+        const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
+        panic(Error(error.errorMessage.getRaw()));
+    }
+}
+
+/**
+ * Add another object file to be linked when calling 'run()'
+ *
+ * @param path Path to the object file
+ */
+public p ExternalLinkerInterface.addFileToLinkage(const FilePath& path) {
+    this.linkedFiles.pushBack(path);
 }
 
 /**
@@ -106,7 +241,7 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSour
     }
 
     // Add the file to the linker
-    this.addObjectFilePath(additionalSource);
+    this.addFileToLinkage(additionalSource);
 }
 
 /**
@@ -114,4 +249,22 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSour
  */
 public p ExternalLinkerInterface.requestLibMathLinkage() {
     this.linkLibMath = true;
+}
+
+/**
+ * Check if the configured target is a WebAssembly target
+ *
+ * @return Whether the target is WebAssembly
+ */
+f<bool> ExternalLinkerInterface.isTargetWasm() {
+    return this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64;
+}
+
+/**
+ * Check if the configured target is a Darwin (macOS) based target
+ *
+ * @return Whether the target is Darwin based
+ */
+f<bool> ExternalLinkerInterface.isTargetDarwin() {
+    return this.cliOptions.targetOs.contains("darwin") || this.cliOptions.targetOs.contains("macos");
 }

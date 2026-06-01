@@ -26,7 +26,8 @@ f<bool> compileProject(const CliOptions& cliOptions) {
 
     // Link the target executable (link object files to executable)
     resourceManager.linker.prepare();
-    resourceManager.linker.link();
+    resourceManager.linker.run();
+    resourceManager.linker.cleanup();
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();*/

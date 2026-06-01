@@ -1,0 +1,120 @@
+import "bootstrap/driver";
+import "bootstrap/linker/external-linker-interface";
+import "std/io/filepath";
+
+/**
+ * Helper to check whether a particular linker flag was assembled
+ */
+f<bool> hasFlag(ExternalLinkerInterface& linker, string flag) {
+    foreach const String& linkerFlag : linker.linkerFlags {
+        if linkerFlag == flag {
+            return true;
+        }
+    }
+    return false;
+}
+
+f<int> main() {
+    // Case 1: Default executable without debug info -> strip symbols
+    CliOptions options1;
+    options1.targetArch = String("x86_64");
+    options1.targetOs = String("linux");
+    ExternalLinkerInterface linker1 = ExternalLinkerInterface(options1);
+    linker1.prepare();
+    assert hasFlag(linker1, "-Wl,-s");
+    assert !hasFlag(linker1, "-static");
+    assert !hasFlag(linker1, "-shared");
+    printf("Case 1 passed\n");
+
+    // Case 2: Static linking
+    CliOptions options2;
+    options2.targetArch = String("x86_64");
+    options2.targetOs = String("linux");
+    options2.staticLinking = true;
+    ExternalLinkerInterface linker2 = ExternalLinkerInterface(options2);
+    linker2.prepare();
+    assert hasFlag(linker2, "-static");
+    assert !hasFlag(linker2, "-shared");
+    printf("Case 2 passed\n");
+
+    // Case 3: Shared library -> '-shared' and early return (no symbol stripping)
+    CliOptions options3;
+    options3.targetOs = String("linux");
+    options3.outputContainer = OutputContainer::SHARED_LIBRARY;
+    ExternalLinkerInterface linker3 = ExternalLinkerInterface(options3);
+    linker3.prepare();
+    assert hasFlag(linker3, "-shared");
+    assert !hasFlag(linker3, "-Wl,-s");
+    printf("Case 3 passed\n");
+
+    // Case 4: Object file -> early return without any flags
+    CliOptions options4;
+    options4.targetOs = String("linux");
+    options4.outputContainer = OutputContainer::OBJECT_FILE;
+    ExternalLinkerInterface linker4 = ExternalLinkerInterface(options4);
+    linker4.prepare();
+    assert linker4.linkerFlags.isEmpty();
+    printf("Case 4 passed\n");
+
+    // Case 5: Debug info enabled -> no symbol stripping
+    CliOptions options5;
+    options5.targetOs = String("linux");
+    options5.instrumentation.generateDebugInfo = true;
+    ExternalLinkerInterface linker5 = ExternalLinkerInterface(options5);
+    linker5.prepare();
+    assert !hasFlag(linker5, "-Wl,-s");
+    printf("Case 5 passed\n");
+
+    // Case 6: Darwin target -> no symbol stripping even without debug info
+    CliOptions options6;
+    options6.targetOs = String("darwin");
+    ExternalLinkerInterface linker6 = ExternalLinkerInterface(options6);
+    linker6.prepare();
+    assert !hasFlag(linker6, "-Wl,-s");
+    printf("Case 6 passed\n");
+
+    // Case 7: Address sanitizer
+    CliOptions options7;
+    options7.targetOs = String("linux");
+    options7.instrumentation.sanitizer = Sanitizer::ADDRESS;
+    ExternalLinkerInterface linker7 = ExternalLinkerInterface(options7);
+    linker7.prepare();
+    assert hasFlag(linker7, "-lasan");
+    printf("Case 7 passed\n");
+
+    // Case 8: Memory sanitizer -> also requests libmath linkage
+    CliOptions options8;
+    options8.targetOs = String("linux");
+    options8.instrumentation.sanitizer = Sanitizer::MEMORY;
+    ExternalLinkerInterface linker8 = ExternalLinkerInterface(options8);
+    linker8.prepare();
+    assert hasFlag(linker8, "-lclang_rt.msan");
+    assert linker8.linkLibMath;
+    printf("Case 8 passed\n");
+
+    // Case 9: WebAssembly target
+    CliOptions options9;
+    options9.targetArch = String(TARGET_WASM32);
+    options9.targetOs = String("unknown");
+    ExternalLinkerInterface linker9 = ExternalLinkerInterface(options9);
+    linker9.prepare();
+    assert hasFlag(linker9, "-nostdlib");
+    assert hasFlag(linker9, "-Wl,--no-entry");
+    assert hasFlag(linker9, "-Wl,--export-all");
+    printf("Case 9 passed\n");
+
+    // Case 10: Mutator methods
+    CliOptions options10;
+    options10.targetOs = String("linux");
+    options10.outputContainer = OutputContainer::OBJECT_FILE;
+    ExternalLinkerInterface linker10 = ExternalLinkerInterface(options10);
+    linker10.addLinkerFlag("-custom-flag");
+    assert hasFlag(linker10, "-custom-flag");
+    linker10.addFileToLinkage(FilePath("foo.o"));
+    assert linker10.linkedFiles.getSize() == 1l;
+    linker10.requestLibMathLinkage();
+    assert linker10.linkLibMath;
+    printf("Case 10 passed\n");
+
+    printf("All assertions passed!\n");
+}

@@ -5,5 +5,15 @@ f<int> main() {
     printf("Graphviz installed: %s\n", isGraphvizInstalled() ? "yes" : "no");
     ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
     assert linkerInvoker.path.contains("clang") || linkerInvoker.path.contains("gcc");
+    ExternalBinaryFinderResult archiver = findArchiver();
+    assert !archiver.path.isEmpty(); // ar/llvm-ar/gcc-ar on Unix, lib/llvm-lib on Windows
+
+    // exec() must actually run the command and report its real exit code
+    // (use silent commands to avoid polluting stdout, which is compared against cout.out)
+    ExecResult okResult = exec("exit 0");
+    assert okResult.exitCode == 0;
+    ExecResult failResult = exec("exit 7");
+    assert failResult.exitCode == 7;
+
     printf("All assertions passed!");
 }

@@ -7,8 +7,8 @@ import "std/io/filepath";
 import "std/iterator/array-iterator";
 
 public type ExecResult struct {
-    String output
-    int exitCode
+    public String output
+    public int exitCode
 }
 
 public type ExternalBinaryFinderResult struct {
@@ -17,14 +17,43 @@ public type ExternalBinaryFinderResult struct {
 }
 
 /**
- * Execute external command. Used to execute compiled binaries
+ * Transform the wait status returned by the 'system' call into a process exit code.
+ *
+ * @param status Wait status
+ * @return Exit code
+ */
+f<int> transformStatusToExitCode(int status) {
+    if isWindows() {
+        return status;
+    }
+    // Invalid status -> invalid exit code
+    if status == -1 {
+        return -1;
+    }
+    // Process terminated by signal (WIFSIGNALED): low 7 bits are neither 0 nor 0x7f
+    const int termSignal = status & 0x7f;
+    if termSignal != 0 && termSignal != 0x7f {
+        return 128 + termSignal;
+    }
+    // Process terminated normally (WIFEXITED): WEXITSTATUS
+    return (status >> 8) & 0xff;
+}
+
+/**
+ * Execute external command and return its exit code.
+ *
+ * The command's output is left to flow through to the parent process. Capturing it is not
+ * implemented yet, because cross-platform output redirection depends on a temp-dir abstraction
+ * that is currently broken on Windows; the 'output' field is therefore left empty. link() and
+ * archive() only rely on the exit code to detect failures, so this is sufficient.
  *
  * @param cmd Command to execute
  * @return Result struct
  */
 public f<ExecResult> exec(const string cmd) {
-    // ToDo
-    return ExecResult{};
+    result = ExecResult{};
+    const int status = execCmd(cmd);
+    result.exitCode = transformStatusToExitCode(status);
 }
 
 /**
@@ -108,6 +137,35 @@ public f<ExternalBinaryFinderResult> findLinker() {
         panic(Error("Unsupported platform"));
     }
     panic(Error("No supported linker found on the system. Supported are: mold, lld, gold and ld"));
+}
+
+/**
+ * Search for a supported archiver on the system and return the executable name or path.
+ * This function may throw a LinkerError if no archiver is found.
+ *
+ * @return Name or path to the archiver executable
+ */
+public f<ExternalBinaryFinderResult> findArchiver() {
+    if isUnixBased() {
+        foreach const string archiverName : ["llvm-ar", "gcc-ar", "ar"] {
+            foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
+                String archiverPath = path + archiverName;
+                if fileExists(archiverPath.getRaw()) {
+                    return ExternalBinaryFinderResult{archiverName, archiverPath};
+                }
+            }
+        }
+    } else if isWindows() {
+        foreach const string archiverName : ["llvm-lib", "lib"] {
+            String checkCmd = archiverName + " -v";
+            if isCommandAvailable(checkCmd.getRaw()) {
+                return ExternalBinaryFinderResult{archiverName, String(archiverName)};
+            }
+        }
+    } else {
+        panic(Error("Unsupported platform"));
+    }
+    panic(Error("No supported archiver found on the system. Supported are: llvm-ar and ar"));
 }
 
 /**
