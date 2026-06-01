@@ -66,6 +66,30 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
   size_t placeholderCount = 0;
   size_t index = templatedString.find_first_of('%');
   while (index != std::string::npos && index != templatedString.size() - 1) {
+    // Handle escaped percent signs (%%), which do not consume an argument
+    if (templatedString.at(index + 1) == '%') {
+      index = templatedString.find_first_of('%', index + 2);
+      continue;
+    }
+
+    // Determine the position of the conversion specifier by skipping the optional
+    // flags, field width and precision (e.g. the "04" in "%04d"). These are forwarded
+    // verbatim to the underlying C printf, so we only need to skip over them here.
+    size_t specifierIndex = index + 1;
+    auto isFlag = [](char c) { return c == '-' || c == '+' || c == ' ' || c == '#' || c == '0'; };
+    auto isDigit = [](char c) { return c >= '0' && c <= '9'; };
+    while (specifierIndex < templatedString.size() && isFlag(templatedString.at(specifierIndex)))
+      specifierIndex++; // Skip flags
+    while (specifierIndex < templatedString.size() && isDigit(templatedString.at(specifierIndex)))
+      specifierIndex++; // Skip field width
+    if (specifierIndex < templatedString.size() && templatedString.at(specifierIndex) == '.') {
+      specifierIndex++; // Skip precision dot
+      while (specifierIndex < templatedString.size() && isDigit(templatedString.at(specifierIndex)))
+        specifierIndex++; // Skip precision
+    }
+    if (specifierIndex >= templatedString.size())
+      SOFT_ERROR_ER(node, PRINTF_TYPE_ERROR, "The placeholder string contains an invalid placeholder")
+
     // Check if there is another assignExpr
     if (node->argLst->args.size() - 1 <= placeholderCount)
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
@@ -77,7 +101,7 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
     HANDLE_UNRESOLVED_TYPE_ER(argType)
     argType = argType.removeReferenceWrapper();
 
-    switch (templatedString.at(index + 1)) {
+    switch (templatedString.at(specifierIndex)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName(false))
@@ -127,7 +151,7 @@ std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {
     default:
       SOFT_ERROR_ER(node, PRINTF_TYPE_ERROR, "The placeholder string contains an invalid placeholder")
     }
-    index = templatedString.find_first_of('%', index + 2); // We can also skip the following char
+    index = templatedString.find_first_of('%', specifierIndex + 1); // We can also skip the conversion specifier
   }
 
   // Check if the number of placeholders matches the number of args

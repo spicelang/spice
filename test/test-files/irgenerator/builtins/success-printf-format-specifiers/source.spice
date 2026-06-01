@@ -1,0 +1,10 @@
+f<int> main() {
+    // Field width and zero-padding
+    printf("%04d-%02d-%02d\n", 2020, 2, 9);
+    // Left-justify and explicit sign flags
+    printf("[%-5d][%+d]\n", 42, 7);
+    // Precision on floating point and width + precision combined
+    printf("%.2f|%8.3f\n", 3.14159, 2.5);
+    // Alternate form and space flag
+    printf("%#x % d\n", 255, 5);
+}
