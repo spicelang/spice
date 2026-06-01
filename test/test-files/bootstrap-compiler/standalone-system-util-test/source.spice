@@ -8,10 +8,10 @@ f<int> main() {
     ExternalBinaryFinderResult archiver = findArchiver();
     assert !archiver.path.isEmpty(); // ar/llvm-ar/gcc-ar on Unix, lib/llvm-lib on Windows
 
-    // exec() must actually run the command and capture its output and exit code
-    ExecResult echoResult = exec("echo bootstrap");
-    assert echoResult.output.contains("bootstrap");
-    assert echoResult.exitCode == 0;
+    // exec() must actually run the command and report its real exit code
+    // (use silent commands to avoid polluting stdout, which is compared against cout.out)
+    ExecResult okResult = exec("exit 0");
+    assert okResult.exitCode == 0;
     ExecResult failResult = exec("exit 7");
     assert failResult.exitCode == 7;
 

@@ -2,11 +2,9 @@
 import "std/os/os";
 import "std/os/cmd";
 import "std/os/env";
-import "std/os/filesystem";
 import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
-import "std/type/type-conversion";
 
 public type ExecResult struct {
     public String output
@@ -42,31 +40,20 @@ f<int> transformStatusToExitCode(int status) {
 }
 
 /**
- * Execute external command and capture its output and exit code.
+ * Execute external command and return its exit code.
  *
- * Output (incl. stderr) is redirected to a temporary file so that we can both capture the output
- * and obtain the real exit code via the standard 'system' call. This avoids the cross-platform
- * differences between popen and _popen.
+ * The command's output is left to flow through to the parent process. Capturing it is not
+ * implemented yet, because cross-platform output redirection depends on a temp-dir abstraction
+ * that is currently broken on Windows; the 'output' field is therefore left empty. link() and
+ * archive() only rely on the exit code to detect failures, so this is sufficient.
  *
  * @param cmd Command to execute
  * @return Result struct
  */
 public f<ExecResult> exec(const string cmd) {
-    // Redirect stdout and stderr to a temporary file
-    const FilePath outputFile = FilePath(getTempDir()) / ("spice-exec-" + toString(getPID()) + ".txt");
-    const String fullCommand = String(cmd) + " > " + outputFile.toString() + " 2>&1";
-
-    // Run the command and capture its exit code
     result = ExecResult{};
-    const int status = execCmd(fullCommand.getRaw());
+    const int status = execCmd(cmd);
     result.exitCode = transformStatusToExitCode(status);
-
-    // Read back the captured output (best effort) and clean up the temporary file
-    const Result<String> outputResult = readFile(outputFile.toString());
-    if outputResult.isOk() {
-        result.output = outputResult.unwrap();
-    }
-    deleteFile(outputFile.toString());
 }
 
 /**
