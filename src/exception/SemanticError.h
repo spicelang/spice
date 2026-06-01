@@ -131,7 +131,7 @@ enum SemanticErrorType : uint8_t {
 class SemanticError final : public std::exception {
 public:
   // Constructors
-  SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message, bool printErrorMessage = true);
+  SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &msg, bool printErrorMessage = true);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

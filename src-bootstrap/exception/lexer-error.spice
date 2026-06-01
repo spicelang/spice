@@ -29,6 +29,15 @@ public p LexerError.ctor(const CodeLoc& codeLoc, const LexerErrorType errorType,
 }
 
 /**
+ * Get the message for this particular error instance
+ *
+ * @return Error message
+ */
+public f<const String&> LexerError.getMessage() {
+    return this.errorMessage;
+}
+
+/**
  * Get the prefix of the error message for a particular error
  *
  * @param errorType Type of the error
