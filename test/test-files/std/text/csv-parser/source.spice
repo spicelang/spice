@@ -66,7 +66,8 @@ f<int> main() {
 
     // Serialization: plain fields are emitted verbatim
     assert parser.serializeField(String("plain")) == String("plain");
-    assert parser.serializeField(String("")) == String("");
+    // Empty fields are quoted so empty records survive a round-trip
+    assert parser.serializeField(String("")) == String("\"\"");
     // Fields needing quoting (delimiter, quote, newline) are wrapped/escaped
     assert parser.serializeField(String("a,b")) == String("\"a,b\"");
     assert parser.serializeField(String("she said \"hi\"")) == String("\"she said \"\"hi\"\"\"");
@@ -93,6 +94,20 @@ f<int> main() {
     assert reHeader.get(2) == String("city");
     assert reAlice.get(2) == String("New York");
     assert reBob.get(2) == String("Line1\nLine2");
+
+    // A trailing record of a single empty field must survive the round-trip
+    Vector<Vector<String>> emptyFieldRows;
+    Vector<String> dataRow;
+    dataRow.pushBack(String("a"));
+    emptyFieldRows.pushBack(dataRow);
+    Vector<String> emptyRow;
+    emptyRow.pushBack(String(""));
+    emptyFieldRows.pushBack(emptyRow);
+    Vector<Vector<String>> reEmptyRows = parser.parse(parser.serialize(emptyFieldRows));
+    assert reEmptyRows.getSize() == 2;
+    Vector<String>& reEmptyTrailing = reEmptyRows.get(1);
+    assert reEmptyTrailing.getSize() == 1;
+    assert reEmptyTrailing.get(0) == String("");
 
     // Custom delimiter is honored during serialization
     assert semicolonParser.serializeField(String("a;b")) == String("\"a;b\"");

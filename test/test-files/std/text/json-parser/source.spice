@@ -172,5 +172,13 @@ f<int> main() {
     expectedPretty += "}";
     assert pretty.serializePretty() == expectedPretty;
 
+    // Non-integral numbers keep full precision across a serialize/parse round-trip
+    Result<JsonValue*> precRes = parseJson(String("1.23456789"));
+    JsonValue* prec = precRes.unwrap();
+    String precSerialized = prec.serialize();
+    Result<JsonValue*> precReparsedRes = parseJson(precSerialized);
+    JsonValue* precReparsed = precReparsedRes.unwrap();
+    assert precReparsed.getNumber() == 1.23456789;
+
     printf("All assertions passed!");
 }

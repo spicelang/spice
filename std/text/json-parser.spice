@@ -526,12 +526,14 @@ p serializeJsonString(String& out, const String& value) {
 }
 
 // Serialize a number, printing integral values without a fractional part.
+// Non-integral values use 17 significant digits ("%.17g"), which is enough to
+// round-trip any double exactly so reparsing yields the same numeric value.
 f<String> serializeJsonNumber(double value) {
     const long asLong = cast<long>(value);
     if cast<double>(asLong) == value {
         return toString(asLong);
     }
-    const int length = snprintf(nil<char*>, 0l, "%g", value);
+    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
     result = String(length);
-    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%g", value);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
 }

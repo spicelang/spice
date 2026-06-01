@@ -137,14 +137,16 @@ public f<Vector<Vector<String>>> CsvParser.parse(const String& input) {
  *
  * A field is wrapped in quotes when it contains the delimiter, the quote
  * character or a line terminator. Embedded quotes are escaped by doubling,
- * so the result round-trips through `parseLine`/`parse`.
+ * so the result round-trips through `parseLine`/`parse`. The empty field is
+ * also quoted (as `""`): an empty record would otherwise serialize to an
+ * empty line, which `parse` does not reproduce as a row.
  *
  * @param field Field value to serialize
  * @return Serialized (and possibly quoted) field
  */
 public f<String> CsvParser.serializeField(const String& field) {
     const unsigned long length = field.getLength();
-    bool needsQuoting = false;
+    bool needsQuoting = length == 0l;
     for unsigned long i = 0l; i < length; i++ {
         const char c = field[i];
         if c == this.delimiter || c == this.quote || c == '\n' || c == '\r' {
