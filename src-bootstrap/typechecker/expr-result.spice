@@ -1,0 +1,10 @@
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+public type ExprResult struct {
+    public QualType ty
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+}
+
+public const f<bool> ExprResult.isTemporary() {
+    return this.entry == nil<SymbolTableEntry*> || this.entry.anonymous;
+}
