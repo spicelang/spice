@@ -9,8 +9,6 @@
 #include <util/CodeLoc.h>
 #include <util/Memory.h>
 
-// LCOV_EXCL_START
-
 namespace spice::testing {
 
 using namespace spice::compiler;

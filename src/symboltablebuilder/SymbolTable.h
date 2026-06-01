@@ -8,7 +8,7 @@
 #include <symboltablebuilder/Capture.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
-#include "../../lib/json/json.hpp"
+#include <nlohmann/json.hpp>
 
 namespace spice::compiler {
 

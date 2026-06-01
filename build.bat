@@ -14,6 +14,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
 cmake --build . --target spice spicetest
 
 :: Cleanup
-move src\spice.exe spice.exe
-move test\spicetest.exe spicetest.exe
+mklink /spice.exe src\spice.exe
+mklink /spicetest.exe test\spicetest.exe
 popd

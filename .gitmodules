@@ -1,0 +1,10 @@
+[submodule "deps/json"]
+	path = deps/json
+	url = https://github.com/nlohmann/json.git
+[submodule "deps/cli11"]
+	path = deps/cli11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "deps/antlr4"]
+	path = deps/antlr4
+	url = https://github.com/spicelang/antlr4.git
+	branch = dev

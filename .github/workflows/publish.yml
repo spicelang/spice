@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -72,7 +74,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:
@@ -115,6 +117,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -169,7 +173,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:
@@ -211,6 +215,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v5
         with:
@@ -256,7 +262,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: .\setup-libs.bat
+        run: .\setup-deps.bat
 
       - name: Build compiler
         env:
@@ -294,6 +300,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -340,7 +348,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-libs.sh
+        run: ./setup-deps.sh
 
       - name: Build compiler
         env:

@@ -48,7 +48,7 @@ echo done.
 
 :: Download third-party libs
 echo [Step 4] Downloading third-party libraries ...
-cmd /c .\setup-libs.bat > nul 2>&1
+cmd /c .\setup-deps.bat > nul 2>&1
 echo done.
 
 :: Build in dev context

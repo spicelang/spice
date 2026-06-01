@@ -5,11 +5,11 @@
 spice.exe
 spice
 
-# Third party libs
-/lib
-
 # Generated output from ANTLR
 /gen
+
+# ANTLR generator jar (downloaded by setup-deps)
+/src/thirdparty/antlr-*-complete.jar
 
 # CLion
 /.idea

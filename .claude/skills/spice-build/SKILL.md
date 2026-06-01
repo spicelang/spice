@@ -32,7 +32,7 @@ export LLVM_DIR=$PWD/llvm/build-release/lib/cmake/llvm
 ```
 
 If LLVM and third-party libs are missing, run `./dev-setup.sh` once (slow: it
-clones and builds LLVM). `./setup-libs.sh` alone fetches just the header-only
+clones and builds LLVM). `./setup-deps.sh` alone fetches just the header-only
 deps (json, CLI11) into `lib/`.
 
 ## Configure (first time / after CMakeLists changes)

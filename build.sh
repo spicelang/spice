@@ -12,6 +12,6 @@ export LLVM_DIR=./llvm/build-release/lib/cmake/llvm
   cd ./build || exit
   cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
   cmake --build . --target spice spicetest
-  mv ./src/spice spice
-  mv ./test/spicetest spicetest
+  ln -s ./src/spice ./spice
+  ln -s ./test/spicetest ./spicetest
 )
