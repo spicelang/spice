@@ -114,28 +114,10 @@ p Parser.expect(TokenType expectedTokenType) {
 }
 
 // Return the type of the token at the given offset, where offset 0 is the current token.
-// Comment tokens are skipped, so the offset counts relevant tokens only.
+// Comment tokens are skipped, so the offset counts relevant tokens only. The lexer resolves this
+// in O(1) via its precomputed comment-free index, which keeps speculative lookahead cheap.
 f<TokenType> Parser.tokenAt(unsigned long offset) {
-    if offset == 0l {
-        return this.lexer.getToken().tokenType;
-    }
-    // Find the offset-th relevant token in the lookahead buffer
-    unsigned long seen = 0l;
-    unsigned long i = 1l;
-    while true {
-        const TokenType tokenType = this.lexer.peek(i).tokenType;
-        if tokenType == TokenType::EOF {
-            return TokenType::EOF;
-        }
-        if !this.isIgnoredTokenType(tokenType) {
-            seen++;
-            if seen == offset {
-                return tokenType;
-            }
-        }
-        i++;
-    }
-    panic(Error("Unreachable")); // The loop above only exits via return
+    return this.lexer.peekRelevantType(offset);
 }
 
 // Close a generic type list. Handles the case where the lexer merged two closing
