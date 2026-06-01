@@ -62,7 +62,7 @@ public f<int> getCurrentYear() {
     TimeVal time = TimeVal{};
     gettimeofday(&time, nil<TimeZone*>);
 
-    long seconds = time.tvSec;
+    long seconds = cast<long>(time.tvSec);
     long days = seconds / 86400l;
 
     int year = 1970;
