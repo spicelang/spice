@@ -1,3 +1,6 @@
+// Std imports
+import "std/text/stringstream";
+
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
@@ -101,14 +104,23 @@ public type SemanticErrorType enum {
 }
 
 public type SemanticError struct {
-    String message
+    String errorMessage
 }
 
-public p SemanticError.ctor(const AstNode* node, const SemanticErrorType errorType, const string message) {
+public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorType, const string message) {
     StringStream msg;
     msg << "[Error|Semantic] " << node.codeLoc.toPrettyString() << ":" << endl();
-    msg << this.getMessagePrefix(errorType) << ": " << message << endl() << endl() << node.errorMessage;
+    msg << this.getMessagePrefix(errorType) << ": " << message;
     this.errorMessage = msg.str();
+}
+
+/**
+ * Get the message for this particular error instance
+ *
+ * @return Error message
+ */
+public f<const String&> SemanticError.getMessage() {
+    return this.errorMessage;
 }
 
 /**

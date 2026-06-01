@@ -32,6 +32,15 @@ public p CliError.ctor(const CliErrorType errorType, const string message) {
 }
 
 /**
+ * Get the message for this particular error instance
+ *
+ * @return Error message
+ */
+public f<const String&> CliError.getMessage() {
+    return this.errorMessage;
+}
+
+/**
  * Get the prefix of the error message for a particular error
  *
  * @param errorType Type of the error

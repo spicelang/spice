@@ -2,6 +2,8 @@
 import "std/data/vector";
 
 // Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/reader/code-loc";
 
 public type SoftError struct {
@@ -9,6 +11,72 @@ public type SoftError struct {
     String message
 }
 
+public p SoftError.ctor(const CodeLoc& codeLoc, const String& message) {
+    this.codeLoc = codeLoc;
+    this.message = message;
+}
+
+public p SoftError.ctor(const SoftError& other) {
+    this.codeLoc = other.codeLoc;
+    this.message = other.message;
+}
+
+public p operator=(SoftError& this, const SoftError& other) {
+    this.codeLoc = other.codeLoc;
+    this.message = other.message;
+}
+
 public type ErrorManager struct {
-    Vector<SoftError> softErrors
+    public Vector<SoftError> softErrors
+}
+
+p ErrorManager.addSoftError(const CodeLoc& codeLoc, const String& message) {
+    // Avoid duplicate errors
+    foreach (const SoftError& error : this.softErrors) {
+        if error.codeLoc == codeLoc {
+            return;
+        }
+    }
+    this.softErrors.pushBack(SoftError(codeLoc, message));
+}
+
+public p ErrorManager.addSoftError(const ASTNode* astNode, SemanticErrorType errorType, const String& message) {
+    // Build error message
+    SemanticError semanticError = SemanticError(astNode, errorType, message.getRaw());
+    // Add to soft errors list
+    this.addSoftError(astNode.codeLoc, semanticError.getMessage());
+}
+
+#[test, test.name="ErrorManager Smoke test"]
+public f<bool> testErrorManagerSmoke() {
+    ErrorManager em;
+    assert em.softErrors.getSize() == 0l;
+
+    // Add a first soft error
+    em.addSoftError(CodeLoc(1l, 1l), String("first"));
+    assert em.softErrors.getSize() == 1l;
+    assert em.softErrors.get(0l).codeLoc == CodeLoc(1l, 1l);
+    assert em.softErrors.get(0l).message == "first";
+
+    // Add a second soft error at a different location
+    em.addSoftError(CodeLoc(2l, 5l), String("second"));
+    assert em.softErrors.getSize() == 2l;
+
+    // Adding another soft error at an already-recorded location is deduplicated
+    em.addSoftError(CodeLoc(1l, 1l), String("duplicate"));
+    assert em.softErrors.getSize() == 2l;
+    assert em.softErrors.get(0l).message == "first";
+
+    // Add a soft error through the AST-node/SemanticError overload
+    ASTNode node = ASTNode(CodeLoc(7l, 3l, "test.spice"));
+    em.addSoftError(&node, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, String("x"));
+    assert em.softErrors.getSize() == 3l;
+    assert em.softErrors.get(2l).codeLoc == CodeLoc(7l, 3l, "test.spice");
+    assert em.softErrors.get(2l).message == "[Error|Semantic] test.spice:7:3:\nReferenced undefined variable: x";
+
+    // Adding a soft error for the same node again is deduplicated
+    em.addSoftError(&node, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, String("x"));
+    assert em.softErrors.getSize() == 3l;
+
+    return true;
 }
