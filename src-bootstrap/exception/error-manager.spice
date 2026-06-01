@@ -78,5 +78,11 @@ public f<bool> testErrorManagerSmoke() {
     em.addSoftError(&node, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, String("x"));
     assert em.softErrors.getSize() == 3l;
 
+    // A different error type maps to its own message prefix
+    ASTNode node2 = ASTNode(CodeLoc(9l, 1l, "test.spice"));
+    em.addSoftError(&node2, SemanticErrorType::UNKNOWN_DATATYPE, String("Foo"));
+    assert em.softErrors.getSize() == 4l;
+    assert em.softErrors.get(3l).message == "[Error|Semantic] test.spice:9:1:\nUnknown datatype: Foo";
+
     return true;
 }

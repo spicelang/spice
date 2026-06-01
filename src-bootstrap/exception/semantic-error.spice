@@ -134,10 +134,98 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION: { return "Referenced undefined function"; }
         case SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE: { return "Referenced undefined variable"; }
         case SemanticErrorType::REFERENCED_UNDEFINED_STRUCT: { return "Referenced undefined struct"; }
+        case SemanticErrorType::REFERENCED_UNDEFINED_FIELD: { return "Referenced undefined struct field"; }
+        case SemanticErrorType::USED_BEFORE_DECLARED: { return "Used before declared"; }
         case SemanticErrorType::FUNCTION_AMBIGUITY: { return "Function ambiguity"; }
         case SemanticErrorType::STRUCT_AMBIGUITY: { return "Struct ambiguity"; }
+        case SemanticErrorType::INTERFACE_AMBIGUITY: { return "Interface ambiguity"; }
+        case SemanticErrorType::DUPLICATE_SYMBOL: { return "Duplicate symbol"; }
         case SemanticErrorType::VARIABLE_DECLARED_TWICE: { return "Multiple declarations of the same variable"; }
-        case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function/procedure"; }
+        case SemanticErrorType::GLOBAL_DECLARED_TWICE: { return "Multiple declarations of the same global variable"; }
+        case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function"; }
+        case SemanticErrorType::GENERIC_TYPE_DECLARED_TWICE: { return "Multiple declarations of a generic type with the same name"; }
+        case SemanticErrorType::STRUCT_WITH_ILLEGAL_NAME: { return "Struct name illegal"; }
+        case SemanticErrorType::STRUCT_INFINITE_SIZE: { return "Struct with infinite size"; }
+        case SemanticErrorType::STRUCT_DECLARED_TWICE: { return "Multiple declarations of a struct with the same name"; }
+        case SemanticErrorType::MISSING_NO_ARGS_CTOR: { return "Missing no-args constructor"; }
+        case SemanticErrorType::INTERFACE_DECLARED_TWICE: { return "Multiple declarations of an interface with the same name"; }
+        case SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED: { return "Interface method not implemented"; }
+        case SemanticErrorType::ENUM_DECLARED_TWICE: { return "Multiple declarations of an enum with the same name"; }
+        case SemanticErrorType::INVALID_SYMBOL_ACCESS: { return "Invalid symbol access"; }
+        case SemanticErrorType::DUPLICATE_ENUM_ITEM_NAME: { return "Duplicate enum item name"; }
+        case SemanticErrorType::DUPLICATE_ENUM_ITEM_VALUE: { return "Duplicate enum item value"; }
+        case SemanticErrorType::GLOBAL_OF_TYPE_DYN: { return "Global of type dyn"; }
+        case SemanticErrorType::GLOBAL_OF_INVALID_TYPE: { return "Global of invalid type"; }
+        case SemanticErrorType::GLOBAL_CONST_WITHOUT_VALUE: { return "Global const without value"; }
+        case SemanticErrorType::MISSING_RETURN_STMT: { return "Missing return statement"; }
+        case SemanticErrorType::INVALID_PARAM_ORDER: { return "Invalid argument order"; }
+        case SemanticErrorType::LAMBDA_WITH_OPTIONAL_PARAMS: { return "Lambda with optional parameters"; }
+        case SemanticErrorType::REFERENCED_OVERLOADED_FCT: { return "Referenced overloaded function"; }
+        case SemanticErrorType::DTOR_MUST_BE_PROCEDURE: { return "Destructor must be a procedure"; }
+        case SemanticErrorType::DTOR_WITH_PARAMS: { return "Destructors must not have parameters"; }
+        case SemanticErrorType::OPERATOR_WRONG_DATA_TYPE: { return "Wrong data type for operator"; }
+        case SemanticErrorType::INVALID_ITERATOR: { return "Invalid iterator"; }
+        case SemanticErrorType::UNEXPECTED_DYN_TYPE: { return "Unexpected dyn type"; }
+        case SemanticErrorType::REASSIGN_CONST_VARIABLE: { return "Cannot re-assign constant variable"; }
+        case SemanticErrorType::CONDITION_MUST_BE_BOOL: { return "Condition must be bool"; }
+        case SemanticErrorType::SWITCH_EXPR_MUST_BE_PRIMITIVE: { return "Switch expression of wrong type"; }
+        case SemanticErrorType::SWITCH_CASE_TYPE_MISMATCH: { return "Case constant type does not match switch expression type"; }
+        case SemanticErrorType::MISSING_MAIN_FUNCTION: { return "Spice executables must contain a main function"; }
+        case SemanticErrorType::FCT_PARAM_IS_TYPE_DYN: { return "Parameter type dyn not valid in function/procedure definition without default value"; }
+        case SemanticErrorType::INVALID_BREAK_NUMBER: { return "Invalid number of break calls"; }
+        case SemanticErrorType::INVALID_CONTINUE_NUMBER: { return "Invalid number of continue calls"; }
+        case SemanticErrorType::FALLTHROUGH_NOT_ALLOWED: { return "Fallthrough statement not allowed here"; }
+        case SemanticErrorType::CASE_CONSTANT_NOT_ENUM: { return "Case constant must be enum item"; }
+        case SemanticErrorType::PRINTF_TYPE_ERROR: { return "Types of printf call not matching"; }
+        case SemanticErrorType::PRINTF_ARG_COUNT_ERROR: { return "Printf arg number not matching template string"; }
+        case SemanticErrorType::DUPLICATE_IMPORT_NAME: { return "Duplicate import name"; }
+        case SemanticErrorType::IMPORTED_FILE_NOT_EXISTING: { return "Imported source file not existing"; }
+        case SemanticErrorType::CIRCULAR_DEPENDENCY: { return "Circular import detected"; }
+        case SemanticErrorType::ACCESS_TO_NON_EXISTING_MEMBER: { return "Access to non-existing member"; }
+        case SemanticErrorType::INVALID_MEMBER_ACCESS: { return "Member access is only allowed on structs and Strings"; }
+        case SemanticErrorType::SCOPE_ACCESS_ONLY_IMPORTS: { return "Scope access is only allowed on imports"; }
+        case SemanticErrorType::UNKNOWN_DATATYPE: { return "Unknown datatype"; }
+        case SemanticErrorType::UNKNOWN_ATTR: { return "Unknown attribute"; }
+        case SemanticErrorType::INVALID_ATTR_TARGET: { return "Invalid attribute target"; }
+        case SemanticErrorType::MISSING_ATTR_VALUE: { return "Missing attribute value"; }
+        case SemanticErrorType::NUMBER_OF_FIELDS_NOT_MATCHING: { return "Number of struct fields not matching declaration"; }
+        case SemanticErrorType::FIELD_TYPE_NOT_MATCHING: { return "The type of a field value does not match the declaration"; }
+        case SemanticErrorType::ARRAY_SIZE_INVALID: { return "Array size invalid"; }
+        case SemanticErrorType::FOREACH_IDX_NOT_LONG: { return "Foreach index not of type long"; }
+        case SemanticErrorType::ARRAY_INDEX_NOT_INT_OR_LONG: { return "Array index not of type int or long"; }
+        case SemanticErrorType::ARRAY_ITEM_TYPE_NOT_MATCHING: { return "Array item type not matching"; }
+        case SemanticErrorType::EXPECTED_ARRAY_TYPE: { return "Expected array type"; }
+        case SemanticErrorType::EXPECTED_ERROR_TYPE: { return "Expected error type"; }
+        case SemanticErrorType::RETURN_WITHOUT_VALUE_RESULT: { return "Return without initialization of result variable"; }
+        case SemanticErrorType::RETURN_WITH_VALUE_IN_PROCEDURE: { return "Return with value in procedure"; }
+        case SemanticErrorType::INVALID_STRUCT_INSTANTIATION: { return "Invalid struct instantiation"; }
+        case SemanticErrorType::DYN_POINTERS_NOT_ALLOWED: { return "Dyn pointers not allowed"; }
+        case SemanticErrorType::REF_POINTERS_ARE_NOT_ALLOWED: { return "Ref pointers not allowed"; }
+        case SemanticErrorType::DYN_REFERENCES_NOT_ALLOWED: { return "Dyn references not allowed"; }
+        case SemanticErrorType::MULTI_REF_NOT_ALLOWED: { return "Multi references not allowed"; }
+        case SemanticErrorType::DYN_ARRAYS_NOT_ALLOWED: { return "Dyn arrays not allowed"; }
+        case SemanticErrorType::REFERENCE_WITHOUT_INITIALIZER: { return "Reference without initializer"; }
+        case SemanticErrorType::TEMP_TO_NON_CONST_REF: { return "Temporary bound to non-const reference"; }
+        case SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE: { return "Generic type not contained in template"; }
+        case SemanticErrorType::QUALIFIER_AT_ILLEGAL_CONTEXT: { return "Qualifier at illegal context"; }
+        case SemanticErrorType::INSUFFICIENT_VISIBILITY: { return "Insufficient symbol visibility"; }
+        case SemanticErrorType::JOIN_ARG_MUST_BE_TID: { return "Argument of join builtin must be a tid"; }
+        case SemanticErrorType::EXPECTED_GENERIC_TYPE: { return "Expected a generic type"; }
+        case SemanticErrorType::EXPECTED_NON_GENERIC_TYPE: { return "Expected a non-generic type"; }
+        case SemanticErrorType::EXPECTED_STRUCT_TYPE: { return "Expected a struct type"; }
+        case SemanticErrorType::EXPECTED_INTERFACE_TYPE: { return "Expected an interface type"; }
+        case SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST: { return "Alias with template list"; }
+        case SemanticErrorType::INTERFACE_WITH_TEMPLATE_LIST: { return "Interface reference with template list"; }
+        case SemanticErrorType::INVALID_TEMPLATE_TYPES: { return "Invalid template types"; }
+        case SemanticErrorType::EXPECTED_VALUE: { return "Expected value"; }
+        case SemanticErrorType::EXPECTED_TYPE: { return "Expected type"; }
+        case SemanticErrorType::UNSAFE_OPERATION_IN_SAFE_CONTEXT: { return "Unsafe operation in safe context"; }
+        case SemanticErrorType::ASSERTION_CONDITION_BOOL: { return "Assertion condition must be bool"; }
+        case SemanticErrorType::ARRAY_INDEX_OUT_OF_BOUNDS: { return "Array index out of bounds"; }
+        case SemanticErrorType::EXPECTED_CONST_VARIABLE: { return "Expected const variable"; }
+        case SemanticErrorType::DIVISION_BY_ZERO: { return "Division by zero"; }
+        case SemanticErrorType::TEST_FUNCTION_WITH_PARAMS: { return "Test function with parameters"; }
+        case SemanticErrorType::TEST_FUNCTION_WRONG_RETURN_TYPE: { return "Test function with wrong return type"; }
         default: { panic(Error("Unknown error")); }
     }
 }
