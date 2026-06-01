@@ -1,0 +1,229 @@
+// Imports
+import "std/time/time" as time;
+
+/**
+ * Calendar representation of a point in time in UTC.
+ * Fields use natural calendar values: month is 1-12 and day is 1-31.
+ */
+public type DateTime struct {
+    int year
+    int month   // 1 - 12
+    int day     // 1 - 31
+    int hour    // 0 - 23
+    int minute  // 0 - 59
+    int second  // 0 - 59
+}
+
+/**
+ * Construct a DateTime from its individual calendar components (UTC).
+ *
+ * @param year Year (e.g. 2026)
+ * @param month Month in range [1, 12]
+ * @param day Day of month in range [1, 31]
+ * @param hour Hour in range [0, 23]
+ * @param minute Minute in range [0, 59]
+ * @param second Second in range [0, 59]
+ * @return Constructed DateTime
+ */
+public f<DateTime> of(int year, int month, int day, int hour, int minute, int second) {
+    result = DateTime{};
+    result.year = year;
+    result.month = month;
+    result.day = day;
+    result.hour = hour;
+    result.minute = minute;
+    result.second = second;
+}
+
+/**
+ * Construct a DateTime at midnight (00:00:00) of the given date (UTC).
+ *
+ * @param year Year (e.g. 2026)
+ * @param month Month in range [1, 12]
+ * @param day Day of month in range [1, 31]
+ * @return Constructed DateTime
+ */
+public f<DateTime> ofDate(int year, int month, int day) {
+    return of(year, month, day, 0, 0, 0);
+}
+
+/**
+ * Convert seconds since the Unix epoch (1970-01-01T00:00:00Z) into a calendar DateTime (UTC).
+ * Uses the well-known civil-from-days algorithm by Howard Hinnant.
+ *
+ * @param secs Seconds since the Unix epoch
+ * @return Corresponding DateTime in UTC
+ */
+public f<DateTime> fromUnixSecs(long secs) {
+    long days = secs / 86400l;
+    long rem = secs % 86400l;
+    if rem < 0l {
+        rem += 86400l;
+        days -= 1l;
+    }
+    int hour = cast<int>(rem / 3600l);
+    int minute = cast<int>((rem % 3600l) / 60l);
+    int second = cast<int>(rem % 60l);
+
+    // civil_from_days
+    long z = days + 719468l;
+    long era = (z >= 0l ? z : z - 146096l) / 146097l;
+    long doe = z - era * 146097l;                                          // [0, 146096]
+    long yoe = (doe - doe / 1460l + doe / 36524l - doe / 146096l) / 365l;  // [0, 399]
+    long y = yoe + era * 400l;
+    long doy = doe - (365l * yoe + yoe / 4l - yoe / 100l);                 // [0, 365]
+    long mp = (5l * doy + 2l) / 153l;                                      // [0, 11]
+
+    result = DateTime{};
+    result.day = cast<int>(doy - (153l * mp + 2l) / 5l + 1l);             // [1, 31]
+    result.month = cast<int>(mp < 10l ? mp + 3l : mp - 9l);              // [1, 12]
+    result.year = cast<int>(mp >= 10l ? y + 1l : y);
+    result.hour = hour;
+    result.minute = minute;
+    result.second = second;
+}
+
+/**
+ * Convert a calendar DateTime (UTC) into seconds since the Unix epoch.
+ * Uses the well-known days-from-civil algorithm by Howard Hinnant.
+ *
+ * @param dt Input DateTime (interpreted as UTC)
+ * @return Seconds since the Unix epoch
+ */
+public f<long> toUnixSecs(const DateTime& dt) {
+    int y = dt.year;
+    if dt.month <= 2 {
+        y -= 1;
+    }
+    long yl = cast<long>(y);
+    long era = (yl >= 0l ? yl : yl - 399l) / 400l;
+    long yoe = yl - era * 400l;                                   // [0, 399]
+    long mAdj = cast<long>(dt.month > 2 ? dt.month - 3 : dt.month + 9);
+    long doy = (153l * mAdj + 2l) / 5l + cast<long>(dt.day) - 1l; // [0, 365]
+    long doe = yoe * 365l + yoe / 4l - yoe / 100l + doy;          // [0, 146096]
+    long days = era * 146097l + doe - 719468l;
+    return days * 86400l + cast<long>(dt.hour) * 3600l + cast<long>(dt.minute) * 60l + cast<long>(dt.second);
+}
+
+/**
+ * Retrieve the current point in time as a DateTime in UTC.
+ *
+ * @return Current DateTime in UTC
+ */
+public f<DateTime> now() {
+    return fromUnixSecs(time::getCurrentMillis() / 1000l);
+}
+
+/**
+ * Determine the number of days in the given month of the given year.
+ *
+ * @param year Year (used to account for leap years in February)
+ * @param month Month in range [1, 12]
+ * @return Number of days in the month
+ */
+public f<int> daysInMonth(int year, int month) {
+    if month == 2 {
+        return time::isLeapYear(year) ? 29 : 28;
+    }
+    if month == 4 || month == 6 || month == 9 || month == 11 {
+        return 30;
+    }
+    return 31;
+}
+
+/**
+ * Determine the day of the week for the given DateTime.
+ * The result is in range [0, 6], where 0 = Sunday and 6 = Saturday.
+ *
+ * @param dt Input DateTime
+ * @return Day of week in range [0, 6]
+ */
+public f<int> dayOfWeek(const DateTime& dt) {
+    long secs = toUnixSecs(dt);
+    long days = secs / 86400l;
+    if secs % 86400l < 0l {
+        days -= 1l;
+    }
+    // 1970-01-01 (epoch day 0) was a Thursday, which is index 4 when Sunday = 0
+    return cast<int>(((days % 7l + 4l) % 7l + 7l) % 7l);
+}
+
+/**
+ * Determine the day of the year for the given DateTime.
+ * The result is in range [1, 366], where January 1st is day 1.
+ *
+ * @param dt Input DateTime
+ * @return Day of year in range [1, 366]
+ */
+public f<int> dayOfYear(const DateTime& dt) {
+    int total = dt.day;
+    for int m = 1; m < dt.month; m++ {
+        total += daysInMonth(dt.year, m);
+    }
+    return total;
+}
+
+/**
+ * Return a copy of the DateTime advanced by the given number of seconds.
+ * A negative value moves the DateTime backwards in time.
+ *
+ * @param dt Input DateTime
+ * @param seconds Number of seconds to add
+ * @return Resulting DateTime
+ */
+public f<DateTime> addSeconds(const DateTime& dt, long seconds) {
+    return fromUnixSecs(toUnixSecs(dt) + seconds);
+}
+
+/**
+ * Return a copy of the DateTime advanced by the given number of days.
+ * A negative value moves the DateTime backwards in time.
+ *
+ * @param dt Input DateTime
+ * @param days Number of days to add
+ * @return Resulting DateTime
+ */
+public f<DateTime> addDays(const DateTime& dt, long days) {
+    return fromUnixSecs(toUnixSecs(dt) + days * 86400l);
+}
+
+/**
+ * Check whether the first DateTime lies strictly before the second.
+ *
+ * @param lhs First DateTime
+ * @param rhs Second DateTime
+ * @return true if lhs is before rhs
+ */
+public f<bool> isBefore(const DateTime& lhs, const DateTime& rhs) {
+    return toUnixSecs(lhs) < toUnixSecs(rhs);
+}
+
+/**
+ * Check whether the first DateTime lies strictly after the second.
+ *
+ * @param lhs First DateTime
+ * @param rhs Second DateTime
+ * @return true if lhs is after rhs
+ */
+public f<bool> isAfter(const DateTime& lhs, const DateTime& rhs) {
+    return toUnixSecs(lhs) > toUnixSecs(rhs);
+}
+
+/**
+ * Check whether two DateTimes represent the same point in time.
+ *
+ * @param lhs First DateTime
+ * @param rhs Second DateTime
+ * @return true if both represent the same point in time
+ */
+public f<bool> equals(const DateTime& lhs, const DateTime& rhs) {
+    return toUnixSecs(lhs) == toUnixSecs(rhs);
+}
+
+/**
+ * Print the DateTime to stdout in ISO 8601 style: YYYY-MM-DD HH:MM:SS.
+ * Note: No trailing newline is emitted.
+ */
+public p DateTime.print() {
+    printf("%04d-%02d-%02d %02d:%02d:%02d", this.year, this.month, this.day, this.hour, this.minute, this.second);
+}

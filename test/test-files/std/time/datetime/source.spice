@@ -1,0 +1,57 @@
+import "std/time/datetime" as dt;
+
+f<int> main() {
+    // Construct from Unix epoch seconds and print (ISO 8601, UTC)
+    dt::DateTime a = dt::fromUnixSecs(0l);
+    a.print();
+    printf("\n");
+    dt::DateTime b = dt::fromUnixSecs(1000000000l);
+    b.print();
+    printf("\n");
+    dt::DateTime c = dt::fromUnixSecs(1700000000l);
+    c.print();
+    printf("\n");
+    dt::DateTime leap = dt::fromUnixSecs(1582934400l);
+    leap.print();
+    printf("\n");
+
+    // Construct from components
+    dt::DateTime made = dt::of(2026, 6, 1, 12, 30, 45);
+    made.print();
+    printf("\n");
+
+    // Round-trip back to epoch seconds
+    printf("Roundtrip c: %lld\n", dt::toUnixSecs(c));
+    printf("Roundtrip made: %lld\n", dt::toUnixSecs(made));
+
+    // Day of week (0 = Sunday)
+    printf("DOW epoch: %d\n", dt::dayOfWeek(a));
+    printf("DOW 1700000000: %d\n", dt::dayOfWeek(c));
+
+    // Days in month
+    printf("DaysInMonth 2020-02: %d\n", dt::daysInMonth(2020, 2));
+    printf("DaysInMonth 2021-02: %d\n", dt::daysInMonth(2021, 2));
+    printf("DaysInMonth 2021-04: %d\n", dt::daysInMonth(2021, 4));
+    printf("DaysInMonth 2021-12: %d\n", dt::daysInMonth(2021, 12));
+
+    // Day of year
+    printf("DayOfYear leap: %d\n", dt::dayOfYear(leap));
+    printf("DayOfYear made: %d\n", dt::dayOfYear(made));
+
+    // Arithmetic
+    dt::DateTime plusDay = dt::addDays(a, 1l);
+    plusDay.print();
+    printf("\n");
+    dt::DateTime plusSecs = dt::addSeconds(a, 3661l);
+    plusSecs.print();
+    printf("\n");
+    dt::DateTime minusDay = dt::addDays(a, -1l);
+    minusDay.print();
+    printf("\n");
+
+    // Comparisons
+    printf("a before c: %d\n", dt::isBefore(a, c) ? 1 : 0);
+    printf("c after a: %d\n", dt::isAfter(c, a) ? 1 : 0);
+    printf("a equals a: %d\n", dt::equals(a, a) ? 1 : 0);
+    printf("a equals c: %d\n", dt::equals(a, c) ? 1 : 0);
+}
