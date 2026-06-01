@@ -36,6 +36,12 @@ Rule of thumb: never profile a `Debug`/`-O0` compiler build or an `-O0`
 optimizer would have removed. Use `-O0` only when you need every source line to
 map cleanly to a frame.
 
+Per `AGENTS.md`, reuse only the two approved build directories — don't create
+extra build trees. Profiling builds go in **`cmake-build-release`** (the
+directory designated for performance work); reconfigure it with the
+profiling-specific options below as needed. The standard `cmake-build-debug` is
+for development/testing and is never the right thing to profile.
+
 ## 1. Built-in compiler timers — always start here
 
 The compiler instruments every pipeline stage (`src/util/Timer.h`, results in
@@ -62,17 +68,16 @@ hit rates (a low hit rate points at redundant resolution work).
 Build a profiling-capable `spice` (see the table above), then sample it:
 
 ```sh
-# Representative: optimized + symbols
-cmake -S . -B cmake-build-relwithdebinfo -G Ninja \
+# Reconfigure the release dir as optimized + symbols (per AGENTS.md, reuse it)
+cmake -S . -B cmake-build-release -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSPICE_DEV_COMPILE=ON
-cmake --build cmake-build-relwithdebinfo --target spice
+cmake --build cmake-build-release --target spice
 
-PROF=cmake-build-relwithdebinfo/src/spice
-perf record -g --call-graph dwarf -- $PROF build -O2 some-large-input.spice
+perf record -g --call-graph dwarf -- $SPICE build -O2 some-large-input.spice
 perf report            # interactive; or: perf report --stdio | head -50
 ```
 
-- `perf stat -- $PROF build file.spice` for cycles/IPC/branch-miss/cache-miss
+- `perf stat -- $SPICE build file.spice` for cycles/IPC/branch-miss/cache-miss
   counters without a full profile.
 - For clean call graphs where O2 inlining obscures the structure, rebuild with
   `-DSPICE_PROF_COMPILE=ON` (O0 + frame pointers) and use
@@ -85,7 +90,7 @@ perf report            # interactive; or: perf report --stdio | head -50
 ### valgrind / callgrind (instruction-exact, no rebuild for representative code)
 
 ```sh
-valgrind --tool=callgrind --callgrind-out-file=cg.out $PROF build file.spice
+valgrind --tool=callgrind --callgrind-out-file=cg.out $SPICE build file.spice
 callgrind_annotate cg.out | head -60     # or open cg.out in kcachegrind
 ```
 
@@ -100,9 +105,9 @@ To profile *building the compiler itself* (which TUs / template instantiations
 are slow to compile), not its runtime, use the dedicated option:
 
 ```sh
-cmake -S . -B cmake-build-timereport -G Ninja \
+cmake -S . -B cmake-build-release -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSPICE_PROFILE_COMPILATION=ON
-cmake --build cmake-build-timereport --target spice
+cmake --build cmake-build-release --target spice
 ```
 
 This adds `-ftime-report`, so each C++ TU prints where the host compiler spent
@@ -135,9 +140,11 @@ For A/B timing of the compiler or an emitted binary, use a statistical
 benchmarker rather than a single `time` run:
 
 ```sh
+# Double quotes so the outer shell expands $SPICE before hyperfine's child shell
+# runs each command (a non-exported var is unset inside the child shell).
 hyperfine --warmup 3 \
-  '$SPICE build -O2 file.spice' \
-  'old-spice build -O2 file.spice'
+  "$SPICE build -O2 file.spice" \
+  "old-spice build -O2 file.spice"
 
 hyperfine --warmup 3 '/tmp/prog <args>'      # emitted binary
 ```
