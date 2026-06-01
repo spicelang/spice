@@ -1,7 +1,17 @@
 # Initialize ANTLR
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 add_definitions(-DANTLR4CPP_STATIC)
-include(ExternalAntlr4Cpp)
+
+# Build the ANTLR4 C++ runtime from the in-tree submodule (deps/antlr4)
+set(ANTLR_BUILD_CPP_TESTS OFF CACHE BOOL "" FORCE)
+set(ANTLR_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(ANTLR_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(WITH_DEMO OFF CACHE BOOL "" FORCE)
+set(ANTLR4_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/antlr4/runtime/Cpp ${CMAKE_BINARY_DIR}/antlr4_runtime EXCLUDE_FROM_ALL)
+set(ANTLR4_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/deps/antlr4/runtime/Cpp/runtime/src)
+
+# Locate the ANTLR code generator jar (downloaded by setup-libs)
 set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antlr-4.13.2-complete.jar)
 find_package(ANTLR REQUIRED)
 message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
@@ -115,8 +125,8 @@ antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
 add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 # Add the current directory as include dir
 target_include_directories(spicecore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-# Link ANTLR
-target_link_libraries(spicecore PUBLIC antlr4_static)
+# Link ANTLR runtime and header-only dependencies
+target_link_libraries(spicecore PUBLIC antlr4_static nlohmann_json::nlohmann_json CLI11::CLI11)
 # Add include directories
 target_include_directories(spicecore
     SYSTEM PUBLIC

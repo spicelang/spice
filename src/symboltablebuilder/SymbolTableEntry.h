@@ -9,7 +9,7 @@
 #include <symboltablebuilder/Lifecycle.h>
 #include <symboltablebuilder/QualType.h>
 
-#include "../../lib/json/json.hpp"
+#include <nlohmann/json.hpp>
 
 // Forward declarations
 namespace llvm {

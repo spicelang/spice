@@ -28,6 +28,10 @@ message(STATUS "Spice: LLVM include dirs: ${LLVM_INCLUDE_DIRS}")
 # Include llvm options to determine which libs to link
 include(LLVMOptions.cmake)
 
+# Third-party header-only dependencies (git submodules in deps/)
+add_subdirectory(deps/json EXCLUDE_FROM_ALL)
+add_subdirectory(deps/cli11 EXCLUDE_FROM_ALL)
+
 # Coverage
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.bat ${CMAKE_CURRENT_BINARY_DIR}/coverage.bat SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.sh ${CMAKE_CURRENT_BINARY_DIR}/coverage.sh SYMBOLIC)

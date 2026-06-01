@@ -6,7 +6,7 @@
 
 #include <llvm/TargetParser/Triple.h>
 
-#include "../../lib/cli11/CLI11.hpp"
+#include <CLI/CLI.hpp>
 
 // Undef conflicting macros (only problematic on Windows)
 #undef TRUE

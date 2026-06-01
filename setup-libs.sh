@@ -1,16 +1,13 @@
 #!/bin/sh
+set -eu
 
-if [ ! -d lib ]; then
-    mkdir -p lib
+ANTLR_VERSION=4.13.2
+
+# Initialize / update git submodules (CLI11, JSON, ANTLR C++ runtime)
+git submodule update --init --recursive
+
+# Download the ANTLR code generator jar (a prebuilt tool, not a submodule)
+JAR_PATH="src/thirdparty/antlr-${ANTLR_VERSION}-complete.jar"
+if [ ! -f "$JAR_PATH" ]; then
+    curl -SsL "https://www.antlr.org/download/antlr-${ANTLR_VERSION}-complete.jar" --output "$JAR_PATH"
 fi
-cd lib || exit
-
-# Download JSON for Modern C++
-mkdir json
-curl -SsL "https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp" --output json/json.hpp
-
-# Download CLI11
-mkdir cli11
-curl -SsL "https://github.com/CLIUtils/CLI11/releases/download/v2.6.1/CLI11.hpp" --output cli11/CLI11.hpp
-
-cd ..
