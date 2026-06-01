@@ -94,7 +94,7 @@ f<int> main() {
     assert reAlice.get(2) == String("New York");
     assert reBob.get(2) == String("Line1\nLine2");
 
-    // Custom delimiter is honoured during serialization
+    // Custom delimiter is honored during serialization
     assert semicolonParser.serializeField(String("a;b")) == String("\"a;b\"");
     assert semicolonParser.serializeField(String("a,b")) == String("a,b");
 
