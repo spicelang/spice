@@ -23,8 +23,14 @@ SPICETEST=cmake-build-debug/test/spicetest
    code. Debug them with the compiler's dump flags, the **built-in
    `--sanitizer`** instrumentation, GDB, and objdump.
 
-A segfault in a compiled Spice program is usually a **codegen bug in the host
-compiler**, not a bug in the user's Spice source — keep that distinction in mind.
+A segfault in a compiled Spice program can be either: a **codegen bug in the
+host compiler**, or a genuine bug in the **user's Spice source** (e.g. a null
+dereference, out-of-bounds access, or use-after-free written in Spice). Don't
+assume one or the other — determine which it is. The dumps and `--sanitizer`
+help here: if the IR/assembly faithfully implements what the Spice source says
+and the fault is an invalid operation the source actually requests, it's a
+source bug; if the emitted code diverges from the source's intent, it's a
+codegen bug.
 
 ## 1. Reproduce first
 
