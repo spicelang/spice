@@ -110,6 +110,10 @@ public f<T> PriorityQueue.pop() {
             this.contents[0] = this.contents[this.size];
             this.siftDown(0l);
         }
+        // Destruct the now-vacated last slot (cf. Vector.removeAt). In both branches this is
+        // the index `this.size`: the moved-from slot when size > 0, or the lone remaining slot
+        // (index 0) when the queue is now empty. Required so owning element types don't leak.
+        sDestruct(this.contents[this.size]);
     }
 }
 

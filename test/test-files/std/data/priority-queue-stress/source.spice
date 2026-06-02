@@ -17,13 +17,13 @@ f<int> main() {
 
     // 2. Pseudo-random insertion order: heap must act as a sorting machine (descending)
     PriorityQueue<int> pq2;
-    int state = 12345;
+    long state = 12345l;
     int count = 2000;
     for int i = 0; i < count; i++ {
-        // Simple LCG to get a spread of values
-        state = (state * 1103515245 + 12345) % 1000000007;
-        int value = state % 100000;
-        if value < 0 { value = -value; }
+        // Simple LCG to get a spread of values. Computed in 64-bit to avoid signed overflow:
+        // state stays in [0, 1e9), so state * 1103515245 reaches ~1.1e18, which fits in a long.
+        state = (state * 1103515245l + 12345l) % 1000000007l;
+        int value = cast<int>(state % 100000l);
         pq2.push(value);
     }
     assert pq2.getSize() == count;
