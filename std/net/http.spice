@@ -173,14 +173,17 @@ public f<unsigned long> HttpHeaders.getSize() {
 }
 
 /**
- * Appends the serialized header block (each field terminated by CRLF) to the given string.
+ * Returns the serialized header block (each field terminated by CRLF).
+ *
+ * @return Serialized header block
  */
-p HttpHeaders.appendTo(String& out) {
+public f<String> HttpHeaders.serialize() {
+    result = String();
     foreach Pair<String, String>& entry : this.entries {
-        out += entry.getFirst();
-        out += ": ";
-        out += entry.getSecond();
-        out += CRLF;
+        result += entry.getFirst();
+        result += ": ";
+        result += entry.getSecond();
+        result += CRLF;
     }
 }
 
@@ -242,7 +245,8 @@ public f<String> HttpRequest.serialize() {
     result += ' ';
     result += this.version;
     result += CRLF;
-    this.headers.appendTo(result);
+    const String headerBlock = this.headers.serialize();
+    result += headerBlock;
     result += CRLF;
     result += this.body;
 }
@@ -309,7 +313,8 @@ public f<String> HttpResponse.serialize() {
     result += ' ';
     result += this.statusText;
     result += CRLF;
-    this.headers.appendTo(result);
+    const String headerBlock = this.headers.serialize();
+    result += headerBlock;
     result += CRLF;
     result += this.body;
 }
@@ -317,18 +322,19 @@ public f<String> HttpResponse.serialize() {
 // ================================================== Parsing helpers ====================================================
 
 /**
- * Splits a raw message into its header section and body using the CRLFCRLF terminator.
- * Both fragments are written into the given out-parameters.
+ * Splits a raw message into its header section (first) and body (second) using the CRLFCRLF terminator.
+ *
+ * @param raw Raw message text
+ * @return Pair of header section and body
  */
-p splitHeadAndBody(const String& raw, String& headSection, String& body) {
+f<Pair<String, String>> splitHeadAndBody(const String& raw) {
     const long sepIdx = raw.find(HEADER_TERMINATOR);
     if sepIdx == -1l {
-        headSection = raw;
-        body = String();
-        return;
+        return Pair<String, String>(raw, String());
     }
-    headSection = raw.getSubstring(0ul, sepIdx);
-    body = raw.getSubstring(cast<unsigned long>(sepIdx + 4l));
+    const String head = raw.getSubstring(0ul, sepIdx);
+    const String body = raw.getSubstring(cast<unsigned long>(sepIdx + 4l));
+    return Pair<String, String>(head, body);
 }
 
 /**
@@ -359,9 +365,9 @@ p parseHeaderLines(const Vector<String>& lines, HttpHeaders& headers) {
 public f<Result<HttpRequest>> parseHttpRequest(const String& raw) {
     if raw.isEmpty() { return err<HttpRequest>("Empty request"); }
 
-    String headSection;
-    String body;
-    splitHeadAndBody(raw, headSection, body);
+    Pair<String, String> headAndBody = splitHeadAndBody(raw);
+    const String headSection = headAndBody.getFirst();
+    const String body = headAndBody.getSecond();
 
     Vector<String> lines = split(headSection, '\n');
     if lines.isEmpty() { return err<HttpRequest>("Malformed request"); }
@@ -390,9 +396,9 @@ public f<Result<HttpRequest>> parseHttpRequest(const String& raw) {
 public f<Result<HttpResponse>> parseHttpResponse(const String& raw) {
     if raw.isEmpty() { return err<HttpResponse>("Empty response"); }
 
-    String headSection;
-    String body;
-    splitHeadAndBody(raw, headSection, body);
+    Pair<String, String> headAndBody = splitHeadAndBody(raw);
+    const String headSection = headAndBody.getFirst();
+    const String body = headAndBody.getSecond();
 
     Vector<String> lines = split(headSection, '\n');
     if lines.isEmpty() { return err<HttpResponse>("Malformed response"); }
