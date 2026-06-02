@@ -52,7 +52,10 @@ public f<bool> GenericType.checkConditionsOf(const QualType& requestedType, Qual
  * @return True or false
  */
 f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType& substantiation, bool ignoreArraySize, bool ignoreQualifiers) {
-    substantiation = requestedType;
+    // Field-wise copy instead of `substantiation = requestedType`: the host compiler currently rejects
+    // assigning a `const QualType&` through a non-const reference LHS (see host-compiler bootstrap gotchas).
+    substantiation.rawType = requestedType.rawType;
+    substantiation.qualifiers = requestedType.qualifiers;
     // Succeed if there are no type conditions
     if this.typeConditions.isEmpty() {
         return true;
@@ -82,7 +85,9 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
             requestedTypeCopy = requestedTypeCopy.removeReferenceWrapper();
         }
         if typeConditionCopy.matches(requestedTypeCopy, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
-            substantiation = typeCondition;
+            // Field-wise copy: see note above on the host's const-ref-through-reference assignment limitation.
+            substantiation.rawType = typeCondition.rawType;
+            substantiation.qualifiers = typeCondition.qualifiers;
             return true;
         }
     }

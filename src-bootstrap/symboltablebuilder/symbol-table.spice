@@ -1,11 +1,14 @@
 // Std imports
 import "std/data/unordered-map";
 import "std/data/vector";
+import "std/data/pair";
+import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
@@ -17,8 +20,8 @@ import "bootstrap/model/interface";
 import "bootstrap/util/compiler-warning";
 
 // Type aliases
-public type CaptureMap alias UnorderedMap</*name=*/string, /*capture*/Capture>;
-public type SymbolMap alias UnorderedMap</*name=*/string, /*entry*/SymbolTableEntry>;
+public type CaptureMap alias UnorderedMap</*name=*/String, /*capture*/Capture>;
+public type SymbolMap alias UnorderedMap</*name=*/String, /*entry*/SymbolTableEntry>;
 
 /**
  * Class for storing information about symbols of the program.
@@ -39,6 +42,27 @@ public p SymbolTable.ctor(SymbolTable* parent, IScope* scope) {
 }
 
 /**
+ * Count the number of field symbols in this symbol table (struct scopes). Mirrors the host Scope::getFieldCount:
+ * skip anonymous symbols, imports and nested function/struct definitions.
+ *
+ * @return Number of field symbols
+ */
+public f<unsigned long> SymbolTable.getFieldCount() {
+    result = 0ul;
+    // Skip imports and function/procedure symbols (methods). Note: the host also skips nested struct defs via
+    // declNode->isStructDef(); that AST-node query is not available on the concrete ASTNode yet, so we currently
+    // approximate by the symbol type, which already excludes methods (TY_FUNCTION/TY_PROCEDURE).
+    const dyn skipOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_IMPORT];
+    foreach Pair<const String&, SymbolTableEntry&> symbolPair : this.symbols {
+        SymbolTableEntry& symbol = symbolPair.getSecond();
+        if symbol.anonymous { continue; }
+        const QualType& symbolType = symbol.getQualType();
+        if symbolType.isOneOf(skipOptions, len(skipOptions)) { continue; }
+        result++;
+    }
+}
+
+/**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
  * @param name Name of the symbol
@@ -47,7 +71,7 @@ public p SymbolTable.ctor(SymbolTable* parent, IScope* scope) {
  */
 public p SymbolTable.insert(const String& name, const ASTNode* declNode) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
-    const unsigned int orderIndex = this.symbols.getSize();
+    const unsigned long orderIndex = cast<unsigned long>(this.symbols.getSize());
     // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
     // ToDo: Implement
 }
@@ -72,7 +96,7 @@ public p SymbolTable.insertAnonymous(const QualType& qualType, ASTNode* declNode
  * @return Copied entry
  */
 public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, const String& newName) {
-    SymbolTableEntry* entryToCopy = lookupStrict(originalName);
+    SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
     // ToDo
     return nil<SymbolTableEntry*>;
@@ -89,23 +113,24 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
     SymbolTableEntry* entry = this.lookupStrict(name);
     if entry == nil<SymbolTableEntry*> { // Symbol was not found in the current scope
         // We reached the root scope, the symbol does not exist at all
-        if parent == nil<SymbolTable*> {
+        if this.parent == nil<SymbolTable*> {
             return nil<SymbolTableEntry*>;
         }
         // If there is a parent scope, continue the search there
         entry = this.parent.lookup(name);
         // Symbol was also not found in all the parent scopes, return nullptr
-        if entry == nil<SymbolTable*> {
+        if entry == nil<SymbolTableEntry*> {
             return nil<SymbolTableEntry*>;
         }
 
         // Check if this scope requires capturing and capture the variable if appropriate
         const QualType entryType = entry.getQualType();
-        if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf([TY_IMPORT, TYPE_FUNCTION, TY_PROCEDURE]) {
-            // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
-            entry.isVolatile = this.scope.isInAsyncScope() && !entry.scope.isInAsyncScope();
+        const dyn captureSkip = [SuperType::TY_IMPORT, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) {
+            // ToDo: Make the symbol volatile if it is captured across an async-scope boundary. This needs the
+            // async-scope query exposed on IScope; skipped for now.
             // Add the capture to the current scope
-            this.captures.insert(name, Capture(entry));
+            this.captures.upsert(name, Capture(entry));
         }
     }
     return entry;
@@ -117,7 +142,7 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
  * @param name Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
+public f<SymbolTableEntry*> SymbolTable.lookupStrict(const String& name) {
     if name.isEmpty() {
         return nil<SymbolTableEntry*>;
     }
@@ -127,7 +152,8 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
     }
     // Check if a capture with this name exists in this scope
     if this.captures.contains(name) {
-        return &this.captures.get(name).capturedSymbol;
+        Capture& capture = this.captures.get(name);
+        return capture.capturedSymbol;
     }
     // Otherwise, return a nullptr
     return nil<SymbolTableEntry*>;
@@ -142,7 +168,7 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
  * @return Desired symbol / nullptr if the symbol was not found
  */
 public f<SymbolTableEntry*> SymbolTable.lookupInComposedFields(const String& name, Vector<unsigned long> indexPath) {
-    assert this.scopeType == ScopeType::STRUCT;
+    assert this.scope.getScopeType() == ScopeType::STRUCT;
     // ToDo
 
     // Symbol was not found in current scope, return nullptr
@@ -168,9 +194,9 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int o
  * @param numericSuffix Numeric suffix of the anonymous symbol
  * @return Anonymous symbol
  */
-public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc& codeLoc) {
-    const String name = String("anon.") + codeLoc.toString();
-    if numericSuffix > 0 {
+public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc& codeLoc, unsigned long numericSuffix = 0l) {
+    String name = String("anon.") + codeLoc.toString();
+    if numericSuffix > 0l {
         name += '.';
         name += toString(numericSuffix);
     }
@@ -183,7 +209,7 @@ public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc& codeLoc) 
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<Capture> SymbolTable.lookupCapture(const String& name) {
+public f<Capture*> SymbolTable.lookupCapture(const String& name) {
     // Check if the capture exists in the current scope. If yes, take it
     Capture* capture = this.lookupCaptureStrict(name);
     if capture != nil<Capture*> {
@@ -192,7 +218,7 @@ public f<Capture> SymbolTable.lookupCapture(const String& name) {
 
     // We reached the root scope, the symbol does not exist at all
     if this.parent == nil<SymbolTable*> {
-        return nullptr;
+        return nil<Capture*>;
     }
 
     return this.parent.lookupCapture(name);
@@ -204,7 +230,7 @@ public f<Capture> SymbolTable.lookupCapture(const String& name) {
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<Capture> SymbolTable.lookupCaptureStrict(const string captureName) {
+public f<Capture*> SymbolTable.lookupCaptureStrict(const String& captureName) {
     // If available in the current scope, return it
     if this.captures.contains(captureName) {
         return &this.captures.get(captureName);

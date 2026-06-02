@@ -110,7 +110,17 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
   // -> show it how to find the struct
   const std::string structName = symbolType.getBase().getSubType();
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
-  assert(origRegistryEntry != nullptr);
+  // If even this file does not know the struct by its unqualified name (deep transitive import), there is
+  // nothing to copy over. Skip teaching the target file; the type identity itself is unaffected, and member
+  // access falls back to the resolved body scope.
+  if (origRegistryEntry == nullptr)
+    return symbolType;
+  // Do not clobber an entry the target file already has under this name (e.g. its OWN same-named struct, like
+  // llvm's `Function` vs the model's `Function`). Teaching uses keepNewOnCollision=false, which would otherwise
+  // ERASE the target's existing entry and break resolution of its own type. The struct's QualType identity is
+  // carried by pointer regardless, so a name that is already taken does not need (re-)teaching here.
+  if (targetSourceFile->exportedNameRegistry.contains(structName))
+    return symbolType;
   const uint64_t targetTypeId = origRegistryEntry->typeId;
   SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
   targetSourceFile->addNameRegistryEntry(structName, targetTypeId, targetEntry, origRegistryEntry->targetScope, false);
@@ -139,7 +149,16 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
   const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getSubType());
-  assert(origRegistryEntry != nullptr);
+  // If even the source file does not know the struct by its unqualified name (deep transitive import), there is
+  // nothing to copy over. Skip teaching this file; the type identity itself is unaffected, and member access
+  // falls back to the resolved body scope.
+  if (origRegistryEntry == nullptr)
+    return symbolType;
+  // Do not clobber an entry this file already has under this name (see mapLocalTypeToImportedScopeType): teaching
+  // with keepNewOnCollision=false would ERASE this file's own same-named struct entry. The QualType identity is
+  // carried by pointer, so an already-taken name needs no (re-)teaching here.
+  if (sourceFile->exportedNameRegistry.contains(baseType.getSubType()))
+    return symbolType;
   const uint64_t typeId = origRegistryEntry->typeId;
   SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
   sourceFile->addNameRegistryEntry(baseType.getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);

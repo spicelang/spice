@@ -1,8 +1,29 @@
 // Own imports
 import "bootstrap/source-file-intf";
 
+// ScopeType lives on the dependency-free interface side (not in scope.spice) so that lightweight consumers
+// such as SymbolTableEntry can reason about a scope's kind via IScope without importing the heavy concrete
+// Scope (which pulls in the symbol table, managers, etc.).
+public type ScopeType enum {
+    GLOBAL,
+    FUNC_PROC_BODY,
+    LAMBDA_BODY,
+    STRUCT,
+    INTERFACE,
+    ENUM,
+    IF_ELSE_BODY,
+    WHILE_BODY,
+    FOR_BODY,
+    FOREACH_BODY,
+    CASE_BODY,
+    DEFAULT_BODY,
+    UNSAFE_BODY,
+    ANONYMOUS_BLOCK_BODY
+}
+
 public type IScope interface {
     public f<ISourceFile*> getSourceFile();
     public f<IScope*> getParent();
     public f<unsigned long> getFieldCount();
+    public f<ScopeType> getScopeType();
 }

@@ -13,21 +13,32 @@ import "bootstrap/symboltablebuilder/scope-intf";
 public const long ARRAY_SIZE_UNKNOWN = 0l;
 
 public type TypeChainElementData struct {
-    unsigned int arraySize = 0       // TY_ARRAY
-    IScope* bodyScope = nil<IScope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
-    bool hasCaptures = false         // TY_FUNCTION, TY_PROCEDURE (lambdas)
+    public unsigned int arraySize = 0       // TY_ARRAY
+    public IScope* bodyScope = nil<IScope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    public bool hasCaptures = false         // TY_FUNCTION, TY_PROCEDURE (lambdas)
 }
 
 public type TypeChainElement struct {
-    SuperType superType = SuperType::TY_DYN
-    String subType
-    unsigned long typeId = cast<unsigned long>(SuperType::TY_INVALID)
-    TypeChainElementData data
-    QualTypeList templateTypes
-    QualTypeList paramTypes // First type is the return type
+    public SuperType superType = SuperType::TY_DYN
+    public String subType
+    public unsigned long typeId = cast<unsigned long>(SuperType::TY_INVALID)
+    public TypeChainElementData data
+    public QualTypeList templateTypes
+    public QualTypeList paramTypes // First type is the return type
 }
 
 public p TypeChainElement.ctor() {}
+
+// Explicit copy ctor: a user-defined ctor suppresses the auto-generated copy ctor, but elements are copied
+// when type chains are duplicated (e.g. in Type.toPtr) and stored in vectors, so a deep copy is required.
+public p TypeChainElement.ctor(const TypeChainElement& other) {
+    this.superType = other.superType;
+    this.subType = other.subType;
+    this.typeId = other.typeId;
+    this.data = other.data;
+    this.templateTypes = other.templateTypes;
+    this.paramTypes = other.paramTypes;
+}
 
 public p TypeChainElement.ctor(SuperType superType) {
     this.superType = superType;
@@ -53,11 +64,43 @@ public p TypeChainElement.ctor(SuperType superType, const String& subType, unsig
 }
 
 public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
-    // Check super type
+    // Check super type, sub type and type id
     if lhs.superType != rhs.superType { return false; }
+    if lhs.subType != rhs.subType { return false; }
+    if lhs.typeId != rhs.typeId { return false; }
 
-    // Check data
-    // ToDo
+    // Check the super-type-specific data payload
+    switch lhs.superType {
+        case SuperType::TY_ARRAY: {
+            if lhs.data.arraySize != rhs.data.arraySize { return false; }
+        }
+        case SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
+            if lhs.data.hasCaptures != rhs.data.hasCaptures { return false; }
+        }
+        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM: {
+            if lhs.data.bodyScope != rhs.data.bodyScope { return false; }
+        }
+        default: {}
+    }
+
+    // Check template types
+    if lhs.templateTypes.getSize() != rhs.templateTypes.getSize() { return false; }
+    const unsigned long templateCount = cast<unsigned long>(lhs.templateTypes.getSize());
+    for unsigned long i = 0ul; i < templateCount; i++ {
+        const QualType& lhsTemplateType = lhs.templateTypes.get(i);
+        const QualType& rhsTemplateType = rhs.templateTypes.get(i);
+        if lhsTemplateType != rhsTemplateType { return false; }
+    }
+
+    // Check param and return types
+    if lhs.paramTypes.getSize() != rhs.paramTypes.getSize() { return false; }
+    const unsigned long paramCount = cast<unsigned long>(lhs.paramTypes.getSize());
+    for unsigned long i = 0ul; i < paramCount; i++ {
+        const QualType& lhsParamType = lhs.paramTypes.get(i);
+        const QualType& rhsParamType = rhs.paramTypes.get(i);
+        if lhsParamType != rhsParamType { return false; }
+    }
+
     return true;
 }
 
@@ -112,7 +155,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
                     if i > 0 {
                         name << ",";
                     }
-                    templateType.getName(name, withSize);
+                    templateType.getName(name, withSize, false);
                 }
                 name << ">";
             }
@@ -133,14 +176,14 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
             }
             if !this.paramTypes.isEmpty() {
                 const QualType& returnType = this.paramTypes.front();
-                name << "<" << returnType.getName(true) << ">";
+                name << "<" << returnType.getName(true, false) << ">";
             }
             name << "(";
             foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
                 if i > 1 {
                     name << ",";
                 }
-                templateType.getName(name, true);
+                templateType.getName(name, true, false);
             }
             name << ")";
         }
@@ -154,7 +197,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
                 if i > 1 {
                     name << ",";
                 }
-                templateType.getName(name, true);
+                templateType.getName(name, true, false);
             }
             name << ")";
         }
@@ -178,7 +221,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
  */
 public f<String> TypeChainElement.getName(bool withSize) {
     StringStream name;
-    this.getName(name);
+    this.getName(name, withSize);
     return name.str();
 }
 

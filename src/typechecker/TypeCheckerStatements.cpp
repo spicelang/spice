@@ -58,8 +58,12 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = type;
       node->calledCopyCtor = copyCtor;
 
-      // If this is a struct type, check if the type is known. If not, error out
-      if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
+      // If this is a struct type, check if the type is known. If not, error out. A type that already carries a
+      // body scope is genuinely resolved (e.g. it reached here through a generic substantiation or a deep
+      // transitive import); only its unqualified name happens to be absent from this file's name registry, which
+      // is not an error.
+      if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType()) &&
+          localVarType.getBase().getBodyScope() == nullptr) {
         const std::string structName = localVarType.getBase().getSubType();
         softError(node->dataType, UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = QualType(TY_UNRESOLVED);

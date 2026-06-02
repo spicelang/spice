@@ -1,4 +1,5 @@
 // Own imports
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 
 public type CapturePassMode enum {
@@ -22,7 +23,8 @@ public p Capture.ctor(SymbolTableEntry* capturedSymbol) {
     // Set the capture mode depending on the symbol type
     // All types with guaranteed size <= 64 bit are captured by value, all others by reference.
     const QualType capturedType = capturedSymbol.getQualType();
-    const bool canBeOver64Bit = capturedType.isOneOf([SuperType::TY_STRUCT, SuperType::TY_INTERFACE]);
+    const dyn over64Options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const bool canBeOver64Bit = capturedType.isOneOf(over64Options, len(over64Options));
     this.captureMode = canBeOver64Bit ? CapturePassMode::BY_REFERENCE : CapturePassMode::BY_VALUE;
 }
 

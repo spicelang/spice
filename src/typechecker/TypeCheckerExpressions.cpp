@@ -715,8 +715,11 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (baseType.is(TY_STRUCT)) {
     const std::string &structName = baseType.getSubType();
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(structName);
-    assert(nameRegistryEntry != nullptr);
-    accessScope = nameRegistryEntry->targetScope;
+    // The struct may only be reachable transitively (i.e. it is not present in this file's name registry under
+    // its unqualified name). In that case, fall back to the struct's body scope, which is exactly what the
+    // registry entry's targetScope would point to (see SymbolTableBuilder struct registration). This keeps
+    // member access working across deep transitive imports instead of crashing.
+    accessScope = nameRegistryEntry != nullptr ? nameRegistryEntry->targetScope : baseType.getBodyScope();
     assert(accessScope != nullptr);
   }
 
