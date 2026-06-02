@@ -1,4 +1,5 @@
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/qual-type";
 
 public type ExprResult struct {
     public QualType ty
