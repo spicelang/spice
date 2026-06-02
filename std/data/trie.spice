@@ -65,7 +65,7 @@ public p Trie.dtor() {
  * @param word The word to insert
  */
 public p Trie.insert(string word) {
-    const unsigned long len = getRawLength(word);
+    const unsigned long len = this.rawLength(word);
     TrieNode* node = this.root;
     for unsigned long i = 0l; i < len; i++ {
         const char c = word[i];
@@ -156,13 +156,28 @@ public p Trie.clear() {
 }
 
 /**
+ * Compute the length of a raw string by counting characters up to the null terminator.
+ * This avoids depending on the `String` runtime, since the trie only ever deals with raw
+ * `string` values.
+ *
+ * @param s The raw string to measure
+ * @return Number of characters before the null terminator
+ */
+f<unsigned long> Trie.rawLength(string s) {
+    result = 0l;
+    while s[result] != '\0' {
+        result++;
+    }
+}
+
+/**
  * Walk the trie along the given string and return the node reached at its end.
  *
  * @param str The string to walk along
  * @return The node at the end of the path, or nil if the path does not exist
  */
 f<TrieNode*> Trie.findNode(string str) {
-    const unsigned long len = getRawLength(str);
+    const unsigned long len = this.rawLength(str);
     TrieNode* node = this.root;
     for unsigned long i = 0l; i < len; i++ {
         node = this.getChild(node, str[i]);
@@ -224,7 +239,7 @@ f<unsigned long> Trie.countEndNodes(TrieNode* node) {
  */
 #[ignoreUnusedReturnValue]
 f<bool> Trie.removeHelper(TrieNode* node, string word, unsigned long depth) {
-    const unsigned long len = getRawLength(word);
+    const unsigned long len = this.rawLength(word);
     if depth == len {
         // We reached the node that should spell the word. Unmark it if it is a word.
         if node.isEndOfWord {
