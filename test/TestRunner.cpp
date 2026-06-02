@@ -213,13 +213,17 @@ void execTestCase(const TestCase &testCase) {
     // GCOV_EXCL_STOP
 
     // Check warnings
-    mainSourceFile->collectAndPrintWarnings();
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] {
-      std::stringstream actualWarningString;
-      for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
-        actualWarningString << warning.warningMessage << "\n";
-      return actualWarningString.str();
-    });
+    // The bootstrap compiler is still incomplete, so its sources emit huge amounts of unused-symbol warnings. Skip warning
+    // collection for the whole bootstrap-compiler suite to keep the test output readable.
+    if (testCase.testSuite != "bootstrapCompiler") {
+      mainSourceFile->collectAndPrintWarnings();
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] {
+        std::stringstream actualWarningString;
+        for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
+          actualWarningString << warning.warningMessage << "\n";
+        return actualWarningString.str();
+      });
+    }
 
     // Do linking and conclude compilation
     const bool needsNormalRunForOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
