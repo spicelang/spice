@@ -14,6 +14,10 @@ import "bootstrap/reader/code-loc";
 public const string CTOR_FUNCTION_NAME = "ctor";
 public const string DTOR_FUNCTION_NAME = "dtor";
 
+// Reserved variable names
+public const string THIS_VARIABLE_NAME = "this";
+public const string RETURN_VARIABLE_NAME = "result";
+
 public type SymbolTableEntry struct {
     // Public fields
     public String name

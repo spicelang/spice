@@ -1,9 +1,11 @@
 // Std imports
 import "std/data/unordered-map";
 import "std/data/vector";
+import "std/data/pair";
 
 // Own imports
 import "bootstrap/reader/code-loc";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
@@ -128,7 +130,7 @@ public p Scope.copyChildScope(const String& oldName, const String& newName) {
     Scope* child = &this.children.get(oldName);
     const Scope* newScope = child.deepCopyScope();
     // Save copy under new name
-    this.children.upsert(newName, newScope);
+    this.children.upsert(newName, *newScope);
 }
 
 /**
@@ -164,9 +166,9 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
     Vector<SymbolTableEntry*> varsGoingOutOfScope;
 
     // Collect all variables in this scope
-    foreach const Pair<String, SymbolTableEntry*> symbol : this.symbolTable.symbols {
+    foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbolTable.symbols {
         const String& name = symbol.getFirst();
-        const SymbolTableEntry* entry = symbol.getSecond();
+        SymbolTableEntry& entry = symbol.getSecond();
         // Skip 'this' and result variables
         if name == THIS_VARIABLE_NAME || name == RETURN_VARIABLE_NAME {
             continue;
@@ -176,19 +178,19 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
             continue;
         }
         // Found variable, that goes out of scope
-        varsGoingOutOfScope.push(&this.symbolTable.symbols.get(name));
+        varsGoingOutOfScope.pushBack(&entry);
     }
 
     // If this is the scope of a dtor, also return all fields of the struct
     if this.isDtorScope {
         assert this.parent != nil<Scope*> && this.parent.scopeType == ScopeType::STRUCT;
         // Get all fields of the struct
-        foreach const Pair<String, SymbolTableEntry*> field : this.parent.symbolTable.symbols {
-            const String& name = symbol.getFirst();
-            const SymbolTableEntry* entry = symbol.getSecond();
+        const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        foreach Pair<const String&, SymbolTableEntry&> field : this.parent.symbolTable.symbols {
+            SymbolTableEntry& entry = field.getSecond();
             const QualType& qualType = entry.getQualType();
-            if !qualType.isOneOf([TY_FUNCTION, TY_PROCEDURE]) {
-                varsGoingOutOfScope.push(&field.getSecond());
+            if !qualType.isOneOf(fctOptions, len(fctOptions)) {
+                varsGoingOutOfScope.pushBack(&entry);
             }
         }
     }
