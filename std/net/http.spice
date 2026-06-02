@@ -47,12 +47,15 @@ const string CONTENT_LENGTH_KEY = "Content-Length";
 
 // =================================================== Small helpers ====================================================
 
+// Offset between an upper and lower case ASCII letter
+const unsigned int ASCII_CASE_OFFSET = 32;
+
 /**
  * Returns the lower case version of an ASCII character.
  */
 f<char> asciiToLower(char c) {
     if c >= 'A' && c <= 'Z' {
-        return cast<char>(c + 32);
+        c += ASCII_CASE_OFFSET;
     }
     return c;
 }
