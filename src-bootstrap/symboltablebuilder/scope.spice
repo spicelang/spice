@@ -14,6 +14,8 @@ import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
 import "bootstrap/source-file-intf";
+import "bootstrap/util/block-allocator";
+import "bootstrap/util/memory";
 
 // ScopeType is defined in scope-intf.spice (imported above) so it can be used through the IScope interface.
 
@@ -39,7 +41,10 @@ public type Scope struct : IScope {
     // Public members
     public Scope* parent
     public ISourceFile* sourceFile
-    public UnorderedMap<String, Scope> children
+    // Child scopes are owned by their parent (mirroring the host's `map<string, shared_ptr<Scope>>`). They are
+    // stored as stable pointers into 'childAllocator' rather than by value, so that adding a child never has to
+    // copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
+    public UnorderedMap<String, Scope*> children
     public SymbolTable symbolTable
     public CodeLoc* codeLoc = nil<CodeLoc*>
     public ScopeType scopeType
@@ -51,6 +56,10 @@ public type Scope struct : IScope {
     StructRegistry structs
     InterfaceRegistry interfaces
     UnorderedMap<String, GenericType> genericTypes
+    // The memory manager is declared before the allocator so that it outlives it (the allocator keeps a
+    // reference to it). Each scope owns the pool its direct child scopes are allocated from.
+    DefaultMemoryManager memoryManager
+    BlockAllocator<Scope> childAllocator
 }
 
 public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
@@ -59,6 +68,7 @@ public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType,
     this.scopeType = scopeType;
     this.symbolTable = SymbolTable(parent == nil<Scope*> ? nil<SymbolTable*> : &parent.symbolTable, this);
     this.codeLoc = codeLoc;
+    this.childAllocator = BlockAllocator<Scope>(this.memoryManager);
 }
 
 // ===================================================== IScope interface =====================================================
@@ -101,8 +111,13 @@ public f<unsigned long> Scope.getFieldCount() {
  * @return Child scope (heap allocated)
  */
 public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
-    this.children.upsert(scopeName, Scope(this, this.sourceFile, scopeType, declCodeLoc));
-    return &this.children.get(scopeName);
+    // Reserve stable storage for the child in this scope's pool and construct it in place (no Scope copy).
+    Scope* child = this.childAllocator.reserve<Scope>();
+    unsafe {
+        __placement_new<Scope>(child, this, this.sourceFile, scopeType, declCodeLoc);
+    }
+    this.children.upsert(scopeName, child);
+    return child;
 }
 
 /**
@@ -114,7 +129,9 @@ public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scope
  */
 public p Scope.renameChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
-    this.children.upsert(newName, this.children.get(oldName));
+    // Re-key the owning pointer; the pooled Scope itself is not moved or copied.
+    Scope* child = this.children.get(oldName);
+    this.children.upsert(newName, child);
     this.children.remove(oldName);
 }
 
@@ -127,10 +144,10 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
 public p Scope.copyChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
     // Create copy
-    Scope* child = &this.children.get(oldName);
-    const Scope* newScope = child.deepCopyScope();
+    Scope* child = this.children.get(oldName);
+    Scope* newScope = child.deepCopyScope();
     // Save copy under new name
-    this.children.upsert(newName, *newScope);
+    this.children.upsert(newName, newScope);
 }
 
 /**
@@ -150,8 +167,8 @@ public f<Scope*> Scope.deepCopyScope() {
  * @return Child scope
  */
 public f<Scope*> Scope.getChildScope(const String& scopeName) {
-    if this.children.isEmpty() && this.children.contains(scopeName) {
-        return &this.children.get(scopeName);
+    if this.children.contains(scopeName) {
+        return this.children.get(scopeName);
     }
     return nil<Scope*>;
 }

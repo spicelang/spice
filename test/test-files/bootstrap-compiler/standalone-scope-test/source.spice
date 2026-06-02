@@ -1,0 +1,42 @@
+// Smoke test for the self-hosted bootstrap Scope ownership model.
+//
+// A Scope owns its direct child scopes the way the host does (`map<string, shared_ptr<Scope>>`): the
+// children are stored as stable pointers into a per-scope `BlockAllocator<Scope>` and constructed in
+// place via __placement_new, so adding a child never copies a Scope (which is not trivially copyable).
+// This previously blocked the whole symboltablebuilder layer from compiling, because storing scopes by
+// value forced the std hash table to deep-copy them. The test exercises child creation, name lookup,
+// stable-pointer identity, parent/type wiring and recursive nesting.
+
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/source-file-intf";
+import "bootstrap/reader/code-loc";
+
+f<int> main() {
+    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+
+    Scope* fnScope = root.createChildScope(String("fn:main"), ScopeType::FUNC_PROC_BODY, nil<CodeLoc*>);
+    Scope* ifScope = root.createChildScope(String("if:0"), ScopeType::IF_ELSE_BODY, nil<CodeLoc*>);
+    assert fnScope != nil<Scope*>;
+    assert ifScope != nil<Scope*>;
+    assert fnScope != ifScope;
+
+    // Pool pointers are stable and retrievable by name
+    Scope* fetched = root.getChildScope(String("fn:main"));
+    assert fetched == fnScope;
+    assert root.getChildScope(String("missing")) == nil<Scope*>;
+
+    // Parent + type wiring
+    assert fnScope.getParent() == &root;
+    assert fnScope.getScopeType() == ScopeType::FUNC_PROC_BODY;
+    assert ifScope.getScopeType() == ScopeType::IF_ELSE_BODY;
+
+    // Nested child in a child scope (exercises the per-scope pool recursively)
+    Scope* nested = fnScope.createChildScope(String("foreach:0"), ScopeType::FOREACH_BODY, nil<CodeLoc*>);
+    assert nested.getParent() == fnScope;
+    assert fnScope.getChildScope(String("foreach:0")) == nested;
+
+    printf("Created and retrieved %d child scopes; nesting works.\n", 3);
+    printf("All assertions passed!");
+    return 0;
+}

@@ -1,0 +1,36 @@
+// Regression + smoke test for the self-hosted bootstrap model layer.
+//
+// Importing `bootstrap/model/function` (which transitively pulls in the LLVM bindings, whose `Function`
+// type name collides with the model's own `Function`) used to crash the host compiler with a segfault
+// inside `TypeChecker::mapLocalTypeToImportedScopeType`: that pass iterates a file's exported name
+// registry and dereferenced `entry.targetEntry->declNode->getStructManifestations()` for every
+// struct-typed entry, even when the declaring node was not a `StructDefNode` (so the base accessor
+// returned a nullptr that got dereferenced by the range-for). This test guards that the model layer
+// now compiles, links and runs, on top of the interned type layer it builds upon.
+
+import "bootstrap/model/function";
+import "bootstrap/global/type-registry";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/ast/ast-node-intf";
+
+f<int> main() {
+    // Build a real, interned type and wrap it in a QualType - the type layer the model builds on.
+    TypeRegistry reg = TypeRegistry();
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
+    assert intQual.is(SuperType::TY_INT);
+    assert intQual.getType() == intType;
+
+    // Reference the model's `Function` type. Its unqualified name collides with `llvm::Function`;
+    // resolving this very import is what used to crash the host compiler.
+    Function* fctPtr = nil<Function*>;
+    assert fctPtr == nil<Function*>;
+
+    printf("Model layer imported successfully.\n");
+    printf("Interned int type name: %s\n", intQual.getName(false, false));
+    printf("All assertions passed!");
+    return 0;
+}
