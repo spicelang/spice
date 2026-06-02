@@ -1,0 +1,46 @@
+import "std/net/http";
+
+// Socket-less tests for the HttpServer routing/dispatch logic.
+
+f<HttpResponse> homeHandler(const HttpRequest& _request) {
+    HttpResponse response = HttpResponse(200);
+    response.setBody(String("home"));
+    return response;
+}
+
+f<HttpResponse> aboutHandler(const HttpRequest& _request) {
+    HttpResponse response = HttpResponse(200);
+    response.setBody(String("about"));
+    return response;
+}
+
+f<int> main() {
+    HttpServer server = HttpServer(8080s);
+    server.addRoute("GET", "/", homeHandler);
+    server.addRoute("GET", "/about", aboutHandler);
+
+    // Matching route returns the handler's response
+    HttpRequest rootReq = HttpRequest("GET", "/");
+    HttpResponse rootRes = server.handle(rootReq);
+    assert rootRes.statusCode == 200;
+    assert rootRes.body == "home";
+
+    HttpRequest aboutReq = HttpRequest("GET", "/about");
+    HttpResponse aboutRes = server.handle(aboutReq);
+    assert aboutRes.statusCode == 200;
+    assert aboutRes.body == "about";
+
+    // Unknown path falls back to a 404 response
+    HttpRequest missingReq = HttpRequest("GET", "/missing");
+    HttpResponse missingRes = server.handle(missingReq);
+    assert missingRes.statusCode == 404;
+    assert missingRes.statusText == "Not Found";
+    assert missingRes.body == "404 Not Found";
+
+    // A matching path but wrong method also yields a 404
+    HttpRequest postReq = HttpRequest("POST", "/");
+    HttpResponse postRes = server.handle(postReq);
+    assert postRes.statusCode == 404;
+
+    printf("All assertions passed!\n");
+}

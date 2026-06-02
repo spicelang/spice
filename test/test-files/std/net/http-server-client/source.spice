@@ -1,0 +1,41 @@
+import "std/os/thread-pool";
+import "std/time/delay";
+import "std/net/http";
+
+// End-to-end HTTP server/client test over real TCP sockets.
+// Disabled by default because it binds a port and depends on the network stack.
+
+f<HttpResponse> handleRoot(const HttpRequest& _request) {
+    HttpResponse response = HttpResponse(200);
+    response.setHeader("Content-Type", "text/plain");
+    response.setBody(String("Hello from Spice!"));
+    return response;
+}
+
+f<int> main() {
+    ThreadPool tp = ThreadPool(2s);
+
+    // Server thread: serve exactly one request, then shut down
+    tp.enqueue(p() [[async]] {
+        HttpServer server = HttpServer(8090s);
+        server.addRoute("GET", "/", handleRoot);
+        Result<bool> served = server.serveOnce();
+        assert served.isOk();
+        printf("Server served one request.\n");
+    });
+
+    // Client thread: issue a GET request and validate the response
+    tp.enqueue(p() [[async]] {
+        delay(100); // Wait for the server to become available
+        HttpClient client = HttpClient("127.0.0.1", 8090s);
+        Result<HttpResponse> responseRes = client.get("/");
+        assert responseRes.isOk();
+        HttpResponse response = responseRes.unwrap();
+        assert response.statusCode == 200;
+        assert response.body == "Hello from Spice!";
+        printf("Client received correct response.\n");
+    });
+
+    tp.start();
+    tp.join();
+}

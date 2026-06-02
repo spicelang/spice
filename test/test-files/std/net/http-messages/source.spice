@@ -1,0 +1,118 @@
+import "std/net/http";
+
+// Pure (socket-less) tests for HTTP request/response building, serialization and parsing.
+
+p testRequestSerialization() {
+    HttpRequest request = HttpRequest("GET", "/index.html");
+    request.setHeader("Host", "localhost");
+    request.setHeader("Accept", "text/html");
+
+    const String raw = request.serialize();
+    assert raw == "GET /index.html HTTP/1.1\r\nHost: localhost\r\nAccept: text/html\r\n\r\n";
+
+    // POST request with a body sets the Content-Length header automatically
+    HttpRequest post = HttpRequest("POST", "/submit");
+    post.setHeader("Host", "example.com");
+    post.setBody(String("name=spice"));
+
+    const String rawPost = post.serialize();
+    assert rawPost == "POST /submit HTTP/1.1\r\nHost: example.com\r\nContent-Length: 10\r\n\r\nname=spice";
+}
+
+p testRequestParsing() {
+    String rawReq = String("GET /hello HTTP/1.1\r\nHost: localhost\r\nUser-Agent: spice\r\n\r\n");
+    Result<HttpRequest> parsedRes = parseHttpRequest(rawReq);
+    assert parsedRes.isOk();
+    HttpRequest parsed = parsedRes.unwrap();
+    assert parsed.method == "GET";
+    assert parsed.path == "/hello";
+    assert parsed.version == "HTTP/1.1";
+    // Header lookups are case-insensitive
+    assert parsed.getHeader("host") == "localhost";
+    assert parsed.hasHeader("User-Agent");
+    assert parsed.getHeader("USER-AGENT") == "spice";
+    assert !parsed.hasHeader("Authorization");
+    assert parsed.body.isEmpty();
+
+    // Request with a body
+    String rawPost = String("POST /data HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello");
+    Result<HttpRequest> postRes = parseHttpRequest(rawPost);
+    assert postRes.isOk();
+    HttpRequest post = postRes.unwrap();
+    assert post.method == "POST";
+    assert post.getHeader("Content-Length") == "5";
+    assert post.body == "hello";
+
+    // An empty input must be rejected
+    Result<HttpRequest> emptyRes = parseHttpRequest(String(""));
+    assert emptyRes.isErr();
+}
+
+p testResponseSerialization() {
+    HttpResponse response = HttpResponse(200);
+    response.setHeader("Content-Type", "text/plain");
+    response.setBody(String("Hello"));
+
+    const String raw = response.serialize();
+    assert raw == "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello";
+
+    // Status text is derived from the code if not given explicitly
+    HttpResponse notFound = HttpResponse(404);
+    assert notFound.statusText == "Not Found";
+    HttpResponse custom = HttpResponse(200, "Totally Fine");
+    assert custom.statusText == "Totally Fine";
+}
+
+p testResponseParsing() {
+    String rawRes = String("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n404");
+    Result<HttpResponse> parsedRes = parseHttpResponse(rawRes);
+    assert parsedRes.isOk();
+    HttpResponse parsed = parsedRes.unwrap();
+    assert parsed.version == "HTTP/1.1";
+    assert parsed.statusCode == 404;
+    assert parsed.statusText == "Not Found";
+    assert parsed.getHeader("Content-Type") == "text/plain";
+    assert parsed.body == "404";
+}
+
+p testHeaderOverwrite() {
+    HttpResponse response = HttpResponse(200);
+    response.setHeader("X-Test", "one");
+    response.setHeader("x-test", "two"); // overwrites case-insensitively
+    assert response.getHeader("X-Test") == "two";
+    assert response.headers.getSize() == 1;
+}
+
+p testReasonPhrases() {
+    assert reasonPhrase(200) == "OK";
+    assert reasonPhrase(201) == "Created";
+    assert reasonPhrase(404) == "Not Found";
+    assert reasonPhrase(500) == "Internal Server Error";
+    assert reasonPhrase(999) == "Unknown";
+}
+
+p testRoundTrip() {
+    HttpResponse original = HttpResponse(201);
+    original.setHeader("Content-Type", "application/json");
+    original.setBody(String("{\"ok\":true}"));
+
+    const String serialized = original.serialize();
+    Result<HttpResponse> reparsedRes = parseHttpResponse(serialized);
+    assert reparsedRes.isOk();
+    HttpResponse reparsed = reparsedRes.unwrap();
+    assert reparsed.statusCode == 201;
+    assert reparsed.statusText == "Created";
+    assert reparsed.getHeader("Content-Type") == "application/json";
+    assert reparsed.body == "{\"ok\":true}";
+}
+
+f<int> main() {
+    testRequestSerialization();
+    testRequestParsing();
+    testResponseSerialization();
+    testResponseParsing();
+    testHeaderOverwrite();
+    testReasonPhrases();
+    testRoundTrip();
+    printf("All assertions passed!\n");
+}

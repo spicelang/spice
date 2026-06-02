@@ -1,45 +1,643 @@
-import "socket_linux";
+// A small, dependency-free HTTP/1.1 implementation built on top of the
+// cross-platform socket abstraction in `std/net/socket`.
+//
+// It offers three building blocks:
+//   - HttpRequest  / HttpResponse: value types that can be built, serialized and parsed
+//   - HttpServer:  accepts connections and dispatches them to registered route handlers
+//   - HttpClient:  sends a request to a remote server and returns the parsed response
+//
+// The message (de)serialization is completely independent of any socket and can
+// therefore be unit tested without networking.
 
-const string SERVER_IDENT = "Spice HTTP Server/0.0.0";
+import "std/net/socket";
+import "std/data/vector";
+import "std/data/pair";
+import "std/text/string-ext";
+import "std/type/type-conversion";
+
+// Server identification, sent as the `Server` header on responses
+const string SERVER_IDENT = "Spice-HTTP/1.0";
 const unsigned int CONNECTIONS_LIMIT = 50;
 
-public const string ADDR_LOCAL = "localhost";
+// Number of bytes that are read from a socket in one go while no body length is known yet
+const long READ_CHUNK_SIZE = 1l;
+
+// Commonly used addresses
+public const string ADDR_LOCAL = "127.0.0.1";
 public const string ADDR_INET = "0.0.0.0";
 
+// Default ports
 public const unsigned short HTTP_PORT_DEFAULT = 80s;
 public const unsigned short HTTP_PORT_FALLBACK = 8080s;
 public const unsigned short HTTPS_PORT_DEFAULT = 443s;
 
+// HTTP request methods
+public const string METHOD_GET = "GET";
+public const string METHOD_HEAD = "HEAD";
+public const string METHOD_POST = "POST";
+public const string METHOD_PUT = "PUT";
+public const string METHOD_DELETE = "DELETE";
+public const string METHOD_PATCH = "PATCH";
+public const string METHOD_OPTIONS = "OPTIONS";
+
+const string PROTOCOL_VERSION = "HTTP/1.1";
+const string CRLF = "\r\n";
+const string HEADER_TERMINATOR = "\r\n\r\n";
+const string CONTENT_LENGTH_KEY = "Content-Length";
+
+// =================================================== Small helpers ====================================================
+
 /**
- * Struct, representing a simple HTTP server
+ * Returns the lower case version of an ASCII character.
+ */
+f<char> asciiToLower(char c) {
+    if c >= 'A' && c <= 'Z' {
+        return cast<char>(c + 32);
+    }
+    return c;
+}
+
+/**
+ * Compares a String with a raw string while ignoring ASCII case differences.
+ * Used to honor the case-insensitivity of HTTP header field names.
+ */
+f<bool> equalsIgnoreCase(const String& a, string b) {
+    const unsigned long bLen = len(b);
+    if a.getLength() != bLen { return false; }
+    const string aRaw = a.getRaw();
+    for unsigned long i = 0l; i < bLen; i++ {
+        if asciiToLower(aRaw[i]) != asciiToLower(b[i]) { return false; }
+    }
+    return true;
+}
+
+// ================================================== Reason phrases =====================================================
+
+/**
+ * Returns the canonical reason phrase for the most common HTTP status codes.
+ *
+ * @param code HTTP status code
+ * @return Reason phrase
+ */
+public f<String> reasonPhrase(int code) {
+    if code == 200 { return String("OK"); }
+    if code == 201 { return String("Created"); }
+    if code == 202 { return String("Accepted"); }
+    if code == 204 { return String("No Content"); }
+    if code == 301 { return String("Moved Permanently"); }
+    if code == 302 { return String("Found"); }
+    if code == 304 { return String("Not Modified"); }
+    if code == 400 { return String("Bad Request"); }
+    if code == 401 { return String("Unauthorized"); }
+    if code == 403 { return String("Forbidden"); }
+    if code == 404 { return String("Not Found"); }
+    if code == 405 { return String("Method Not Allowed"); }
+    if code == 409 { return String("Conflict"); }
+    if code == 418 { return String("I'm a teapot"); }
+    if code == 500 { return String("Internal Server Error"); }
+    if code == 501 { return String("Not Implemented"); }
+    if code == 503 { return String("Service Unavailable"); }
+    return String("Unknown");
+}
+
+// =================================================== HttpHeaders =======================================================
+
+/**
+ * An insertion-ordered, case-insensitive collection of HTTP header fields.
+ *
+ * The insertion order is preserved so that serialization is deterministic.
+ */
+public type HttpHeaders struct {
+    Vector<Pair<String, String>> entries
+}
+
+/**
+ * Sets a header field. If a field with the same (case-insensitive) name already
+ * exists, its value is replaced, otherwise the field is appended.
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpHeaders.set(string name, const String& value) {
+    foreach Pair<String, String>& entry : this.entries {
+        if equalsIgnoreCase(entry.getFirst(), name) {
+            entry.setSecond(value);
+            return;
+        }
+    }
+    this.entries.pushBack(Pair<String, String>(String(name), value));
+}
+
+public p HttpHeaders.set(string name, string value) {
+    this.set(name, String(value));
+}
+
+/**
+ * Returns the value of the given header field or an empty string if it is absent.
+ *
+ * @param name Field name
+ * @return Field value
+ */
+public f<String> HttpHeaders.get(string name) {
+    foreach Pair<String, String>& entry : this.entries {
+        if equalsIgnoreCase(entry.getFirst(), name) {
+            return entry.getSecond();
+        }
+    }
+    return String();
+}
+
+/**
+ * Checks whether the given header field is present.
+ *
+ * @param name Field name
+ * @return Present or not
+ */
+public f<bool> HttpHeaders.has(string name) {
+    foreach Pair<String, String>& entry : this.entries {
+        if equalsIgnoreCase(entry.getFirst(), name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Returns the number of header fields.
+ */
+public f<unsigned long> HttpHeaders.getSize() {
+    return cast<unsigned long>(this.entries.getSize());
+}
+
+/**
+ * Appends the serialized header block (each field terminated by CRLF) to the given string.
+ */
+p HttpHeaders.appendTo(String& out) {
+    foreach Pair<String, String>& entry : this.entries {
+        out += entry.getFirst();
+        out += ": ";
+        out += entry.getSecond();
+        out += CRLF;
+    }
+}
+
+// =================================================== HttpRequest =======================================================
+
+/**
+ * Represents an HTTP request, consisting of a request line, header fields and an optional body.
+ */
+public type HttpRequest struct {
+    public String method
+    public String path
+    public String version
+    public HttpHeaders headers
+    public String body
+}
+
+public p HttpRequest.ctor(string method = METHOD_GET, string path = "/", string version = PROTOCOL_VERSION) {
+    this.method = String(method);
+    this.path = String(path);
+    this.version = String(version);
+}
+
+public p HttpRequest.setHeader(string name, string value) {
+    this.headers.set(name, value);
+}
+
+public p HttpRequest.setHeader(string name, const String& value) {
+    this.headers.set(name, value);
+}
+
+public f<String> HttpRequest.getHeader(string name) {
+    return this.headers.get(name);
+}
+
+public f<bool> HttpRequest.hasHeader(string name) {
+    return this.headers.has(name);
+}
+
+/**
+ * Sets the request body and keeps the Content-Length header in sync.
+ *
+ * @param body Request body
+ */
+public p HttpRequest.setBody(const String& body) {
+    this.body = body;
+    this.headers.set(CONTENT_LENGTH_KEY, toString(cast<int>(body.getLength())));
+}
+
+/**
+ * Serializes the request into its raw textual HTTP/1.1 representation.
+ *
+ * @return Raw request
+ */
+public f<String> HttpRequest.serialize() {
+    result = String();
+    result += this.method;
+    result += ' ';
+    result += this.path;
+    result += ' ';
+    result += this.version;
+    result += CRLF;
+    this.headers.appendTo(result);
+    result += CRLF;
+    result += this.body;
+}
+
+// =================================================== HttpResponse ======================================================
+
+/**
+ * Represents an HTTP response, consisting of a status line, header fields and an optional body.
+ */
+public type HttpResponse struct {
+    public String version
+    public int statusCode
+    public String statusText
+    public HttpHeaders headers
+    public String body
+}
+
+public p HttpResponse.ctor(int statusCode = 200, string statusText = "") {
+    this.version = String(PROTOCOL_VERSION);
+    this.statusCode = statusCode;
+    if len(statusText) == 0l {
+        this.statusText = reasonPhrase(statusCode);
+    } else {
+        this.statusText = String(statusText);
+    }
+}
+
+public p HttpResponse.setHeader(string name, string value) {
+    this.headers.set(name, value);
+}
+
+public p HttpResponse.setHeader(string name, const String& value) {
+    this.headers.set(name, value);
+}
+
+public f<String> HttpResponse.getHeader(string name) {
+    return this.headers.get(name);
+}
+
+public f<bool> HttpResponse.hasHeader(string name) {
+    return this.headers.has(name);
+}
+
+/**
+ * Sets the response body and keeps the Content-Length header in sync.
+ *
+ * @param body Response body
+ */
+public p HttpResponse.setBody(const String& body) {
+    this.body = body;
+    this.headers.set(CONTENT_LENGTH_KEY, toString(cast<int>(body.getLength())));
+}
+
+/**
+ * Serializes the response into its raw textual HTTP/1.1 representation.
+ *
+ * @return Raw response
+ */
+public f<String> HttpResponse.serialize() {
+    result = String();
+    result += this.version;
+    result += ' ';
+    result += toString(this.statusCode);
+    result += ' ';
+    result += this.statusText;
+    result += CRLF;
+    this.headers.appendTo(result);
+    result += CRLF;
+    result += this.body;
+}
+
+// ================================================== Parsing helpers ====================================================
+
+/**
+ * Splits a raw message into its header section and body using the CRLFCRLF terminator.
+ * Both fragments are written into the given out-parameters.
+ */
+p splitHeadAndBody(const String& raw, String& headSection, String& body) {
+    const long sepIdx = raw.find(HEADER_TERMINATOR);
+    if sepIdx == -1l {
+        headSection = raw;
+        body = String();
+        return;
+    }
+    headSection = raw.getSubstring(0ul, sepIdx);
+    body = raw.getSubstring(cast<unsigned long>(sepIdx + 4l));
+}
+
+/**
+ * Parses the header lines (everything except the first line) into the given header collection.
+ */
+p parseHeaderLines(const Vector<String>& lines, HttpHeaders& headers) {
+    const unsigned long lineCount = cast<unsigned long>(lines.getSize());
+    for unsigned long i = 1ul; i < lineCount; i++ {
+        const String line = lines.get(i).trim();
+        if line.isEmpty() { continue; }
+        const long colonIdx = line.find(':');
+        if colonIdx == -1l { continue; }
+        const String name = line.getSubstring(0ul, colonIdx).trim();
+        const String value = line.getSubstring(cast<unsigned long>(colonIdx + 1l)).trim();
+        headers.set(name.getRaw(), value);
+    }
+}
+
+/**
+ * Parses a raw HTTP request.
+ *
+ * @param raw Raw request text
+ * @return Parsed request or an error if the request line is malformed
+ */
+public f<Result<HttpRequest>> parseHttpRequest(const String& raw) {
+    if raw.isEmpty() { return err<HttpRequest>("Empty request"); }
+
+    String headSection;
+    String body;
+    splitHeadAndBody(raw, headSection, body);
+
+    Vector<String> lines = split(headSection, '\n');
+    if lines.isEmpty() { return err<HttpRequest>("Malformed request"); }
+
+    // Parse the request line: <method> <path> <version>
+    const String requestLine = lines.get(0ul).trim();
+    Vector<String> parts = split(requestLine, ' ');
+    if parts.getSize() < 3 { return err<HttpRequest>("Malformed request line"); }
+
+    HttpRequest request = HttpRequest(parts.get(0ul).getRaw(), parts.get(1ul).getRaw(), parts.get(2ul).getRaw());
+    parseHeaderLines(lines, request.headers);
+    request.body = body;
+    return ok(request);
+}
+
+/**
+ * Parses a raw HTTP response.
+ *
+ * @param raw Raw response text
+ * @return Parsed response or an error if the status line is malformed
+ */
+public f<Result<HttpResponse>> parseHttpResponse(const String& raw) {
+    if raw.isEmpty() { return err<HttpResponse>("Empty response"); }
+
+    String headSection;
+    String body;
+    splitHeadAndBody(raw, headSection, body);
+
+    Vector<String> lines = split(headSection, '\n');
+    if lines.isEmpty() { return err<HttpResponse>("Malformed response"); }
+
+    // Parse the status line: <version> <code> <reason...>
+    const String statusLine = lines.get(0ul).trim();
+    Vector<String> parts = split(statusLine, ' ');
+    if parts.getSize() < 2 { return err<HttpResponse>("Malformed status line"); }
+
+    const int statusCode = toInt(parts.get(1ul).getRaw());
+    String statusText = String();
+    const unsigned long partCount = cast<unsigned long>(parts.getSize());
+    for unsigned long i = 2ul; i < partCount; i++ {
+        if i > 2ul { statusText += ' '; }
+        statusText += parts.get(i);
+    }
+
+    HttpResponse response = HttpResponse(statusCode, statusText.getRaw());
+    response.version = parts.get(0ul);
+    parseHeaderLines(lines, response.headers);
+    response.body = body;
+    return ok(response);
+}
+
+// ================================================ Socket I/O helpers ===================================================
+
+/**
+ * Reads the Content-Length value from an already received header block.
+ * Returns 0 if the header is absent or not a valid number.
+ */
+f<long> contentLengthOf(const String& head) {
+    // Lower case copy to search case-insensitively
+    String lower = String(head);
+    for unsigned long i = 0l; i < lower.getLength(); i++ {
+        lower[i] = asciiToLower(lower[i]);
+    }
+
+    const long keyIdx = lower.find("content-length:");
+    if keyIdx == -1l { return 0l; }
+
+    const long valueStart = keyIdx + 15l; // len("content-length:")
+    long lineEnd = head.find(CRLF, cast<unsigned long>(valueStart));
+    if lineEnd == -1l { lineEnd = cast<long>(head.getLength()); }
+
+    const String value = head.getSubstring(cast<unsigned long>(valueStart), lineEnd - valueStart).trim();
+    return toLong(value.getRaw());
+}
+
+/**
+ * Reads a complete HTTP message (head + optional body) from a connected socket.
+ * First reads until the end of the header block, then reads exactly Content-Length body bytes.
+ *
+ * @param socket Connected socket to read from
+ * @return Raw message text
+ */
+f<String> receiveMessage(Socket& socket) {
+    result = String();
+    byte buffer = cast<byte>(0);
+
+    // Read header block byte by byte until the CRLFCRLF terminator
+    while socket.read(&buffer, READ_CHUNK_SIZE) > 0l {
+        result += cast<char>(buffer);
+        if result.endsWith(HEADER_TERMINATOR) { break; }
+    }
+
+    // Read the body according to the announced Content-Length
+    const long contentLength = contentLengthOf(result);
+    for long i = 0l; i < contentLength; i++ {
+        if socket.read(&buffer, READ_CHUNK_SIZE) <= 0l { break; }
+        result += cast<char>(buffer);
+    }
+}
+
+// =================================================== HttpServer ========================================================
+
+/**
+ * A route binds an HTTP method and path to a handler function.
+ */
+public type HttpRoute struct {
+    String method
+    String path
+    f<HttpResponse>(const HttpRequest&) handler
+}
+
+/**
+ * A minimal route based HTTP server.
+ *
+ * Usage:
+ *   HttpServer server = HttpServer(8080s);
+ *   server.addRoute("GET", "/", f<HttpResponse>(const HttpRequest& req) {
+ *       HttpResponse res = HttpResponse(200);
+ *       res.setBody(String("Hello World"));
+ *       return res;
+ *   });
+ *   server.serveForever();
  */
 public type HttpServer struct {
-    Socket socket       // Underlying TCP socket
-    unsigned short port // Exposed port
-    bool initialized    // true if the server was initialized
+    unsigned short port
+    Vector<HttpRoute> routes
+    bool running = false
 }
 
-/**
- * Used to initialize a HTTP server instance, listening on a specific port for incoming requests
- */
-public p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
+public p HttpServer.ctor(unsigned short port = HTTP_PORT_FALLBACK) {
     this.port = port;
-    this.initialized = true;
 }
 
 /**
+ * Registers a handler for the given method and path.
  *
+ * @param method HTTP method to match (e.g. "GET")
+ * @param path Request path to match (e.g. "/")
+ * @param handler Function producing a response for a matching request
  */
-public f<bool> HttpServer.start() {
-    // Check if the server is initialized
-    if !this.initialized { return false; }
-
-    // Setup TCP socket
-    this.socket = openServerSocket(this.port, CONNECTIONS_LIMIT);
-
+public p HttpServer.addRoute(string method, string path, f<HttpResponse>(const HttpRequest&) handler) {
+    this.routes.pushBack(HttpRoute{ String(method), String(path), handler });
 }
 
-public f<bool> HttpServer.serve(string path, string htmlContent) {
+/**
+ * Resolves a request to a response by looking up a matching route. Falls back to a 404 response.
+ *
+ * @param request Incoming request
+ * @return Response produced by the matching handler or a 404 response
+ */
+public f<HttpResponse> HttpServer.handle(const HttpRequest& request) {
+    foreach const HttpRoute& route : this.routes {
+        if route.method == request.method && route.path == request.path {
+            f<HttpResponse>(const HttpRequest&) handler = route.handler;
+            return handler(request);
+        }
+    }
+    HttpResponse notFound = HttpResponse(404);
+    notFound.setHeader("Server", SERVER_IDENT);
+    notFound.setBody(String("404 Not Found"));
+    return notFound;
+}
 
-    return false;
+/**
+ * Accepts a single connection, dispatches it and writes the response.
+ * Useful for tests and request-by-request control.
+ *
+ * @return Whether the request was served successfully
+ */
+public f<Result<bool>> HttpServer.serveOnce() {
+    Result<Socket> socketRes = openServerSocket(this.port, cast<int>(CONNECTIONS_LIMIT));
+    if socketRes.isErr() { return err<bool>(socketRes.getErr()); }
+    Socket socket = socketRes.unwrap();
+
+    result = this.acceptAndRespond(socket);
+    socket.close();
+}
+
+/**
+ * Continuously accepts connections and serves them until stop() is called.
+ *
+ * @return Whether the server socket could be opened
+ */
+public f<Result<bool>> HttpServer.serveForever() {
+    Result<Socket> socketRes = openServerSocket(this.port, cast<int>(CONNECTIONS_LIMIT));
+    if socketRes.isErr() { return err<bool>(socketRes.getErr()); }
+    Socket socket = socketRes.unwrap();
+
+    this.running = true;
+    while this.running {
+        Result<bool> served = this.acceptAndRespond(socket);
+        if served.isErr() { continue; }
+    }
+
+    socket.close();
+    return ok(true);
+}
+
+/**
+ * Stops a server that is running inside serveForever() after the current connection.
+ */
+public p HttpServer.stop() {
+    this.running = false;
+}
+
+/**
+ * Accepts one connection on the given (listening) socket, dispatches the request and writes the response.
+ */
+f<Result<bool>> HttpServer.acceptAndRespond(Socket& socket) {
+    Result<int> conn = socket.acceptConnection();
+    if conn.isErr() { return err<bool>(conn.getErr()); }
+
+    const String raw = receiveMessage(socket);
+    Result<HttpRequest> requestRes = parseHttpRequest(raw);
+    if requestRes.isErr() { return err<bool>(requestRes.getErr()); }
+
+    HttpResponse response = this.handle(requestRes.unwrap());
+    const String rawResponse = response.serialize();
+    socket.write(rawResponse.getRaw());
+    return ok(true);
+}
+
+// =================================================== HttpClient ========================================================
+
+/**
+ * A minimal HTTP client that performs a single request/response exchange per call.
+ */
+public type HttpClient struct {
+    String host
+    unsigned short port
+}
+
+public p HttpClient.ctor(string host = ADDR_LOCAL, unsigned short port = HTTP_PORT_FALLBACK) {
+    this.host = String(host);
+    this.port = port;
+}
+
+/**
+ * Sends a fully built request to the configured host and returns the parsed response.
+ * The Host header is added automatically if it is not already present.
+ *
+ * @param request Request to send
+ * @return Parsed response or an error if the connection failed
+ */
+public f<Result<HttpResponse>> HttpClient.send(HttpRequest& request) {
+    if !request.hasHeader("Host") {
+        request.setHeader("Host", this.host);
+    }
+
+    Result<Socket> socketRes = openClientSocket(this.host.getRaw(), this.port);
+    if socketRes.isErr() { return err<HttpResponse>(socketRes.getErr()); }
+    Socket socket = socketRes.unwrap();
+
+    const String rawRequest = request.serialize();
+    socket.write(rawRequest.getRaw());
+
+    const String rawResponse = receiveMessage(socket);
+    socket.close();
+
+    return parseHttpResponse(rawResponse);
+}
+
+/**
+ * Convenience helper performing a GET request for the given path.
+ *
+ * @param path Request path
+ * @return Parsed response or an error
+ */
+public f<Result<HttpResponse>> HttpClient.get(string path) {
+    HttpRequest request = HttpRequest(METHOD_GET, path);
+    return this.send(request);
+}
+
+/**
+ * Convenience helper performing a POST request with the given body for the given path.
+ *
+ * @param path Request path
+ * @param body Request body
+ * @return Parsed response or an error
+ */
+public f<Result<HttpResponse>> HttpClient.post(string path, const String& body) {
+    HttpRequest request = HttpRequest(METHOD_POST, path);
+    request.setBody(body);
+    return this.send(request);
 }
