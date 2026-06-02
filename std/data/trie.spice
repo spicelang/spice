@@ -39,6 +39,21 @@ public p Trie.ctor() {
     this.wordCount = 0l;
 }
 
+public p Trie.ctor(const Trie& original) {
+    // Deep-copy the other trie so the two instances own independent node trees.
+    // A shallow copy would alias `root` and double-free it when both are destructed.
+    this.root = __new<TrieNode>();
+    this.wordCount = original.wordCount;
+    this.copySubtree(this.root, original.root);
+}
+
+public p operator=(Trie& this, const Trie& other) {
+    // Drop the current node tree, then deep-copy the other trie into the fresh root
+    this.freeSubtrees(this.root);
+    this.wordCount = other.wordCount;
+    this.copySubtree(this.root, other.root);
+}
+
 public p Trie.dtor() {
     this.freeSubtrees(this.root);
     sDelete(this.root);
@@ -164,12 +179,9 @@ f<TrieNode*> Trie.findNode(string str) {
  * @return The matching child node, or nil if there is none
  */
 f<TrieNode*> Trie.getChild(TrieNode* node, char c) {
-    for unsigned long i = 0l; i < node.keys.getSize(); i++ {
-        if node.keys.get(i) == c {
-            return node.children.get(i);
-        }
-    }
-    return nil<TrieNode*>;
+    const long idx = this.findChildIndex(node, c);
+    if idx < 0l { return nil<TrieNode*>; }
+    return node.children.get(cast<unsigned long>(idx));
 }
 
 /**
@@ -250,4 +262,21 @@ p Trie.freeSubtrees(TrieNode* node) {
     }
     node.children.clear();
     node.keys.clear();
+}
+
+/**
+ * Recursively deep-copy the subtree rooted at `src` into the (freshly allocated, empty) node
+ * `dest`. New child nodes are allocated so the copy owns an independent node tree.
+ *
+ * @param dest The destination node to copy into
+ * @param src The source node to copy from
+ */
+p Trie.copySubtree(TrieNode* dest, TrieNode* src) {
+    dest.isEndOfWord = src.isEndOfWord;
+    for unsigned long i = 0l; i < src.children.getSize(); i++ {
+        TrieNode* newChild = __new<TrieNode>();
+        dest.keys.pushBack(src.keys.get(i));
+        dest.children.pushBack(newChild);
+        this.copySubtree(newChild, src.children.get(i));
+    }
 }

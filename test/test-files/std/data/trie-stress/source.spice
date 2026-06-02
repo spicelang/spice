@@ -19,36 +19,43 @@ f<int> main() {
     Trie t1;
     const unsigned long wordCount = 2000l;
     for unsigned long i = 0l; i < wordCount; i++ {
-        t1.insert(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t1.insert(w.getRaw());
     }
     assert t1.getSize() == wordCount;
     for unsigned long i = 0l; i < wordCount; i++ {
-        assert t1.contains(makeWord(i).getRaw());
+        String w = makeWord(i);
+        assert t1.contains(w.getRaw());
     }
     // A word that was never inserted must not be found
-    assert !t1.contains(makeWord(wordCount).getRaw());
+    String absentWord = makeWord(wordCount);
+    assert !t1.contains(absentWord.getRaw());
     assert !t1.contains("absent");
     // Every stored word starts with the empty prefix
     assert t1.countWordsWithPrefix("") == wordCount;
 
     // 2. Re-inserting all words again must not change the size (idempotent insert)
     for unsigned long i = 0l; i < wordCount; i++ {
-        t1.insert(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t1.insert(w.getRaw());
     }
     assert t1.getSize() == wordCount;
 
     // 3. Remove the first half; the trie must prune unused branches and keep the rest intact
     for unsigned long i = 0l; i < wordCount / 2l; i++ {
-        t1.remove(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t1.remove(w.getRaw());
     }
     assert t1.getSize() == wordCount / 2l;
     for unsigned long i = 0l; i < wordCount; i++ {
         const bool shouldExist = i >= wordCount / 2l;
-        assert t1.contains(makeWord(i).getRaw()) == shouldExist;
+        String w = makeWord(i);
+        assert t1.contains(w.getRaw()) == shouldExist;
     }
     // Removing already removed words is a no-op
     for unsigned long i = 0l; i < wordCount / 2l; i++ {
-        t1.remove(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t1.remove(w.getRaw());
     }
     assert t1.getSize() == wordCount / 2l;
 
@@ -126,20 +133,26 @@ f<int> main() {
     // 7. Drain via clear, then reuse the same trie
     Trie t5;
     for unsigned long i = 0l; i < 100l; i++ {
-        t5.insert(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t5.insert(w.getRaw());
     }
     assert t5.getSize() == 100l;
     t5.clear();
     assert t5.isEmpty();
     assert t5.getSize() == 0l;
-    assert !t5.contains(makeWord(0l).getRaw());
+    String firstWord = makeWord(0l);
+    assert !t5.contains(firstWord.getRaw());
     for unsigned long i = 0l; i < 50l; i++ {
-        t5.insert(makeWord(i).getRaw());
+        String w = makeWord(i);
+        t5.insert(w.getRaw());
     }
     assert t5.getSize() == 50l;
-    assert t5.contains(makeWord(0l).getRaw());
-    assert t5.contains(makeWord(49l).getRaw());
-    assert !t5.contains(makeWord(50l).getRaw());
+    String w0 = makeWord(0l);
+    String w49 = makeWord(49l);
+    String w50 = makeWord(50l);
+    assert t5.contains(w0.getRaw());
+    assert t5.contains(w49.getRaw());
+    assert !t5.contains(w50.getRaw());
 
     printf("Trie stress tests passed!\n");
 }

@@ -88,5 +88,41 @@ f<int> main() {
     assert t3.contains("fresh");
     assert t3.getSize() == 1l;
 
+    // The copy ctor produces an independent deep copy: mutating one must not affect the other
+    Trie original;
+    original.insert("apple");
+    original.insert("apply");
+    original.insert("banana");
+    Trie copy = Trie(original);
+    assert copy.getSize() == 3l;
+    assert copy.contains("apple");
+    assert copy.contains("apply");
+    assert copy.contains("banana");
+    // Mutate the copy - the original must stay untouched
+    copy.remove("apple");
+    copy.insert("cherry");
+    assert !copy.contains("apple");
+    assert copy.contains("cherry");
+    assert original.contains("apple");
+    assert !original.contains("cherry");
+    assert original.getSize() == 3l;
+    assert copy.getSize() == 3l;
+    // Mutate the original - the copy must stay untouched
+    original.insert("date");
+    assert original.contains("date");
+    assert !copy.contains("date");
+
+    // operator= overwrites the destination and stays independent afterwards
+    Trie assigned;
+    assigned.insert("temporary");
+    assigned = original;
+    assert !assigned.contains("temporary");
+    assert assigned.contains("apple");
+    assert assigned.contains("date");
+    assert assigned.getSize() == original.getSize();
+    assigned.remove("apple");
+    assert !assigned.contains("apple");
+    assert original.contains("apple");
+
     printf("Trie smoke tests passed!\n");
 }
