@@ -1,0 +1,253 @@
+import "std/data/vector";
+
+/**
+ * Node of a Trie.
+ *
+ * Each node owns its child nodes as heap-allocated pointers. The edge labels are stored in
+ * `keys`, parallel to `children`, so the edge `keys[i]` leads to the child `children[i]`.
+ * `isEndOfWord` marks whether the path from the root to this node spells a complete word.
+ */
+type TrieNode struct {
+    Vector<char> keys              // Edge labels, parallel to children
+    Vector<TrieNode*> children     // Child nodes, parallel to keys
+    bool isEndOfWord = false
+}
+
+p TrieNode.ctor() {
+    this.isEndOfWord = false;
+}
+
+/**
+ * A trie (also called prefix tree) is a data structure that stores a set of strings in a way
+ * that makes prefix-based lookups efficient. Every edge is labeled with a single character, so
+ * a word corresponds to a path from the root down to a node marked as the end of a word.
+ * Words that share a common prefix also share the nodes that spell out that prefix.
+ *
+ * Time complexity (k = length of the word/prefix):
+ * Insert:        O(k)
+ * Contains:      O(k)
+ * Starts with:   O(k)
+ * Remove:        O(k)
+ */
+public type Trie struct {
+    TrieNode* root
+    unsigned long wordCount = 0l
+}
+
+public p Trie.ctor() {
+    this.root = __new<TrieNode>();
+    this.wordCount = 0l;
+}
+
+public p Trie.dtor() {
+    this.freeSubtrees(this.root);
+    sDelete(this.root);
+}
+
+/**
+ * Insert a word into the trie. Inserting a word that is already present has no effect.
+ *
+ * @param word The word to insert
+ */
+public p Trie.insert(string word) {
+    const unsigned long len = getRawLength(word);
+    TrieNode* node = this.root;
+    for unsigned long i = 0l; i < len; i++ {
+        const char c = word[i];
+        TrieNode* child = this.getChild(node, c);
+        if child == nil<TrieNode*> {
+            child = __new<TrieNode>();
+            node.children.pushBack(child);
+            node.keys.pushBack(c);
+        }
+        node = child;
+    }
+    // Mark the end of the word, counting it only if it was not already present
+    if !node.isEndOfWord {
+        node.isEndOfWord = true;
+        this.wordCount++;
+    }
+}
+
+/**
+ * Check if the trie contains the given word.
+ *
+ * @param word The word to look for
+ * @return True if the exact word was inserted before, false otherwise
+ */
+public f<bool> Trie.contains(string word) {
+    TrieNode* node = this.findNode(word);
+    return node != nil<TrieNode*> && node.isEndOfWord;
+}
+
+/**
+ * Check if the trie contains any word that starts with the given prefix.
+ * The empty prefix is contained in every trie.
+ *
+ * @param prefix The prefix to look for
+ * @return True if at least one stored word starts with the prefix, false otherwise
+ */
+public f<bool> Trie.startsWith(string prefix) {
+    return this.findNode(prefix) != nil<TrieNode*>;
+}
+
+/**
+ * Count how many stored words start with the given prefix.
+ *
+ * @param prefix The prefix to look for
+ * @return Number of stored words that start with the prefix
+ */
+public f<unsigned long> Trie.countWordsWithPrefix(string prefix) {
+    TrieNode* node = this.findNode(prefix);
+    if node == nil<TrieNode*> { return 0l; }
+    return this.countEndNodes(node);
+}
+
+/**
+ * Remove a word from the trie. Removing a word that is not present has no effect.
+ * Nodes that become unused after the removal are pruned and their memory is freed.
+ *
+ * @param word The word to remove
+ */
+public p Trie.remove(string word) {
+    this.removeHelper(this.root, word, 0l);
+}
+
+/**
+ * Get the number of words stored in the trie.
+ *
+ * @return The number of stored words
+ */
+public f<unsigned long> Trie.getSize() {
+    return this.wordCount;
+}
+
+/**
+ * Check if the trie is empty.
+ *
+ * @return True if no words are stored, false otherwise
+ */
+public f<bool> Trie.isEmpty() {
+    return this.wordCount == 0l;
+}
+
+/**
+ * Remove all words from the trie, freeing all nodes but the root.
+ */
+public p Trie.clear() {
+    this.freeSubtrees(this.root);
+    this.root.isEndOfWord = false;
+    this.wordCount = 0l;
+}
+
+/**
+ * Walk the trie along the given string and return the node reached at its end.
+ *
+ * @param str The string to walk along
+ * @return The node at the end of the path, or nil if the path does not exist
+ */
+f<TrieNode*> Trie.findNode(string str) {
+    const unsigned long len = getRawLength(str);
+    TrieNode* node = this.root;
+    for unsigned long i = 0l; i < len; i++ {
+        node = this.getChild(node, str[i]);
+        if node == nil<TrieNode*> { return nil<TrieNode*>; }
+    }
+    return node;
+}
+
+/**
+ * Retrieve the child of the given node that is reached via the edge labeled `c`.
+ *
+ * @param node The node whose children to search
+ * @param c The edge label to look for
+ * @return The matching child node, or nil if there is none
+ */
+f<TrieNode*> Trie.getChild(TrieNode* node, char c) {
+    for unsigned long i = 0l; i < node.keys.getSize(); i++ {
+        if node.keys.get(i) == c {
+            return node.children.get(i);
+        }
+    }
+    return nil<TrieNode*>;
+}
+
+/**
+ * Retrieve the index of the child of the given node that is reached via the edge labeled `c`.
+ *
+ * @param node The node whose children to search
+ * @param c The edge label to look for
+ * @return The index of the matching child, or -1 if there is none
+ */
+f<long> Trie.findChildIndex(TrieNode* node, char c) {
+    for unsigned long i = 0l; i < node.keys.getSize(); i++ {
+        if node.keys.get(i) == c {
+            return cast<long>(i);
+        }
+    }
+    return -1l;
+}
+
+/**
+ * Count the number of end-of-word markers in the subtree rooted at the given node.
+ *
+ * @param node The root of the subtree to count
+ * @return Number of stored words in the subtree
+ */
+f<unsigned long> Trie.countEndNodes(TrieNode* node) {
+    result = node.isEndOfWord ? 1l : 0l;
+    for unsigned long i = 0l; i < node.children.getSize(); i++ {
+        result += this.countEndNodes(node.children.get(i));
+    }
+}
+
+/**
+ * Recursion helper for remove(). Unmarks the word at the end of the path and prunes nodes that
+ * become unused on the way back up.
+ *
+ * @param node The current node
+ * @param word The word being removed
+ * @param depth The current depth, i.e. the index of the next character to match
+ * @return True if `node` is now unused and may be pruned by its parent
+ */
+#[ignoreUnusedReturnValue]
+f<bool> Trie.removeHelper(TrieNode* node, string word, unsigned long depth) {
+    const unsigned long len = getRawLength(word);
+    if depth == len {
+        // We reached the node that should spell the word. Unmark it if it is a word.
+        if node.isEndOfWord {
+            node.isEndOfWord = false;
+            this.wordCount--;
+        }
+    } else {
+        const long idx = this.findChildIndex(node, word[depth]);
+        if idx >= 0l {
+            const unsigned long uidx = cast<unsigned long>(idx);
+            TrieNode* child = node.children.get(uidx);
+            if this.removeHelper(child, word, depth + 1l) {
+                // The child became unused: free it and detach it from this node
+                sDelete(child);
+                node.children.removeAt(uidx);
+                node.keys.removeAt(uidx);
+            }
+        }
+    }
+    // The root is never pruned, even if it ends up empty
+    return node != this.root && node.children.isEmpty() && !node.isEndOfWord;
+}
+
+/**
+ * Recursively free all descendant nodes of the given node and clear its child lists.
+ * The node itself is left allocated and usable.
+ *
+ * @param node The node whose subtrees to free
+ */
+p Trie.freeSubtrees(TrieNode* node) {
+    for unsigned long i = 0l; i < node.children.getSize(); i++ {
+        TrieNode* child = node.children.get(i);
+        this.freeSubtrees(child);
+        sDelete(child);
+    }
+    node.children.clear();
+    node.keys.clear();
+}

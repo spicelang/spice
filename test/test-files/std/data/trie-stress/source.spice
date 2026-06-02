@@ -1,0 +1,145 @@
+import "std/data/trie";
+
+// Build a deterministic, distinct 5-letter lowercase word for the given index.
+// The encoding is bijective for indices below 26^5, so different indices always
+// produce different words.
+f<String> makeWord(unsigned long index) {
+    String w;
+    unsigned long n = index;
+    for unsigned long i = 0l; i < 5l; i++ {
+        const char c = cast<char>(cast<int>('a') + cast<int>(n % 26l));
+        w.append(c);
+        n = n / 26l;
+    }
+    return w;
+}
+
+f<int> main() {
+    // 1. Insert many distinct words; every one must be found and counted exactly once
+    Trie t1;
+    const unsigned long wordCount = 2000l;
+    for unsigned long i = 0l; i < wordCount; i++ {
+        t1.insert(makeWord(i).getRaw());
+    }
+    assert t1.getSize() == wordCount;
+    for unsigned long i = 0l; i < wordCount; i++ {
+        assert t1.contains(makeWord(i).getRaw());
+    }
+    // A word that was never inserted must not be found
+    assert !t1.contains(makeWord(wordCount).getRaw());
+    assert !t1.contains("absent");
+    // Every stored word starts with the empty prefix
+    assert t1.countWordsWithPrefix("") == wordCount;
+
+    // 2. Re-inserting all words again must not change the size (idempotent insert)
+    for unsigned long i = 0l; i < wordCount; i++ {
+        t1.insert(makeWord(i).getRaw());
+    }
+    assert t1.getSize() == wordCount;
+
+    // 3. Remove the first half; the trie must prune unused branches and keep the rest intact
+    for unsigned long i = 0l; i < wordCount / 2l; i++ {
+        t1.remove(makeWord(i).getRaw());
+    }
+    assert t1.getSize() == wordCount / 2l;
+    for unsigned long i = 0l; i < wordCount; i++ {
+        const bool shouldExist = i >= wordCount / 2l;
+        assert t1.contains(makeWord(i).getRaw()) == shouldExist;
+    }
+    // Removing already removed words is a no-op
+    for unsigned long i = 0l; i < wordCount / 2l; i++ {
+        t1.remove(makeWord(i).getRaw());
+    }
+    assert t1.getSize() == wordCount / 2l;
+
+    // 4. A large fan-out under a single shared prefix; countWordsWithPrefix must see all of them
+    Trie t2;
+    for unsigned long i = 0l; i < 26l; i++ {
+        String w = String("key");
+        w.append(cast<char>(cast<int>('a') + cast<int>(i)));
+        t2.insert(w.getRaw());
+    }
+    assert t2.getSize() == 26l;
+    assert t2.countWordsWithPrefix("key") == 26l;
+    assert t2.startsWith("key");
+    assert t2.contains("keya");
+    assert t2.contains("keyz");
+    assert !t2.contains("key");
+    // Remove half of the fan-out, the prefix must remain valid and the count must shrink
+    for unsigned long i = 0l; i < 13l; i++ {
+        String w = String("key");
+        w.append(cast<char>(cast<int>('a') + cast<int>(i)));
+        t2.remove(w.getRaw());
+    }
+    assert t2.getSize() == 13l;
+    assert t2.countWordsWithPrefix("key") == 13l;
+    assert t2.startsWith("key");
+    assert !t2.contains("keya");
+    assert t2.contains("keyz");
+    // Remove the remaining words, the whole branch must disappear
+    for unsigned long i = 13l; i < 26l; i++ {
+        String w = String("key");
+        w.append(cast<char>(cast<int>('a') + cast<int>(i)));
+        t2.remove(w.getRaw());
+    }
+    assert t2.isEmpty();
+    assert !t2.startsWith("key");
+    assert t2.countWordsWithPrefix("key") == 0l;
+
+    // 5. Nested words where each is a prefix of the next
+    Trie t3;
+    t3.insert("a");
+    t3.insert("ab");
+    t3.insert("abc");
+    t3.insert("abcd");
+    t3.insert("abcde");
+    assert t3.getSize() == 5l;
+    assert t3.countWordsWithPrefix("a") == 5l;
+    assert t3.countWordsWithPrefix("abc") == 3l;
+    // Removing an inner word keeps the longer words reachable
+    t3.remove("abc");
+    assert !t3.contains("abc");
+    assert t3.contains("ab");
+    assert t3.contains("abcd");
+    assert t3.contains("abcde");
+    assert t3.getSize() == 4l;
+    assert t3.countWordsWithPrefix("abc") == 2l; // abcd, abcde
+
+    // 6. A very long word builds a deep trie; prefixes of every length must be visible
+    Trie t4;
+    const unsigned long depth = 500l;
+    String longWord;
+    for unsigned long i = 0l; i < depth; i++ {
+        longWord.append('a');
+    }
+    t4.insert(longWord.getRaw());
+    assert t4.getSize() == 1l;
+    assert t4.contains(longWord.getRaw());
+    // Any proper prefix is a valid prefix but not a stored word
+    String prefix;
+    for unsigned long i = 0l; i < depth - 1l; i++ {
+        prefix.append('a');
+        assert t4.startsWith(prefix.getRaw());
+        assert !t4.contains(prefix.getRaw());
+    }
+
+    // 7. Drain via clear, then reuse the same trie
+    Trie t5;
+    for unsigned long i = 0l; i < 100l; i++ {
+        t5.insert(makeWord(i).getRaw());
+    }
+    assert t5.getSize() == 100l;
+    t5.clear();
+    assert t5.isEmpty();
+    assert t5.getSize() == 0l;
+    assert !t5.contains(makeWord(0l).getRaw());
+    for unsigned long i = 0l; i < 50l; i++ {
+        t5.insert(makeWord(i).getRaw());
+    }
+    assert t5.getSize() == 50l;
+    assert t5.contains(makeWord(0l).getRaw());
+    assert t5.contains(makeWord(49l).getRaw());
+    assert !t5.contains(makeWord(50l).getRaw());
+
+    printf("Trie stress tests passed!\n");
+}

@@ -42,11 +42,13 @@ Common data structures for organizing and storing data.
 | `vector`                             | Dynamic, growable array.                              |
 | `deque`                              | Double-ended queue.                                   |
 | `queue` / `stack`                    | FIFO queue and LIFO stack.                            |
+| `priority-queue`                     | Binary max-heap served by priority.                   |
 | `linked-list` / `doubly-linked-list` | Singly and doubly linked lists.                       |
 | `map` / `unordered-map`              | Ordered and hash-based key/value maps.                |
 | `set` / `unordered-set`              | Ordered and hash-based sets.                          |
 | `hash-table`                         | Hash table backing the unordered containers.          |
 | `binary-tree` / `red-black-tree`     | Binary search tree and self-balancing red-black tree. |
+| `trie`                               | Prefix tree for fast prefix-based string lookups.     |
 | `graph`                              | Generic graph structure.                              |
 | `bitset`                             | Fixed-size set of bits.                               |
 | `pair` / `triple`                    | Tuples holding two or three values.                   |
