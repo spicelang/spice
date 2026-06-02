@@ -1,0 +1,128 @@
+import "std/data/trie";
+
+f<int> main() {
+    // Default ctor: empty trie
+    Trie t;
+    assert t.isEmpty();
+    assert t.getSize() == 0l;
+    assert !t.contains("anything");
+    // The empty prefix is contained in every trie, even an empty one
+    assert t.startsWith("");
+
+    // insert/contains - words that share a prefix share their nodes
+    t.insert("car");
+    t.insert("card");
+    t.insert("care");
+    t.insert("cat");
+    assert t.getSize() == 4l;
+    assert !t.isEmpty();
+    assert t.contains("car");
+    assert t.contains("card");
+    assert t.contains("care");
+    assert t.contains("cat");
+
+    // Prefixes of stored words are not themselves stored words
+    assert !t.contains("ca");
+    assert !t.contains("c");
+    assert !t.contains("cars");
+
+    // startsWith reflects whether any word continues the prefix
+    assert t.startsWith("c");
+    assert t.startsWith("ca");
+    assert t.startsWith("car");
+    assert t.startsWith("card");
+    assert !t.startsWith("d");
+    assert !t.startsWith("cab");
+
+    // countWordsWithPrefix counts every word below the prefix
+    assert t.countWordsWithPrefix("car") == 3l; // car, card, care
+    assert t.countWordsWithPrefix("ca") == 4l;  // car, card, care, cat
+    assert t.countWordsWithPrefix("cat") == 1l;
+    assert t.countWordsWithPrefix("d") == 0l;
+    assert t.countWordsWithPrefix("") == 4l;    // all words
+
+    // Inserting an existing word does not change the size
+    t.insert("car");
+    assert t.getSize() == 4l;
+
+    // remove unmarks a word but keeps words that share its prefix
+    t.remove("card");
+    assert !t.contains("card");
+    assert t.contains("car");
+    assert t.contains("care");
+    assert t.getSize() == 3l;
+    assert t.startsWith("car");
+
+    // Removing a word that is not present is a no-op
+    t.remove("dog");
+    assert t.getSize() == 3l;
+
+    // Removing the last word with a given prefix prunes that branch
+    t.remove("cat");
+    assert !t.contains("cat");
+    assert !t.startsWith("cat");
+    assert t.getSize() == 2l;
+
+    // The empty string can be stored and removed like any other word
+    Trie t2;
+    assert !t2.contains("");
+    t2.insert("");
+    assert t2.contains("");
+    assert t2.getSize() == 1l;
+    t2.remove("");
+    assert !t2.contains("");
+    assert t2.getSize() == 0l;
+
+    // clear empties the trie but keeps it usable
+    Trie t3;
+    t3.insert("hello");
+    t3.insert("help");
+    t3.insert("world");
+    assert t3.getSize() == 3l;
+    t3.clear();
+    assert t3.isEmpty();
+    assert t3.getSize() == 0l;
+    assert !t3.contains("hello");
+    assert !t3.startsWith("hel");
+    t3.insert("fresh");
+    assert t3.contains("fresh");
+    assert t3.getSize() == 1l;
+
+    // The copy ctor produces an independent deep copy: mutating one must not affect the other
+    Trie original;
+    original.insert("apple");
+    original.insert("apply");
+    original.insert("banana");
+    Trie copy = Trie(original);
+    assert copy.getSize() == 3l;
+    assert copy.contains("apple");
+    assert copy.contains("apply");
+    assert copy.contains("banana");
+    // Mutate the copy - the original must stay untouched
+    copy.remove("apple");
+    copy.insert("cherry");
+    assert !copy.contains("apple");
+    assert copy.contains("cherry");
+    assert original.contains("apple");
+    assert !original.contains("cherry");
+    assert original.getSize() == 3l;
+    assert copy.getSize() == 3l;
+    // Mutate the original - the copy must stay untouched
+    original.insert("date");
+    assert original.contains("date");
+    assert !copy.contains("date");
+
+    // operator= overwrites the destination and stays independent afterwards
+    Trie assigned;
+    assigned.insert("temporary");
+    assigned = original;
+    assert !assigned.contains("temporary");
+    assert assigned.contains("apple");
+    assert assigned.contains("date");
+    assert assigned.getSize() == original.getSize();
+    assigned.remove("apple");
+    assert !assigned.contains("apple");
+    assert original.contains("apple");
+
+    printf("Trie smoke tests passed!\n");
+}
