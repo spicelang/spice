@@ -6,6 +6,7 @@ import "std/data/vector";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
@@ -39,6 +40,25 @@ public p SymbolTable.ctor(SymbolTable* parent, IScope* scope) {
 }
 
 /**
+ * Count the number of field symbols in this symbol table (struct scopes). Mirrors the host Scope::getFieldCount:
+ * skip anonymous symbols, imports and nested function/struct definitions.
+ *
+ * @return Number of field symbols
+ */
+public f<unsigned long> SymbolTable.getFieldCount() {
+    result = 0ul;
+    foreach Pair<const string&, SymbolTableEntry&> symbolPair : this.symbols {
+        SymbolTableEntry& symbol = symbolPair.getSecond();
+        if symbol.anonymous { continue; }
+        const QualType& symbolType = symbol.getQualType();
+        if symbolType.is(SuperType::TY_IMPORT) { continue; }
+        const ASTNode* declNode = symbol.declNode;
+        if declNode.isFctOrProcDef() || declNode.isStructDef() { continue; }
+        result++;
+    }
+}
+
+/**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
  * @param name Name of the symbol
@@ -47,7 +67,7 @@ public p SymbolTable.ctor(SymbolTable* parent, IScope* scope) {
  */
 public p SymbolTable.insert(const String& name, const ASTNode* declNode) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
-    const unsigned int orderIndex = this.symbols.getSize();
+    const unsigned long orderIndex = cast<unsigned long>(this.symbols.getSize());
     // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
     // ToDo: Implement
 }
@@ -127,7 +147,8 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
     }
     // Check if a capture with this name exists in this scope
     if this.captures.contains(name) {
-        return &this.captures.get(name).capturedSymbol;
+        Capture& capture = this.captures.get(name);
+        return capture.capturedSymbol;
     }
     // Otherwise, return a nullptr
     return nil<SymbolTableEntry*>;
@@ -183,7 +204,7 @@ public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc& codeLoc) 
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<Capture> SymbolTable.lookupCapture(const String& name) {
+public f<Capture*> SymbolTable.lookupCapture(const String& name) {
     // Check if the capture exists in the current scope. If yes, take it
     Capture* capture = this.lookupCaptureStrict(name);
     if capture != nil<Capture*> {
@@ -192,7 +213,7 @@ public f<Capture> SymbolTable.lookupCapture(const String& name) {
 
     // We reached the root scope, the symbol does not exist at all
     if this.parent == nil<SymbolTable*> {
-        return nullptr;
+        return nil<Capture*>;
     }
 
     return this.parent.lookupCapture(name);
@@ -204,7 +225,7 @@ public f<Capture> SymbolTable.lookupCapture(const String& name) {
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<Capture> SymbolTable.lookupCaptureStrict(const string captureName) {
+public f<Capture*> SymbolTable.lookupCaptureStrict(const string captureName) {
     // If available in the current scope, return it
     if this.captures.contains(captureName) {
         return &this.captures.get(captureName);

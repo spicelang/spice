@@ -5,6 +5,7 @@ import "std/bindings/llvm/llvm" as llvm;
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/reader/code-loc";
@@ -57,7 +58,9 @@ public f<const QualType&> SymbolTableEntry.getQualType() {
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
 public p SymbolTableEntry.updateType(const QualType& newType, bool overwriteExistingType) {
-    assert overwriteExistingType || qualType.isOneOf([TY_INVALID, TY_DYN]);
+    const dyn options = [SuperType::TY_INVALID, SuperType::TY_DYN];
+    assert overwriteExistingType || this.qualType.isOneOf(options, len(options));
+    this.qualType = newType;
 }
 
 /**
@@ -111,11 +114,16 @@ public f<llvm::Value*> SymbolTableEntry.getAddress() {
 public p SymbolTableEntry.updateAddress(llvm::Value* address) {
     assert address != nil<llvm::Value*>;
     // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-    assert (scope.scopeType != ScopeType::STRUCT && scope.scopeType != ScopeType::INTERFACE) || qualType.isOneOf([TY_FUNCTION, TY_PROCEDURE]);
+    const ScopeType currentScopeType = this.scope.getScopeType();
+    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    assert (currentScopeType != ScopeType::STRUCT && currentScopeType != ScopeType::INTERFACE) || this.qualType.isOneOf(fctOptions, len(fctOptions));
     if this.memAddress.isEmpty() {
         this.memAddress.push(address);
     } else {
-        this.memAddress.top() = address;
+        // Replace the top element. The host compiler does not treat a reference returned from a method call
+        // (Stack.top()) as an assignable lvalue, so we pop and push instead of `this.memAddress.top() = address`.
+        this.memAddress.pop();
+        this.memAddress.push(address);
     }
 }
 
@@ -143,7 +151,7 @@ public p SymbolTableEntry.popAddress() {
  * @return Struct field or not
  */
 public f<bool> SymbolTableEntry.isField() {
-    return this.scope.scopeType == ScopeType::STRUCT && orderIndex < this.scope.getFieldCount();
+    return this.scope.getScopeType() == ScopeType::STRUCT && this.orderIndex < this.scope.getFieldCount();
 }
 
 /**

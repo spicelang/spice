@@ -677,7 +677,7 @@ p SourceFile.dumpCacheStats() {
 p SourceFile.dumpCompilationStats() {
     const unsigned long sourceFileCount = this.resourceManager.sourceFiles.getSize();
     const unsigned long totalLineCount = this.resourceManager.getTotalLineCount();
-    const unsigned long totalTypeCount = /*TypeRegistry.getTypeCount()*/ 0;
+    const unsigned long totalTypeCount = this.resourceManager.typeRegistry.getTypeCount();
     const unsigned long allocatedBytes = this.resourceManager.astNodeAlloc.getTotalAllocatedSize();
     const unsigned long allocationCount = this.resourceManager.astNodeAlloc.getAllocationCount();
     const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationMilliseconds();

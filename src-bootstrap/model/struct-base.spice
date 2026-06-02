@@ -120,10 +120,10 @@ public f<bool> StructBase.isFullySubstantiated() {
  * @return Template types as vector of symbol types
  */
 public f<QualTypeList> StructBase.getTemplateTypes() {
-    result = QualTypeList();
     foreach GenericType& genericType : this.templateTypes {
         result.pushBack(genericType.qualType);
     }
+    return result;
 }
 
 /**

@@ -13,22 +13,7 @@ import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
 import "bootstrap/source-file-intf";
 
-public type ScopeType enum {
-    GLOBAL,
-    FUNC_PROC_BODY,
-    LAMBDA_BODY,
-    STRUCT,
-    INTERFACE,
-    ENUM,
-    IF_ELSE_BODY,
-    WHILE_BODY,
-    FOR_BODY,
-    FOREACH_BODY,
-    CASE_BODY,
-    DEFAULT_BODY,
-    UNSAFE_BODY,
-    ANONYMOUS_BLOCK_BODY
-}
+// ScopeType is defined in scope-intf.spice (imported above) so it can be used through the IScope interface.
 
 /**
  * Represents an enclosed group of instructions, which are semantically separated from other scopes.
@@ -72,6 +57,37 @@ public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType,
     this.scopeType = scopeType;
     this.symbolTable = SymbolTable(parent == nil<Scope*> ? nil<SymbolTable*> : &parent.symbolTable, this);
     this.codeLoc = codeLoc;
+}
+
+// ===================================================== IScope interface =====================================================
+
+/**
+ * Get the source file this scope belongs to
+ */
+public f<ISourceFile*> Scope.getSourceFile() {
+    return this.sourceFile;
+}
+
+/**
+ * Get the parent scope (nil for the global scope)
+ */
+public f<IScope*> Scope.getParent() {
+    return this.parent;
+}
+
+/**
+ * Get the kind of this scope
+ */
+public f<ScopeType> Scope.getScopeType() {
+    return this.scopeType;
+}
+
+/**
+ * Get the number of field symbols in this (struct) scope
+ */
+public f<unsigned long> Scope.getFieldCount() {
+    assert this.scopeType == ScopeType::STRUCT;
+    return this.symbolTable.getFieldCount();
 }
 
 /**

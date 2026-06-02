@@ -4,17 +4,34 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/source-file-intf";
+import "bootstrap/ast/ast-node-intf";
 import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/scope-intf";
 
+// IType is the dependency-free interface over the concrete Type. It deliberately exposes NO QualType in its
+// method signatures: the irreducible Type <-> QualType cycle (QualType holds a `const IType*`, while a Type's
+// template/param types are QualTypes) can only be broken by keeping this interface free of QualType. Template
+// and function param/return types are therefore exposed element-wise via raw IType pointers + qualifiers, and
+// QualType reconstructs its QualTypeList views from those. Derived-type factories return `const IType*` and are
+// backed by the type registry (see ITypeRegistry), which is threaded into each concrete Type.
 public type IType interface {
     // Getters and setters on type parts
     public f<SuperType> getSuperType();
-    public f<String&> getSubType();
+    public f<const String&> getSubType();
     public f<unsigned int> getArraySize();
     public f<IScope*> getBodyScope();
-    // ToDo
     public f<bool> hasLambdaCaptures();
+
+    // Template types (element-wise to keep QualType out of this interface)
+    public f<unsigned long> getTemplateTypeCount();
+    public f<const IType*> getTemplateTypeRaw(unsigned long);
+    public f<TypeQualifiers> getTemplateTypeQualifiers(unsigned long);
+
+    // Function param and return types (element-wise; index 0 is the return type)
+    public f<unsigned long> getFunctionParamAndReturnTypeCount();
+    public f<const IType*> getFunctionParamAndReturnTypeRaw(unsigned long);
+    public f<TypeQualifiers> getFunctionParamAndReturnTypeQualifiers(unsigned long);
 
     // Queries on the type
     public f<bool> is(SuperType);
@@ -35,21 +52,17 @@ public type IType interface {
     public p getName(StringStream&, bool);
     public f<String> getName(bool);
 
-    // Get new type, base on this one
-    public f<const Type*> toPtr(const ASTNode*);
-    public f<const Type*> toRef(const ASTNode*);
-    public f<const Type*> toArr(const ASTNode*, unsigned int, bool);
-    public f<const Type*> getContained();
-    public f<const Type*> replaceBase(const IType*);
-    public f<const Type*> removeReferenceWrapper();
-    public f<const Type*> getBase();
-    public f<const Type*> getWithLambdaCaptures(bool);
-    public f<const Type*> getWithBodyScope(IScope*);
-    // ToDo
+    // Get new type, based on this one (interned via the type registry)
+    public f<const IType*> toPtr(const IASTNode*);
+    public f<const IType*> toRef(const IASTNode*);
+    public f<const IType*> toArr(const IASTNode*, unsigned int, bool);
+    public f<const IType*> getContained();
+    public f<const IType*> replaceBase(const IType*);
+    public f<const IType*> removeReferenceWrapper();
+    public f<const IType*> getBase();
+    public f<const IType*> getWithLambdaCaptures(bool);
+    public f<const IType*> getWithBodyScope(IScope*);
 
     // LLVM helpers
     public f<llvm::Type> toLLVMType(ISourceFile*);
-
-    // Helpers
-    public f<TypeChain> getTypeChain();
 }

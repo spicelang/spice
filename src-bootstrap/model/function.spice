@@ -68,10 +68,10 @@ public p Function.ctor(const String& name, SymbolTableEntry* entry, const QualTy
  * @return Vector of parameter types
  */
 public f<QualTypeList> Function.getParamTypes() {
-    result = QualTypeList();
     foreach const Param& param : this.paramList {
         result.pushBack(param.qualType);
     }
+    return result;
 }
 
 /**

@@ -1,0 +1,13 @@
+// Own imports
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type-chain";
+
+// ITypeRegistry is the dependency-free interface over the concrete TypeRegistry. Each concrete Type holds a
+// non-owning pointer to it and uses it to intern derived types (see Type.toPtr etc.). Returning `const IType*`
+// keeps this interface out of the Type <-> QualType cycle, so a Type can store an ITypeRegistry* field.
+public type ITypeRegistry interface {
+    public f<const IType*> getOrInsert(SuperType);
+    public f<const IType*> getOrInsertSub(SuperType, const String&);
+    public f<const IType*> getOrInsertChain(const TypeChain&);
+}
