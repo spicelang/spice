@@ -1,0 +1,148 @@
+import "std/data/priority-queue";
+
+f<int> main() {
+    // 1. Many pushes force multiple resizes; pop must yield strictly descending order
+    PriorityQueue<int> pq1;
+    for int i = 0; i < 1000; i++ { pq1.push(i); }
+    assert pq1.getSize() == 1000;
+    assert pq1.getCapacity() >= 1000;
+    assert pq1.peek() == 999;
+    int prev = 1000;
+    for int i = 0; i < 1000; i++ {
+        int top = pq1.pop();
+        assert top == prev - 1; // 999, 998, ..., 0
+        prev = top;
+    }
+    assert pq1.isEmpty();
+
+    // 2. Pseudo-random insertion order: heap must act as a sorting machine (descending)
+    PriorityQueue<int> pq2;
+    long state = 12345l;
+    int count = 2000;
+    for int i = 0; i < count; i++ {
+        // Simple LCG to get a spread of values. Computed in 64-bit to avoid signed overflow:
+        // state stays in [0, 1e9), so state * 1103515245 reaches ~1.1e18, which fits in a long.
+        state = (state * 1103515245l + 12345l) % 1000000007l;
+        int value = cast<int>(state % 100000l);
+        pq2.push(value);
+    }
+    assert pq2.getSize() == count;
+    int last = pq2.pop();
+    int popped = 1;
+    while !pq2.isEmpty() {
+        int cur = pq2.pop();
+        assert cur <= last; // non-increasing
+        last = cur;
+        popped++;
+    }
+    assert popped == count;
+
+    // 3. Interleaved push/pop keeps the max invariant at all times
+    PriorityQueue<int> pq3;
+    pq3.push(50);
+    assert pq3.peek() == 50;
+    pq3.push(75);
+    assert pq3.peek() == 75;
+    pq3.push(25);
+    assert pq3.peek() == 75;
+    assert pq3.pop() == 75;
+    assert pq3.peek() == 50;
+    pq3.push(60);
+    assert pq3.peek() == 60;
+    pq3.push(100);
+    assert pq3.peek() == 100;
+    assert pq3.pop() == 100;
+    assert pq3.pop() == 60;
+    assert pq3.pop() == 50;
+    assert pq3.pop() == 25;
+    assert pq3.isEmpty();
+
+    // 4. Duplicates are handled correctly
+    PriorityQueue<int> pq4;
+    for int i = 0; i < 100; i++ { pq4.push(7); }
+    assert pq4.getSize() == 100;
+    for int i = 0; i < 100; i++ {
+        assert pq4.pop() == 7;
+    }
+    assert pq4.isEmpty();
+
+    // 5. Copy ctor produces an independent heap with the same priority order
+    PriorityQueue<int> pq5;
+    for int i = 0; i < 50; i++ { pq5.push(i * 3); }
+    PriorityQueue<int> pq6 = PriorityQueue<int>(pq5);
+    assert pq6.getSize() == 50;
+    assert pq6.peek() == 147; // 49 * 3
+    assert pq6.pop() == 147;
+    // Mutating the copy must not affect the original
+    assert pq5.getSize() == 50;
+    assert pq5.peek() == 147;
+
+    // 6. operator= overwrites the destination and stays independent
+    PriorityQueue<int> pq7;
+    pq7.push(1); pq7.push(2);
+    pq7 = pq5;
+    assert pq7.getSize() == 50;
+    assert pq7.peek() == 147;
+    int expected7 = 147;
+    while !pq7.isEmpty() {
+        assert pq7.pop() == expected7;
+        expected7 -= 3;
+    }
+    // Original is untouched
+    assert pq5.getSize() == 50;
+    assert pq5.peek() == 147;
+
+    // 7. reserve grows capacity without disturbing the contents or ordering
+    PriorityQueue<int> pq8;
+    pq8.push(5); pq8.push(15); pq8.push(10);
+    pq8.reserve(256l);
+    assert pq8.getCapacity() >= 256;
+    assert pq8.getSize() == 3;
+    assert pq8.pop() == 15;
+    assert pq8.pop() == 10;
+    assert pq8.pop() == 5;
+
+    // 8. pack shrinks capacity down to the current size; heap stays valid
+    PriorityQueue<int> pq9;
+    for int i = 0; i < 20; i++ { pq9.push(i); }
+    for int i = 0; i < 15; i++ { pq9.pop(); }
+    assert pq9.getSize() == 5;
+    pq9.pack();
+    assert pq9.getCapacity() == 5;
+    // Remaining items are the five largest: 4, 3, 2, 1, 0
+    assert pq9.pop() == 4;
+    assert pq9.pop() == 3;
+    assert pq9.pop() == 2;
+    assert pq9.pop() == 1;
+    assert pq9.pop() == 0;
+    assert pq9.isEmpty();
+
+    // 9. Drain, refill and drain again to ensure the structure is reusable
+    PriorityQueue<int> pq10;
+    for int i = 0; i < 30; i++ { pq10.push(i); }
+    while !pq10.isEmpty() { pq10.pop(); }
+    assert pq10.isEmpty();
+    for int i = 100; i > 70; i-- { pq10.push(i); }
+    assert pq10.getSize() == 30;
+    assert pq10.peek() == 100;
+    int expected10 = 100;
+    while !pq10.isEmpty() {
+        assert pq10.pop() == expected10;
+        expected10--;
+    }
+    assert expected10 == 70;
+
+    // 10. Works with a wider element type
+    PriorityQueue<long> pq11;
+    for long i = 0l; i < 500l; i++ { pq11.push(i * 1000l); }
+    assert pq11.getSize() == 500;
+    assert pq11.peek() == 499000l;
+    long prevLong = 1000000l;
+    while !pq11.isEmpty() {
+        long cur = pq11.pop();
+        assert cur < prevLong;
+        prevLong = cur;
+    }
+
+    printf("Priority queue stress tests passed!\n");
+}
