@@ -334,12 +334,15 @@ p splitHeadAndBody(const String& raw, String& headSection, String& body) {
 p parseHeaderLines(const Vector<String>& lines, HttpHeaders& headers) {
     const unsigned long lineCount = cast<unsigned long>(lines.getSize());
     for unsigned long i = 1ul; i < lineCount; i++ {
-        const String line = lines.get(i).trim();
+        const String rawLine = lines.get(i);
+        const String line = rawLine.trim();
         if line.isEmpty() { continue; }
         const long colonIdx = line.find(':');
         if colonIdx == -1l { continue; }
-        const String name = line.getSubstring(0ul, colonIdx).trim();
-        const String value = line.getSubstring(cast<unsigned long>(colonIdx + 1l)).trim();
+        const String rawName = line.getSubstring(0ul, colonIdx);
+        const String name = rawName.trim();
+        const String rawValue = line.getSubstring(cast<unsigned long>(colonIdx + 1l));
+        const String value = rawValue.trim();
         headers.set(name.getRaw(), value);
     }
 }
@@ -361,11 +364,15 @@ public f<Result<HttpRequest>> parseHttpRequest(const String& raw) {
     if lines.isEmpty() { return err<HttpRequest>("Malformed request"); }
 
     // Parse the request line: <method> <path> <version>
-    const String requestLine = lines.get(0ul).trim();
+    const String firstLine = lines.get(0ul);
+    const String requestLine = firstLine.trim();
     Vector<String> parts = split(requestLine, ' ');
     if parts.getSize() < 3 { return err<HttpRequest>("Malformed request line"); }
 
-    HttpRequest request = HttpRequest(parts.get(0ul).getRaw(), parts.get(1ul).getRaw(), parts.get(2ul).getRaw());
+    const String methodPart = parts.get(0ul);
+    const String pathPart = parts.get(1ul);
+    const String versionPart = parts.get(2ul);
+    HttpRequest request = HttpRequest(methodPart.getRaw(), pathPart.getRaw(), versionPart.getRaw());
     parseHeaderLines(lines, request.headers);
     request.body = body;
     return ok(request);
@@ -388,11 +395,13 @@ public f<Result<HttpResponse>> parseHttpResponse(const String& raw) {
     if lines.isEmpty() { return err<HttpResponse>("Malformed response"); }
 
     // Parse the status line: <version> <code> <reason...>
-    const String statusLine = lines.get(0ul).trim();
+    const String firstLine = lines.get(0ul);
+    const String statusLine = firstLine.trim();
     Vector<String> parts = split(statusLine, ' ');
     if parts.getSize() < 2 { return err<HttpResponse>("Malformed status line"); }
 
-    const int statusCode = toInt(parts.get(1ul).getRaw());
+    const String codePart = parts.get(1ul);
+    const int statusCode = toInt(codePart.getRaw());
     String statusText = String();
     const unsigned long partCount = cast<unsigned long>(parts.getSize());
     for unsigned long i = 2ul; i < partCount; i++ {
@@ -427,7 +436,8 @@ f<long> contentLengthOf(const String& head) {
     long lineEnd = head.find(CRLF, cast<unsigned long>(valueStart));
     if lineEnd == -1l { lineEnd = cast<long>(head.getLength()); }
 
-    const String value = head.getSubstring(cast<unsigned long>(valueStart), lineEnd - valueStart).trim();
+    const String rawValue = head.getSubstring(cast<unsigned long>(valueStart), lineEnd - valueStart);
+    const String value = rawValue.trim();
     return toLong(value.getRaw());
 }
 
@@ -570,11 +580,15 @@ f<Result<bool>> HttpServer.acceptAndRespond(Socket& socket) {
 
     const String raw = receiveMessage(socket);
     Result<HttpRequest> requestRes = parseHttpRequest(raw);
-    if requestRes.isErr() { return err<bool>(requestRes.getErr()); }
+    if requestRes.isErr() {
+        socket.closeConnection();
+        return err<bool>(requestRes.getErr());
+    }
 
     HttpResponse response = this.handle(requestRes.unwrap());
     const String rawResponse = response.serialize();
     socket.write(rawResponse.getRaw());
+    socket.closeConnection();
     return ok(true);
 }
 
