@@ -1,0 +1,267 @@
+// Constants
+const unsigned long INITIAL_CAPACITY = 5l;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Add generic type definition
+type T dyn;
+
+/**
+ * A priority queue in Spice is a commonly used data structure, in which every item has a priority
+ * attached to it. It is implemented as a binary max-heap stored in a contiguous array, so the item
+ * with the highest priority (the largest one according to the `<` operator) is always served first.
+ *
+ * Time complexity:
+ * Insert: O(log n)
+ * Delete: O(log n)
+ * Peek:   O(1)
+ *
+ * Priority queues pre-allocate space using an initial size and a resize factor to not have to
+ * re-allocate with every item pushed.
+ */
+public type PriorityQueue<T> struct {
+    heap T* contents        // Pointer to the first data element
+    unsigned long capacity  // Allocated number of items
+    unsigned long size = 0l // Current number of items
+}
+
+public p PriorityQueue.ctor(unsigned long initAllocItems, const T& defaultValue) {
+    // Allocate space for the initial number of elements
+    this.ctor(initAllocItems);
+    // Fill in the default values. All items are equal, so the heap property holds trivially.
+    for unsigned long index = 0ul; index < initAllocItems; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], defaultValue);
+        }
+    }
+    this.size = initAllocItems;
+}
+
+public p PriorityQueue.ctor(unsigned int initAllocItems) {
+    this.ctor(cast<unsigned long>(initAllocItems));
+}
+
+public p PriorityQueue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
+    // Allocate space for the initial number of elements
+    const unsigned long itemSize = sizeof<T>();
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
+        this.contents = cast<heap T*>(allocResult.unwrap());
+    }
+    this.capacity = initAllocItems;
+}
+
+public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
+    this.ctor(original.capacity);
+    // Copying the underlying array verbatim preserves the heap property
+    const unsigned long itemSize = sizeof<T>();
+    unsafe {
+        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), itemSize * original.size);
+    }
+    this.size = original.size;
+}
+
+public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) {
+    const unsigned long itemSize = sizeof<T>();
+    if newValue.capacity != this.capacity {
+        unsafe {
+            Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
+            this.contents = cast<heap T*>(allocResult.unwrap());
+        }
+        this.capacity = newValue.capacity;
+    }
+    this.size = newValue.size;
+    unsafe {
+        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+    }
+}
+
+/**
+ * Add an item to the priority queue
+ */
+public p PriorityQueue.push(const T& item) {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * cast<unsigned long>(RESIZE_FACTOR);
+        this.resize(newCapacity);
+    }
+
+    // Insert the element at the back and restore the heap property by sifting it up
+    unsafe {
+        __placement_new<T>(&this.contents[this.size], item);
+    }
+    this.size++;
+    this.siftUp(this.size - 1l);
+}
+
+/**
+ * Retrieve the item with the highest priority and remove it from the priority queue
+ *
+ * @return Item with the highest priority
+ */
+#[ignoreUnusedReturnValue]
+public f<T> PriorityQueue.pop() {
+    if this.isEmpty() { panic(Error("The priority queue is empty")); }
+    unsafe {
+        // Copy out the root (highest priority) item
+        result = this.contents[0];
+        // Move the last element to the root and shrink, then restore the heap property
+        this.size--;
+        if this.size > 0l {
+            this.contents[0] = this.contents[this.size];
+            this.siftDown(0l);
+        }
+    }
+}
+
+/**
+ * Retrieve the item with the highest priority without removing it from the priority queue
+ *
+ * @return Item with the highest priority
+ */
+public f<T&> PriorityQueue.peek() {
+    if this.isEmpty() { panic(Error("The priority queue is empty")); }
+    unsafe {
+        return this.contents[0];
+    }
+}
+
+/**
+ * Retrieve the current size of the priority queue
+ *
+ * @return Current size of the priority queue
+ */
+public f<long> PriorityQueue.getSize() {
+    return this.size;
+}
+
+/**
+ * Retrieve the current capacity of the priority queue
+ *
+ * @return Current capacity of the priority queue
+ */
+public f<long> PriorityQueue.getCapacity() {
+    return this.capacity;
+}
+
+/**
+ * Checks if the priority queue contains any items at the moment
+ *
+ * @return Empty or not empty
+ */
+public f<bool> PriorityQueue.isEmpty() {
+    return this.size == 0;
+}
+
+/**
+ * Checks if the priority queue exhausts its capacity and needs to resize at the next call of push
+ *
+ * @return Full or not full
+ */
+public f<bool> PriorityQueue.isFull() {
+    return this.size == this.capacity;
+}
+
+/**
+ * Removes all items from the priority queue
+ */
+public p PriorityQueue.clear() {
+    this.size = 0l;
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p PriorityQueue.reserve(unsigned long itemCount) {
+    if itemCount > this.capacity {
+        this.resize(itemCount);
+    }
+}
+
+/**
+ * Frees allocated memory that is not used by the priority queue
+ */
+public p PriorityQueue.pack() {
+    // Return if no packing is required
+    if this.isFull() { return; }
+    // Pack the array
+    this.resize(this.size);
+}
+
+public f<bool> operator==<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
+    // Compare the sizes
+    if lhs.size != rhs.size { return false; }
+    // Two heaps are equal if they hold the same items in the same priority order. Since two equal
+    // multisets can have different internal array layouts, compare by draining copies in priority order.
+    PriorityQueue<T> a = PriorityQueue<T>(lhs);
+    PriorityQueue<T> b = PriorityQueue<T>(rhs);
+    while !a.isEmpty() {
+        if a.pop() != b.pop() { return false; }
+    }
+    return true;
+}
+
+public f<bool> operator!=<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
+    return !(lhs == rhs);
+}
+
+/**
+ * Restores the heap property by moving the item at `index` up towards the root
+ */
+p PriorityQueue.siftUp(unsigned long index) {
+    unsafe {
+        while index > 0l {
+            const unsigned long parent = (index - 1l) / 2l;
+            // Stop as soon as the parent is not lower in priority than the current item
+            if !(this.contents[parent] < this.contents[index]) {
+                break;
+            }
+            T tmp = this.contents[parent];
+            this.contents[parent] = this.contents[index];
+            this.contents[index] = tmp;
+            index = parent;
+        }
+    }
+}
+
+/**
+ * Restores the heap property by moving the item at `index` down towards the leaves
+ */
+p PriorityQueue.siftDown(unsigned long index) {
+    unsafe {
+        while true {
+            const unsigned long left = 2l * index + 1l;
+            const unsigned long right = 2l * index + 2l;
+            unsigned long largest = index;
+            if left < this.size && this.contents[largest] < this.contents[left] {
+                largest = left;
+            }
+            if right < this.size && this.contents[largest] < this.contents[right] {
+                largest = right;
+            }
+            // Stop as soon as the item is not lower in priority than either child
+            if largest == index {
+                break;
+            }
+            T tmp = this.contents[index];
+            this.contents[index] = this.contents[largest];
+            this.contents[largest] = tmp;
+            index = largest;
+        }
+    }
+}
+
+/**
+ * Re-allocates heap space for the priority queue contents
+ */
+p PriorityQueue.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    const unsigned long itemSize = sizeof<T>();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
+        Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
+        this.contents = cast<heap T*>(allocResult.unwrap());
+    }
+    // Set new capacity
+    this.capacity = itemCount;
+}

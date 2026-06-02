@@ -1,0 +1,70 @@
+import "std/data/priority-queue";
+
+f<int> main() {
+    // Default ctor: empty priority queue with INITIAL_CAPACITY=5
+    PriorityQueue<int> pq;
+    assert pq.isEmpty();
+    assert !pq.isFull();
+    assert pq.getSize() == 0;
+    assert pq.getCapacity() == 5;
+
+    // push/peek/getSize - the largest item bubbles to the top regardless of insertion order
+    pq.push(3);
+    pq.push(1);
+    pq.push(4);
+    pq.push(1);
+    pq.push(5);
+    assert pq.getSize() == 5;
+    assert !pq.isEmpty();
+    assert pq.peek() == 5;
+
+    // pop returns items in descending priority order
+    assert pq.pop() == 5;
+    assert pq.pop() == 4;
+    assert pq.peek() == 3;
+    assert pq.pop() == 3;
+    assert pq.pop() == 1;
+    assert pq.pop() == 1;
+    assert pq.isEmpty();
+
+    // ctor(capacity) reserves up front, but starts empty
+    PriorityQueue<int> pq2 = PriorityQueue<int>(16l);
+    assert pq2.getCapacity() == 16;
+    assert pq2.isEmpty();
+
+    // ctor(count, default) starts full with the default value
+    PriorityQueue<short> pq3 = PriorityQueue<short>(4l, 7s);
+    assert pq3.getSize() == 4;
+    assert pq3.isFull();
+    assert pq3.peek() == 7s;
+
+    // Items inserted in ascending order still come out in descending order
+    PriorityQueue<int> pq4;
+    for int i = 1; i <= 6; i++ { pq4.push(i); }
+    assert pq4.peek() == 6;
+    for int expected = 6; expected >= 1; expected-- {
+        assert pq4.pop() == expected;
+    }
+    assert pq4.isEmpty();
+
+    // clear empties the priority queue but keeps it usable
+    PriorityQueue<int> pq5;
+    pq5.push(10); pq5.push(20); pq5.push(30);
+    pq5.clear();
+    assert pq5.isEmpty();
+    assert pq5.getSize() == 0;
+    pq5.push(42);
+    assert pq5.peek() == 42;
+
+    // Equality compares items in priority order, independent of insertion order
+    PriorityQueue<int> a;
+    PriorityQueue<int> b;
+    a.push(1); a.push(2); a.push(3);
+    b.push(3); b.push(1); b.push(2);
+    assert a == b;
+    assert !(a != b);
+    b.pop();
+    assert a != b;
+
+    printf("Priority queue smoke tests passed!\n");
+}
