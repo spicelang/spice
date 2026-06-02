@@ -46,6 +46,8 @@ public p Type.ctor(const Type& other) {
 
 /**
  * Get the super type of the current type
+ *
+ * @return Super type
  */
 public f<SuperType> Type.getSuperType() {
     assert !this.typeChain.isEmpty();
@@ -54,6 +56,8 @@ public f<SuperType> Type.getSuperType() {
 
 /**
  * Get the sub type of the current type
+ *
+ * @return Sub type
  */
 public f<const String&> Type.getSubType() {
     assert !this.typeChain.isEmpty();
@@ -64,6 +68,8 @@ public f<const String&> Type.getSubType() {
 
 /**
  * Get the array size of the current type
+ *
+ * @return Array size
  */
 public f<unsigned int> Type.getArraySize() {
     assert this.isArray();
@@ -72,6 +78,8 @@ public f<unsigned int> Type.getArraySize() {
 
 /**
  * Get the body scope of the current type
+ *
+ * @return Body scope
  */
 public f<IScope*> Type.getBodyScope() {
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
@@ -281,6 +289,9 @@ public f<String> Type.getName(bool withSize) {
 
 /**
  * Get the pointer type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Pointer type of the current type
  */
 public f<const IType*> Type.toPtr(const IASTNode* node) {
     if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '*' instead")); }
@@ -293,6 +304,9 @@ public f<const IType*> Type.toPtr(const IASTNode* node) {
 
 /**
  * Get the reference type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Reference type of the current type
  */
 public f<const IType*> Type.toRef(const IASTNode* node) {
     if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '&' instead")); }
@@ -305,6 +319,11 @@ public f<const IType*> Type.toRef(const IASTNode* node) {
 
 /**
  * Get the array type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @param size Size of the array
+ * @param skipDynCheck Skip check if array base type is dyn
+ * @return Array type of the current type
  */
 public f<const IType*> Type.toArr(const IASTNode* node, unsigned int size, bool skipDynCheck) {
     if !skipDynCheck && this.typeChain.back().superType == SuperType::TY_DYN {
@@ -319,6 +338,8 @@ public f<const IType*> Type.toArr(const IASTNode* node, unsigned int size, bool 
 
 /**
  * Retrieve the base type of an array or a pointer
+ *
+ * @return Base type
  */
 public f<const IType*> Type.getContained() {
     if this.is(SuperType::TY_STRING) {
@@ -333,6 +354,9 @@ public f<const IType*> Type.getContained() {
 
 /**
  * Replace the base type with another one
+ *
+ * @param newBaseType New base type
+ * @return The new type
  */
 public f<const IType*> Type.replaceBase(const IType* newBaseTypeI) {
     assert !this.typeChain.isEmpty();
@@ -353,6 +377,8 @@ public f<const IType*> Type.replaceBase(const IType* newBaseTypeI) {
 
 /**
  * Remove reference wrapper from the current type
+ *
+ * @return Type without reference wrapper
  */
 public f<const IType*> Type.removeReferenceWrapper() {
     if this.isRef() { return this.getContained(); }
@@ -392,6 +418,9 @@ public f<const IType*> Type.getWithBodyScope(IScope* bodyScope) {
 
 /**
  * Return the LLVM type for this symbol type
+ *
+ * @param sourceFile Referenced source file
+ * @return Corresponding LLVM type
  */
 public f<llvm::Type> Type.toLLVMType(ISourceFile* sourceFile) {
     // ToDo: Port the full host implementation once the IR generator layer is available.

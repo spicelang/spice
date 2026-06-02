@@ -68,6 +68,8 @@ public p operator=(QualType& this, const QualType& other) {
 
 /**
  * Get the underlying raw type
+ *
+ * @return Underlying raw type
  */
 public f<const IType*> QualType.getType() {
     return this.rawType;
@@ -75,6 +77,8 @@ public f<const IType*> QualType.getType() {
 
 /**
  * Get the super type of the underlying type
+ *
+ * @return Super type
  */
 public f<SuperType> QualType.getSuperType() {
     return this.rawType.getSuperType();
@@ -82,6 +86,8 @@ public f<SuperType> QualType.getSuperType() {
 
 /**
  * Get the subtype of the underlying type
+ *
+ * @return Subtype
  */
 public f<const String&> QualType.getSubType() {
     return this.rawType.getSubType();
@@ -89,6 +95,8 @@ public f<const String&> QualType.getSubType() {
 
 /**
  * Get the array size of the underlying type
+ *
+ * @return Array size
  */
 public f<unsigned int> QualType.getArraySize() {
     return this.rawType.getArraySize();
@@ -96,6 +104,8 @@ public f<unsigned int> QualType.getArraySize() {
 
 /**
  * Get the body scope of the underlying type
+ *
+ * @return Body scope
  */
 public f<IScope*> QualType.getBodyScope() {
     return this.rawType.getBodyScope();
@@ -103,6 +113,8 @@ public f<IScope*> QualType.getBodyScope() {
 
 /**
  * Get the function return type of the underlying type
+ *
+ * @return Function return type
  */
 public f<QualType> QualType.getFunctionReturnType() {
     const IType* raw = this.rawType.getFunctionParamAndReturnTypeRaw(0ul);
@@ -112,6 +124,8 @@ public f<QualType> QualType.getFunctionReturnType() {
 
 /**
  * Get the function parameter types of the underlying type
+ *
+ * @return Function parameter types
  */
 public f<QualTypeList> QualType.getFunctionParamTypes() {
     const unsigned long count = this.rawType.getFunctionParamAndReturnTypeCount();
@@ -125,6 +139,8 @@ public f<QualTypeList> QualType.getFunctionParamTypes() {
 
 /**
  * Get the function parameter and return types of the underlying type (index 0 is the return type)
+ *
+ * @return Function parameter and return types
  */
 public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
     const unsigned long count = this.rawType.getFunctionParamAndReturnTypeCount();
@@ -138,6 +154,8 @@ public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
 
 /**
  * Check if the underlying type has lambda captures
+ *
+ * @return Has lambda captures or not
  */
 public f<bool> QualType.hasLambdaCaptures() {
     return this.rawType.hasLambdaCaptures();
@@ -145,6 +163,8 @@ public f<bool> QualType.hasLambdaCaptures() {
 
 /**
  * Get the template types of the underlying type
+ *
+ * @return Template types
  */
 public f<QualTypeList> QualType.getTemplateTypes() {
     const unsigned long count = this.rawType.getTemplateTypeCount();
@@ -158,6 +178,9 @@ public f<QualTypeList> QualType.getTemplateTypes() {
 
 /**
  * Get the struct instance for a struct type
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
  */
 public f<IStruct*> QualType.getStruct(const IASTNode* node) {
     assert this.is(SuperType::TY_STRUCT);
@@ -167,6 +190,9 @@ public f<IStruct*> QualType.getStruct(const IASTNode* node) {
 
 /**
  * Get the interface instance for an interface type
+ *
+ * @param node Accessing AST node
+ * @return Interface instance
  */
 public f<IInterface*> QualType.getInterface(const IASTNode* node) {
     assert this.is(SuperType::TY_INTERFACE);
@@ -176,6 +202,9 @@ public f<IInterface*> QualType.getInterface(const IASTNode* node) {
 
 /**
  * Check if the underlying type is of a certain super type
+ *
+ * @param superType Super type
+ * @return Is of super type or not
  */
 public f<bool> QualType.is(SuperType superType) {
     return this.rawType.is(superType);
@@ -183,6 +212,9 @@ public f<bool> QualType.is(SuperType superType) {
 
 /**
  * Check if the underlying type is one of a list of super types
+ *
+ * @param superTypes List of super types
+ * @return Is one of the super types or not
  */
 public f<bool> QualType.isOneOf(SuperType[] superTypes, unsigned long superTypesSize) {
     return this.rawType.isOneOf(superTypes, superTypesSize);
@@ -190,6 +222,9 @@ public f<bool> QualType.isOneOf(SuperType[] superTypes, unsigned long superTypes
 
 /**
  * Check if the base type of the underlying type is a certain super type
+ *
+ * @param superType Super type
+ * @return Is base type or not
  */
 public f<bool> QualType.isBase(SuperType superType) {
     return this.rawType.isBase(superType);
@@ -197,6 +232,9 @@ public f<bool> QualType.isBase(SuperType superType) {
 
 /**
  * Check if the underlying type is a primitive type
+ * Note: enum types are mapped to int, so they are also count as primitive types.
+ *
+ * @return Primitive or not
  */
 public f<bool> QualType.isPrimitive() {
     return this.rawType.isPrimitive();
@@ -204,6 +242,12 @@ public f<bool> QualType.isPrimitive() {
 
 /**
  * Check if the underlying type is an extended primitive type
+ * The definition of extended primitive types contains all primitive types plus the following:
+ * - structs
+ * - interfaces
+ * - functions/procedures
+ *
+ * @return Extended primitive or not
  */
 public f<bool> QualType.isExtendedPrimitive() {
     return this.rawType.isExtendedPrimitive();
@@ -211,6 +255,8 @@ public f<bool> QualType.isExtendedPrimitive() {
 
 /**
  * Check if the underlying type is a pointer
+ *
+ * @return Pointer or not
  */
 public f<bool> QualType.isPtr() {
     return this.rawType.isPtr();
@@ -218,6 +264,9 @@ public f<bool> QualType.isPtr() {
 
 /**
  * Check if the underlying type is a pointer to a certain super type
+ *
+ * @param superType Super type
+ * @return Pointer to super type or not
  */
 public f<bool> QualType.isPtrTo(SuperType superType) {
     if !this.isPtr() { return false; }
@@ -227,6 +276,8 @@ public f<bool> QualType.isPtrTo(SuperType superType) {
 
 /**
  * Check if the underlying type is a reference
+ *
+ * @return Reference or not
  */
 public f<bool> QualType.isRef() {
     return this.rawType.isRef();
@@ -234,6 +285,9 @@ public f<bool> QualType.isRef() {
 
 /**
  * Check if the underlying type is a reference to a certain super type
+ *
+ * @param superType Super type
+ * @return Reference to super type or not
  */
 public f<bool> QualType.isRefTo(SuperType superType) {
     if !this.isRef() { return false; }
@@ -243,6 +297,8 @@ public f<bool> QualType.isRefTo(SuperType superType) {
 
 /**
  * Check if the underlying type is an array
+ *
+ * @return Array or not
  */
 public f<bool> QualType.isArray() {
     return this.rawType.isArray();
@@ -250,6 +306,9 @@ public f<bool> QualType.isArray() {
 
 /**
  * Check if the underlying type is an array of a certain super type
+ *
+ * @param superType Super type
+ * @return Array of super type or not
  */
 public f<bool> QualType.isArrayOf(SuperType superType) {
     if !this.isArray() { return false; }
@@ -259,6 +318,8 @@ public f<bool> QualType.isArrayOf(SuperType superType) {
 
 /**
  * Check if the type is heap-allocated
+ *
+ * @return Heap-allocated or not
  */
 public f<bool> QualType.isHeap() {
     return this.qualifiers.isHeap;
@@ -266,6 +327,8 @@ public f<bool> QualType.isHeap() {
 
 /**
  * Check if the type is const
+ *
+ * @return Const or not
  */
 public f<bool> QualType.isConst() {
     return this.qualifiers.isConst;
@@ -273,6 +336,8 @@ public f<bool> QualType.isConst() {
 
 /**
  * Check if the underlying type is a const reference
+ *
+ * @return Const reference or not
  */
 public f<bool> QualType.isConstRef() {
     return this.qualifiers.isConst && this.rawType.isRef();
@@ -280,6 +345,8 @@ public f<bool> QualType.isConstRef() {
 
 /**
  * Check if the current type is a string object
+ *
+ * @return String object or not
  */
 public f<bool> QualType.isStringObj() {
     if !this.is(SuperType::TY_STRUCT) { return false; }
@@ -291,6 +358,8 @@ public f<bool> QualType.isStringObj() {
 
 /**
  * Check if the current type is an error object
+ *
+ * @return Error object or not
  */
 public f<bool> QualType.isErrorObj() {
     if !this.is(SuperType::TY_STRUCT) { return false; }
@@ -302,6 +371,9 @@ public f<bool> QualType.isErrorObj() {
 
 /**
  * Check if the current type is an iterator
+ *
+ * @param node IASTNode
+ * @return Iterator or not
  */
 public f<bool> QualType.isIterator(const IASTNode* node) {
     // ToDo: Port iterator-interface matching once the type registry is threaded to call sites.
@@ -310,6 +382,11 @@ public f<bool> QualType.isIterator(const IASTNode* node) {
 
 /**
  * Check if the current type is an iterable
+ * - Arrays are always considered iterable
+ * - Otherwise the type must be a struct that implements the iterator interface
+ *
+ * @param node IASTNode
+ * @return Iterable or not
  */
 public f<bool> QualType.isIterable(const IASTNode* node) {
     // Arrays are always considered iterable
@@ -320,6 +397,8 @@ public f<bool> QualType.isIterable(const IASTNode* node) {
 
 /**
  * Check if the current type has any generic parts
+ *
+ * @return Generic parts or not
  */
 public f<bool> QualType.hasAnyGenericParts() {
     return this.rawType.hasAnyGenericParts();
@@ -327,6 +406,10 @@ public f<bool> QualType.hasAnyGenericParts() {
 
 /**
  * Check if copying an instance of the current type would require calling other copy ctors.
+ * If this function return true, the type can be copied by calling memcpy.
+ *
+ * @param node Accessing IASTNode
+ * @return Trivially copyable or not
  */
 public f<bool> QualType.isTriviallyCopyable(const IASTNode* node) {
     // Heap-allocated values may not be copied via memcpy
@@ -347,6 +430,10 @@ public f<bool> QualType.isTriviallyCopyable(const IASTNode* node) {
 
 /**
  * Check if the current type implements the given interface type
+ *
+ * @param implementedInterfaceType Interface type
+ * @param node Accessing IASTNode
+ * @return Struct implements interface or not
  */
 public f<bool> QualType.doesImplement(const QualType& implementedInterfaceType, const IASTNode* node) {
     assert this.is(SuperType::TY_STRUCT) && implementedInterfaceType.is(SuperType::TY_INTERFACE);
@@ -356,6 +443,10 @@ public f<bool> QualType.doesImplement(const QualType& implementedInterfaceType, 
 
 /**
  * Check if a certain input type can be bound (assigned) to the current type.
+ *
+ * @param inputType Qualified type, which should be bound to the current type
+ * @param isTemporary Is the input type a temporary type
+ * @return Can be bound or not
  */
 public f<bool> QualType.canBind(const QualType& inputType, bool isTemporary) {
     return !isTemporary || inputType.rawType.isRef() || !this.rawType.isRef() || this.isConstRef();
@@ -363,6 +454,13 @@ public f<bool> QualType.canBind(const QualType& inputType, bool isTemporary) {
 
 /**
  * Check for the matching compatibility of two types.
+ * Useful for struct and function matching as well as assignment type validation and function arg matching.
+ *
+ * @param otherType Type to compare against
+ * @param ignoreArraySize Ignore array sizes
+ * @param ignoreQualifiers Ignore qualifiers, except for pointer and reference types
+ * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
+ * @return Matching or not
  */
 public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) {
     // Compare type
@@ -376,6 +474,10 @@ public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize,
 
 /**
  * Check for the matching compatibility of two types in terms of interface implementation.
+ * Useful for function matching as well as assignment type validation and function arg matching.
+ *
+ * @param structType Type to compare against
+ * @return Matching or not
  */
 public f<bool> QualType.matchesInterfaceImplementedByStruct(const QualType& structType) {
     if !this.is(SuperType::TY_INTERFACE) || !structType.is(SuperType::TY_STRUCT) {
@@ -387,6 +489,10 @@ public f<bool> QualType.matchesInterfaceImplementedByStruct(const QualType& stru
 
 /**
  * Check if the current type is the same container type as another type.
+ * Container types include arrays, pointers, and references.
+ *
+ * @param other Other type
+ * @return Same container type or not
  */
 public f<bool> QualType.isSameContainerTypeAs(const QualType& other) {
     return this.rawType.isSameContainerTypeAs(other.rawType);
@@ -394,6 +500,9 @@ public f<bool> QualType.isSameContainerTypeAs(const QualType& other) {
 
 /**
  * Check if the current type is a self-referencing struct type
+ *
+ * @param typeToCompareWith Type to compare with (nil on the first iteration)
+ * @return Self-referencing struct type or not
  */
 public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompareWith) {
     if !this.is(SuperType::TY_STRUCT) { return false; }
@@ -403,6 +512,9 @@ public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompar
 
 /**
  * Check if the given generic type list has a substantiation for the current (generic) type
+ *
+ * @param genericTypeList Generic type list
+ * @return Has substantiation or not
  */
 public f<bool> QualType.isCoveredByGenericTypeList(Vector<IGenericType>& genericTypeList) {
     // ToDo: Port generic-coverage check once the model layer is wired up.
@@ -411,6 +523,8 @@ public f<bool> QualType.isCoveredByGenericTypeList(Vector<IGenericType>& generic
 
 /**
  * Check if the current type needs de-allocation
+ *
+ * @return Needs de-allocation or not
  */
 public f<bool> QualType.needsDeAllocation() {
     if !this.isHeap() { return false; }
@@ -420,6 +534,10 @@ public f<bool> QualType.needsDeAllocation() {
 
 /**
  * Get the name of the symbol type as a string
+ *
+ * @param name Name stream
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
  */
 public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) {
     // Append the qualifiers
@@ -451,6 +569,10 @@ public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) 
 
 /**
  * Get the name of the symbol type as a string
+ *
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
+ * @return Symbol type name
  */
 public f<String> QualType.getName(bool withSize, bool ignorePublic) {
     StringStream name;
@@ -460,6 +582,9 @@ public f<String> QualType.getName(bool withSize, bool ignorePublic) {
 
 /**
  * Convert the type to an LLVM type
+ *
+ * @param sourceFile Source file
+ * @return LLVM type
  */
 public f<llvm::Type> QualType.toLLVMType(ISourceFile* sourceFile) {
     return this.rawType.toLLVMType(sourceFile);
@@ -467,6 +592,9 @@ public f<llvm::Type> QualType.toLLVMType(ISourceFile* sourceFile) {
 
 /**
  * Retrieve the pointer type to this type
+ *
+ * @param node ASTNode
+ * @return New type
  */
 public f<QualType> QualType.toPtr(const IASTNode* node) {
     QualType newType = *this;
@@ -476,6 +604,9 @@ public f<QualType> QualType.toPtr(const IASTNode* node) {
 
 /**
  * Retrieve the reference type to this type
+ *
+ * @param node ASTNode
+ * @return New type
  */
 public f<QualType> QualType.toRef(const IASTNode* node) {
     QualType newType = *this;
@@ -492,6 +623,9 @@ public p QualType.makeConst() {
 
 /**
  * Retrieve the const reference type of this type
+ *
+ * @param node ASTNode
+ * @return New type
  */
 public f<QualType> QualType.toConstRef(const IASTNode* node) {
     QualType newType = this.toRef(node);
@@ -501,6 +635,11 @@ public f<QualType> QualType.toConstRef(const IASTNode* node) {
 
 /**
  * Retrieve the array type of this type
+ *
+ * @param node ASTNode
+ * @param size Array size
+ * @param skipDynCheck Skip dynamic check
+ * @return New type
  */
 public f<QualType> QualType.toArray(const IASTNode* node, unsigned int size, bool skipDynCheck = false) {
     QualType newType = *this;
@@ -510,6 +649,8 @@ public f<QualType> QualType.toArray(const IASTNode* node, unsigned int size, boo
 
 /**
  * Retrieve the non-const type of this type
+ *
+ * @return New type
  */
 public f<QualType> QualType.toNonConst() {
     QualType newType = *this;
@@ -519,6 +660,9 @@ public f<QualType> QualType.toNonConst() {
 
 /**
  * Retrieve the contained type of this type
+ * This works on pointers, arrays, references and strings (which alias with char*)
+ *
+ * @return New type
  */
 public f<QualType> QualType.getContained() {
     const dyn options = [SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_ARRAY, SuperType::TY_STRING];
@@ -530,6 +674,8 @@ public f<QualType> QualType.getContained() {
 
 /**
  * Retrieve the base type of this type
+ *
+ * @return New type
  */
 public f<QualType> QualType.getBase() {
     QualType newType = *this;
@@ -539,6 +685,8 @@ public f<QualType> QualType.getBase() {
 
 /**
  * Remove reference of this type, if it is a reference
+ *
+ * @return New type
  */
 public f<QualType> QualType.removeReferenceWrapper() {
     if !this.isRef() { return *this; }
@@ -547,6 +695,9 @@ public f<QualType> QualType.removeReferenceWrapper() {
 
 /**
  * Replace the base type with another one
+ *
+ * @param newBaseType New base type
+ * @return The new type
  */
 public f<QualType> QualType.replaceBaseType(const QualType& newBaseType) {
     // Create new type
@@ -559,6 +710,8 @@ public f<QualType> QualType.replaceBaseType(const QualType& newBaseType) {
 
 /**
  * Retrieve the same type, but with lambda captures enabled
+ *
+ * @return Same type with lambda captures
  */
 public f<QualType> QualType.getWithLambdaCaptures(bool enabled = true) {
     const IType* newType = this.rawType.getWithLambdaCaptures(enabled);
@@ -567,6 +720,8 @@ public f<QualType> QualType.getWithLambdaCaptures(bool enabled = true) {
 
 /**
  * Equality over the interned raw type pointer and the qualifiers
+ *
+ * @return Equal or not
  */
 public f<bool> operator==(const QualType& lhs, const QualType& rhs) {
     return lhs.rawType == rhs.rawType && lhs.qualifiers == rhs.qualifiers;
