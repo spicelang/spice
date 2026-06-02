@@ -486,6 +486,12 @@ public type HttpRoute struct {
     f<HttpResponse>(const HttpRequest&) handler
 }
 
+public p HttpRoute.ctor(string method, string path, f<HttpResponse>(const HttpRequest&) handler) {
+    this.method = String(method);
+    this.path = String(path);
+    this.handler = handler;
+}
+
 /**
  * A minimal route based HTTP server.
  *
@@ -516,7 +522,7 @@ public p HttpServer.ctor(unsigned short port = HTTP_PORT_FALLBACK) {
  * @param handler Function producing a response for a matching request
  */
 public p HttpServer.addRoute(string method, string path, f<HttpResponse>(const HttpRequest&) handler) {
-    this.routes.pushBack(HttpRoute{ String(method), String(path), handler });
+    this.routes.pushBack(HttpRoute(method, path, handler));
 }
 
 /**
