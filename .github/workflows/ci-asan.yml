@@ -70,6 +70,9 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
             ../llvm
           cmake --build .
 

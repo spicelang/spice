@@ -65,6 +65,9 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -DLLVM_ENABLE_ZLIB=OFF \
             -DLLVM_ENABLE_ZSTD=OFF \
             -Wno-dev \
@@ -163,6 +166,9 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -DLLVM_ENABLE_ZLIB=OFF \
             -DLLVM_ENABLE_ZSTD=OFF \
             -Wno-dev \
@@ -253,6 +259,9 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" `
             -DLLVM_BUILD_TOOLS=OFF `
+            -DLLVM_INCLUDE_TESTS=OFF `
+            -DLLVM_INCLUDE_EXAMPLES=OFF `
+            -DLLVM_INCLUDE_BENCHMARKS=OFF `
             -Wno-dev `
             -Wattributes `
             ../llvm
@@ -338,6 +347,9 @@ jobs:
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
             -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -Wno-dev \
             -Wattributes \
             ../llvm
