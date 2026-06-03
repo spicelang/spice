@@ -139,6 +139,12 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 target_compile_definitions(spicecore PRIVATE ${LLVM_DEFINITIONS_LIST})
 # Enable pedantic warnings
 target_compile_options(spicecore PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
+# RawStringOStream derives from the polymorphic LLVM type llvm::raw_pwrite_stream. Compiling it with
+# RTTI emits a type_info that references "typeinfo for llvm::raw_pwrite_stream", which does not exist
+# when LLVM is built without RTTI (the default). The class is never used with dynamic_cast/typeid, so
+# compile this single translation unit without RTTI to drop the unused type_info and avoid the
+# dangling reference at link time.
+set_source_files_properties(util/RawStringOStream.cpp PROPERTIES COMPILE_OPTIONS -fno-rtti)
 
 ################## spice executable ##################
 
