@@ -19,7 +19,7 @@ void Lifecycle::addEvent(const LifecycleEvent &event) { events.push_back(event);
 LifecycleState Lifecycle::getCurrentState() const { return events.empty() ? DEAD : events.back().state; }
 
 /**
- * Retrieve the name of the  current state of a symbol
+ * Retrieve the name of the current state of a symbol
  *
  * @return Current state name
  */

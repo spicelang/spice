@@ -227,6 +227,10 @@ public f<bool> Type.hasAnyGenericParts() {
     return false;
 }
 
+public const f<unsigned long> Type.getTypeChainLength() {
+    return this.typeChain.getSize();
+}
+
 /**
  * Check if the current type is of the same container type like the other type.
  */
@@ -265,27 +269,34 @@ public f<bool> Type.matches(const IType* otherTypeI, bool ignoreArraySize) {
     return true;
 }
 
-// =================================================== Serialization ===================================================
-
 /**
  * Get the name of the symbol type as a string
+ *
+ * @param name Get name of type
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
+ * @return Symbol type name
  */
-public p Type.getName(StringStream& name, bool withSize) {
+public p Type.getName(StringStream& name, bool withSize, bool ignorePublic, bool withAliases) {
     foreach const TypeChainElement& chainElement : this.typeChain {
-        chainElement.getName(name, withSize);
+        chainElement.getName(name, withSize, ignorePublic, withAliases);
     }
 }
 
 /**
  * Get the name of the symbol type as a string
+ *
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
+ * @return Symbol type name
  */
-public f<String> Type.getName(bool withSize) {
+public f<String> Type.getName(bool withSize, bool ignorePublic, bool withAliases) {
     StringStream name;
-    this.getName(name, withSize);
+    this.getName(name, withSize, ignorePublic, withAliases);
     return name.str();
 }
-
-// =================================================== Derived types (interned via registry) ===================================================
 
 /**
  * Get the pointer type of the current type as a new type

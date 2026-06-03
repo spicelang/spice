@@ -68,10 +68,10 @@ f<int> main() {
     // -------------------------------------------------------------------------
     // Type name serialization walks the whole type chain
     // -------------------------------------------------------------------------
-    String intName = intType.getName(false);
-    String intPtrName = intPtr.getName(false);
-    String intRefName = intRef.getName(false);
-    String intArrName = intArr5.getName(true);
+    String intName = intType.getName(false, false, false);
+    String intPtrName = intPtr.getName(false, false, false);
+    String intRefName = intRef.getName(false, false, false);
+    String intArrName = intArr5.getName(true, false, false);
     assert intName == String("int");
     assert intPtrName == String("int*");
     assert intRefName == String("int&");

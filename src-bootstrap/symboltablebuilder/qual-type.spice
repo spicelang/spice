@@ -538,8 +538,9 @@ public f<bool> QualType.needsDeAllocation() {
  * @param name Name stream
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  */
-public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) {
+public p QualType.getName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
     // Append the qualifiers
     const QualType baseType = this.getBase();
     const SuperType baseSuperType = baseType.getSuperType();
@@ -550,7 +551,7 @@ public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) 
     if this.qualifiers.isComposition && !defaultForSuperType.isComposition {
         name << "compose ";
     }
-    if this.qualifiers.isConst && !defaultForSuperType.isConst {
+    if this.qualifiers.isConst && !defaultForSuperType.isConst && this.rawType.getTypeChainLength() > 1 {
         name << "const ";
     }
     if this.qualifiers.isHeap && !defaultForSuperType.isHeap {
@@ -559,12 +560,12 @@ public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) 
     if this.qualifiers.isSigned && !defaultForSuperType.isSigned {
         name << "signed ";
     }
-    if this.qualifiers.isUnsigned && !defaultForSuperType.isUnsigned {
+    if !this.qualifiers.isSigned && defaultForSuperType.isSigned {
         name << "unsigned ";
     }
 
     // Loop through all chain elements
-    this.rawType.getName(name, withSize);
+    this.rawType.getName(name, withSize, ignorePublic, withAliases);
 }
 
 /**
@@ -572,11 +573,12 @@ public p QualType.getName(StringStream& name, bool withSize, bool ignorePublic) 
  *
  * @param withSize Include the array size for sized types
  * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-public f<String> QualType.getName(bool withSize, bool ignorePublic) {
+public f<String> QualType.getName(bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
     StringStream name;
-    this.getName(name, withSize, ignorePublic);
+    this.getName(name, withSize, ignorePublic, withAliases);
     return name.str();
 }
 

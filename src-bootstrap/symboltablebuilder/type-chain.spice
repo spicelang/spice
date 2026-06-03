@@ -10,7 +10,7 @@ import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/scope-intf";
 
 // Constants
-public const long ARRAY_SIZE_UNKNOWN = 0l;
+public const unsigned long ARRAY_SIZE_UNKNOWN = 0ul;
 
 public type TypeChainElementData struct {
     public unsigned int arraySize = 0       // TY_ARRAY
@@ -19,7 +19,7 @@ public type TypeChainElementData struct {
 }
 
 public type TypeChainElement struct {
-    public SuperType superType = SuperType::TY_DYN
+    public SuperType superType = SuperType::TY_INVALID
     public String subType
     public unsigned long typeId = cast<unsigned long>(SuperType::TY_INVALID)
     public TypeChainElementData data
@@ -28,17 +28,6 @@ public type TypeChainElement struct {
 }
 
 public p TypeChainElement.ctor() {}
-
-// Explicit copy ctor: a user-defined ctor suppresses the auto-generated copy ctor, but elements are copied
-// when type chains are duplicated (e.g. in Type.toPtr) and stored in vectors, so a deep copy is required.
-public p TypeChainElement.ctor(const TypeChainElement& other) {
-    this.superType = other.superType;
-    this.subType = other.subType;
-    this.typeId = other.typeId;
-    this.data = other.data;
-    this.templateTypes = other.templateTypes;
-    this.paramTypes = other.paramTypes;
-}
 
 public p TypeChainElement.ctor(SuperType superType) {
     this.superType = superType;
@@ -63,52 +52,62 @@ public p TypeChainElement.ctor(SuperType superType, const String& subType, unsig
     this.templateTypes = templateTypes;
 }
 
+// Explicit copy ctor: a user-defined ctor suppresses the auto-generated copy ctor, but elements are copied
+// when type chains are duplicated (e.g. in Type.toPtr) and stored in vectors, so a deep copy is required.
+public p TypeChainElement.ctor(const TypeChainElement& other) {
+    this.superType = other.superType;
+    this.subType = other.subType;
+    this.typeId = other.typeId;
+    this.data = other.data;
+    this.templateTypes = other.templateTypes;
+    this.paramTypes = other.paramTypes;
+}
+
 public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
-    // Check super type, sub type and type id
+    // Check super type
     if lhs.superType != rhs.superType { return false; }
-    if lhs.subType != rhs.subType { return false; }
-    if lhs.typeId != rhs.typeId { return false; }
 
     // Check the super-type-specific data payload
     switch lhs.superType {
         case SuperType::TY_ARRAY: {
-            if lhs.data.arraySize != rhs.data.arraySize { return false; }
+            return lhs.data.arraySize == rhs.data.arraySize;
+        }
+        case SuperType::TY_STRUCT: {
+            assert lhs.data.bodyScope != nil<IScope*> && rhs.data.bodyScope != nil<IScope*>;
+            return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
+        }
+        case SuperType::TY_INTERFACE: {
+            return lhs.typeId == rhs.typeId;
+        }
+        case SuperType::TY_ENUM: {
+            assert lhs.data.bodyScope != nil<IScope*> && rhs.data.bodyScope != nil<IScope*>;
+            return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
         }
         case SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
-            if lhs.data.hasCaptures != rhs.data.hasCaptures { return false; }
+            if lhs.paramTypes.getSize() != rhs.paramTypes.getSize() {
+                return false;
+            }
+            for unsigned long i = 0ul; i < lhs.paramTypes.getSize(); i++ {
+                if lhs.paramTypes[i] != rhs.paramTypes[i] {
+                    return false;
+                }
+            }
+            return true;
         }
-        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM: {
-            if lhs.data.bodyScope != rhs.data.bodyScope { return false; }
+        case SuperType::TY_GENERIC: {
+            return lhs.subType == rhs.subType;
         }
-        default: {}
+        default: {
+            return true;
+        }
     }
-
-    // Check template types
-    if lhs.templateTypes.getSize() != rhs.templateTypes.getSize() { return false; }
-    const unsigned long templateCount = cast<unsigned long>(lhs.templateTypes.getSize());
-    for unsigned long i = 0ul; i < templateCount; i++ {
-        const QualType& lhsTemplateType = lhs.templateTypes.get(i);
-        const QualType& rhsTemplateType = rhs.templateTypes.get(i);
-        if lhsTemplateType != rhsTemplateType { return false; }
-    }
-
-    // Check param and return types
-    if lhs.paramTypes.getSize() != rhs.paramTypes.getSize() { return false; }
-    const unsigned long paramCount = cast<unsigned long>(lhs.paramTypes.getSize());
-    for unsigned long i = 0ul; i < paramCount; i++ {
-        const QualType& lhsParamType = lhs.paramTypes.get(i);
-        const QualType& rhsParamType = rhs.paramTypes.get(i);
-        if lhsParamType != rhsParamType { return false; }
-    }
-
-    return true;
 }
 
 public f<bool> operator!=(const TypeChainElement& lhs, const TypeChainElement& rhs) {
     return !(lhs == rhs);
 }
 
-public p TypeChainElement.getName(StringStream& name, bool withSize) {
+public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignorePublic, bool withAliases) {
     switch this.superType {
         case SuperType::TY_PTR: {
             name << "*";
@@ -117,11 +116,11 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
             name << "&";
         }
         case SuperType::TY_ARRAY: {
+            name << "[";
             if withSize && this.data.arraySize != ARRAY_SIZE_UNKNOWN {
-                name << "[" << toString(this.data.arraySize) << "]";
-            } else {
-                name << "[]";
+                name << toString(this.data.arraySize);
             }
+            name << "]";
         }
         case SuperType::TY_DOUBLE: {
             name << "double";
@@ -142,7 +141,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
             name << "char";
         }
         case SuperType::TY_STRING: {
-            name << "string";
+            name << (withAliases ? "string" : "const char*");
         }
         case SuperType::TY_BOOL: {
             name << "bool";
@@ -152,10 +151,8 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
             if !this.templateTypes.isEmpty() {
                 name << "<";
                 foreach unsigned long i, const QualType& templateType : this.templateTypes {
-                    if i > 0 {
-                        name << ",";
-                    }
-                    templateType.getName(name, withSize, false);
+                    if i > 0 {  name << ","; }
+                    templateType.getName(name, withSize, ignorePublic);
                 }
                 name << ">";
             }
@@ -171,33 +168,27 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
         }
         case SuperType::TY_FUNCTION: {
             name << "f";
-            if this.data.hasCaptures {
-                name << "[]";
-            }
+            if this.data.hasCaptures { name << "[]"; }
             if !this.paramTypes.isEmpty() {
                 const QualType& returnType = this.paramTypes.front();
-                name << "<" << returnType.getName(true, false) << ">";
+                name << "<";
+                returnType.getName(name, true, ignorePublic);
+                name << ">";
             }
             name << "(";
             foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
-                if i > 1 {
-                    name << ",";
-                }
-                templateType.getName(name, true, false);
+                if i > 1 { name << ","; }
+                templateType.getName(name, true, ignorePublic);
             }
             name << ")";
         }
         case SuperType::TY_PROCEDURE: {
             name << "p";
-            if this.data.hasCaptures {
-                name << "[]";
-            }
+            if this.data.hasCaptures { name << "[]"; }
             name << "(";
             foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
-                if i > 1 {
-                    name << ",";
-                }
-                templateType.getName(name, true, false);
+                if i > 1 { name << ","; }
+                templateType.getName(name, true, ignorePublic);
             }
             name << ")";
         }
@@ -217,11 +208,13 @@ public p TypeChainElement.getName(StringStream& name, bool withSize) {
  * Return the type name as string
  *
  * @param withSize Also encode array sizes
+ * @param ignorePublic Ignore public qualifier
+ * @param withAliases Print aliases as is and not decompose them
  * @return Name as string
  */
-public f<String> TypeChainElement.getName(bool withSize) {
+public const f<String> TypeChainElement.getName(bool withSize, bool ignorePublic, bool withAliases) {
     StringStream name;
-    this.getName(name, withSize);
+    this.getName(name, withSize, ignorePublic, withAliases);
     return name.str();
 }
 

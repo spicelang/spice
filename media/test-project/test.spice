@@ -1,5 +1,6 @@
-import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type-chain";
 
 f<int> main() {
-    Scope scope;
+    TypeChainElement intElement = TypeChainElement(SuperType::TY_INT);
 }

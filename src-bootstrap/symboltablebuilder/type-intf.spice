@@ -43,14 +43,15 @@ public type IType interface {
     public f<bool> isRef();
     public f<bool> isArray();
     public f<bool> hasAnyGenericParts();
+    public const f<unsigned long> getTypeChainLength();
 
     // Complex queries on the type
     public f<bool> isSameContainerTypeAs(const IType*);
     public f<bool> matches(const IType*, bool);
 
     // Serialization
-    public p getName(StringStream&, bool);
-    public f<String> getName(bool);
+    public p getName(StringStream&, bool, bool, bool);
+    public f<String> getName(bool, bool, bool);
 
     // Get new type, based on this one (interned via the type registry)
     public f<const IType*> toPtr(const IASTNode*);
