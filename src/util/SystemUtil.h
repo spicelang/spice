@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace spice::compiler {
 
@@ -24,6 +25,8 @@ struct ExternalBinaryFinderResult {
 class SystemUtil {
 public:
   static ExecResult exec(const std::string &command, bool redirectStdErrToStdOut = false);
+  static ExecResult exec(const std::string &program, const std::vector<std::string> &args,
+                         bool redirectStdErrToStdOut = false);
   static bool isCommandAvailable(const std::string &cmd);
   static bool isGraphvizInstalled();
   static ExternalBinaryFinderResult findLinkerInvoker();

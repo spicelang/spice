@@ -840,7 +840,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     svgFilePath.replace_extension("svg");
     dotFilePath.make_preferred();
     svgFilePath.make_preferred();
-    SystemUtil::exec("dot -T svg -o" + svgFilePath.string() + " " + dotFilePath.string());
+    SystemUtil::exec("dot", {"-T", "svg", "-o", svgFilePath.string(), dotFilePath.string()});
     std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
   } else {
     // Dump to console

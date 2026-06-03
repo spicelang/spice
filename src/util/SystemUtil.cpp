@@ -4,6 +4,7 @@
 
 #include <array>
 #include <iostream> // IWYU pragma: keep (usage in Windows-only code)
+#include <optional>
 #include <vector>
 #if OS_UNIX
 #include <unistd.h>
@@ -16,13 +17,22 @@
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
+#include <util/FileUtil.h>
 
+#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Program.h>
 #include <llvm/TargetParser/Triple.h>
 
 namespace spice::compiler {
 
 /**
- * Execute external command. Used to execute compiled binaries
+ * Execute a command string through the system shell (popen/_popen).
+ *
+ * WARNING: This variant passes 'command' to a shell, so any shell metacharacters it contains are interpreted. It must
+ * only be used with fully trusted, internally-constructed command strings (e.g. the test runner). For anything whose
+ * arguments are influenced by user input, use the argument-vector overload exec(program, args, ...) instead, which
+ * never involves a shell.
  *
  * @param command Command to execute
  * @param redirectStdErrToStdOut Redirect StdErr to StdOut
@@ -56,21 +66,71 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
 }
 
 /**
+ * Execute an external program without involving a shell.
+ *
+ * Each argument is passed verbatim to the program via 'execve'/'CreateProcess' (through LLVM's process abstraction),
+ * so file paths and other arguments can never be interpreted as shell syntax. This is the safe variant that must be
+ * used for any command whose arguments are influenced by (untrusted) user input, e.g. the linker invocation.
+ *
+ * @param program Name or path of the program to execute (resolved against PATH if it is a bare name)
+ * @param args Arguments passed to the program (without argv[0], which is added automatically)
+ * @param redirectStdErrToStdOut Capture stderr into the returned output alongside stdout
+ * @return Result struct with the captured output and the process exit code
+ */
+ExecResult SystemUtil::exec(const std::string &program, const std::vector<std::string> &args, bool redirectStdErrToStdOut) {
+  // Resolve the program to a concrete path. This replaces the shell's PATH lookup and keeps execution independent of
+  // any shell metacharacter parsing. Absolute/relative paths are returned unchanged by findProgramByName.
+  const llvm::ErrorOr<std::string> programPath = llvm::sys::findProgramByName(program);
+  const std::string resolvedProgram = programPath ? *programPath : program;
+
+  // Assemble the argument vector. LLVM expects argv[0] to be the program itself.
+  std::vector<llvm::StringRef> execArgs;
+  execArgs.reserve(args.size() + 1);
+  execArgs.emplace_back(resolvedProgram);
+  for (const std::string &arg : args)
+    execArgs.emplace_back(arg);
+
+  // Redirect the child's stdout (and optionally stderr) into a temporary file so we can capture it
+  llvm::SmallString<128> outputFilePath;
+  if (const std::error_code ec = llvm::sys::fs::createTemporaryFile("spice-exec", "out", outputFilePath)) // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Could not create temporary file for command output: " + ec.message()); // GCOV_EXCL_LINE
+
+  // Redirects layout is [stdin, stdout, stderr]; std::nullopt inherits the parent's descriptor, a path redirects to a
+  // file. LLVM merges stdout and stderr when both reference the same path.
+  const llvm::StringRef outputRef = outputFilePath.str();
+  const std::array<std::optional<llvm::StringRef>, 3> redirects = {
+      std::nullopt,                              // stdin: inherit
+      std::optional<llvm::StringRef>(outputRef), // stdout -> temp file
+      redirectStdErrToStdOut ? std::optional<llvm::StringRef>(outputRef) : std::nullopt, // stderr
+  };
+
+  // Execute and wait. No shell is involved.
+  std::string errorMsg;
+  bool executionFailed = false;
+  const int exitCode =
+      llvm::sys::ExecuteAndWait(resolvedProgram, execArgs, std::nullopt, redirects, 0, 0, &errorMsg, &executionFailed);
+
+  if (executionFailed) {                                                                  // GCOV_EXCL_LINE
+    llvm::sys::fs::remove(outputFilePath.str());                                          // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute '" + program + "': " + errorMsg);    // GCOV_EXCL_LINE
+  } // GCOV_EXCL_LINE
+
+  // Read back the captured output and clean up the temporary file
+  std::string output = FileUtil::getFileContent(outputFilePath.str().str());
+  llvm::sys::fs::remove(outputFilePath.str());
+
+  return {output, exitCode};
+}
+
+/**
  * Checks if a certain command is available on the computer
  *
  * @param cmd Command to search for
  * @return Present or not
  */
 bool SystemUtil::isCommandAvailable(const std::string &cmd) {
-#if OS_UNIX
-  const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
-#elif OS_WINDOWS
-  const std::string checkCmd = "where " + cmd + " > nul 2>&1";
-#else
-#error "Unsupported platform"
-#endif
-  const int status = std::system(checkCmd.c_str());
-  return transformStatusToExitCode(status) == EXIT_SUCCESS;
+  // Look the program up on PATH without spawning a shell ('which'/'where')
+  return static_cast<bool>(llvm::sys::findProgramByName(cmd));
 }
 
 /**
@@ -94,7 +154,7 @@ ExternalBinaryFinderResult SystemUtil::findLinkerInvoker() {
         return ExternalBinaryFinderResult{linkerInvokerName, path + linkerInvokerName};
 #elif OS_WINDOWS
   for (const char *linkerInvokerName : {"clang", "gcc"})
-    if (isCommandAvailable(std::string(linkerInvokerName) + " -v"))
+    if (isCommandAvailable(linkerInvokerName))
       return ExternalBinaryFinderResult{linkerInvokerName, linkerInvokerName};
 #else
 #error "Unsupported platform"
@@ -128,7 +188,7 @@ ExternalBinaryFinderResult SystemUtil::findLinker([[maybe_unused]] const CliOpti
         return ExternalBinaryFinderResult{linkerName, path + linkerName};
 #elif OS_WINDOWS
   for (const char *linkerName : {"lld", "ld"})
-    if (isCommandAvailable(std::string(linkerName) + " -v"))
+    if (isCommandAvailable(linkerName))
       return ExternalBinaryFinderResult{linkerName, linkerName};
 #else
 #error "Unsupported platform"
@@ -151,7 +211,7 @@ ExternalBinaryFinderResult SystemUtil::findArchiver() {
         return ExternalBinaryFinderResult{archiverName, path + archiverName};
 #elif OS_WINDOWS
   for (const char *archiverName : {"llvm-lib", "lib"})
-    if (isCommandAvailable(std::string(archiverName) + " -v"))
+    if (isCommandAvailable(archiverName))
       return ExternalBinaryFinderResult{archiverName, archiverName};
 #else
 #error "Unsupported platform"

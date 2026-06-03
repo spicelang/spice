@@ -26,6 +26,18 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
 }
 
 std::any ImportCollector::visitImportDef(ImportDefNode *node) {
+  // Validate the import path before resolving it against any base directory. Import paths must be relative and must
+  // not contain parent-directory ('..') components. Otherwise a malicious source file could escape the std/bootstrap/
+  // project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read arbitrary files, or worse,
+  // smuggle shell metacharacters into a filename that later ends up in a linker invocation.
+  const std::filesystem::path importPathRelative(node->importPath);
+  if (importPathRelative.has_root_path())
+    throw SemanticError(node, INVALID_IMPORT_PATH, "Import paths must be relative, but '" + node->importPath + "' is not");
+  for (const std::filesystem::path &part : importPathRelative)
+    if (part == "..")
+      throw SemanticError(node, INVALID_IMPORT_PATH,
+                          "Import paths must not contain parent-directory ('..') components: '" + node->importPath + "'");
+
   const bool isStd = node->importPath.starts_with("std/");
   const bool isBootstrap = node->importPath.starts_with("bootstrap/");
 
