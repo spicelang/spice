@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-nortti
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -77,7 +77,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_BUILD_TOOLS=OFF \
             ../llvm
           cmake --build .
@@ -199,7 +198,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-nortti
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -215,7 +214,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_BUILD_TOOLS=OFF \
             ../llvm
           cmake --build .
@@ -279,7 +277,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-win-x64
+          key: llvm-${{ env.LLVM_VERSION }}-win-x64-nortti
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -295,7 +293,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ `
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" `
-            -DLLVM_ENABLE_RTTI=ON `
             -DLLVM_BUILD_TOOLS=OFF `
             ../llvm
           cmake --build .
@@ -373,7 +370,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64
+          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64-nortti
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -386,7 +383,6 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_BUILD_TOOLS=OFF \
             ../llvm
           cmake --build .
