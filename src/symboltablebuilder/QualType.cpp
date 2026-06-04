@@ -441,7 +441,7 @@ bool QualType::doesImplement(const QualType &implementedInterfaceType, const AST
 }
 
 /**
- * Check if a certain input type can be bound (assigned) to the current type->
+ * Check if a certain input type can be bound (assigned) to the current type.
  *
  * @param inputType Qualified type, which should be bound to the current type
  * @param isTemporary Is the input type a temporary type
@@ -509,14 +509,14 @@ bool QualType::matchesComposedBaseOfStruct(const QualType &structType) const {
     return false;
 
   // Only the first field is guaranteed to be located at offset 0
-  const QualType &firstField = spiceStruct->fieldTypes.front();
-  if (!firstField.isComposition())
+  const QualType &firstFieldType = spiceStruct->fieldTypes.front();
+  if (!firstFieldType.isComposition())
     return false;
   // The composed field matches the requested base directly (qualifiers like 'compose' are ignored)
-  if (matches(firstField, false, true, true))
+  if (matches(firstFieldType, false, true, true))
     return true;
   // Otherwise follow the composition chain further down
-  return matchesComposedBaseOfStruct(firstField);
+  return matchesComposedBaseOfStruct(firstFieldType);
 }
 
 /**
@@ -531,6 +531,7 @@ bool QualType::isSameContainerTypeAs(const QualType &other) const { return type-
 /**
  * Check if the current type is a self-referencing struct type
  *
+ * @param typeToCompareWith Type to compare with (nil on the first iteration)
  * @return Self-referencing struct type or not
  */
 bool QualType::isSelfReferencingStructType(const QualType *typeToCompareWith) const { // NOLINT(*-no-recursion)
@@ -858,6 +859,13 @@ QualType QualType::getWithFunctionParamAndReturnTypes(const QualTypeList &paramA
   return {newType, qualifiers};
 }
 
+/**
+ * Retrieve the same type, but with new function parameter and return types
+ *
+ * @param returnType New return type
+ * @param paramTypes New parameter types
+ * @return Same type with new parameter types
+ */
 QualType QualType::getWithFunctionParamAndReturnTypes(const QualType &returnType, const QualTypeList &paramTypes) const {
   QualTypeList paramAndReturnTypes = paramTypes;
   paramAndReturnTypes.insert(paramAndReturnTypes.begin(), returnType);

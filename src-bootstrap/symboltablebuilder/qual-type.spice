@@ -26,18 +26,18 @@ public const string ARRAY_ITERATOR_NAME = "ArrayIterator";
 public const unsigned long TYPE_ID_ITERATOR_INTERFACE = 255ul;
 public const unsigned long TYPE_ID_ITERABLE_INTERFACE = 256ul;
 
-// QualType pairs an interned, immutable type (held behind the dependency-free IType interface) with a set of
-// qualifiers. It is a small value type that is copied around freely; the rawType pointer is owned by the type
-// registry. QualType-valued views over the underlying type (template types, function param/return types) are
-// reconstructed on demand from IType's element-wise accessors, since IType itself must stay QualType-free.
+/**
+ * QualType pairs an interned, immutable type (held behind the dependency-free IType interface) with a set of
+ * qualifiers. It is a small value type that is copied around freely; the rawType pointer is owned by the type
+ * registry. QualType-valued views over the underlying type (template types, function param/return types) are
+ * reconstructed on demand from IType's element-wise accessors, since IType itself must stay QualType-free.
+ */
 public type QualType struct {
     public const IType* rawType = nil<const IType*>
     public TypeQualifiers qualifiers
 }
 
 public type QualTypeList alias Vector<QualType>;
-public type Arg alias Pair</*type=*/QualType, /*isTemporary=*/bool>;
-public type ArgList alias Vector</*arg=*/Arg>;
 
 // Note: The context-free QualType(SuperType) ctors cannot intern a type, since they have no access to the type
 // registry (which lives on the GlobalResourceManager). They therefore leave rawType as nil (a "dyn" placeholder).
@@ -52,15 +52,11 @@ public p QualType.ctor(const IType* rawType, TypeQualifiers qualifiers) {
     this.qualifiers = qualifiers;
 }
 
-// Explicit copy ctor: a user-defined ctor suppresses the auto-generated copy ctor, but QualType values are
-// copied everywhere (stored in QualTypeList vectors, `QualType newType = *this`, etc.).
 public p QualType.ctor(const QualType& other) {
     this.rawType = other.rawType;
     this.qualifiers = other.qualifiers;
 }
 
-// Copy assignment operator: defining a copy ctor suppresses the implicitly generated one, so it is provided
-// explicitly. Needed for `substantiation = requestedType`-style assignments from a const QualType&.
 public p operator=(QualType& this, const QualType& other) {
     this.rawType = other.rawType;
     this.qualifiers = other.qualifiers;
@@ -138,7 +134,7 @@ public f<QualTypeList> QualType.getFunctionParamTypes() {
 }
 
 /**
- * Get the function parameter and return types of the underlying type (index 0 is the return type)
+ * Get the function parameter and return types of the underlying type
  *
  * @return Function parameter and return types
  */
@@ -150,6 +146,15 @@ public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
         result.pushBack(QualType(raw, quals));
     }
     return result;
+}
+
+/**
+ * Check if the underlying type has lambda captures
+ *
+ * @return Has lambda captures or not
+ */
+public f<bool> QualType.hasLambdaCaptures() {
+    return this.rawType.hasLambdaCaptures();
 }
 
 /**
@@ -171,12 +176,63 @@ public f<QualTypeList> QualType.getTemplateTypes() {
  * Get the struct instance for a struct type
  *
  * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
  * @return Struct instance
  */
-public f<IStruct*> QualType.getStruct(const IASTNode* node) {
+public f<IStruct*> QualType.getStruct(const IASTNode* node, const QualTypeList &templateTypes) {
     assert this.is(SuperType::TY_STRUCT);
     // ToDo: Wire up to StructManager.matchStruct once the model/typechecker layer is available.
     return nil<IStruct*>;
+}
+
+/**
+ * Get the struct instance for a struct type
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+public f<IStruct*> QualType.getStruct(const IASTNode* node) {
+    return this.getStruct(node, this.getTemplateTypes());
+}
+
+/**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Struct instance
+ */
+public f<IStruct*> QualType.getStructAndAdjustType(const IASTNode* node, const QualTypeList& templateTypes) {
+    const IStruct* spiceStruct = this.getStruct(node, templateTypes);
+    this.rawType = this.rawType.getWithBodyScope(spiceStruct.getBodyScope());
+    // ToDo: Comment out
+    //this.rawType = this.rawType.getWithTemplateTypes(spiceStruct.getTemplateTypes());
+    return spiceStruct;
+}
+
+/**
+ * Get the struct instance for a struct type
+ * Adopt information from the struct to this type.
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+public f<IStruct*> QualType.getStructAndAdjustType(const IASTNode* node) {
+    return this.getStructAndAdjustType(node, this.getTemplateTypes());
+}
+
+/**
+ * Get the interface instance for an interface type
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Interface instance
+ */
+public f<IInterface*> QualType.getInterface(const IASTNode* node, const QualTypeList& templateTypes) {
+    assert this.is(SuperType::TY_INTERFACE);
+    // ToDo: Wire up to InterfaceManager.matchInterface once the model/typechecker layer is available.
+    return nil<IInterface*>;
 }
 
 /**
@@ -186,9 +242,7 @@ public f<IStruct*> QualType.getStruct(const IASTNode* node) {
  * @return Interface instance
  */
 public f<IInterface*> QualType.getInterface(const IASTNode* node) {
-    assert this.is(SuperType::TY_INTERFACE);
-    // ToDo: Wire up to InterfaceManager.matchInterface once the model/typechecker layer is available.
-    return nil<IInterface*>;
+    return this.getInterface(node, this.getTemplateTypes());
 }
 
 /**
@@ -308,30 +362,44 @@ public f<bool> QualType.isArrayOf(SuperType superType) {
 }
 
 /**
- * Check if the type is heap-allocated
- *
- * @return Heap-allocated or not
- */
-public f<bool> QualType.isHeap() {
-    return this.qualifiers.isHeap;
-}
-
-/**
- * Check if the type is const
- *
- * @return Const or not
- */
-public f<bool> QualType.isConst() {
-    return this.qualifiers.isConst;
-}
-
-/**
  * Check if the underlying type is a const reference
  *
  * @return Const reference or not
  */
 public f<bool> QualType.isConstRef() {
     return this.qualifiers.isConst && this.rawType.isRef();
+}
+
+/**
+ * Check if the current type is an iterator
+ *
+ * @param node ASTNode
+ * @return Iterator or not
+ */
+public f<bool> QualType.isIterator(const IASTNode* node) {
+    // The type must be a struct that implements the iterator interface
+    if !this.is(SuperType::TY_STRUCT) { return false; }
+
+    // ToDo: Port iterator-interface matching once the type registry is threaded to call sites.
+    return false;
+}
+
+/**
+ * Check if the current type is an iterable
+ * - Arrays are always considered iterable
+ * - Otherwise the type must be a struct that implements the iterator interface
+ *
+ * @param node ASTNode
+ * @return Iterable or not
+ */
+public f<bool> QualType.isIterable(const IASTNode* node) {
+    // Arrays are always considered iterable
+    if this.isArray() { return true; }
+    // Otherwise the type must be a struct that implements the iterator interface
+    if !this.is(SuperType::TY_STRUCT) { return false; }
+
+    // ToDo: Port iterable-interface matching once the type registry is threaded to call sites.
+    return false;
 }
 
 /**
@@ -361,32 +429,6 @@ public f<bool> QualType.isErrorObj() {
 }
 
 /**
- * Check if the current type is an iterator
- *
- * @param node IASTNode
- * @return Iterator or not
- */
-public f<bool> QualType.isIterator(const IASTNode* node) {
-    // ToDo: Port iterator-interface matching once the type registry is threaded to call sites.
-    return false;
-}
-
-/**
- * Check if the current type is an iterable
- * - Arrays are always considered iterable
- * - Otherwise the type must be a struct that implements the iterator interface
- *
- * @param node IASTNode
- * @return Iterable or not
- */
-public f<bool> QualType.isIterable(const IASTNode* node) {
-    // Arrays are always considered iterable
-    if this.isArray() { return true; }
-    // ToDo: Port iterable-interface matching once the type registry is threaded to call sites.
-    return false;
-}
-
-/**
  * Check if the current type has any generic parts
  *
  * @return Generic parts or not
@@ -396,18 +438,54 @@ public f<bool> QualType.hasAnyGenericParts() {
 }
 
 /**
- * Check if copying an instance of the current type would require calling other copy ctors.
+ * Check if constructing an instance of the current type would require calling a ctor.
+ * If this function return true, the type does not need to be constructed.
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially constructible or not
+ */
+public f<bool> QualType.isTriviallyConstructible(const IASTNode* node) {
+    // Heap-allocated values require manual allocation, which is done in the default/explicit ctor
+    if this.qualifiers.isHeap { return false; }
+
+    // References can't be default initialized
+    if this.isRef() { return false; }
+
+    // In case of an array, the item type is determining the construction triviality
+    if this.isArray() {
+        const QualType baseType = this.getBase();
+        return baseType.isTriviallyConstructible(node);
+    }
+
+    // In case of a struct, the member types determine the construction triviality
+    if this.is(SuperType::TY_STRUCT) {
+        // If the struct has a ctor, it is a non-trivially constructible one
+        const IStruct* spiceStruct = this.getStruct(node);
+        // ToDo
+
+        // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
+        // ToDo
+
+        // If any field has a default value, the struct is non-trivially constructible
+        // ToDo
+
+        // Check if all member types are trivially constructible
+        // ToDo
+    }
+
+    return true;
+}
+
+/**
+ * Check if copying an instance of the current type would require a call to the copy ctor.
  * If this function return true, the type can be copied by calling memcpy.
  *
- * @param node Accessing IASTNode
+ * @param node Accessing ASTNode
  * @return Trivially copyable or not
  */
 public f<bool> QualType.isTriviallyCopyable(const IASTNode* node) {
     // Heap-allocated values may not be copied via memcpy
     if this.qualifiers.isHeap { return false; }
-
-    // References can't be copied at all
-    if this.isRef() { return false; }
 
     // In case of an array, the item type is determining the copy triviality
     if this.isArray() {
@@ -415,7 +493,46 @@ public f<bool> QualType.isTriviallyCopyable(const IASTNode* node) {
         return baseType.isTriviallyCopyable(node);
     }
 
-    // ToDo: For structs, check whether the struct has a (non-trivial) copy ctor once the model layer is wired up.
+    // In case of a struct, the member types determine the copy triviality
+    if this.is(SuperType::TY_STRUCT) {
+        // If the struct has a copy ctor, it is a non-trivially copyable one
+        const IStruct* spiceStruct = this.getStruct(node);
+        // ToDo
+
+        // Check if all member types are trivially copyable
+        // ToDo
+    }
+
+    return true;
+}
+
+/**
+ * Check if destructing an instance of the current type would require calling a dtor.
+ * If this function return true, the type does not need to be destructed.
+ *
+ * @param node Accessing ASTNode
+ * @return Trivially destructible or not
+ */
+public f<bool> QualType.isTriviallyDestructible(const IASTNode* node) {
+    // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
+    if this.qualifiers.isHeap { return false; }
+
+    // In case of an array, the item type is determining the destructing triviality
+    if this.isArray() {
+        const QualType baseType = this.getBase();
+        return baseType.isTriviallyDestructible(node);
+    }
+
+    // In case of a struct, the member types determine the destruction triviality
+    if this.is(SuperType::TY_STRUCT) {
+        // If the struct has a dtor, it is a non-trivially destructible one
+        const IStruct* spiceStruct = this.getStruct(node);
+        // ToDo
+
+        // Check if all member types are trivially destructible
+        // ToDo
+    }
+
     return true;
 }
 
@@ -423,11 +540,13 @@ public f<bool> QualType.isTriviallyCopyable(const IASTNode* node) {
  * Check if the current type implements the given interface type
  *
  * @param implementedInterfaceType Interface type
- * @param node Accessing IASTNode
+ * @param node Accessing ASTNode
  * @return Struct implements interface or not
  */
 public f<bool> QualType.doesImplement(const QualType& implementedInterfaceType, const IASTNode* node) {
     assert this.is(SuperType::TY_STRUCT) && implementedInterfaceType.is(SuperType::TY_INTERFACE);
+    const IStruct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<IStruct*>;
     // ToDo: Port interface-implementation check once the model layer is wired up.
     return false;
 }
@@ -454,6 +573,10 @@ public f<bool> QualType.canBind(const QualType& inputType, bool isTemporary) {
  * @return Matching or not
  */
 public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) {
+    // Special case: string is equivalent to const char*
+    if this.is(SuperType::TY_STRING) && otherType.isPtrTo(SuperType::TY_CHAR) && otherType.isConst() { return true; }
+    if this.isPtrTo(SuperType::TY_CHAR) && this.isConst() && otherType.is(SuperType::TY_STRING) { return true; }
+
     // Compare type
     if !this.rawType.matches(otherType.rawType, ignoreArraySize) {
         return false;
@@ -471,11 +594,36 @@ public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize,
  * @return Matching or not
  */
 public f<bool> QualType.matchesInterfaceImplementedByStruct(const QualType& structType) {
-    if !this.is(SuperType::TY_INTERFACE) || !structType.is(SuperType::TY_STRUCT) {
-        return false;
-    }
+    if !this.is(SuperType::TY_INTERFACE) || !structType.is(SuperType::TY_STRUCT) { return false; }
+    const IStruct* spiceStruct = this.getStruct(nil<const IASTNode*>);
+    assert spiceStruct != nil<IStruct*>;
     // ToDo: Port interface-implementation check once the model layer is wired up.
     return false;
+}
+
+/**
+ * Check if the current (struct) type is a base of the given struct type, embedded via the 'compose'
+ * qualifier. Only first-field compositions are considered, because only those sit at offset 0 and can
+ * therefore be reached without adjusting the pointer value. The check follows the chain of first-field
+ * compositions transitively, so a base that is composed several levels deep is still matched.
+ */
+public f<bool> QualType.matchesComposedBaseOfStruct(const QualType& structType) {
+    if !this.is(SuperType::TY_STRUCT) || !structType.is(SuperType::TY_STRUCT) { return false; }
+
+    const IStruct* spiceStruct = structType.getStruct(nil<const IASTNode*>);
+    if spiceStruct == nil<IStruct*> { return false; }
+    // ToDo: Switch
+    //const Vector<QualType>& fieldTypes = spiceStruct.getFieldTypes();
+    const Vector<QualType> fieldTypes;
+    if fieldTypes.isEmpty() { return false; }
+
+    // Only the first field is guaranteed to be located at offset 0
+    const QualType& firstFieldType = fieldTypes[0];
+    if !firstFieldType.qualifiers.isComposition { return false; }
+    // The composed field matches the requested base directly (qualifiers like 'compose' are ignored)
+    if this.matches(firstFieldType, false, true, true) { return true; }
+    // Otherwise follow the composition chain further down
+    return this.matchesComposedBaseOfStruct(firstFieldType);
 }
 
 /**
@@ -497,6 +645,13 @@ public f<bool> QualType.isSameContainerTypeAs(const QualType& other) {
  */
 public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompareWith) {
     if !this.is(SuperType::TY_STRUCT) { return false; }
+
+    // If no type was set by a previous iteration, we set it to the current type
+    if typeToCompareWith == nil<const QualType*> {
+        typeToCompareWith = this;
+    }
+
+    IScope* bodyScope = this.getBodyScope();
     // ToDo: Port self-reference detection once IScope exposes lookupField(i).
     return false;
 }
@@ -520,6 +675,7 @@ public f<bool> QualType.isCoveredByGenericTypeList(Vector<IGenericType>& generic
 public f<bool> QualType.needsDeAllocation() {
     if !this.isHeap() { return false; }
     // We only need de-allocation, if we directly point to a heap-allocated type
+    // e.g. for heap TestStruct** we don't need to de-allocate, since it is a non-owning pointer to an owning pointer
     return this.isPtr() && !this.isPtrTo(SuperType::TY_PTR);
 }
 
@@ -608,13 +764,6 @@ public f<QualType> QualType.toRef(const IASTNode* node) {
 }
 
 /**
- * Make this type const
- */
-public p QualType.makeConst() {
-    this.qualifiers.isConst = true;
-}
-
-/**
  * Retrieve the const reference type of this type
  *
  * @param node ASTNode
@@ -634,7 +783,7 @@ public f<QualType> QualType.toConstRef(const IASTNode* node) {
  * @param skipDynCheck Skip dynamic check
  * @return New type
  */
-public f<QualType> QualType.toArray(const IASTNode* node, unsigned int size, bool skipDynCheck = false) {
+public f<QualType> QualType.toArr(const IASTNode* node, unsigned int size, bool skipDynCheck = false) {
     QualType newType = *this;
     newType.rawType = this.rawType.toArr(node, size, skipDynCheck);
     return newType;
@@ -677,13 +826,34 @@ public f<QualType> QualType.getBase() {
 }
 
 /**
+ * Get aliased type for an alias type
+ *
+ * @param aliasEntry Entry of the alias definition
+ * @return Aliased type
+ */
+// ToDo: getAliased
+
+/**
  * Remove reference of this type, if it is a reference
  *
  * @return New type
  */
 public f<QualType> QualType.removeReferenceWrapper() {
-    if !this.isRef() { return *this; }
-    return this.getContained();
+    return this.isRef() ? this.getContained() : *this;
+}
+
+/**
+ * Auto-dereference the given symbol type (peeling off all ptr/ref wrappers).
+ * This process is NOT equivalent with getBase() because getBase() also removes e.g. array wrappers
+ *
+ * @return New type
+ */
+public f<QualType> QualType.autoDereference() {
+    QualType newType = *this;
+    while newType.isPtr() || newType.isRef() {
+        newType = newType.getContained();
+    }
+    return newType;
 }
 
 /**
@@ -707,19 +877,245 @@ public f<QualType> QualType.replaceBaseType(const QualType& newBaseType) {
  * @return Same type with lambda captures
  */
 public f<QualType> QualType.getWithLambdaCaptures(bool enabled = true) {
+    // Create new type
     const IType* newType = this.rawType.getWithLambdaCaptures(enabled);
+    // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
 
 /**
- * Equality over the interned raw type pointer and the qualifiers
+ * Retrieve the same type, but with a new body scope
  *
+ * @return Same type with body scope
+ */
+public f<QualType> QualType.getWithBodyScope(IScope* bodyScope) {
+    // Create new type
+    const IType* newType = this.rawType.getWithBodyScope(bodyScope);
+    // Return the new qualified type
+    return QualType(newType, this.qualifiers);
+}
+
+/**
+ * Retrieve the same type, but with new template types
+ *
+ * @param templateTypes New template types
+ * @return Same type with new template types
+ */
+public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTypes) {
+    // Create new type
+    // ToDo: Switch
+    //const IType* newType = this.rawType.getWithTemplateTypes(templateTypes);
+    const IType* newType = nil<const IType*>;
+    // Return the new qualified type
+    return QualType(newType, this.qualifiers);
+}
+
+/**
+ * Retrieve the same type, but with new base template types
+ *
+ * @param templateTypes New base template types
+ * @return Same type with new base template types
+ */
+public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
+    // Create new type
+    // ToDo: Switch
+    //const IType* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
+    const IType* newType = nil<const IType*>;
+    // Return the new qualified type
+    return QualType(newType, this.qualifiers);
+}
+
+/**
+ * Retrieve the same type, but with new function parameter and return types
+ *
+ * @param paramAndReturnTypes New parameter types
+ * @return Same type with new parameter types
+ */
+public f<QualType> QualType.getWithFunctionParamAndReturnTypes(const QualTypeList& paramAndReturnTypes) {
+    // Create new type
+    // ToDo: Switch
+    //const IType* newType = this.rawType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+    const IType* newType = nil<const IType*>;
+    // Return the new qualified type
+    return QualType(newType, this.qualifiers);
+}
+
+/**
+ * Retrieve the same type, but with new function parameter and return types
+ *
+ * @param returnType New return type
+ * @param paramTypes New parameter types
+ * @return Same type with new parameter types
+ */
+public f<QualType> QualType.getWithFunctionParamAndReturnTypes(const QualType& returnType, const QualTypeList& paramTypes) {
+    QualTypeList paramAndReturnTypes = paramTypes;
+    paramAndReturnTypes.insertAt(0ul, returnType);
+    return this.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+}
+
+/**
+ * Check if the current type is const
+ *
+ * Examples for const types:
+ * - const int
+ * - const TestStruct
+ * - const string
+ *
+ * Examples for non-const types:
+ * - double (reason: not marked const)
+ * - const int* (reason: pointer to const int is not const itself)
+ * - const TestStruct& (reason: reference to const TestStruct is not const itself)
+ *
+ * @return Is const or not
+ */
+public f<bool> QualType.isConst() {
+    return this.isExtendedPrimitive() && this.qualifiers.isConst;
+}
+
+/**
+ * Check if the current type is marked signed
+ *
+ * @return Is signed or not
+ */
+public f<bool> QualType.isSigned() {
+    const dyn options = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    assert this.isOneOf(options, len(options));
+    return this.qualifiers.isSigned;
+}
+
+/**
+ * Check if the current type is marked unsigned
+ *
+ * @return Is unsigned or not
+ */
+public f<bool> QualType.isUnsigned() {
+    const dyn options = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    assert this.isOneOf(options, len(options));
+    return !this.qualifiers.isUnsigned;
+}
+
+/**
+ * Check if the current type is marked inline
+ *
+ * @return Is inline or not
+ */
+public f<bool> QualType.isInline() {
+    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    assert this.isOneOf(options, len(options));
+    return this.qualifiers.isInline;
+}
+
+/**
+ * Check if the current type is marked public
+ *
+ * @return Is public or not
+ */
+public f<bool> QualType.isPublic() {
+    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
+    return this.qualifiers.isPublic;
+}
+
+/**
+ * Check if the current type is marked heap
+ *
+ * @return Is heap or not
+ */
+public f<bool> QualType.isHeap() {
+    return this.qualifiers.isHeap;
+}
+
+/**
+ * Check if the current type is marked as composition
+ *
+ * @return Is composition or not
+ */
+public f<bool> QualType.isComposition() {
+    return this.qualifiers.isComposition;
+}
+
+/**
+ * Make the current type const
+ *
+ * @param isConst Is const or not
+ */
+public p QualType.makeConst(bool isConst = true) {
+    this.qualifiers.isConst = isConst;
+}
+
+/**
+ * Make the current type unsigned
+ *
+ * @param isUnsigned Is unsigned or not
+ */
+public p QualType.makeUnsigned(bool isUnsigned = true) {
+    const dyn options = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    assert this.isOneOf(options, len(options));
+    this.qualifiers.isSigned = !isUnsigned;
+    this.qualifiers.isUnsigned = isUnsigned;
+}
+
+/**
+ * Make the current type public
+ *
+ * @param isPublic Is public or not
+ */
+public p QualType.makePublic(bool isPublic = true) {
+    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
+    this.qualifiers.isPublic = isPublic;
+}
+
+/**
+ * Make the current type heap
+ *
+ * @param isHeap Is heap or not
+ */
+public p QualType.makeHeap(bool isHeap = true) {
+    this.qualifiers.isHeap = isHeap;
+}
+
+/**
+ * Check if two types are equal
+ *
+ * @param lhs Left-hand side type
+ * @param rhs Right-hand side type
  * @return Equal or not
  */
 public f<bool> operator==(const QualType& lhs, const QualType& rhs) {
     return lhs.rawType == rhs.rawType && lhs.qualifiers == rhs.qualifiers;
 }
 
+/**
+ * Check if two types are not equal
+ *
+ * @param lhs Left-hand side type
+ * @param rhs Right-hand side type
+ * @return Not equal or not
+ */
 public f<bool> operator!=(const QualType& lhs, const QualType& rhs) {
     return !(lhs == rhs);
+}
+
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+public p unwrapBoth(QualType& typeA, QualType& typeB) {
+    // ToDo: Fix funcion matching problem below
+    //unwrapBoth(typeA.rawType, typeB.rawType);
+}
+
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ * Furthermore, remove reference wrappers if possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+public p unwrapBothAndRemoveReferenceWrapper(QualType& typeA, QualType& typeB) {
+    // ToDo: Fix funcion matching problem below
+    //unwrapBothWithRefWrappers(typeA.rawType, typeB.rawType);
 }

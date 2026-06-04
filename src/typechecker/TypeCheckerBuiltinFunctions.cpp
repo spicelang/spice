@@ -231,7 +231,7 @@ std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
     SOFT_ERROR_ER(node->argLst->args.front(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   if (argType.is(TY_ARRAY)) {
-    node->data.at(manIdx).setCompileTimeValue({.longValue = argType.getArraySize()});
+    node->data.at(manIdx).setCompileTimeValue({.longValue = static_cast<int64_t>(argType.getArraySize())});
   } else {
     // If we want to use the len builtin on a string, we need to import the string runtime module
     if (!sourceFile->isStringRT())
