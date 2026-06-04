@@ -27,6 +27,26 @@ f<int> main() {
     assert v[0] == 10;
     assert v[1] == 30;
 
+    // insertAt(middle)
+    v.insertAt(1l, 20);
+    assert v.getSize() == 3;
+    assert v[0] == 10;
+    assert v[1] == 20;
+    assert v[2] == 30;
+
+    // insertAt(front)
+    v.insertAt(0l, 5);
+    assert v.getSize() == 4;
+    assert v[0] == 5;
+    assert v[1] == 10;
+    assert v[3] == 30;
+
+    // insertAt(back == size) appends
+    v.insertAt(v.getSize(), 40);
+    assert v.getSize() == 5;
+    assert v.front() == 5;
+    assert v.back() == 40;
+
     // clear
     v.clear();
     assert v.isEmpty();
