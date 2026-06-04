@@ -1115,7 +1115,7 @@ public p unwrapBoth(QualType& typeA, QualType& typeB) {
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-public p unwrapBothAndRemoveReferenceWrapper(QualType& typeA, QualType& typeB) {
+public p unwrapBothWithRefWrappers(QualType& typeA, QualType& typeB) {
     // ToDo: Fix funcion matching problem below
     //unwrapBothWithRefWrappers(typeA.rawType, typeB.rawType);
 }

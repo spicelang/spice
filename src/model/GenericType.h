@@ -20,7 +20,6 @@ public:
   explicit GenericType(const QualType &type) : QualType(type) {}
   GenericType(const std::string &name, QualTypeList typeConditions)
       : QualType(TY_GENERIC, name), typeConditions(std::move(typeConditions)) {}
-  GenericType() = default;
 
   // Public methods
   [[nodiscard]] bool checkConditionsOf(const QualType &requestedType, QualType &substantiation, bool ignoreArraySize = false,

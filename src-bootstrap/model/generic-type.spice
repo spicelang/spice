@@ -14,13 +14,10 @@ public type GenericType struct {
     public bool used = false
 }
 
+public p GenericType.ctor() {}
+
 public p GenericType.ctor(const QualType& qualType) {
     this.qualType = qualType;
-    this.typeConditions.pushBack(QualType(SuperType::TY_DYN));
-}
-
-public p GenericType.ctor(const String& name) {
-    this.qualType = QualType(SuperType::TY_GENERIC, name);
     this.typeConditions.pushBack(QualType(SuperType::TY_DYN));
 }
 
@@ -30,12 +27,12 @@ public p GenericType.ctor(const String& name, const QualTypeList& typeConditions
 }
 
 /**
- * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
+ * Checks if the given symbol qualType matches all conditions to get a manifestation of the current generic qualType
  *
- * @param requestedType Qualified type to be checked
+ * @param requestedType Qualified qualType to be checked
  * @param substantiation Concrete substantiation of the generic type
- * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreQualifiers Ignore the type qualifiers for type comparison
+ * @param ignoreArraySize Ignore the array size for qualType comparison
+ * @param ignoreQualifiers Ignore the type qualifiers for qualType comparison
  * @return True or false
  */
 public f<bool> GenericType.checkConditionsOf(const QualType& requestedType, QualType& substantiation, bool ignoreArraySize = false, bool ignoreQualifiers = false) {
@@ -43,12 +40,12 @@ public f<bool> GenericType.checkConditionsOf(const QualType& requestedType, Qual
 }
 
 /**
- * Checks if the given type matches all type conditions to get a manifestation of the current generic type
+ * Checks if the given qualType matches all qualType conditions to get a manifestation of the current generic qualType
  *
  * @param requestedType Qualified type to be checked
  * @param substantiation Concrete substantiation of the generic type
- * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreQualifiers Ignore the type qualifiers for type comparison
+ * @param ignoreArraySize Ignore the array size for qualType comparison
+ * @param ignoreQualifiers Ignore the type qualifiers for qualType comparison
  * @return True or false
  */
 f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType& substantiation, bool ignoreArraySize, bool ignoreQualifiers) {
@@ -61,8 +58,7 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
         return true;
     }
     // Succeed if the given qual type is generic and matches the current one
-    // ToDo: Use a dedicated QualType equality operator once available; matches(...) is used as an approximation here.
-    if requestedType.hasAnyGenericParts() && requestedType.matches(this.qualType, false, false, false) {
+    if requestedType.hasAnyGenericParts() && requestedType == *this {
         return true;
     }
     // Check type conditions
@@ -72,18 +68,9 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
             return true;
         }
         // In situations like this we need to unwrap: requestedType = const int&, typeCondition = int
-        // ToDo: Also unwrap matching pointer/array layers (Type::unwrapBoth) once that helper is available in the bootstrap.
         QualType typeConditionCopy = typeCondition;
         QualType requestedTypeCopy = requestedType;
-        // Remove reference wrapper of the condition type if required
-        if typeConditionCopy.isRef() && !requestedTypeCopy.isRef() {
-            typeConditionCopy = typeConditionCopy.removeReferenceWrapper();
-        }
-        // Remove reference wrapper of the requested type if required
-        const QualType conditionBaseType = typeConditionCopy.getBase();
-        if !typeConditionCopy.isRef() && requestedTypeCopy.isRef() && !conditionBaseType.is(SuperType::TY_GENERIC) {
-            requestedTypeCopy = requestedTypeCopy.removeReferenceWrapper();
-        }
+        unwrapBothWithRefWrappers(typeConditionCopy, requestedTypeCopy);
         if typeConditionCopy.matches(requestedTypeCopy, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
             // Field-wise copy: see note above on the host's const-ref-through-reference assignment limitation.
             substantiation.rawType = typeCondition.rawType;
