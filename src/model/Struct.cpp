@@ -27,9 +27,11 @@ std::string Struct::getScopeName() const {
 }
 
 /**
- * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the struct
- * from the parent scope.
+ * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the
+ * struct from the parent scope.
  *
+ * @param name Struct name
+ * @param concreteTemplateTypes Concrete template types
  * @return Name of the struct scope
  */
 std::string Struct::getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes) {

@@ -26,18 +26,13 @@ public p Struct.ctor(const String& name, SymbolTableEntry* entry, IScope* scope,
 }
 
 /**
- * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the
- * struct from the parent scope.
+ * Retrieve the name of the scope, where members and methods are placed. This is used to navigate to the scope of the struct
+ * from the parent scope.
  *
  * @return Name of the struct scope
  */
 public f<String> Struct.getScopeName() {
-    String appendix;
-    if this.structBase.isGenericSubstantiation() {
-        appendix = this.structBase.getSignature();
-    } else {
-        appendix = this.structBase.name;
-    }
+    const String &appendix = this.structBase.isGenericSubstantiation() ? this.structBase.getSignature() : this.name;
     return String(STRUCT_SCOPE_PREFIX) + appendix;
 }
 
@@ -72,7 +67,7 @@ public f<bool> Struct.hasReferenceFields() {
  * Check that all fields are in a certain lifecycle state.
  *
  * @param state Lifecycle state to check for
- * @return nil if all fields are in this state, otherwise the first mismatched field symbol
+ * @return nullptr if all fields are in this state, otherwise the first mismatched field symbol
  */
 public f<SymbolTableEntry*> Struct.areAllFieldsInState(const LifecycleState state) {
     // ToDo: Iterate the fields via scope.lookupField(i) once IScope exposes it. For now, assume all fields are in state.
@@ -82,7 +77,7 @@ public f<SymbolTableEntry*> Struct.areAllFieldsInState(const LifecycleState stat
 /**
  * Check that all fields are initialized.
  *
- * @return nil if all fields are initialized, otherwise the first uninitialized field symbol
+ * @return nullptr if all fields are initialized, otherwise the first uninitialized field symbol
  */
 public f<SymbolTableEntry*> Struct.areAllFieldsInitialized() {
     return this.areAllFieldsInState(LifecycleState::INITIALIZED);

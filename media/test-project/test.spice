@@ -1,4 +1,4 @@
-import "bootstrap/model/function";
+import "bootstrap/model/interface";
 
 f<int> main() {
 
