@@ -112,7 +112,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const Qual
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string signature = newManifestation.getSignature(true, true, false);
+  const std::string signature = newManifestation.getSignature(true, true, false, true);
 
   // Check if the function exists already
   for (const auto &manifestations : insertScope->functions | std::views::values) {
@@ -263,7 +263,7 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      const std::string newSignature = candidate.getSignature(true, true, false);
+      const std::string newSignature = candidate.getSignature(true, true, false, true);
       if (const auto it = manifestations.find(newSignature); it != manifestations.end()) {
         it->second.used = true;
         matches.push_back(&it->second);

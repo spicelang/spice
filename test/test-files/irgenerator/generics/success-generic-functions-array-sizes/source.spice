@@ -1,0 +1,26 @@
+// Calling a generic function with arguments that only differ in their array size must produce
+// separate substantiations. Otherwise the substantiations collide and the compiler emits a call
+// with a mismatching signature (see GitHub issue #1161).
+
+public type SuperType enum {
+    A,
+    B,
+    C,
+    D
+}
+
+type SuperTypeArray dyn;
+
+f<bool> isOneOf<SuperTypeArray>(SuperType given, SuperTypeArray superTypes) {
+    for unsigned long i = 0ul; i < len(superTypes); i++ {
+        if given == superTypes[i] { return true; }
+    }
+    return false;
+}
+
+f<int> main() {
+    printf("%d\n", isOneOf(SuperType::A, [SuperType::B, SuperType::A, SuperType::C])); // true
+    printf("%d\n", isOneOf(SuperType::D, [SuperType::B, SuperType::C]));               // false
+    printf("%d\n", isOneOf(SuperType::C, [SuperType::C]));                             // true
+    return 0;
+}
