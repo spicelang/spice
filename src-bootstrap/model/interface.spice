@@ -30,12 +30,7 @@ public p Interface.ctor(const String& name, SymbolTableEntry* entry, IScope* sco
  * @return Name of the interface scope
  */
 public f<String> Interface.getScopeName() {
-    String appendix;
-    if this.structBase.isGenericSubstantiation() {
-        appendix = this.structBase.getSignature();
-    } else {
-        appendix = this.structBase.name;
-    }
+    const String& appendix = this.structBase.isGenericSubstantiation() ? this.structBase.getSignature() : this.name;
     return String(INTERFACE_SCOPE_PREFIX) + appendix;
 }
 

@@ -23,6 +23,9 @@ f<int> main() {
     assert s4.rfind("o") == 7;
     assert s4.rfind("!") == 11;
     assert s4.rfind("o", 6) == 4;
+    assert s4.rfind("Wort") == -1; // Not found: must not underflow the unsigned search index
+    assert s4.rfind("xyz") == -1;
+    assert s4.rfind("H") == 0; // Match at index 0 (the lower bound of the search)
     assert !s4.contains("abc");
     assert s4.contains("Hello");
     assert s4.contains("World!");

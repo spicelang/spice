@@ -473,9 +473,13 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
 
     if startIndex == 0l { startIndex = this.length - needleLength; }
 
-    // Search needle in haystack
-    for unsigned long idx = startIndex; idx >= 0; idx-- {
-        // Start matching at startIdx
+    // Search needle in haystack, iterating from startIndex down to 0.
+    // Note: a forward counter is used (idx = startIndex - i) instead of decrementing idx directly,
+    // because idx is unsigned and would underflow to a huge value once it reaches 0, causing an
+    // out-of-bounds read past the buffer.
+    for unsigned long i = 0l; i <= startIndex; i++ {
+        const unsigned long idx = startIndex - i;
+        // Start matching at idx
         for unsigned long charIdx = 0l; charIdx < needleLength; charIdx++ {
             unsafe {
                 if this.contents[idx + charIdx] != needle[charIdx] {

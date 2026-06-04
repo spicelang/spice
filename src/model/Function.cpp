@@ -35,17 +35,19 @@ QualTypeList Function::getParamTypes() const {
  * @param withThisType Include 'this' type in signature
  * @param withTemplateTypes Include concrete template types in the signature
  * @param withTypeAliases Print type aliases as is and not decompose them
+ * @param withSize Print array sizes
  * @return String representation as function signature
  */
-std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplateTypes /*=true*/,
-                                   bool withTypeAliases /*=true*/, bool withSize /*=false*/) const {
+std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplateTypes /*=true*/, bool withTypeAliases /*=true*/,
+                                   bool withSize /*=false*/) const {
   QualTypeList concreteTemplateTypes;
   if (withTemplateTypes) {
     concreteTemplateTypes.reserve(templateTypes.size());
     for (const GenericType &genericType : templateTypes) {
       if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
-        assert(typeMapping.contains(genericType.getSubType()));
-        concreteTemplateTypes.push_back(typeMapping.at(genericType.getSubType()));
+        const std::string &subType = genericType.getSubType();
+        assert(typeMapping.contains(subType));
+        concreteTemplateTypes.push_back(typeMapping.at(subType));
       } else {
         concreteTemplateTypes.push_back(genericType);
       }
@@ -68,6 +70,7 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool withTemplat
  * @param withThisType Include 'this' type in signature
  * @param ignorePublic Not include public modifiers in signature
  * @param withTypeAliases Print type aliases as is and not decompose them
+ * @param withSize Print array sizes
  * @return Function signature
  */
 std::string Function::getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
@@ -96,7 +99,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
         if (i > 0)
           signature << ",";
-        signature << thisTemplateTypes.at(i).getName(withSize, ignorePublic, withTypeAliases);
+        thisTemplateTypes.at(i).getName(signature, withSize, ignorePublic, withTypeAliases);
       }
       signature << ">";
     }
@@ -112,7 +115,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         signature << ",";
-      signature << concreteTemplateTypes.at(i).getName(withSize, ignorePublic, withTypeAliases);
+      concreteTemplateTypes.at(i).getName(signature, withSize, ignorePublic, withTypeAliases);
     }
     signature << ">";
   }
@@ -123,7 +126,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     const auto &[qualType, isOptional] = paramList.at(i);
     if (i > 0)
       signature << ",";
-    signature << qualType.getName(withSize, ignorePublic, withTypeAliases);
+    qualType.getName(signature, withSize, ignorePublic, withTypeAliases);
     if (isOptional)
       signature << "?";
   }
@@ -132,8 +135,18 @@ std::string Function::getSignature(const std::string &name, const QualType &this
   return signature.str();
 }
 
+/**
+ * Get the name of the scope, where members and the body of the function live
+ *
+ * @return Scope name
+ */
 std::string Function::getScopeName() const { return getSignature(false, true, false, true); }
 
+/**
+ * Get the mangled name of the function
+ *
+ * @return Mangled name
+ */
 std::string Function::getMangledName() const {
   // Use predefined mangled name if available
   if (!predefinedMangledName.empty())
@@ -145,22 +158,53 @@ std::string Function::getMangledName() const {
   return NameMangling::mangleFunction(*this);
 }
 
+/**
+ * Get the name of the symbol table entry of the function
+ *
+ * @param functionName Function name
+ * @param codeLoc Code location
+ * @return Symbol table entry name
+ */
 std::string Function::getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc) {
   return functionName + ":" + codeLoc.toString();
 }
 
+/**
+ * Get the name of the symbol table entry of the default constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
 std::string Function::getSymbolTableEntryNameDefaultCtor(const CodeLoc &structCodeLoc) {
   return "default_" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }
 
+/**
+ * Get the name of the symbol table entry of the default copy constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
 std::string Function::getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc &structCodeLoc) {
   return "default_copy" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }
 
+/**
+ * Get the name of the symbol table entry of the default move constructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
 std::string Function::getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc &structCodeLoc) {
   return "default_move" + std::string(CTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }
 
+/**
+ * Get the name of the symbol table entry of the default destructor of a struct
+ *
+ * @param structCodeLoc Code location of the struct
+ * @return Symbol table entry name
+ */
 std::string Function::getSymbolTableEntryNameDefaultDtor(const CodeLoc &structCodeLoc) {
   return "default_" + std::string(DTOR_FUNCTION_NAME) + ":" + structCodeLoc.toString();
 }

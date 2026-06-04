@@ -1,0 +1,7 @@
+import "bootstrap/model/struct-base";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testStructBaseSmoke();
+    printf("All assertions passed!");
+}

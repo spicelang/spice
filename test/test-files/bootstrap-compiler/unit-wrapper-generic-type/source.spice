@@ -1,0 +1,7 @@
+import "bootstrap/model/generic-type";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testGenericTypeSmoke();
+    printf("All assertions passed!");
+}
