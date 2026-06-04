@@ -128,7 +128,7 @@ f<Hash> TypeRegistry.getTypeHash(const Type& candidate) {
 f<Hash> TypeRegistry.hashElement(const TypeChainElement& tce) {
     Hash h = hash(cast<long>(tce.superType));
     h = combineHashes(h, hash(tce.subType));
-    h = combineHashes(h, hash(cast<long>(tce.typeId)));
+    h = combineHashes(h, hash(tce.typeId));
 
     // Hash the super-type-specific data payload. The body scope pointer cannot be hashed (Spice has no
     // pointer-to-integer cast), so it is intentionally omitted here and disambiguated exactly via structural

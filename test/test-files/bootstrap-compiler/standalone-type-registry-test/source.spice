@@ -3,7 +3,6 @@
 // type name serialization. This is the keystone of the bootstrap type layer: QualType holds a stable
 // `const IType*` handed out by the registry, so type identity can be compared by pointer.
 
-import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/global/type-registry";

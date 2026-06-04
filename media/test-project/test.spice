@@ -1,6 +1,22 @@
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/type-chain";
+type ITest interface {
+    public p foo();
+    public p bar();
+}
+
+type Test struct : ITest {}
+
+p Test.bar() {
+    printf("Hello from bar!\n");
+}
+
+p Test.foo() {
+    printf("Hello from foo!\n");
+}
 
 f<int> main() {
-    TypeChainElement intElement = TypeChainElement(SuperType::TY_INT);
+    Test test;
+    ITest* i = &test;
+    i.foo();
+    i.bar();
+    return 0;
 }

@@ -153,15 +153,6 @@ public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
 }
 
 /**
- * Check if the underlying type has lambda captures
- *
- * @return Has lambda captures or not
- */
-public f<bool> QualType.hasLambdaCaptures() {
-    return this.rawType.hasLambdaCaptures();
-}
-
-/**
  * Get the template types of the underlying type
  *
  * @return Template types
@@ -551,7 +542,7 @@ public p QualType.getName(StringStream& name, bool withSize = false, bool ignore
     if this.qualifiers.isComposition && !defaultForSuperType.isComposition {
         name << "compose ";
     }
-    if this.qualifiers.isConst && !defaultForSuperType.isConst && this.rawType.getTypeChainLength() > 1 {
+    if this.qualifiers.isConst && !defaultForSuperType.isConst && this.rawType.getTypeChainDepth() > 1 {
         name << "const ";
     }
     if this.qualifiers.isHeap && !defaultForSuperType.isHeap {

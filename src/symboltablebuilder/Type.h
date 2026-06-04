@@ -42,6 +42,7 @@ public:
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
   [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
+  [[nodiscard]] size_t getTypeChainDepth() const;
 
   // Queries on the type
   [[nodiscard]] bool is(SuperType superType) const;
