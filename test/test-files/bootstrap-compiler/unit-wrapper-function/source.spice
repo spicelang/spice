@@ -1,0 +1,7 @@
+import "bootstrap/model/function";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testFunctionSmoke();
+    printf("All assertions passed!");
+}

@@ -10,6 +10,9 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/util/common-util";
@@ -122,6 +125,7 @@ public f<bool> StructBase.isFullySubstantiated() {
  * @return Template types as vector of symbol types
  */
 public f<QualTypeList> StructBase.getTemplateTypes() {
+    result = Vector<QualType>();
     foreach GenericType& genericTemplateType : this.templateTypes {
         result.pushBack(genericTemplateType.qualType);
     }
@@ -144,4 +148,48 @@ public f<const CodeLoc&> StructBase.getDeclCodeLoc() {
  */
 public f<bool> StructBase.isGenericSubstantiation() {
     return this.genericPreset != nil<StructBase*>;
+}
+
+#[test, test.name="StructBase Smoke test"]
+public f<bool> testStructBaseSmoke() {
+    TypeRegistry reg = TypeRegistry();
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
+    const IType* genType = reg.getOrInsertSub(SuperType::TY_GENERIC, String("T"));
+    const QualType genQual = QualType(genType, getTypeQualifiersOf(SuperType::TY_GENERIC));
+
+    // A struct without template types
+    Vector<GenericType> noTemplates;
+    StructBase plain = StructBase(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noTemplates, nil<ASTNode*>);
+    assert plain.name == String("Plain");
+    assert !plain.used;
+    assert plain.getSignature() == String("Plain");
+    assert plain.hasSubstantiatedGenerics();
+    assert plain.isFullySubstantiated();
+    assert !plain.isGenericSubstantiation();
+    QualTypeList plainTemplates = plain.getTemplateTypes();
+    assert plainTemplates.isEmpty();
+
+    // A struct substantiated with a concrete template type (int)
+    Vector<GenericType> concreteTemplates;
+    GenericType gtInt = GenericType(intQual);
+    concreteTemplates.pushBack(gtInt);
+    StructBase box = StructBase(String("Box"), nil<SymbolTableEntry*>, nil<IScope*>, concreteTemplates, nil<ASTNode*>);
+    assert box.getSignature() == String("Box<int>");
+    assert box.hasSubstantiatedGenerics();
+    assert box.isFullySubstantiated();
+    QualTypeList boxTemplates = box.getTemplateTypes();
+    assert boxTemplates.getSize() == 1l;
+    QualType firstTemplate = boxTemplates.get(0ul);
+    assert firstTemplate.is(SuperType::TY_INT);
+
+    // A struct that still carries a generic template type is not fully substantiated
+    Vector<GenericType> genericTemplates;
+    GenericType gtGeneric = GenericType(genQual);
+    genericTemplates.pushBack(gtGeneric);
+    StructBase wrapper = StructBase(String("Wrapper"), nil<SymbolTableEntry*>, nil<IScope*>, genericTemplates, nil<ASTNode*>);
+    assert !wrapper.hasSubstantiatedGenerics();
+    assert !wrapper.isFullySubstantiated();
+
+    return true;
 }

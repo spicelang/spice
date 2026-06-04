@@ -8,6 +8,9 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/model/generic-type";
@@ -68,6 +71,7 @@ public p Function.ctor(const String& name, SymbolTableEntry* entry, const QualTy
  * @return Vector of parameter types
  */
 public f<QualTypeList> Function.getParamTypes() {
+    result = Vector<QualType>();
     foreach const Param& param : this.paramList {
         result.pushBack(param.qualType);
     }
@@ -142,7 +146,7 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
             signature << "<";
             foreach unsigned long i, const QualType& templateType : thisTemplateTypes {
                 if i > 0ul { signature << ","; }
-                templateType.getName(withSize, ignorePublic, withTypeAliases);
+                templateType.getName(signature, withSize, ignorePublic, withTypeAliases);
             }
             signature << ">";
         }
@@ -157,7 +161,7 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
         signature << "<";
         foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
             if i > 0ul { signature << ","; }
-            templateType.getName(withSize, ignorePublic, withTypeAliases);
+            templateType.getName(signature, withSize, ignorePublic, withTypeAliases);
         }
         signature << ">";
     }
@@ -166,7 +170,7 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
     signature << "(";
     foreach unsigned long i, const Param& param : paramList {
         if i > 0ul { signature << ","; }
-        param.qualType.getName(withSize, ignorePublic, withTypeAliases);
+        param.qualType.getName(signature, withSize, ignorePublic, withTypeAliases);
         if param.isOptional { signature << "?"; }
     }
     signature << ")";
@@ -189,17 +193,20 @@ public f<String> Function.getScopeName() {
  * @return Mangled name
  */
 public f<String> Function.getMangledName() {
+    // Note: members are returned via an explicit `String(...)` copy. The host compiler currently returns a
+    // struct member returned by value as a shallow alias of the member buffer instead of invoking the copy
+    // ctor, which leads to a double free once both the returned value and the owning struct are destructed.
     // Use predefined mangled name if available
     if !this.predefinedMangledName.isEmpty() {
-        return this.predefinedMangledName;
+        return String(this.predefinedMangledName);
     }
     // Use function name if mangling is disabled
     if !this.mangleFunctionName {
-        return this.name;
+        return String(this.name);
     }
     // Use normal name mangling
     // ToDo: Use NameMangling.mangleFunction(*this) once the name mangling pass is ported. Fall back to the raw name for now.
-    return this.name;
+    return String(this.name);
 }
 
 /**
@@ -381,4 +388,67 @@ public f<bool> Function.isMethodProcedure() {
  */
 public f<bool> Function.isVirtualMethod() {
     return this.isMethod() && this.isVirtual;
+}
+
+#[test, test.name="Function Smoke test"]
+public f<bool> testFunctionSmoke() {
+    TypeRegistry reg = TypeRegistry();
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const IType* dynType = reg.getOrInsert(SuperType::TY_DYN);
+    const IType* structType = reg.getOrInsertSub(SuperType::TY_STRUCT, String("MyStruct"));
+    const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
+    const QualType dynQual = QualType(dynType, getTypeQualifiersOf(SuperType::TY_DYN));
+    const QualType structQual = QualType(structType, getTypeQualifiersOf(SuperType::TY_STRUCT));
+
+    Vector<GenericType> noTemplates;
+
+    // A normal function: int return, no 'this', no params
+    ParamList noParams;
+    Function fct = Function(String("foo"), nil<SymbolTableEntry*>, dynQual, intQual, noParams, noTemplates, nil<ASTNode*>);
+    assert fct.isFunction();
+    assert !fct.isProcedure();
+    assert !fct.isMethod();
+    assert fct.isNormalFunction();
+    assert !fct.isMethodFunction();
+    assert fct.getSignature() == String("f<int> foo()");
+    assert fct.getMangledName() == String("foo");
+    QualTypeList fctParams = fct.getParamTypes();
+    assert fctParams.isEmpty();
+    assert fct.hasSubstantiatedParams();
+    assert fct.hasSubstantiatedGenerics();
+    assert fct.isFullySubstantiated();
+    assert !fct.isGenericSubstantiation();
+
+    // A procedure with one int parameter
+    ParamList oneParam;
+    Param intParam = Param{intQual, false};
+    oneParam.pushBack(intParam);
+    Function proc = Function(String("bar"), nil<SymbolTableEntry*>, dynQual, dynQual, oneParam, noTemplates, nil<ASTNode*>);
+    assert proc.isProcedure();
+    assert !proc.isFunction();
+    assert proc.isNormalProcedure();
+    assert proc.getSignature() == String("p bar(int)");
+    QualTypeList procParams = proc.getParamTypes();
+    assert procParams.getSize() == 1l;
+    QualType firstParam = procParams.get(0ul);
+    assert firstParam.is(SuperType::TY_INT);
+
+    // A method function: has a (struct) 'this' type
+    Function method = Function(String("baz"), nil<SymbolTableEntry*>, structQual, intQual, noParams, noTemplates, nil<ASTNode*>);
+    assert method.isMethod();
+    assert method.isMethodFunction();
+    assert !method.isNormalFunction();
+    assert !method.isVirtualMethod();
+    method.isVirtual = true;
+    assert method.isVirtualMethod();
+
+    // An optional parameter means the function is not fully substantiated
+    ParamList optParams;
+    Param optParam = Param{intQual, true};
+    optParams.pushBack(optParam);
+    Function optFct = Function(String("qux"), nil<SymbolTableEntry*>, dynQual, intQual, optParams, noTemplates, nil<ASTNode*>);
+    assert !optFct.hasSubstantiatedParams();
+    assert !optFct.isFullySubstantiated();
+
+    return true;
 }

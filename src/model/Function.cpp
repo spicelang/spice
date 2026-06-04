@@ -99,7 +99,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
         if (i > 0)
           signature << ",";
-        signature << thisTemplateTypes.at(i).getName(withSize, ignorePublic, withTypeAliases);
+        thisTemplateTypes.at(i).getName(signature, withSize, ignorePublic, withTypeAliases);
       }
       signature << ">";
     }
@@ -115,7 +115,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         signature << ",";
-      signature << concreteTemplateTypes.at(i).getName(withSize, ignorePublic, withTypeAliases);
+      concreteTemplateTypes.at(i).getName(signature, withSize, ignorePublic, withTypeAliases);
     }
     signature << ">";
   }
@@ -126,7 +126,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
     const auto &[qualType, isOptional] = paramList.at(i);
     if (i > 0)
       signature << ",";
-    signature << qualType.getName(withSize, ignorePublic, withTypeAliases);
+    qualType.getName(signature, withSize, ignorePublic, withTypeAliases);
     if (isOptional)
       signature << "?";
   }
