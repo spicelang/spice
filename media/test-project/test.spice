@@ -1,12 +1,5 @@
-import "bootstrap/model/struct-base";
-import "bootstrap/model/generic-type";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
-
-import "std/data/vector";
+import "bootstrap/model/function";
 
 f<int> main() {
-    Vector<GenericType> templateTypes;
-    StructBase sb = StructBase(String("name"), nil<SymbolTableEntry*>, nil<IScope*>, templateTypes, nil<ASTNode*>);
+
 }

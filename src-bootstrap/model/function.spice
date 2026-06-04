@@ -49,7 +49,7 @@ public type Function struct {
     public bool isVirtual = false
     public bool isNewlyInserted = false
     public llvm::Function* llvmFunction = nil<llvm::Function*>
-    public unsigned long vtableIndex = 0l
+    public unsigned long vtableIndex = 0ul
 }
 
 public p Function.ctor(const String& name, SymbolTableEntry* entry, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
@@ -82,11 +82,14 @@ public f<QualTypeList> Function.getParamTypes() {
  *
  * @param withThisType Include 'this' type in signature
  * @param withTemplateTypes Include concrete template types in the signature
+ * @param withTypeAliases Print type aliases as is and not decompose them
+ * @param withSize Print array sizes
  * @return String representation as function signature
  */
-public f<String> Function.getSignature(bool withThisType = true, bool withTemplateTypes = true) {
+public f<String> Function.getSignature(bool withThisType = true, bool withTemplateTypes = true, bool withTypeAliases = true, bool withSize = false) {
     QualTypeList concreteTemplateTypes;
     if withTemplateTypes {
+        concreteTemplateTypes.reserve(this.templateTypes.getSize());
         foreach const GenericType& genericType : this.templateTypes {
             if genericType.qualType.is(SuperType::TY_GENERIC) && !this.typeMapping.isEmpty() {
                 const String& subType = genericType.qualType.getSubType();
@@ -98,7 +101,7 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
         }
     }
 
-    return this.getSignature(this.name, this.thisType, this.returnType, this.paramList, concreteTemplateTypes, true, withThisType, true);
+    return this.getSignature(this.name, this.thisType, this.returnType, this.paramList, concreteTemplateTypes, true, withThisType, true, withTypeAliases, withSize);
 }
 
 /**
@@ -112,9 +115,11 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
  * @param withReturnType Include return type in signature
  * @param withThisType Include 'this' type in signature
  * @param ignorePublic Not include public modifiers in signature
+ * @param withTypeAliases Print type aliases as is and not decompose them
+ * @param withSize Print array sizes
  * @return Function signature
  */
-public f<String> Function.getSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = true) {
+public f<String> Function.getSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = false, bool withTypeAliases = true, bool withSize = false) {
     StringStream signature;
 
     // Build return type string
@@ -123,7 +128,7 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
             signature << "p ";
         } else {
             signature << "f<";
-            returnType.getName(signature, false, ignorePublic);
+            returnType.getName(signature, withSize, ignorePublic, withTypeAliases);
             signature << "> ";
         }
     }
@@ -135,12 +140,9 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
         const QualTypeList& thisTemplateTypes = thisType.getTemplateTypes();
         if !thisTemplateTypes.isEmpty() {
             signature << "<";
-            for unsigned long i = 0l; i < thisTemplateTypes.getSize(); i = i + 1l {
-                if i > 0l {
-                    signature << ",";
-                }
-                const QualType templateType = thisTemplateTypes.get(i);
-                templateType.getName(signature, false, ignorePublic);
+            foreach unsigned long i, const QualType& templateType : thisTemplateTypes {
+                if i > 0ul { signature << ","; }
+                templateType.getName(withSize, ignorePublic, withTypeAliases);
             }
             signature << ">";
         }
@@ -153,27 +155,19 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
     // Build template type string
     if !concreteTemplateTypes.isEmpty() {
         signature << "<";
-        for unsigned long i = 0l; i < concreteTemplateTypes.getSize(); i = i + 1l {
-            if i > 0l {
-                signature << ",";
-            }
-            const QualType templateType = concreteTemplateTypes.get(i);
-            templateType.getName(signature, false, ignorePublic);
+        foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
+            if i > 0ul { signature << ","; }
+            templateType.getName(withSize, ignorePublic, withTypeAliases);
         }
         signature << ">";
     }
 
     // Parameter type string
     signature << "(";
-    for unsigned long i = 0l; i < paramList.getSize(); i = i + 1l {
-        if i > 0l {
-            signature << ",";
-        }
-        const Param param = paramList.get(i);
-        param.qualType.getName(signature, false, ignorePublic);
-        if param.isOptional {
-            signature << "?";
-        }
+    foreach unsigned long i, const Param& param : paramList {
+        if i > 0ul { signature << ","; }
+        param.qualType.getName(withSize, ignorePublic, withTypeAliases);
+        if param.isOptional { signature << "?"; }
     }
     signature << ")";
 
@@ -186,7 +180,7 @@ public f<String> Function.getSignature(const String& name, const QualType& thisT
  * @return Scope name
  */
 public f<String> Function.getScopeName() {
-    return this.getSignature(false, true);
+    return this.getSignature(false, true, false, true);
 }
 
 /**
@@ -203,6 +197,7 @@ public f<String> Function.getMangledName() {
     if !this.mangleFunctionName {
         return this.name;
     }
+    // Use normal name mangling
     // ToDo: Use NameMangling.mangleFunction(*this) once the name mangling pass is ported. Fall back to the raw name for now.
     return this.name;
 }
@@ -256,6 +251,64 @@ public f<String> Function.getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc& 
  */
 public f<String> Function.getSymbolTableEntryNameDefaultDtor(const CodeLoc& structCodeLoc) {
     return "default_" + DTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
+}
+
+/**
+ * Checks if a function contains optional parameters.
+ * This would imply that the function is not substantiated by its optional parameters yet.
+ *
+ * @return Substantiated params or not
+ */
+public f<bool> Function.hasSubstantiatedParams() {
+    foreach const Param& param : this.paramList {
+        if param.isOptional {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if a function contains template types.
+ * This would imply that the function is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+public f<bool> Function.hasSubstantiatedGenerics() {
+    foreach const GenericType& genericType : this.templateTypes {
+        if !this.typeMapping.contains(genericType.qualType.getSubType()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if a function contains optional parameters or has generic types present.
+ * This would imply that the function is not fully substantiated yet.
+ *
+ * @return Fully substantiated or not
+ */
+public f<bool> Function.isFullySubstantiated() {
+    return this.hasSubstantiatedParams() && this.hasSubstantiatedGenerics();
+}
+
+/**
+ * Returns, if this function is a substantiation of a generic one.
+ *
+ * @return Generic substantiation or not
+ */
+public f<bool> Function.isGenericSubstantiation() {
+    return this.genericPreset != nil<Function*>;
+}
+
+/**
+ * Retrieve the declaration code location of this function
+ *
+ * @return Declaration code location
+ */
+public f<CodeLoc&> Function.getDeclCodeLoc() {
+    return this.declNode.codeLoc;
 }
 
 /**
@@ -328,63 +381,4 @@ public f<bool> Function.isMethodProcedure() {
  */
 public f<bool> Function.isVirtualMethod() {
     return this.isMethod() && this.isVirtual;
-}
-
-/**
- * Checks if a function contains optional parameters.
- * This would imply that the function is not substantiated by its optional parameters yet.
- *
- * @return Substantiated params or not
- */
-public f<bool> Function.hasSubstantiatedParams() {
-    foreach const Param& param : this.paramList {
-        if param.isOptional {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
- * Checks if a function contains template types.
- * This would imply that the function is not substantiated by its generic types yet.
- *
- * @return Substantiated generics or not
- */
-public f<bool> Function.hasSubstantiatedGenerics() {
-    foreach const GenericType& genericType : this.templateTypes {
-        const String& subType = genericType.qualType.getSubType();
-        if !this.typeMapping.contains(subType) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
- * Checks if a function contains optional parameters or has generic types present.
- * This would imply that the function is not fully substantiated yet.
- *
- * @return Fully substantiated or not
- */
-public f<bool> Function.isFullySubstantiated() {
-    return this.hasSubstantiatedParams() && this.hasSubstantiatedGenerics();
-}
-
-/**
- * Returns, if this function is a substantiation of a generic one.
- *
- * @return Generic substantiation or not
- */
-public f<bool> Function.isGenericSubstantiation() {
-    return this.genericPreset != nil<Function*>;
-}
-
-/**
- * Retrieve the declaration code location of this function
- *
- * @return Declaration code location
- */
-public f<const CodeLoc&> Function.getDeclCodeLoc() {
-    return this.declNode.codeLoc;
 }
