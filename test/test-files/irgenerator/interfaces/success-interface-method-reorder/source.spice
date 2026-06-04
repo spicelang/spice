@@ -1,0 +1,26 @@
+// Regression test for https://github.com/spicelang/spice/issues/1162
+// The methods are defined in the struct in a different order than they are declared in the interface.
+// The VTable must still be laid out according to the interface declaration order, so that virtual
+// dispatch through an interface pointer calls the correct method.
+type ITest interface {
+    public p foo();
+    public p bar();
+}
+
+type Test struct : ITest {}
+
+p Test.bar() {
+    printf("Hello from bar!\n");
+}
+
+p Test.foo() {
+    printf("Hello from foo!\n");
+}
+
+f<int> main() {
+    Test test;
+    ITest* i = &test;
+    i.foo();
+    i.bar();
+    return 0;
+}

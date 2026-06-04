@@ -269,7 +269,10 @@ size_t Scope::getFieldCount() const {
 }
 
 /**
- * Get all virtual methods in this scope, sorted by declaration code location
+ * Get all virtual methods in this scope, sorted by their VTable index
+ *
+ * The VTable index is assigned based on the declaration order of the methods in the implemented interface(s). This must match the
+ * order the call sites use to index into the VTable, which may differ from the order the methods are defined in within the struct.
  *
  * @return List of virtual method pointers
  */
@@ -285,8 +288,8 @@ std::vector<Function *> Scope::getVirtualMethods() {
         methods.push_back(&functions.at(fctId).at(mangledName));
   }
 
-  // Sort the list
-  const auto pred = [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); };
+  // Sort the list by VTable index, so that the VTable layout matches the slot indices used at the call sites
+  const auto pred = [](const Function *a, const Function *b) { return a->vtableIndex < b->vtableIndex; };
   std::ranges::sort(methods, pred);
 
   return methods;
