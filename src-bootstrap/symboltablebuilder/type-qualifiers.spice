@@ -12,6 +12,7 @@ const unsigned short BIT_INDEX_CONST = 6s;
 const unsigned short BIT_INDEX_MAX = 6s; // Please adjust if something changes above
 
 public type TypeQualifiers struct {
+    // Note: Please adjust bit indices above, if something changes here
     public bool isConst = false
     public bool isSigned = false
     public bool isUnsigned = false
@@ -21,6 +22,12 @@ public type TypeQualifiers struct {
     public bool isComposition = false
 }
 
+/**
+ * Get default type qualifiers for a given super type
+ *
+ * @param superType Super type
+ * @return Default type qualifiers
+ */
 public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
     switch superType {
         case SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG: {
@@ -69,6 +76,7 @@ public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
             };
         }
         case SuperType::TY_DYN, SuperType::TY_INVALID, SuperType::TY_UNRESOLVED: {
+            // Return all-false qualifiers to not match anything
             return TypeQualifiers{
                 /*isConst=*/false,
                 /*isSigned*/false,
@@ -88,7 +96,7 @@ public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
 /**
  * Merge two sets of type qualifiers. If possible, prefer the opposite of the default of the super type
  *
- * @param other Other TypeQualifiers object
+ * @param other Other type qualifiers object
  * @return Merged qualifiers object
  */
 public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
@@ -109,7 +117,7 @@ public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
 /**
  * Check if two sets of type qualifiers match
  *
- * @param otherQualifiers The rhs qualifiers
+ * @param other The rhs qualifiers
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
@@ -117,7 +125,7 @@ public f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowCo
     const TypeQualifiers thisQualifiers = *this;
 
     // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
-    if allowConstify && thisQualifiers.isConst && !otherQualifiers.isConst {
+    if allowConstify && thisQualifiers.isConst {
         otherQualifiers.isConst = true;
     }
 

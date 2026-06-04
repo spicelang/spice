@@ -148,6 +148,34 @@ public f<T&> operator[]<T, UIntOrULong>(Vector<T>& v, UIntOrULong index) {
 }
 
 /**
+ * Insert an item at a certain index
+ *
+ * @param index Index to insert the item at
+ * @param item Item to insert
+ */
+public p Vector.insertAt(unsigned long index, const T& item) {
+    if index > this.size {
+        panic(Error("Access index out of bounds"));
+    }
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+    // Move all elements after the index one to the back
+    for unsigned long i = this.size; i > index; i-- {
+        unsafe {
+            this.contents[i] = this.contents[i - 1];
+        }
+    }
+    // Insert the new element at the index
+    unsafe {
+        __placement_new<T>(&this.contents[index], item);
+    }
+    // Increment the size
+    this.size++;
+}
+
+/**
  * Remove an item at a certain index
  *
  * @param index Index of the item to remove

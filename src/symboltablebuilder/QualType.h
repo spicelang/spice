@@ -42,6 +42,11 @@ static constexpr uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 // Typedefs
 using QualTypeList = std::vector<QualType>;
 
+/**
+ * QualType pairs an interned, immutable type (held behind the dependency-free IType interface) with a set of
+ * qualifiers. It is a small value type that is copied around freely; the rawType pointer is owned by the type
+ * registry.
+ */
 class QualType {
 public:
   // Constructors

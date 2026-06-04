@@ -1,3 +1,5 @@
-public type IStruct interface {
+import "bootstrap/symboltablebuilder/scope-intf";
 
+public type IStruct interface {
+    public f<IScope*> getBodyScope();
 }

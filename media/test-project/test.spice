@@ -1,22 +1,87 @@
-type ITest interface {
-    public p foo();
-    public p bar();
-}
+// Smoke test for the self-hosted bootstrap TypeRegistry: it exercises type interning (deduplication +
+// stable pointer identity), derived-type creation (pointer/reference/array), base-type round-trips and
+// type name serialization. This is the keystone of the bootstrap type layer: QualType holds a stable
+// `const IType*` handed out by the registry, so type identity can be compared by pointer.
 
-type Test struct : ITest {}
-
-p Test.bar() {
-    printf("Hello from bar!\n");
-}
-
-p Test.foo() {
-    printf("Hello from foo!\n");
-}
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/global/type-registry";
+import "bootstrap/ast/ast-node-intf";
 
 f<int> main() {
-    Test test;
-    ITest* i = &test;
-    i.foo();
-    i.bar();
+    TypeRegistry reg = TypeRegistry();
+
+    // -------------------------------------------------------------------------
+    // Interning of primitive types: same super type -> same stable pointer
+    // -------------------------------------------------------------------------
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const IType* intTypeAgain = reg.getOrInsert(SuperType::TY_INT);
+    const IType* boolType = reg.getOrInsert(SuperType::TY_BOOL);
+    const IType* boolTypeAgain = reg.getOrInsert(SuperType::TY_BOOL);
+
+    assert intType == intTypeAgain;       // deduplicated to the same instance
+    assert boolType == boolTypeAgain;
+    assert intType != boolType;           // distinct types -> distinct instances
+    assert intType.is(SuperType::TY_INT);
+    assert boolType.is(SuperType::TY_BOOL);
+    assert intType.isPrimitive();
+
+    // -------------------------------------------------------------------------
+    // Derived pointer types are interned through the registry as well
+    // -------------------------------------------------------------------------
+    const IType* intPtr = intType.toPtr(nil<const IASTNode*>);
+    const IType* intPtrAgain = intTypeAgain.toPtr(nil<const IASTNode*>);
+    assert intPtr == intPtrAgain;         // int* is deduplicated
+    assert intPtr != intType;             // int* differs from int
+    assert intPtr.isPtr();
+    assert !intType.isPtr();
+
+    // getBase / getContained round-trips back to the interned base type
+    const IType* baseOfIntPtr = intPtr.getBase();
+    assert baseOfIntPtr == intType;
+    const IType* containedOfIntPtr = intPtr.getContained();
+    assert containedOfIntPtr == intType;
+
+    // -------------------------------------------------------------------------
+    // Reference types
+    // -------------------------------------------------------------------------
+    const IType* intRef = intType.toRef(nil<const IASTNode*>);
+    const IType* intRefAgain = intType.toRef(nil<const IASTNode*>);
+    assert intRef == intRefAgain;
+    assert intRef.isRef();
+    assert intRef != intPtr;
+
+    // -------------------------------------------------------------------------
+    // Array types
+    // -------------------------------------------------------------------------
+    const IType* intArr5 = intType.toArr(nil<const IASTNode*>, 5, false);
+    const IType* intArr5Again = intType.toArr(nil<const IASTNode*>, 5, false);
+    const IType* intArr8 = intType.toArr(nil<const IASTNode*>, 8, false);
+    assert intArr5 == intArr5Again;       // int[5] is deduplicated
+    assert intArr5 != intArr8;            // different sizes -> different types
+    assert intArr5.isArray();
+    assert intArr5.getArraySize() == 5;
+    const IType* baseOfArr = intArr5.getBase();
+    assert baseOfArr == intType;
+
+    // -------------------------------------------------------------------------
+    // Type name serialization walks the whole type chain
+    // -------------------------------------------------------------------------
+    String intName = intType.getName(false, false, false);
+    String intPtrName = intPtr.getName(false, false, false);
+    String intRefName = intRef.getName(false, false, false);
+    String intArrName = intArr5.getName(true, false, false);
+    assert intName == String("int");
+    assert intPtrName == String("int*");
+    assert intRefName == String("int&");
+    assert intArrName == String("int[5]");
+
+    // -------------------------------------------------------------------------
+    // The registry tracks exactly the distinct types created above
+    // int, bool, int*, int&, int[5], int[8] -> 6 types
+    // -------------------------------------------------------------------------
+    assert reg.getTypeCount() == 6l;
+
+    printf("All assertions passed!\n");
     return 0;
 }
