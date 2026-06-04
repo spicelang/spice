@@ -30,7 +30,10 @@ struct LifecycleEvent {
  * A lifecycle represents a collection of timely events that occur for a symbol.
  *
  * Usually a lifecycle looks e.g. like this:
- * f<int
+ * - dead
+ * - declared
+ * - initialized
+ * - dead
  */
 class Lifecycle {
 public:

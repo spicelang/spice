@@ -6,7 +6,7 @@ import "bootstrap/ast/ast-nodes";
 
 public type LifecycleState enum {
     DEAD,         // The symbol is not alive yet (e.g. not declared yet)
-    DECLARED,     // The symbol is declared but hasn't got a value yet
+    DECLARED,     // The symbol is declared but hasn't got a value yet (in debug mode declaration comes with default initialization)
     INITIALIZED,  // The symbol is initialized with a value
     MOVED         // The symbol was moved away (can still be accessed, but does not own its memory anymore)
 }
@@ -47,17 +47,16 @@ public p Lifecycle.addEvent(const LifecycleEvent& event) {
  *
  * @return Current state
  */
-public f<LifecycleState> Lifecycle.getCurrentState() {
-    if this.events.isEmpty() { return LifecycleState::DEAD; }
-    return this.events.back().state;
+public const f<LifecycleState> Lifecycle.getCurrentState() {
+    return this.events.isEmpty() ? LifecycleState::DEAD : this.events.back().state;
 }
 
 /**
- * Retrieve the name of the  current state of a symbol
+ * Retrieve the name of the current state of a symbol
  *
  * @return Current state name
  */
-public f<string> Lifecycle.getCurrentStateName() {
+public const f<string> Lifecycle.getCurrentStateName() {
     switch this.getCurrentState() {
         case LifecycleState::DECLARED: { return "declared"; }
         case LifecycleState::INITIALIZED: { return "initialized"; }
@@ -71,7 +70,7 @@ public f<string> Lifecycle.getCurrentStateName() {
  *
  * @return Dead or not
  */
-public f<bool> Lifecycle.isDead() {
+public const f<bool> Lifecycle.isDead() {
     return this.getCurrentState() == LifecycleState::DEAD;
 }
 
@@ -80,7 +79,7 @@ public f<bool> Lifecycle.isDead() {
  *
  * @return Declared or not
  */
-public f<bool> Lifecycle.isDeclared() {
+public const f<bool> Lifecycle.isDeclared() {
     return this.getCurrentState() == LifecycleState::DECLARED;
 }
 
@@ -89,7 +88,7 @@ public f<bool> Lifecycle.isDeclared() {
  *
  * @return Initialized or not
  */
-public f<bool> Lifecycle.isInitialized() {
+public const f<bool> Lifecycle.isInitialized() {
     return this.getCurrentState() == LifecycleState::INITIALIZED;
 }
 
@@ -98,7 +97,7 @@ public f<bool> Lifecycle.isInitialized() {
  *
  * @return Moved or not
  */
-public f<bool> Lifecycle.wasMoved() {
+public const f<bool> Lifecycle.wasMoved() {
     return this.getCurrentState() == LifecycleState::MOVED;
 }
 
@@ -107,6 +106,6 @@ public f<bool> Lifecycle.wasMoved() {
  *
  * @return Owning state or not
  */
-public f<bool> Lifecycle.isInOwningState() {
+public const f<bool> Lifecycle.isInOwningState() {
     return this.isDeclared() || this.isInitialized();
 }

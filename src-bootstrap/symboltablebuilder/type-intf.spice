@@ -17,40 +17,31 @@ import "bootstrap/symboltablebuilder/scope-intf";
 // backed by the type registry (see ITypeRegistry), which is threaded into each concrete Type.
 public type IType interface {
     // Getters and setters on type parts
-    public f<SuperType> getSuperType();
-    public f<const String&> getSubType();
-    public f<unsigned int> getArraySize();
-    public f<IScope*> getBodyScope();
-    public f<bool> hasLambdaCaptures();
-
-    // Template types (element-wise to keep QualType out of this interface)
-    public f<unsigned long> getTemplateTypeCount();
-    public f<const IType*> getTemplateTypeRaw(unsigned long);
-    public f<TypeQualifiers> getTemplateTypeQualifiers(unsigned long);
-
-    // Function param and return types (element-wise; index 0 is the return type)
-    public f<unsigned long> getFunctionParamAndReturnTypeCount();
-    public f<const IType*> getFunctionParamAndReturnTypeRaw(unsigned long);
-    public f<TypeQualifiers> getFunctionParamAndReturnTypeQualifiers(unsigned long);
+    public const f<SuperType> getSuperType();
+    public const f<const String&> getSubType();
+    public const f<unsigned int> getArraySize();
+    public const f<IScope*> getBodyScope();
+    public const f<bool> hasLambdaCaptures();
+    public const f<unsigned long> getTypeChainDepth();
 
     // Queries on the type
-    public f<bool> is(SuperType);
-    public f<bool> isOneOf(SuperType[], unsigned long);
-    public f<bool> isBase(SuperType);
-    public f<bool> isPrimitive();
-    public f<bool> isExtendedPrimitive();
-    public f<bool> isPtr();
-    public f<bool> isRef();
-    public f<bool> isArray();
-    public f<bool> hasAnyGenericParts();
+    public const f<bool> is(SuperType);
+    public const f<bool> isOneOf(SuperType[], unsigned long);
+    public const f<bool> isBase(SuperType);
+    public const f<bool> isPrimitive();
+    public const f<bool> isExtendedPrimitive();
+    public const f<bool> isPtr();
+    public const f<bool> isRef();
+    public const f<bool> isArray();
+    public const f<bool> hasAnyGenericParts();
 
     // Complex queries on the type
-    public f<bool> isSameContainerTypeAs(const IType*);
-    public f<bool> matches(const IType*, bool);
+    public const f<bool> isSameContainerTypeAs(const IType*);
+    public const f<bool> matches(const IType*, bool);
 
     // Serialization
-    public p getName(StringStream&, bool);
-    public f<String> getName(bool);
+    public p getName(StringStream&, bool, bool, bool);
+    public f<String> getName(bool, bool, bool);
 
     // Get new type, based on this one (interned via the type registry)
     public f<const IType*> toPtr(const IASTNode*);
@@ -65,4 +56,12 @@ public type IType interface {
 
     // LLVM helpers
     public f<llvm::Type> toLLVMType(ISourceFile*);
+
+    // Helpers
+    public f<unsigned long> getTemplateTypeCount();
+    public f<const IType*> getTemplateTypeRaw(unsigned long);
+    public f<TypeQualifiers> getTemplateTypeQualifiers(unsigned long);
+    public f<unsigned long> getFunctionParamAndReturnTypeCount();
+    public f<const IType*> getFunctionParamAndReturnTypeRaw(unsigned long);
+    public f<TypeQualifiers> getFunctionParamAndReturnTypeQualifiers(unsigned long);
 }
