@@ -1,3 +1,174 @@
+import "std/runtime/memory_rt";
+
+// Generic type definitions
+type T dyn;
+
+// Number of bytes that can be stored inline before falling back to the heap.
+// Sized (8-byte aligned via the long array) to hold the largest payloads that
+// commonly flow through the compiler visitor (e.g. LLVMExprResult = 6 pointers).
+const unsigned long ANY_INLINE_BYTES = 48ul;
+
+/**
+ * Any is a type-erased container that can hold a value of an arbitrary type.
+ *
+ * Small payloads (<= ANY_INLINE_BYTES) are stored inline to avoid a heap
+ * allocation; larger payloads are boxed on the heap. The heap buffer is owned
+ * by the Any and released automatically when it goes out of scope.
+ *
+ * Note: Any performs a bitwise copy of the stored value. It is therefore
+ * intended for trivially-copyable/-destructible payloads (pointers, and PODs
+ * such as ExprResult, QualType or LLVMExprResult). Storing a type that owns
+ * heap resources (e.g. String or Vector) will not run its copy/destructor and
+ * is not supported.
+ */
 public type Any struct {
-    bool test
+    long typeId = 0ul                      // typeid of the stored value; 0 means empty
+    unsigned long size = 0ul               // size of the stored value in bytes
+    long[6] inlineStore                    // inline storage (8-byte aligned, ANY_INLINE_BYTES wide)
+    heap byte* heapStore = nil<heap byte*> // owned heap storage, non-nil iff size > ANY_INLINE_BYTES
+}
+
+/**
+ * Initialize an empty Any.
+ */
+public p Any.ctor() {}
+
+/**
+ * Copy-construct an Any, deep-copying any heap-allocated payload so that both
+ * instances own independent storage.
+ */
+public p Any.ctor(const Any& original) {
+    this.typeId = original.typeId;
+    this.size = original.size;
+    if original.size > ANY_INLINE_BYTES {
+        unsafe {
+            this.heapStore = sAllocUnsafe(original.size);
+            sCopy(original.heapStore, this.heapStore, original.size);
+        }
+    } else {
+        this.inlineStore = original.inlineStore;
+    }
+}
+
+/**
+ * Deep-copy assignment. Releases any previously held heap payload first.
+ */
+public p operator=<T>(Any& this, const Any& newValue) {
+    // Guard against self-assignment, which would free the payload we copy from
+    if &this == &newValue {
+        return;
+    }
+    // Release the currently held heap payload, if any
+    unsafe {
+        if this.heapStore != nil<heap byte*> {
+            sDealloc(this.heapStore);
+        }
+    }
+    this.typeId = newValue.typeId;
+    this.size = newValue.size;
+    if newValue.size > ANY_INLINE_BYTES {
+        unsafe {
+            this.heapStore = sAllocUnsafe(newValue.size);
+            sCopy(newValue.heapStore, this.heapStore, newValue.size);
+        }
+    } else {
+        this.inlineStore = newValue.inlineStore;
+    }
+}
+
+/**
+ * Returns if the data is stored in the inline buffer
+ */
+public inline f<bool> Any.isStoredInline() {
+    return this.size <= ANY_INLINE_BYTES;
+}
+
+/**
+ * Returns a raw pointer to the stored payload (inline or heap).
+ */
+f<byte*> Any.dataPtr() {
+    unsafe {
+        return this.isStoredInline() ? cast<byte*>(&this.inlineStore[0]) : cast<byte*>(this.heapStore);
+    }
+}
+
+/**
+ * Stores a value of arbitrary type T, type-erasing it into the Any.
+ *
+ * @param value Value to store
+ */
+public p Any.set<T>(const T& value) {
+    // Release any previously held heap payload to avoid leaking it
+    unsafe {
+        if this.heapStore != nil<heap byte*> {
+            sDealloc(this.heapStore);
+        }
+    }
+    this.typeId = typeid<T>();
+    this.size = sizeof<T>();
+    unsafe {
+        byte* slot;
+        if this.size > ANY_INLINE_BYTES {
+            this.heapStore = sAllocUnsafe(this.size);
+            slot = cast<byte*>(this.heapStore);
+        } else {
+            slot = cast<byte*>(&this.inlineStore[0]);
+        }
+        __placement_new<T>(cast<T*>(slot), value);
+    }
+}
+
+/**
+ * Retrieves the stored value as type T. Panics if the Any does not currently
+ * hold a value of type T.
+ *
+ * @return Stored value
+ */
+public inline f<T&> Any.get<T>() {
+    if this.typeId != typeid<T>() {
+        panic(Error("Any does not hold a value of the requested type"));
+    }
+    unsafe {
+        T* dataPtr = cast<T*>(this.dataPtr());
+        return *dataPtr;
+    }
+}
+
+/**
+ * Checks whether the Any currently holds a value of type T.
+ *
+ * @return Holds T or not
+ */
+public inline f<bool> Any.has<T>() {
+    return this.typeId == typeid<T>();
+}
+
+/**
+ * Checks whether the Any is empty (holds no value).
+ *
+ * @return Empty or not
+ */
+public inline f<bool> Any.isEmpty() {
+    return this.typeId == 0l;
+}
+
+/**
+ * Returns the typeid of the stored value, or 0 if the Any is empty.
+ *
+ * @return typeid of stored value
+ */
+public inline f<long> Any.getTypeId() {
+    return this.typeId;
+}
+
+/**
+ * Constructs an Any holding the given value.
+ *
+ * @param value Value to store
+ * @return Any wrapping the value
+ */
+public f<Any> any<T>(const T& value) {
+    Any box = Any();
+    box.set(value);
+    return box;
 }
