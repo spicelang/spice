@@ -2,9 +2,9 @@
 type T dyn;
 
 // Number of bytes that can be stored inline before falling back to the heap.
-// Sized (8-byte aligned via the long array) to hold the largest payloads that
-// commonly flow through the compiler visitor (e.g. LLVMExprResult = 6 pointers).
-const unsigned long ANY_INLINE_BYTES = 48ul;
+// One 8-byte slot keeps the Any struct small while still storing the common
+// pointer-sized payloads inline; everything larger is boxed on the heap.
+const unsigned int ANY_INLINE_BYTES = 8u;
 
 // Thunk function pointer types that carry a type-erased payload's copy
 // constructor (dst, src) and destructor (obj) for non-trivial types.
@@ -19,9 +19,9 @@ type DtorThunk alias p(byte*);
  * methods) yield different result types. The stored type is identified via the
  * `typeid` builtin, so retrieval is checked: requesting the wrong type panics.
  *
- * Trivially-copyable and -destructible payloads up to ANY_INLINE_BYTES are
- * stored inline to avoid a heap allocation (the common, hot case). All other
- * payloads - larger ones, and non-trivial ones - are boxed on the heap. For
+ * Trivially-copyable and -destructible payloads up to ANY_INLINE_BYTES (a
+ * single pointer-sized slot) are stored inline to avoid a heap allocation. All
+ * other payloads - larger ones, and non-trivial ones - are boxed on the heap. For
  * non-trivial payloads, Any captures the type's copy constructor and destructor
  * as thunks at construction time and runs them on copy/destroy, just like a
  * std::any manager. Non-trivial types are therefore always heap-boxed, which
@@ -34,7 +34,7 @@ type DtorThunk alias p(byte*);
 public type Any struct {
     long typeId = 0l                       // typeid of the stored value; 0 means empty
     unsigned long size = 0ul               // size of the stored value in bytes
-    long[6] inlineStore                    // inline storage (8-byte aligned, ANY_INLINE_BYTES wide)
+    byte[ANY_INLINE_BYTES] inlineStore     // inline storage (8-byte aligned, ANY_INLINE_BYTES wide)
     heap byte* heapStore = nil<heap byte*> // owned heap storage, non-nil iff the payload is boxed
     CopyThunk copyThunk = nil<CopyThunk>   // copy constructor thunk, nil for trivially-copyable payloads
     DtorThunk dtorThunk = nil<DtorThunk>   // destructor thunk, nil for trivially-destructible payloads
@@ -92,7 +92,7 @@ public inline f<bool> Any.isStoredInline() {
  */
 f<byte*> Any.dataPtr() {
     unsafe {
-        return this.isStoredInline() ? cast<byte*>(&this.inlineStore[0]) : cast<byte*>(this.heapStore);
+        return this.isStoredInline() ? cast<byte*>(&this.inlineStore) : cast<byte*>(this.heapStore);
     }
 }
 
@@ -183,7 +183,7 @@ public p Any.set<T>(const T& value) {
             this.heapStore = sAllocUnsafe(this.size);
             slot = cast<byte*>(this.heapStore);
         } else {
-            slot = cast<byte*>(&this.inlineStore[0]);
+            slot = cast<byte*>(&this.inlineStore);
         }
         __placement_new<T>(cast<T*>(slot), value);
     }
