@@ -6,9 +6,13 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/struct-base";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/global/type-registry";
 
 // Constants
 const string INTERFACE_SCOPE_PREFIX = "interface:";
@@ -44,4 +48,36 @@ public f<String> Interface.getScopeName() {
  */
 public f<String> Interface.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
     return String(INTERFACE_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+}
+
+#[test, test.name="Interface Smoke test"]
+public f<bool> testInterfaceSmoke() {
+    TypeRegistry reg = TypeRegistry();
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
+
+    Vector<GenericType> noTemplates;
+
+    // A plain interface: no methods, no template types
+    Vector<Function*> noMethods;
+    Interface plain = Interface(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noMethods, noTemplates, nil<ASTNode*>);
+    assert plain.name == String("Plain");
+    assert plain.getScopeName() == String("interface:Plain");
+    assert plain.structBase.getSignature() == String("Plain");
+    assert !plain.structBase.isGenericSubstantiation();
+    assert plain.methods.isEmpty();
+
+    // An interface substantiated with a concrete template type (int)
+    Vector<GenericType> concreteTemplates;
+    GenericType gtInt = GenericType(intQual);
+    concreteTemplates.pushBack(gtInt);
+    Interface comparable = Interface(String("Comparable"), nil<SymbolTableEntry*>, nil<IScope*>, noMethods, concreteTemplates, nil<ASTNode*>);
+    assert comparable.structBase.getSignature() == String("Comparable<int>");
+    assert comparable.getScopeName() == String("interface:Comparable");
+
+    // getScopeName from an explicit name and concrete template types
+    QualTypeList comparableTemplates = comparable.structBase.getTemplateTypes();
+    assert comparable.getScopeName(String("Comparable"), comparableTemplates) == String("interface:Comparable<int>");
+
+    return true;
 }
