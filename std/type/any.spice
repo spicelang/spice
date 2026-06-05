@@ -1,3 +1,245 @@
+// Generic type definitions
+type T dyn;
+
+// Number of bytes that can be stored inline before falling back to the heap.
+// One 8-byte slot keeps the Any struct small while still storing the common
+// pointer-sized payloads inline; everything larger is boxed on the heap.
+const unsigned int ANY_INLINE_BYTES = 8u;
+
+// Thunk function pointer types that carry a type-erased payload's copy
+// constructor (dst, src) and destructor (obj) for non-trivial types.
+type CopyThunk alias p(byte*, const byte*);
+type DtorThunk alias p(byte*);
+
+/**
+ * Any is a type-erased container that can hold a value of an arbitrary type.
+ *
+ * It is the Spice equivalent of C++'s std::any and is primarily used as the
+ * return type of the AST visitor, where different passes (and different visit
+ * methods) yield different result types. The stored type is identified via the
+ * `typeid` builtin, so retrieval is checked: requesting the wrong type panics.
+ *
+ * Trivially-copyable and -destructible payloads up to ANY_INLINE_BYTES (a
+ * single pointer-sized slot) are stored inline to avoid a heap allocation. All
+ * other payloads - larger ones, and non-trivial ones - are boxed on the heap. For
+ * non-trivial payloads, Any captures the type's copy constructor and destructor
+ * as thunks at construction time and runs them on copy/destroy, just like a
+ * std::any manager. Non-trivial types are therefore always heap-boxed, which
+ * makes `heapStore != nil` a reliable "owns a live payload" signal and keeps the
+ * destructor correct under move/return (a moved-from Any has heapStore nil'd).
+ *
+ * Note: non-trivial payloads must follow the std convention of public copy
+ * constructor and destructor.
+ */
 public type Any struct {
-    bool test
+    long typeId = 0l                       // typeid of the stored value; 0 means empty
+    unsigned long size = 0ul               // size of the stored value in bytes
+    byte[ANY_INLINE_BYTES] inlineStore     // inline storage (8-byte aligned, ANY_INLINE_BYTES wide)
+    heap byte* heapStore = nil<heap byte*> // owned heap storage, non-nil iff the payload is boxed
+    CopyThunk copyThunk = nil<CopyThunk>   // copy constructor thunk, nil for trivially-copyable payloads
+    DtorThunk dtorThunk = nil<DtorThunk>   // destructor thunk, nil for trivially-destructible payloads
+}
+
+/**
+ * Initialize an empty Any.
+ */
+public p Any.ctor() {}
+
+/**
+ * Copy-construct an Any, deep-copying the payload so that both instances own
+ * independent storage. Non-trivial payloads are copied via their copy ctor.
+ */
+public p Any.ctor(const Any& original) {
+    this.typeId = original.typeId;
+    this.size = original.size;
+    this.copyThunk = original.copyThunk;
+    this.dtorThunk = original.dtorThunk;
+    this.copyPayloadFrom(original);
+}
+
+/**
+ * Deep-copy assignment. Destroys and releases the currently held payload first.
+ */
+public p operator=<T>(Any& this, const Any& newValue) {
+    // Guard against self-assignment, which would destroy the payload we copy from
+    if &this == &newValue {
+        return;
+    }
+    this.reset();
+    this.typeId = newValue.typeId;
+    this.size = newValue.size;
+    this.copyThunk = newValue.copyThunk;
+    this.dtorThunk = newValue.dtorThunk;
+    this.copyPayloadFrom(newValue);
+}
+
+/**
+ * Destroy the held payload (if any) and release its storage.
+ */
+public p Any.dtor() {
+    this.reset();
+}
+
+/**
+ * Returns if the data is stored in the inline buffer.
+ */
+public inline f<bool> Any.isStoredInline() {
+    return this.heapStore == nil<heap byte*>;
+}
+
+/**
+ * Returns a raw pointer to the stored payload (inline or heap).
+ */
+f<byte*> Any.dataPtr() {
+    unsafe {
+        return this.isStoredInline() ? cast<byte*>(&this.inlineStore) : cast<byte*>(this.heapStore);
+    }
+}
+
+/**
+ * Destroys the held payload (running its destructor thunk if non-trivial),
+ * releases the heap storage and resets the Any to the empty state.
+ */
+p Any.reset() {
+    unsafe {
+        // Only heap-boxed payloads can be non-trivial and need destruction. An
+        // inline payload is always trivial, and a moved-from Any has a nil
+        // heapStore, so this guard makes destruction idempotent and move-safe.
+        if this.heapStore != nil<heap byte*> {
+            if this.dtorThunk != nil<DtorThunk> {
+                DtorThunk dtor = this.dtorThunk; // fn-ptr fields must be called via a local
+                dtor(cast<byte*>(this.heapStore));
+            }
+            sDealloc(this.heapStore); // frees and nils heapStore
+        }
+    }
+    this.typeId = 0l;
+    this.size = 0ul;
+    this.copyThunk = nil<CopyThunk>;
+    this.dtorThunk = nil<DtorThunk>;
+}
+
+/**
+ * Copy-constructs this Any's payload from another Any. Assumes the type/thunk
+ * metadata has already been copied and that this Any owns no payload yet.
+ */
+p Any.copyPayloadFrom(const Any& original) {
+    if original.typeId == 0l {
+        return; // empty
+    }
+    const bool useHeap = original.heapStore != nil<heap byte*>;
+    unsafe {
+        if useHeap {
+            this.heapStore = sAllocUnsafe(original.size);
+            if original.copyThunk != nil<CopyThunk> {
+                CopyThunk copy = original.copyThunk; // fn-ptr fields must be called via a local
+                copy(cast<byte*>(this.heapStore), cast<const byte*>(original.heapStore));
+            } else {
+                sCopy(original.heapStore, this.heapStore, original.size);
+            }
+        } else {
+            // Inline payloads are always trivially copyable -> bitwise copy
+            this.inlineStore = original.inlineStore;
+        }
+    }
+}
+
+/**
+ * Stores a value of arbitrary type T, type-erasing it into the Any. Replaces
+ * and destroys any previously held value.
+ *
+ * @param value Value to store
+ */
+public p Any.set<T>(const T& value) {
+    this.reset();
+    this.typeId = typeid<T>();
+    this.size = sizeof<T>();
+
+    // Capture copy/destructor thunks for non-trivial payloads. Trivial payloads
+    // leave the thunks nil and take the fast bitwise path.
+    if !__is_trivially_copyable<T>() {
+        this.copyThunk = p(byte* dst, const byte* src) {
+            unsafe {
+                const T* typedSrc = cast<const T*>(src);
+                __placement_new<T>(cast<T*>(dst), *typedSrc);
+            }
+        };
+    }
+    if !__is_trivially_destructible<T>() {
+        this.dtorThunk = p(byte* obj) {
+            unsafe {
+                T* typedObj = cast<T*>(obj);
+                sDestruct(*typedObj);
+            }
+        };
+    }
+
+    // Non-trivial payloads must live on the heap (see the type doc comment), so
+    // that the move-safe `heapStore != nil` ownership signal holds.
+    const bool useHeap = this.copyThunk != nil<CopyThunk> || this.dtorThunk != nil<DtorThunk> || this.size > ANY_INLINE_BYTES;
+    unsafe {
+        byte* slot;
+        if useHeap {
+            this.heapStore = sAllocUnsafe(this.size);
+            slot = cast<byte*>(this.heapStore);
+        } else {
+            slot = cast<byte*>(&this.inlineStore);
+        }
+        __placement_new<T>(cast<T*>(slot), value);
+    }
+}
+
+/**
+ * Retrieves the stored value as type T. Panics if the Any does not currently
+ * hold a value of type T.
+ *
+ * @return Reference to the stored value
+ */
+public inline f<T&> Any.get<T>() {
+    if this.typeId != typeid<T>() {
+        panic(Error("Any does not hold a value of the requested type"));
+    }
+    unsafe {
+        T* dataPtr = cast<T*>(this.dataPtr());
+        return *dataPtr;
+    }
+}
+
+/**
+ * Checks whether the Any currently holds a value of type T.
+ *
+ * @return Holds T or not
+ */
+public inline f<bool> Any.has<T>() {
+    return this.typeId == typeid<T>();
+}
+
+/**
+ * Checks whether the Any is empty (holds no value).
+ *
+ * @return Empty or not
+ */
+public inline f<bool> Any.isEmpty() {
+    return this.typeId == 0l;
+}
+
+/**
+ * Returns the typeid of the stored value, or 0 if the Any is empty.
+ *
+ * @return typeid of stored value
+ */
+public inline f<long> Any.getTypeId() {
+    return this.typeId;
+}
+
+/**
+ * Constructs an Any holding the given value.
+ *
+ * @param value Value to store
+ * @return Any wrapping the value
+ */
+public f<Any> any<T>(const T& value) {
+    Any box = Any();
+    box.set(value);
+    return box;
 }

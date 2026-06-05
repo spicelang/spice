@@ -1,0 +1,89 @@
+import "std/type/any";
+
+// A POD payload larger than the 8-byte inline slot (8 + 4 = 16 bytes), forcing
+// the heap storage path
+type Small struct {
+    long* ptr
+    int tag
+}
+
+// A clearly oversized payload (7 * 8 = 56 bytes), also heap-stored
+type Large struct {
+    long v1
+    long v2
+    long v3
+    long v4
+    long v5
+    long v6
+    long v7
+}
+
+f<int> main() {
+    // Empty Any
+    Any empty = Any();
+    assert empty.isEmpty();
+    assert empty.getTypeId() == 0l;
+    assert !empty.has<int>();
+    assert empty.isStoredInline();
+
+    // Inline scalar payload (4 bytes <= 8 -> inline)
+    Any scalar = any(42);
+    assert !scalar.isEmpty();
+    assert scalar.has<int>();
+    assert !scalar.has<long>();
+    assert scalar.get<int>() == 42;
+    assert scalar.getTypeId() == typeid<int>();
+    assert scalar.isStoredInline();
+
+    // Inline pointer payload (exactly 8 bytes -> inline, survives the round-trip)
+    long target = 7l;
+    long* targetPtr = &target;
+    Any ptrAny = any(targetPtr);
+    assert ptrAny.isStoredInline();
+    long* backPtr = ptrAny.get<long*>();
+    unsafe {
+        assert backPtr == &target;
+        assert *backPtr == 7l;
+    }
+
+    // Heap struct payload (16 bytes > 8 -> heap; pointers survive the round-trip)
+    Small small = Small{&target, 99};
+    Any smallAny = any(small);
+    assert !smallAny.isStoredInline();
+    Small smallBack = smallAny.get<Small>();
+    assert smallBack.tag == 99;
+    unsafe {
+        assert smallBack.ptr == &target;
+        assert *smallBack.ptr == 7l;
+    }
+
+    // Heap struct payload (larger)
+    Large large = Large{1l, 2l, 3l, 4l, 5l, 6l, 7l};
+    Any largeAny = any(large);
+    assert largeAny.has<Large>();
+    assert !largeAny.isStoredInline();
+    Large largeBack = largeAny.get<Large>();
+    assert largeBack.v1 == 1l;
+    assert largeBack.v2 == 2l;
+    assert largeBack.v3 == 3l;
+    assert largeBack.v4 == 4l;
+    assert largeBack.v5 == 5l;
+    assert largeBack.v6 == 6l;
+    assert largeBack.v7 == 7l;
+
+    // Deep-copy independence on the heap path
+    Any copied = largeAny;
+    Large replacement = Large{9l, 9l, 9l, 9l, 9l, 9l, 9l};
+    largeAny.set(replacement);
+    assert copied.get<Large>().v1 == 1l;     // copy is untouched
+    assert copied.get<Large>().v7 == 7l;
+    assert largeAny.get<Large>().v1 == 9l;   // original was reassigned
+
+    // Re-set onto an inline-holding Any switches the stored type
+    scalar.set(123l);
+    assert scalar.has<long>();
+    assert !scalar.has<int>();
+    assert scalar.get<long>() == 123l;
+
+    printf("Any smoke tests passed!\n");
+}

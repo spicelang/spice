@@ -1,0 +1,68 @@
+import "std/type/any";
+
+// Tracks object lifetimes to prove Any runs copy ctors and dtors correctly for
+// non-trivial payloads. LiveCount must return to 0 (no leaks, no missed dtors)
+// and DoubleFree must stay false (no dtor runs twice).
+int LiveCount = 0;
+bool DoubleFree = false;
+
+type Obj struct {
+    int tag
+    bool alive = false
+}
+
+public p Obj.ctor(int tag) {
+    this.tag = tag;
+    this.alive = true;
+    LiveCount++;
+}
+
+public p Obj.ctor(const Obj& other) {
+    this.tag = other.tag;
+    this.alive = true;
+    LiveCount++;
+}
+
+public p Obj.dtor() {
+    if !this.alive {
+        DoubleFree = true;
+    }
+    this.alive = false;
+    LiveCount--;
+}
+
+f<int> main() {
+    // Scope the Any usage so that all payloads are destroyed before we check the
+    // counters at the end.
+    {
+        Obj original = Obj(7);
+        Any a = any(original);
+        assert a.has<Obj>();
+        Obj& ra = a.get<Obj>();
+        assert ra.tag == 7;
+
+        // Copy construction must deep-copy the payload via its copy ctor
+        Any b = a;
+        Obj& rb = b.get<Obj>();
+        assert rb.tag == 7;
+
+        // Re-store into a: the old payload must be destroyed, b stays independent
+        Obj replacement = Obj(9);
+        a.set(replacement);
+        Obj& ra2 = a.get<Obj>();
+        Obj& rb2 = b.get<Obj>();
+        assert ra2.tag == 9;
+        assert rb2.tag == 7;
+
+        // Copy assignment must destroy a's payload, then deep-copy b's
+        a = b;
+        Obj& ra3 = a.get<Obj>();
+        assert ra3.tag == 7;
+    }
+
+    // Every constructed object must have been destroyed exactly once
+    assert LiveCount == 0;
+    assert !DoubleFree;
+
+    printf("Any non-trivial tests passed!\n");
+}
