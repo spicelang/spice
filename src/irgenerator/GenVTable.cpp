@@ -44,7 +44,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
 
   QualTypeList interfaceTypes;
   if (spiceStruct->entry->getQualType().is(TY_STRUCT))
-    interfaceTypes = spice_pointer_cast<Struct *>(spiceStruct)->interfaceTypes;
+    interfaceTypes = static_cast<Struct *>(spiceStruct)->interfaceTypes;
 
   // Build type info LLVM type
   std::vector<llvm::Type *> typeInfoFieldTypes = {ptrTy, ptrTy};
