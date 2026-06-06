@@ -1,0 +1,32 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:5:
+Builtin function argument count mismatch: This builtin expects 2 argument(s), but got 0
+
+8  __offsetof(); // No args
+   ^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:9:5:
+Builtin function argument count mismatch: This builtin expects 2 argument(s), but got 1
+
+9  __offsetof(s); // Too few args
+   ^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:10:5:
+Builtin function argument count mismatch: This builtin expects 2 argument(s), but got 3
+
+10  __offsetof(s, s._fieldA, s._fieldB); // Too many args
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:11:16:
+Expected a struct type: The offsetof builtin expects a struct as its first argument
+
+11  __offsetof(123, s._fieldA); // Fir
+               ^^^
+
+[Error|Semantic] ./source.spice:12:19:
+Member access is only allowed on structs and Strings: The offsetof builtin expects a struct member access as its second argument
+
+12  __offsetof(s, s); // Second arg is 
+                  ^

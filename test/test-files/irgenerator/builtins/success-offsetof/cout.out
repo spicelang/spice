@@ -1,0 +1,8 @@
+Offset of _fieldA: 0
+Offset of _fieldB: 4
+Offset of _fieldC: 8
+Offset of _fieldD: 16
+Offset of _fieldE: 24
+Offset of _fieldE.a: 24
+Offset of _fieldE.b: 32
+Const offset of _fieldD: 16
