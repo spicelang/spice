@@ -299,13 +299,13 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
       fieldConstants.push_back(defaultFieldValue);
     }
 
-    const auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
+    const auto structType = llvm::cast<llvm::StructType>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
-    const auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
+    const auto structType = llvm::cast<llvm::StructType>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
 

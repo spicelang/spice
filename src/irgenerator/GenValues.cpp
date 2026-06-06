@@ -412,7 +412,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
   // Get struct type
   assert(spiceStruct->entry != nullptr);
-  const auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getQualType().toLLVMType(sourceFile));
+  const auto structType = llvm::cast<llvm::StructType>(spiceStruct->entry->getQualType().toLLVMType(sourceFile));
   assert(structType != nullptr);
 
   if (!node->fieldLst) {
