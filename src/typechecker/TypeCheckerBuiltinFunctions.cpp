@@ -8,10 +8,14 @@
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <symboltablebuilder/QualType.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/Builtins.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
+
+#include <llvm/IR/DataLayout.h>
+#include <llvm/IR/DerivedTypes.h>
 
 namespace spice::compiler {
 
@@ -199,6 +203,82 @@ std::any TypeChecker::visitBuiltinAlignOfCall(FctCallNode *node) const {
   llvm::Type *type = qualType.toLLVMType(sourceFile);
   const int64_t typeAlignment = sourceFile->targetMachine->createDataLayout().getABITypeAlign(type).value();
   node->data.at(manIdx).setCompileTimeValue({.longValue = typeAlignment});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinOffsetOfCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_OFFSETOF);
+  assert(node->hasArgs && node->argLst->args.size() == 2);
+
+  // The first argument denotes the struct to compute the offset within
+  const ExprNode *structArg = node->argLst->args.at(0);
+  const QualType structType = structArg->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
+  if (!structType.is(TY_STRUCT))
+    SOFT_ERROR_ER(structArg, EXPECTED_STRUCT_TYPE, "The offsetof builtin expects a struct as its first argument")
+
+  // The second argument must be a (possibly chained) member access, denoting the field to compute the offset of
+  const ExprNode *memberArg = node->argLst->args.at(1);
+  const PostfixUnaryExprNode *leafAccess = nullptr;
+  for (const ASTNode *cur = memberArg; cur != nullptr;) {
+    if (const auto *postfix = dynamic_cast<const PostfixUnaryExprNode *>(cur)) {
+      leafAccess = postfix;
+      break;
+    }
+    const std::vector<ASTNode *> children = cur->getChildren();
+    cur = children.size() == 1 ? children.front() : nullptr;
+  }
+  if (leafAccess == nullptr || leafAccess->op != PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS)
+    SOFT_ERROR_ER(memberArg, INVALID_MEMBER_ACCESS, "The offsetof builtin expects a struct member access as its second argument")
+
+  // Collect the chain of member accesses (from leaf to base). Only plain member accesses are supported.
+  std::vector<const PostfixUnaryExprNode *> accessChain;
+  for (const PostfixUnaryExprNode *access = leafAccess; access != nullptr;) {
+    if (access->op != PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS)
+      SOFT_ERROR_ER(memberArg, INVALID_MEMBER_ACCESS, "The offsetof builtin only supports plain member accesses")
+    accessChain.push_back(access);
+    access = dynamic_cast<const PostfixUnaryExprNode *>(access->postfixUnaryExpr);
+  }
+
+  // Ensure the base of the member access chain is the struct that was passed as first argument
+  const QualType chainBaseType =
+      accessChain.back()->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
+  if (!chainBaseType.matches(structType, false, true, false))
+    SOFT_ERROR_ER(memberArg, INVALID_MEMBER_ACCESS, "The member access must be rooted in the struct passed as first argument")
+
+  // Accumulate the byte offset by walking each access in the chain through its struct layout
+  const llvm::DataLayout dataLayout = sourceFile->targetMachine->createDataLayout();
+  int64_t offset = 0;
+  for (const PostfixUnaryExprNode *access : accessChain) {
+    const QualType baseType =
+        access->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
+    assert(baseType.is(TY_STRUCT));
+
+    // Resolve the struct body scope (substantiate the generic scope if required)
+    Scope *structScope = baseType.getBodyScope();
+    if (structScope->isGenericScope) {
+      const Struct *spiceStruct = baseType.getStruct(node);
+      assert(spiceStruct != nullptr);
+      structScope = spiceStruct->scope;
+    }
+    assert(!structScope->isGenericScope);
+
+    // Look up the accessed field to retrieve its index path within the struct
+    std::vector<size_t> indexPath;
+    const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupInComposedFields(access->identifier, indexPath);
+    if (fieldEntry == nullptr)
+      SOFT_ERROR_ER(memberArg, REFERENCED_UNDEFINED_FIELD,
+                    "Field '" + access->identifier + "' not found in struct " + baseType.getSubType())
+
+    // Walk the index path through the struct layout to accumulate the byte offset of the field
+    llvm::Type *currentType = baseType.toLLVMType(sourceFile);
+    for (const size_t index : indexPath) {
+      auto *structLLVMType = llvm::cast<llvm::StructType>(currentType);
+      offset += static_cast<int64_t>(dataLayout.getStructLayout(structLLVMType)->getElementOffset(index));
+      currentType = structLLVMType->getElementType(index);
+    }
+  }
+  node->data.at(manIdx).setCompileTimeValue({.longValue = offset});
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }

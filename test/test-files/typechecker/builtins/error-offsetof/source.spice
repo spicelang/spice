@@ -1,0 +1,13 @@
+type Struct struct {
+    int _fieldA
+    bool _fieldB
+}
+
+f<int> main() {
+    Struct s = Struct{1, true};
+    __offsetof(); // No args
+    __offsetof(s); // Too few args
+    __offsetof(s, s._fieldA, s._fieldB); // Too many args
+    __offsetof(123, s._fieldA); // First arg is not a struct
+    __offsetof(s, s); // Second arg is not a member access
+}

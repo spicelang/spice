@@ -1,0 +1,27 @@
+type Inner struct {
+    int a
+    long b
+}
+
+type Struct struct {
+    int _fieldA
+    bool _fieldB
+    string _fieldC
+    long _fieldD
+    Inner _fieldE
+}
+
+f<int> main() {
+    Struct s = Struct{1, true, "hi", 5l, Inner{2, 3l}};
+    printf("Offset of _fieldA: %d\n", __offsetof(s, s._fieldA));
+    printf("Offset of _fieldB: %d\n", __offsetof(s, s._fieldB));
+    printf("Offset of _fieldC: %d\n", __offsetof(s, s._fieldC));
+    printf("Offset of _fieldD: %d\n", __offsetof(s, s._fieldD));
+    printf("Offset of _fieldE: %d\n", __offsetof(s, s._fieldE));
+    printf("Offset of _fieldE.a: %d\n", __offsetof(s, s._fieldE.a));
+    printf("Offset of _fieldE.b: %d\n", __offsetof(s, s._fieldE.b));
+
+    // The result is a compile time constant and can be used in const contexts
+    const long fieldDOffset = __offsetof(s, s._fieldD);
+    printf("Const offset of _fieldD: %d\n", fieldDOffset);
+}

@@ -39,6 +39,7 @@ static constexpr std::string_view BUILTIN_FCT_NAME_LEN = "len";
 static constexpr std::string_view BUILTIN_FCT_NAME_PANIC = "panic";
 static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
 // Undocumented builtins (intended to be primarily used via std wrapper functions)
+static constexpr std::string_view BUILTIN_FCT_NAME_OFFSETOF = "__offsetof";
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_SAME = "__is_same";
 static constexpr std::string_view BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
 static constexpr std::string_view BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_var";
@@ -74,6 +75,14 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
             .allTemplateTypesOrAllArgTypes = true,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_OFFSETOF,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinOffsetOfCall,
+            .minArgTypes = 2,
+            .maxArgTypes = 2,
         },
     },
     BuiltinFunctionEntry{

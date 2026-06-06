@@ -15,8 +15,8 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
 
   // Generate global string constant
-  llvm::GlobalVariable *global =
-      builder.CreateGlobalString(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
+  const std::string mangledName = NameMangling::mangleTypeInfoValue(spiceStruct->name);
+  llvm::GlobalVariable *global = builder.CreateGlobalString(mangledName, globalName, 0, module);
 
   // If the output should be comparable, fix alignment to 4 bytes
   if (cliOptions.comparableOutput)
@@ -43,10 +43,8 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   llvm::PointerType *ptrTy = builder.getPtrTy();
 
   QualTypeList interfaceTypes;
-  if (spiceStruct->entry->getQualType().is(TY_STRUCT)) {
-    const auto spiceStructEnsured = reinterpret_cast<Struct *>(spiceStruct);
-    interfaceTypes = spiceStructEnsured->interfaceTypes;
-  }
+  if (spiceStruct->entry->getQualType().is(TY_STRUCT))
+    interfaceTypes = static_cast<Struct *>(spiceStruct)->interfaceTypes;
 
   // Build type info LLVM type
   std::vector<llvm::Type *> typeInfoFieldTypes = {ptrTy, ptrTy};
