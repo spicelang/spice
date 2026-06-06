@@ -334,7 +334,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     llvm::Type *structType = spiceStruct->entry->getQualType().toLLVMType(irGenerator->sourceFile);
     assert(structType != nullptr);
     const llvm::DataLayout &dataLayout = irGenerator->module->getDataLayout();
-    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
+    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(llvm::cast<llvm::StructType>(structType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
 
     // Create struct ty
@@ -387,7 +387,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->sourceFile);
     assert(interfaceType != nullptr);
     const llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
-    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));
+    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(llvm::cast<llvm::StructType>(interfaceType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value();
 
     // Create interface ty
