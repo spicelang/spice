@@ -497,7 +497,7 @@
           "isVolatile": false,
           "name": "cursor",
           "orderIndex": 2,
-          "state": "initialized",
+          "state": "declared",
           "type": "unsigned long"
         },
         {
