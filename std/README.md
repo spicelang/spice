@@ -31,7 +31,7 @@ Spice bindings for common external libraries, allowing them to be called from Sp
 | Module            | Description                                                            |
 |-------------------|------------------------------------------------------------------------|
 | `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                    |
-| `libcurl/libcurl` | Bindings for libcurl, used for network transfers (see `std/net/http`). |
+| `libcurl/libcurl` | Bindings for libcurl, used for network transfers.                     |
 | `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.   |
 
 ### `std/data`
@@ -91,7 +91,7 @@ Network communication via sockets and HTTP.
 | Module   | Description                                                                        |
 |----------|------------------------------------------------------------------------------------|
 | `socket` | Cross-platform socket abstraction (with `_linux`, `_darwin`, `_windows` variants). |
-| `http`   | HTTP client built on top of `std/bindings/libcurl`.                                |
+| `http`   | HTTP/1.1 message types (`HttpRequest`/`HttpResponse`) plus a route-based `HttpServer` and `HttpClient`, built on `std/net/socket`. |
 
 ### `std/os`
 Interacting with the underlying operating system: processes, threads, memory, environment, and raw syscalls.

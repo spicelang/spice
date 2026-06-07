@@ -120,6 +120,21 @@ public f<long> Socket.read(byte* buffer, long size) {
 }
 
 /**
+ * Closes the current connection (e.g. an accepted client connection on a server socket) while
+ * leaving the underlying (listening) socket open. Does nothing for client sockets, where the
+ * connection and the socket are the same file descriptor.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> Socket.closeConnection() {
+    // Nothing separate to close for unconnected or client sockets
+    if this.connFd == 0 || this.connFd == this.sockFd { return true; }
+    const bool success = close(this.connFd) == 0;
+    this.connFd = 0;
+    return success;
+}
+
+/**
  * Closes the socket. This method should always be called by the user before exiting the program.
  *
  * @return Closing the connection was successful or not
@@ -170,8 +185,9 @@ public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
     const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if sockFd == -1 { return err<Socket>(Error("Error opening socket client connection")); }
 
-    // Construct socket object
-    const Socket s = Socket { sockFd, /*connFd*/ 0 };
+    // Construct socket object. For client sockets the connection equals the socket itself,
+    // so connFd mirrors sockFd to make Socket.read/write operate on the connected socket.
+    const Socket s = Socket { sockFd, /*connFd*/ sockFd };
     const SockAddrIn cliAddr = SockAddrIn { AF_INET, InAddr { inet_addr(host) }, htons(port), 0ul};
 
     // Connect to server
