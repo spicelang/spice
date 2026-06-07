@@ -51,26 +51,13 @@ public p Lambda.ctor() {
  */
 public p Lambda.ctor(S lambda) {
     this.native = lambda;
-    this.ownedCaptures = nil<heap byte*>;
-    this.captureSize = 0ul;
     unsafe {
-        // The fat pointer is laid out as { fctPtr, capturePtr, captureSize }, three 8-byte
-        // slots. Read the capture size (third slot) and, if there is an owned capture struct,
-        // copy it onto the heap and rebind the wrapped lambda's capturePtr to that copy.
-        byte** srcSlots;
-        srcSlots = cast<byte**>(&lambda);
-        unsigned long* sizePtr;
-        sizePtr = cast<unsigned long*>(&srcSlots[2]);
-        unsigned long size;
-        size = *sizePtr;
-        this.captureSize = size;
-        if size > 0ul {
-            this.ownedCaptures = sAllocUnsafe(size);
-            sCopyUnsafe(cast<heap byte*>(srcSlots[1]), this.ownedCaptures, size);
-            byte** dstSlots;
-            dstSlots = cast<byte**>(&this.native);
-            dstSlots[1] = cast<byte*>(this.ownedCaptures);
-        }
+        // The native lambda is a fat pointer laid out as { fctPtr, capturePtr, captureSize }, three
+        // consecutive 8-byte slots. Read its capturePtr (slot 1) and captureSize (slot 2), then take
+        // ownership of the capture struct those slots describe.
+        dyn srcSlots = cast<byte**>(&lambda);
+        dyn sizePtr = cast<unsigned long*>(&srcSlots[2]);
+        this.adoptCaptures(cast<heap byte*>(srcSlots[1]), *sizePtr);
     }
 }
 
@@ -80,17 +67,8 @@ public p Lambda.ctor(S lambda) {
  */
 public p Lambda.ctor(const Lambda<S>& original) {
     this.native = original.native;
-    this.captureSize = original.captureSize;
-    this.ownedCaptures = nil<heap byte*>;
-    if original.captureSize > 0ul {
-        unsafe {
-            this.ownedCaptures = sAllocUnsafe(original.captureSize);
-            sCopyUnsafe(original.ownedCaptures, this.ownedCaptures, original.captureSize);
-            byte** dstSlots;
-            dstSlots = cast<byte**>(&this.native);
-            dstSlots[1] = cast<byte*>(this.ownedCaptures);
-        }
-    }
+    // Give this copy its own heap copy of the captures (or nothing, if there are none).
+    this.adoptCaptures(original.ownedCaptures, original.captureSize);
 }
 
 /**
@@ -101,17 +79,39 @@ public p operator=<S>(Lambda<S>& this, const Lambda<S>& original) {
     if &this == &original {
         return;
     }
+    // Release our current captures, then adopt an independent copy of the source's captures.
     this.reset();
     this.native = original.native;
-    this.captureSize = original.captureSize;
-    if original.captureSize > 0ul {
-        unsafe {
-            this.ownedCaptures = sAllocUnsafe(original.captureSize);
-            sCopyUnsafe(original.ownedCaptures, this.ownedCaptures, original.captureSize);
-            byte** dstSlots;
-            dstSlots = cast<byte**>(&this.native);
-            dstSlots[1] = cast<byte*>(this.ownedCaptures);
-        }
+    this.adoptCaptures(original.ownedCaptures, original.captureSize);
+}
+
+/**
+ * Take ownership of a lambda's captures by relocating them onto the heap.
+ *
+ * `source` points to the capture struct to duplicate (it stays owned by the caller) and `size` is
+ * its byte size; a size of zero means the lambda captures nothing. The bytes are copied into a fresh
+ * heap allocation that this Lambda owns, and the wrapped lambda's capturePtr is rebound to that copy
+ * so the lambda keeps working for as long as this Lambda is alive.
+ *
+ * Precondition: this.native has already been set to the lambda whose captures are being adopted.
+ */
+p Lambda.adoptCaptures(heap byte* source, unsigned long size) {
+    this.captureSize = size;
+    this.ownedCaptures = nil<heap byte*>;
+    // A non-capturing lambda is self-contained in its fat pointer, so there is nothing to own.
+    if size == 0ul {
+        return;
+    }
+    unsafe {
+        // Duplicate the capture struct onto the heap so it outlives the (possibly stack) storage
+        // that `source` points into.
+        this.ownedCaptures = sAllocUnsafe(size);
+        sCopyUnsafe(source, this.ownedCaptures, size);
+        // Reinterpret the wrapped fat pointer { fctPtr, capturePtr, captureSize } as an array of
+        // pointer slots and overwrite slot 1 (capturePtr), so the lambda reads its captures from
+        // our owned heap copy instead of the original storage.
+        dyn dstSlots = cast<byte**>(&this.native);
+        dstSlots[1] = cast<byte*>(this.ownedCaptures);
     }
 }
 
