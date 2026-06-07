@@ -11,22 +11,24 @@ define private noundef i32 @_Z4testv() {
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %testFct = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %testFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store ptr @_Z4testv, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
-  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %2, ptr %testFct, align 8
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %2, align 8
+  %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %3, ptr %testFct, align 8
   %fct = load ptr, ptr %testFct, align 8
-  %3 = call i32 %fct()
-  store i32 %3, ptr %i, align 4
-  %4 = load i32, ptr %i, align 4
-  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %4 = call i32 %fct()
+  store i32 %4, ptr %i, align 4
+  %5 = load i32, ptr %i, align 4
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 ; Function Attrs: nofree nounwind

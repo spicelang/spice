@@ -16,54 +16,60 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %callbackWithoutArgs = alloca { ptr, ptr }, align 8
-  %fat.ptr1 = alloca { ptr, ptr }, align 8
-  %callbackWithArgs1 = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithoutArgs = alloca { ptr, ptr, i64 }, align 8
+  %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithArgs1 = alloca { ptr, ptr, i64 }, align 8
   %1 = alloca %struct.String, align 8
-  %fat.ptr3 = alloca { ptr, ptr }, align 8
-  %callbackWithArgs2 = alloca { ptr, ptr }, align 8
+  %fat.ptr3 = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithArgs2 = alloca { ptr, ptr, i64 }, align 8
   %2 = alloca %struct.String, align 8
   %arg.copy = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
-  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %3, align 8
-  %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %4, align 8
+  %5 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %5, ptr %callbackWithoutArgs, align 8
   %fct = load ptr, ptr %callbackWithoutArgs, align 8
-  %5 = call ptr %fct()
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %5)
+  %6 = call ptr %fct()
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %6)
   store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %fat.ptr1, align 8
-  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %7, align 8
-  %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
+  %8 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr poison, ptr %8, align 8
+  %9 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2
+  store i64 0, ptr %9, align 8
+  %10 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
+  store { ptr, ptr, i64 } %10, ptr %callbackWithArgs1, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.2)
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
-  %9 = call i1 %fct2(ptr %1, double 3.140000e+00)
-  %10 = zext i1 %9 to i32
-  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %10)
+  %11 = call i1 %fct2(ptr %1, double 3.140000e+00)
+  %12 = zext i1 %11 to i32
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %12)
   store ptr @_Z15lambda.L13C49.06Strings, ptr %fat.ptr3, align 8
-  %12 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
-  store ptr poison, ptr %12, align 8
-  %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
-  store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8
+  %14 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr3, i32 0, i32 1
+  store ptr poison, ptr %14, align 8
+  %15 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr3, i32 0, i32 2
+  store i64 0, ptr %15, align 8
+  %16 = load { ptr, ptr, i64 }, ptr %fat.ptr3, align 8
+  store { ptr, ptr, i64 } %16, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.3)
   call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
-  %14 = load %struct.String, ptr %arg.copy, align 8
+  %17 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
-  %15 = call i16 %fct4(%struct.String %14, i16 321)
-  %16 = xor i16 %15, 956
-  %17 = sext i16 %16 to i32
-  %18 = icmp eq i32 %17, 1
-  %19 = select i1 %18, i32 9, i32 12
-  %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %19)
+  %18 = call i16 %fct4(%struct.String %17, i16 321)
+  %19 = xor i16 %18, 956
+  %20 = sext i16 %19 to i32
+  %21 = icmp eq i32 %20, 1
+  %22 = select i1 %21, i32 9, i32 12
+  %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %22)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
-  %21 = load i32, ptr %result, align 4
-  ret i32 %21
+  %24 = load i32, ptr %result, align 4
+  ret i32 %24
 }
 
 define private ptr @_Z14lambda.L2C39.0v() {

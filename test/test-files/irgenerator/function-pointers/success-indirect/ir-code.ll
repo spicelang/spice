@@ -11,10 +11,10 @@ define private noundef i32 @_Z4testPKc(ptr noundef %0) {
   ret i32 12
 }
 
-define private noundef i32 @_Z6invokePFiPKcE({ ptr, ptr } noundef %0) {
+define private noundef i32 @_Z6invokePFiPKcE({ ptr, ptr, i64 } noundef %0) {
   %result = alloca i32, align 4
-  %fctPtr = alloca { ptr, ptr }, align 8
-  store { ptr, ptr } %0, ptr %fctPtr, align 8
+  %fctPtr = alloca { ptr, ptr, i64 }, align 8
+  store { ptr, ptr, i64 } %0, ptr %fctPtr, align 8
   %fct = load ptr, ptr %fctPtr, align 8
   %2 = call i32 %fct(ptr @anon.string.0)
   ret i32 %2
@@ -23,22 +23,24 @@ define private noundef i32 @_Z6invokePFiPKcE({ ptr, ptr } noundef %0) {
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %testFct = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %testFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store ptr @_Z4testPKc, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
-  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %2, ptr %testFct, align 8
-  %3 = load { ptr, ptr }, ptr %testFct, align 8
-  %4 = call noundef i32 @_Z6invokePFiPKcE({ ptr, ptr } noundef %3)
-  store i32 %4, ptr %i, align 4
-  %5 = load i32, ptr %i, align 4
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %2, align 8
+  %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %3, ptr %testFct, align 8
+  %4 = load { ptr, ptr, i64 }, ptr %testFct, align 8
+  %5 = call noundef i32 @_Z6invokePFiPKcE({ ptr, ptr, i64 } noundef %4)
+  store i32 %5, ptr %i, align 4
+  %6 = load i32, ptr %i, align 4
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
+  %8 = load i32, ptr %result, align 4
+  ret i32 %8
 }
 
 ; Function Attrs: nofree nounwind

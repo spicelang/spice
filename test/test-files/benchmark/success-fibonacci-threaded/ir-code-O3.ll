@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.Thread = type { { ptr, ptr }, i64 }
+%struct.Thread = type { { ptr, ptr, i64 }, i64 }
 
 @printf.str.0 = private unnamed_addr constant [33 x i8] c"Thread returned with result: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [17 x i8] c"Program finished\00", align 4
@@ -36,48 +36,48 @@ define dso_local noundef i32 @main() local_unnamed_addr #1 {
 for.body.L11:
   %threads = alloca [8 x %struct.Thread], align 8
   %0 = alloca %struct.Thread, align 8
-  %.fca.1.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 24
-  %.fca.2.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 48
-  %.fca.3.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 72
-  %.fca.4.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 96
-  %.fca.5.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 120
-  %.fca.6.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 144
-  %.fca.7.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 168
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  %1 = getelementptr inbounds nuw i8, ptr %threads, i64 24
-  call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(168) %1, i8 0, i64 168, i1 false)
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %threads, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %threads) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #5
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %0, { ptr, ptr } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison }) #5
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep, ptr noundef nonnull align 8 dereferenceable(24) %0, i64 24, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep) #5
+  %.fca.1.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 32
+  %.fca.2.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 64
+  %.fca.3.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 96
+  %.fca.4.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 128
+  %.fca.5.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 160
+  %.fca.6.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 192
+  %.fca.7.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 224
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  %1 = getelementptr inbounds nuw i8, ptr %threads, i64 32
+  call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(224) %1, i8 0, i64 224, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %threads, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %threads) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.1.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.1.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.2.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.2.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.3.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.3.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.4.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.4.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.5.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.5.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.6.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.6.0.0.gep) #5
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L12C29.0v, ptr poison, i64 0 }) #5
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %.fca.7.0.0.gep, ptr noundef nonnull align 8 dereferenceable(32) %0, i64 32, i1 false)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.7.0.0.gep) #5
   %puts = call i32 @puts(ptr nonnull dereferenceable(1) @str)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %threads) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.1.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.2.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.3.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.4.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.5.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.6.0.0.gep) #5
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %.fca.7.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %threads) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.1.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.2.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.3.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.4.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.5.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.6.0.0.gep) #5
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %.fca.7.0.0.gep) #5
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }
@@ -92,7 +92,7 @@ define private void @_Z15lambda.L12C29.0v() #2 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr }) local_unnamed_addr
+declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 }) local_unnamed_addr
 
 ; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3

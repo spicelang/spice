@@ -1682,7 +1682,7 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   case COMB(TY_PTR, TY_FUNCTION): // fallthrough
   case COMB(TY_PTR, TY_PROCEDURE): {
     assert(lhsSTy.isPtrTo(TY_BYTE));
-    llvm::Value *fctPtrPtr = irGenerator->insertStructGEP(irGenerator->llvmTypes.fatPtrType, rhsP(), 0);
+    llvm::Value *fctPtrPtr = irGenerator->insertStructGEP(irGenerator->llvmTypes.lambdaFatPtrType, rhsP(), 0);
     llvm::Value *fctPtr = irGenerator->insertLoad(builder.getPtrTy(), fctPtrPtr);
     return {.value = fctPtr};
   }

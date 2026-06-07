@@ -129,11 +129,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (data.isFctPtrCall()) {
     llvm::Value *fatPtr = firstFragEntry->getAddress();
     // Load fctPtr
-    llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-    fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
+    fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
     if (firstFragEntry->getQualType().hasLambdaCaptures()) {
       // Load captures struct
-      llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
+      llvm::Value *capturesPtrPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 1);
       llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
       // Add captures to argument list
       argValues.push_back(capturesPtr);
@@ -940,6 +939,10 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda) {
   // Create capture struct if required
   llvm::Value *capturesPtr = nullptr;
+  // Byte size of the owned capture struct. This is only non-zero if the captures live in a dedicated
+  // (stack-allocated) struct that the std Lambda type needs to relocate to the heap to take ownership.
+  // A single capture stored inline in the capturePtr slot, or no captures at all, leaves this at 0.
+  uint64_t captureStructSize = 0;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
     // If we have a single capture of ptr type, we can directly store it into the fat ptr. Otherwise, we need a stack allocated
@@ -956,6 +959,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       }
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
+      captureStructSize = module->getDataLayout().getTypeAllocSize(capturesStructType);
       size_t captureIdx = 0;
       for (const auto &capture : bodyScope->symbolTable.captures | std::views::values) {
         const SymbolTableEntry *capturedEntry = capture.capturedSymbol;
@@ -974,16 +978,14 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
     }
   }
 
-  // Create fat ptr struct type if not exists yet
-  if (!llvmTypes.fatPtrType)
-    llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-
   // Create fat pointer
-  llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
-  llvm::Value *fctPtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
+  llvm::Value *fatFctPtr = insertAlloca(llvmTypes.lambdaFatPtrType, "fat.ptr");
+  llvm::Value *fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 0);
   insertStore(lambda, fctPtr);
-  llvm::Value *capturePtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
+  llvm::Value *capturePtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 1);
   insertStore(capturesPtr != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
+  llvm::Value *captureSizePtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 2);
+  insertStore(builder.getInt64(captureStructSize), captureSizePtr);
 
   return fatFctPtr;
 }

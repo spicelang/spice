@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [21 x i8] c"Hello from thread 2\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
-declare i32 @pthread_create(ptr noundef, ptr noundef, { ptr, ptr } noundef, ptr noundef)
+declare i32 @pthread_create(ptr noundef, ptr noundef, { ptr, ptr, i64 } noundef, ptr noundef)
 
 declare i32 @pthread_join(i64 noundef, ptr noundef)
 
@@ -16,35 +16,39 @@ define dso_local noundef i32 @main() #0 {
   %tid2 = alloca i64, align 8
   %i = alloca i32, align 4
   %d = alloca double, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %captures = alloca { ptr, ptr }, align 8
-  %fat.ptr1 = alloca { ptr, ptr }, align 8
+  %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
   store i32 0, ptr %result, align 4
   store i64 0, ptr %tid1, align 8
   store i64 0, ptr %tid2, align 8
   store i32 123, ptr %i, align 4
   store double 1.234560e+02, ptr %d, align 8
   store ptr @_Z15lambda.L11C39.0v, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr %i, ptr %1, align 8
-  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  %3 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid1, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr } noundef %2, ptr noundef align 1 dereferenceable(1) null)
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %2, align 8
+  %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  %4 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid1, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr, i64 } noundef %3, ptr noundef align 1 dereferenceable(1) null)
   store ptr %d, ptr %captures, align 8
-  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %captures, i32 0, i32 1
-  store ptr %i, ptr %4, align 8
+  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %captures, i32 0, i32 1
+  store ptr %i, ptr %5, align 8
   store ptr @_Z15lambda.L15C39.0v, ptr %fat.ptr1, align 8
-  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr %captures, ptr %5, align 8
-  %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  %7 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid2, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr } noundef %6, ptr noundef align 1 dereferenceable(1) null)
-  %8 = load i64, ptr %tid1, align 8
-  %9 = call noundef i32 @pthread_join(i64 noundef %8, ptr noundef align 8 dereferenceable(8) null)
-  %10 = load i64, ptr %tid2, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr %captures, ptr %6, align 8
+  %7 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2
+  store i64 16, ptr %7, align 8
+  %8 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
+  %9 = call noundef i32 @pthread_create(ptr noundef align 8 dereferenceable(8) %tid2, ptr noundef align 1 dereferenceable(1) null, { ptr, ptr, i64 } noundef %8, ptr noundef align 1 dereferenceable(1) null)
+  %10 = load i64, ptr %tid1, align 8
   %11 = call noundef i32 @pthread_join(i64 noundef %10, ptr noundef align 8 dereferenceable(8) null)
-  %12 = load volatile i32, ptr %i, align 4
-  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %12)
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  %12 = load i64, ptr %tid2, align 8
+  %13 = call noundef i32 @pthread_join(i64 noundef %12, ptr noundef align 8 dereferenceable(8) null)
+  %14 = load volatile i32, ptr %i, align 4
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %14)
+  %16 = load i32, ptr %result, align 4
+  ret i32 %16
 }
 
 define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) {

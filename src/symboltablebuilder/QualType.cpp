@@ -308,6 +308,15 @@ bool QualType::isErrorObj() const {
 }
 
 /**
+ * Check if the current type is a Lambda object (the std owning lambda wrapper)
+ *
+ * @return Lambda object or not
+ */
+bool QualType::isLambdaObj() const {
+  return is(TY_STRUCT) && getSubType() == LAMBDAOBJ_NAME && getBodyScope()->sourceFile->isStdFile;
+}
+
+/**
  * Check if the current type has any generic parts
  *
  * @return Generic parts or not

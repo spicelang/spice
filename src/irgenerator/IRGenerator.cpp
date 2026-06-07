@@ -34,6 +34,9 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
   identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, PRODUCER_STRING)));
 
+  // Initialize common LLVM types
+  llvmTypes.lambdaFatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy(), builder.getInt64Ty()});
+
   // Initialize debug info generator
   if (cliOptions.instrumentation.generateDebugInfo)
     diGenerator.initialize(sourceFile->fileName, sourceFile->fileDir);
@@ -265,11 +268,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
   // Function or procedure
   if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    if (!llvmTypes.fatPtrType)
-      llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-
     llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(QualType(TY_PTR));
-    return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
+    llvm::Constant *sizeDefaultValue = builder.getInt64(0);
+    return llvm::ConstantStruct::get(llvmTypes.lambdaFatPtrType, {ptrDefaultValue, ptrDefaultValue, sizeDefaultValue});
   }
 
   // Struct

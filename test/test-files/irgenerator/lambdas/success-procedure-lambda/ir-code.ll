@@ -12,46 +12,52 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %callbackWithoutArgs = alloca { ptr, ptr }, align 8
-  %fat.ptr1 = alloca { ptr, ptr }, align 8
-  %callbackWithArgs1 = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithoutArgs = alloca { ptr, ptr, i64 }, align 8
+  %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithArgs1 = alloca { ptr, ptr, i64 }, align 8
   %1 = alloca %struct.String, align 8
-  %fat.ptr3 = alloca { ptr, ptr }, align 8
-  %callbackWithArgs2 = alloca { ptr, ptr }, align 8
+  %fat.ptr3 = alloca { ptr, ptr, i64 }, align 8
+  %callbackWithArgs2 = alloca { ptr, ptr, i64 }, align 8
   %2 = alloca %struct.String, align 8
   %arg.copy = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C31.0v, ptr %fat.ptr, align 8
-  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %3, align 8
-  %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %4, align 8
+  %5 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %5, ptr %callbackWithoutArgs, align 8
   %fct = load ptr, ptr %callbackWithoutArgs, align 8
   call void %fct()
   store ptr @_Z14lambda.L7C44.0R6Stringd, ptr %fat.ptr1, align 8
-  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %5, align 8
-  %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  store { ptr, ptr } %6, ptr %callbackWithArgs1, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr poison, ptr %6, align 8
+  %7 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2
+  store i64 0, ptr %7, align 8
+  %8 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
+  store { ptr, ptr, i64 } %8, ptr %callbackWithArgs1, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
   %fct2 = load ptr, ptr %callbackWithArgs1, align 8
   call void %fct2(ptr %1, double 3.140000e+00)
   store ptr @_Z15lambda.L12C41.06Stringb, ptr %fat.ptr3, align 8
-  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
-  store ptr poison, ptr %7, align 8
-  %8 = load { ptr, ptr }, ptr %fat.ptr3, align 8
-  store { ptr, ptr } %8, ptr %callbackWithArgs2, align 8
+  %9 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr3, i32 0, i32 1
+  store ptr poison, ptr %9, align 8
+  %10 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr3, i32 0, i32 2
+  store i64 0, ptr %10, align 8
+  %11 = load { ptr, ptr, i64 }, ptr %fat.ptr3, align 8
+  store { ptr, ptr, i64 } %11, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.1)
   call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
-  %9 = load %struct.String, ptr %arg.copy, align 8
+  %12 = load %struct.String, ptr %arg.copy, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
-  call void %fct4(%struct.String %9, i1 false)
+  call void %fct4(%struct.String %12, i1 false)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
 define private void @_Z14lambda.L2C31.0v() {

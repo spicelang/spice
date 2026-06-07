@@ -30,6 +30,7 @@ enum SuperType : uint8_t;
 constexpr const char *const STROBJ_NAME = "String";
 constexpr const char *const RESULTOBJ_NAME = "Result";
 constexpr const char *const ERROBJ_NAME = "Error";
+constexpr const char *const LAMBDAOBJ_NAME = "Lambda";
 constexpr const char *const TIOBJ_NAME = "TypeInfo";
 constexpr const char *const IITERATOR_NAME = "IIterator";
 constexpr const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
@@ -92,6 +93,7 @@ public:
   [[nodiscard]] bool isIterable(const ASTNode *node) const;
   [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool isErrorObj() const;
+  [[nodiscard]] bool isLambdaObj() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
 
   // Complex queries on the type

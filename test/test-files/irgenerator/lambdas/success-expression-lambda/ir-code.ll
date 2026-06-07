@@ -24,13 +24,13 @@ define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) {
   ret void
 }
 
-define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr } noundef %1) {
+define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) {
   %array = alloca ptr, align 8
-  %sortFct = alloca { ptr, ptr }, align 8
+  %sortFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
   %j = alloca i32, align 4
   store ptr %0, ptr %array, align 8
-  store { ptr, ptr } %1, ptr %sortFct, align 8
+  store { ptr, ptr, i64 } %1, ptr %sortFct, align 8
   store i32 0, ptr %i, align 4
   br label %for.head.L8
 
@@ -105,17 +105,19 @@ for.exit.L8:                                      ; preds = %for.head.L8
 define dso_local noundef i32 @main() #0 {
   %result = alloca i32, align 4
   %array = alloca [10 x i32], align 4
-  %fat.ptr = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   store i32 0, ptr %result, align 4
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
   store ptr @_Z15lambda.L19C17.0ii, ptr %fat.ptr, align 8
-  %1 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
-  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_Z4sortRA10_iPFbiiE(ptr noundef %array, { ptr, ptr } noundef %2)
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %2, align 8
+  %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  call void @_Z4sortRA10_iPFbiiE(ptr noundef %array, { ptr, ptr, i64 } noundef %3)
   call void @_Z10printArrayRA10_i(ptr noundef %array)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
 }
 
 define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {

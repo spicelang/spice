@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.Thread = type { { ptr, ptr }, i64 }
+%struct.Thread = type { { ptr, ptr, i64 }, i64 }
 
 @COUNTER = private global i32 0
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
@@ -44,30 +44,34 @@ define dso_local noundef i32 @main() #1 {
   call void @__tsan_func_entry(ptr %1)
   %result = alloca i32, align 4
   %thread1 = alloca %struct.Thread, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %thread2 = alloca %struct.Thread, align 8
-  %fat.ptr1 = alloca { ptr, ptr }, align 8
+  %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z6workerv, ptr %fat.ptr, align 8
-  %2 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %2, align 8
-  %3 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread1, { ptr, ptr } noundef %3)
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %3, align 8
+  %4 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %thread1, { ptr, ptr, i64 } noundef %4)
   store ptr @_Z6workerv, ptr %fat.ptr1, align 8
-  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %4, align 8
-  %5 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread2, { ptr, ptr } noundef %5)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread1)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread2)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %thread1)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %thread2)
-  %6 = load i32, ptr %result, align 4
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr poison, ptr %5, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2
+  store i64 0, ptr %6, align 8
+  %7 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(32) %thread2, { ptr, ptr, i64 } noundef %7)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %thread1)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(32) %thread2)
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %thread1)
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(32) %thread2)
+  %8 = load i32, ptr %result, align 4
   call void @__tsan_func_exit()
-  ret i32 %6
+  ret i32 %8
 }
 
-declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr })
+declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 })
 
 declare void @_ZN6Thread3runEv(ptr)
 

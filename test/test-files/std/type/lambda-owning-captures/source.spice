@@ -1,0 +1,56 @@
+import "std/type/lambda";
+
+// Mirrors the situation from the bug report: a lambda is stored in a struct field and
+// therefore outlives the frame that created it. Wrapping it in the owning Lambda type
+// relocates the captures to the heap so they stay valid.
+type Adder struct {
+    Lambda<f<int>(int)> op
+}
+
+p Adder.ctor(int base) {
+    // The capturing lambda is created here; without the Lambda wrapper its capture struct
+    // would be destroyed when this constructor returns.
+    this.op = Lambda<f<int>(int)>(f<int>(int x) { return base + x; });
+}
+
+f<int> Adder.apply(int x) {
+    f<int>(int) native = this.op.get();
+    return native(x);
+}
+
+// Clobbers the stack with junk to make a use-after-scope of the captures observable.
+p clobberStack() {
+    int[64] junk;
+    for int i = 0; i < 64; i++ {
+        junk[i] = i * 7;
+    }
+}
+
+f<int> main() {
+    // 1) Capturing lambda stored in a struct field, called after its creating frame is gone
+    Adder a = Adder(1000);
+    clobberStack();
+    assert a.apply(5) == 1005;
+    assert a.apply(42) == 1042;
+
+    // 2) Copy construction deep-copies the owned captures
+    Adder b = a;
+    clobberStack();
+    assert b.apply(7) == 1007;
+    assert a.apply(7) == 1007;
+
+    // 3) Direct wrapping, get() and call in the same scope
+    int factor = 3;
+    Lambda<f<int>(int)> mul = Lambda<f<int>(int)>(f<int>(int x) { return factor * x; });
+    f<int>(int) mulNative = mul.get();
+    assert mulNative(4) == 12;
+
+    // 4) operator= reassigns to a lambda with different captures
+    int factor2 = 10;
+    mul = Lambda<f<int>(int)>(f<int>(int x) { return factor2 * x; });
+    f<int>(int) mulNative2 = mul.get();
+    assert mulNative2(4) == 40;
+
+    printf("Lambda owning-captures tests passed!\n");
+    return 0;
+}

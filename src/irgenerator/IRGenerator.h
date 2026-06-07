@@ -225,7 +225,7 @@ private:
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   MetadataGenerator mdGenerator = MetadataGenerator(this);
   struct CommonLLVMTypes {
-    llvm::StructType *fatPtrType = nullptr;
+    llvm::StructType *lambdaFatPtrType = nullptr;
   } llvmTypes;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;

@@ -248,6 +248,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Test function with parameters";
   case TEST_FUNCTION_WRONG_RETURN_TYPE:
     return "Test function with wrong return type";
+  case LAMBDA_CAPTURE_ESCAPE:
+    return "Lambda may outlive its captures";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE
