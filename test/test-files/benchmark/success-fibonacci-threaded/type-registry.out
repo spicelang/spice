@@ -17,7 +17,6 @@ Pthread_attr_t*
 Pthread_t
 Result<T>
 Result<T>
-Result<T>&
 Result<T>*
 Result<heap byte*>
 Result<heap byte*>

@@ -148,9 +148,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
 
   // Abort if the struct already has a user-defined copy constructor
   const QualType structType = spiceStruct.entry->getQualType();
-  const ArgList lookupArgs = {{structType.toConstRef(node), true}};
-  const Function *copyCtor = FunctionManager::lookup(structScope, CTOR_FUNCTION_NAME, structType, lookupArgs, true);
-  if (copyCtor != nullptr)
+  if (FunctionManager::hasCopyCtor(structScope))
     return;
 
   // Check if we have fields, that require us to do anything in the ctor
