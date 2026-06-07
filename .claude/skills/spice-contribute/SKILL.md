@@ -26,7 +26,7 @@ All work happens on a dedicated branch, never directly on `main`.
 
 Rules:
 - Use lowercase `kebab-case` slugs (`fix/lambda-capture-crash`, not `Fix/LambdaCaptureCrash`).
-- Keep slugs short but descriptive; they appear in merge-commit messages.
+- Keep slugs short but descriptive; the squash-commit headline is taken from the PR title.
 - Tie the slug to the issue number when one exists: `fix/1234-lambda-capture-crash`.
 
 ```sh
@@ -37,57 +37,38 @@ git checkout -b feature/my-new-thing
 
 ## Commit message format
 
-Follow the **Conventional Commits** style, which matches the existing project
-history:
+Use a short, descriptive headline — no type prefix or scope annotation:
 
 ```
-<type>(<scope>): <short summary>
+<Short descriptive headline>
 
 [optional body — explain WHY, not what]
 
 [optional footer — Fixes #<issue>, Closes #<issue>, Co-authored-by: …]
 ```
 
-### Types
-
-| Type | When |
-|------|------|
-| `feat` | New user-visible capability |
-| `fix` | Bug fix |
-| `chore` | Build, deps, tooling, repo maintenance |
-| `ci` | CI/CD pipeline changes |
-| `test` | Test-only changes |
-| `docs` | Documentation only |
-| `refactor` | Code restructuring with no behavior change |
-| `perf` | Performance improvement |
-| `style` | Formatting, whitespace (rare — prefer `chore`) |
-
-### Scope
-
-Optional; use the subsystem name in lowercase:
-`parser`, `typechecker`, `irgenerator`, `symboltable`, `std`, `bootstrap`,
-`cli`, `cmake`, `ci`, `docs`.
-
 ### Examples
 
 ```
-feat(irgenerator): add support for lambda owning captures
+Add support for lambda owning captures
 
-fix(typechecker): resolve incorrect type widening for unsigned ops
+Resolve incorrect type widening for unsigned ops
 
 Fixes #1201
+```
 
-chore(cmake): bump minimum CMake version to 3.22
+```
+Bump minimum CMake version to 3.22
+```
 
-ci: add valgrind leak-check step to PR workflow
-
-test(std): add reference tests for string slicing
+```
+Add valgrind leak-check step to PR workflow
 ```
 
 Rules:
-- Summary line ≤ 72 characters, imperative mood ("add", "fix", not "added", "fixes").
-- No trailing period on the summary line.
-- Blank line between summary and body.
+- Headline ≤ 72 characters, imperative mood ("Add", "Fix", not "Added", "Fixes").
+- No trailing period on the headline.
+- Blank line between headline and body.
 - Reference issues in the footer with `Fixes #N` (auto-closes) or `Refs #N`.
 
 ## No-push-to-main rule
@@ -141,7 +122,7 @@ explicitly in the PR description. Do not silently skip checks.
 
 Target branch: **`main`**.
 
-PR title mirrors the commit summary style: `type(scope): short summary`.
+PR title uses the same style as commit headlines: short, descriptive, imperative mood, no type prefix.
 
 PR description template:
 
@@ -174,14 +155,15 @@ Additional rules:
 
 ## Merge strategy
 
-PRs are merged by a maintainer using **squash-and-merge** or **merge commit**
-depending on the PR size. You do not need to squash locally; write clean
-incremental commits so the reviewer can follow the progression.
+All PRs are merged by a maintainer using **squash and merge** — every PR lands
+as a single commit on `main`. Merge commits are never used. Write clean
+incremental commits on your branch so the reviewer can follow the progression;
+they will be squashed at merge time.
 
 ## Checklist (use in PR description or locally before pushing)
 
 - [ ] Branch named with the correct prefix and a descriptive slug
-- [ ] All commits follow the Conventional Commits format
+- [ ] All commits have a short descriptive headline (no type prefix)
 - [ ] Build passes (`cmake --build cmake-build-debug --target spice spicetest`)
 - [ ] Relevant tests pass (full suite or focused filter)
 - [ ] Reference files updated and reviewed (`--update-refs` + `git diff`)
