@@ -56,20 +56,14 @@ Variadic C functions (those declared with `...` in C) are supported too:
 ext f<int> snprintf(byte*, unsigned long, string, ...);
 ```
 
-## Controlling name mangling
+## Renaming an external symbol
 
-Spice applies name mangling to every symbol by default, similar to C++. When binding a plain C function, you must
-disable mangling so the linker can match the symbol name exactly.
+`ext` declarations are never name-mangled—the compiler always uses the plain function name as the linker symbol,
+so they are directly compatible with C and `extern "C"` C++ symbols out of the box. No attribute is needed for
+a straightforward binding.
 
-Disable mangling for a single declaration with the `core.compiler.mangle` attribute:
-
-```spice
-#[core.compiler.mangle = false]
-ext f<double> sqrt(double);
-```
-
-If you want to use a different name on the Spice side while still linking against the original C symbol, use
-`core.compiler.mangledName`:
+The `core.compiler.mangledName` attribute lets you give the declaration a different name on the Spice side while
+still linking against the original C symbol:
 
 ```spice
 #[core.compiler.mangledName = "pthread_self"]
