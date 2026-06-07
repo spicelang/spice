@@ -26,6 +26,7 @@
           - 'docs/**/*'
           - 'media/specs/**/*'
           - 'AGENTS.md'
+          - 'CLAUDE.md'
           - 'README.md'
           - 'SECURITY.md'
 
@@ -33,3 +34,9 @@
   - changed-files:
       - any-glob-to-any-file:
           - '.github/**/*'
+
+'dependencies':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'deps/**/*'
+          - 'docs/requirements.txt'
