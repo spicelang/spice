@@ -1,0 +1,15 @@
+// A capturing lambda may not be stored in a struct field, because its captures live in the frame
+// that created the lambda and would dangle once the lambda outlives that frame. The owning std
+// Lambda wrapper must be used instead. Non-capturing lambdas (plain function pointers) are fine.
+type Container struct {
+    f<int>(int) cb
+}
+
+p Container.ctor(int base) {
+    this.cb = f<int>(int x) { return base + x; };
+}
+
+f<int> main() {
+    Container c = Container(10);
+    return 0;
+}

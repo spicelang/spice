@@ -56,26 +56,30 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   boolTy = diBuilder->createBasicType("bool", 8, llvm::dwarf::DW_ATE_boolean);
   voidTy = diBuilder->createBasicType("void", 0, llvm::dwarf::DW_ATE_unsigned);
 
-  // Initialize fat ptr type
+  // Initialize lambda fat ptr type
   llvm::PointerType *ptrTy = irGenerator->builder.getPtrTy();
-  if (!irGenerator->llvmTypes.fatPtrType)
-    irGenerator->llvmTypes.fatPtrType = llvm::StructType::get(context, {ptrTy, ptrTy});
-
+  llvm::IntegerType *int64Ty = irGenerator->builder.getInt64Ty();
   const llvm::DataLayout &dataLayout = module->getDataLayout();
-  const llvm::StructLayout *structLayout = dataLayout.getStructLayout(irGenerator->llvmTypes.fatPtrType);
-  const uint32_t alignInBits = dataLayout.getABITypeAlign(irGenerator->llvmTypes.fatPtrType).value();
+  const llvm::StructLayout *structLayout = dataLayout.getStructLayout(irGenerator->llvmTypes.lambdaFatPtrType);
+  const uint32_t alignInBits = dataLayout.getABITypeAlign(irGenerator->llvmTypes.lambdaFatPtrType).value();
   const uint32_t ptrAlignInBits = dataLayout.getABITypeAlign(ptrTy).value();
-
-  fatPtrTy = diBuilder->createStructType(diFile, "_fat_ptr", diFile, 0, structLayout->getSizeInBits(), alignInBits,
-                                         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0,
-                                         nullptr, "_fat_ptr");
+  const uint32_t int64Width = dataLayout.getTypeSizeInBits(int64Ty);
+  const uint32_t int64AlignInBits = dataLayout.getABITypeAlign(int64Ty).value();
+  const uint64_t fctPtrOffset = structLayout->getElementOffsetInBits(0);
+  const uint64_t capturesOffset = structLayout->getElementOffsetInBits(1);
+  const uint64_t captureSizeOffset = structLayout->getElementOffsetInBits(2);
 
   llvm::DIType *voidPtrDIType = diBuilder->createPointerType(voidTy, pointerWidth, ptrAlignInBits);
-  llvm::DIDerivedType *firstType = diBuilder->createMemberType(fatPtrTy, "fct", diFile, 0, pointerWidth, ptrAlignInBits, 0,
-                                                               llvm::DINode::FlagZero, voidPtrDIType);
-  llvm::DIDerivedType *secondType = diBuilder->createMemberType(fatPtrTy, "captures", diFile, 0, pointerWidth, ptrAlignInBits,
-                                                                pointerWidth, llvm::DINode::FlagZero, voidPtrDIType);
-  fatPtrTy->replaceElements(llvm::MDTuple::get(context, {firstType, secondType}));
+  fatPtrTy = diBuilder->createStructType(diFile, "_lambda", diFile, 0, structLayout->getSizeInBits(), alignInBits,
+                                         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0,
+                                         nullptr, "_lambda");
+  const auto firstType = diBuilder->createMemberType(fatPtrTy, "fct", diFile, 0, pointerWidth, ptrAlignInBits, fctPtrOffset,
+                                                     llvm::DINode::FlagZero, voidPtrDIType);
+  const auto secondType = diBuilder->createMemberType(fatPtrTy, "captures", diFile, 0, pointerWidth, ptrAlignInBits,
+                                                      capturesOffset, llvm::DINode::FlagZero, voidPtrDIType);
+  const auto thirdType = diBuilder->createMemberType(fatPtrTy, "captureSize", diFile, 0, int64Width, int64AlignInBits,
+                                                     captureSizeOffset, llvm::DINode::FlagZero, uLongTy);
+  fatPtrTy->replaceElements(llvm::MDTuple::get(context, {firstType, secondType, thirdType}));
 }
 
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {

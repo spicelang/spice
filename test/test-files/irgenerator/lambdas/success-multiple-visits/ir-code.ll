@@ -8,8 +8,8 @@ define private void @_Z4testv() {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %l = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %l = alloca { ptr, ptr, i64 }, align 8
   store i32 123, ptr %t, align 4
   store i32 456, ptr %x, align 4
   %1 = load i32, ptr %t, align 4
@@ -18,12 +18,14 @@ define private void @_Z4testv() {
   %3 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %2, ptr %3, align 4
   store ptr @_Z14lambda.L3C13.0v, ptr %fat.ptr, align 8
-  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %4, align 8
-  %5 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %5, ptr %l, align 8
-  %6 = getelementptr inbounds nuw { ptr, ptr }, ptr %l, i32 0, i32 1
-  %captures1 = load ptr, ptr %6, align 8
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 8, ptr %5, align 8
+  %6 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %6, ptr %l, align 8
+  %7 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l, i32 0, i32 1
+  %captures1 = load ptr, ptr %7, align 8
   %fct = load ptr, ptr %l, align 8
   call void %fct(ptr %captures1)
   ret void
@@ -47,8 +49,8 @@ define private void @_Z4testi(i32 noundef %0) {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %l = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %l = alloca { ptr, ptr, i64 }, align 8
   store i32 %0, ptr %t, align 4
   store i32 456, ptr %x, align 4
   %2 = load i32, ptr %t, align 4
@@ -57,12 +59,14 @@ define private void @_Z4testi(i32 noundef %0) {
   %4 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %3, ptr %4, align 4
   store ptr @_Z14lambda.L3C13.1v, ptr %fat.ptr, align 8
-  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %5, align 8
-  %6 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %6, ptr %l, align 8
-  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %l, i32 0, i32 1
-  %captures1 = load ptr, ptr %7, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 8, ptr %6, align 8
+  %7 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %7, ptr %l, align 8
+  %8 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l, i32 0, i32 1
+  %captures1 = load ptr, ptr %8, align 8
   %fct = load ptr, ptr %l, align 8
   call void %fct(ptr %captures1)
   ret void

@@ -1,0 +1,148 @@
+// Generic type definition. S is the native lambda signature type, e.g. f<int>() or p(int).
+type S dyn;
+
+/**
+ * Lambda is an owning wrapper around a native lambda value.
+ *
+ * A native lambda is a fat pointer with the layout { fctPtr, capturePtr, captureSize }.
+ * When a lambda captures more than a single inline value, its captures live in a
+ * dedicated capture struct that the compiler stack-allocates in the frame that created
+ * the lambda. That is fine as long as the lambda does not outlive that frame, but it is
+ * unsound to store such a lambda somewhere that lives longer (e.g. a struct field).
+ *
+ * Therefore native lambda types are not allowed as field, return or element types. To
+ * persist a lambda, wrap it in a Lambda: the wrapper copies the capture struct onto the
+ * heap and takes ownership of it, so the wrapped lambda stays valid for as long as the
+ * Lambda object lives and can be passed around and stored arbitrarily.
+ *
+ * The captures are relocated with a raw byte copy, which matches the way the compiler
+ * builds the capture struct (a shallow copy of the captured values). The capture size
+ * travels inside the fat pointer, so a Lambda can take ownership of any native lambda,
+ * regardless of where it was created.
+ *
+ * Retrieve the underlying native lambda via get() to call it:
+ *   Lambda<f<int>()> wrapped = Lambda<f<int>()>(f<int>() { return 42; });
+ *   f<int>() native = wrapped.get();
+ *   int result = native();
+ *
+ * Note: once Spice supports overloading the call operator, get() can be complemented by
+ * an operator() that simply forwards to it, without changing the storage model.
+ */
+public type Lambda<S> struct {
+    S native                  // the wrapped native lambda (capturePtr rebound to ownedCaptures)
+    heap byte* ownedCaptures  // owned heap copy of the capture struct, nil if there is none
+    unsigned long captureSize // byte size of the owned capture struct, 0 if there is none
+}
+
+/**
+ * Construct an empty Lambda that owns no captures. Calling get() on an empty Lambda
+ * yields an unspecified native lambda, so an empty Lambda must be assigned a wrapped
+ * lambda before it is used.
+ */
+public p Lambda.ctor() {
+    this.native = nil<S>;
+    this.ownedCaptures = nil<heap byte*>;
+    this.captureSize = 0ul;
+}
+
+/**
+ * Wrap a native lambda, taking ownership of its captures by relocating the capture
+ * struct onto the heap.
+ */
+public p Lambda.ctor(S lambda) {
+    this.native = lambda;
+    unsafe {
+        // The native lambda is a fat pointer laid out as { fctPtr, capturePtr, captureSize }, three
+        // consecutive 8-byte slots. Read its capturePtr (slot 1) and captureSize (slot 2), then take
+        // ownership of the capture struct those slots describe.
+        dyn srcSlots = cast<byte**>(&lambda);
+        dyn sizePtr = cast<unsigned long*>(&srcSlots[2]);
+        this.adoptCaptures(cast<heap byte*>(srcSlots[1]), *sizePtr);
+    }
+}
+
+/**
+ * Copy-construct a Lambda, deep-copying the owned capture struct so that both instances
+ * own independent storage.
+ */
+public p Lambda.ctor(const Lambda<S>& original) {
+    this.native = original.native;
+    // Give this copy its own heap copy of the captures (or nothing, if there are none).
+    this.adoptCaptures(original.ownedCaptures, original.captureSize);
+}
+
+/**
+ * Deep-copy assignment. Releases the currently owned capture struct first.
+ */
+public p operator=<S>(Lambda<S>& this, const Lambda<S>& original) {
+    // Guard against self-assignment, which would free the storage we copy from
+    if &this == &original {
+        return;
+    }
+    // Release our current captures, then adopt an independent copy of the source's captures.
+    this.reset();
+    this.native = original.native;
+    this.adoptCaptures(original.ownedCaptures, original.captureSize);
+}
+
+/**
+ * Take ownership of a lambda's captures by relocating them onto the heap.
+ *
+ * `source` points to the capture struct to duplicate (it stays owned by the caller) and `size` is
+ * its byte size; a size of zero means the lambda captures nothing. The bytes are copied into a fresh
+ * heap allocation that this Lambda owns, and the wrapped lambda's capturePtr is rebound to that copy
+ * so the lambda keeps working for as long as this Lambda is alive.
+ *
+ * Precondition: this.native has already been set to the lambda whose captures are being adopted.
+ */
+p Lambda.adoptCaptures(heap byte* source, unsigned long size) {
+    this.captureSize = size;
+    this.ownedCaptures = nil<heap byte*>;
+    // A non-capturing lambda is self-contained in its fat pointer, so there is nothing to own.
+    if size == 0ul {
+        return;
+    }
+    unsafe {
+        // Duplicate the capture struct onto the heap so it outlives the (possibly stack) storage
+        // that `source` points into.
+        this.ownedCaptures = sAllocUnsafe(size);
+        sCopyUnsafe(source, this.ownedCaptures, size);
+        // Reinterpret the wrapped fat pointer { fctPtr, capturePtr, captureSize } as an array of
+        // pointer slots and overwrite slot 1 (capturePtr), so the lambda reads its captures from
+        // our owned heap copy instead of the original storage.
+        dyn dstSlots = cast<byte**>(&this.native);
+        dstSlots[1] = cast<byte*>(this.ownedCaptures);
+    }
+}
+
+/**
+ * Release the owned capture struct (if any).
+ */
+public p Lambda.dtor() {
+    this.reset();
+}
+
+/**
+ * Return the wrapped native lambda. Its capturePtr points into this Lambda's owned
+ * storage, so the returned value is valid for as long as this Lambda is alive.
+ */
+public inline f<S> Lambda.get() {
+    return this.native;
+}
+
+/**
+ * Returns true if the lambda is empty
+ */
+public inline f<bool> Lambda.isEmpty() {
+    return this.native == nil<S>;
+}
+
+/**
+ * Free the owned capture struct and reset to the empty state.
+ */
+p Lambda.reset() {
+    if this.ownedCaptures != nil<heap byte*> {
+        sDealloc(this.ownedCaptures); // frees and nils ownedCaptures
+    }
+    this.captureSize = 0ul;
+}

@@ -1,0 +1,10 @@
+// A capturing lambda may not be returned, because its captures live in the frame that created it
+// and would dangle once the function returns. The owning std Lambda wrapper must be used instead.
+// Non-capturing lambdas (plain function pointers) are fine to return.
+f<f<int>()> makeConstant(int value) {
+    return f<int>() { return value; };
+}
+
+f<int> main() {
+    return 0;
+}

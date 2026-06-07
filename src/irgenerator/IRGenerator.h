@@ -169,6 +169,7 @@ private:
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
+  llvm::Function *getOrCreateFatFctPtrThunk(llvm::Function *target);
   llvm::Type *buildCapturesContainerType(const CaptureMap &captures) const;
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
   void setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const;
@@ -225,7 +226,7 @@ private:
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   MetadataGenerator mdGenerator = MetadataGenerator(this);
   struct CommonLLVMTypes {
-    llvm::StructType *fatPtrType = nullptr;
+    llvm::StructType *lambdaFatPtrType = nullptr;
   } llvmTypes;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;

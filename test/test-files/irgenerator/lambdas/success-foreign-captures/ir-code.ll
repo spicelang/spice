@@ -6,14 +6,14 @@ source_filename = "source.spice"
 @anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
 
-define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } noundef %0, { ptr, ptr } noundef %1) {
-  %l1 = alloca { ptr, ptr }, align 8
-  %l2 = alloca { ptr, ptr }, align 8
+define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr, ptr, i64 } noundef %1) {
+  %l1 = alloca { ptr, ptr, i64 }, align 8
+  %l2 = alloca { ptr, ptr, i64 }, align 8
   %x = alloca i32, align 4
-  store { ptr, ptr } %0, ptr %l1, align 8
-  store { ptr, ptr } %1, ptr %l2, align 8
+  store { ptr, ptr, i64 } %0, ptr %l1, align 8
+  store { ptr, ptr, i64 } %1, ptr %l2, align 8
   store i32 1, ptr %x, align 4
-  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %l1, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l1, i32 0, i32 1
   %captures = load ptr, ptr %3, align 8
   %fct = load ptr, ptr %l1, align 8
   call void %fct(ptr %captures, ptr %x)
@@ -27,7 +27,7 @@ assert.then.L4:                                   ; preds = %2
   unreachable
 
 assert.exit.L4:                                   ; preds = %2
-  %7 = getelementptr inbounds nuw { ptr, ptr }, ptr %l2, i32 0, i32 1
+  %7 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l2, i32 0, i32 1
   %captures1 = load ptr, ptr %7, align 8
   %fct2 = load ptr, ptr %l2, align 8
   %8 = call i1 %fct2(ptr %captures1, ptr %x)
@@ -64,11 +64,11 @@ define dso_local noundef i32 @main() #2 {
   %z = alloca i32, align 4
   %w = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %foo1 = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %foo1 = alloca { ptr, ptr, i64 }, align 8
   %captures1 = alloca { i32, i32 }, align 8
-  %fat.ptr2 = alloca { ptr, ptr }, align 8
-  %foo2 = alloca { ptr, ptr }, align 8
+  %fat.ptr2 = alloca { ptr, ptr, i64 }, align 8
+  %foo2 = alloca { ptr, ptr, i64 }, align 8
   store i32 0, ptr %result, align 4
   store i32 2, ptr %z, align 4
   store i32 3, ptr %w, align 4
@@ -78,26 +78,30 @@ define dso_local noundef i32 @main() #2 {
   %3 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %2, ptr %3, align 4
   store ptr @_Z15lambda.L12C20.0Ri, ptr %fat.ptr, align 8
-  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %4, align 8
-  %5 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %5, ptr %foo1, align 8
-  %6 = load i32, ptr %w, align 4
-  store i32 %6, ptr %captures1, align 4
-  %7 = load i32, ptr %z, align 4
-  %8 = getelementptr inbounds nuw { i32, i32 }, ptr %captures1, i32 0, i32 1
-  store i32 %7, ptr %8, align 4
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 8, ptr %5, align 8
+  %6 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %6, ptr %foo1, align 8
+  %7 = load i32, ptr %w, align 4
+  store i32 %7, ptr %captures1, align 4
+  %8 = load i32, ptr %z, align 4
+  %9 = getelementptr inbounds nuw { i32, i32 }, ptr %captures1, i32 0, i32 1
+  store i32 %8, ptr %9, align 4
   store ptr @_Z15lambda.L15C26.0Ri, ptr %fat.ptr2, align 8
-  %9 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
-  store ptr %captures1, ptr %9, align 8
-  %10 = load { ptr, ptr }, ptr %fat.ptr2, align 8
-  store { ptr, ptr } %10, ptr %foo2, align 8
-  %11 = load { ptr, ptr }, ptr %foo1, align 8
-  %12 = load { ptr, ptr }, ptr %foo2, align 8
-  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } noundef %11, { ptr, ptr } noundef %12)
-  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  %10 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr2, i32 0, i32 1
+  store ptr %captures1, ptr %10, align 8
+  %11 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr2, i32 0, i32 2
+  store i64 8, ptr %11, align 8
+  %12 = load { ptr, ptr, i64 }, ptr %fat.ptr2, align 8
+  store { ptr, ptr, i64 } %12, ptr %foo2, align 8
+  %13 = load { ptr, ptr, i64 }, ptr %foo1, align 8
+  %14 = load { ptr, ptr, i64 }, ptr %foo2, align 8
+  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %13, { ptr, ptr, i64 } noundef %14)
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %16 = load i32, ptr %result, align 4
+  ret i32 %16
 }
 
 define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {

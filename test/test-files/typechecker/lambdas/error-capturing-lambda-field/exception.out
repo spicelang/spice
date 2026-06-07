@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:9:15:
+Lambda may outlive its captures: A capturing lambda cannot be stored in a field, because its captures live in the frame that created it and would dangle. Wrap it in 'Lambda<f<int>(int)>' from std/type/lambda instead.
+
+9  this.cb = f<int>(int x) { return base + x; };
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

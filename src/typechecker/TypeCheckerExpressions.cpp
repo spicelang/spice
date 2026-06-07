@@ -29,6 +29,18 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     auto [lhsType, lhsVar] = lhs;
     HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
+    // A native lambda stores its captures in the stack frame that created it. Storing a capturing lambda in a
+    // struct field lets it outlive those captures, so the captures would dangle. Reject this and direct the user
+    // to the owning std Lambda wrapper. Non-capturing lambdas (plain function pointers) are safe to store and are
+    // not affected. The std Lambda wrapper itself stores the captures-flagged lambda in its own field, so std
+    // files are exempt.
+    if (node->op == AssignExprNode::AssignOp::OP_ASSIGN && lhs.entry != nullptr && lhs.entry->isField() &&
+        rhsType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && rhsType.hasLambdaCaptures() && !sourceFile->isStdFile)
+      SOFT_ERROR_ER(node->rhs, LAMBDA_CAPTURE_ESCAPE,
+                    "A capturing lambda cannot be stored in a field, because its captures live in the frame that "
+                    "created it and would dangle. Wrap it in 'Lambda<" +
+                        rhsType.getBase().getWithLambdaCaptures(false).getName(false) + ">' from std/type/lambda instead.")
+
     // Take a look at the operator
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
       const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();

@@ -1,7 +1,8 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.Thread = type { { ptr, ptr }, i64 }
+%struct.Thread = type { %struct.Lambda, i64 }
+%struct.Lambda = type { { ptr, ptr, i64 }, ptr, i64 }
 
 @COUNTER = private global i32 0, !dbg !0
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
@@ -45,37 +46,63 @@ define dso_local noundef i32 @main() #1 !dbg !30 {
   call void @__tsan_func_entry(ptr %1), !dbg !33
   %result = alloca i32, align 4
   %thread1 = alloca %struct.Thread, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %thread2 = alloca %struct.Thread, align 8
-  %fat.ptr1 = alloca { ptr, ptr }, align 8
+  %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
     #dbg_declare(ptr %result, !34, !DIExpression(), !35)
   store i32 0, ptr %result, align 4, !dbg !35
-  store ptr @_Z6workerv, ptr %fat.ptr, align 8, !dbg !36
-  %2 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1, !dbg !36
-  store ptr poison, ptr %2, align 8, !dbg !36
-  %3 = load { ptr, ptr }, ptr %fat.ptr, align 8, !dbg !36
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread1, { ptr, ptr } noundef %3), !dbg !36
-    #dbg_declare(ptr %thread1, !37, !DIExpression(), !48)
-  store ptr @_Z6workerv, ptr %fat.ptr1, align 8, !dbg !49
-  %4 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1, !dbg !49
-  store ptr poison, ptr %4, align 8, !dbg !49
-  %5 = load { ptr, ptr }, ptr %fat.ptr1, align 8, !dbg !49
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(24) %thread2, { ptr, ptr } noundef %5), !dbg !49
-    #dbg_declare(ptr %thread2, !50, !DIExpression(), !51)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread1), !dbg !52
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(24) %thread2), !dbg !53
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %thread1), !dbg !54
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(24) %thread2), !dbg !55
-  %6 = load i32, ptr %result, align 4, !dbg !56
-  call void @__tsan_func_exit(), !dbg !56
-  ret i32 %6, !dbg !56
+  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr, align 8, !dbg !36
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1, !dbg !36
+  store ptr null, ptr %2, align 8, !dbg !36
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2, !dbg !36
+  store i64 0, ptr %3, align 8, !dbg !36
+  %4 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8, !dbg !36
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread1, { ptr, ptr, i64 } noundef %4), !dbg !36
+    #dbg_declare(ptr %thread1, !37, !DIExpression(), !57)
+  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr1, align 8, !dbg !58
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1, !dbg !58
+  store ptr null, ptr %5, align 8, !dbg !58
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2, !dbg !58
+  store i64 0, ptr %6, align 8, !dbg !58
+  %7 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8, !dbg !58
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread2, { ptr, ptr, i64 } noundef %7), !dbg !58
+    #dbg_declare(ptr %thread2, !59, !DIExpression(), !60)
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !61
+  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !62
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !63
+  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !64
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !65
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !65
+  %8 = load i32, ptr %result, align 4, !dbg !65
+  call void @__tsan_func_exit(), !dbg !65
+  ret i32 %8, !dbg !65
 }
 
-declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr })
+define private void @_Z6workerv.fatthunk(ptr %0) personality ptr @__gcc_personality_v0 {
+entry:
+  %1 = call ptr @llvm.returnaddress(i32 0), !dbg !36
+  call void @__tsan_func_entry(ptr %1), !dbg !36
+  invoke void @_Z6workerv()
+          to label %.noexc unwind label %tsan_cleanup, !dbg !36
+
+.noexc:                                           ; preds = %entry
+  call void @__tsan_func_exit(), !dbg !36
+  ret void, !dbg !36
+
+tsan_cleanup:                                     ; preds = %entry
+  %cleanup.lpad = landingpad { ptr, i32 }
+          cleanup
+  call void @__tsan_func_exit()
+  resume { ptr, i32 } %cleanup.lpad
+}
+
+declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 })
 
 declare void @_ZN6Thread3runEv(ptr)
 
 declare void @_ZN6Thread4joinEv(ptr)
+
+declare void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48))
 
 declare void @__tsan_init()
 
@@ -421,6 +448,8 @@ declare ptr @__tsan_memset(ptr, i32, i64) #3
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
 declare ptr @llvm.returnaddress(i32 immarg) #4
 
+declare i32 @__gcc_personality_v0(...)
+
 attributes #0 = { sanitize_thread }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone sanitize_thread uwtable }
 attributes #2 = { nounwind uwtable "frame-pointer"="all" }
@@ -469,22 +498,31 @@ attributes #4 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !35 = !DILocation(line: 13, column: 1, scope: !30)
 !36 = !DILocation(line: 14, column: 29, scope: !30)
 !37 = !DILocalVariable(name: "thread1", scope: !30, file: !5, line: 14, type: !38)
-!38 = !DICompositeType(tag: DW_TAG_structure_type, name: "Thread", scope: !5, file: !5, line: 21, size: 192, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !39, identifier: "struct.Thread")
-!39 = !{!40, !46}
-!40 = !DIDerivedType(tag: DW_TAG_member, name: "threadRoutine", scope: !38, file: !5, line: 22, baseType: !41, size: 128, align: 8)
-!41 = !DICompositeType(tag: DW_TAG_structure_type, name: "_fat_ptr", scope: !5, file: !5, size: 128, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !42, identifier: "_fat_ptr")
-!42 = !{!43, !45}
-!43 = !DIDerivedType(tag: DW_TAG_member, name: "fct", scope: !41, file: !5, baseType: !44, size: 64, align: 8)
-!44 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64, align: 8)
-!45 = !DIDerivedType(tag: DW_TAG_member, name: "captures", scope: !41, file: !5, baseType: !44, size: 64, align: 8, offset: 64)
-!46 = !DIDerivedType(tag: DW_TAG_member, name: "threadId", scope: !38, file: !5, line: 23, baseType: !47, size: 64, offset: 128)
-!47 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!48 = !DILocation(line: 14, column: 5, scope: !30)
-!49 = !DILocation(line: 15, column: 29, scope: !30)
-!50 = !DILocalVariable(name: "thread2", scope: !30, file: !5, line: 15, type: !38)
-!51 = !DILocation(line: 15, column: 5, scope: !30)
-!52 = !DILocation(line: 16, column: 5, scope: !30)
-!53 = !DILocation(line: 17, column: 5, scope: !30)
-!54 = !DILocation(line: 18, column: 5, scope: !30)
-!55 = !DILocation(line: 19, column: 5, scope: !30)
-!56 = !DILocation(line: 20, column: 1, scope: !30)
+!38 = !DICompositeType(tag: DW_TAG_structure_type, name: "Thread", scope: !5, file: !5, line: 23, size: 384, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !39, identifier: "struct.Thread")
+!39 = !{!40, !55}
+!40 = !DIDerivedType(tag: DW_TAG_member, name: "threadRoutine", scope: !38, file: !5, line: 24, baseType: !41, size: 320, align: 8)
+!41 = !DICompositeType(tag: DW_TAG_structure_type, name: "Lambda", scope: !5, file: !5, line: 31, size: 320, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !42, identifier: "struct.Lambda")
+!42 = !{!43, !51, !54}
+!43 = !DIDerivedType(tag: DW_TAG_member, name: "native", scope: !41, file: !5, line: 32, baseType: !44, size: 192, align: 8)
+!44 = !DICompositeType(tag: DW_TAG_structure_type, name: "_lambda", scope: !5, file: !5, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !45, identifier: "_lambda")
+!45 = !{!46, !48, !49}
+!46 = !DIDerivedType(tag: DW_TAG_member, name: "fct", scope: !44, file: !5, baseType: !47, size: 64, align: 8)
+!47 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64, align: 8)
+!48 = !DIDerivedType(tag: DW_TAG_member, name: "captures", scope: !44, file: !5, baseType: !47, size: 64, align: 8, offset: 64)
+!49 = !DIDerivedType(tag: DW_TAG_member, name: "captureSize", scope: !44, file: !5, baseType: !50, size: 64, align: 8, offset: 128)
+!50 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
+!51 = !DIDerivedType(tag: DW_TAG_member, name: "ownedCaptures", scope: !41, file: !5, line: 33, baseType: !52, size: 64, offset: 192)
+!52 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !53, size: 64)
+!53 = !DIBasicType(name: "byte", size: 8, encoding: DW_ATE_unsigned)
+!54 = !DIDerivedType(tag: DW_TAG_member, name: "captureSize", scope: !41, file: !5, line: 34, baseType: !50, size: 64, offset: 256)
+!55 = !DIDerivedType(tag: DW_TAG_member, name: "threadId", scope: !38, file: !5, line: 25, baseType: !56, size: 64, offset: 320)
+!56 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!57 = !DILocation(line: 14, column: 5, scope: !30)
+!58 = !DILocation(line: 15, column: 29, scope: !30)
+!59 = !DILocalVariable(name: "thread2", scope: !30, file: !5, line: 15, type: !38)
+!60 = !DILocation(line: 15, column: 5, scope: !30)
+!61 = !DILocation(line: 16, column: 5, scope: !30)
+!62 = !DILocation(line: 17, column: 5, scope: !30)
+!63 = !DILocation(line: 18, column: 5, scope: !30)
+!64 = !DILocation(line: 19, column: 5, scope: !30)
+!65 = !DILocation(line: 20, column: 1, scope: !30)

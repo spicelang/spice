@@ -1,0 +1,74 @@
+import "std/type/lambda";
+
+// Mirrors the situation from the bug report: a lambda is stored in a struct field and
+// therefore outlives the frame that created it. Wrapping it in the owning Lambda type
+// relocates the captures to the heap so they stay valid.
+type Adder struct {
+    Lambda<f<int>(int)> op
+}
+
+p Adder.ctor(int base) {
+    // The capturing lambda is created here; without the Lambda wrapper its capture struct
+    // would be destroyed when this constructor returns.
+    this.op = Lambda<f<int>(int)>(f<int>(int x) { return base + x; });
+}
+
+f<int> Adder.apply(int x) {
+    f<int>(int) native = this.op.get();
+    return native(x);
+}
+
+// A plain named function, to be referenced as a non-capturing lambda value.
+f<int> triple(int x) {
+    return x * 3;
+}
+
+// Clobbers the stack with junk to make a use-after-scope of the captures observable.
+p clobberStack() {
+    int[64] junk;
+    for int i = 0; i < 64; i++ {
+        junk[i] = i * 7;
+    }
+}
+
+f<int> main() {
+    // 1) Capturing lambda stored in a struct field, called after its creating frame is gone
+    Adder a = Adder(1000);
+    clobberStack();
+    assert a.apply(5) == 1005;
+    assert a.apply(42) == 1042;
+
+    // 2) Copy construction deep-copies the owned captures
+    Adder b = a;
+    clobberStack();
+    assert b.apply(7) == 1007;
+    assert a.apply(7) == 1007;
+
+    // 3) Direct wrapping, get() and call in the same scope
+    int factor = 3;
+    Lambda<f<int>(int)> mul = Lambda<f<int>(int)>(f<int>(int x) { return factor * x; });
+    f<int>(int) mulNative = mul.get();
+    assert mulNative(4) == 12;
+
+    // 4) operator= reassigns to a lambda with different captures
+    int factor2 = 10;
+    mul = Lambda<f<int>(int)>(f<int>(int x) { return factor2 * x; });
+    f<int>(int) mulNative2 = mul.get();
+    assert mulNative2(4) == 40;
+
+    // 5) A non-capturing lambda may also be wrapped (it simply owns nothing). This used to be rejected, but with
+    //    the uniform lambda calling convention a wrapped non-capturing lambda is called correctly.
+    Lambda<f<int>(int)> square = Lambda<f<int>(int)>(f<int>(int x) { return x * x; });
+    clobberStack();
+    f<int>(int) squareNative = square.get();
+    assert squareNative(6) == 36;
+
+    // 6) A plain named function reference can be wrapped as well
+    Lambda<f<int>(int)> tripler = Lambda<f<int>(int)>(triple);
+    clobberStack();
+    f<int>(int) triplerNative = tripler.get();
+    assert triplerNative(9) == 27;
+
+    printf("Lambda owning-captures tests passed!\n");
+    return 0;
+}

@@ -124,20 +124,19 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     argValues.push_back(thisPtr);
   }
 
-  // If we have a lambda call that takes captures, add them to the argument list
+  // Every callable behind a fat function pointer uses the same calling convention: the capture-struct pointer
+  // (fat ptr slot 1) is always passed as the leading argument, regardless of whether the target actually captures.
+  // Non-capturing lambdas and plain function references ignore it. This lets a lambda be called without the call
+  // site knowing statically whether it captures (e.g. when it was retrieved from the std Lambda wrapper).
   llvm::Value *fctPtr = nullptr;
   if (data.isFctPtrCall()) {
     llvm::Value *fatPtr = firstFragEntry->getAddress();
     // Load fctPtr
-    llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-    fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
-    if (firstFragEntry->getQualType().hasLambdaCaptures()) {
-      // Load captures struct
-      llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
-      llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
-      // Add captures to argument list
-      argValues.push_back(capturesPtr);
-    }
+    fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
+    // Load the captures pointer and add it to the argument list
+    llvm::Value *capturesPtrPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 1);
+    llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
+    argValues.push_back(capturesPtr);
   }
 
   // Get arg values
@@ -224,8 +223,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
       argTypes.push_back(builder.getPtrTy()); // This pointer
-    if (data.isFctPtrCall() && firstFragEntry->getQualType().hasLambdaCaptures())
-      argTypes.push_back(builder.getPtrTy()); // Capture pointer
+    if (data.isFctPtrCall())
+      argTypes.push_back(builder.getPtrTy()); // Capture pointer (always present in the uniform lambda ABI)
     for (const QualType &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(sourceFile));
 
@@ -490,17 +489,15 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // If there are captures, we pass them in a struct as the first function argument
+  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
+  // can be stored, retrieved and called without the call site knowing statically whether it captures. A
+  // non-capturing lambda simply ignores the passed (poison) pointer.
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
-  llvm::Type *capturesStructType = nullptr;
-  if (hasCaptures) {
-    // Create captures struct type
-    capturesStructType = buildCapturesContainerType(captures);
-    // Add the captures struct as first parameter
-    paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-    paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
-  }
+  llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
@@ -578,7 +575,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    const bool isCapturesStruct = argNumber == 0;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -647,17 +644,15 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // If there are captures, we pass them in a struct as the first function argument
+  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
+  // can be stored, retrieved and called without the call site knowing statically whether it captures. A
+  // non-capturing lambda simply ignores the passed (poison) pointer.
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
-  llvm::Type *capturesStructType = nullptr;
-  if (hasCaptures) {
-    // Create captures struct type
-    capturesStructType = buildCapturesContainerType(captures);
-    // Add the captures struct as first parameter
-    paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-    paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
-  }
+  llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
@@ -724,7 +719,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    const bool isCapturesStruct = argNumber == 0;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -791,17 +786,15 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // If there are captures, we pass them in a struct as the first function argument
+  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
+  // can be stored, retrieved and called without the call site knowing statically whether it captures. A
+  // non-capturing lambda simply ignores the passed (poison) pointer.
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
-  llvm::Type *capturesStructType = nullptr;
-  if (hasCaptures) {
-    // Create captures struct type
-    capturesStructType = buildCapturesContainerType(captures);
-    // Add the captures struct as first parameter
-    paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-    paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
-  }
+  llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
@@ -872,7 +865,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = hasCaptures && argNumber == 0;
+    const bool isCapturesStruct = argNumber == 0;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -937,9 +930,60 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   return symbolType.toLLVMType(sourceFile);
 }
 
+llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
+  // Plain function/procedure references are stored in fat function pointers and called through the uniform lambda
+  // calling convention, which always passes a leading capture-struct pointer. A named function does not have that
+  // parameter, so we wrap it in a thunk that has the extra (ignored) pointer and forwards to the real function.
+  const std::string thunkName = target->getName().str() + ".fatthunk";
+  if (llvm::Function *existing = module->getFunction(thunkName))
+    return existing;
+
+  // Build the thunk signature: the target's signature with an additional leading capture-struct pointer
+  const llvm::FunctionType *targetType = target->getFunctionType();
+  std::vector<llvm::Type *> paramTypes;
+  paramTypes.reserve(targetType->getNumParams() + 1);
+  paramTypes.push_back(builder.getPtrTy()); // Ignored captures pointer
+  paramTypes.insert(paramTypes.end(), targetType->param_begin(), targetType->param_end());
+  llvm::FunctionType *thunkType = llvm::FunctionType::get(targetType->getReturnType(), paramTypes, targetType->isVarArg());
+
+  llvm::Function *thunk = llvm::Function::Create(thunkType, llvm::Function::PrivateLinkage, thunkName, module);
+  thunk->setDSOLocal(true);
+
+  // Save insert markers, because we emit the thunk body in the middle of generating another function
+  llvm::BasicBlock *bOrig = builder.GetInsertBlock();
+  llvm::BasicBlock *allocaInsertBlockOrig = allocaInsertBlock;
+  llvm::AllocaInst *allocaInsertInstOrig = allocaInsertInst;
+
+  llvm::BasicBlock *bEntry = createBlock("entry");
+  switchToBlock(bEntry, thunk);
+
+  // Forward all arguments except the leading (ignored) captures pointer
+  std::vector<llvm::Value *> fwdArgs;
+  fwdArgs.reserve(targetType->getNumParams());
+  for (size_t i = 1; i < thunk->arg_size(); i++)
+    fwdArgs.push_back(thunk->getArg(i));
+  llvm::CallInst *call = builder.CreateCall(target, fwdArgs);
+  if (targetType->getReturnType()->isVoidTy())
+    builder.CreateRetVoid();
+  else
+    builder.CreateRet(call);
+
+  // Restore insert markers
+  builder.SetInsertPoint(bOrig);
+  blockAlreadyTerminated = false;
+  allocaInsertBlock = allocaInsertBlockOrig;
+  allocaInsertInst = allocaInsertInstOrig;
+
+  return thunk;
+}
+
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda) {
   // Create capture struct if required
   llvm::Value *capturesPtr = nullptr;
+  // Byte size of the owned capture struct. This is only non-zero if the captures live in a dedicated
+  // (stack-allocated) struct that the std Lambda type needs to relocate to the heap to take ownership.
+  // A single capture stored inline in the capturePtr slot, or no captures at all, leaves this at 0.
+  uint64_t captureStructSize = 0;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
     // If we have a single capture of ptr type, we can directly store it into the fat ptr. Otherwise, we need a stack allocated
@@ -956,6 +1000,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       }
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
+      captureStructSize = module->getDataLayout().getTypeAllocSize(capturesStructType);
       size_t captureIdx = 0;
       for (const auto &capture : bodyScope->symbolTable.captures | std::views::values) {
         const SymbolTableEntry *capturedEntry = capture.capturedSymbol;
@@ -974,16 +1019,16 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
     }
   }
 
-  // Create fat ptr struct type if not exists yet
-  if (!llvmTypes.fatPtrType)
-    llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-
   // Create fat pointer
-  llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
-  llvm::Value *fctPtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
+  llvm::Value *fatFctPtr = insertAlloca(llvmTypes.lambdaFatPtrType, "fat.ptr");
+  llvm::Value *fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 0);
   insertStore(lambda, fctPtr);
-  llvm::Value *capturePtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
-  insertStore(capturesPtr != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
+  llvm::Value *capturePtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 1);
+  // The uniform lambda calling convention always loads and passes this slot, so it must hold a defined value even
+  // when there are no captures. A null pointer is passed to (and ignored by) non-capturing targets.
+  insertStore(capturesPtr != nullptr ? capturesPtr : llvm::ConstantPointerNull::get(builder.getPtrTy()), capturePtr);
+  llvm::Value *captureSizePtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatFctPtr, 2);
+  insertStore(builder.getInt64(captureStructSize), captureSizePtr);
 
   return fatFctPtr;
 }

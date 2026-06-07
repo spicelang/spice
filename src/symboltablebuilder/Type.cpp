@@ -127,9 +127,7 @@ const QualTypeList &Type::getTemplateTypes() const { return typeChain.back().tem
  *
  * @return Type chain depth
  */
-size_t Type::getTypeChainDepth() const {
-  return typeChain.size();
-}
+size_t Type::getTypeChainDepth() const { return typeChain.size(); }
 
 /**
  * Check if the current type is of a certain super type
@@ -577,8 +575,14 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
   }
 
   if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    // Lambda/function values are represented as a fat pointer with three slots:
+    // { fctPtr, capturePtr, captureSize }. The capture size (in bytes) travels with
+    // the value so that the std Lambda type can take ownership of the captures on the
+    // heap regardless of where the lambda came from. It is 0 if there is no owned
+    // capture struct (no captures, or a single capture stored inline in capturePtr).
     llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
-    return llvm::StructType::get(context, {ptrTy, ptrTy});
+    llvm::IntegerType *int64Ty = llvm::Type::getInt64Ty(context);
+    return llvm::StructType::get(context, {ptrTy, ptrTy, int64Ty});
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true, true, true)); // GCOVR_EXCL_LINE

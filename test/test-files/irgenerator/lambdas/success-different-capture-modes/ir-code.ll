@@ -11,8 +11,8 @@ define dso_local noundef i32 @main() #0 {
   %i = alloca i32, align 4
   %j = alloca i32, align 4
   %captures = alloca { ptr, i32 }, align 8
-  %fat.ptr = alloca { ptr, ptr }, align 8
-  %lambda = alloca { ptr, ptr }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %lambda = alloca { ptr, ptr, i64 }, align 8
   store i32 0, ptr %result, align 4
   store i32 123, ptr %i, align 4
   store i32 321, ptr %j, align 4
@@ -21,18 +21,20 @@ define dso_local noundef i32 @main() #0 {
   %2 = getelementptr inbounds nuw { ptr, i32 }, ptr %captures, i32 0, i32 1
   store i32 %1, ptr %2, align 4
   store ptr @_Z14lambda.L4C18.0v, ptr %fat.ptr, align 8
-  %3 = getelementptr inbounds nuw { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %3, align 8
-  %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %4, ptr %lambda, align 8
-  %5 = getelementptr inbounds nuw { ptr, ptr }, ptr %lambda, i32 0, i32 1
-  %captures1 = load ptr, ptr %5, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 16, ptr %4, align 8
+  %5 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %5, ptr %lambda, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %lambda, i32 0, i32 1
+  %captures1 = load ptr, ptr %6, align 8
   %fct = load ptr, ptr %lambda, align 8
   call void %fct(ptr %captures1)
-  %6 = load i32, ptr %i, align 4
-  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  %7 = load i32, ptr %i, align 4
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7)
+  %9 = load i32, ptr %result, align 4
+  ret i32 %9
 }
 
 define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) %0) {

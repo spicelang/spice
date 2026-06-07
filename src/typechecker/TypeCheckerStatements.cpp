@@ -134,6 +134,15 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   const auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
   HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
+  // A native lambda stores its captures in this frame, so returning a capturing lambda would let it outlive its
+  // captures. Direct the user to the owning std Lambda wrapper. Non-capturing lambdas (plain function pointers)
+  // are safe to return. The std Lambda wrapper hands its captures-flagged lambda back from get(), so std is exempt.
+  if (rhs.type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && rhs.type.hasLambdaCaptures() && !sourceFile->isStdFile)
+    SOFT_ERROR_ER(node->assignExpr, LAMBDA_CAPTURE_ESCAPE,
+                  "A capturing lambda cannot be returned, because its captures live in this frame and would dangle. "
+                  "Wrap it in 'Lambda<" +
+                      rhs.type.getBase().getWithLambdaCaptures(false).getName(false) + ">' from std/type/lambda instead.")
+
   // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
   // in performStructAssign), turning rhs.entry into a dangling pointer.
   const bool rhsIsAnonymous = rhs.entry != nullptr && rhs.entry->anonymous;

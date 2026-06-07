@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:5:12:
+Lambda may outlive its captures: A capturing lambda cannot be returned, because its captures live in this frame and would dangle. Wrap it in 'Lambda<f<int>()>' from std/type/lambda instead.
+
+5  return f<int>() { return value; };
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^

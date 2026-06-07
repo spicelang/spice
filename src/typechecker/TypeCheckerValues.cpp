@@ -261,6 +261,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   } else {
     returnType = callee->returnType;
   }
+
   const QualType returnBaseType = returnType.getBase();
 
   // Make sure this source file knows about the return type
