@@ -29,9 +29,9 @@ type S dyn;
  * an operator() that simply forwards to it, without changing the storage model.
  */
 public type Lambda<S> struct {
-    S native                               // the wrapped native lambda (capturePtr rebound to ownedCaptures)
-    heap byte* ownedCaptures = nil<heap byte*> // owned heap copy of the capture struct, nil if there is none
-    unsigned long captureSize = 0ul        // byte size of the owned capture struct, 0 if there is none
+    S native                  // the wrapped native lambda (capturePtr rebound to ownedCaptures)
+    heap byte* ownedCaptures  // owned heap copy of the capture struct, nil if there is none
+    unsigned long captureSize // byte size of the owned capture struct, 0 if there is none
 }
 
 /**
@@ -40,6 +40,7 @@ public type Lambda<S> struct {
  * lambda before it is used.
  */
 public p Lambda.ctor() {
+    this.native = nil<S>;
     this.ownedCaptures = nil<heap byte*>;
     this.captureSize = 0ul;
 }
@@ -127,6 +128,13 @@ public p Lambda.dtor() {
  */
 public inline f<S> Lambda.get() {
     return this.native;
+}
+
+/**
+ * Returns true if the lambda is empty
+ */
+public inline f<bool> Lambda.isEmpty() {
+    return this.native == nil<S>;
 }
 
 /**

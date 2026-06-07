@@ -1,5 +1,7 @@
 #![core.linker.flag = "-pthread"]
 
+import "std/type/lambda";
+
 // Type definitions
 type Pthread_t alias long;
 type Pthread_attr_t struct {
@@ -19,11 +21,18 @@ ext f<Pthread_t> pthread_self();
  * Lightweight thread, that uses posix threads (pthread) under the hood.
  */
 public type Thread struct {
-    p() threadRoutine
+    Lambda<p()> threadRoutine
     Pthread_t threadId = 0l
 }
 
 public p Thread.ctor(p() threadRoutine) {
+    // Wrap the routine in an owning Lambda. This takes ownership of the routine's captures (if any), so a
+    // capturing lambda may safely be used as a thread routine even though its captures were created in the
+    // caller's now-dying frame. Non-capturing routines work just as well (the Lambda simply owns nothing).
+    this.threadRoutine = Lambda<p()>(threadRoutine);
+}
+
+public p Thread.ctor(const Lambda<p()>& threadRoutine) {
     this.threadRoutine = threadRoutine;
 }
 
@@ -31,7 +40,7 @@ public p Thread.ctor(p() threadRoutine) {
  * Start the thread
  */
 public p Thread.run() {
-    if pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine) != 0 {
+    if pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine.get()) != 0 {
         panic(Error("pthread_create failed"));
     }
 }

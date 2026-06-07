@@ -54,154 +54,130 @@ main:                                   # @main
 	.cfi_def_cfa_offset 48
 	pushq	%rbx
 	.cfi_def_cfa_offset 56
-	subq	$312, %rsp                      # imm = 0x138
-	.cfi_def_cfa_offset 368
+	subq	$456, %rsp                      # imm = 0x1C8
+	.cfi_def_cfa_offset 512
 	.cfi_offset %rbx, -56
 	.cfi_offset %r12, -48
 	.cfi_offset %r13, -40
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	leaq	56(%rsp), %rbx
-	addq	$32, %rbx
-	leaq	56(%rsp), %rbp
-	addq	$64, %rbp
-	leaq	56(%rsp), %r13
-	addq	$96, %r13
-	leaq	56(%rsp), %r12
-	addq	$128, %r12
-	movq	%r12, 40(%rsp)                  # 8-byte Spill
-	leaq	56(%rsp), %r15
-	addq	$160, %r15
-	leaq	56(%rsp), %rax
-	addq	$192, %rax
+	leaq	72(%rsp), %rbx
+	addq	$48, %rbx
+	leaq	72(%rsp), %rbp
+	addq	$96, %rbp
+	leaq	72(%rsp), %r13
+	addq	$144, %r13
+	leaq	72(%rsp), %r12
+	addq	$192, %r12
+	leaq	72(%rsp), %rax
+	addq	$240, %rax
+	movq	%rax, %r15
+	leaq	72(%rsp), %rax
+	addq	$288, %rax                      # imm = 0x120
 	movq	%rax, %r14
-	leaq	56(%rsp), %rax
-	addq	$224, %rax
-	movq	%rax, 48(%rsp)                  # 8-byte Spill
+	leaq	72(%rsp), %rax
+	addq	$336, %rax                      # imm = 0x150
+	movq	%rax, 64(%rsp)                  # 8-byte Spill
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	leaq	56(%rsp), %rdi
-	addq	$32, %rdi
+	leaq	72(%rsp), %rdi
+	addq	$48, %rdi
 	xorl	%esi, %esi
-	movl	$224, %edx
+	movl	$336, %edx                      # imm = 0x150
 	callq	memset@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 56(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 64(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 72(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 80(%rsp)
-	leaq	56(%rsp), %rdi
+	leaq	72(%rsp), %rdi
+	leaq	8(%rsp), %rsi
+	movl	$48, %edx
+	callq	memcpy@PLT
+	leaq	72(%rsp), %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 88(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 96(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 104(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 112(%rsp)
+	leaq	8(%rsp), %rsi
+	movq	%rbx, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
 	movq	%rbx, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 120(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 128(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 136(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 144(%rsp)
+	leaq	8(%rsp), %rsi
+	movq	%rbp, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
 	movq	%rbp, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 152(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 160(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 168(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 176(%rsp)
+	leaq	8(%rsp), %rsi
+	movq	%r13, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
 	movq	%r13, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 184(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 192(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 200(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 208(%rsp)
+	leaq	8(%rsp), %rsi
+	movq	%r12, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
 	movq	%r12, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 216(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 224(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 232(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 240(%rsp)
+	leaq	8(%rsp), %rsi
+	movq	%r15, 56(%rsp)                  # 8-byte Spill
 	movq	%r15, %rdi
-	movq	%r15, %r12
+	movl	$48, %edx
+	callq	memcpy@PLT
+	movq	%r15, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 248(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 256(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 264(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 272(%rsp)
+	leaq	8(%rsp), %rsi
 	movq	%r14, %r15
 	movq	%r15, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
+	movq	%r15, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rsi
 	leaq	8(%rsp), %rdi
+	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movq	8(%rsp), %rax
-	movq	%rax, 280(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 288(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 296(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 304(%rsp)
-	movq	48(%rsp), %r14                  # 8-byte Reload
+	leaq	8(%rsp), %rsi
+	movq	64(%rsp), %r14                  # 8-byte Reload
+	movq	%r14, %rdi
+	movl	$48, %edx
+	callq	memcpy@PLT
 	movq	%r14, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	leaq	.Lstr(%rip), %rdi
 	callq	puts@PLT
-	leaq	56(%rsp), %rdi
+	leaq	72(%rsp), %rdi
 	callq	_ZN6Thread4joinEv@PLT
 	movq	%rbx, %rdi
 	callq	_ZN6Thread4joinEv@PLT
@@ -209,9 +185,9 @@ main:                                   # @main
 	callq	_ZN6Thread4joinEv@PLT
 	movq	%r13, %rdi
 	callq	_ZN6Thread4joinEv@PLT
-	movq	40(%rsp), %rdi                  # 8-byte Reload
-	callq	_ZN6Thread4joinEv@PLT
 	movq	%r12, %rdi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	56(%rsp), %rdi                  # 8-byte Reload
 	callq	_ZN6Thread4joinEv@PLT
 	movq	%r15, %rdi
 	callq	_ZN6Thread4joinEv@PLT
@@ -221,7 +197,7 @@ main:                                   # @main
 	movb	$0, %al
 	callq	printf@PLT
 	xorl	%eax, %eax
-	addq	$312, %rsp                      # imm = 0x138
+	addq	$456, %rsp                      # imm = 0x1C8
 	.cfi_def_cfa_offset 56
 	popq	%rbx
 	.cfi_def_cfa_offset 48

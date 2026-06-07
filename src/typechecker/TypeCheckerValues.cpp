@@ -262,26 +262,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     returnType = callee->returnType;
   }
 
-  // The std Lambda wrapper owns the captures of the lambda it stores. Methods that hand the wrapped lambda
-  // back (e.g. get()) therefore return a capturing lambda, even though the generic signature type does not
-  // carry the captures flag. Force the flag so that calling the retrieved lambda passes the capture pointer.
-  if (data.isMethodCall() && thisType.getBase().isLambdaObj() && returnType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-    returnType = returnType.getWithLambdaCaptures(true);
-
-  // The std Lambda wrapper exists to give a capturing lambda a home that outlives the frame that created it.
-  // It always hands its lambda back (via get()) as a capturing lambda, so wrapping a non-capturing lambda
-  // would call it through the capturing calling convention it was not generated with. Non-capturing lambdas do
-  // not need an owning wrapper anyway (they are safe to store directly), so reject this with a clear error.
-  if (data.isCtorCall() && thisType.getBase().isLambdaObj() && node->hasArgs) {
-    for (const ExprNode *arg : node->argLst->args) {
-      const QualType argType = arg->getEvaluatedSymbolType(manIdx);
-      if (argType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && !argType.hasLambdaCaptures())
-        SOFT_ERROR_ER(arg, LAMBDA_CAPTURE_ESCAPE,
-                      "Only capturing lambdas need to be wrapped in 'Lambda'. This lambda captures nothing, so store "
-                      "it directly as a native lambda value instead.")
-    }
-  }
-
   const QualType returnBaseType = returnType.getBase();
 
   // Make sure this source file knows about the return type

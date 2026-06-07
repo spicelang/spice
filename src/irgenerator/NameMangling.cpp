@@ -13,6 +13,24 @@
 
 namespace spice::compiler {
 
+#ifndef NDEBUG
+/**
+ * Recursively check whether a type contains a function or procedure type anywhere - directly or nested as a
+ * struct template argument (e.g. Lambda<p()>). Spice mangles function/procedure types in a way that is not valid
+ * Itanium ABI, so such signatures must be excluded from the demangle-based sanity check in mangleFunction.
+ */
+static bool containsFctOrProcType(const QualType &type) {
+  const QualType base = type.getBase();
+  if (base.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+    return true;
+  if (base.is(TY_STRUCT)) {
+    const auto pred = [](const QualType &templateType) { return containsFctOrProcType(templateType); };
+    return std::ranges::any_of(base.getTemplateTypes(), pred);
+  }
+  return false;
+}
+#endif
+
 /**
  * Mangle a function or procedure.
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
@@ -79,15 +97,15 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
 
 #ifndef NDEBUG
   const TypeMapping &typeMapping = spiceFunc.typeMapping;
-  const bool returnTypeIsFctOrProc = spiceFunc.returnType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
-  const auto paramPredicate = [](const Param &p) { return p.qualType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
+  const bool returnTypeIsFctOrProc = containsFctOrProcType(spiceFunc.returnType);
+  const auto paramPredicate = [](const Param &p) { return containsFctOrProcType(p.qualType); };
   const bool paramTypeIsFctOrProc = std::ranges::any_of(spiceFunc.paramList, paramPredicate);
   const auto templateTypePredicate = [&](const GenericType &t) {
     if (t.is(TY_GENERIC)) {
       assert(typeMapping.contains(t.getSubType()));
-      return typeMapping.at(t.getSubType()).getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+      return containsFctOrProcType(typeMapping.at(t.getSubType()));
     }
-    return t.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+    return containsFctOrProcType(t);
   };
   const bool templateTypeIsFctOrProc = std::ranges::any_of(spiceFunc.templateTypes, templateTypePredicate);
   if (!returnTypeIsFctOrProc && !paramTypeIsFctOrProc && !templateTypeIsFctOrProc)

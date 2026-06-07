@@ -54,9 +54,9 @@ define private void @_Z8activate14GtkApplicationPh(%struct.GtkApplication nounde
   %4 = load %struct.GtkBox, ptr %box, align 8
   call void @_ZN9GtkWindow8setChildE6GtkBox(ptr noundef nonnull align 8 dereferenceable(8) %window, %struct.GtkBox noundef %4)
   call void @_ZN9GtkButton4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(8) %btnCancel, ptr noundef @anon.string.2)
-  store ptr @_Z13destroyWindow9GtkWidget9GtkWindow, ptr %fat.ptr, align 8
+  store ptr @_Z13destroyWindow9GtkWidget9GtkWindow.fatthunk, ptr %fat.ptr, align 8
   %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
-  store ptr poison, ptr %5, align 8
+  store ptr null, ptr %5, align 8
   %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
   store i64 0, ptr %6, align 8
   %7 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
@@ -65,9 +65,9 @@ define private void @_Z8activate14GtkApplicationPh(%struct.GtkApplication nounde
   %9 = load %struct.GtkButton, ptr %btnCancel, align 8
   call void @_ZN6GtkBox6appendE9GtkButton(ptr noundef nonnull align 8 dereferenceable(8) %box, %struct.GtkButton noundef %9)
   call void @_ZN9GtkButton4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(8) %btnYes, ptr noundef @anon.string.3)
-  store ptr @_Z11btnYesClick9GtkWidget, ptr %fat.ptr1, align 8
+  store ptr @_Z11btnYesClick9GtkWidget.fatthunk, ptr %fat.ptr1, align 8
   %10 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %10, align 8
+  store ptr null, ptr %10, align 8
   %11 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2
   store i64 0, ptr %11, align 8
   %12 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
@@ -94,9 +94,21 @@ declare void @_ZN9GtkWindow8setChildE6GtkBox(ptr, %struct.GtkBox)
 
 declare void @_ZN9GtkButton4ctorEPKc(ptr, ptr)
 
+define private void @_Z13destroyWindow9GtkWidget9GtkWindow.fatthunk(ptr %0, %struct.GtkWidget %1, %struct.GtkWindow %2) {
+entry:
+  call void @_Z13destroyWindow9GtkWidget9GtkWindow(%struct.GtkWidget %1, %struct.GtkWindow %2)
+  ret void
+}
+
 declare void @_ZN9GtkButton18setOnClickCallbackI9GtkWindowEEvPFv9GtkWidget9GtkWindowE9GtkWindow(ptr, { ptr, ptr, i64 }, %struct.GtkWindow)
 
 declare void @_ZN6GtkBox6appendE9GtkButton(ptr, %struct.GtkButton)
+
+define private void @_Z11btnYesClick9GtkWidget.fatthunk(ptr %0, %struct.GtkWidget %1) {
+entry:
+  call void @_Z11btnYesClick9GtkWidget(%struct.GtkWidget %1)
+  ret void
+}
 
 declare void @_ZN9GtkButton18setOnClickCallbackEPFv9GtkWidgetE(ptr, { ptr, ptr, i64 })
 
@@ -113,9 +125,9 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 {
   store i32 %0, ptr %argc, align 4
   store ptr %1, ptr %argv, align 8
   call void @_ZN14GtkApplication4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(8) %app, ptr noundef @anon.string.4)
-  store ptr @_Z8activate14GtkApplicationPh, ptr %fat.ptr, align 8
+  store ptr @_Z8activate14GtkApplicationPh.fatthunk, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
-  store ptr poison, ptr %3, align 8
+  store ptr null, ptr %3, align 8
   %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
   store i64 0, ptr %4, align 8
   %5 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
@@ -128,6 +140,12 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 {
 }
 
 declare void @_ZN14GtkApplication4ctorEPKc(ptr, ptr)
+
+define private void @_Z8activate14GtkApplicationPh.fatthunk(ptr %0, %struct.GtkApplication %1, ptr %2) {
+entry:
+  call void @_Z8activate14GtkApplicationPh(%struct.GtkApplication %1, ptr %2)
+  ret void
+}
 
 declare void @_ZN14GtkApplication19setActivateCallbackEPFv14GtkApplicationPhE(ptr, { ptr, ptr, i64 })
 

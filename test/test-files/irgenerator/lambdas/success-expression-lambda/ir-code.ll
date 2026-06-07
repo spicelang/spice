@@ -55,46 +55,48 @@ for.head.L9:                                      ; preds = %for.tail.L9, %for.b
   br i1 %12, label %for.body.L9, label %for.exit.L9
 
 for.body.L9:                                      ; preds = %for.head.L9
-  %13 = load i32, ptr %j, align 4
-  %14 = load ptr, ptr %array, align 8
-  %15 = getelementptr inbounds [10 x i32], ptr %14, i64 0, i32 %13
-  %16 = load i32, ptr %15, align 4
-  %17 = load i32, ptr %j, align 4
-  %18 = add nsw i32 %17, 1
-  %19 = load ptr, ptr %array, align 8
-  %20 = getelementptr inbounds [10 x i32], ptr %19, i64 0, i32 %18
-  %21 = load i32, ptr %20, align 4
+  %13 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %sortFct, i32 0, i32 1
+  %captures = load ptr, ptr %13, align 8
+  %14 = load i32, ptr %j, align 4
+  %15 = load ptr, ptr %array, align 8
+  %16 = getelementptr inbounds [10 x i32], ptr %15, i64 0, i32 %14
+  %17 = load i32, ptr %16, align 4
+  %18 = load i32, ptr %j, align 4
+  %19 = add nsw i32 %18, 1
+  %20 = load ptr, ptr %array, align 8
+  %21 = getelementptr inbounds [10 x i32], ptr %20, i64 0, i32 %19
+  %22 = load i32, ptr %21, align 4
   %fct = load ptr, ptr %sortFct, align 8
-  %22 = call i1 %fct(i32 %16, i32 %21)
-  br i1 %22, label %if.then.L10, label %if.exit.L10
+  %23 = call i1 %fct(ptr %captures, i32 %17, i32 %22)
+  br i1 %23, label %if.then.L10, label %if.exit.L10
 
 if.then.L10:                                      ; preds = %for.body.L9
-  %23 = load i32, ptr %j, align 4
-  %24 = load ptr, ptr %array, align 8
-  %25 = getelementptr inbounds [10 x i32], ptr %24, i64 0, i32 %23
-  %26 = load i32, ptr %j, align 4
-  %27 = add nsw i32 %26, 1
-  %28 = load ptr, ptr %array, align 8
-  %29 = getelementptr inbounds [10 x i32], ptr %28, i64 0, i32 %27
-  call void @_Z4swapRiRi(ptr noundef %25, ptr noundef %29)
+  %24 = load i32, ptr %j, align 4
+  %25 = load ptr, ptr %array, align 8
+  %26 = getelementptr inbounds [10 x i32], ptr %25, i64 0, i32 %24
+  %27 = load i32, ptr %j, align 4
+  %28 = add nsw i32 %27, 1
+  %29 = load ptr, ptr %array, align 8
+  %30 = getelementptr inbounds [10 x i32], ptr %29, i64 0, i32 %28
+  call void @_Z4swapRiRi(ptr noundef %26, ptr noundef %30)
   br label %if.exit.L10
 
 if.exit.L10:                                      ; preds = %if.then.L10, %for.body.L9
   br label %for.tail.L9
 
 for.tail.L9:                                      ; preds = %if.exit.L10
-  %30 = load i32, ptr %j, align 4
-  %31 = add nsw i32 %30, 1
-  store i32 %31, ptr %j, align 4
+  %31 = load i32, ptr %j, align 4
+  %32 = add nsw i32 %31, 1
+  store i32 %32, ptr %j, align 4
   br label %for.head.L9
 
 for.exit.L9:                                      ; preds = %for.head.L9
   br label %for.tail.L8
 
 for.tail.L8:                                      ; preds = %for.exit.L9
-  %32 = load i32, ptr %i, align 4
-  %33 = add nsw i32 %32, 1
-  store i32 %33, ptr %i, align 4
+  %33 = load i32, ptr %i, align 4
+  %34 = add nsw i32 %33, 1
+  store i32 %34, ptr %i, align 4
   br label %for.head.L8
 
 for.exit.L8:                                      ; preds = %for.head.L8
@@ -110,7 +112,7 @@ define dso_local noundef i32 @main() #0 {
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
   store ptr @_Z15lambda.L19C17.0ii, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
-  store ptr poison, ptr %1, align 8
+  store ptr null, ptr %1, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
   store i64 0, ptr %2, align 8
   %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
@@ -120,15 +122,17 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %4
 }
 
-define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
+define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) {
+  %captures = alloca ptr, align 8
   %a = alloca i32, align 4
   %b = alloca i32, align 4
-  store i32 %0, ptr %a, align 4
-  store i32 %1, ptr %b, align 4
-  %3 = load i32, ptr %b, align 4
-  %4 = load i32, ptr %a, align 4
-  %5 = icmp sgt i32 %4, %3
-  ret i1 %5
+  store ptr %0, ptr %captures, align 8
+  store i32 %1, ptr %a, align 4
+  store i32 %2, ptr %b, align 4
+  %4 = load i32, ptr %b, align 4
+  %5 = load i32, ptr %a, align 4
+  %6 = icmp sgt i32 %5, %4
+  ret i1 %6
 }
 
 define private void @_Z10printArrayRA10_i(ptr noundef %0) {

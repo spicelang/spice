@@ -2,10 +2,32 @@
 Error
 Error&
 Error*
+Lambda<S>
+Lambda<S>
+Lambda<S>&
+Lambda<S>*
+Lambda<p()>
+Lambda<p()>
+Lambda<p()>&
+Lambda<p()>&
+Lambda<p()>*
 Pthread_attr_t
 Pthread_attr_t&
 Pthread_attr_t*
 Pthread_t
+Result<T>
+Result<T>
+Result<T>&
+Result<T>*
+Result<heap byte*>
+Result<heap byte*>
+Result<heap byte*>&
+Result<heap byte*>*
+S
+T
+T&
+T*
+T*&
 Thread
 Thread&
 Thread*
@@ -13,16 +35,36 @@ Thread[]
 bool
 byte
 byte*
+byte*&
 byte**
 char
 char*
 dyn
 f()
+f<Error&>()
+f<Result<T>>(const Error&)
+f<Result<T>>(const T&)
+f<Result<T>>(int,string)
+f<Result<T>>(string)
+f<Result<heap byte*>>(heap byte*,heap byte*,unsigned long)
+f<Result<heap byte*>>(heap byte*,unsigned long)
+f<Result<heap byte*>>(unsigned long)
+f<S>()
+f<T&>()
+f<T*>(heap T*&)
+f<bool>()
+f<bool>(const heap T*,const heap T*,unsigned long)
+f<heap T*>(heap T*&)
+f<heap byte*>(heap byte*,heap byte*,unsigned long)
+f<heap byte*>(heap byte*,unsigned long)
+f<heap byte*>(unsigned long)
 f<int>()
+f<int>(const heap byte*,const heap byte*,unsigned long)
 f<int>(int)
 f<int>(long*,Pthread_attr_t*,p())
 f<int>(long,byte**)
 f<long>()
+import
 import
 int
 invalid
@@ -30,6 +72,18 @@ long
 long*
 p()
 p()
+p()*
+p(Lambda<S>&,const Lambda<S>&)
+p(S)
+p(T&)
+p(const Error&)
+p(const Lambda<S>&)
+p(const Lambda<p()>&)
+p(const T&)
+p(heap T*&)
+p(heap byte*&)
+p(heap byte*)
+p(heap byte*,heap byte*,unsigned long)
 p(int,string)
 p(p())
 p(string)

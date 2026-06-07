@@ -15,20 +15,28 @@ define dso_local noundef i32 @main() #0 {
   %testFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store ptr @_Z4testv, ptr %fat.ptr, align 8
+  store ptr @_Z4testv.fatthunk, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
-  store ptr poison, ptr %1, align 8
+  store ptr null, ptr %1, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
   store i64 0, ptr %2, align 8
   %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
   store { ptr, ptr, i64 } %3, ptr %testFct, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %testFct, i32 0, i32 1
+  %captures = load ptr, ptr %4, align 8
   %fct = load ptr, ptr %testFct, align 8
-  %4 = call i32 %fct()
-  store i32 %4, ptr %i, align 4
-  %5 = load i32, ptr %i, align 4
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %5 = call i32 %fct(ptr %captures)
+  store i32 %5, ptr %i, align 4
+  %6 = load i32, ptr %i, align 4
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
+  %8 = load i32, ptr %result, align 4
+  ret i32 %8
+}
+
+define private i32 @_Z4testv.fatthunk(ptr %0) {
+entry:
+  %1 = call i32 @_Z4testv()
+  ret i32 %1
 }
 
 ; Function Attrs: nofree nounwind

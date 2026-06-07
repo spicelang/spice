@@ -81,3 +81,7 @@ p Button.click() {
 
 `Lambda` values can be copied, assigned and passed around freely. Non-capturing lambdas (plain function pointers)
 do not need the wrapper - they are safe to store directly and can be used as field and return types as before.
+
+A `Lambda<...>` also accepts a non-capturing lambda (it simply owns nothing in that case). This makes `Lambda` a
+good fit for a field or parameter that should accept *any* routine, capturing or not - for example the routine
+passed to `std/os/thread`'s `Thread`, which may capture or not depending on the caller.

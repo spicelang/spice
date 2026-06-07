@@ -18,6 +18,11 @@ f<int> Adder.apply(int x) {
     return native(x);
 }
 
+// A plain named function, to be referenced as a non-capturing lambda value.
+f<int> triple(int x) {
+    return x * 3;
+}
+
 // Clobbers the stack with junk to make a use-after-scope of the captures observable.
 p clobberStack() {
     int[64] junk;
@@ -50,6 +55,19 @@ f<int> main() {
     mul = Lambda<f<int>(int)>(f<int>(int x) { return factor2 * x; });
     f<int>(int) mulNative2 = mul.get();
     assert mulNative2(4) == 40;
+
+    // 5) A non-capturing lambda may also be wrapped (it simply owns nothing). This used to be rejected, but with
+    //    the uniform lambda calling convention a wrapped non-capturing lambda is called correctly.
+    Lambda<f<int>(int)> square = Lambda<f<int>(int)>(f<int>(int x) { return x * x; });
+    clobberStack();
+    f<int>(int) squareNative = square.get();
+    assert squareNative(6) == 36;
+
+    // 6) A plain named function reference can be wrapped as well
+    Lambda<f<int>(int)> tripler = Lambda<f<int>(int)>(triple);
+    clobberStack();
+    f<int>(int) triplerNative = tripler.get();
+    assert triplerNative(9) == 27;
 
     printf("Lambda owning-captures tests passed!\n");
     return 0;

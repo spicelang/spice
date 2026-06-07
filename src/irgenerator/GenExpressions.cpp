@@ -890,9 +890,11 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   llvm::Value *address = entry->getAddress();
   assert(address != nullptr);
 
-  // If this is a function/procedure reference, return it as value
+  // If this is a function/procedure reference, return it as value. The fat pointer must point at a thunk that
+  // carries the (ignored) leading capture-struct pointer, so it can be called through the uniform lambda ABI.
   if (entry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    llvm::Value *fatPtr = buildFatFctPtr(nullptr, nullptr, address);
+    llvm::Function *thunk = getOrCreateFatFctPtrThunk(llvm::cast<llvm::Function>(address));
+    llvm::Value *fatPtr = buildFatFctPtr(nullptr, nullptr, thunk);
     return LLVMExprResult{.ptr = fatPtr, .entry = entry};
   }
 

@@ -2,7 +2,6 @@
 
 #include "StructManager.h"
 
-#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <model/GenericType.h>
@@ -257,15 +256,6 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &re
  * @param node Instantiation AST node for printing error messages
  */
 void StructManager::substantiateFieldTypes(Struct &candidate, const TypeMapping &typeMapping, const ASTNode *node) {
-  // The std Lambda wrapper owns the captures of the lambda it stores, so its wrapped lambda must always be
-  // treated as capturing: the captures flag is otherwise erased when a (possibly capturing) lambda is bound to
-  // the generic signature type, which would make calls retrieved via get() omit the capture pointer.
-  const bool isLambdaObj = candidate.name == LAMBDAOBJ_NAME && candidate.scope->sourceFile->isStdFile;
-  const auto forceLambdaCaptures = [&](QualType &fieldType) {
-    if (isLambdaObj && fieldType.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-      fieldType = fieldType.getWithLambdaCaptures(true);
-  };
-
   // Loop over all implicit fields and substantiate the generic ones
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -273,17 +263,14 @@ void StructManager::substantiateFieldTypes(Struct &candidate, const TypeMapping 
     QualType fieldType = fieldEntry->getQualType();
     if (fieldType.hasAnyGenericParts()) {
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
-      forceLambdaCaptures(fieldType);
       fieldEntry->updateType(fieldType, true);
     }
   }
 
   // Loop over all explicit field types and substantiate the generic ones
   for (QualType &fieldType : candidate.fieldTypes)
-    if (fieldType.hasAnyGenericParts()) {
+    if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
-      forceLambdaCaptures(fieldType);
-    }
 }
 
 /**
