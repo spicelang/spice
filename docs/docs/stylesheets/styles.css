@@ -4,3 +4,42 @@
     margin: .5em 0;
     height: 40px;
 }
+
+/* Labeled badges for the auto-generated std library reference */
+.doc-badge {
+    display: inline-block;
+    margin-left: .35em;
+    padding: .1em .55em;
+    border-radius: .4em;
+    font-size: .55em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    vertical-align: middle;
+    color: #fff;
+}
+
+.doc-badge-struct {
+    background-color: #d32f2f;
+}
+
+.doc-badge-interface {
+    background-color: #7b1fa2;
+}
+
+.doc-badge-enum {
+    background-color: #1565c0;
+}
+
+.doc-badge-alias {
+    background-color: #00796b;
+}
+
+/*
+ * The std library pages are auto-generated, so editing/viewing their Markdown
+ * source is not meaningful. Hide the edit/view action buttons on them. These
+ * buttons are the only links that point at the docs/docs/std source path.
+ */
+.md-content a[href*="/docs/docs/std/"] {
+    display: none;
+}

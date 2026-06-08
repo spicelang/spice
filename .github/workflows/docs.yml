@@ -10,6 +10,8 @@ on:
       - fix/**
     paths:
       - docs/**
+      - std/**
+      - tools/generate_std_docs.py
   workflow_dispatch:
 
 permissions:
@@ -40,6 +42,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
           pip install -r docs/requirements.txt
+
+      - name: Generate std library reference
+        run: python tools/generate_std_docs.py --nav-out /dev/null
 
       - name: Build
         working-directory: docs
