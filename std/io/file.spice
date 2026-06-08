@@ -73,6 +73,9 @@ ext f<int> access(string /*file path*/, int /*mode*/);
 ext f<int> fseek(FilePtr /*stream*/, long /*offset*/, int /*whence*/);
 ext f<unsigned long> ftell(FilePtr /*stream*/);
 
+/**
+ * A handle to an open file, wrapping the underlying C file pointer and tracking the end-of-file state
+ */
 public type File struct {
     FilePtr filePtr
     bool isEOF
@@ -252,6 +255,13 @@ public f<Result<File>> openFile(string path, string mode = MODE_READ) {
     return fp != nil<FilePtr> ? ok(file) : err<File>(Error("Failed to open file"));
 }
 
+/**
+ * Opens the file at the given path in the given mode.
+ *
+ * @param path Path to the file
+ * @param mode Mode to open the file in (e.g. "r", "w", "a")
+ * @return Result holding the opened file, or an error if the file could not be opened
+ */
 public f<Result<File>> openFile(String path, string mode = MODE_READ) {
     return openFile(path.getRaw(), mode);
 }

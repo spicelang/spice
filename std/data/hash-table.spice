@@ -17,6 +17,11 @@ type HashEntry<K, V> struct {
     V value
 }
 
+/**
+ * Construct a hash entry as a copy of another hash entry
+ *
+ * @param original Hash entry to copy
+ */
 public p HashEntry.ctor(const HashEntry<K, V>& original) {
     this.key = original.key;
     this.value = original.value;
@@ -39,6 +44,11 @@ public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
     Vector<LinkedList<HashEntry<K, V>>> buckets
 }
 
+/**
+ * Construct an empty hash table with the given number of buckets
+ *
+ * @param bucketCount Number of buckets to allocate
+ */
 public p HashTable.ctor(unsigned long bucketCount = 100l) {
     this.buckets = Vector<LinkedList<HashEntry<K, V>>>(bucketCount);
     for unsigned long i = 0l; i < bucketCount; i++ {
@@ -176,6 +186,11 @@ public type HashTableIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     unsigned long cursor = 0l
 }
 
+/**
+ * Construct a hash table iterator over the given hash table
+ *
+ * @param hashTable Hash table to iterate over
+ */
 public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
     this.hashTable = hashTable;
     if !this.hashTable.buckets.isEmpty() {

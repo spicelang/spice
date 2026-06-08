@@ -2,6 +2,11 @@ const int MAX_PATH = 260; // Maximum path length on Windows
 
 ext f<string> GetTempPathA(int, char[]);
 
+/**
+ * Retrieve the path to the system's temporary directory
+ *
+ * @return Path to the temporary directory
+ */
 public f<string> getTempDir() {
     char[MAX_PATH] path;
     return GetTempPathA(MAX_PATH, path);

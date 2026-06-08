@@ -23,6 +23,11 @@ public type BitSet struct {
     unsigned long numWords      // Number of allocated words
 }
 
+/**
+ * Construct a bit set holding the given number of bits, all initialized to 0
+ *
+ * @param numBits Number of bits in the set
+ */
 public p BitSet.ctor(unsigned long numBits = 0l) {
     this.numBits = numBits;
     this.numWords = (numBits + BITS_PER_WORD - 1l) / BITS_PER_WORD;
@@ -35,15 +40,31 @@ public p BitSet.ctor(unsigned long numBits = 0l) {
     this.clearAll();
 }
 
+/**
+ * Construct a bit set holding the given number of bits, all initialized to 0
+ *
+ * @param numBits Number of bits in the set
+ */
 public p BitSet.ctor(unsigned int numBits) {
     this.ctor(cast<unsigned long>(numBits));
 }
 
+/**
+ * Construct a bit set holding the given number of bits, all initialized to the given value
+ *
+ * @param numBits Number of bits in the set
+ * @param initialValue Value to initialize every bit to
+ */
 public p BitSet.ctor(unsigned long numBits, bool initialValue) {
     this.ctor(numBits);
     if initialValue { this.setAll(); }
 }
 
+/**
+ * Construct a bit set as a deep copy of another bit set
+ *
+ * @param original Bit set to copy
+ */
 public p BitSet.ctor(const BitSet& original) {
     this.ctor(original.numBits);
     unsafe {
@@ -51,6 +72,11 @@ public p BitSet.ctor(const BitSet& original) {
     }
 }
 
+/**
+ * Copy-assign the contents of another bit set into this one
+ *
+ * @param newValue Bit set to copy from
+ */
 public p operator=(BitSet& this, const BitSet& newValue) {
     if &this == &newValue { return; }
     if this.numWords != newValue.numWords {
@@ -228,6 +254,11 @@ public f<String> BitSet.toString() {
     }
 }
 
+/**
+ * Check if two bit sets are equal, i.e. they have the same size and the same bits set
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==(const BitSet& lhs, const BitSet& rhs) {
     if lhs.numBits != rhs.numBits { return false; }
     unsafe {
@@ -238,10 +269,20 @@ public f<bool> operator==(const BitSet& lhs, const BitSet& rhs) {
     return true;
 }
 
+/**
+ * Check if two bit sets are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=(const BitSet& lhs, const BitSet& rhs) {
     return !(lhs == rhs);
 }
 
+/**
+ * Compute the bitwise AND of two equally sized bit sets
+ *
+ * @return New bit set holding the bitwise AND
+ */
 public f<BitSet> operator&(const BitSet& lhs, const BitSet& rhs) {
     if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
     result = BitSet(lhs.numBits);
@@ -252,6 +293,11 @@ public f<BitSet> operator&(const BitSet& lhs, const BitSet& rhs) {
     }
 }
 
+/**
+ * Compute the bitwise OR of two equally sized bit sets
+ *
+ * @return New bit set holding the bitwise OR
+ */
 public f<BitSet> operator|(const BitSet& lhs, const BitSet& rhs) {
     if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
     result = BitSet(lhs.numBits);
@@ -262,6 +308,11 @@ public f<BitSet> operator|(const BitSet& lhs, const BitSet& rhs) {
     }
 }
 
+/**
+ * Compute the bitwise XOR of two equally sized bit sets
+ *
+ * @return New bit set holding the bitwise XOR
+ */
 public f<BitSet> operator^(const BitSet& lhs, const BitSet& rhs) {
     if lhs.numBits != rhs.numBits { panic(Error("BitSet size mismatch")); }
     result = BitSet(lhs.numBits);
@@ -272,6 +323,11 @@ public f<BitSet> operator^(const BitSet& lhs, const BitSet& rhs) {
     }
 }
 
+/**
+ * Compute the bitwise NOT (complement) of a bit set
+ *
+ * @return New bit set holding the bitwise complement
+ */
 public f<BitSet> operator~(const BitSet& bs) {
     result = BitSet(bs.numBits);
     unsafe {

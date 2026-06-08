@@ -39,6 +39,13 @@ public f<bool> HttpServer.start() {
 
 }
 
+/**
+ * Register a route on the server that responds with the given HTML content
+ *
+ * @param path Request path to serve
+ * @param htmlContent HTML content to respond with
+ * @return true if the route was registered successfully, false otherwise
+ */
 public f<bool> HttpServer.serve(string path, string htmlContent) {
 
     return false;

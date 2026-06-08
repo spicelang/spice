@@ -113,6 +113,11 @@ public type MapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     RedBlackTreeIterator<K, V> rbtIterator
 }
 
+/**
+ * Construct a map iterator over the given map
+ *
+ * @param map Map to iterate over
+ */
 public p MapIterator.ctor<K, V>(Map<K, V>& map) {
     this.rbtIterator = map.tree.getIterator();
 }

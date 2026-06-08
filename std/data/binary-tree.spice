@@ -10,6 +10,13 @@ public type Node<T> struct {
     heap Node<T>* childRight
 }
 
+/**
+ * Construct a binary tree node holding the given value and optional children
+ *
+ * @param value Value to store in the node
+ * @param childLeft Left child node, or nil if there is none
+ * @param childRight Right child node, or nil if there is none
+ */
 public p Node.ctor(const T& value, heap Node<T>* childLeft = nil<heap Node<T>*>, heap Node<T>* childRight = nil<heap Node<T>*>) {
     this.value = value;
     this.childLeft = childLeft;

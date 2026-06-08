@@ -13,6 +13,12 @@ public type NumberIterator<N> struct : IIterator<N> {
     N upperBound // Inclusive
 }
 
+/**
+ * Construct a number iterator over the inclusive range [lowerBound, upperBound]
+ *
+ * @param lowerBound Inclusive lower bound of the range
+ * @param upperBound Inclusive upper bound of the range
+ */
 public p NumberIterator.ctor(N lowerBound, N upperBound) {
     if lowerBound > upperBound { panic(Error("Upper bound is below lower bound")); }
     this.currentNumber = lowerBound;

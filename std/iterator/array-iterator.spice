@@ -14,6 +14,12 @@ public type ArrayIterator<I> struct : IIterator<I> {
     unsigned long cursor = 0l
 }
 
+/**
+ * Construct an array iterator over the given array
+ *
+ * @param array Array to iterate over
+ * @param size Number of items in the array
+ */
 public p ArrayIterator.ctor(I[] array, unsigned long size) {
     this.array = array;
     this.size = size;
@@ -30,6 +36,11 @@ public inline f<I&> ArrayIterator.get() {
     }
 }
 
+/**
+ * Returns the current index and the current item of the array
+ *
+ * @return Pair of current index and reference to the current item
+ */
 public inline f<Pair<unsigned long, I&>> ArrayIterator.getIdx() {
     unsafe {
         return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);

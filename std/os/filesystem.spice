@@ -1,5 +1,10 @@
 import "std/os/env";
 
+/**
+ * Retrieve the path to the system's temporary directory
+ *
+ * @return Path to the temporary directory
+ */
 public f<string> getTempDir() {
     Result<string> dir = getEnv("TMPDIR");
     return dir.isOk() ? dir.unwrap() : "/tmp";

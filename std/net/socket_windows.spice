@@ -40,22 +40,32 @@ type SockAddrStorage struct {
     SAFamilyT ssFamily // Address family
 }
 
-// Represents an IPv4 address
+/**
+ * Represents an IPv4 address
+ */
 public type InAddr struct {
     InAddrT addr
 }
 
-// Represents an IPv6 address
+/**
+ * Represents an IPv6 address
+ */
 public type In6Addr struct {
     unsigned byte[16] addr
 }
 
+/**
+ * Socket address for an IPv4 (AF_INET) endpoint
+ */
 public type SockAddrIn struct {
     unsigned short sinFamily // AF_INET
     InPortT sinPort          // Port number
     InAddr sinAddr           // IPv4 address
 }
 
+/**
+ * Socket address for an IPv6 (AF_INET6) endpoint
+ */
 public type SockAddrIn6 struct {
     unsigned short sin6Family // AF_INET6
     InPortT sin6Port          // Port number
@@ -64,10 +74,16 @@ public type SockAddrIn6 struct {
     unsigned int sin6ScopeId  // Set of interfaces for a scope
 }
 
+/**
+ * Socket address for a Unix domain (AF_UNIX) endpoint
+ */
 public type SockAddrUn struct {
 
 }
 
+/**
+ * A network socket, wrapping the listening socket file descriptor and the current connection
+ */
 public type Socket struct {
     int sockFd // Actual socket
     int connFd // Current connection

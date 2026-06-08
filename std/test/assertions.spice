@@ -1,38 +1,86 @@
 // Generic types
 type T dyn;
 
+/**
+ * Assert that the given condition is true
+ *
+ * @param actual Condition to check
+ */
 public inline p assertTrue(bool actual) {
     assert actual;
 }
 
+/**
+ * Assert that the given condition is false
+ *
+ * @param actual Condition to check
+ */
 public inline p assertFalse(bool actual) {
     assert !actual;
 }
 
+/**
+ * Assert that two values are equal
+ *
+ * @param expected Expected value
+ * @param actual Actual value
+ */
 public inline p assertEqual<T>(const T& expected, const T& actual) {
     assert expected == actual;
 }
 
+/**
+ * Assert that two values are not equal
+ *
+ * @param expected Value that is not expected
+ * @param actual Actual value
+ */
 public inline p assertNotEqual<T>(const T& expected, const T& actual) {
     assert expected != actual;
 }
 
+/**
+ * Assert that the given value is nil
+ *
+ * @param actual Value to check
+ */
 public inline p assertNil<T>(const T& actual) {
     assert actual == nil<T>;
 }
 
+/**
+ * Assert that the given value is not nil
+ *
+ * @param actual Value to check
+ */
 public inline p assertNotNil<T>(const T& actual) {
     assert actual != nil<T>;
 }
 
+/**
+ * Assert that the given string is empty
+ *
+ * @param actual String to check
+ */
 public inline p assertEmpty(string actual) {
     assert actual == "";
 }
 
+/**
+ * Assert that the given string is not empty
+ *
+ * @param actual String to check
+ */
 public inline p assertNotEmpty(string actual) {
     assert actual != "";
 }
 
+/**
+ * Assert that the given string contains the given substring
+ *
+ * @param actual String to search in
+ * @param needle Substring that must be contained
+ */
 public inline p assertContains(string actual, string needle) {
     dyn actualString = String(actual);
     assert actualString.contains(needle);

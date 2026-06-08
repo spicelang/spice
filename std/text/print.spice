@@ -3,27 +3,48 @@ import "std/text/analysis";
 // Generic type definitions
 type StrTy String|string;
 
-// Prints the given string to the console
+/**
+ * Print the given string to the console
+ *
+ * @param text Text to print
+ */
 public inline p print<StrTy>(StrTy text) {
     printf("%s", text);
 }
 
-// Prints the given string to the console with a trailing line break
+/**
+ * Print the given string to the console, followed by a trailing line break
+ *
+ * @param text Text to print
+ */
 public inline p println<StrTy>(StrTy text) {
     printf("%s\n", text);
 }
 
-// Prints one or several line breaks to the console
+/**
+ * Print one or several line breaks to the console
+ *
+ * @param number Number of line breaks to print
+ */
 public inline p lineBreak(unsigned int number = 1) {
     for int i = 0; i < number; i++ {
         printf("\n");
     }
 }
 
+/**
+ * Emit the terminal bell (beep) character
+ */
 public inline p beep() {
     printf("\a");
 }
 
+/**
+ * Print the given text wrapped into a column of the given width, breaking on whitespace
+ *
+ * @param text Text to print
+ * @param width Column width in characters
+ */
 public p printColumn(string text, unsigned int width) {
     const unsigned long length = len(text);
     unsigned long i = 0l;
@@ -48,10 +69,23 @@ public p printColumn(string text, unsigned int width) {
     }
 }
 
+/**
+ * Print the given text wrapped into a column of the given width, breaking on whitespace
+ *
+ * @param text Text to print
+ * @param width Column width in characters
+ */
 public p printColumn(const String& text, unsigned int width) {
     printColumn(text.getRaw(), width);
 }
 
+/**
+ * Print the given text padded or truncated to exactly the given width
+ *
+ * @param text Text to print
+ * @param width Target width in characters
+ * @param ellipsis If true, truncated text ends with an ellipsis ("...")
+ */
 public p printFixedWidth(string text, unsigned int width, bool ellipsis = false) {
     unsigned long length = len(text);
     const bool printEllipsis = ellipsis & length > width;
@@ -68,6 +102,13 @@ public p printFixedWidth(string text, unsigned int width, bool ellipsis = false)
     }
 }
 
+/**
+ * Print the given text padded or truncated to exactly the given width
+ *
+ * @param text Text to print
+ * @param width Target width in characters
+ * @param ellipsis If true, truncated text ends with an ellipsis ("...")
+ */
 public p printFixedWidth(const String& text, unsigned int width, bool ellipsis = false) {
     printFixedWidth(text.getRaw(), width, ellipsis);
 }

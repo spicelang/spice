@@ -6,16 +6,29 @@ public type StringStream struct {
     String buffer
 }
 
+/**
+ * Construct an empty string stream
+ */
 public p StringStream.ctor() {
     // Initialize buffer empty
     this.buffer = String();
 }
 
+/**
+ * Construct a string stream initialized with a raw string
+ *
+ * @param input Initial buffer content
+ */
 public p StringStream.ctor(string input) {
     // Initialize buffer with an initial string
     this.buffer = String(input);
 }
 
+/**
+ * Construct a string stream initialized with a String
+ *
+ * @param input Initial buffer content
+ */
 public p StringStream.ctor(const String& input) {
     // Initialize buffer with an initial string
     this.buffer = input;

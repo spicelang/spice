@@ -1,5 +1,8 @@
 import "time";
 
+/**
+ * Unit in which a Timer reports its measured durations
+ */
 public type TimerMode enum {
     MICROS,
     MILLIS,
@@ -17,11 +20,20 @@ public type Timer struct {
     unsigned long* timerOutput
 }
 
+/**
+ * Construct a timer
+ *
+ * @param mode Unit the timer reports durations in
+ * @param timerOutput Optional pointer accumulating the measured duration across pause cycles
+ */
 public p Timer.ctor(TimerMode mode = TimerMode::MILLIS, unsigned long* timerOutput = nil<unsigned long*>) {
     this.mode = mode;
     this.timerOutput = timerOutput;
 }
 
+/**
+ * Start the timer, resetting any accumulated output
+ */
 public p Timer.start() {
     this.resume();
     if this.timerOutput != nil<unsigned long*> {
@@ -29,10 +41,16 @@ public p Timer.start() {
     }
 }
 
+/**
+ * Stop the timer
+ */
 public p Timer.stop() {
     this.pause();
 }
 
+/**
+ * Pause the timer, adding the elapsed duration to the optional output pointer
+ */
 public p Timer.pause() {
     this.timeStop = getCurrentMicros();
     if this.timerOutput != nil<unsigned long*> {
@@ -40,26 +58,54 @@ public p Timer.pause() {
     }
 }
 
+/**
+ * Resume the timer, restarting the measurement from the current time
+ */
 public p Timer.resume() {
     this.timeStart = getCurrentMicros();
 }
 
+/**
+ * Retrieve the measured duration in microseconds
+ *
+ * @return Duration in microseconds
+ */
 public f<unsigned long> Timer.getDurationInMicros() {
     return this.timeStop - this.timeStart;
 }
 
+/**
+ * Retrieve the measured duration in milliseconds
+ *
+ * @return Duration in milliseconds
+ */
 public f<unsigned long> Timer.getDurationInMillis() {
     return this.getDurationInMicros() / 1000l;
 }
 
+/**
+ * Retrieve the measured duration in seconds
+ *
+ * @return Duration in seconds
+ */
 public f<double> Timer.getDurationInSeconds() {
     return this.getDurationInMicros() / 1000000.0;
 }
 
+/**
+ * Retrieve the measured duration in minutes
+ *
+ * @return Duration in minutes
+ */
 public f<double> Timer.getDurationInMinutes() {
     return this.getDurationInMicros() / 60000000.0;
 }
 
+/**
+ * Retrieve the measured duration in the timer's configured mode
+ *
+ * @return Duration in the configured unit
+ */
 public f<unsigned long> Timer.getDuration() {
     if this.mode == TimerMode::MICROS { return this.getDurationInMicros(); }
     if this.mode == TimerMode::MILLIS { return this.getDurationInMillis(); }

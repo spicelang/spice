@@ -22,6 +22,12 @@ public type Stack<T> struct {
     unsigned long size = 0l // Current number of items
 }
 
+/**
+ * Construct a stack pre-filled with a number of copies of a default value
+ *
+ * @param initAllocItems Number of items to insert
+ * @param defaultValue Value to fill the stack with
+ */
 public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -34,10 +40,20 @@ public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
     this.size = initAllocItems;
 }
 
+/**
+ * Construct a stack, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Stack.ctor(unsigned int initAllocItems) {
     this.ctor(cast<unsigned long>(initAllocItems));
 }
 
+/**
+ * Construct a stack, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Stack.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
@@ -48,6 +64,11 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     this.capacity = initAllocItems;
 }
 
+/**
+ * Construct a stack as a deep copy of another stack
+ *
+ * @param original Stack to copy
+ */
 public p Stack.ctor(const Stack<T>& original) {
     this.ctor(original.capacity);
     const unsigned long itemSize = sizeof<T>();
@@ -57,6 +78,11 @@ public p Stack.ctor(const Stack<T>& original) {
     this.size = original.size;
 }
 
+/**
+ * Copy-assign the contents of another stack into this one
+ *
+ * @param newValue Stack to copy from
+ */
 public p operator=<T>(Stack<T>& this, const Stack<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
@@ -156,6 +182,11 @@ public p Stack.pack() {
     this.resize(this.size);
 }
 
+/**
+ * Check if two stacks are equal, i.e. they have the same size and equal contents
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
@@ -164,6 +195,11 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
 }
 
+/**
+ * Check if two stacks are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     return !(lhs == rhs);
 }

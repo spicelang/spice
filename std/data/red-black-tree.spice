@@ -456,6 +456,11 @@ public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     unsigned long cursor = 0l
 }
 
+/**
+ * Construct a red-black tree iterator over the given tree, starting at its minimum key
+ *
+ * @param tree Red-black tree to iterate over
+ */
 public p RedBlackTreeIterator.ctor<K, V>(RedBlackTree<K, V>& tree) {
     this.tree = tree;
     if tree.rootNode != nil<heap Node<K, V>*> {

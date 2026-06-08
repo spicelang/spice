@@ -21,6 +21,11 @@ const unsigned int POSITIONAL_TAG_STRING_OBJ = 1u;
 const unsigned int POSITIONAL_TAG_INT = 2u;
 const unsigned int POSITIONAL_TAG_FILEPATH = 3u;
 
+/**
+ * A subcommand of a CLI parser. It groups options, flags and nested subcommands under a name and
+ * is responsible for parsing the slice of arguments that belongs to it. The root of a CliParser is
+ * itself a CliSubcommand.
+ */
 public type CliSubcommand struct {
     String name
     String description
@@ -43,6 +48,14 @@ public type CliSubcommand struct {
     bool allowUnknownOptions = false
 }
 
+/**
+ * Construct a subcommand
+ *
+ * @param parent Parent subcommand, or nil for the root subcommand
+ * @param versionString Version string inherited from the parent
+ * @param name Name of the subcommand
+ * @param description Description of the subcommand shown in the help output
+ */
 public p CliSubcommand.ctor(CliSubcommand* parent, const String& versionString, const String& name, const String& description = String("")) {
     this.name = name;
     this.description = description;
@@ -62,6 +75,14 @@ f<bool> CliSubcommand.nameOrAliasMatches(const String& name, const Vector<String
     return false;
 }
 
+/**
+ * Parse the arguments belonging to this subcommand, dispatching to nested subcommands as needed
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @param layer Index of the first argument that belongs to this subcommand
+ * @return Exit code of the parse run
+ */
 public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 1) {
     // Check if we have any arguments
     if argc == layer {
@@ -240,26 +261,54 @@ p CliSubcommand.applyPositional(unsigned int slot, string value) {
     }
 }
 
+/**
+ * Retrieve the name of the subcommand
+ *
+ * @return Name of the subcommand
+ */
 public const f<const String&> CliSubcommand.getName() {
     return this.name;
 }
 
+/**
+ * Retrieve the description of the subcommand
+ *
+ * @return Description of the subcommand
+ */
 public const f<const String&> CliSubcommand.getDescription() {
     return this.description;
 }
 
+/**
+ * Set the version string reported by the subcommand
+ *
+ * @param versionString Version string to report
+ */
 public p CliSubcommand.setVersion(const String& versionString) {
     this.versionString = versionString;
 }
 
+/**
+ * Set the footer text shown at the bottom of the subcommand's help output
+ *
+ * @param footerString Footer text
+ */
 public p CliSubcommand.setFooter(const String& footerString) {
     this.footerString = footerString;
 }
 
+/**
+ * Set the callback invoked when this subcommand is selected without a nested subcommand
+ *
+ * @param callback Callback to invoke
+ */
 public p CliSubcommand.setCallback(p() callback) {
     this.callback = callback;
 }
 
+/**
+ * Allow unknown options on this subcommand and all of its nested subcommands
+ */
 public p CliSubcommand.allowUnknownOptions() {
     this.allowUnknownOptions = true;
     foreach CliSubcommand& subcommand : this.subcommands {
@@ -267,23 +316,56 @@ public p CliSubcommand.allowUnknownOptions() {
     }
 }
 
+/**
+ * Add an alternative name (alias) for the subcommand
+ *
+ * @param subCommand Alias to add
+ */
 public p CliSubcommand.addAlias(string subCommand) {
     this.aliases.pushBack(String(subCommand));
 }
 
+/**
+ * Add an alternative name (alias) for the subcommand
+ *
+ * @param subCommand Alias to add
+ */
 public p CliSubcommand.addAlias(const String& subCommand) {
     this.aliases.pushBack(subCommand);
 }
 
+/**
+ * Register a nested subcommand
+ *
+ * @param name Name of the subcommand
+ * @param description Description of the subcommand
+ * @return Reference to the newly created subcommand
+ */
 public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
     this.subcommands.pushBack(CliSubcommand(this, this.versionString, String(name), String(description)));
     return this.subcommands.back();
 }
 
+/**
+ * Register a nested subcommand
+ *
+ * @param name Name of the subcommand
+ * @param description Description of the subcommand
+ * @return Reference to the newly created subcommand
+ */
 public f<CliSubcommand&> CliSubcommand.addSubcommand(const String& name, const String& description) {
     return this.addSubcommand(name.getRaw(), description.getRaw());
 }
 
+/**
+ * Register a string option on the subcommand. If the name does not start with a dash, the option
+ * is treated as a positional argument.
+ *
+ * @param name Name of the option
+ * @param output Target variable or callback receiving the parsed value
+ * @param description Description of the option
+ * @return Reference to the newly created option
+ */
 #[ignoreUnusedReturnValue]
 public f<CliOption<string>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackString>(StrOrConstStrObjRef name, TargetVarOrCallbackString output, StrOrConstStrObjRef description) {
     this.stringOptions.pushBack(CliOption<string>(name, output, description));
@@ -295,6 +377,15 @@ public f<CliOption<string>&> CliSubcommand.addOption<StrOrConstStrObjRef, Target
     return opt;
 }
 
+/**
+ * Register a String option on the subcommand. If the name does not start with a dash, the option
+ * is treated as a positional argument.
+ *
+ * @param name Name of the option
+ * @param output Target variable or callback receiving the parsed value
+ * @param description Description of the option
+ * @return Reference to the newly created option
+ */
 #[ignoreUnusedReturnValue]
 public f<CliOption<String>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackStringObj>(StrOrConstStrObjRef name, TargetVarOrCallbackStringObj output, StrOrConstStrObjRef description) {
     this.stringObjOptions.pushBack(CliOption<String>(name, output, description));
@@ -306,6 +397,15 @@ public f<CliOption<String>&> CliSubcommand.addOption<StrOrConstStrObjRef, Target
     return opt;
 }
 
+/**
+ * Register an int option on the subcommand. If the name does not start with a dash, the option
+ * is treated as a positional argument.
+ *
+ * @param name Name of the option
+ * @param output Target variable or callback receiving the parsed value
+ * @param description Description of the option
+ * @return Reference to the newly created option
+ */
 #[ignoreUnusedReturnValue]
 public f<CliOption<int>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackInt>(StrOrConstStrObjRef name, TargetVarOrCallbackInt output, StrOrConstStrObjRef description) {
     this.intOptions.pushBack(CliOption<int>(name, output, description));
@@ -317,6 +417,15 @@ public f<CliOption<int>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVar
     return opt;
 }
 
+/**
+ * Register a FilePath option on the subcommand. If the name does not start with a dash, the option
+ * is treated as a positional argument.
+ *
+ * @param name Name of the option
+ * @param output Target variable or callback receiving the parsed value
+ * @param description Description of the option
+ * @return Reference to the newly created option
+ */
 #[ignoreUnusedReturnValue]
 public f<CliOption<FilePath>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVarOrCallbackFilePath>(StrOrConstStrObjRef name, TargetVarOrCallbackFilePath output, StrOrConstStrObjRef description) {
     this.filePathOptions.pushBack(CliOption<FilePath>(name, output, description));
@@ -328,12 +437,23 @@ public f<CliOption<FilePath>&> CliSubcommand.addOption<StrOrConstStrObjRef, Targ
     return opt;
 }
 
+/**
+ * Register a boolean flag on the subcommand
+ *
+ * @param name Name of the flag
+ * @param output Target variable set to true, or callback invoked, when the flag is present
+ * @param description Description of the flag
+ * @return Reference to the newly created flag
+ */
 #[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliSubcommand.addFlag<StrOrConstStrObjRef, TargetVarOrCallbackBool>(StrOrConstStrObjRef name, TargetVarOrCallbackBool output, StrOrConstStrObjRef description) {
     this.boolOptions.pushBack(CliOption<bool>(name, output, description));
     return this.boolOptions.back();
 }
 
+/**
+ * Print the subcommand's name, aliases and description as a single help entry
+ */
 public p CliSubcommand.printHelpItem() {
     // Print name and aliases
     StringStream ss;

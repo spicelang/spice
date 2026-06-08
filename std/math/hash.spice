@@ -6,6 +6,10 @@ type T dyn;                                // Any type
 // Aliases
 public type Hash alias unsigned long;
 
+/**
+ * Interface for types that can produce a hash value of themselves, e.g. for use as keys in hash-based
+ * containers like UnorderedMap and UnorderedSet.
+ */
 public type IHashable interface {
     public f<Hash> hash();
 }

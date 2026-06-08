@@ -298,6 +298,11 @@ public type LinkedListIterator<T> struct : IIterator<T> {
     unsigned long cursor = 0l
 }
 
+/**
+ * Construct a linked list iterator over the given linked list
+ *
+ * @param list Linked list to iterate over
+ */
 public p LinkedListIterator.ctor<T>(LinkedList<T>& list) {
     this.list = list;
 }

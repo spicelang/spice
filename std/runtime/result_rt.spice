@@ -13,10 +13,20 @@ public type Result<T> struct {
     Error error
 }
 
+/**
+ * Construct a successful result holding the given data
+ *
+ * @param data Data value to wrap
+ */
 public p Result.ctor(const T& data) {
     this.data = data;
 }
 
+/**
+ * Construct a failed result holding the given error
+ *
+ * @param error Error to wrap
+ */
 public p Result.ctor(const Error& error) {
     this.error = error;
 }

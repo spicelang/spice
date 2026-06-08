@@ -28,6 +28,11 @@ public type Vector<T> struct : IIterable<T> {
     unsigned long size = 0l // Current number of items
 }
 
+/**
+ * Construct a vector, pre-allocating space for the given number of items
+ *
+ * @param initialCapacity Number of items to pre-allocate space for
+ */
 public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
@@ -39,10 +44,21 @@ public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
     this.capacity = initialCapacity;
 }
 
+/**
+ * Construct a vector, pre-allocating space for the given number of items
+ *
+ * @param initialCapacity Number of items to pre-allocate space for
+ */
 public p Vector.ctor(unsigned int initialCapacity) {
     this.ctor(cast<unsigned long>(initialCapacity));
 }
 
+/**
+ * Construct a vector pre-filled with a number of copies of a default value
+ *
+ * @param initAllocItems Number of items to insert
+ * @param defaultValue Value to fill the vector with
+ */
 public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -55,6 +71,11 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     this.size = initAllocItems;
 }
 
+/**
+ * Construct a vector as a deep copy of another vector
+ *
+ * @param original Vector to copy
+ */
 public p Vector.ctor(const Vector<T>& original) {
     this.ctor(original.capacity);
     const unsigned long itemSize = sizeof<T>();
@@ -64,6 +85,11 @@ public p Vector.ctor(const Vector<T>& original) {
     this.size = original.size;
 }
 
+/**
+ * Copy-assign the contents of another vector into this one
+ *
+ * @param newValue Vector to copy from
+ */
 public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
     assert itemSize > 0l;
@@ -293,6 +319,11 @@ public p Vector.pack() {
     this.resize(this.size);
 }
 
+/**
+ * Check if two vectors are equal, i.e. they have the same size and equal contents
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
@@ -301,6 +332,11 @@ public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
 }
 
+/**
+ * Check if two vectors are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     return !(lhs == rhs);
 }
@@ -330,6 +366,11 @@ public type VectorIterator<T> struct : IIterator<T> {
     unsigned long cursor = 0l
 }
 
+/**
+ * Construct a vector iterator over the given vector
+ *
+ * @param vector Vector to iterate over
+ */
 public p VectorIterator.ctor<T>(Vector<T>& vector) {
     this.vector = vector;
 }
