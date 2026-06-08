@@ -374,28 +374,36 @@ public f<bool> testAstVisitorSmoke() {
 
     // spot-check: all visit methods are present and return an empty Any
     ASTMainFctDefNode mainFct = ASTMainFctDefNode(loc);
-    assert visitor.visitMainFctDef(&mainFct).isEmpty();
+    result = visitor.visitMainFctDef(&mainFct);
+    assert result.isEmpty();
 
     ASTFctDefNode fctDef = ASTFctDefNode(loc);
-    assert visitor.visitFctDef(&fctDef).isEmpty();
+    result = visitor.visitFctDef(&fctDef);
+    assert result.isEmpty();
 
     ASTAssignExprNode assignExpr = ASTAssignExprNode(loc);
-    assert visitor.visitAssignExpr(&assignExpr).isEmpty();
+    result = visitor.visitAssignExpr(&assignExpr);
+    assert result.isEmpty();
 
     ASTConstantNode constNode = ASTConstantNode(loc);
-    assert visitor.visitConstant(&constNode).isEmpty();
+    result = visitor.visitConstant(&constNode);
+    assert result.isEmpty();
 
     ASTLambdaFuncNode lambdaFunc = ASTLambdaFuncNode(loc);
-    assert visitor.visitLambdaFunc(&lambdaFunc).isEmpty();
+    result = visitor.visitLambdaFunc(&lambdaFunc);
+    assert result.isEmpty();
 
     ASTIfStmtNode ifStmt = ASTIfStmtNode(loc);
-    assert visitor.visitIfStmt(&ifStmt).isEmpty();
+    result = visitor.visitIfStmt(&ifStmt);
+    assert result.isEmpty();
 
     ASTQualifierNode qual = ASTQualifierNode(loc);
-    assert visitor.visitQualifier(&qual).isEmpty();
+    result = visitor.visitQualifier(&qual);
+    assert result.isEmpty();
 
     ASTTopLevelDefAttrNode tlAttr = ASTTopLevelDefAttrNode(loc);
-    assert visitor.visitTopLevelDefinitionAttr(&tlAttr).isEmpty();
+    result = visitor.visitTopLevelDefinitionAttr(&tlAttr);
+    assert result.isEmpty();
 
     return true;
 }
