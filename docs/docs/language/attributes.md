@@ -5,7 +5,7 @@ title: Attributes
 Spice offers the option to annotate single function or whole modules via attributes.
 
 !!! note "Optional value for bool attributes"
-For attributes of type bool, the value `true` can be omitted.
+    For attributes of type bool, the value `true` can be omitted.
 
 ## Module attributes
 ```spice
@@ -24,7 +24,7 @@ For attributes of type bool, the value `true` can be omitted.
 
 ## Function attributes
 ```spice
-#[core.compiler.mangleName = false]
+#[core.compiler.mangle = false]
 f<int> test(long input) {
     return input == 0 ? 123 : 456;
 }
@@ -39,7 +39,7 @@ f<int> test(long input) {
 
 ## External declaration attributes
 ```spice
-#[core.compiler.mangleName = false]
+#[core.compiler.mangle = false]
 ext f<heap byte*> malloc(unsigned long);
 
 // ...

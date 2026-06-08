@@ -35,4 +35,6 @@ type Vegetable enum {
 }
 ```
 
-Spice will then assign 0 for `TOMATO` and 1 for `POTATO`.
+For items without an explicit value, Spice assigns the lowest non-negative integer not already taken by any other
+item in the enum. Here `CUCUMBER = 5` and `CARROT = 2` are already claimed, so the compiler assigns `TOMATO = 0`
+and `POTATO = 1`.

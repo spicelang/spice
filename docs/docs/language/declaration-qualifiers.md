@@ -156,7 +156,7 @@ type TestStruct struct {
 
 ## The `compose` qualifier
 
-Includes a struct info the current strut. This is useful for composing structs from other structs.
+Includes a struct into the current struct. This is useful for composing structs from other structs.
 
 *Note: The `compose` qualifier only works for by-value struct types. This is enforced by the compiler.*
 
