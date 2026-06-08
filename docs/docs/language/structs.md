@@ -96,7 +96,7 @@ f<int> main() {
 Multiple structs can be composed; if two composed structs expose the same field name, the compiler will require an
 explicit qualifier to disambiguate.
 
-## Adding behaviour
+## Adding behavior
 
 Structs can be extended with [methods](methods.md), [constructors and destructors](constructors-destructors.md), and
 can implement [interfaces](interfaces.md).
