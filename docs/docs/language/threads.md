@@ -71,6 +71,7 @@ The thread pool can be used like this:
 
 ```spice
 import "std/os/threadpool";
+import "std/time/delay";
 
 f<int> main() {
     ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
