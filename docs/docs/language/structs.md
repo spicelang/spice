@@ -34,3 +34,69 @@ f<int> main() {
 	printf("John's age: %d", john.age);
 }
 ```
+
+## Default field values
+
+Fields can be given default values. A field with a default value does not need to be supplied when instantiating the
+struct without a constructor:
+
+```spice
+type Config struct {
+    int retries = 3
+    bool verbose = false
+    string host = "localhost"
+}
+
+f<int> main() {
+    Config cfg;              // all fields take their defaults
+    cfg.retries = 5;
+    printf("retries: %d\n", cfg.retries);
+}
+```
+
+## Public and private fields
+
+All fields are private by default — they are only accessible within the same source file. Mark individual fields
+`public` to expose them to code that imports the struct:
+
+```spice
+public type Socket struct {
+    public int sock
+    short _errorCode       // private — not accessible from importers
+    public string host
+}
+```
+
+This follows the same [visibility rules](declaration-qualifiers.md) as functions and structs themselves.
+
+## Struct composition
+
+The [`compose` qualifier](declaration-qualifiers.md#the-compose-qualifier) lets you embed one struct inside another
+and access its fields directly on the outer struct, without going through an intermediate field name:
+
+```spice
+type Point struct {
+    int x
+    int y
+}
+
+type ColoredPoint struct {
+    compose Point base
+    int color
+}
+
+f<int> main() {
+    ColoredPoint cp;
+    cp.x = 10;      // accessed directly, no cp.base.x needed
+    cp.y = 20;
+    cp.color = 0xFF0000;
+}
+```
+
+Multiple structs can be composed; if two composed structs expose the same field name, the compiler will require an
+explicit qualifier to disambiguate.
+
+## Adding behaviour
+
+Structs can be extended with [methods](methods.md), [constructors and destructors](constructors-destructors.md), and
+can implement [interfaces](interfaces.md).
