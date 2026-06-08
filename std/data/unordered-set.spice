@@ -19,6 +19,11 @@ public type UnorderedSet<V> struct : IIterable<V> {
     HashTable<V, bool> hashTable
 }
 
+/**
+ * Construct an empty unordered set with the given number of buckets
+ *
+ * @param bucketCount Number of buckets in the underlying hash table
+ */
 public p UnorderedSet.ctor(unsigned long bucketCount = 100l) {
     this.hashTable = HashTable<V, bool>(bucketCount);
 }
@@ -97,6 +102,11 @@ public type UnorderedSetIterator<V> struct : IIterator<const V&> {
     HashTableIterator<V, bool> htIterator
 }
 
+/**
+ * Construct an unordered set iterator over the given unordered set
+ *
+ * @param unorderedSet Unordered set to iterate over
+ */
 public p UnorderedSetIterator.ctor<V>(UnorderedSet<V>& unorderedSet) {
     this.htIterator = unorderedSet.hashTable.getIterator();
 }

@@ -79,10 +79,20 @@ public inline f<bool> Optional.isPresent() {
     return this.isPresent;
 }
 
+/**
+ * Check if two optionals are equal, i.e. they have the same presence and equal payloads
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
     return lhs.isPresent == rhs.isPresent && lhs.data == rhs.data;
 }
 
+/**
+ * Check if two optionals are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
     return !(lhs == rhs);
 }

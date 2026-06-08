@@ -24,6 +24,12 @@ public type Queue<T> struct {
     unsigned long idxBack = 0l  // Index for back access
 }
 
+/**
+ * Construct a queue pre-filled with a number of copies of a default value
+ *
+ * @param initAllocItems Number of items to insert
+ * @param defaultValue Value to fill the queue with
+ */
 public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -37,10 +43,20 @@ public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     this.idxBack = this.capacity == 0l ? 0l : initAllocItems % this.capacity;
 }
 
+/**
+ * Construct a queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Queue.ctor(unsigned int initAllocItems) {
     this.ctor(cast<unsigned long>(initAllocItems));
 }
 
+/**
+ * Construct a queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof<T>();
@@ -51,6 +67,11 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     this.capacity = initAllocItems;
 }
 
+/**
+ * Construct a queue as a deep copy of another queue
+ *
+ * @param original Queue to copy
+ */
 public p Queue.ctor(const Queue<T>& original) {
     this.ctor(original.capacity);
     // Copy elements in logical order, normalizing the layout so idxFront = 0
@@ -65,6 +86,11 @@ public p Queue.ctor(const Queue<T>& original) {
     this.idxBack = this.capacity == 0l ? 0l : original.size % this.capacity;
 }
 
+/**
+ * Copy-assign the contents of another queue into this one
+ *
+ * @param newValue Queue to copy from
+ */
 public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
     // Self-assignment: leave the queue as is; normalizing in place would
     // overwrite source slots before the wrapped index reads them.
@@ -204,6 +230,11 @@ public p Queue.pack() {
     this.resize(this.size);
 }
 
+/**
+ * Check if two queues are equal, i.e. they have the same size and equal contents in order
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
@@ -220,6 +251,11 @@ public f<bool> operator==<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
     return true;
 }
 
+/**
+ * Check if two queues are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
     return !(lhs == rhs);
 }

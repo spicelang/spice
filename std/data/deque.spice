@@ -28,6 +28,12 @@ public type Deque<T> struct {
     long idxBack = 0l           // Index for back access
 }
 
+/**
+ * Construct a deque pre-filled with a number of copies of a default value
+ *
+ * @param initAllocItems Number of items to insert
+ * @param defaultValue Value to fill the deque with
+ */
 public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -40,10 +46,20 @@ public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
     this.size = initAllocItems;
 }
 
+/**
+ * Construct a deque, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Deque.ctor(unsigned int initAllocItems) {
     this.ctor(cast<unsigned long>(initAllocItems));
 }
 
+/**
+ * Construct a deque, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof<T>();
@@ -54,6 +70,11 @@ public p Deque.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     this.capacity = initAllocItems;
 }
 
+/**
+ * Construct a deque as a deep copy of another deque
+ *
+ * @param original Deque to copy
+ */
 public p Deque.ctor(const Deque<T>& original) {
     this.ctor(original.capacity);
     // Copy elements in logical order, normalizing the layout so idxFront = 0
@@ -68,6 +89,11 @@ public p Deque.ctor(const Deque<T>& original) {
     this.idxBack = this.capacity == 0l ? 0l : original.size % this.capacity;
 }
 
+/**
+ * Copy-assign the contents of another deque into this one
+ *
+ * @param newValue Deque to copy from
+ */
 public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
     // Self-assignment: leave the deque as is; normalizing in place would
     // overwrite source slots before the wrapped index reads them.
@@ -251,6 +277,11 @@ public p Deque.pack() {
     this.resize(this.size);
 }
 
+/**
+ * Check if two deques are equal, i.e. they have the same size and equal contents in order
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
@@ -267,6 +298,11 @@ public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     return true;
 }
 
+/**
+ * Check if two deques are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     return !(lhs == rhs);
 }

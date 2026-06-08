@@ -12,6 +12,13 @@ public type Triple<V1, V2, V3> struct {
     V3 third
 }
 
+/**
+ * Construct a triple from three values
+ *
+ * @param first First value
+ * @param second Second value
+ * @param third Third value
+ */
 public inline p Triple.ctor(V1 first, V2 second, V3 third) {
     this.first = first;
     this.second = second;
@@ -72,10 +79,20 @@ public inline p Triple.setThird(V3& third) {
     this.third = third;
 }
 
+/**
+ * Check if two triples are equal, i.e. all three of their values are equal
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<V1, V2, V3>(const Triple<V1, V2, V3>& lhs, const Triple<V1, V2, V3>& rhs) {
     return lhs.first == rhs.first && lhs.second == rhs.second && lhs.third == rhs.third;
 }
 
+/**
+ * Check if two triples are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<V1, V2, V3>(const Triple<V1, V2, V3>& lhs, const Triple<V1, V2, V3>& rhs) {
     return !(lhs == rhs);
 }

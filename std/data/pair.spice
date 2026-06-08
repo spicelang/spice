@@ -10,6 +10,12 @@ public type Pair<V1, V2> struct {
     V2 second
 }
 
+/**
+ * Construct a pair from two values
+ *
+ * @param first First value
+ * @param second Second value
+ */
 public inline p Pair.ctor(V1 first, V2 second) {
     this.first = first;
     this.second = second;
@@ -51,10 +57,20 @@ public inline p Pair.setSecond(const V2& second) {
     this.second = second;
 }
 
+/**
+ * Check if two pairs are equal, i.e. both of their values are equal
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
     return lhs.first == rhs.first && lhs.second == rhs.second;
 }
 
+/**
+ * Check if two pairs are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
     return !(lhs == rhs);
 }

@@ -19,6 +19,11 @@ public type Vertex<T> struct : IHashable {
     T value
 }
 
+/**
+ * Construct a vertex wrapping the given value
+ *
+ * @param value Value to store in the vertex
+ */
 public p Vertex.ctor(const T& value) {
     this.value = value;
 }
@@ -32,10 +37,20 @@ public f<T&> Vertex.getValue() {
     return this.value;
 }
 
+/**
+ * Check if two vertices are equal, i.e. they wrap equal values
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const Vertex<T>& v1, const Vertex<T>& v2) {
     return v1.value == v2.value;
 }
 
+/**
+ * Compute the hash of the vertex, derived from the hash of its wrapped value
+ *
+ * @return Hash of the vertex
+ */
 public f<Hash> Vertex.hash() {
     return hash(this.value);
 }
@@ -59,6 +74,11 @@ public type Graph<T> struct : IIterable<T> {
     bool directed
 }
 
+/**
+ * Construct an empty graph
+ *
+ * @param directed Whether the graph is directed (true) or undirected (false)
+ */
 public p Graph.ctor(bool directed = true) {
     this.directed = directed;
 }
@@ -165,6 +185,12 @@ public type GraphDFSIterator<T> struct : IIterator<Vertex<T>> {
     unsigned long nextVertexIndex = 0ul
 }
 
+/**
+ * Construct a depth-first iterator over the given graph
+ *
+ * @param graph Graph to iterate over
+ * @param startVertex Vertex to start the traversal from, or nil to start at the first vertex
+ */
 public p GraphDFSIterator.ctor<T>(Graph<T>& graph, Vertex<T>* startVertex = nil<Vertex<T>*>) {
     this.graph = graph;
     if startVertex != nil<Vertex<T>*> {
@@ -268,6 +294,12 @@ public type GraphBFSIterator<T> struct : IIterator<Vertex<T>> {
     unsigned long nextVertexIndex = 0ul
 }
 
+/**
+ * Construct a breadth-first iterator over the given graph
+ *
+ * @param graph Graph to iterate over
+ * @param startVertex Vertex to start the traversal from, or nil to start at the first vertex
+ */
 public p GraphBFSIterator.ctor<T>(Graph<T>& graph, Vertex<T>* startVertex = nil<Vertex<T>*>) {
     this.graph = graph;
     if startVertex != nil<Vertex<T>*> {

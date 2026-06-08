@@ -34,11 +34,19 @@ public type Trie struct {
     unsigned long wordCount = 0l
 }
 
+/**
+ * Construct an empty trie
+ */
 public p Trie.ctor() {
     this.root = __new<TrieNode>();
     this.wordCount = 0l;
 }
 
+/**
+ * Construct a trie as a deep copy of another trie
+ *
+ * @param original Trie to copy
+ */
 public p Trie.ctor(const Trie& original) {
     // Deep-copy the other trie so the two instances own independent node trees.
     // A shallow copy would alias `root` and double-free it when both are destructed.
@@ -47,6 +55,11 @@ public p Trie.ctor(const Trie& original) {
     this.copySubtree(this.root, original.root);
 }
 
+/**
+ * Copy-assign another trie into this one, replacing all currently stored words
+ *
+ * @param other Trie to copy from
+ */
 public p operator=(Trie& this, const Trie& other) {
     // Drop the current node tree, then deep-copy the other trie into the fresh root
     this.freeSubtrees(this.root);
@@ -54,6 +67,9 @@ public p operator=(Trie& this, const Trie& other) {
     this.copySubtree(this.root, other.root);
 }
 
+/**
+ * Destruct the trie, freeing all allocated nodes
+ */
 public p Trie.dtor() {
     this.freeSubtrees(this.root);
     sDelete(this.root);

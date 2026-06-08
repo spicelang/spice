@@ -93,6 +93,11 @@ public type SetIterator<V> struct : IIterator<const V&> {
     RedBlackTreeIterator<V, bool> rbtIterator
 }
 
+/**
+ * Construct a set iterator over the given set
+ *
+ * @param set Set to iterate over
+ */
 public p SetIterator.ctor<V>(Set<V>& set) {
     this.rbtIterator = set.tree.getIterator();
 }

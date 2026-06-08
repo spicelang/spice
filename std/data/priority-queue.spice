@@ -24,6 +24,12 @@ public type PriorityQueue<T> struct {
     unsigned long size = 0l // Current number of items
 }
 
+/**
+ * Construct a priority queue pre-filled with a number of copies of a default value
+ *
+ * @param initAllocItems Number of items to insert
+ * @param defaultValue Value to fill the priority queue with
+ */
 public p PriorityQueue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -36,10 +42,20 @@ public p PriorityQueue.ctor(unsigned long initAllocItems, const T& defaultValue)
     this.size = initAllocItems;
 }
 
+/**
+ * Construct a priority queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p PriorityQueue.ctor(unsigned int initAllocItems) {
     this.ctor(cast<unsigned long>(initAllocItems));
 }
 
+/**
+ * Construct a priority queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
 public p PriorityQueue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
@@ -50,6 +66,11 @@ public p PriorityQueue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
     this.capacity = initAllocItems;
 }
 
+/**
+ * Construct a priority queue as a deep copy of another priority queue
+ *
+ * @param original Priority queue to copy
+ */
 public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
     this.ctor(original.capacity);
     // Copying the underlying array verbatim preserves the heap property
@@ -60,6 +81,11 @@ public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
     this.size = original.size;
 }
 
+/**
+ * Copy-assign the contents of another priority queue into this one
+ *
+ * @param newValue Priority queue to copy from
+ */
 public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
@@ -191,6 +217,11 @@ public p PriorityQueue.pack() {
     this.resize(this.size);
 }
 
+/**
+ * Check if two priority queues are equal, i.e. they hold the same items in the same priority order
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
@@ -204,6 +235,11 @@ public f<bool> operator==<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>
     return true;
 }
 
+/**
+ * Check if two priority queues are not equal
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
     return !(lhs == rhs);
 }
