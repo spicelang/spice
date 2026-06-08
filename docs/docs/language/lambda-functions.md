@@ -24,15 +24,15 @@ lambda(5, 3.14);
 
 ```spice
 // Definition
-f<int>(const String&, bool) lambda = f<int>(const String& str, bool b) {
-    if (b) {
-        return str.getLength();
+f<int>(string, bool) lambda = f<int>(string str, bool b) {
+    if b {
+        return cast<int>(str[0]);
     } else {
         return -1;
     }
 };
 // Call
-int result = lambda(String("Hello"), true);
+int result = lambda("Hello", true);
 ```
 
 ### Inline lambdas
