@@ -10,6 +10,11 @@ public type LifetimeObject struct {
     bool dtorCalled = false
 }
 
+/**
+ * Construct a lifetime object, logging the construction to stdout
+ *
+ * @param objectNumber Identifying number of the object, defaults to a global running counter
+ */
 public p LifetimeObject.ctor(int objectNumber = ++OBJECT_COUNTER) {
     if this.ctorCalled {
         printf("-- LifetimeObject %d ctor was called, although the object was already constructed. This indicates a compiler bug. Please report it!\n", this.objectNumber);
@@ -19,6 +24,11 @@ public p LifetimeObject.ctor(int objectNumber = ++OBJECT_COUNTER) {
     printf("-- LifetimeObject %d was created (ctor)\n", this.objectNumber);
 }
 
+/**
+ * Construct a lifetime object as a copy of another one, logging the copy to stdout
+ *
+ * @param other Lifetime object to copy
+ */
 public p LifetimeObject.ctor(const LifetimeObject& other) {
     if this.ctorCalled {
         printf("-- LifetimeObject %d copy ctor was called, although the object was already constructed. This indicates a compiler bug. Please report it!\n", this.objectNumber);
@@ -28,6 +38,9 @@ public p LifetimeObject.ctor(const LifetimeObject& other) {
     printf("-- LifetimeObject %d was copied to LifetimeObject %d (copy ctor)\n", other.objectNumber, this.objectNumber);
 }
 
+/**
+ * Destruct the lifetime object, logging the destruction to stdout
+ */
 public p LifetimeObject.dtor() {
     if this.dtorCalled {
         printf("-- LifetimeObject %d dtor was called again. This indicates a compiler bug. Please report it!\n", this.objectNumber);

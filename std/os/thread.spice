@@ -25,6 +25,11 @@ public type Thread struct {
     Pthread_t threadId = 0l
 }
 
+/**
+ * Construct a thread from a procedure to run
+ *
+ * @param threadRoutine Procedure to execute on the thread
+ */
 public p Thread.ctor(p() threadRoutine) {
     // Wrap the routine in an owning Lambda. This takes ownership of the routine's captures (if any), so a
     // capturing lambda may safely be used as a thread routine even though its captures were created in the
@@ -32,6 +37,11 @@ public p Thread.ctor(p() threadRoutine) {
     this.threadRoutine = Lambda<p()>(threadRoutine);
 }
 
+/**
+ * Construct a thread from a lambda to run
+ *
+ * @param threadRoutine Lambda to execute on the thread
+ */
 public p Thread.ctor(const Lambda<p()>& threadRoutine) {
     this.threadRoutine = threadRoutine;
 }

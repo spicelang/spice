@@ -9,18 +9,38 @@ public type TypeInfo struct {
     string name
 }
 
+/**
+ * Construct a type info holding the given type name
+ *
+ * @param name Name of the type
+ */
 public p TypeInfo.ctor(string name) {
     this.name = name;
 }
 
+/**
+ * Retrieve the name of the type
+ *
+ * @return Name of the type
+ */
 public f<string> TypeInfo.getName() {
     return this.name;
 }
 
+/**
+ * Check if two type infos refer to the same type, i.e. they have the same name
+ *
+ * @return Equal or not equal
+ */
 public f<bool> operator==(const TypeInfo& a, const TypeInfo& b) {
     return a.name == b.name;
 }
 
+/**
+ * Check if two type infos refer to different types
+ *
+ * @return Not equal or equal
+ */
 public f<bool> operator!=(const TypeInfo& a, const TypeInfo& b) {
     return !(a == b);
 }

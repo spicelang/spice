@@ -16,16 +16,23 @@ type SockAddrStorage struct {
     SAFamilyT ssFamily // Address family
 }
 
-// Represents an IPv4 address
+/**
+ * Represents an IPv4 address
+ */
 public type InAddr struct {
     InAddrT addr
 }
 
-// Represents an IPv6 address
+/**
+ * Represents an IPv6 address
+ */
 public type In6Addr struct {
     unsigned byte[16] addr
 }
 
+/**
+ * Socket address for an IPv4 (AF_INET) endpoint
+ */
 public type SockAddrIn struct {
     SAFamilyT    sinFamily // AF_INET
     InAddr       sinAddr   // IPv4 address
@@ -33,6 +40,9 @@ public type SockAddrIn struct {
     unsigned long sinZero  // Padding (this is a byte[8] in the original implementation)
 }
 
+/**
+ * Socket address for an IPv6 (AF_INET6) endpoint
+ */
 public type SockAddrIn6 struct {
     SAFamilyT    sin6Family   // AF_INET6
     InPortT      sin6Port     // Port number
@@ -41,6 +51,9 @@ public type SockAddrIn6 struct {
     unsigned int sin6ScopeId  // Set of interfaces for a scope
 }
 
+/**
+ * Socket address for a Unix domain (AF_UNIX) endpoint
+ */
 public type SockAddrUn struct {
     SAFamilyT sunFamily // Address family
     char[]    sunPath   // Socket pathname
@@ -59,6 +72,9 @@ ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to r
 ext f<InAddrT> inet_addr(string /*cp*/);
 ext f<int> connect(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
 
+/**
+ * A network socket, wrapping the listening socket file descriptor and the current connection
+ */
 public type Socket struct {
     int sockFd // Actual socket
     int connFd // Current connection

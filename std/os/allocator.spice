@@ -27,11 +27,17 @@ type Region struct {
     UInt32 count
 }
 
+/**
+ * Summary of the allocator's free storage at a glance
+ */
 public type StorageReport struct {
     UInt32 totalFreeSpace
     UInt32 largestFreeRegion
 }
 
+/**
+ * Detailed report of the allocator's free storage, broken down per leaf bin
+ */
 public type StorageReportFull struct {
     UInt32[NUM_LEAF_BINS] freeRegions
 }
@@ -45,6 +51,11 @@ type Node struct {
     bool used
 }
 
+/**
+ * An offset allocator that hands out regions from a fixed-size storage area using binned free lists.
+ * It manages offsets into an external storage block rather than memory itself, which makes it useful
+ * for sub-allocating GPU buffers or other contiguous resources.
+ */
 public type Allocator struct {
     UInt32 size
     UInt32 freeStorage
@@ -55,26 +66,56 @@ public type Allocator struct {
     UInt32 freeOffset
 }
 
+/**
+ * Construct an allocator managing a storage area of the given size
+ *
+ * @param size Total size of the managed storage area
+ * @param maxAllocas Maximum number of concurrent allocations to support
+ */
 public p Allocator.ctor(UInt32 size, UInt32 maxAllocas = 128 * 1024) {
     // ToDo
 }
 
+/**
+ * Destruct the allocator, releasing its internal bookkeeping storage
+ */
 public p Allocator.dtor() {
     // ToDo
 }
 
+/**
+ * Allocate a region of the given size from the storage area
+ *
+ * @param size Size of the region to allocate
+ * @return Allocation describing the reserved region
+ */
 public f<Allocation> Allocator.allocate(UInt32 size) {
     // ToDo
 }
 
+/**
+ * Return a previously allocated region to the allocator
+ *
+ * @param allocation Allocation to free
+ */
 public p Allocator.free(Allocation allocation) {
     // ToDo
 }
 
+/**
+ * Produce a summary report of the allocator's free storage
+ *
+ * @return Storage report with total free space and largest free region
+ */
 public const f<StorageReport> getStorageReport() {
     // ToDo
 }
 
+/**
+ * Produce a detailed report of the allocator's free storage, broken down per leaf bin
+ *
+ * @return Full storage report
+ */
 public const f<StorageReportFull> getStorageReportFull() {
     // ToDo
 }

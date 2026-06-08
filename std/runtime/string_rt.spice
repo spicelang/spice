@@ -31,6 +31,11 @@ type StrTy        String|string;
 type RawStrChar   string|char;
 type StrTyChar    String|string|char;
 
+/**
+ * Construct a String from a raw string value
+ *
+ * @param value Initial raw string value
+ */
 public p String.ctor(const string value = "") {
     this.length = getRawLength(value);
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
@@ -45,6 +50,11 @@ public p String.ctor(const string value = "") {
     }
 }
 
+/**
+ * Construct a String holding a single character
+ *
+ * @param value Initial character
+ */
 public p String.ctor(const char value) {
     this.length = 1l;
     this.capacity = INITIAL_ALLOC_COUNT;
@@ -61,6 +71,11 @@ public p String.ctor(const char value) {
     }
 }
 
+/**
+ * Construct a String as a deep copy of another String
+ *
+ * @param original String to copy
+ */
 public p String.ctor(const String& original) {
     this.length = original.length;
     this.capacity = original.capacity;
@@ -76,6 +91,11 @@ public p String.ctor(const String& original) {
     }
 }
 
+/**
+ * Copy-assign the contents of another String into this one
+ *
+ * @param newValue String to copy from
+ */
 public p operator=(String& this, const String& newValue) {
     this.length = newValue.length;
     this.capacity = newValue.capacity;
@@ -91,6 +111,11 @@ public p operator=(String& this, const String& newValue) {
     }
 }
 
+/**
+ * Construct a String pre-allocating space for the given number of characters
+ *
+ * @param initialSize Number of characters to pre-allocate space for
+ */
 public p String.ctor<IntLong>(IntLong initialSize) {
     this.length = cast<unsigned long>(initialSize);
     this.capacity = initialSize > INITIAL_ALLOC_COUNT ? cast<unsigned long>(initialSize * RESIZE_FACTOR) : INITIAL_ALLOC_COUNT;
@@ -106,6 +131,9 @@ public p String.ctor<IntLong>(IntLong initialSize) {
     }
 }
 
+/**
+ * Destruct the String, freeing its heap-allocated character buffer
+ */
 public p String.dtor() {
     free(this.contents);
     this.contents = nil<heap char*>;
@@ -177,6 +205,12 @@ p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLeng
     }
 }
 
+/**
+ * Insert a raw string into the string at the given position
+ *
+ * @param position Position to insert at
+ * @param str Raw string to insert
+ */
 public p String.insert<IntLong>(unsigned IntLong position, string str) {
     const unsigned long strLength = len(str);
     this.prepareInsert(position, strLength);
@@ -187,10 +221,22 @@ public p String.insert<IntLong>(unsigned IntLong position, string str) {
     }
 }
 
+/**
+ * Insert a String into the string at the given position
+ *
+ * @param position Position to insert at
+ * @param str String to insert
+ */
 public p String.insert<IntLong>(unsigned IntLong position, const String& str) {
     this.insert(position, str.getRaw());
 }
 
+/**
+ * Insert a single character into the string at the given position
+ *
+ * @param position Position to insert at
+ * @param c Character to insert
+ */
 public p String.insert<IntLong>(unsigned IntLong position, char c) {
     this.prepareInsert(position, 1l);
     unsafe {
@@ -305,10 +351,24 @@ public f<bool> operator==(const String& a, const String& b) {
     return true;
 }
 
+/**
+ * Checks if a String and a raw string have the same value
+ *
+ * @param a First input string
+ * @param b Second input string
+ * @return Equal or not
+ */
 public f<bool> operator==(const String& a, string b) {
     return isRawEqual(a.getRaw(), b);
 }
 
+/**
+ * Checks if a raw string and a String have the same value
+ *
+ * @param a First input string
+ * @param b Second input string
+ * @return Equal or not
+ */
 public f<bool> operator==(string a, const String& b) {
     return isRawEqual(a, b.getRaw());
 }
@@ -324,10 +384,24 @@ public f<bool> operator!=(const String& a, const String& b) {
     return !(a == b);
 }
 
+/**
+ * Checks if a String and a raw string do not have the same value
+ *
+ * @param a First input string
+ * @param b Second input string
+ * @return Not equal or not
+ */
 public f<bool> operator!=(const String& a, const string& b) {
     return !(a == b);
 }
 
+/**
+ * Checks if a raw string and a String do not have the same value
+ *
+ * @param a First input string
+ * @param b Second input string
+ * @return Not equal or not
+ */
 public f<bool> operator!=(const string& a, const String& b) {
     return !(a == b);
 }
@@ -347,6 +421,12 @@ public f<char&> operator[](String& str, unsigned long idx) {
     }
 }
 
+/**
+ * Extract the char at the given index and return it
+ *
+ * @param str Input string
+ * @return Character at the given index
+ */
 public f<char&> operator[](String& str, unsigned int idx) {
     return str[cast<unsigned long>(idx)];
 }
@@ -637,6 +717,13 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
 }
 
 #[ignoreUnusedReturnValue]
+/**
+ * Replaces all occurrences of a character with another character
+ *
+ * @param needle Character to search for
+ * @param replacement Character to replace each occurrence with
+ * @return Number of replacements made
+ */
 public f<unsigned long> String.replaceAll(char needle, char replacement) {
     const String needleStr = String(needle);
     const String replacementStr = String(replacement);

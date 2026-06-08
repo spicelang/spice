@@ -3,29 +3,57 @@ import "std/os/mutex";
 // Generic type defs
 type T dyn;
 
+/**
+ * A wrapper that guards a value of arbitrary type with a mutex, so it can be read and updated safely
+ * from multiple threads.
+ */
 public type Atomic<T> struct {
     T value
     Mutex mutex
 }
 
+/**
+ * Construct an atomic initialized with the zero value of its type
+ */
 public p Atomic.ctor() {
     this.value = cast<T>(0);
 }
 
+/**
+ * Construct an atomic initialized with the given value
+ *
+ * @param value Initial value
+ */
 public p Atomic.ctor(T value) {
     this.value = value;
 }
 
+/**
+ * Atomically store a new value
+ *
+ * @param value Value to store
+ */
 public p Atomic.store(const T& value) {
     LockGuard _ = LockGuard(this.mutex);
     this.value = value;
 }
 
+/**
+ * Atomically load the current value
+ *
+ * @return Reference to the current value
+ */
 public const f<const T&> Atomic.load() {
     LockGuard _ = LockGuard(this.mutex);
     return this.value;
 }
 
+/**
+ * Atomically replace the value and return the previous one
+ *
+ * @param value New value to store
+ * @return Previous value
+ */
 public f<T> Atomic.exchange(const T& value) {
     LockGuard _ = LockGuard(this.mutex);
     T old = this.value;
@@ -33,6 +61,13 @@ public f<T> Atomic.exchange(const T& value) {
     return old;
 }
 
+/**
+ * Atomically set the value to `desired` only if it currently equals `expected`
+ *
+ * @param expected Value the atomic is compared against
+ * @param desired Value to store if the comparison succeeds
+ * @return true if the value was exchanged, false otherwise
+ */
 public f<bool> Atomic.compareExchange(const T& expected, const T& desired) {
     LockGuard _ = LockGuard(this.mutex);
     result = this.value == expected;
