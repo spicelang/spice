@@ -44,7 +44,7 @@ public type IAbstractAstVisitor interface {
     f<Any> visitQualifierLst(ASTQualifierLstNode*);
     f<Any> visitQualifier(ASTQualifierNode*);
     f<Any> visitModAttr(ASTModAttrNode*);
-    f<Any> visitTopLevelDefinitionAttr(ASTTopLevelDefinitionAttrNode*);
+    f<Any> visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode*);
     f<Any> visitLambdaAttr(ASTLambdaAttrNode*);
     f<Any> visitAttrLst(ASTAttrLstNode*);
     f<Any> visitAttr(ASTAttrNode*);
