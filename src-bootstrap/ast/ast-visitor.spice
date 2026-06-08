@@ -12,7 +12,7 @@ import "bootstrap/reader/code-loc";
  * vector.  Because the bootstrap nodes do not yet carry an accept() dispatch
  * method (the circular-import guard is still in place in ast-nodes.spice),
  * visitChildren cannot call the typed visitXxx methods on children; it only
- * recurses structurally.  Concrete passes that need type-specific behaviour
+ * recurses structurally.  Concrete passes that need type-specific behavior
  * should override the methods they care about and drive their own child
  * traversal explicitly.
  */
