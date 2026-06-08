@@ -9,6 +9,9 @@ import "std/data/pair";
 type K dyn;
 type V dyn;
 
+/**
+ * A single key-value entry stored within a hash table bucket
+ */
 type HashEntry<K, V> struct {
     K key
     V value
@@ -19,6 +22,19 @@ public p HashEntry.ctor(const HashEntry<K, V>& original) {
     this.value = original.value;
 }
 
+/**
+ * A hash table in Spice is a commonly used data structure, which stores key-value pairs and allows
+ * fast access to a value by its key. Collisions are resolved via separate chaining, where each
+ * bucket holds a linked list of entries that hash to the same index.
+ *
+ * Time complexity:
+ * Insert: O(1) (average case), O(n) (worst case)
+ * Delete: O(1) (average case), O(n) (worst case)
+ * Lookup: O(1) (average case), O(n) (worst case)
+ *
+ * The average case assumes a good hash distribution. In the worst case, all keys hash to the same
+ * bucket, degrading every operation to a linear scan of that bucket.
+ */
 public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
     Vector<LinkedList<HashEntry<K, V>>> buckets
 }

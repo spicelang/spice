@@ -15,18 +15,38 @@ public inline p Pair.ctor(V1 first, V2 second) {
     this.second = second;
 }
 
+/**
+ * Retrieve the first value of the pair
+ *
+ * @return Reference to the first value
+ */
 public inline f<V1&> Pair.getFirst() {
     return this.first;
 }
 
+/**
+ * Retrieve the second value of the pair
+ *
+ * @return Reference to the second value
+ */
 public inline f<V2&> Pair.getSecond() {
     return this.second;
 }
 
+/**
+ * Set the first value of the pair
+ *
+ * @param first New first value
+ */
 public inline p Pair.setFirst(const V1& first) {
     this.first = first;
 }
 
+/**
+ * Set the second value of the pair
+ *
+ * @param second New second value
+ */
 public inline p Pair.setSecond(const V2& second) {
     this.second = second;
 }

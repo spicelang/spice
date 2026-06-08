@@ -12,6 +12,9 @@ import "std/iterator/iterator";
 // Generic types
 type T dyn;
 
+/**
+ * A vertex (or node) of a graph, wrapping a single value of arbitrary type
+ */
 public type Vertex<T> struct : IHashable {
     T value
 }
@@ -20,6 +23,11 @@ public p Vertex.ctor(const T& value) {
     this.value = value;
 }
 
+/**
+ * Retrieve the value stored in the vertex
+ *
+ * @return Reference to the stored value
+ */
 public f<T&> Vertex.getValue() {
     return this.value;
 }
@@ -33,9 +41,17 @@ public f<Hash> Vertex.hash() {
 }
 
 /**
- * Graph data structure
+ * A graph in Spice is a data structure consisting of a set of vertices and a set of edges connecting
+ * them. It is stored as an adjacency list, mapping each vertex to the list of its neighbours. The
+ * graph can be either directed or undirected, which is decided at construction time.
  *
- * ToDo: Add time complexities for common operations
+ * Time complexity (V = number of vertices, E = number of edges):
+ * Add vertex:           O(1) (average case)
+ * Add edge:             O(1) (average case)
+ * Traversal (DFS/BFS):  O(V + E)
+ *
+ * The average case for adding vertices and edges assumes a good hash distribution in the underlying
+ * unordered map. In the worst case, hash collisions degrade these operations to O(V).
  */
 public type Graph<T> struct : IIterable<T> {
     Vector<Vertex<T>> vertices
@@ -47,6 +63,12 @@ public p Graph.ctor(bool directed = true) {
     this.directed = directed;
 }
 
+/**
+ * Add a new vertex with the given value to the graph
+ *
+ * @param value The value to store in the new vertex
+ * @return Reference to the newly added vertex
+ */
 public f<Vertex<T>&> Graph.addVertex(const T& value) {
     this.vertices.pushBack(Vertex<T>(value));
     Vertex<T>& vertex = this.vertices.back();
@@ -54,6 +76,13 @@ public f<Vertex<T>&> Graph.addVertex(const T& value) {
     return vertex;
 }
 
+/**
+ * Add an edge between two vertices that are already part of the graph.
+ * For undirected graphs the caller is responsible for adding the reverse edge as well.
+ *
+ * @param from The source vertex of the edge
+ * @param to The destination vertex of the edge
+ */
 public p Graph.addEdge(const Vertex<T>& from, const Vertex<T>& to) {
     if !this.adjList.contains(from) || !this.adjList.contains(to) {
         panic(Error("Graph must already contain both given vertices"));
@@ -71,18 +100,38 @@ const f<bool> Graph.hasCyclesUndirected() {
     return false;
 }
 
+/**
+ * Check whether the graph contains at least one cycle
+ *
+ * @return true if the graph contains a cycle, false otherwise
+ */
 public const f<bool> Graph.hasCycles() {
     return this.directed ? this.hasCyclesDirected() : this.hasCyclesUndirected();
 }
 
+/**
+ * Check whether the graph is directed
+ *
+ * @return true if the graph is directed, false if it is undirected
+ */
 public const f<bool> Graph.isDirected() {
     return this.directed;
 }
 
+/**
+ * Check whether the graph is a directed acyclic graph (DAG)
+ *
+ * @return true if the graph is directed and contains no cycles, false otherwise
+ */
 public const f<bool> Graph.isDAG() {
     return this.directed && !this.hasCycles();
 }
 
+/**
+ * Serialize the graph to the Graphviz DOT format and write it into the given string stream
+ *
+ * @param ss The string stream to write the DOT representation to
+ */
 public const p Graph.toGraphviz(StringStream& ss) {
     const string graphType = this.directed ? "digraph" : "graph";
     const string edgeSep = this.directed ? "->" : "--";

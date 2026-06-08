@@ -18,26 +18,56 @@ public inline p Triple.ctor(V1 first, V2 second, V3 third) {
     this.third = third;
 }
 
+/**
+ * Retrieve the first value of the triple
+ *
+ * @return Reference to the first value
+ */
 public inline f<V1&> Triple.getFirst() {
     return this.first;
 }
 
+/**
+ * Retrieve the second value of the triple
+ *
+ * @return Reference to the second value
+ */
 public inline f<V2&> Triple.getSecond() {
     return this.second;
 }
 
+/**
+ * Retrieve the third value of the triple
+ *
+ * @return Reference to the third value
+ */
 public inline f<V3&> Triple.getThird() {
     return this.third;
 }
 
+/**
+ * Set the first value of the triple
+ *
+ * @param first New first value
+ */
 public inline p Triple.setFirst(V1& first) {
     this.first = first;
 }
 
+/**
+ * Set the second value of the triple
+ *
+ * @param second New second value
+ */
 public inline p Triple.setSecond(V2& second) {
     this.second = second;
 }
 
+/**
+ * Set the third value of the triple
+ *
+ * @param third New third value
+ */
 public inline p Triple.setThird(V3& third) {
     this.third = third;
 }
