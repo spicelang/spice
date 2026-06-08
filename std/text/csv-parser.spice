@@ -16,6 +16,12 @@ public type CsvParser struct {
     char quote
 }
 
+/**
+ * Construct a CSV parser with the given control characters
+ *
+ * @param delimiter Field delimiter character
+ * @param quote Quote character used to wrap fields
+ */
 public p CsvParser.ctor(char delimiter = DEFAULT_DELIMITER, char quote = DEFAULT_QUOTE) {
     this.delimiter = delimiter;
     this.quote = quote;

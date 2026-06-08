@@ -33,21 +33,49 @@ public type XmlNode struct {
     Vector<XmlNode*> children
 }
 
+/**
+ * Construct an empty XML element node
+ */
 public p XmlNode.ctor() {
     this.kind = XmlNodeKind::XML_ELEMENT;
 }
 
 // --- Kind inspection -------------------------------------------------------
 
+/**
+ * Retrieve the kind of the XML node
+ *
+ * @return Kind of the node
+ */
 public f<XmlNodeKind> XmlNode.getKind() { return this.kind; }
+/**
+ * Check whether the node is an element node
+ *
+ * @return true if the node is an element, false otherwise
+ */
 public f<bool> XmlNode.isElement() { return this.kind == XmlNodeKind::XML_ELEMENT; }
+/**
+ * Check whether the node is a text node
+ *
+ * @return true if the node is text, false otherwise
+ */
 public f<bool> XmlNode.isText()    { return this.kind == XmlNodeKind::XML_TEXT; }
 
+/**
+ * Retrieve the tag name of the element. Panics if the node is not an element.
+ *
+ * @return Tag name
+ */
 public f<const String&> XmlNode.getName() {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
     return this.name;
 }
 
+/**
+ * Retrieve the character data of the text node. Panics if the node is not a text node.
+ *
+ * @return Text content
+ */
 public f<const String&> XmlNode.getText() {
     assert this.kind == XmlNodeKind::XML_TEXT;
     return this.textValue;
@@ -55,11 +83,22 @@ public f<const String&> XmlNode.getText() {
 
 // --- Attribute operations --------------------------------------------------
 
+/**
+ * Retrieve the number of attributes on the element. Panics if the node is not an element.
+ *
+ * @return Number of attributes
+ */
 public f<unsigned long> XmlNode.getAttributeCount() {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
     return this.attributeKeys.getSize();
 }
 
+/**
+ * Check whether the element has an attribute with the given name
+ *
+ * @param name Attribute name to look for
+ * @return true if the attribute exists, false otherwise
+ */
 public f<bool> XmlNode.hasAttribute(string name) {
     if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
     const String nameStr = String(name);
@@ -69,6 +108,13 @@ public f<bool> XmlNode.hasAttribute(string name) {
     return false;
 }
 
+/**
+ * Retrieve the value of the attribute with the given name. Panics if the node is not an element
+ * or the attribute does not exist.
+ *
+ * @param name Attribute name to look up
+ * @return Attribute value
+ */
 public f<const String&> XmlNode.getAttribute(string name) {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
     const String nameStr = String(name);
@@ -82,16 +128,33 @@ public f<const String&> XmlNode.getAttribute(string name) {
 
 // --- Child operations ------------------------------------------------------
 
+/**
+ * Retrieve the number of child nodes. Panics if the node is not an element.
+ *
+ * @return Number of child nodes
+ */
 public f<unsigned long> XmlNode.getChildCount() {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
     return this.children.getSize();
 }
 
+/**
+ * Retrieve the child node at the given index. Panics if the node is not an element.
+ *
+ * @param idx Index of the child
+ * @return Pointer to the child node
+ */
 public f<XmlNode*> XmlNode.getChild(unsigned long idx) {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
     return this.children.get(idx);
 }
 
+/**
+ * Retrieve the child node at the given index. Panics if the node is not an element.
+ *
+ * @param idx Index of the child
+ * @return Pointer to the child node
+ */
 public f<XmlNode*> XmlNode.getChild(unsigned int idx) {
     return this.getChild(cast<unsigned long>(idx));
 }
@@ -112,6 +175,12 @@ public f<XmlNode*> XmlNode.findChild(string name) {
     return nil<XmlNode*>;
 }
 
+/**
+ * Check whether the element has a direct child element with the given tag name
+ *
+ * @param name Tag name to look for
+ * @return true if such a child exists, false otherwise
+ */
 public f<bool> XmlNode.hasChild(string name) {
     return this.findChild(name) != nil<XmlNode*>;
 }
@@ -145,12 +214,22 @@ public type XmlParser struct {
     bool hasError
 }
 
+/**
+ * Construct an XML parser over the given input string
+ *
+ * @param input XML text to parse
+ */
 public p XmlParser.ctor(const String& input) {
     this.input = input;
     this.pos = 0l;
     this.hasError = false;
 }
 
+/**
+ * Parse the input string into an XML node tree
+ *
+ * @return Result holding the root XML node, or an error if the input is malformed
+ */
 public f<Result<XmlNode*>> XmlParser.parse() {
     this.skipProlog();
     if this.hasError {
