@@ -42,7 +42,7 @@ public f<Hash> Vertex.hash() {
 
 /**
  * A graph in Spice is a data structure consisting of a set of vertices and a set of edges connecting
- * them. It is stored as an adjacency list, mapping each vertex to the list of its neighbours. The
+ * them. It is stored as an adjacency list, mapping each vertex to the list of its neighbors. The
  * graph can be either directed or undirected, which is decided at construction time.
  *
  * Time complexity (V = number of vertices, E = number of edges):
