@@ -242,6 +242,11 @@ jobs:
             ..
           cmake --build . --target spicetest
 
+      - name: Build spice compiler
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: cmake --build ./build --target spice
+
       - name: Run Test target
         working-directory: build/test
         env:
@@ -251,6 +256,40 @@ jobs:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: ./spicetest --is-github-actions
+
+      - name: Dump IR for failing test (AArch64 diagnostic)
+        if: failure()
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+        run: |
+          mkdir -p /tmp/aarch64-diag
+          # Dump unoptimized IR to reveal what the Spice compiler generates for the failing test
+          build/src/spice build --dump-ir \
+            test/test-files/std/io/cli-parser-positional/source.spice \
+            -o /tmp/aarch64-diag/cli-parser-positional \
+            > /tmp/aarch64-diag/ir.txt 2>&1 || true
+          # Also dump AArch64 assembly (via LLVM llc if present, otherwise via spice -s)
+          build/src/spice build -s \
+            test/test-files/std/io/cli-parser-positional/source.spice \
+            -o /tmp/aarch64-diag/cli-parser-positional \
+            >> /tmp/aarch64-diag/ir.txt 2>&1 || true
+          # Run the binary standalone with its CLI flags to reproduce the panic
+          build/src/spice build \
+            test/test-files/std/io/cli-parser-positional/source.spice \
+            -o /tmp/aarch64-diag/cli-parser-positional 2>&1 || true
+          /tmp/aarch64-diag/cli-parser-positional \
+            $(cat test/test-files/std/io/cli-parser-positional/cli-flags.txt) \
+            > /tmp/aarch64-diag/runtime-output.txt 2>&1 || true
+          echo "=== runtime output ===" && cat /tmp/aarch64-diag/runtime-output.txt
+          echo "=== IR (tail 200) ===" && tail -200 /tmp/aarch64-diag/ir.txt
+
+      - name: Upload AArch64 diagnostic artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aarch64-diag-${{ github.sha }}
+          path: /tmp/aarch64-diag/
+          retention-days: 7
 
   build-windows-x86:
     name: C++ CI - Windows/x86_64

@@ -30,7 +30,10 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
   */
 public f<heap byte*> sAllocUnsafe(unsigned long size) {
     heap byte* ptr = malloc(size);
-    if ptr == nil<heap byte*> { panic(Error("OOM occurred in sAllocUnsafe!")); }
+    if ptr == nil<heap byte*> {
+        printf("[sAllocUnsafe] malloc(%lu) returned null - size was 0x%lx\n", size, size);
+        panic(Error("OOM occurred in sAllocUnsafe!"));
+    }
     return ptr;
 }
 
