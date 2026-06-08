@@ -11,18 +11,36 @@ public type FilePath struct {
     String path
 }
 
+/**
+ * Construct an empty file path
+ */
 public p FilePath.ctor() {
     this.path = String();
 }
 
+/**
+ * Construct a file path from a raw string
+ *
+ * @param pathStr Path string
+ */
 public p FilePath.ctor(string pathStr) {
     this.path = String(pathStr);
 }
 
+/**
+ * Construct a file path from a String
+ *
+ * @param pathStr Path string
+ */
 public p FilePath.ctor(const String& pathStr) {
     this.path = pathStr;
 }
 
+/**
+ * Replace every path separator in the path with the given one
+ *
+ * @param separator Separator to use
+ */
 public p FilePath.replaceSeparator(char separator) {
     if separator != PATH_SEPARATOR_UNIX {
         this.path.replaceAll(PATH_SEPARATOR_UNIX, separator);
@@ -32,10 +50,16 @@ public p FilePath.replaceSeparator(char separator) {
     }
 }
 
+/**
+ * Convert the path to use the generic (UNIX) path separator
+ */
 public inline p FilePath.makeGeneric() {
     this.replaceSeparator(PATH_SEPARATOR_UNIX);
 }
 
+/**
+ * Convert the path to use the native path separator of the current platform
+ */
 public inline p FilePath.makeNative() {
     this.replaceSeparator(PATH_SEPARATOR);
 }
@@ -149,14 +173,29 @@ public inline p FilePath.replaceExtension(string newExtension) {
     this.path.replace(oldExtension.getRaw(), newExtension, startIdx);
 }
 
+/**
+ * Check if two file paths are equal
+ *
+ * @return Equal or not equal
+ */
 public inline f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {
     return lhs.path == rhs.path;
 }
 
+/**
+ * Check if two file paths are not equal
+ *
+ * @return Not equal or equal
+ */
 public inline f<bool> operator!=(const FilePath& lhs, const FilePath& rhs) {
     return lhs.path != rhs.path;
 }
 
+/**
+ * Append a path component to the path, inserting a separator if needed
+ *
+ * @param rhs Path component to append
+ */
 public p operator/=(FilePath& lhs, string rhs) {
     if lhs.path.isEmpty() || rhs[len(rhs) - 1] == PATH_SEPARATOR {
         lhs.path += rhs;
@@ -166,24 +205,49 @@ public p operator/=(FilePath& lhs, string rhs) {
     }
 }
 
+/**
+ * Append a path component to the path, inserting a separator if needed
+ *
+ * @param rhs Path component to append
+ */
 public inline p operator/=(FilePath& lhs, const String& rhs) {
     lhs /= rhs.getRaw();
 }
 
+/**
+ * Append a path component to the path, inserting a separator if needed
+ *
+ * @param rhs Path component to append
+ */
 public inline p operator/=(FilePath& lhs, const FilePath& rhs) {
     lhs /= rhs.path.getRaw();
 }
 
+/**
+ * Join a path and a path component into a new file path, inserting a separator if needed
+ *
+ * @return New joined file path
+ */
 public inline f<FilePath> operator/(const FilePath& lhs, string rhs) {
     result = FilePath(lhs);
     result /= rhs;
 }
 
+/**
+ * Join a path and a path component into a new file path, inserting a separator if needed
+ *
+ * @return New joined file path
+ */
 public inline f<FilePath> operator/(const FilePath& lhs, const String& rhs) {
     result = FilePath(lhs);
     result /= rhs.getRaw();
 }
 
+/**
+ * Join two file paths into a new file path, inserting a separator if needed
+ *
+ * @return New joined file path
+ */
 public inline f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
     result = FilePath(lhs);
     result /= rhs.path.getRaw();

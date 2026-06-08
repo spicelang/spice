@@ -13,6 +13,10 @@ type CliOptionMode enum {
     CALL_CALLBACK
 }
 
+/**
+ * A single command line option of a CLI parser. An option either writes the parsed value into a
+ * target variable or invokes a callback with it, depending on the mode it was constructed with.
+ */
 public type CliOption<T> struct {
     String name
     String description
@@ -22,6 +26,13 @@ public type CliOption<T> struct {
     p(const T&) callback
 }
 
+/**
+ * Construct a CLI option that writes the parsed value into a target variable
+ *
+ * @param name Primary name of the option (e.g. "--output")
+ * @param targetVariable Variable the parsed value is written to
+ * @param description Help text describing the option
+ */
 public p CliOption.ctor(string name, T& targetVariable, string description) {
     this.name = String(name);
     this.description = String(description);
@@ -29,10 +40,24 @@ public p CliOption.ctor(string name, T& targetVariable, string description) {
     this.targetVariable = targetVariable;
 }
 
+/**
+ * Construct a CLI option that writes the parsed value into a target variable
+ *
+ * @param name Primary name of the option (e.g. "--output")
+ * @param targetVariable Variable the parsed value is written to
+ * @param description Help text describing the option
+ */
 public p CliOption.ctor(const String& name, T& targetVariable, const String& description) {
     this.ctor(name.getRaw(), targetVariable, description.getRaw());
 }
 
+/**
+ * Construct a CLI option that invokes a callback with the parsed value
+ *
+ * @param name Primary name of the option (e.g. "--output")
+ * @param callback Callback to invoke with the parsed value
+ * @param description Help text describing the option
+ */
 public p CliOption.ctor(string name, p(const T&) callback, string description) {
     this.name = String(name);
     this.description = String(description);
@@ -40,36 +65,78 @@ public p CliOption.ctor(string name, p(const T&) callback, string description) {
     this.callback = callback;
 }
 
+/**
+ * Construct a CLI option that invokes a callback with the parsed value
+ *
+ * @param name Primary name of the option (e.g. "--output")
+ * @param callback Callback to invoke with the parsed value
+ * @param description Help text describing the option
+ */
 public p CliOption.ctor(const String& name, p(const T&) callback, const String& description) {
     this.ctor(name.getRaw(), callback, description.getRaw());
 }
 
+/**
+ * Retrieve the primary name of the option
+ *
+ * @return Name of the option
+ */
 public const f<const String&> CliOption.getName() {
     return this.name;
 }
 
+/**
+ * Retrieve the help text describing the option
+ *
+ * @return Description of the option
+ */
 public const f<const String&> CliOption.getDescription() {
     return this.description;
 }
 
+/**
+ * Add an alternative name (alias) for the option
+ *
+ * @param optionName Alias to add
+ */
 public p CliOption.addAlias(string optionName) {
     this.aliases.pushBack(String(optionName));
 }
 
+/**
+ * Add an alternative name (alias) for the option
+ *
+ * @param optionName Alias to add
+ */
 public p CliOption.addAlias(const String& optionName) {
     this.aliases.pushBack(optionName);
 }
 
+/**
+ * Retrieve the list of aliases registered for the option
+ *
+ * @return Aliases of the option
+ */
 public const f<const Vector<String>&> CliOption.getAliases() {
     return this.aliases;
 }
 
+/**
+ * Write the given value into the option's target variable, if it is in set-value mode
+ *
+ * @param value Value to write
+ */
 public p CliOption.setTargetValue(T& value) {
     if this.mode == CliOptionMode::SET_VALUE {
         this.targetVariable = value;
     }
 }
 
+/**
+ * Invoke the option's callback with the given value, if it is in call-callback mode
+ *
+ * @param value Value to pass to the callback
+ */
 public p CliOption.callCallback(const T& value) {
     if this.mode == CliOptionMode::CALL_CALLBACK {
         p(const T&) cb = this.callback;
@@ -77,6 +144,11 @@ public p CliOption.callCallback(const T& value) {
     }
 }
 
+/**
+ * Check whether the option is positional, i.e. neither its name nor any alias starts with a dash
+ *
+ * @return true if the option is positional, false otherwise
+ */
 public const f<bool> CliOption.isPositional() {
     if this.name.startsWith("-") {
         return false;
@@ -89,6 +161,9 @@ public const f<bool> CliOption.isPositional() {
     return true;
 }
 
+/**
+ * Print the option's name, aliases and description as a single help entry
+ */
 public p CliOption.printHelpItem() {
     // Print name and aliases
     StringStream ss;

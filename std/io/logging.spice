@@ -1,21 +1,39 @@
 import "std/io/file";
 import "std/io/filepath";
 
+/**
+ * A log file that writes timestamped log messages to a file on disk and, optionally, also mirrors
+ * them to the console.
+ */
 public type LogFile struct {
     File fileHandle
     bool onlyToFile
 }
 
+/**
+ * Construct a log file, opening the file at the given path in append mode
+ *
+ * @param filePath Path to the log file
+ * @param onlyToFile If true, messages are only written to the file and not also to the console
+ */
 public p LogFile.ctor(const FilePath& filePath, bool onlyToFile = false) {
     Result<File> fileResult = openFile(filePath.toNativeString(), "a");
     this.fileHandle = fileResult.unwrap();
     this.onlyToFile = onlyToFile;
 }
 
+/**
+ * Destruct the log file, closing the underlying file handle
+ */
 public p LogFile.dtor() {
     this.fileHandle.close();
 }
 
+/**
+ * Log a message at debug level to the file (and the console unless onlyToFile is set)
+ *
+ * @param message Message to log
+ */
 public p LogFile.logDebug(string message) {
     if !this.onlyToFile {
         logDebug(message);
@@ -23,6 +41,11 @@ public p LogFile.logDebug(string message) {
     this.fileHandle.write("[debug] " + message + "\n");
 }
 
+/**
+ * Log a message at info level to the file (and the console unless onlyToFile is set)
+ *
+ * @param message Message to log
+ */
 public p LogFile.logInfo(string message) {
     if !this.onlyToFile {
         logInfo(message);
@@ -30,6 +53,11 @@ public p LogFile.logInfo(string message) {
     this.fileHandle.write("[info] " + message + "\n");
 }
 
+/**
+ * Log a message at warning level to the file (and the console unless onlyToFile is set)
+ *
+ * @param message Message to log
+ */
 public p LogFile.logWarning(string message) {
     if !this.onlyToFile {
         logWarning(message);
@@ -37,6 +65,11 @@ public p LogFile.logWarning(string message) {
     this.fileHandle.write("[warning] " + message + "\n");
 }
 
+/**
+ * Log a message at error level to the file (and the console unless onlyToFile is set)
+ *
+ * @param message Message to log
+ */
 public p LogFile.logError(string message) {
     if !this.onlyToFile {
         logError(message);
@@ -46,18 +79,38 @@ public p LogFile.logError(string message) {
 
 // Standalone function to log messages to console
 
+/**
+ * Log a message at debug level to the console
+ *
+ * @param message Message to log
+ */
 public p logDebug(string message) {
     printf("[debug] %s\n", message);
 }
 
+/**
+ * Log a message at info level to the console
+ *
+ * @param message Message to log
+ */
 public p logInfo(string message) {
     printf("\033[0;34m[info] %s\033[0m\n", message);
 }
 
+/**
+ * Log a message at warning level to the console
+ *
+ * @param message Message to log
+ */
 public p logWarning(string message) {
     printf("\033[38;5;208m[warning] %s\033[0m\n", message);
 }
 
+/**
+ * Log a message at error level to the console
+ *
+ * @param message Message to log
+ */
 public p logError(string message) {
     printf("\033[0;31m[error] %s\033[0m\n", message);
 }
