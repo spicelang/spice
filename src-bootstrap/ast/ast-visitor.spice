@@ -357,53 +357,53 @@ public f<bool> testAstVisitorSmoke() {
 
     // visitEntry on a leaf node returns an empty Any
     ASTEntryNode entry = ASTEntryNode(loc);
-    Any result = visitor.visitEntry(&entry);
-    assert result.isEmpty();
+    Any entryResult = visitor.visitEntry(&entry);
+    assert entryResult.isEmpty();
 
     // visitChildren on a node with no children returns an empty Any
-    result = visitor.visitChildren(&entry.node);
-    assert result.isEmpty();
+    Any noChildrenResult = visitor.visitChildren(&entry.node);
+    assert noChildrenResult.isEmpty();
 
     // visitChildren traverses a multi-node tree without panicking
     ASTStmtLstNode stmtLst = ASTStmtLstNode(loc);
     ASTReturnStmtNode retStmt = ASTReturnStmtNode(loc);
     entry.node.addChild(&stmtLst.node);
     stmtLst.node.addChild(&retStmt.node.node);
-    result = visitor.visitChildren(&entry.node);
-    assert result.isEmpty();
+    Any treeResult = visitor.visitChildren(&entry.node);
+    assert treeResult.isEmpty();
 
     // spot-check: all visit methods are present and return an empty Any
     ASTMainFctDefNode mainFct = ASTMainFctDefNode(loc);
-    result = visitor.visitMainFctDef(&mainFct);
-    assert result.isEmpty();
+    Any mainFctResult = visitor.visitMainFctDef(&mainFct);
+    assert mainFctResult.isEmpty();
 
     ASTFctDefNode fctDef = ASTFctDefNode(loc);
-    result = visitor.visitFctDef(&fctDef);
-    assert result.isEmpty();
+    Any fctDefResult = visitor.visitFctDef(&fctDef);
+    assert fctDefResult.isEmpty();
 
     ASTAssignExprNode assignExpr = ASTAssignExprNode(loc);
-    result = visitor.visitAssignExpr(&assignExpr);
-    assert result.isEmpty();
+    Any assignResult = visitor.visitAssignExpr(&assignExpr);
+    assert assignResult.isEmpty();
 
     ASTConstantNode constNode = ASTConstantNode(loc);
-    result = visitor.visitConstant(&constNode);
-    assert result.isEmpty();
+    Any constResult = visitor.visitConstant(&constNode);
+    assert constResult.isEmpty();
 
     ASTLambdaFuncNode lambdaFunc = ASTLambdaFuncNode(loc);
-    result = visitor.visitLambdaFunc(&lambdaFunc);
-    assert result.isEmpty();
+    Any lambdaResult = visitor.visitLambdaFunc(&lambdaFunc);
+    assert lambdaResult.isEmpty();
 
     ASTIfStmtNode ifStmt = ASTIfStmtNode(loc);
-    result = visitor.visitIfStmt(&ifStmt);
-    assert result.isEmpty();
+    Any ifResult = visitor.visitIfStmt(&ifStmt);
+    assert ifResult.isEmpty();
 
     ASTQualifierNode qual = ASTQualifierNode(loc);
-    result = visitor.visitQualifier(&qual);
-    assert result.isEmpty();
+    Any qualResult = visitor.visitQualifier(&qual);
+    assert qualResult.isEmpty();
 
     ASTTopLevelDefAttrNode tlAttr = ASTTopLevelDefAttrNode(loc);
-    result = visitor.visitTopLevelDefinitionAttr(&tlAttr);
-    assert result.isEmpty();
+    Any tlAttrResult = visitor.visitTopLevelDefinitionAttr(&tlAttr);
+    assert tlAttrResult.isEmpty();
 
     return true;
 }
