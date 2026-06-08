@@ -14,6 +14,15 @@ type Node<T> struct {
  * A doubly linked list is a common, dynamically resizable data structure to store uniform data in order.
  * It is characterized by the pointer for every item, pointing to the next one and the pointer, pointing
  * to the previous one.
+ *
+ * Time complexity:
+ * Insert at front/back: O(1)
+ * Insert at index:      O(n)
+ * Delete at front/back: O(1)
+ * Delete at index:      O(n)
+ * Search:               O(n)
+ *
+ * Beware that each add operation allocates memory and every remove operation frees memory.
  */
 public type DoublyLinkedList<T> struct {
     Node<T>* head = nil<Node<T>*>
@@ -21,6 +30,11 @@ public type DoublyLinkedList<T> struct {
     unsigned long size = 0l
 }
 
+/**
+ * Pushes a new item to the back of the list
+ *
+ * @param value Value to push
+ */
 public p DoublyLinkedList.pushBack(const T& value) {
     heap Node<T>* newNode = this.createNode(value);
     if this.isEmpty() {
@@ -34,6 +48,11 @@ public p DoublyLinkedList.pushBack(const T& value) {
     this.size++;
 }
 
+/**
+ * Pushes a new item to the front of the list
+ *
+ * @param value Value to push
+ */
 public p DoublyLinkedList.pushFront(const T& value) {
     heap Node<T>* newNode = this.createNode(value);
     if this.isEmpty() {
@@ -47,6 +66,12 @@ public p DoublyLinkedList.pushFront(const T& value) {
     this.size++;
 }
 
+/**
+ * Inserts a new item at the given index
+ *
+ * @param idx Index to insert the new item
+ * @param value Value to insert
+ */
 public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
     // Abort if the index is out of bounds
     if idx < 0 || idx > this.size { panic(Error("Access index out of bound")); }
@@ -71,6 +96,11 @@ public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
     this.size++;
 }
 
+/**
+ * Removes the first occurrence of the given value
+ *
+ * @param valueToRemove Value to remove
+ */
 public p DoublyLinkedList.remove(const T& valueToRemove) {
     Node<T>* curr = this.tail;
     while curr != nil<Node<T>*> {
@@ -97,6 +127,11 @@ public p DoublyLinkedList.remove(const T& valueToRemove) {
     }
 }
 
+/**
+ * Removes the item at the given index
+ *
+ * @param idx Index to remove
+ */
 public p DoublyLinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
@@ -123,26 +158,53 @@ public p DoublyLinkedList.removeAt(unsigned long idx) {
     this.size--;
 }
 
+/**
+ * Removes the item at the given index
+ *
+ * @param idx Index to remove
+ */
 public p DoublyLinkedList.removeAt(unsigned int idx) {
     this.removeAt(cast<unsigned long>(idx));
 }
 
+/**
+ * Removes the first item of the list
+ */
 public p DoublyLinkedList.removeFront() {
     this.removeAt(0l);
 }
 
+/**
+ * Removes the last item of the list
+ */
 public p DoublyLinkedList.removeBack() {
     this.removeAt(this.size - 1l);
 }
 
+/**
+ * Returns the size of the list
+ *
+ * @return Size of the list
+ */
 public inline f<unsigned long> DoublyLinkedList.getSize() {
     return this.size;
 }
 
+/**
+ * Returns if the list is empty
+ *
+ * @return true if the list is empty, false otherwise
+ */
 public inline f<bool> DoublyLinkedList.isEmpty() {
     return this.size == 0l;
 }
 
+/**
+ * Returns the item at the given index
+ *
+ * @param idx Index to access
+ * @return Reference to the item
+ */
 public f<T&> DoublyLinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
@@ -154,15 +216,31 @@ public f<T&> DoublyLinkedList.get(unsigned long idx) {
     return curr.value;
 }
 
+/**
+ * Returns the item at the given index
+ *
+ * @param idx Index to access
+ * @return Reference to the item
+ */
 public f<T&> DoublyLinkedList.get(unsigned int idx) {
     return this.get(cast<unsigned long>(idx));
 }
 
+/**
+ * Returns the first item of the list
+ *
+ * @return Reference to the first item
+ */
 public inline f<T&> DoublyLinkedList.getFront() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.tail.value;
 }
 
+/**
+ * Returns the last item of the list
+ *
+ * @return Reference to the last item
+ */
 public inline f<T&> DoublyLinkedList.getBack() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
