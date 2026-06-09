@@ -51,9 +51,11 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   Function defaultMethod(name, procEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
-  // Fill type mapping for the case, that the template type list contains non-generic types
+  // Fill type mapping for the case, that the template type list contains non-generic types. Only struct, interface
+  // and enum types carry a sub type usable as a key here; a non-generic primitive template argument (e.g. the 'int'
+  // in BlockAllocator<int>) has no sub type, so getSubType() would assert on it - skip those.
   for (const GenericType &templateType : templateTypes)
-    if (!templateType.is(TY_GENERIC))
+    if (!templateType.is(TY_GENERIC) && templateType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM}))
       defaultMethod.typeMapping[templateType.getSubType()] = static_cast<QualType>(templateType);
 
   // Create function scope
@@ -165,15 +167,19 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     // If the field is of type struct, check if this struct has a copy ctor that has to be called
     if (fieldType.is(TY_STRUCT)) {
       Scope *bodyScope = fieldType.getBodyScope();
-      // Check if we are required to call a ctor
-      const bool isCopyCtorCallRequired = !structType.isTriviallyCopyable(node);
-      // Lookup copy ctor function
+      // A field whose copy is non-trivial forces the outer struct to have a copy ctor as well.
+      const bool fieldRequiresCopyCtor = !fieldType.isTriviallyCopyable(node);
+      // Try to resolve (and substantiate) the field's copy ctor. While the outer struct is still a generic preset,
+      // a field type that is itself generic (e.g. Lambda<p(const T&)>) cannot be matched to a concrete copy ctor
+      // yet; it is matched later, per manifestation, in generateCopyCtorBodyPreamble.
       const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
       const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
-      // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
-      if (!ctorFct && isCopyCtorCallRequired)
+      // If the field requires a copy ctor, but we proved none exists, we cannot synthesize one for the outer struct.
+      // A null match only proves absence for a concrete field type - for a still-generic field it merely means the
+      // ctor is not resolvable yet, which must not abort copy ctor synthesis.
+      if (!ctorFct && fieldRequiresCopyCtor && !fieldType.hasAnyGenericParts())
         return;
-      copyCtorRequired |= ctorFct != nullptr;
+      copyCtorRequired |= fieldRequiresCopyCtor;
     }
 
     // If we have an owning heap pointer, we need to do a memcpy of the heap storage and therefore need a default copy ctor

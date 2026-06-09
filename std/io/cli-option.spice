@@ -3,6 +3,7 @@ import "std/data/vector";
 import "std/io/filepath";
 import "std/text/print";
 import "std/text/stringstream";
+import "std/type/lambda";
 
 // Generic types
 type T bool|string|String|int|long|short|FilePath;
@@ -23,7 +24,7 @@ public type CliOption<T> struct {
     Vector<String> aliases
     CliOptionMode mode
     T& targetVariable
-    p(const T&) callback
+    Lambda<p(const T&)> callback
 }
 
 /**
@@ -38,6 +39,7 @@ public p CliOption.ctor(string name, T& targetVariable, string description) {
     this.description = String(description);
     this.mode = CliOptionMode::SET_VALUE;
     this.targetVariable = targetVariable;
+    this.callback = Lambda<p(const T&)>();
 }
 
 /**
@@ -62,7 +64,7 @@ public p CliOption.ctor(string name, p(const T&) callback, string description) {
     this.name = String(name);
     this.description = String(description);
     this.mode = CliOptionMode::CALL_CALLBACK;
-    this.callback = callback;
+    this.callback = Lambda<p(const T&)>(callback);
 }
 
 /**
@@ -138,8 +140,8 @@ public p CliOption.setTargetValue(T& value) {
  * @param value Value to pass to the callback
  */
 public p CliOption.callCallback(const T& value) {
-    if this.mode == CliOptionMode::CALL_CALLBACK {
-        p(const T&) cb = this.callback;
+    if this.mode == CliOptionMode::CALL_CALLBACK && !this.callback.isEmpty() {
+        p(const T&) cb = this.callback.get();
         cb(value);
     }
 }

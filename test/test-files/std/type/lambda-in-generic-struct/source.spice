@@ -1,0 +1,53 @@
+import "std/type/lambda";
+import "std/data/vector";
+
+// A generic struct that stores a Lambda whose signature depends on the struct's own generic parameter.
+// This used to be impossible to copy or store in a container: the implicit copy ctor of the generic struct
+// could not be synthesized, because matching the nested Lambda<p(const T&)> copy ctor failed while the outer
+// struct was still generic.
+type T bool|int;
+
+public type Handler<T> struct {
+    Lambda<p(const T&)> callback
+    int tag
+}
+
+public p Handler.ctor(int tag, p(const T&) callback) {
+    this.tag = tag;
+    this.callback = Lambda<p(const T&)>(callback);
+}
+
+public p Handler.fire(const T& value) {
+    p(const T&) cb = this.callback.get();
+    cb(value);
+}
+
+f<int> main() {
+    int base = 100;
+
+    // 1) Copy construction of a generic struct with a Lambda<p(const T&)> field (deep-copies the captures)
+    Handler<int> original = Handler<int>(1, p(const int& v) { printf("handler %d got %d\n", base, v); });
+    Handler<int> copy = original;
+    copy.fire(7);       // uses the copy's own (deep-copied) captures
+    original.fire(8);   // original stays valid and independent
+
+    // 2) Storing instances in a Vector (requires the struct to be copy-constructible)
+    Vector<Handler<int>> handlers;
+    Handler<int> extra = Handler<int>(2, p(const int& v) { printf("vec handler %d\n", v); });
+    handlers.pushBack(extra);
+    handlers.pushBack(original);
+    handlers.pushBack(copy);
+    Handler<int>& h0 = handlers.get(0);
+    Handler<int>& h2 = handlers.get(2);
+    h0.fire(10);
+    h2.fire(20);
+    printf("count=%d\n", handlers.getSize());
+
+    // 3) A non-capturing callback works too (the Lambda simply owns nothing)
+    Handler<bool> flag = Handler<bool>(3, p(const bool& b) { printf("flag set\n"); });
+    Handler<bool> flagCopy = flag;
+    bool on = true;
+    flagCopy.fire(on);
+
+    printf("done\n");
+}

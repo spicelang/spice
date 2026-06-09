@@ -1,5 +1,6 @@
 import "std/io/cli-option";
 import "std/text/print";
+import "std/type/lambda";
 import "std/type/type-conversion";
 import "std/data/vector";
 import "std/os/os";
@@ -32,7 +33,7 @@ public type CliSubcommand struct {
     CliSubcommand* parent
     String versionString
     String footerString
-    p() callback
+    Lambda<p()> callback
     Vector<String> aliases
     Vector<CliSubcommand> subcommands
     Vector<CliOption<bool>> boolOptions
@@ -90,8 +91,8 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             printf("Missing required positional argument(s).\n");
             return EXIT_CODE_ERROR;
         }
-        if this.callback != nil<p()> {
-            p() rc = this.callback;
+        if !this.callback.isEmpty() {
+            p() rc = this.callback.get();
             rc();
         } else {
             this.printHelp(argv, layer);
@@ -303,6 +304,10 @@ public p CliSubcommand.setFooter(const String& footerString) {
  * @param callback Callback to invoke
  */
 public p CliSubcommand.setCallback(p() callback) {
+    this.callback = Lambda<p()>(callback);
+}
+
+public p CliSubcommand.setCallback(const Lambda<p()>& callback) {
     this.callback = callback;
 }
 

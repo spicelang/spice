@@ -77,8 +77,13 @@ const SymbolTableEntry *Struct::areAllFieldsInitialized() const { return areAllF
  * @param node AST node to associate with the update
  */
 void Struct::resetFieldSymbolsToDeclared(const ASTNode *node) const {
-  for (size_t i = 0; i < fieldTypes.size(); i++)
-    scope->lookupField(i)->updateState(DECLARED, node);
+  // Reset every explicit field
+  const size_t fieldCount = scope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = scope->lookupField(i);
+    if (!fieldSymbol->isImplicitField)
+      fieldSymbol->updateState(DECLARED, node);
+  }
 }
 
 } // namespace spice::compiler

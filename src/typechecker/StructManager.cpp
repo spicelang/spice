@@ -257,8 +257,8 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &re
  */
 void StructManager::substantiateFieldTypes(Struct &candidate, const TypeMapping &typeMapping, const ASTNode *node) {
   // Loop over all implicit fields and substantiate the generic ones
-  const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
-  for (size_t i = 0; i < fieldCount; i++) {
+  const size_t implicitFieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
+  for (size_t i = 0; i < implicitFieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->lookupField(i);
     QualType fieldType = fieldEntry->getQualType();
     if (fieldType.hasAnyGenericParts()) {
