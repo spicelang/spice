@@ -238,12 +238,9 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
-
       - name: Setup Dependencies
         run: |
-          choco install ccache -y
+          choco install ccache ninja -y
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
       - name: Setup CCache

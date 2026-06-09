@@ -279,12 +279,9 @@ jobs:
           java-version: 25
           java-package: jre
 
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
-
       - name: Install Dependencies
         run: |
-          choco install graphviz ccache -y
+          choco install graphviz ccache ninja -y
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
