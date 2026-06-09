@@ -38,6 +38,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -45,7 +46,7 @@ jobs:
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/.ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -190,6 +191,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -197,7 +199,7 @@ jobs:
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/.ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -284,6 +286,7 @@ jobs:
         run: |
           choco install graphviz ccache -y
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
+          New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
       - name: Setup CCache
         uses: actions/cache@v5
@@ -378,11 +381,12 @@ jobs:
         run: |
           brew update
           brew install ccache graphviz
+          mkdir -p ~/.cache/ccache
 
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/Library/Caches/ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 

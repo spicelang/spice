@@ -36,11 +36,12 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
 
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/.ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -141,11 +142,12 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
 
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/.ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -240,7 +242,9 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
 
       - name: Setup Dependencies
-        run: choco install ccache -y
+        run: |
+          choco install ccache -y
+          New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
       - name: Setup CCache
         uses: actions/cache@v5
@@ -335,12 +339,14 @@ jobs:
         uses: rui314/setup-mold@v1
 
       - name: Setup Dependencies
-        run: brew install ccache
+        run: |
+          brew install ccache
+          mkdir -p ~/.cache/ccache
 
       - name: Setup CCache
         uses: actions/cache@v5
         with:
-          path: ~/Library/Caches/ccache
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
