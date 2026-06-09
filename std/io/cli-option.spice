@@ -39,6 +39,7 @@ public p CliOption.ctor(string name, T& targetVariable, string description) {
     this.description = String(description);
     this.mode = CliOptionMode::SET_VALUE;
     this.targetVariable = targetVariable;
+    this.callback = Lambda<p(const T&)>();
 }
 
 /**
