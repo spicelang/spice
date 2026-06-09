@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets-nozlib-nortti
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets-nozlib
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -159,7 +159,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets-nozlib-nortti
+          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets-nozlib
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -258,7 +258,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-win-x64-all-targets-nortti
+          key: llvm-${{ env.LLVM_VERSION }}-win-x64-all-targets
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -355,7 +355,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64-all-targets-nortti
+          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64-all-targets
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
