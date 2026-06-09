@@ -32,13 +32,17 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ccache ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup CCache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: actions/cache@v5
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -133,13 +137,17 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ccache ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
 
       - name: Setup CCache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: actions/cache@v5
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -231,8 +239,15 @@ jobs:
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
+      - name: Setup Dependencies
+        run: choco install ccache -y
+
       - name: Setup CCache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: actions/cache@v5
+        with:
+          path: ~/AppData/Local/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -319,8 +334,15 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
+      - name: Setup Dependencies
+        run: brew install ccache
+
       - name: Setup CCache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: actions/cache@v5
+        with:
+          path: ~/Library/Caches/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
