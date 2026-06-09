@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-nortti
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'

@@ -68,7 +68,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -215,7 +215,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -306,7 +306,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+        run: if (Test-Path llvm) { Remove-Item -Recurse -Force llvm }; git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -403,7 +403,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
