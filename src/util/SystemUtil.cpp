@@ -143,7 +143,7 @@ std::string SystemUtil::renderCommandForDisplay(const std::string &program, cons
  */
 std::string SystemUtil::getClangResourceDir() {
   const std::vector<std::string> args{"-print-resource-dir"};
-  const auto [dir, exitCode] = SystemUtil::exec("clang", args);
+  auto [dir, exitCode] = SystemUtil::exec("clang", args);
   if (exitCode != 0)                                                                                          // GCOV_EXCL_LINE
     throw LinkerError(LINKER_ERROR, "Could not determine clang resource directory for sanitizer runtime linkage"); // GCOV_EXCL_LINE
   while (!dir.empty() && std::isspace(static_cast<unsigned char>(dir.back())))
