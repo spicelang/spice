@@ -3,8 +3,10 @@
 #include "SystemUtil.h"
 
 #include <array>
+#include <cctype>
 #include <iostream> // IWYU pragma: keep (usage in Windows-only code)
 #include <optional>
+#include <sstream>
 #include <vector>
 #if OS_UNIX
 #include <unistd.h>
@@ -120,6 +122,33 @@ ExecResult SystemUtil::exec(const std::string &program, const std::vector<std::s
   llvm::sys::fs::remove(outputFilePath.str());
 
   return {output, exitCode};
+}
+
+/**
+ * Render a program invocation as a human-readable command string. Used for debug output and error messages only -
+ * the actual execution happens via an argument vector (no shell), so this rendering is never executed.
+ */
+std::string SystemUtil::renderCommandForDisplay(const std::string &program, const std::vector<std::string> &args) {
+  std::stringstream command;
+  command << program;
+  for (const std::string &arg : args)
+    command << " " << arg;
+  return command.str();
+}
+
+/**
+ * Query clang for its resource directory. Required to locate the sanitizer runtime libraries. Previously this was done
+ * via a '$(clang -print-resource-dir)' shell substitution embedded in a linker flag; since linking no longer goes
+ * through a shell, the substitution is resolved here instead.
+ */
+std::string SystemUtil::getClangResourceDir() {
+  const std::vector<std::string> args{"-print-resource-dir"};
+  const auto [dir, exitCode] = SystemUtil::exec("clang", args);
+  if (exitCode != 0)                                                                                          // GCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, "Could not determine clang resource directory for sanitizer runtime linkage"); // GCOV_EXCL_LINE
+  while (!dir.empty() && std::isspace(static_cast<unsigned char>(dir.back())))
+    dir.pop_back();
+  return dir;
 }
 
 /**
