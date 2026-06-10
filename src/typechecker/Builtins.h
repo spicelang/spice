@@ -35,6 +35,7 @@ static constexpr std::string_view BUILTIN_FCT_NAME_PRINTF = "printf";
 static constexpr std::string_view BUILTIN_FCT_NAME_SIZEOF = "sizeof";
 static constexpr std::string_view BUILTIN_FCT_NAME_ALIGNOF = "alignof";
 static constexpr std::string_view BUILTIN_FCT_NAME_TYPEID = "typeid";
+static constexpr std::string_view BUILTIN_FCT_NAME_TYPENAME = "typename";
 static constexpr std::string_view BUILTIN_FCT_NAME_LEN = "len";
 static constexpr std::string_view BUILTIN_FCT_NAME_PANIC = "panic";
 static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
@@ -89,6 +90,15 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
         BUILTIN_FCT_NAME_TYPEID,
         BuiltinFunctionInfo{
             .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeIdCall,
+            .maxTemplateTypes = 1,
+            .maxArgTypes = 1,
+            .allTemplateTypesOrAllArgTypes = true,
+        },
+    },
+    BuiltinFunctionEntry{
+        BUILTIN_FCT_NAME_TYPENAME,
+        BuiltinFunctionInfo{
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeNameCall,
             .maxTemplateTypes = 1,
             .maxArgTypes = 1,
             .allTemplateTypesOrAllArgTypes = true,

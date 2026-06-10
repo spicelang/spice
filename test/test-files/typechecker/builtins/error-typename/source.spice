@@ -1,0 +1,6 @@
+f<int> main() {
+    typename(); // No template types and no args
+    typename<short>(8s); // Template types and args
+    typename<double, int>(); // Too many template types
+    typename(1, 2); // Too many args
+}

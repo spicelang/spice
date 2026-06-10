@@ -1,0 +1,13 @@
+type DemoStruct struct {
+    int intField
+    long longField
+}
+
+f<int> main() {
+    printf("%s\n", typename(4));
+    printf("%s\n", typename<int>());
+
+    DemoStruct s = DemoStruct{123, 56l};
+    printf("%s\n", typename(s));
+    printf("%s\n", typename<DemoStruct>());
+}

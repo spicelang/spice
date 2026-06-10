@@ -2,7 +2,7 @@
 title: Builtin Functions
 ---
 
-Spice offers seven builtin functions out of the box. Those can be used anywhere without having to be imported manually and
+Spice offers eight builtin functions out of the box. Those can be used anywhere without having to be imported manually and
 can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin
@@ -100,6 +100,24 @@ typeid<int>() // 1015829715
 DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
 typeid(s); // 1502876624
 typeid<DemoStruct>(); // 1502876624
+```
+
+## The `typename` builtin
+Typename returns the name of the type of a variable, constant or type as string.
+
+### Signature
+`string typename(<any variable or constant>)` or `string typename<any type>()`
+
+`any variable`: Variable or constant of any type, `any type`: Any data type
+
+### Usage example
+```spice
+typename(12); // "int"
+typename<int>() // "int"
+
+DemoStruct s = DemoStruct{123, 56l, 12s, "String"};
+typename(s); // "DemoStruct"
+typename<DemoStruct>(); // "DemoStruct"
 ```
 
 ## The `len` builtin
