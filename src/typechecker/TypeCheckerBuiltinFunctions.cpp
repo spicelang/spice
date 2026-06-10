@@ -299,6 +299,23 @@ std::any TypeChecker::visitBuiltinTypeIdCall(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
+std::any TypeChecker::visitBuiltinTypeNameCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_TYPENAME);
+
+  // Directly set compile time value here, so that compile time ifs can be evaluated.
+  QualType qualType;
+  if (node->hasTemplateTypes) { // typename of type
+    qualType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  } else { // typename of value
+    qualType = node->argLst->args.front()->getEvaluatedSymbolType(manIdx);
+  }
+  const size_t stringValueOffset = resourceManager.compileTimeStringValues.size();
+  resourceManager.compileTimeStringValues.push_back(qualType.getName());
+  node->data.at(manIdx).setCompileTimeValue({.stringValueOffset = stringValueOffset});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_STRING), manIdx)};
+}
+
 std::any TypeChecker::visitBuiltinLenCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_LEN);
 

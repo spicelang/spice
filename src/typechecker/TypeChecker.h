@@ -130,6 +130,7 @@ public:
   std::any visitBuiltinAlignOfCall(FctCallNode *node) const;
   std::any visitBuiltinOffsetOfCall(FctCallNode *node) const;
   std::any visitBuiltinTypeIdCall(FctCallNode *node) const;
+  std::any visitBuiltinTypeNameCall(FctCallNode *node) const;
   std::any visitBuiltinLenCall(FctCallNode *node) const;
   std::any visitBuiltinPanicCall(FctCallNode *node) const;
   std::any visitBuiltinSyscallCall(FctCallNode *node) const;
