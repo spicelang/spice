@@ -38,8 +38,8 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           mkdir -p ~/.cache/ccache
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -111,6 +111,13 @@ jobs:
         working-directory: build
         run: checksec --file=./spice --output=json | jq
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -144,8 +151,8 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           mkdir -p ~/.cache/ccache
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -217,6 +224,13 @@ jobs:
         working-directory: build
         run: checksec --file=./spice --output=json | jq
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -243,8 +257,8 @@ jobs:
           choco install ccache ninja -y
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/AppData/Local/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -309,6 +323,13 @@ jobs:
         working-directory: build
         run: mv ./src/spice.exe spice.exe
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/AppData/Local/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -340,8 +361,8 @@ jobs:
           brew install ccache
           mkdir -p ~/.cache/ccache
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -405,6 +426,13 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
+
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
