@@ -43,13 +43,12 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-          save-always: true
 
 #      - name: Setup Valgrind
 #        if: github.event_name == 'pull_request'
@@ -59,16 +58,15 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: sudo pipx install gcovr
 
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -151,6 +149,13 @@ jobs:
 #          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/spice/src-bootstrap
 #        run: valgrind -q --leak-check=full ./spicetest --is-github-actions --leak-detection
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
       - name: Generate coverage report
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: build
@@ -198,13 +203,15 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-          save-always: true
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
@@ -212,10 +219,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
-
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -266,6 +269,13 @@ jobs:
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: ./spicetest --is-github-actions
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
   build-windows-x86:
     name: C++ CI - Windows/x86_64
     runs-on: windows-2025-vs2026
@@ -289,13 +299,15 @@ jobs:
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/AppData/Local/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-          save-always: true
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
@@ -303,10 +315,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-win-x64
-
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: if (Test-Path llvm) { Remove-Item -Recurse -Force llvm }; git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -360,6 +368,13 @@ jobs:
         run: |
           ./spicetest --is-github-actions
 
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/AppData/Local/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
   build-macos-aarch64:
     name: C++ CI - MacOS/AArch64
     runs-on: macos-26
@@ -386,13 +401,15 @@ jobs:
           brew install ccache graphviz
           mkdir -p ~/.cache/ccache
 
-      - name: Setup CCache
-        uses: actions/cache@v5
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-          save-always: true
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Cache LLVM
         id: cache-llvm
@@ -400,10 +417,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64
-
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: rm -rf llvm && git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
       - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -450,3 +463,10 @@ jobs:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: ./spicetest --is-github-actions
+
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
