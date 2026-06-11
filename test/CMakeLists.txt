@@ -1,6 +1,5 @@
-# Initialize GTest
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-find_package(GTest REQUIRED)
+# Initialize GTest (git submodule in deps/)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/googletest ${CMAKE_BINARY_DIR}/deps/googletest EXCLUDE_FROM_ALL)
 
 ################ spicetest executable ################
 

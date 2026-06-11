@@ -3,7 +3,7 @@ set -eu
 
 ANTLR_VERSION=4.13.2
 
-# Initialize / update git submodules (CLI11, JSON, ANTLR C++ runtime)
+# Initialize / update git submodules (CLI11, JSON, ANTLR C++ runtime, GoogleTest)
 git submodule update --init --recursive
 
 # Download the ANTLR code generator jar (a prebuilt tool, not a submodule)
