@@ -44,6 +44,16 @@ list(APPEND LLVM_COMPONENTS mcjit target nativecodegen passes)
 # Map components to library names
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
 
+# Link every target compiled into the LLVM distribution, since the
+# InitializeAll* entry points reference all of them
+foreach (LLVM_TARGET ${LLVM_TARGETS_TO_BUILD})
+    foreach (LLVM_TARGET_LIB_KIND CodeGen AsmParser Desc Info Utils Disassembler)
+        if (EXISTS "${LLVM_LIBRARY_DIR}/libLLVM${LLVM_TARGET}${LLVM_TARGET_LIB_KIND}.a")
+            list(APPEND LLVM_LIBS "LLVM${LLVM_TARGET}${LLVM_TARGET_LIB_KIND}")
+        endif ()
+    endforeach ()
+endforeach ()
+
 # Print status messages
 string(JOIN "," LLVM_TARGET_ARCHITECTURES_JOINED ${LLVM_TARGET_ARCHITECTURES})
 message(STATUS "Spice: Enabled targets: ${LLVM_TARGET_ARCHITECTURES_JOINED}")
