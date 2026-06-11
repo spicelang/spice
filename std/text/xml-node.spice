@@ -1,0 +1,275 @@
+import "std/data/vector";
+
+/**
+ * Tag for the variant stored inside an XmlNode.
+ */
+public type XmlNodeKind enum {
+    XML_ELEMENT,
+    XML_TEXT
+}
+
+/**
+ * Represents a node in an XML document.
+ *
+ * Element nodes carry a tag name, ordered attributes and ordered child nodes
+ * (which may themselves be elements or text). Text nodes carry only the
+ * decoded character data. Children are owned as heap pointers so the parsed
+ * tree is reached via `XmlNode*` (`heap` on the root).
+ *
+ * Parsing lives in "std/text/xml-parser" and serialization in
+ * "std/text/xml-serializer", so programs only pull in what they use.
+ */
+public type XmlNode struct {
+    XmlNodeKind kind
+    String name           // tag name (element) - empty for text nodes
+    String textValue      // decoded character data (text) - empty for elements
+    Vector<String> attributeKeys
+    Vector<String> attributeValues
+    Vector<XmlNode*> children
+}
+
+/**
+ * Construct an empty XML element node
+ */
+public p XmlNode.ctor() {
+    this.kind = XmlNodeKind::XML_ELEMENT;
+}
+
+/**
+ * Construct an empty XML node of the given kind
+ *
+ * @param kind Kind of the node
+ */
+public p XmlNode.ctor(XmlNodeKind kind) {
+    this.kind = kind;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+/**
+ * Retrieve the kind of the XML node
+ *
+ * @return Kind of the node
+ */
+public f<XmlNodeKind> XmlNode.getKind() { return this.kind; }
+/**
+ * Check whether the node is an element node
+ *
+ * @return true if the node is an element, false otherwise
+ */
+public f<bool> XmlNode.isElement() { return this.kind == XmlNodeKind::XML_ELEMENT; }
+/**
+ * Check whether the node is a text node
+ *
+ * @return true if the node is text, false otherwise
+ */
+public f<bool> XmlNode.isText()    { return this.kind == XmlNodeKind::XML_TEXT; }
+
+/**
+ * Retrieve the tag name of the element. Panics if the node is not an element.
+ *
+ * @return Tag name
+ */
+public f<const String&> XmlNode.getName() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.name;
+}
+
+/**
+ * Set the tag name of the element. Panics if the node is not an element.
+ *
+ * @param name New tag name
+ */
+public p XmlNode.setName(const String& name) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    this.name = name;
+}
+
+/**
+ * Retrieve the character data of the text node. Panics if the node is not a text node.
+ *
+ * @return Text content
+ */
+public f<const String&> XmlNode.getText() {
+    assert this.kind == XmlNodeKind::XML_TEXT;
+    return this.textValue;
+}
+
+/**
+ * Set the character data of the text node. Panics if the node is not a text node.
+ *
+ * @param text New text content
+ */
+public p XmlNode.setText(const String& text) {
+    assert this.kind == XmlNodeKind::XML_TEXT;
+    this.textValue = text;
+}
+
+// --- Attribute operations --------------------------------------------------
+
+/**
+ * Retrieve the number of attributes on the element. Panics if the node is not an element.
+ *
+ * @return Number of attributes
+ */
+public f<unsigned long> XmlNode.getAttributeCount() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.attributeKeys.getSize();
+}
+
+/**
+ * Retrieve the name of the attribute at the given index, in document order.
+ * Panics if the node is not an element.
+ *
+ * @param idx Index of the attribute
+ * @return Attribute name
+ */
+public f<const String&> XmlNode.getAttributeKey(unsigned long idx) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.attributeKeys.get(idx);
+}
+
+/**
+ * Retrieve the value of the attribute at the given index, in document order.
+ * Panics if the node is not an element.
+ *
+ * @param idx Index of the attribute
+ * @return Attribute value
+ */
+public f<const String&> XmlNode.getAttributeValue(unsigned long idx) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.attributeValues.get(idx);
+}
+
+/**
+ * Check whether the element has an attribute with the given name
+ *
+ * @param name Attribute name to look for
+ * @return true if the attribute exists, false otherwise
+ */
+public f<bool> XmlNode.hasAttribute(string name) {
+    if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        if this.attributeKeys.get(i) == nameStr { return true; }
+    }
+    return false;
+}
+
+/**
+ * Retrieve the value of the attribute with the given name. Panics if the node is not an element
+ * or the attribute does not exist.
+ *
+ * @param name Attribute name to look up
+ * @return Attribute value
+ */
+public f<const String&> XmlNode.getAttribute(string name) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        if this.attributeKeys.get(i) == nameStr {
+            return this.attributeValues.get(i);
+        }
+    }
+    panic(Error("XML element has no such attribute"));
+}
+
+/**
+ * Append an attribute to the element. Panics if the node is not an element.
+ * The caller is responsible for avoiding duplicate attribute names.
+ *
+ * @param name Attribute name
+ * @param value Attribute value
+ */
+public p XmlNode.addAttribute(const String& name, const String& value) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    this.attributeKeys.pushBack(name);
+    this.attributeValues.pushBack(value);
+}
+
+// --- Child operations ------------------------------------------------------
+
+/**
+ * Retrieve the number of child nodes. Panics if the node is not an element.
+ *
+ * @return Number of child nodes
+ */
+public f<unsigned long> XmlNode.getChildCount() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.children.getSize();
+}
+
+/**
+ * Retrieve the child node at the given index. Panics if the node is not an element.
+ *
+ * @param idx Index of the child
+ * @return Pointer to the child node
+ */
+public f<XmlNode*> XmlNode.getChild(unsigned long idx) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    return this.children.get(idx);
+}
+
+/**
+ * Retrieve the child node at the given index. Panics if the node is not an element.
+ *
+ * @param idx Index of the child
+ * @return Pointer to the child node
+ */
+public f<XmlNode*> XmlNode.getChild(unsigned int idx) {
+    return this.getChild(cast<unsigned long>(idx));
+}
+
+/**
+ * Append a child node to the element. Panics if the node is not an element.
+ * The element takes ownership of the heap-allocated child.
+ *
+ * @param child Child node to append
+ */
+public p XmlNode.addChild(XmlNode* child) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    this.children.pushBack(child);
+}
+
+/**
+ * Find the first child element with the given tag name. Returns nil if none
+ * exists. Text-node children are ignored.
+ */
+public f<XmlNode*> XmlNode.findChild(string name) {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    const String nameStr = String(name);
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        XmlNode* child = this.children.get(i);
+        if child.kind == XmlNodeKind::XML_ELEMENT && child.name == nameStr {
+            return child;
+        }
+    }
+    return nil<XmlNode*>;
+}
+
+/**
+ * Check whether the element has a direct child element with the given tag name
+ *
+ * @param name Tag name to look for
+ * @return true if such a child exists, false otherwise
+ */
+public f<bool> XmlNode.hasChild(string name) {
+    return this.findChild(name) != nil<XmlNode*>;
+}
+
+/**
+ * Concatenated text of all direct text-node children, in document order.
+ * Useful for elements like `<title>Hello</title>` where the natural value
+ * is the text content.
+ */
+public f<String> XmlNode.getInnerText() {
+    assert this.kind == XmlNodeKind::XML_ELEMENT;
+    String out;
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        XmlNode* child = this.children.get(i);
+        if child.kind == XmlNodeKind::XML_TEXT {
+            out += child.textValue;
+        }
+    }
+    return out;
+}

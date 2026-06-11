@@ -10,6 +10,8 @@ const char DEFAULT_QUOTE     = '"';
  * Supports quoted fields, embedded delimiters/newlines and escaped quotes
  * (by doubling, e.g. `""` inside a quoted field yields a single `"`).
  * Both `\n` and `\r\n` are accepted as line terminators.
+ *
+ * The matching serializer lives in "std/text/csv-serializer".
  */
 public type CsvParser struct {
     char delimiter
@@ -136,75 +138,4 @@ public f<Vector<Vector<String>>> CsvParser.parse(const String& input) {
         // Drop the trailing empty row created after the last terminator
         result.removeAt(result.getSize() - 1l);
     }
-}
-
-/**
- * Serializes a single field, quoting it when necessary.
- *
- * A field is wrapped in quotes when it contains the delimiter, the quote
- * character or a line terminator. Embedded quotes are escaped by doubling,
- * so the result round-trips through `parseLine`/`parse`. The empty field is
- * also quoted (as `""`): an empty record would otherwise serialize to an
- * empty line, which `parse` does not reproduce as a row.
- *
- * @param field Field value to serialize
- * @return Serialized (and possibly quoted) field
- */
-public f<String> CsvParser.serializeField(const String& field) {
-    const unsigned long length = field.getLength();
-    bool needsQuoting = length == 0l;
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = field[i];
-        if c == this.delimiter || c == this.quote || c == '\n' || c == '\r' {
-            needsQuoting = true;
-            break;
-        }
-    }
-    if !needsQuoting { return field; }
-
-    String out;
-    out += this.quote;
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = field[i];
-        if c == this.quote {
-            // Escape by doubling the quote character
-            out += this.quote;
-        }
-        out += c;
-    }
-    out += this.quote;
-    return out;
-}
-
-/**
- * Serializes a single row into one CSV record. Fields are separated by the
- * configured delimiter; no trailing line terminator is appended.
- *
- * @param row Fields of the record
- * @return Serialized CSV record
- */
-public f<String> CsvParser.serializeRow(const Vector<String>& row) {
-    String out;
-    for unsigned long i = 0l; i < row.getSize(); i++ {
-        if i > 0l { out += this.delimiter; }
-        out += this.serializeField(row.get(i));
-    }
-    return out;
-}
-
-/**
- * Serializes a whole document into CSV text. Records are separated by `\r\n`
- * as recommended by RFC 4180; no trailing line terminator is appended, so
- * `parse(serialize(rows))` reproduces the input rows.
- *
- * @param rows Rows of the document
- * @return Serialized CSV document
- */
-public f<String> CsvParser.serialize(const Vector<Vector<String>>& rows) {
-    String out;
-    for unsigned long i = 0l; i < rows.getSize(); i++ {
-        if i > 0l { out += "\r\n"; }
-        out += this.serializeRow(rows.get(i));
-    }
-    return out;
 }

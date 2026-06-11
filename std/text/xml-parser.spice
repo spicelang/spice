@@ -1,21 +1,8 @@
-import "std/data/vector";
+import "std/text/xml-node";
 import "std/text/analysis";
 
 /**
- * Tag for the variant stored inside an XmlNode.
- */
-public type XmlNodeKind enum {
-    XML_ELEMENT,
-    XML_TEXT
-}
-
-/**
- * Represents a node in an XML document.
- *
- * Element nodes carry a tag name, ordered attributes and ordered child nodes
- * (which may themselves be elements or text). Text nodes carry only the
- * decoded character data. Children are owned as heap pointers so the parsed
- * tree is reached via `XmlNode*` (`heap` on the root).
+ * Recursive-descent XML parser. Use `parseXml` for one-shot parsing.
  *
  * The parser handles a useful subset of XML 1.0: elements with attributes,
  * self-closing tags, character data with the standard predefined entities
@@ -23,189 +10,9 @@ public type XmlNodeKind enum {
  * (`&#NN;` and `&#xNN;`), CDATA sections, comments and an optional XML
  * declaration / processing instructions (which are skipped). DTDs,
  * namespaces and external entities are not interpreted.
- */
-public type XmlNode struct {
-    XmlNodeKind kind
-    String name           // tag name (element) - empty for text nodes
-    String textValue      // decoded character data (text) - empty for elements
-    Vector<String> attributeKeys
-    Vector<String> attributeValues
-    Vector<XmlNode*> children
-}
-
-/**
- * Construct an empty XML element node
- */
-public p XmlNode.ctor() {
-    this.kind = XmlNodeKind::XML_ELEMENT;
-}
-
-// --- Kind inspection -------------------------------------------------------
-
-/**
- * Retrieve the kind of the XML node
  *
- * @return Kind of the node
- */
-public f<XmlNodeKind> XmlNode.getKind() { return this.kind; }
-/**
- * Check whether the node is an element node
- *
- * @return true if the node is an element, false otherwise
- */
-public f<bool> XmlNode.isElement() { return this.kind == XmlNodeKind::XML_ELEMENT; }
-/**
- * Check whether the node is a text node
- *
- * @return true if the node is text, false otherwise
- */
-public f<bool> XmlNode.isText()    { return this.kind == XmlNodeKind::XML_TEXT; }
-
-/**
- * Retrieve the tag name of the element. Panics if the node is not an element.
- *
- * @return Tag name
- */
-public f<const String&> XmlNode.getName() {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    return this.name;
-}
-
-/**
- * Retrieve the character data of the text node. Panics if the node is not a text node.
- *
- * @return Text content
- */
-public f<const String&> XmlNode.getText() {
-    assert this.kind == XmlNodeKind::XML_TEXT;
-    return this.textValue;
-}
-
-// --- Attribute operations --------------------------------------------------
-
-/**
- * Retrieve the number of attributes on the element. Panics if the node is not an element.
- *
- * @return Number of attributes
- */
-public f<unsigned long> XmlNode.getAttributeCount() {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    return this.attributeKeys.getSize();
-}
-
-/**
- * Check whether the element has an attribute with the given name
- *
- * @param name Attribute name to look for
- * @return true if the attribute exists, false otherwise
- */
-public f<bool> XmlNode.hasAttribute(string name) {
-    if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
-    const String nameStr = String(name);
-    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == nameStr { return true; }
-    }
-    return false;
-}
-
-/**
- * Retrieve the value of the attribute with the given name. Panics if the node is not an element
- * or the attribute does not exist.
- *
- * @param name Attribute name to look up
- * @return Attribute value
- */
-public f<const String&> XmlNode.getAttribute(string name) {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    const String nameStr = String(name);
-    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == nameStr {
-            return this.attributeValues.get(i);
-        }
-    }
-    panic(Error("XML element has no such attribute"));
-}
-
-// --- Child operations ------------------------------------------------------
-
-/**
- * Retrieve the number of child nodes. Panics if the node is not an element.
- *
- * @return Number of child nodes
- */
-public f<unsigned long> XmlNode.getChildCount() {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    return this.children.getSize();
-}
-
-/**
- * Retrieve the child node at the given index. Panics if the node is not an element.
- *
- * @param idx Index of the child
- * @return Pointer to the child node
- */
-public f<XmlNode*> XmlNode.getChild(unsigned long idx) {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    return this.children.get(idx);
-}
-
-/**
- * Retrieve the child node at the given index. Panics if the node is not an element.
- *
- * @param idx Index of the child
- * @return Pointer to the child node
- */
-public f<XmlNode*> XmlNode.getChild(unsigned int idx) {
-    return this.getChild(cast<unsigned long>(idx));
-}
-
-/**
- * Find the first child element with the given tag name. Returns nil if none
- * exists. Text-node children are ignored.
- */
-public f<XmlNode*> XmlNode.findChild(string name) {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    const String nameStr = String(name);
-    for unsigned long i = 0l; i < this.children.getSize(); i++ {
-        XmlNode* child = this.children.get(i);
-        if child.kind == XmlNodeKind::XML_ELEMENT && child.name == nameStr {
-            return child;
-        }
-    }
-    return nil<XmlNode*>;
-}
-
-/**
- * Check whether the element has a direct child element with the given tag name
- *
- * @param name Tag name to look for
- * @return true if such a child exists, false otherwise
- */
-public f<bool> XmlNode.hasChild(string name) {
-    return this.findChild(name) != nil<XmlNode*>;
-}
-
-/**
- * Concatenated text of all direct text-node children, in document order.
- * Useful for elements like `<title>Hello</title>` where the natural value
- * is the text content.
- */
-public f<String> XmlNode.getInnerText() {
-    assert this.kind == XmlNodeKind::XML_ELEMENT;
-    String out;
-    for unsigned long i = 0l; i < this.children.getSize(); i++ {
-        XmlNode* child = this.children.get(i);
-        if child.kind == XmlNodeKind::XML_TEXT {
-            out += child.textValue;
-        }
-    }
-    return out;
-}
-
-// --- Parser ----------------------------------------------------------------
-
-/**
- * Recursive-descent XML parser. Use `parseXml` for one-shot parsing.
+ * The XmlNode data model lives in "std/text/xml-node" and serialization in
+ * "std/text/xml-serializer".
  */
 public type XmlParser struct {
     String input
@@ -497,14 +304,13 @@ p XmlParser.parseAttributes(XmlNode* element) {
         this.skipWhitespace();
         const String attrValue = this.readAttributeValue();
         if this.hasError { return; }
-        for unsigned long i = 0l; i < element.attributeKeys.getSize(); i++ {
-            if element.attributeKeys.get(i) == attrName {
+        for unsigned long i = 0l; i < element.getAttributeCount(); i++ {
+            if element.getAttributeKey(i) == attrName {
                 this.fail("Duplicate attribute name");
                 return;
             }
         }
-        element.attributeKeys.pushBack(attrName);
-        element.attributeValues.pushBack(attrValue);
+        element.addAttribute(attrName, attrValue);
     }
 }
 
@@ -518,7 +324,7 @@ p XmlParser.parseChildren(XmlNode* element) {
             this.pos += 2l;
             const String closeName = this.readName();
             if this.hasError { return; }
-            if closeName != element.name {
+            if closeName != element.getName() {
                 this.fail("Mismatched closing tag");
                 return;
             }
@@ -556,10 +362,9 @@ p XmlParser.parseChildren(XmlNode* element) {
             }
             const String content = this.input.getSubstring(start, this.pos - start);
             this.pos += 3l; // consume ']]>'
-            XmlNode* cdataNode = __new<XmlNode>();
-            cdataNode.kind = XmlNodeKind::XML_TEXT;
-            cdataNode.textValue = content;
-            element.children.pushBack(cdataNode);
+            XmlNode* cdataNode = __new<XmlNode>(XmlNodeKind::XML_TEXT);
+            cdataNode.setText(content);
+            element.addChild(cdataNode);
             continue;
         }
         if this.startsWith("<?") {
@@ -577,7 +382,7 @@ p XmlParser.parseChildren(XmlNode* element) {
         if this.input[this.pos] == '<' {
             XmlNode* child = this.parseElement();
             if this.hasError { return; }
-            element.children.pushBack(child);
+            element.addChild(child);
             continue;
         }
         String text;
@@ -592,10 +397,9 @@ p XmlParser.parseChildren(XmlNode* element) {
             text += c;
             this.pos++;
         }
-        XmlNode* textNode = __new<XmlNode>();
-        textNode.kind = XmlNodeKind::XML_TEXT;
-        textNode.textValue = text;
-        element.children.pushBack(textNode);
+        XmlNode* textNode = __new<XmlNode>(XmlNodeKind::XML_TEXT);
+        textNode.setText(text);
+        element.addChild(textNode);
     }
 }
 
@@ -607,9 +411,8 @@ f<XmlNode*> XmlParser.parseElement() {
     this.pos++; // consume '<'
     const String name = this.readName();
     if this.hasError { return nil<XmlNode*>; }
-    XmlNode* element = __new<XmlNode>();
-    element.kind = XmlNodeKind::XML_ELEMENT;
-    element.name = name;
+    XmlNode* element = __new<XmlNode>(XmlNodeKind::XML_ELEMENT);
+    element.setName(name);
     this.parseAttributes(element);
     if this.hasError { return nil<XmlNode*>; }
     if this.pos >= this.input.getLength() {
@@ -634,123 +437,4 @@ f<XmlNode*> XmlParser.parseElement() {
     this.parseChildren(element);
     if this.hasError { return nil<XmlNode*>; }
     return element;
-}
-
-// --- Serialization ---------------------------------------------------------
-
-/**
- * Serializes this node into a compact XML string. Elements without children
- * are written as self-closing tags. Text content and attribute values are
- * escaped with the predefined entities, so the result round-trips through
- * `parseXml`.
- *
- * @return Compact XML representation
- */
-public f<String> XmlNode.serialize() {
-    String out;
-    this.serializeInto(out, false, 0l);
-    return out;
-}
-
-/**
- * Serializes this node into a human-readable XML string. Elements that
- * contain child elements are laid out with two-space indentation, one node
- * per line; elements containing only text are kept on a single line.
- *
- * @return Pretty-printed XML representation
- */
-public f<String> XmlNode.serializePretty() {
-    String out;
-    this.serializeInto(out, true, 0l);
-    return out;
-}
-
-p XmlNode.serializeInto(String& out, bool pretty, unsigned long depth) {
-    if this.kind == XmlNodeKind::XML_TEXT {
-        appendXmlEscapedText(out, this.textValue);
-        return;
-    }
-
-    out += '<';
-    out += this.name;
-    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        out += ' ';
-        out += this.attributeKeys.get(i);
-        out += "=\"";
-        appendXmlEscapedAttribute(out, this.attributeValues.get(i));
-        out += '"';
-    }
-
-    const unsigned long childCount = this.children.getSize();
-    if childCount == 0l {
-        out += "/>";
-        return;
-    }
-    out += '>';
-
-    // Lay children out on their own lines only when there is structure to show.
-    bool hasElementChild = false;
-    for unsigned long i = 0l; i < childCount; i++ {
-        if this.children.get(i).kind == XmlNodeKind::XML_ELEMENT {
-            hasElementChild = true;
-            break;
-        }
-    }
-    const bool block = pretty && hasElementChild;
-
-    for unsigned long i = 0l; i < childCount; i++ {
-        XmlNode* child = this.children.get(i);
-        if block { appendXmlNewlineIndent(out, depth + 1l); }
-        child.serializeInto(out, pretty, depth + 1l);
-    }
-    if block { appendXmlNewlineIndent(out, depth); }
-
-    out += "</";
-    out += this.name;
-    out += '>';
-}
-
-// Append a newline followed by `depth` levels of two-space indentation.
-p appendXmlNewlineIndent(String& out, unsigned long depth) {
-    out += '\n';
-    for unsigned long i = 0l; i < depth; i++ {
-        out += "  ";
-    }
-}
-
-// Escape character data: '&', '<' and '>' become their predefined entities.
-p appendXmlEscapedText(String& out, const String& text) {
-    const unsigned long length = text.getLength();
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = text[i];
-        if c == '&' {
-            out += "&amp;";
-        } else if c == '<' {
-            out += "&lt;";
-        } else if c == '>' {
-            out += "&gt;";
-        } else {
-            out += c;
-        }
-    }
-}
-
-// Escape an attribute value (delimited by double quotes), additionally
-// escaping the '"' character.
-p appendXmlEscapedAttribute(String& out, const String& value) {
-    const unsigned long length = value.getLength();
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = value[i];
-        if c == '&' {
-            out += "&amp;";
-        } else if c == '<' {
-            out += "&lt;";
-        } else if c == '>' {
-            out += "&gt;";
-        } else if c == '"' {
-            out += "&quot;";
-        } else {
-            out += c;
-        }
-    }
 }

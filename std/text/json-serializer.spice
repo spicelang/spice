@@ -1,0 +1,149 @@
+import "std/text/json-value";
+import "std/type/type-conversion";
+
+ext f<int> snprintf(char*, unsigned long, string, ...);
+
+/**
+ * Serializer for JSON output.
+ *
+ * In compact mode (the default) the output contains no insignificant
+ * whitespace. In pretty mode nested arrays and objects are laid out with
+ * two-space indentation. Either way the result round-trips through
+ * `parseJson` from "std/text/json-parser".
+ */
+public type JsonSerializer struct {
+    bool pretty
+}
+
+/**
+ * Construct a JSON serializer
+ *
+ * @param pretty Emit human-readable output with two-space indentation
+ */
+public p JsonSerializer.ctor(bool pretty = false) {
+    this.pretty = pretty;
+}
+
+/**
+ * Serializes a JSON value into a JSON string
+ *
+ * @param value JSON value to serialize
+ * @return JSON representation
+ */
+public f<String> JsonSerializer.serialize(JsonValue& value) {
+    String out;
+    this.serializeInto(&value, out, 0l);
+    return out;
+}
+
+/**
+ * Serializes a JSON value into a JSON string
+ *
+ * @param value JSON value to serialize
+ * @return JSON representation
+ */
+public f<String> JsonSerializer.serialize(JsonValue* value) {
+    String out;
+    this.serializeInto(value, out, 0l);
+    return out;
+}
+
+// --- Internal serializer helpers --------------------------------------------
+
+p JsonSerializer.serializeInto(JsonValue* value, String& out, unsigned long depth) {
+    const JsonValueKind kind = value.getKind();
+    if kind == JsonValueKind::JSON_NULL {
+        out += "null";
+    } else if kind == JsonValueKind::JSON_BOOL {
+        out += value.getBool() ? "true" : "false";
+    } else if kind == JsonValueKind::JSON_NUMBER {
+        out += serializeJsonNumber(value.getNumber());
+    } else if kind == JsonValueKind::JSON_STRING {
+        serializeJsonString(out, value.getString());
+    } else if kind == JsonValueKind::JSON_ARRAY {
+        const unsigned long size = value.getArraySize();
+        if size == 0l {
+            out += "[]";
+            return;
+        }
+        out += '[';
+        for unsigned long i = 0l; i < size; i++ {
+            if i > 0l { out += ','; }
+            if this.pretty { appendJsonNewlineIndent(out, depth + 1l); }
+            this.serializeInto(value.getArrayItem(i), out, depth + 1l);
+        }
+        if this.pretty { appendJsonNewlineIndent(out, depth); }
+        out += ']';
+    } else {
+        const unsigned long size = value.getObjectSize();
+        if size == 0l {
+            out += "{}";
+            return;
+        }
+        out += '{';
+        for unsigned long i = 0l; i < size; i++ {
+            if i > 0l { out += ','; }
+            if this.pretty { appendJsonNewlineIndent(out, depth + 1l); }
+            serializeJsonString(out, value.getObjectKey(i));
+            out += this.pretty ? ": " : ":";
+            this.serializeInto(value.getObjectValue(i), out, depth + 1l);
+        }
+        if this.pretty { appendJsonNewlineIndent(out, depth); }
+        out += '}';
+    }
+}
+
+// Append a newline followed by `depth` levels of two-space indentation.
+p appendJsonNewlineIndent(String& out, unsigned long depth) {
+    out += '\n';
+    for unsigned long i = 0l; i < depth; i++ {
+        out += "  ";
+    }
+}
+
+// Serialize a string value with surrounding quotes and JSON escaping.
+p serializeJsonString(String& out, const String& value) {
+    out += '"';
+    const unsigned long length = value.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = value[i];
+        if c == '"' {
+            out += "\\\"";
+        } else if c == '\\' {
+            out += "\\\\";
+        } else if c == '\n' {
+            out += "\\n";
+        } else if c == '\r' {
+            out += "\\r";
+        } else if c == '\t' {
+            out += "\\t";
+        } else if c == '\b' {
+            out += "\\b";
+        } else if c == '\f' {
+            out += "\\f";
+        } else if cast<int>(c) < 0x20 {
+            // Other control characters are emitted as \u00XX escapes
+            string hexDigits = "0123456789abcdef";
+            const int code = cast<int>(c);
+            out += "\\u00";
+            out += hexDigits[(code >> 4) & 0xF];
+            out += hexDigits[code & 0xF];
+        } else {
+            out += c;
+        }
+    }
+    out += '"';
+}
+
+// Serialize a number, printing integral values without a fractional part.
+// Non-integral values use 17 significant digits ("%.17g"), which is enough to
+// round-trip any double exactly so reparsing yields the same numeric value.
+f<String> serializeJsonNumber(double value) {
+    const long asLong = cast<long>(value);
+    if cast<double>(asLong) == value {
+        return toString(asLong);
+    }
+    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
+}
