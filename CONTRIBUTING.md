@@ -4,6 +4,9 @@ Apart from that, feel free to fork this project and send us some code contributi
 
 In every case please read the [Code of Conduct](https://github.com/spicelang/spice/blob/main/CODE_OF_CONDUCT.md) before contributing.
 
+## Code style
+Before sending in code contributions, please read the [Coding Style Guide](https://github.com/spicelang/spice/blob/main/STYLE_GUIDE.md). It documents the formatting, naming and structural conventions used throughout the compiler (C++) and standard library (Spice), so that contributions stay consistent.
+
 ## Security issues
 Please do **not** open issues on GitHub! Please read our [Security Policy](https://github.com/spicelang/spice/blob/main/SECURITY.md) and contact us via non-public ways, e.g. per mail: [contact@chillibits.com](mailto:contact@chillibits.com).
 
