@@ -86,6 +86,12 @@ Instructions how to build when inside the respective build directory:
     - Use the `--gtest_filter` option to focus on specific tests when running under the debugger.
 - For debugging memory issues, use valgrind as described in the testing section.
 
+## Coding style
+
+Follow the project [Coding Style Guide](STYLE_GUIDE.md) for all C++ (`src/`, `test/`) and Spice (`std/`,
+`test/test-files/`) changes. It documents formatting (`.clang-format`), naming, file layout, the visitor pattern,
+diagnostics, memory management, and Spice-source conventions. Read it before writing or modifying code.
+
 ## Editing expectations
 
 - Keep changes minimal and scoped to the task.
