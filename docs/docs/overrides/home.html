@@ -83,6 +83,12 @@
 		backdrop-filter: blur(4px);
 	}
 
+	/* Override Material's [dir=ltr] .md-typeset ul li margin-left: 1.25em */
+	[dir=ltr] .tx-hero .tx-hero__pills li,
+	[dir=rtl] .tx-hero .tx-hero__pills li {
+		margin-left: 8px;
+	}
+
 	.tx-hero__pills svg {
 		width: .85rem;
 		height: .85rem;
