@@ -24,7 +24,7 @@
 	 * -------------------------------------------------------------------- */
 	[data-md-color-scheme=slate] .tx-container {
 		padding-top: 1rem;
-		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1123 258'><path d='M1124,2c0,0 0,256 0,256l-1125,0l0,-48c0,0 16,5 55,5c116,0 197,-92 325,-92c121,0 114,46 254,46c140,0 214,-167 572,-166Z' style='fill: hsla(232, 15%, 21%, 1)'/></svg>") no-repeat bottom, linear-gradient(to bottom, var(--md-primary-fg-color), var(--spice-primary-color) 99%, #F7861E 99%)
+		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1123 258'><path d='M1124,2c0,0 0,256 0,256l-1125,0l0,-48c0,0 16,5 55,5c116,0 197,-92 325,-92c121,0 114,46 254,46c140,0 214,-167 572,-166Z' style='fill: hsla(232, 15%, 14%, 1)'/></svg>") no-repeat bottom, linear-gradient(to bottom, var(--md-primary-fg-color), var(--spice-primary-color) 99%, #F7861E 99%)
 	}
 
 	.tx-container {
@@ -49,7 +49,7 @@
 		font-weight: 400;
 		line-height: 1.5;
 		opacity: .92;
-		margin-bottom: 1.4rem;
+		margin-bottom: .9rem;
 		max-width: 30rem;
 	}
 
@@ -61,7 +61,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: .5rem;
-		margin-bottom: 1.6rem;
+		margin-top: 0;
+		margin-bottom: 1.1rem;
 		list-style: none;
 		padding: 0;
 	}
@@ -353,11 +354,12 @@
 		border-bottom: 1px solid rgba(255, 255, 255, .06);
 	}
 
-	.tx-window__bar span {
+	.tx-window__bar span:not(.tx-window__title) {
 		width: .7rem;
 		height: .7rem;
 		border-radius: 50%;
 		display: inline-block;
+		flex: none;
 	}
 
 	.tx-window__bar span:nth-child(1) { background: #ff5f56; }
@@ -368,14 +370,14 @@
 		margin-left: .5rem;
 		font-size: .68rem;
 		color: rgba(255, 255, 255, .45);
-		font-family: var(--md-code-font-family, monospace);
+		font-family: var(--md-code-font-family, monospace),serif;
 	}
 
 	.tx-window pre {
 		margin: 0;
 		padding: 1.2rem 1.3rem;
 		overflow-x: auto;
-		font-family: var(--md-code-font-family, monospace);
+		font-family: var(--md-code-font-family, monospace),serif;
 		font-size: .76rem;
 		line-height: 1.65;
 		color: #e6e6ef;
@@ -393,13 +395,11 @@
 	 * Closing CTA
 	 * -------------------------------------------------------------------- */
 	.tx-cta {
-		margin: 3rem 0 1rem;
-		padding: 2.6rem 1.5rem;
-		border-radius: .9rem;
+		margin: 3rem 0 0;
+		padding: 3.2rem 1.5rem;
 		text-align: center;
 		color: #fff;
 		background: linear-gradient(120deg, var(--spice-primary-color), var(--spice-accent-color));
-		box-shadow: 0 .8rem 2rem rgba(146, 12, 23, .3);
 	}
 
 	.tx-cta h2 {
@@ -448,7 +448,7 @@
 			<div class="tx-hero__content">
 				<h1>The Spice Programming Language</h1>
 				<p class="tx-hero__tagline">
-					A compiled, statically typed systems language that targets native machine code via LLVM —
+					A compiled, statically typed systems language that targets native machine code —
 					producing lean binaries with no runtime overhead.
 				</p>
 				<ul class="tx-hero__pills">
@@ -542,13 +542,11 @@
 </section>
 
 <!-- ====================== Closing CTA ====================== -->
-<section class="md-grid md-typeset">
-	<div class="tx-cta">
-		<h2>Ready to give Spice a try?</h2>
-		<p>Install the toolchain on your platform and write your first program in minutes.</p>
-		<a href="{{ 'install/linux/' | url }}" class="md-button md-button--primary">Install Spice</a>
-		<a href="{{ 'intro/' | url }}" class="md-button">Read the introduction</a>
-	</div>
+<section class="tx-cta md-typeset">
+	<h2>Ready to give Spice a try?</h2>
+	<p>Install the toolchain on your platform and write your first program in minutes.</p>
+	<a href="{{ 'install/linux/' | url }}" class="md-button md-button--primary">Install Spice</a>
+	<a href="{{ 'intro/' | url }}" class="md-button">Read the introduction</a>
 </section>
 {% endblock %}
 {% block content %}{% endblock %}
