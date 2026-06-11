@@ -1,0 +1,142 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/reader/code-loc";
+import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/source-file-intf";
+
+/**
+ * Visitor for debug purposes (is only executed in the compiler debug mode and when explicitly enabling it via cli flag)
+ *
+ * Jobs:
+ * - Visualize AST
+ *
+ * Differences to the C++ ASTVisualizer:
+ * 1. The C++ implementation derives the node name via RTTI (typeid + demangling) and recurses through
+ *    the AbstractASTVisitor's virtual accept()/visit() dispatch, so every child is routed back through
+ *    its typed visitXxx method. Spice supports neither RTTI nor (yet) accept() dispatch on AST nodes -
+ *    the IVisitable interface is still guarded out in ast-nodes.spice due to a circular import.
+ *    Therefore each node stores its name on the base ASTNode (set to typename(*this) in its
+ *    constructor) and the recursion is driven structurally over the generic getChildren() vector
+ *    instead of through the typed visitXxx methods. The stored name is the Spice type name (e.g.
+ *    "ASTEntryNode"); the leading "AST" is stripped here to match the C++ node names (e.g. "EntryNode"),
+ *    so the produced dot code is identical to the one of the C++ ASTVisualizer.
+ * 2. In C++ this pass derives from CompilerPass. The bootstrap CompilerPass is not wired up against the
+ *    real GlobalResourceManager/SourceFile interfaces yet, so we mirror the two CompilerPass members
+ *    this pass conceptually needs (resourceManager + sourceFile) directly here. Once CompilerPass
+ *    compiles against the real interfaces, this should become `compose CompilerPass compilerPass`.
+ */
+public type ASTVisualizer struct {
+    IGlobalResourceManager& resourceManager
+    ISourceFile* sourceFile
+    String parentNodeId
+}
+
+public p ASTVisualizer.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile) {
+    this.resourceManager = resourceManager;
+    this.sourceFile = sourceFile;
+}
+
+/**
+ * Entry point of the AST visualizer. Builds the dot code for the whole AST of the source file.
+ *
+ * @param ctx Root node of the AST
+ * @return Dot code for the AST
+ */
+public f<String> ASTVisualizer.visit(ASTEntryNode* ctx) {
+    return this.buildNode(&ctx.node);
+}
+
+/**
+ * Build the dot representation of a single AST node and recursively of all its children.
+ *
+ * @param node Node to visualize
+ * @return Dot code for the subtree rooted at the given node
+ */
+f<String> ASTVisualizer.buildNode(ASTNode* node) {
+    // The implicit 'result' variable collects the dot code (initialize it to an empty string)
+    result = String();
+
+    // Prepare strings
+    // node.nodeName is set to typename(*this) in each node's constructor, so it carries the Spice type
+    // name including its visibility qualifier (e.g. "public ASTEntryNode"). We take everything after the
+    // "AST" type-name prefix to match the C++ node names (e.g. "EntryNode").
+    const String codeLoc = node.codeLoc.toString();
+    const String fullNodeName = String(node.nodeName);
+    const long astPrefixIdx = fullNodeName.find("AST");
+    assert astPrefixIdx >= 0l;
+    const String nodeName = fullNodeName.getSubstring(astPrefixIdx + 3l);
+    const String nodeId = codeLoc + "_" + nodeName;
+
+    // Build result
+    result += nodeId;
+    result += " [color=\"lightgreen\",label=\"";
+    result += nodeName;
+    result += "\"];\n";
+
+    // Link parent node with the current one
+    if !this.parentNodeId.isEmpty() {
+        result += " ";
+        result += this.parentNodeId;
+        result += " -> ";
+        result += nodeId;
+        result += ";\n";
+    }
+
+    // Set parentNodeId for children
+    const String previousParentNodeId = this.parentNodeId;
+    this.parentNodeId = nodeId;
+
+    // Visit all the children
+    foreach ASTNode* child : node.getChildren() {
+        assert child != nil<ASTNode*>;
+        result += " ";
+        result += this.buildNode(child);
+    }
+
+    // Restore parentNodeId for the next sibling
+    this.parentNodeId = previousParentNodeId;
+
+    return result;
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Minimal dummy resource manager to satisfy the ASTVisualizer constructor in the test.
+type DummyResourceManager struct : IGlobalResourceManager {}
+
+#[test, test.name="ASTVisualizer Smoke test"]
+public f<bool> testASTVisualizerSmoke() {
+    const CodeLoc loc = CodeLoc(1l, 1l, "test.spice");
+
+    // Build a tiny AST: Entry -> MainFctDef -> StmtLst -> ReturnStmt
+    ASTEntryNode entry = ASTEntryNode(loc);
+    ASTMainFctDefNode mainFct = ASTMainFctDefNode(loc);
+    ASTStmtLstNode stmtLst = ASTStmtLstNode(loc);
+    ASTReturnStmtNode retStmt = ASTReturnStmtNode(loc);
+    entry.node.addChild(&mainFct.node.node);
+    mainFct.node.node.addChild(&stmtLst.node);
+    stmtLst.node.addChild(&retStmt.node.node);
+
+    // Run the visualizer
+    DummyResourceManager resourceManager = DummyResourceManager();
+    ASTVisualizer visualizer = ASTVisualizer(resourceManager, nil<ISourceFile*>);
+    const String dotCode = visualizer.visit(&entry);
+
+    // Check the produced dot code
+    String expected;
+    expected += "L1C1_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];\n";
+    expected += " L1C1_MainFctDefNode [color=\"lightgreen\",label=\"MainFctDefNode\"];\n";
+    expected += " L1C1_EntryNode -> L1C1_MainFctDefNode;\n";
+    expected += " L1C1_StmtLstNode [color=\"lightgreen\",label=\"StmtLstNode\"];\n";
+    expected += " L1C1_MainFctDefNode -> L1C1_StmtLstNode;\n";
+    expected += " L1C1_ReturnStmtNode [color=\"lightgreen\",label=\"ReturnStmtNode\"];\n";
+    expected += " L1C1_StmtLstNode -> L1C1_ReturnStmtNode;\n";
+    assert dotCode == expected;
+
+    return true;
+}

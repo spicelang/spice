@@ -716,7 +716,6 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
     return foundOccurrences;
 }
 
-#[ignoreUnusedReturnValue]
 /**
  * Replaces all occurrences of a character with another character
  *
@@ -724,6 +723,7 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
  * @param replacement Character to replace each occurrence with
  * @return Number of replacements made
  */
+#[ignoreUnusedReturnValue]
 public f<unsigned long> String.replaceAll(char needle, char replacement) {
     const String needleStr = String(needle);
     const String replacementStr = String(replacement);

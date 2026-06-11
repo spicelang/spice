@@ -1,24 +1,28 @@
 // Double
 public const unsigned int DOUBLE_SIZE = 8; // sizeof<double>()
+public const unsigned int DOUBLE_ALIGN = 8; // alignof<double>()
 public const double DOUBLE_MIN_VALUE = -1.7976931348623157e+308;
 public const double DOUBLE_MAX_VALUE = 1.7976931348623157e+308;
 
 // Int
-public const int INT_SIZE = 4; // sizeof<int>()
+public const unsigned int INT_SIZE = 4; // sizeof<int>()
+public const unsigned int INT_ALIGN = 4; // alignof<int>()
 public const int INT_MIN_VALUE = -2147483648;
 public const int INT_MAX_VALUE = 2147483647;
 public const unsigned int UINT_MIN_VALUE = 0;
 public const unsigned int UINT_MAX_VALUE = 4294967295u;
 
 // Long
-public const unsigned int SIZE = 8; // sizeof<long>()
-public const long MIN_VALUE = -9223372036854775808l;
-public const long MAX_VALUE = 9223372036854775807l;
+public const unsigned int LONG_SIZE = 8; // sizeof<long>()
+public const unsigned int LONG_ALIGN = 8; // alignof<long>()
+public const long LONG_MIN_VALUE = -9223372036854775808l;
+public const long LONG_MAX_VALUE = 9223372036854775807l;
 public const unsigned long ULONG_MIN_VALUE = 0ul;
 public const unsigned long ULONG_MAX_VALUE = 18446744073709551615ul;
 
 // Short
 public const unsigned int SHORT_SIZE = 2; // sizeof<short>()
+public const unsigned int SHORT_ALIGN = 2; // alignof<short>()
 public const short SHORT_MIN_VALUE = -32768s;
 public const short SHORT_MAX_VALUE = 32767s;
 public const unsigned short USHORT_MIN_VALUE = 0s;
@@ -26,16 +30,19 @@ public const unsigned short USHORT_MAX_VALUE = 65535us;
 
 // Char
 public const unsigned int CHAR_SIZE = 1; // sizeof<char>()
+public const unsigned int CHAR_ALIGN = 1; // alignof<char>()
 public const unsigned int CHAR_MIN_VALUE = 0;
 public const unsigned int CHAR_MAX_VALUE = 255;
 
 // Byte
 public const unsigned int BYTE_SIZE = 1; // sizeof<byte>()
+public const unsigned int BYTE_ALIGN = 1; // alignof<byte>()
 public const unsigned int BYTE_MIN_VALUE = 0;
 public const unsigned int BYTE_MAX_VALUE = 255;
 
 // Bool
 public const int BOOL_SIZE = 1; // sizeof<bool>()
+public const int BOOL_ALIGN = 1; // alignof<bool>()
 public const bool TRUE = true;
 public const bool FALSE = false;
 
