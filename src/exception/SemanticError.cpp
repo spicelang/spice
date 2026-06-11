@@ -136,6 +136,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Duplicate import name";
   case IMPORTED_FILE_NOT_EXISTING:
     return "Imported source file not existing";
+  case INVALID_IMPORT_PATH:
+    return "Invalid import path";
   case CIRCULAR_DEPENDENCY:
     return "Circular import detected";
   case ACCESS_TO_NON_EXISTING_MEMBER:

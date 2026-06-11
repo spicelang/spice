@@ -1,0 +1,3 @@
+import "../secret" as s;
+
+f<int> main() {}

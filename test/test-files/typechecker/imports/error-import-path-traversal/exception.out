@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:1:
+Invalid import path: Import paths must not contain parent-directory ('..') components: '../secret'
+
+1  import "../secret" as s;
+   ^^^^^^^^^^^^^^^^^^^^^^^^
