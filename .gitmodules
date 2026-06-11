@@ -8,3 +8,6 @@
 	path = deps/antlr4
 	url = https://github.com/spicelang/antlr4.git
 	branch = dev
+[submodule "deps/googletest"]
+	path = deps/googletest
+	url = https://github.com/google/googletest.git
