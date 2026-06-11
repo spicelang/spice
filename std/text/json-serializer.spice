@@ -4,62 +4,53 @@ import "std/type/type-conversion";
 ext f<int> snprintf(char*, unsigned long, string, ...);
 
 /**
- * Serializes a JSON value into a compact JSON string (no insignificant
- * whitespace). The result round-trips through `parseJson` from
- * "std/text/json-parser".
+ * Serializer for JSON output.
+ *
+ * In compact mode (the default) the output contains no insignificant
+ * whitespace. In pretty mode nested arrays and objects are laid out with
+ * two-space indentation. Either way the result round-trips through
+ * `parseJson` from "std/text/json-parser".
+ */
+public type JsonSerializer struct {
+    bool pretty
+}
+
+/**
+ * Construct a JSON serializer
+ *
+ * @param pretty Emit human-readable output with two-space indentation
+ */
+public p JsonSerializer.ctor(bool pretty = false) {
+    this.pretty = pretty;
+}
+
+/**
+ * Serializes a JSON value into a JSON string
  *
  * @param value JSON value to serialize
- * @return Compact JSON representation
+ * @return JSON representation
  */
-public f<String> serializeJson(JsonValue& value) {
+public f<String> JsonSerializer.serialize(JsonValue& value) {
     String out;
-    serializeJsonInto(&value, out, false, 0l);
+    this.serializeInto(&value, out, 0l);
     return out;
 }
 
 /**
- * Serializes a JSON value into a compact JSON string (no insignificant
- * whitespace). The result round-trips through `parseJson` from
- * "std/text/json-parser".
+ * Serializes a JSON value into a JSON string
  *
  * @param value JSON value to serialize
- * @return Compact JSON representation
+ * @return JSON representation
  */
-public f<String> serializeJson(JsonValue* value) {
+public f<String> JsonSerializer.serialize(JsonValue* value) {
     String out;
-    serializeJsonInto(value, out, false, 0l);
-    return out;
-}
-
-/**
- * Serializes a JSON value into a human-readable JSON string using two-space
- * indentation for nested arrays and objects.
- *
- * @param value JSON value to serialize
- * @return Pretty-printed JSON representation
- */
-public f<String> serializeJsonPretty(JsonValue& value) {
-    String out;
-    serializeJsonInto(&value, out, true, 0l);
-    return out;
-}
-
-/**
- * Serializes a JSON value into a human-readable JSON string using two-space
- * indentation for nested arrays and objects.
- *
- * @param value JSON value to serialize
- * @return Pretty-printed JSON representation
- */
-public f<String> serializeJsonPretty(JsonValue* value) {
-    String out;
-    serializeJsonInto(value, out, true, 0l);
+    this.serializeInto(value, out, 0l);
     return out;
 }
 
 // --- Internal serializer helpers --------------------------------------------
 
-p serializeJsonInto(JsonValue* value, String& out, bool pretty, unsigned long depth) {
+p JsonSerializer.serializeInto(JsonValue* value, String& out, unsigned long depth) {
     const JsonValueKind kind = value.getKind();
     if kind == JsonValueKind::JSON_NULL {
         out += "null";
@@ -78,10 +69,10 @@ p serializeJsonInto(JsonValue* value, String& out, bool pretty, unsigned long de
         out += '[';
         for unsigned long i = 0l; i < size; i++ {
             if i > 0l { out += ','; }
-            if pretty { appendJsonNewlineIndent(out, depth + 1l); }
-            serializeJsonInto(value.getArrayItem(i), out, pretty, depth + 1l);
+            if this.pretty { appendJsonNewlineIndent(out, depth + 1l); }
+            this.serializeInto(value.getArrayItem(i), out, depth + 1l);
         }
-        if pretty { appendJsonNewlineIndent(out, depth); }
+        if this.pretty { appendJsonNewlineIndent(out, depth); }
         out += ']';
     } else {
         const unsigned long size = value.getObjectSize();
@@ -92,12 +83,12 @@ p serializeJsonInto(JsonValue* value, String& out, bool pretty, unsigned long de
         out += '{';
         for unsigned long i = 0l; i < size; i++ {
             if i > 0l { out += ','; }
-            if pretty { appendJsonNewlineIndent(out, depth + 1l); }
+            if this.pretty { appendJsonNewlineIndent(out, depth + 1l); }
             serializeJsonString(out, value.getObjectKey(i));
-            out += pretty ? ": " : ":";
-            serializeJsonInto(value.getObjectValue(i), out, pretty, depth + 1l);
+            out += this.pretty ? ": " : ":";
+            this.serializeInto(value.getObjectValue(i), out, depth + 1l);
         }
-        if pretty { appendJsonNewlineIndent(out, depth); }
+        if this.pretty { appendJsonNewlineIndent(out, depth); }
         out += '}';
     }
 }

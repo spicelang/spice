@@ -3,15 +3,17 @@ import "std/text/xml-serializer";
 import "std/text/xml-parser";
 
 f<int> main() {
+    XmlSerializer serializer;
+
     // Serialization: self-closing element with escaped attributes
     Result<XmlNode*> serSelfRes = parseXml(String("<a x=\"1\" y='two &amp; three'/>"));
     XmlNode* serSelf = serSelfRes.unwrap();
-    assert serializeXml(serSelf) == String("<a x=\"1\" y=\"two &amp; three\"/>");
+    assert serializer.serialize(serSelf) == String("<a x=\"1\" y=\"two &amp; three\"/>");
 
     // Text content escaping round-trips through the parser
     Result<XmlNode*> serTextRes = parseXml(String("<msg>hi &lt;there&gt; &amp; you</msg>"));
     XmlNode* serText = serTextRes.unwrap();
-    assert serializeXml(serText) == String("<msg>hi &lt;there&gt; &amp; you</msg>");
+    assert serializer.serialize(serText) == String("<msg>hi &lt;there&gt; &amp; you</msg>");
 
     // Nodes built programmatically serialize as expected
     XmlNode root = XmlNode(XmlNodeKind::XML_ELEMENT);
@@ -20,25 +22,26 @@ f<int> main() {
     XmlNode* textChild = __new<XmlNode>(XmlNodeKind::XML_TEXT);
     textChild.setText(String("Hello & bye"));
     root.addChild(textChild);
-    assert serializeXml(root) == String("<greeting lang=\"en\">Hello &amp; bye</greeting>");
+    assert serializer.serialize(root) == String("<greeting lang=\"en\">Hello &amp; bye</greeting>");
 
     // Round-trip: serialize -> parse -> serialize is stable
     Result<XmlNode*> serRoundRes = parseXml(String("<book id=\"42\"><title>Spice</title><tags><tag>lang</tag><tag>systems</tag></tags></book>"));
     XmlNode* serRound = serRoundRes.unwrap();
-    String serializedXml = serializeXml(serRound);
+    String serializedXml = serializer.serialize(serRound);
     Result<XmlNode*> reparsedRes = parseXml(serializedXml);
     assert reparsedRes.isOk();
     XmlNode* reparsedRoot = reparsedRes.unwrap();
-    assert serializeXml(reparsedRoot) == serializedXml;
+    assert serializer.serialize(reparsedRoot) == serializedXml;
 
     // Pretty printing lays element children on their own lines
+    XmlSerializer prettySerializer = XmlSerializer(true);
     Result<XmlNode*> prettyXmlRes = parseXml(String("<root><a>1</a><b>2</b></root>"));
     XmlNode* prettyXml = prettyXmlRes.unwrap();
     String expectedPrettyXml = String("<root>\n");
     expectedPrettyXml += "  <a>1</a>\n";
     expectedPrettyXml += "  <b>2</b>\n";
     expectedPrettyXml += "</root>";
-    assert serializeXmlPretty(prettyXml) == expectedPrettyXml;
+    assert prettySerializer.serialize(prettyXml) == expectedPrettyXml;
 
     printf("All assertions passed!");
 }

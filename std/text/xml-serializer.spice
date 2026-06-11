@@ -1,66 +1,56 @@
 import "std/text/xml-node";
 
 /**
- * Serializes an XML node into a compact XML string. Elements without children
- * are written as self-closing tags. Text content and attribute values are
- * escaped with the predefined entities, so the result round-trips through
- * `parseXml` from "std/text/xml-parser".
+ * Serializer for XML output.
+ *
+ * Elements without children are written as self-closing tags. Text content
+ * and attribute values are escaped with the predefined entities, so the
+ * result round-trips through `parseXml` from "std/text/xml-parser".
+ *
+ * In pretty mode, elements that contain child elements are laid out with
+ * two-space indentation, one node per line; elements containing only text
+ * are kept on a single line.
+ */
+public type XmlSerializer struct {
+    bool pretty
+}
+
+/**
+ * Construct an XML serializer
+ *
+ * @param pretty Emit human-readable output with two-space indentation
+ */
+public p XmlSerializer.ctor(bool pretty = false) {
+    this.pretty = pretty;
+}
+
+/**
+ * Serializes an XML node into an XML string
  *
  * @param node XML node to serialize
- * @return Compact XML representation
+ * @return XML representation
  */
-public f<String> serializeXml(XmlNode& node) {
+public f<String> XmlSerializer.serialize(XmlNode& node) {
     String out;
-    serializeXmlInto(&node, out, false, 0l);
+    this.serializeInto(&node, out, 0l);
     return out;
 }
 
 /**
- * Serializes an XML node into a compact XML string. Elements without children
- * are written as self-closing tags. Text content and attribute values are
- * escaped with the predefined entities, so the result round-trips through
- * `parseXml` from "std/text/xml-parser".
+ * Serializes an XML node into an XML string
  *
  * @param node XML node to serialize
- * @return Compact XML representation
+ * @return XML representation
  */
-public f<String> serializeXml(XmlNode* node) {
+public f<String> XmlSerializer.serialize(XmlNode* node) {
     String out;
-    serializeXmlInto(node, out, false, 0l);
-    return out;
-}
-
-/**
- * Serializes an XML node into a human-readable XML string. Elements that
- * contain child elements are laid out with two-space indentation, one node
- * per line; elements containing only text are kept on a single line.
- *
- * @param node XML node to serialize
- * @return Pretty-printed XML representation
- */
-public f<String> serializeXmlPretty(XmlNode& node) {
-    String out;
-    serializeXmlInto(&node, out, true, 0l);
-    return out;
-}
-
-/**
- * Serializes an XML node into a human-readable XML string. Elements that
- * contain child elements are laid out with two-space indentation, one node
- * per line; elements containing only text are kept on a single line.
- *
- * @param node XML node to serialize
- * @return Pretty-printed XML representation
- */
-public f<String> serializeXmlPretty(XmlNode* node) {
-    String out;
-    serializeXmlInto(node, out, true, 0l);
+    this.serializeInto(node, out, 0l);
     return out;
 }
 
 // --- Internal serializer helpers --------------------------------------------
 
-p serializeXmlInto(XmlNode* node, String& out, bool pretty, unsigned long depth) {
+p XmlSerializer.serializeInto(XmlNode* node, String& out, unsigned long depth) {
     if node.getKind() == XmlNodeKind::XML_TEXT {
         appendXmlEscapedText(out, node.getText());
         return;
@@ -92,11 +82,11 @@ p serializeXmlInto(XmlNode* node, String& out, bool pretty, unsigned long depth)
             break;
         }
     }
-    const bool block = pretty && hasElementChild;
+    const bool block = this.pretty && hasElementChild;
 
     for unsigned long i = 0l; i < childCount; i++ {
         if block { appendXmlNewlineIndent(out, depth + 1l); }
-        serializeXmlInto(node.getChild(i), out, pretty, depth + 1l);
+        this.serializeInto(node.getChild(i), out, depth + 1l);
     }
     if block { appendXmlNewlineIndent(out, depth); }
 
