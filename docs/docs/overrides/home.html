@@ -60,8 +60,8 @@
 	.tx-hero .tx-hero__pills {
 		display: flex;
 		flex-wrap: wrap;
-		gap: .5rem;
-		margin: 0 0 1.1rem;
+		gap: .4rem;
+		margin: 1rem 0 1.4rem;
 		list-style: none;
 		padding: 0;
 	}
@@ -70,9 +70,10 @@
 		margin: 0;
 		display: inline-flex;
 		align-items: center;
-		gap: .35rem;
-		padding: .25rem .7rem;
-		font-size: .62rem;
+		white-space: nowrap;
+		gap: .3rem;
+		padding: .35rem .55rem;
+		font-size: .6rem;
 		font-weight: 700;
 		letter-spacing: .04em;
 		text-transform: uppercase;
@@ -148,9 +149,13 @@
 		}
 
 		.tx-hero__content {
-			max-width: 32rem;
+			max-width: 40rem;
 			margin-top: 3.5rem;
 			padding-bottom: 14vw
+		}
+
+		.tx-hero .tx-hero__pills {
+			flex-wrap: nowrap;
 		}
 
 		.tx-hero__image {
