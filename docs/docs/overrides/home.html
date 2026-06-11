@@ -4,6 +4,7 @@
 <style>
 	:root {
 		--spice-primary-color: #920C17;
+		--spice-accent-color: #F7861E;
 	}
 
 	.md-header {
@@ -18,6 +19,9 @@
 		display: none
 	}
 
+	/* ----------------------------------------------------------------------
+	 * Hero
+	 * -------------------------------------------------------------------- */
 	[data-md-color-scheme=slate] .tx-container {
 		padding-top: 1rem;
 		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1123 258'><path d='M1124,2c0,0 0,256 0,256l-1125,0l0,-48c0,0 16,5 55,5c116,0 197,-92 325,-92c121,0 114,46 254,46c140,0 214,-167 572,-166Z' style='fill: hsla(232, 15%, 21%, 1)'/></svg>") no-repeat bottom, linear-gradient(to bottom, var(--md-primary-fg-color), var(--spice-primary-color) 99%, #F7861E 99%)
@@ -36,35 +40,82 @@
 	.tx-hero h1 {
 		margin-bottom: 1rem;
 		color: currentColor;
-		font-weight: 700
+		font-weight: 700;
+		line-height: 1.1;
+	}
+
+	.tx-hero__tagline {
+		font-size: 1.05rem;
+		font-weight: 400;
+		line-height: 1.5;
+		opacity: .92;
+		margin-bottom: 1.4rem;
+		max-width: 30rem;
 	}
 
 	.tx-hero__content {
 		padding-bottom: 6rem
 	}
 
+	.tx-hero__pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: .5rem;
+		margin-bottom: 1.6rem;
+		list-style: none;
+		padding: 0;
+	}
+
+	.tx-hero__pills li {
+		display: inline-flex;
+		align-items: center;
+		gap: .35rem;
+		padding: .25rem .7rem;
+		font-size: .62rem;
+		font-weight: 700;
+		letter-spacing: .04em;
+		text-transform: uppercase;
+		border-radius: 2rem;
+		background: rgba(255, 255, 255, .15);
+		border: 1px solid rgba(255, 255, 255, .25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tx-hero__pills svg {
+		width: .85rem;
+		height: .85rem;
+		fill: currentColor;
+	}
+
 	.tx-hero .md-button {
 		margin-top: .5rem;
 		margin-right: .5rem;
-		color: var(--md-primary-bg-color)
+		color: var(--md-primary-bg-color);
+		transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease;
 	}
 
 	.tx-hero .md-button--primary {
 		background-color: var(--md-primary-bg-color);
 		color: var(--spice-primary-color);
-		border-color: var(--md-primary-bg-color)
+		border-color: var(--md-primary-bg-color);
+		box-shadow: 0 .4rem 1.2rem rgba(0, 0, 0, .2);
 	}
 
 	.tx-hero .md-button:focus,
 	.tx-hero .md-button:hover {
 		background-color: var(--md-accent-fg-color);
 		color: var(--md-default-bg-color);
-		border-color: var(--md-accent-fg-color)
+		border-color: var(--md-accent-fg-color);
+		transform: translateY(-2px);
+	}
+
+	.tx-hero__image img {
+		filter: drop-shadow(0 .6rem 1.6rem rgba(0, 0, 0, .35));
 	}
 
 	@media screen and (max-width:70em) {
 		.tx-hero h1 {
-			font-size: 1.4rem
+			font-size: 1.6rem
 		}
 
 		.tx-hero__image {
@@ -73,6 +124,15 @@
 
 		.tx-hero__image img {
 			max-width: 10rem;
+		}
+
+		.tx-hero__pills {
+			justify-content: center;
+		}
+
+		.tx-hero__tagline {
+			margin-left: auto;
+			margin-right: auto;
 		}
 	}
 
@@ -83,11 +143,11 @@
 
 		.tx-hero {
 			display: flex;
-			align-items: stretch
+			align-items: center
 		}
 
 		.tx-hero__content {
-			max-width: 30rem;
+			max-width: 32rem;
 			margin-top: 3.5rem;
 			padding-bottom: 14vw
 		}
@@ -99,7 +159,7 @@
 		}
 
 		.tx-hero__image img {
-			max-width: 15rem;
+			max-width: 16rem;
 		}
 	}
 
@@ -117,23 +177,285 @@
 		}
 	}
 
+	/* ----------------------------------------------------------------------
+	 * Shared section layout
+	 * -------------------------------------------------------------------- */
+	.tx-section {
+		padding: 2.5rem 0 1rem;
+	}
+
+	.tx-section__header {
+		text-align: center;
+		max-width: 38rem;
+		margin: 0 auto 2.4rem;
+	}
+
+	.tx-section__eyebrow {
+		display: inline-block;
+		font-size: .62rem;
+		font-weight: 700;
+		letter-spacing: .12em;
+		text-transform: uppercase;
+		color: var(--spice-accent-color);
+		margin-bottom: .5rem;
+	}
+
+	.tx-section__header h2 {
+		font-weight: 700;
+		margin: 0 0 .6rem;
+		line-height: 1.2;
+	}
+
+	.tx-section__header p {
+		margin: 0;
+		color: var(--md-default-fg-color--light);
+		font-size: .82rem;
+		line-height: 1.6;
+	}
+
+	/* ----------------------------------------------------------------------
+	 * Feature cards
+	 * -------------------------------------------------------------------- */
+	.tx-features {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		gap: 1rem;
+	}
+
+	.tx-card {
+		position: relative;
+		padding: 1.5rem 1.4rem;
+		border-radius: .7rem;
+		background: var(--md-default-bg-color);
+		border: 1px solid var(--md-default-fg-color--lightest);
+		box-shadow: 0 .1rem .4rem rgba(0, 0, 0, .05);
+		transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+		overflow: hidden;
+	}
+
+	.tx-card::before {
+		content: "";
+		position: absolute;
+		inset: 0 0 auto 0;
+		height: 3px;
+		background: linear-gradient(90deg, var(--spice-primary-color), var(--spice-accent-color));
+		opacity: 0;
+		transition: opacity .18s ease;
+	}
+
+	.tx-card:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 .6rem 1.6rem rgba(0, 0, 0, .12);
+		border-color: var(--md-default-fg-color--lighter);
+	}
+
+	.tx-card:hover::before {
+		opacity: 1;
+	}
+
+	.tx-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		border-radius: .6rem;
+		margin-bottom: 1rem;
+		background: linear-gradient(135deg, var(--spice-primary-color), var(--spice-accent-color));
+		color: #fff;
+	}
+
+	.tx-card__icon svg {
+		width: 1.4rem;
+		height: 1.4rem;
+		fill: currentColor;
+	}
+
+	.tx-card h3 {
+		margin: 0 0 .45rem;
+		font-size: .92rem;
+		font-weight: 700;
+	}
+
+	.tx-card p {
+		margin: 0;
+		font-size: .76rem;
+		line-height: 1.6;
+		color: var(--md-default-fg-color--light);
+	}
+
+	/* ----------------------------------------------------------------------
+	 * Code showcase
+	 * -------------------------------------------------------------------- */
+	.tx-showcase {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 2rem;
+		align-items: center;
+	}
+
+	@media screen and (min-width:60em) {
+		.tx-showcase {
+			grid-template-columns: 1fr 1.1fr;
+		}
+	}
+
+	.tx-showcase__text h2 {
+		font-weight: 700;
+		margin: 0 0 .8rem;
+		line-height: 1.2;
+	}
+
+	.tx-showcase__text p {
+		color: var(--md-default-fg-color--light);
+		font-size: .82rem;
+		line-height: 1.7;
+		margin: 0 0 1rem;
+	}
+
+	.tx-showcase__text ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.tx-showcase__text li {
+		position: relative;
+		padding-left: 1.5rem;
+		margin-bottom: .55rem;
+		font-size: .8rem;
+		line-height: 1.5;
+	}
+
+	.tx-showcase__text li svg {
+		position: absolute;
+		left: 0;
+		top: .1rem;
+		width: 1rem;
+		height: 1rem;
+		fill: var(--spice-accent-color);
+	}
+
+	.tx-window {
+		border-radius: .7rem;
+		overflow: hidden;
+		box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .25);
+		border: 1px solid var(--md-default-fg-color--lightest);
+		background: #1e1f2b;
+	}
+
+	.tx-window__bar {
+		display: flex;
+		align-items: center;
+		gap: .4rem;
+		padding: .65rem .9rem;
+		background: #16171f;
+		border-bottom: 1px solid rgba(255, 255, 255, .06);
+	}
+
+	.tx-window__bar span {
+		width: .7rem;
+		height: .7rem;
+		border-radius: 50%;
+		display: inline-block;
+	}
+
+	.tx-window__bar span:nth-child(1) { background: #ff5f56; }
+	.tx-window__bar span:nth-child(2) { background: #ffbd2e; }
+	.tx-window__bar span:nth-child(3) { background: #27c93f; }
+
+	.tx-window__title {
+		margin-left: .5rem;
+		font-size: .68rem;
+		color: rgba(255, 255, 255, .45);
+		font-family: var(--md-code-font-family, monospace);
+	}
+
+	.tx-window pre {
+		margin: 0;
+		padding: 1.2rem 1.3rem;
+		overflow-x: auto;
+		font-family: var(--md-code-font-family, monospace);
+		font-size: .76rem;
+		line-height: 1.65;
+		color: #e6e6ef;
+		tab-size: 4;
+	}
+
+	.tx-window .c-key { color: #ff8c69; }
+	.tx-window .c-fn { color: #6cb6ff; }
+	.tx-window .c-str { color: #95e6a0; }
+	.tx-window .c-num { color: #f7d774; }
+	.tx-window .c-com { color: #6b7089; font-style: italic; }
+	.tx-window .c-type { color: #d6a6ff; }
+
+	/* ----------------------------------------------------------------------
+	 * Closing CTA
+	 * -------------------------------------------------------------------- */
+	.tx-cta {
+		margin: 3rem 0 1rem;
+		padding: 2.6rem 1.5rem;
+		border-radius: .9rem;
+		text-align: center;
+		color: #fff;
+		background: linear-gradient(120deg, var(--spice-primary-color), var(--spice-accent-color));
+		box-shadow: 0 .8rem 2rem rgba(146, 12, 23, .3);
+	}
+
+	.tx-cta h2 {
+		font-weight: 700;
+		margin: 0 0 .6rem;
+		color: #fff;
+	}
+
+	.tx-cta p {
+		margin: 0 auto 1.4rem;
+		max-width: 32rem;
+		opacity: .95;
+		font-size: .85rem;
+		line-height: 1.6;
+	}
+
+	.tx-cta .md-button {
+		color: #fff;
+		border-color: rgba(255, 255, 255, .8);
+		transition: transform .15s ease, background-color .15s ease, color .15s ease;
+	}
+
+	.tx-cta .md-button--primary {
+		background: #fff;
+		color: var(--spice-primary-color);
+		border-color: #fff;
+	}
+
+	.tx-cta .md-button:hover {
+		transform: translateY(-2px);
+	}
+
+	.tx-cta .md-button--primary:hover {
+		background: rgba(255, 255, 255, .9);
+		color: var(--spice-primary-color);
+	}
 </style>
+
+<!-- ====================== Hero ====================== -->
 <section class="tx-container">
 	<div class="md-grid md-typeset">
 		<div class="tx-hero">
 			<div class="tx-hero__image">
-				<img src="static/logo_600x600.png" alt="" draggable="false">
+				<img src="static/logo_600x600.png" alt="Spice logo" draggable="false">
 			</div>
 			<div class="tx-hero__content">
-				<h1>Spice Programming Language</h1>
-				<h2>Compiled language with special language features!</h2>
-				<p>Spice is:</p>
-				<ul>
-					<li>Practice-oriented</li>
-					<li>System-oriented</li>
-					<li>Fast</li>
-                    <li>able to cross-compile</li>
-					<li>... and much more!</li>
+				<h1>The Spice Programming Language</h1>
+				<p class="tx-hero__tagline">
+					A compiled, statically typed systems language that targets native machine code via LLVM —
+					producing lean binaries with no runtime overhead.
+				</p>
+				<ul class="tx-hero__pills">
+					<li>{% include ".icons/material/flash-outline.svg" %} Blazing fast</li>
+					<li>{% include ".icons/material/cog-outline.svg" %} Systems-oriented</li>
+					<li>{% include ".icons/material/earth.svg" %} Cross-compiling</li>
+					<li>{% include ".icons/material/toolbox-outline.svg" %} Self-contained</li>
 				</ul>
 				<a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | striptags }}"
 					class="md-button md-button--primary">
@@ -146,6 +468,88 @@
 		</div>
 	</div>
 </section>
+
+<!-- ====================== Features ====================== -->
+<section class="md-grid md-typeset tx-section">
+	<div class="tx-section__header">
+		<span class="tx-section__eyebrow">Why Spice</span>
+		<h2>Built for performance and practicality</h2>
+		<p>Spice combines the speed of a low-level systems language with a modern, familiar syntax and a
+			batteries-included toolchain.</p>
+	</div>
+	<div class="tx-features">
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/rocket-launch-outline.svg" %}</span>
+			<h3>Performance first</h3>
+			<p>Zero-cost abstractions, value semantics by default, and LLVM optimizations at every level.</p>
+		</div>
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/code-braces.svg" %}</span>
+			<h3>Familiar syntax</h3>
+			<p>Borrows the curly-brace style of C and C++, so existing systems programmers feel at home.</p>
+		</div>
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/shield-check-outline.svg" %}</span>
+			<h3>Safety where it counts</h3>
+			<p>Strong static typing, immutability via <code>const</code>, and deterministic destructors — no garbage collector.</p>
+		</div>
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/puzzle-outline.svg" %}</span>
+			<h3>Practical interop</h3>
+			<p>Call C and C++ libraries directly and cross-compile to any LLVM-supported target.</p>
+		</div>
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/toolbox-outline.svg" %}</span>
+			<h3>Self-contained toolchain</h3>
+			<p>A single binary covers compilation, running, testing, and installing packages.</p>
+		</div>
+		<div class="tx-card">
+			<span class="tx-card__icon">{% include ".icons/material/earth.svg" %}</span>
+			<h3>Targets everywhere</h3>
+			<p>From CLI tools and compilers to embedded drivers and WebAssembly modules.</p>
+		</div>
+	</div>
+</section>
+
+<!-- ====================== Code showcase ====================== -->
+<section class="md-grid md-typeset tx-section">
+	<div class="tx-showcase">
+		<div class="tx-showcase__text">
+			<h2>A first look at Spice</h2>
+			<p>Functions return values (<code>f&lt;ReturnType&gt;</code>), procedures do not (<code>p</code>).
+				The entry point is always <code>main</code>, and the standard library is imported with
+				<code>import "std/..."</code>.</p>
+			<ul>
+				<li>{% include ".icons/material/check-decagram-outline.svg" %} Clean, readable, C-like syntax</li>
+				<li>{% include ".icons/material/check-decagram-outline.svg" %} Compiles straight to native binaries</li>
+				<li>{% include ".icons/material/check-decagram-outline.svg" %} Rich standard library out of the box</li>
+			</ul>
+		</div>
+		<div class="tx-window">
+			<div class="tx-window__bar">
+				<span></span><span></span><span></span>
+				<span class="tx-window__title">hello.spice</span>
+			</div>
+<pre><code><span class="c-key">import</span> <span class="c-str">"std/text/print"</span>;
+
+<span class="c-com">// The entry point always returns an int</span>
+<span class="c-key">f</span>&lt;<span class="c-type">int</span>&gt; <span class="c-fn">main</span>() {
+    <span class="c-fn">println</span>(<span class="c-str">"Hello, Spice!"</span>);
+    <span class="c-key">return</span> <span class="c-num">0</span>;
+}</code></pre>
+		</div>
+	</div>
+</section>
+
+<!-- ====================== Closing CTA ====================== -->
+<section class="md-grid md-typeset">
+	<div class="tx-cta">
+		<h2>Ready to give Spice a try?</h2>
+		<p>Install the toolchain on your platform and write your first program in minutes.</p>
+		<a href="{{ 'install/linux/' | url }}" class="md-button md-button--primary">Install Spice</a>
+		<a href="{{ 'intro/' | url }}" class="md-button">Read the introduction</a>
+	</div>
+</section>
 {% endblock %}
 {% block content %}{% endblock %}
-{% block footer %}{% endblock %}
+{% block footer %}{{ super() }}{% endblock %}
