@@ -1,0 +1,71 @@
+import "std/text/json-value";
+import "std/text/json-serializer";
+import "std/text/json-parser";
+
+f<int> main() {
+    // Serialization of scalars
+    JsonValue nullVal = JsonValue();
+    assert serializeJson(nullVal) == String("null");
+    JsonValue boolVal = JsonValue(true);
+    assert serializeJson(boolVal) == String("true");
+    JsonValue intVal = JsonValue(42.0);
+    assert serializeJson(intVal) == String("42");
+    JsonValue fracVal = JsonValue(-3.5);
+    assert serializeJson(fracVal) == String("-3.5");
+    JsonValue strVal = JsonValue(String("a\"b\nc"));
+    assert serializeJson(strVal) == String("\"a\\\"b\\nc\"");
+
+    // Values built programmatically serialize as expected
+    JsonValue arrVal = JsonValue(JsonValueKind::JSON_ARRAY);
+    arrVal.addArrayItem(__new<JsonValue>(1.0));
+    arrVal.addArrayItem(__new<JsonValue>(2.0));
+    assert serializeJson(arrVal) == String("[1,2]");
+
+    JsonValue objVal = JsonValue(JsonValueKind::JSON_OBJECT);
+    objVal.addObjectField(String("a"), __new<JsonValue>(true));
+    objVal.addObjectField(String("b"), __new<JsonValue>(String("x")));
+    assert serializeJson(objVal) == String("{\"a\":true,\"b\":\"x\"}");
+
+    // Compact serialization of a parsed object preserves field order
+    String compactDoc = String("{\"name\":\"Alice\",\"age\":30,\"admin\":true,\"tags\":[\"a\",\"b\"],\"address\":{\"city\":\"NYC\"}}");
+    Result<JsonValue*> compactRes = parseJson(compactDoc);
+    assert compactRes.isOk();
+    JsonValue* compact = compactRes.unwrap();
+    assert serializeJson(compact) == compactDoc;
+
+    // Empty array/object
+    Result<JsonValue*> emptyArrSerRes = parseJson(String("[]"));
+    JsonValue* emptyArrSer = emptyArrSerRes.unwrap();
+    assert serializeJson(emptyArrSer) == String("[]");
+    Result<JsonValue*> emptyObjSerRes = parseJson(String("{}"));
+    JsonValue* emptyObjSer = emptyObjSerRes.unwrap();
+    assert serializeJson(emptyObjSer) == String("{}");
+
+    // Round-trip: serialize -> parse -> serialize is stable
+    String onceSerialized = serializeJson(compact);
+    Result<JsonValue*> reParsedRes = parseJson(onceSerialized);
+    JsonValue* reParsed = reParsedRes.unwrap();
+    assert serializeJson(reParsed) == compactDoc;
+
+    // Pretty printing
+    Result<JsonValue*> prettyRes = parseJson(String("{\"a\":1,\"b\":[2,3]}"));
+    JsonValue* pretty = prettyRes.unwrap();
+    String expectedPretty = String("{\n");
+    expectedPretty += "  \"a\": 1,\n";
+    expectedPretty += "  \"b\": [\n";
+    expectedPretty += "    2,\n";
+    expectedPretty += "    3\n";
+    expectedPretty += "  ]\n";
+    expectedPretty += "}";
+    assert serializeJsonPretty(pretty) == expectedPretty;
+
+    // Non-integral numbers keep full precision across a serialize/parse round-trip
+    Result<JsonValue*> precRes = parseJson(String("1.23456789"));
+    JsonValue* prec = precRes.unwrap();
+    String precSerialized = serializeJson(prec);
+    Result<JsonValue*> precReparsedRes = parseJson(precSerialized);
+    JsonValue* precReparsed = precReparsedRes.unwrap();
+    assert precReparsed.getNumber() == 1.23456789;
+
+    printf("All assertions passed!");
+}

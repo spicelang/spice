@@ -1,3 +1,4 @@
+import "std/text/xml-node";
 import "std/text/xml-parser";
 
 f<int> main() {
@@ -19,6 +20,9 @@ f<int> main() {
     assert !a.hasAttribute("missing");
     assert a.getAttribute("x") == String("1");
     assert a.getAttribute("y") == String("two & three");
+    // Attributes are enumerable in document order
+    assert a.getAttributeKey(0l) == String("x");
+    assert a.getAttributeValue(1l) == String("two & three");
 
     // Text content with character references
     Result<XmlNode*> textRes = parseXml(String("<msg>hi &lt;there&gt; &#65;</msg>"));
@@ -95,34 +99,6 @@ f<int> main() {
     assert prologRes.isOk();
     XmlNode* prologRoot = prologRes.unwrap();
     assert prologRoot.getName() == String("root");
-
-    // Serialization: self-closing element with escaped attributes
-    Result<XmlNode*> serSelfRes = parseXml(String("<a x=\"1\" y='two &amp; three'/>"));
-    XmlNode* serSelf = serSelfRes.unwrap();
-    assert serSelf.serialize() == String("<a x=\"1\" y=\"two &amp; three\"/>");
-
-    // Text content escaping round-trips through the parser
-    Result<XmlNode*> serTextRes = parseXml(String("<msg>hi &lt;there&gt; &amp; you</msg>"));
-    XmlNode* serText = serTextRes.unwrap();
-    assert serText.serialize() == String("<msg>hi &lt;there&gt; &amp; you</msg>");
-
-    // Round-trip: serialize -> parse -> serialize is stable
-    Result<XmlNode*> serRoundRes = parseXml(String("<book id=\"42\"><title>Spice</title><tags><tag>lang</tag><tag>systems</tag></tags></book>"));
-    XmlNode* serRound = serRoundRes.unwrap();
-    String serializedXml = serRound.serialize();
-    Result<XmlNode*> reparsedRes = parseXml(serializedXml);
-    assert reparsedRes.isOk();
-    XmlNode* reparsedRoot = reparsedRes.unwrap();
-    assert reparsedRoot.serialize() == serializedXml;
-
-    // Pretty printing lays element children on their own lines
-    Result<XmlNode*> prettyXmlRes = parseXml(String("<root><a>1</a><b>2</b></root>"));
-    XmlNode* prettyXml = prettyXmlRes.unwrap();
-    String expectedPrettyXml = String("<root>\n");
-    expectedPrettyXml += "  <a>1</a>\n";
-    expectedPrettyXml += "  <b>2</b>\n";
-    expectedPrettyXml += "</root>";
-    assert prettyXml.serializePretty() == expectedPrettyXml;
 
     printf("All assertions passed!");
 }

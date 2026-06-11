@@ -1,236 +1,15 @@
-import "std/data/vector";
+import "std/text/json-value";
 import "std/text/analysis";
 import "std/type/type-conversion";
-
-/**
- * Tag for the variant stored inside a JsonValue.
- */
-public type JsonValueKind enum {
-    JSON_NULL,
-    JSON_BOOL,
-    JSON_NUMBER,
-    JSON_STRING,
-    JSON_ARRAY,
-    JSON_OBJECT
-}
-
-/**
- * Represents a single JSON value.
- *
- * Composite values (arrays and objects) own their children as heap pointers,
- * so a JsonValue is always reached via `heap JsonValue*` once it has been
- * parsed. Numbers are stored as `double`; integers are representable up to
- * 2^53. Object fields preserve insertion order.
- */
-public type JsonValue struct {
-    JsonValueKind kind
-    bool boolValue
-    double numberValue
-    String stringValue
-    Vector<JsonValue*> arrayItems
-    Vector<String> objectKeys
-    Vector<JsonValue*> objectValues
-}
-
-/**
- * Construct a JSON null value
- */
-public p JsonValue.ctor() {
-    this.kind = JsonValueKind::JSON_NULL;
-}
-
-/**
- * Construct a JSON boolean value
- *
- * @param value Boolean value
- */
-public p JsonValue.ctor(bool value) {
-    this.kind = JsonValueKind::JSON_BOOL;
-    this.boolValue = value;
-}
-
-/**
- * Construct a JSON number value
- *
- * @param value Number value
- */
-public p JsonValue.ctor(double value) {
-    this.kind = JsonValueKind::JSON_NUMBER;
-    this.numberValue = value;
-}
-
-/**
- * Construct a JSON string value
- *
- * @param value String value
- */
-public p JsonValue.ctor(const String& value) {
-    this.kind = JsonValueKind::JSON_STRING;
-    this.stringValue = value;
-}
-
-// --- Kind inspection -------------------------------------------------------
-
-/**
- * Retrieve the kind of the JSON value
- *
- * @return Kind of the value
- */
-public f<JsonValueKind> JsonValue.getKind() { return this.kind; }
-/**
- * Check whether the JSON value is null
- *
- * @return true if the value is null, false otherwise
- */
-public f<bool> JsonValue.isNull()   { return this.kind == JsonValueKind::JSON_NULL; }
-/**
- * Check whether the JSON value is a boolean
- *
- * @return true if the value is a boolean, false otherwise
- */
-public f<bool> JsonValue.isBool()   { return this.kind == JsonValueKind::JSON_BOOL; }
-/**
- * Check whether the JSON value is a number
- *
- * @return true if the value is a number, false otherwise
- */
-public f<bool> JsonValue.isNumber() { return this.kind == JsonValueKind::JSON_NUMBER; }
-/**
- * Check whether the JSON value is a string
- *
- * @return true if the value is a string, false otherwise
- */
-public f<bool> JsonValue.isString() { return this.kind == JsonValueKind::JSON_STRING; }
-/**
- * Check whether the JSON value is an array
- *
- * @return true if the value is an array, false otherwise
- */
-public f<bool> JsonValue.isArray()  { return this.kind == JsonValueKind::JSON_ARRAY; }
-/**
- * Check whether the JSON value is an object
- *
- * @return true if the value is an object, false otherwise
- */
-public f<bool> JsonValue.isObject() { return this.kind == JsonValueKind::JSON_OBJECT; }
-
-// --- Scalar accessors (panic on wrong kind) --------------------------------
-
-/**
- * Retrieve the boolean payload. Panics if the value is not a boolean.
- *
- * @return Boolean value
- */
-public f<bool> JsonValue.getBool() {
-    assert this.kind == JsonValueKind::JSON_BOOL;
-    return this.boolValue;
-}
-
-/**
- * Retrieve the number payload. Panics if the value is not a number.
- *
- * @return Number value
- */
-public f<double> JsonValue.getNumber() {
-    assert this.kind == JsonValueKind::JSON_NUMBER;
-    return this.numberValue;
-}
-
-/**
- * Retrieve the string payload. Panics if the value is not a string.
- *
- * @return String value
- */
-public f<const String&> JsonValue.getString() {
-    assert this.kind == JsonValueKind::JSON_STRING;
-    return this.stringValue;
-}
-
-// --- Array operations ------------------------------------------------------
-
-/**
- * Retrieve the number of items in the array. Panics if the value is not an array.
- *
- * @return Number of array items
- */
-public f<unsigned long> JsonValue.getArraySize() {
-    assert this.kind == JsonValueKind::JSON_ARRAY;
-    return this.arrayItems.getSize();
-}
-
-/**
- * Retrieve the array item at the given index. Panics if the value is not an array.
- *
- * @param idx Index of the item
- * @return Pointer to the array item
- */
-public f<JsonValue*> JsonValue.getArrayItem(unsigned long idx) {
-    assert this.kind == JsonValueKind::JSON_ARRAY;
-    return this.arrayItems.get(idx);
-}
-
-/**
- * Retrieve the array item at the given index. Panics if the value is not an array.
- *
- * @param idx Index of the item
- * @return Pointer to the array item
- */
-public f<JsonValue*> JsonValue.getArrayItem(unsigned int idx) {
-    return this.getArrayItem(cast<unsigned long>(idx));
-}
-
-// --- Object operations -----------------------------------------------------
-
-/**
- * Retrieve the number of fields in the object. Panics if the value is not an object.
- *
- * @return Number of object fields
- */
-public f<unsigned long> JsonValue.getObjectSize() {
-    assert this.kind == JsonValueKind::JSON_OBJECT;
-    return this.objectKeys.getSize();
-}
-
-/**
- * Check whether the object contains a field with the given key
- *
- * @param key Field key to look for
- * @return true if the field exists, false otherwise
- */
-public f<bool> JsonValue.hasField(string key) {
-    if this.kind != JsonValueKind::JSON_OBJECT { return false; }
-    const String keyStr = String(key);
-    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == keyStr { return true; }
-    }
-    return false;
-}
-
-/**
- * Retrieve the value of the object field with the given key. Panics if the value is not an object
- * or the field does not exist.
- *
- * @param key Field key to look up
- * @return Pointer to the field value
- */
-public f<JsonValue*> JsonValue.getField(string key) {
-    assert this.kind == JsonValueKind::JSON_OBJECT;
-    const String keyStr = String(key);
-    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == keyStr {
-            return this.objectValues.get(i);
-        }
-    }
-    panic(Error("JSON object has no such field"));
-}
-
-// --- Parser ----------------------------------------------------------------
 
 /**
  * Recursive-descent JSON parser.
  *
  * Use `parseJson` for one-shot parsing; the struct is exposed mainly so the
  * parser state (position, error message) can be inspected when needed.
+ *
+ * The JsonValue data model lives in "std/text/json-value" and serialization
+ * in "std/text/json-serializer".
  */
 public type JsonParser struct {
     String input
@@ -444,8 +223,7 @@ f<String> JsonParser.parseStringLiteral() {
 
 f<JsonValue*> JsonParser.parseArray() {
     this.pos++; // consume '['
-    heap JsonValue* arr = __new<JsonValue>();
-    arr.kind = JsonValueKind::JSON_ARRAY;
+    heap JsonValue* arr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
     this.skipWhitespace();
     if this.pos < this.input.getLength() && this.input[this.pos] == ']' {
         this.pos++;
@@ -455,7 +233,7 @@ f<JsonValue*> JsonParser.parseArray() {
         this.skipWhitespace();
         JsonValue* item = this.parseValue();
         if this.hasError { return nil<JsonValue*>; }
-        arr.arrayItems.pushBack(item);
+        arr.addArrayItem(item);
         this.skipWhitespace();
         if this.pos >= this.input.getLength() {
             this.fail("Unterminated array");
@@ -478,8 +256,7 @@ f<JsonValue*> JsonParser.parseArray() {
 
 f<JsonValue*> JsonParser.parseObject() {
     this.pos++; // consume '{'
-    heap JsonValue* obj = __new<JsonValue>();
-    obj.kind = JsonValueKind::JSON_OBJECT;
+    heap JsonValue* obj = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
     this.skipWhitespace();
     if this.pos < this.input.getLength() && this.input[this.pos] == '}' {
         this.pos++;
@@ -502,8 +279,7 @@ f<JsonValue*> JsonParser.parseObject() {
         this.skipWhitespace();
         JsonValue* value = this.parseValue();
         if this.hasError { return nil<JsonValue*>; }
-        obj.objectKeys.pushBack(key);
-        obj.objectValues.pushBack(value);
+        obj.addObjectField(key, value);
         this.skipWhitespace();
         if this.pos >= this.input.getLength() {
             this.fail("Unterminated object");
@@ -522,131 +298,4 @@ f<JsonValue*> JsonParser.parseObject() {
         return nil<JsonValue*>;
     }
     return nil<JsonValue*>;
-}
-
-// --- Serialization ---------------------------------------------------------
-
-ext f<int> snprintf(char*, unsigned long, string, ...);
-
-/**
- * Serializes this value into a compact JSON string (no insignificant
- * whitespace). The result round-trips through `parseJson`.
- *
- * @return Compact JSON representation
- */
-public f<String> JsonValue.serialize() {
-    String out;
-    this.serializeInto(out, false, 0l);
-    return out;
-}
-
-/**
- * Serializes this value into a human-readable JSON string using two-space
- * indentation for nested arrays and objects.
- *
- * @return Pretty-printed JSON representation
- */
-public f<String> JsonValue.serializePretty() {
-    String out;
-    this.serializeInto(out, true, 0l);
-    return out;
-}
-
-p JsonValue.serializeInto(String& out, bool pretty, unsigned long depth) {
-    if this.kind == JsonValueKind::JSON_NULL {
-        out += "null";
-    } else if this.kind == JsonValueKind::JSON_BOOL {
-        out += this.boolValue ? "true" : "false";
-    } else if this.kind == JsonValueKind::JSON_NUMBER {
-        out += serializeJsonNumber(this.numberValue);
-    } else if this.kind == JsonValueKind::JSON_STRING {
-        serializeJsonString(out, this.stringValue);
-    } else if this.kind == JsonValueKind::JSON_ARRAY {
-        const unsigned long size = this.arrayItems.getSize();
-        if size == 0l {
-            out += "[]";
-            return;
-        }
-        out += '[';
-        for unsigned long i = 0l; i < size; i++ {
-            if i > 0l { out += ','; }
-            if pretty { appendJsonNewlineIndent(out, depth + 1l); }
-            JsonValue* item = this.arrayItems.get(i);
-            item.serializeInto(out, pretty, depth + 1l);
-        }
-        if pretty { appendJsonNewlineIndent(out, depth); }
-        out += ']';
-    } else {
-        const unsigned long size = this.objectKeys.getSize();
-        if size == 0l {
-            out += "{}";
-            return;
-        }
-        out += '{';
-        for unsigned long i = 0l; i < size; i++ {
-            if i > 0l { out += ','; }
-            if pretty { appendJsonNewlineIndent(out, depth + 1l); }
-            serializeJsonString(out, this.objectKeys.get(i));
-            out += pretty ? ": " : ":";
-            JsonValue* value = this.objectValues.get(i);
-            value.serializeInto(out, pretty, depth + 1l);
-        }
-        if pretty { appendJsonNewlineIndent(out, depth); }
-        out += '}';
-    }
-}
-
-// Append a newline followed by `depth` levels of two-space indentation.
-p appendJsonNewlineIndent(String& out, unsigned long depth) {
-    out += '\n';
-    for unsigned long i = 0l; i < depth; i++ {
-        out += "  ";
-    }
-}
-
-// Serialize a string value with surrounding quotes and JSON escaping.
-p serializeJsonString(String& out, const String& value) {
-    out += '"';
-    const unsigned long length = value.getLength();
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = value[i];
-        if c == '"' {
-            out += "\\\"";
-        } else if c == '\\' {
-            out += "\\\\";
-        } else if c == '\n' {
-            out += "\\n";
-        } else if c == '\r' {
-            out += "\\r";
-        } else if c == '\t' {
-            out += "\\t";
-        } else if c == '\b' {
-            out += "\\b";
-        } else if c == '\f' {
-            out += "\\f";
-        } else if cast<int>(c) < 0x20 {
-            // Other control characters are emitted as \u00XX escapes
-            string hexDigits = "0123456789abcdef";
-            const int code = cast<int>(c);
-            out += "\\u00";
-            out += hexDigits[(code >> 4) & 0xF];
-            out += hexDigits[code & 0xF];
-        } else {
-            out += c;
-        }
-    }
-    out += '"';
-}
-
-// Serialize a number, printing integral values without a fractional part.
-// Non-integral values use 17 significant digits ("%.17g"), which is enough to
-// round-trip any double exactly so reparsing yields the same numeric value.
-f<String> serializeJsonNumber(double value) {
-    const long asLong = cast<long>(value);
-    if cast<double>(asLong) == value {
-        return toString(asLong);
-    }
-    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
 }

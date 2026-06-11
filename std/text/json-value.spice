@@ -1,0 +1,284 @@
+import "std/data/vector";
+
+/**
+ * Tag for the variant stored inside a JsonValue.
+ */
+public type JsonValueKind enum {
+    JSON_NULL,
+    JSON_BOOL,
+    JSON_NUMBER,
+    JSON_STRING,
+    JSON_ARRAY,
+    JSON_OBJECT
+}
+
+/**
+ * Represents a single JSON value.
+ *
+ * Composite values (arrays and objects) own their children as heap pointers,
+ * so a JsonValue is always reached via `heap JsonValue*` once it has been
+ * parsed. Numbers are stored as `double`; integers are representable up to
+ * 2^53. Object fields preserve insertion order.
+ *
+ * Parsing lives in "std/text/json-parser" and serialization in
+ * "std/text/json-serializer", so programs only pull in what they use.
+ */
+public type JsonValue struct {
+    JsonValueKind kind
+    bool boolValue
+    double numberValue
+    String stringValue
+    Vector<JsonValue*> arrayItems
+    Vector<String> objectKeys
+    Vector<JsonValue*> objectValues
+}
+
+/**
+ * Construct a JSON null value
+ */
+public p JsonValue.ctor() {
+    this.kind = JsonValueKind::JSON_NULL;
+}
+
+/**
+ * Construct an empty JSON value of the given kind. Useful for building
+ * arrays and objects from scratch.
+ *
+ * @param kind Kind of the value
+ */
+public p JsonValue.ctor(JsonValueKind kind) {
+    this.kind = kind;
+}
+
+/**
+ * Construct a JSON boolean value
+ *
+ * @param value Boolean value
+ */
+public p JsonValue.ctor(bool value) {
+    this.kind = JsonValueKind::JSON_BOOL;
+    this.boolValue = value;
+}
+
+/**
+ * Construct a JSON number value
+ *
+ * @param value Number value
+ */
+public p JsonValue.ctor(double value) {
+    this.kind = JsonValueKind::JSON_NUMBER;
+    this.numberValue = value;
+}
+
+/**
+ * Construct a JSON string value
+ *
+ * @param value String value
+ */
+public p JsonValue.ctor(const String& value) {
+    this.kind = JsonValueKind::JSON_STRING;
+    this.stringValue = value;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+/**
+ * Retrieve the kind of the JSON value
+ *
+ * @return Kind of the value
+ */
+public f<JsonValueKind> JsonValue.getKind() { return this.kind; }
+/**
+ * Check whether the JSON value is null
+ *
+ * @return true if the value is null, false otherwise
+ */
+public f<bool> JsonValue.isNull()   { return this.kind == JsonValueKind::JSON_NULL; }
+/**
+ * Check whether the JSON value is a boolean
+ *
+ * @return true if the value is a boolean, false otherwise
+ */
+public f<bool> JsonValue.isBool()   { return this.kind == JsonValueKind::JSON_BOOL; }
+/**
+ * Check whether the JSON value is a number
+ *
+ * @return true if the value is a number, false otherwise
+ */
+public f<bool> JsonValue.isNumber() { return this.kind == JsonValueKind::JSON_NUMBER; }
+/**
+ * Check whether the JSON value is a string
+ *
+ * @return true if the value is a string, false otherwise
+ */
+public f<bool> JsonValue.isString() { return this.kind == JsonValueKind::JSON_STRING; }
+/**
+ * Check whether the JSON value is an array
+ *
+ * @return true if the value is an array, false otherwise
+ */
+public f<bool> JsonValue.isArray()  { return this.kind == JsonValueKind::JSON_ARRAY; }
+/**
+ * Check whether the JSON value is an object
+ *
+ * @return true if the value is an object, false otherwise
+ */
+public f<bool> JsonValue.isObject() { return this.kind == JsonValueKind::JSON_OBJECT; }
+
+// --- Scalar accessors (panic on wrong kind) --------------------------------
+
+/**
+ * Retrieve the boolean payload. Panics if the value is not a boolean.
+ *
+ * @return Boolean value
+ */
+public f<bool> JsonValue.getBool() {
+    assert this.kind == JsonValueKind::JSON_BOOL;
+    return this.boolValue;
+}
+
+/**
+ * Retrieve the number payload. Panics if the value is not a number.
+ *
+ * @return Number value
+ */
+public f<double> JsonValue.getNumber() {
+    assert this.kind == JsonValueKind::JSON_NUMBER;
+    return this.numberValue;
+}
+
+/**
+ * Retrieve the string payload. Panics if the value is not a string.
+ *
+ * @return String value
+ */
+public f<const String&> JsonValue.getString() {
+    assert this.kind == JsonValueKind::JSON_STRING;
+    return this.stringValue;
+}
+
+// --- Array operations ------------------------------------------------------
+
+/**
+ * Retrieve the number of items in the array. Panics if the value is not an array.
+ *
+ * @return Number of array items
+ */
+public f<unsigned long> JsonValue.getArraySize() {
+    assert this.kind == JsonValueKind::JSON_ARRAY;
+    return this.arrayItems.getSize();
+}
+
+/**
+ * Retrieve the array item at the given index. Panics if the value is not an array.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the array item
+ */
+public f<JsonValue*> JsonValue.getArrayItem(unsigned long idx) {
+    assert this.kind == JsonValueKind::JSON_ARRAY;
+    return this.arrayItems.get(idx);
+}
+
+/**
+ * Retrieve the array item at the given index. Panics if the value is not an array.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the array item
+ */
+public f<JsonValue*> JsonValue.getArrayItem(unsigned int idx) {
+    return this.getArrayItem(cast<unsigned long>(idx));
+}
+
+/**
+ * Append an item to the array. Panics if the value is not an array.
+ * The array takes ownership of the heap-allocated item.
+ *
+ * @param item Item to append
+ */
+public p JsonValue.addArrayItem(JsonValue* item) {
+    assert this.kind == JsonValueKind::JSON_ARRAY;
+    this.arrayItems.pushBack(item);
+}
+
+// --- Object operations -----------------------------------------------------
+
+/**
+ * Retrieve the number of fields in the object. Panics if the value is not an object.
+ *
+ * @return Number of object fields
+ */
+public f<unsigned long> JsonValue.getObjectSize() {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    return this.objectKeys.getSize();
+}
+
+/**
+ * Retrieve the key of the object field at the given index, in insertion order.
+ * Panics if the value is not an object.
+ *
+ * @param idx Index of the field
+ * @return Field key
+ */
+public f<const String&> JsonValue.getObjectKey(unsigned long idx) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    return this.objectKeys.get(idx);
+}
+
+/**
+ * Retrieve the value of the object field at the given index, in insertion order.
+ * Panics if the value is not an object.
+ *
+ * @param idx Index of the field
+ * @return Pointer to the field value
+ */
+public f<JsonValue*> JsonValue.getObjectValue(unsigned long idx) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    return this.objectValues.get(idx);
+}
+
+/**
+ * Check whether the object contains a field with the given key
+ *
+ * @param key Field key to look for
+ * @return true if the field exists, false otherwise
+ */
+public f<bool> JsonValue.hasField(string key) {
+    if this.kind != JsonValueKind::JSON_OBJECT { return false; }
+    const String keyStr = String(key);
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        if this.objectKeys.get(i) == keyStr { return true; }
+    }
+    return false;
+}
+
+/**
+ * Retrieve the value of the object field with the given key. Panics if the value is not an object
+ * or the field does not exist.
+ *
+ * @param key Field key to look up
+ * @return Pointer to the field value
+ */
+public f<JsonValue*> JsonValue.getField(string key) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    const String keyStr = String(key);
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        if this.objectKeys.get(i) == keyStr {
+            return this.objectValues.get(i);
+        }
+    }
+    panic(Error("JSON object has no such field"));
+}
+
+/**
+ * Append a field to the object. Panics if the value is not an object.
+ * The object takes ownership of the heap-allocated field value.
+ *
+ * @param key Field key
+ * @param value Field value
+ */
+public p JsonValue.addObjectField(const String& key, JsonValue* value) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    this.objectKeys.pushBack(key);
+    this.objectValues.pushBack(value);
+}

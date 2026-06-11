@@ -131,14 +131,16 @@ Basic mechanisms for testing in Spice.
 ### `std/text`
 Text processing, parsing, and formatted output.
 
-| Module                                      | Description                     |
-|---------------------------------------------|---------------------------------|
-| `print`                                     | Formatted printing helpers.     |
-| `format`                                    | String formatting.              |
-| `stringstream`                              | Stream-style string building.   |
-| `string-ext`                                | Extra string utility functions. |
-| `analysis`                                  | Text analysis helpers.          |
-| `csv-parser` / `json-parser` / `xml-parser` | Parsers for CSV, JSON, and XML. |
+| Module                                                  | Description                                        |
+|---------------------------------------------------------|----------------------------------------------------|
+| `print`                                                 | Formatted printing helpers.                        |
+| `format`                                                | String formatting.                                 |
+| `stringstream`                                          | Stream-style string building.                      |
+| `string-ext`                                            | Extra string utility functions.                    |
+| `analysis`                                              | Text analysis helpers.                             |
+| `csv-parser` / `json-parser` / `xml-parser`             | Parsers for CSV, JSON, and XML.                    |
+| `csv-serializer` / `json-serializer` / `xml-serializer` | Serializers for CSV, JSON, and XML.                |
+| `json-value` / `xml-node`                               | Data models shared by the parsers and serializers. |
 
 ### `std/time`
 Accessing system time in different formats and measuring durations.
