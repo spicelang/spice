@@ -61,7 +61,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		row-gap: .4rem;
-		margin: 0;
+		margin: 1rem;
 		list-style: none;
 		padding: 0;
 	}
@@ -392,7 +392,20 @@
 		font-size: .76rem;
 		line-height: 1.65;
 		color: #e6e6ef;
+		background: #1e1f2b;
 		tab-size: 4;
+	}
+
+	/* Keep the window dark in light mode too: neutralize Material's inline
+	   code box (it paints #f5f5f5 from --md-code-bg-color in the default scheme). */
+	.tx-window pre code,
+	.tx-window code {
+		background: transparent;
+		color: inherit;
+		padding: 0;
+		border-radius: 0;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
 	}
 
 	.tx-window .c-key { color: #ff8c69; }
@@ -483,7 +496,7 @@
 <!-- ====================== Features ====================== -->
 <section class="md-grid md-typeset tx-section">
 	<div class="tx-section__header">
-		<span class="tx-section__eyebrow">Why Spice</span>
+		<span class="tx-section__eyebrow">Why Spice?</span>
 		<h2>Built for performance and practicality</h2>
 		<p>Spice combines the speed of a low-level systems language with a modern, familiar syntax and a
 			batteries-included toolchain.</p>
