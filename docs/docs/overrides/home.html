@@ -11,6 +11,15 @@
 		position: initial
 	}
 
+	/* The hero sets .md-header to static, which removes the header as the
+	   positioning context for the absolutely-positioned palette radio inputs.
+	   Without this their static position falls to the document bottom, so
+	   clicking the color-scheme toggle focuses them and scrolls to the end.
+	   Restore a local positioning context to keep them in the header. */
+	.md-header__option {
+		position: relative
+	}
+
 	.md-main__inner {
 		margin: 0
 	}
