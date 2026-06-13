@@ -66,7 +66,7 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
 
 // ========================================================== EntryNode ==========================================================
 
-public type ASTEntryNode struct : IVisitable {
+public type ASTEntryNode struct {
     compose public ASTNode node
 
 }
@@ -113,7 +113,7 @@ public p ASTExprNode.ctor(CodeLoc codeLoc) {
 
 // ======================================================== MainFctDefNode =======================================================
 
-public type ASTMainFctDefNode struct : IVisitable {
+public type ASTMainFctDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -128,7 +128,7 @@ public f<Any> ASTMainFctDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= FctNameNode =========================================================
 
-public type ASTFctNameNode struct : IVisitable {
+public type ASTFctNameNode struct {
     compose public ASTNode node
 
 }
@@ -153,7 +153,7 @@ public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
 
 // ========================================================== FctDefNode =========================================================
 
-public type ASTFctDefNode struct : IVisitable {
+public type ASTFctDefNode struct {
     compose public ASTFctDefBaseNode node
 
 }
@@ -168,7 +168,7 @@ public f<Any> ASTFctDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ProcDefNode ========================================================
 
-public type ASTProcDefNode struct : IVisitable {
+public type ASTProcDefNode struct {
     compose public ASTFctDefBaseNode node
 
 }
@@ -183,7 +183,7 @@ public f<Any> ASTProcDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= StructDefNode =======================================================
 
-public type ASTStructDefNode struct : IVisitable {
+public type ASTStructDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -198,7 +198,7 @@ public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== InterfaceDefNode =====================================================
 
-public type ASTInterfaceDefNode struct : IVisitable {
+public type ASTInterfaceDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -213,7 +213,7 @@ public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== EnumDefNode ========================================================
 
-public type ASTEnumDefNode struct : IVisitable {
+public type ASTEnumDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -228,7 +228,7 @@ public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= GenericTypeDefNode ====================================================
 
-public type ASTGenericTypeDefNode struct : IVisitable {
+public type ASTGenericTypeDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -243,7 +243,7 @@ public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== AliasDefNode =======================================================
 
-public type ASTAliasDefNode struct : IVisitable {
+public type ASTAliasDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -258,7 +258,7 @@ public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== GlobalVarDefNode =====================================================
 
-public type ASTGlobalVarDefNode struct : IVisitable {
+public type ASTGlobalVarDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -273,7 +273,7 @@ public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ExtDeclNode ========================================================
 
-public type ASTExtDeclNode struct : IVisitable {
+public type ASTExtDeclNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -288,7 +288,7 @@ public f<Any> ASTExtDeclNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= ImportDefNode =======================================================
 
-public type ASTImportDefNode struct : IVisitable {
+public type ASTImportDefNode struct {
     compose public ASTTopLevelDefNode node
 
 }
@@ -303,7 +303,7 @@ public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== UnsafeBlockNode ========================================================
 
-public type ASTUnsafeBlockNode struct : IVisitable {
+public type ASTUnsafeBlockNode struct {
     compose public ASTStmtNode node
 
 }
@@ -318,7 +318,7 @@ public f<Any> ASTUnsafeBlockNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ForLoopNode ========================================================
 
-public type ASTForLoopNode struct : IVisitable {
+public type ASTForLoopNode struct {
     compose public ASTStmtNode node
 
 }
@@ -333,7 +333,7 @@ public f<Any> ASTForLoopNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== ForeachLoopNode ======================================================
 
-public type ASTForeachLoopNode struct : IVisitable {
+public type ASTForeachLoopNode struct {
     compose public ASTStmtNode node
 
 }
@@ -348,7 +348,7 @@ public f<Any> ASTForeachLoopNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= WhileLoopNode =======================================================
 
-public type ASTWhileLoopNode struct : IVisitable {
+public type ASTWhileLoopNode struct {
     compose public ASTStmtNode node
 
 }
@@ -363,7 +363,7 @@ public f<Any> ASTWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-public type ASTDoWhileLoopNode struct : IVisitable {
+public type ASTDoWhileLoopNode struct {
     compose public ASTStmtNode node
 
 }
@@ -378,7 +378,7 @@ public f<Any> ASTDoWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== IfStmtNode ========================================================
 
-public type ASTIfStmtNode struct : IVisitable {
+public type ASTIfStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -393,7 +393,7 @@ public f<Any> ASTIfStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ElseStmtNode =======================================================
 
-public type ASTElseStmtNode struct : IVisitable {
+public type ASTElseStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -408,7 +408,7 @@ public f<Any> ASTElseStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= SwitchStmtNode ======================================================
 
-public type ASTSwitchStmtNode struct : IVisitable {
+public type ASTSwitchStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -423,7 +423,7 @@ public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= CaseBranchNode ======================================================
 
-public type ASTCaseBranchNode struct : IVisitable {
+public type ASTCaseBranchNode struct {
     compose public ASTNode node
 
 }
@@ -438,7 +438,7 @@ public f<Any> ASTCaseBranchNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== DefaultBranchNode ====================================================
 
-public type ASTDefaultBranchNode struct : IVisitable {
+public type ASTDefaultBranchNode struct {
     compose public ASTNode node
 
 }
@@ -453,7 +453,7 @@ public f<Any> ASTDefaultBranchNode.accept(IAbstractAstVisitor* visitor) {
 
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
-public type ASTAnonymousBlockStmtNode struct : IVisitable {
+public type ASTAnonymousBlockStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -468,7 +468,7 @@ public f<Any> ASTAnonymousBlockStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== StmtLstNode ========================================================
 
-public type ASTStmtLstNode struct : IVisitable {
+public type ASTStmtLstNode struct {
     compose public ASTNode node
 
 }
@@ -483,7 +483,7 @@ public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== TypeLstNode ========================================================
 
-public type ASTTypeLstNode struct : IVisitable {
+public type ASTTypeLstNode struct {
     compose public ASTNode node
 
 }
@@ -498,7 +498,7 @@ public f<Any> ASTTypeLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ==================================================== TypeLstWithEllipsisNode ==================================================
 
-public type ASTTypeLstWithEllipsisNode struct : IVisitable {
+public type ASTTypeLstWithEllipsisNode struct {
     compose public ASTNode node
 
 }
@@ -513,7 +513,7 @@ public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== TypeAltsLstNode ======================================================
 
-public type ASTTypeAltsLstNode struct : IVisitable {
+public type ASTTypeAltsLstNode struct {
     compose public ASTNode node
 
 }
@@ -528,7 +528,7 @@ public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ParamLstNode =======================================================
 
-public type ASTParamLstNode struct : IVisitable {
+public type ASTParamLstNode struct {
     compose public ASTNode node
 
 }
@@ -543,7 +543,7 @@ public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // =========================================================== ArgLstNode ========================================================
 
-public type ASTArgLstNode struct : IVisitable {
+public type ASTArgLstNode struct {
     compose public ASTNode node
 
 }
@@ -558,7 +558,7 @@ public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== EnumItemLstNode ======================================================
 
-public type ASTEnumItemLstNode struct : IVisitable {
+public type ASTEnumItemLstNode struct {
     compose public ASTNode node
 
 }
@@ -573,7 +573,7 @@ public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== EnumItemNode =======================================================
 
-public type ASTEnumItemNode struct : IVisitable {
+public type ASTEnumItemNode struct {
     compose public ASTNode node
 
 }
@@ -588,7 +588,7 @@ public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
 
 // =========================================================== FieldNode =========================================================
 
-public type ASTFieldNode struct : IVisitable {
+public type ASTFieldNode struct {
     compose public ASTNode node
 
 }
@@ -603,7 +603,7 @@ public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= SignatureNode =======================================================
 
-public type ASTSignatureNode struct : IVisitable {
+public type ASTSignatureNode struct {
     compose public ASTNode node
 
 }
@@ -618,7 +618,7 @@ public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== DeclStmtNode =======================================================
 
-public type ASTDeclStmtNode struct : IVisitable {
+public type ASTDeclStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -633,7 +633,7 @@ public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ExprStmtNode =======================================================
 
-public type ASTExprStmtNode struct : IVisitable {
+public type ASTExprStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -648,7 +648,7 @@ public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== QualifierLstNode =====================================================
 
-public type ASTQualifierLstNode struct : IVisitable {
+public type ASTQualifierLstNode struct {
     compose public ASTNode node
 
 }
@@ -674,7 +674,7 @@ type QualifierType enum {
     COMPOSE
 }
 
-public type ASTQualifierNode struct : IVisitable {
+public type ASTQualifierNode struct {
     compose public ASTNode node
     public QualifierType qualifierType = QualifierType::NONE
 }
@@ -689,7 +689,7 @@ public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ModAttrNode ========================================================
 
-public type ASTModAttrNode struct : IVisitable {
+public type ASTModAttrNode struct {
     compose public ASTNode node
 
 }
@@ -704,7 +704,7 @@ public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // =================================================== TopLevelDefAttrNode ================================================
 
-public type ASTTopLevelDefAttrNode struct : IVisitable {
+public type ASTTopLevelDefAttrNode struct {
     compose public ASTNode node
 
 }
@@ -719,7 +719,7 @@ public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== LambdaAttrNode =======================================================
 
-public type ASTLambdaAttrNode struct : IVisitable {
+public type ASTLambdaAttrNode struct {
     compose public ASTNode node
 
 }
@@ -734,7 +734,7 @@ public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== AttrLstNode ========================================================
 
-public type ASTAttrLstNode struct : IVisitable {
+public type ASTAttrLstNode struct {
     compose public ASTNode node
 
 }
@@ -749,7 +749,7 @@ public f<Any> ASTAttrLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ============================================================ AttrNode =========================================================
 
-public type ASTAttrNode struct : IVisitable {
+public type ASTAttrNode struct {
     compose public ASTNode node
 
 }
@@ -764,7 +764,7 @@ public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= CaseConstantNode ====================================================
 
-public type ASTCaseConstantNode struct : IVisitable {
+public type ASTCaseConstantNode struct {
     compose public ASTExprNode node
 
 }
@@ -779,7 +779,7 @@ public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= ReturnStmtNode ======================================================
 
-public type ASTReturnStmtNode struct : IVisitable {
+public type ASTReturnStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -794,7 +794,7 @@ public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= BreakStmtNode =======================================================
 
-public type ASTBreakStmtNode struct : IVisitable {
+public type ASTBreakStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -809,7 +809,7 @@ public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== ContinueStmtNode =====================================================
 
-public type ASTContinueStmtNode struct : IVisitable {
+public type ASTContinueStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -824,7 +824,7 @@ public f<Any> ASTContinueStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= FallthroughStmtNode ===================================================
 
-public type ASTFallthroughStmtNode struct : IVisitable {
+public type ASTFallthroughStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -839,7 +839,7 @@ public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= AssertStmtNode ======================================================
 
-public type ASTAssertStmtNode struct : IVisitable {
+public type ASTAssertStmtNode struct {
     compose public ASTStmtNode node
 
 }
@@ -854,7 +854,7 @@ public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= AssignExprNode =======================================================
 
-public type ASTAssignExprNode struct : IVisitable {
+public type ASTAssignExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -869,7 +869,7 @@ public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== TernaryExprNode ======================================================
 
-public type ASTTernaryExprNode struct : IVisitable {
+public type ASTTernaryExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -884,7 +884,7 @@ public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= LogicalOrExprNode =====================================================
 
-public type ASTLogicalOrExprNode struct : IVisitable {
+public type ASTLogicalOrExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -899,7 +899,7 @@ public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= LogicalAndExprNode ====================================================
 
-public type ASTLogicalAndExprNode struct : IVisitable {
+public type ASTLogicalAndExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -914,7 +914,7 @@ public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= BitwiseOrExprNode =====================================================
 
-public type ASTBitwiseOrExprNode struct : IVisitable {
+public type ASTBitwiseOrExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -929,7 +929,7 @@ public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= BitwiseXorExprNode ====================================================
 
-public type ASTBitwiseXorExprNode struct : IVisitable {
+public type ASTBitwiseXorExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -944,7 +944,7 @@ public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= BitwiseAndExprNode ====================================================
 
-public type ASTBitwiseAndExprNode struct : IVisitable {
+public type ASTBitwiseAndExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -959,7 +959,7 @@ public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== EqualityExprNode =====================================================
 
-public type ASTEqualityExprNode struct : IVisitable {
+public type ASTEqualityExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -974,7 +974,7 @@ public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= RelationalExprNode ====================================================
 
-public type ASTRelationalExprNode struct : IVisitable {
+public type ASTRelationalExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -989,7 +989,7 @@ public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= ShiftExprNode =======================================================
 
-public type ASTShiftExprNode struct : IVisitable {
+public type ASTShiftExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1004,7 +1004,7 @@ public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== AdditiveExprNode =====================================================
 
-public type ASTAdditiveExprNode struct : IVisitable {
+public type ASTAdditiveExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1019,7 +1019,7 @@ public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
-public type ASTMultiplicativeExprNode struct : IVisitable {
+public type ASTMultiplicativeExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1034,7 +1034,7 @@ public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== CastExprNode =======================================================
 
-public type ASTCastExprNode struct : IVisitable {
+public type ASTCastExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1049,7 +1049,7 @@ public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
-public type ASTPrefixUnaryExprNode struct : IVisitable {
+public type ASTPrefixUnaryExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1064,7 +1064,7 @@ public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
-public type ASTPostfixUnaryExprNode struct : IVisitable {
+public type ASTPostfixUnaryExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1079,7 +1079,7 @@ public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= AtomicExprNode ======================================================
 
-public type ASTAtomicExprNode struct : IVisitable {
+public type ASTAtomicExprNode struct {
     compose public ASTExprNode node
 
 }
@@ -1094,7 +1094,7 @@ public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // =========================================================== ValueNode =========================================================
 
-public type ASTValueNode struct : IVisitable {
+public type ASTValueNode struct {
     compose public ASTExprNode node
 
 }
@@ -1109,7 +1109,7 @@ public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ConstantNode =======================================================
 
-public type ASTConstantNode struct : IVisitable {
+public type ASTConstantNode struct {
     compose public ASTExprNode node
     CompileTimeValue compileTimeValue
 }
@@ -1124,7 +1124,7 @@ public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== FctCallNode ========================================================
 
-public type ASTFctCallNode struct : IVisitable {
+public type ASTFctCallNode struct {
     compose public ASTExprNode node
 
 }
@@ -1139,7 +1139,7 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
 
 // ==================================================== ArrayInitializationNode ==================================================
 
-public type ASTArrayInitializationNode struct : IVisitable {
+public type ASTArrayInitializationNode struct {
     compose public ASTExprNode node
 
 }
@@ -1154,7 +1154,7 @@ public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
 
 // ==================================================== StructInstantiationNode ==================================================
 
-public type ASTStructInstantiationNode struct : IVisitable {
+public type ASTStructInstantiationNode struct {
     compose public ASTExprNode node
 
 }
@@ -1179,7 +1179,7 @@ public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
 
 // ========================================================= LambdaFuncNode ======================================================
 
-public type ASTLambdaFuncNode struct : IVisitable {
+public type ASTLambdaFuncNode struct {
     compose public ASTLambdaBaseNode node
 
 }
@@ -1194,7 +1194,7 @@ public f<Any> ASTLambdaFuncNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= LambdaProcNode ======================================================
 
-public type ASTLambdaProcNode struct : IVisitable {
+public type ASTLambdaProcNode struct {
     compose public ASTLambdaBaseNode node
 
 }
@@ -1209,7 +1209,7 @@ public f<Any> ASTLambdaProcNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= LambdaExprNode =======================================================
 
-public type ASTLambdaExprNode struct : IVisitable {
+public type ASTLambdaExprNode struct {
     compose public ASTLambdaBaseNode node
 
 }
@@ -1224,7 +1224,7 @@ public f<Any> ASTLambdaExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== DataTypeNode =======================================================
 
-public type ASTDataTypeNode struct : IVisitable {
+public type ASTDataTypeNode struct {
     compose public ASTExprNode node
 
 }
@@ -1239,7 +1239,7 @@ public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== BaseDataTypeNode =====================================================
 
-public type ASTBaseDataTypeNode struct : IVisitable {
+public type ASTBaseDataTypeNode struct {
     compose public ASTExprNode node
 
 }
@@ -1254,7 +1254,7 @@ public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= CustomDataTypeNode ====================================================
 
-public type ASTCustomDataTypeNode struct : IVisitable {
+public type ASTCustomDataTypeNode struct {
     compose public ASTExprNode node
 }
 
@@ -1268,7 +1268,7 @@ public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
-public type ASTFunctionDataTypeNode struct : IVisitable {
+public type ASTFunctionDataTypeNode struct {
     compose public ASTExprNode node
 
 }
