@@ -118,9 +118,11 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     if (node->hasParams)
       visit(node->paramLst);
 
-    // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required
+    // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required.
+    // Use the concrete manifestation body scope, not node->scope (generic), to avoid stale types from one
+    // concrete manifestation polluting the generic struct scope for subsequent manifestations.
     if (node->isCtor)
-      createCtorBodyPreamble(node->scope);
+      createCtorBodyPreamble(manifestation->bodyScope);
 
     // Visit statements in new scope
     visit(node->body);
