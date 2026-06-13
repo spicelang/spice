@@ -1,0 +1,12 @@
+// Std imports
+import "std/type/any";
+
+/**
+ * Dependency-free visitor interface. Declared here (without importing ast-nodes.spice or
+ * ast-node-intf.spice) so that ast-nodes.spice can import this file and declare
+ * accept(IAbstractAstVisitor*) on every node without creating a circular dependency.
+ *
+ * The full IAbstractAstVisitor with typed visit methods lives in abstract-ast-visitor.spice,
+ * which extends this interface.
+ */
+public type IAbstractAstVisitor interface {}

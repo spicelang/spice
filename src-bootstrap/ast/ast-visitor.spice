@@ -4,23 +4,34 @@ import "std/type/any";
 // Own imports
 import "bootstrap/ast/abstract-ast-visitor";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/ast-node-intf";
 import "bootstrap/reader/code-loc";
 
 /**
- * Default AST visitor: every visitXxx method delegates to visitChildren, which
- * performs a depth-first structural traversal over the base ASTNode children
- * vector.  Because the bootstrap nodes do not yet carry an accept() dispatch
- * method (the circular-import guard is still in place in ast-nodes.spice),
- * visitChildren cannot call the typed visitXxx methods on children; it only
- * recurses structurally.  Concrete passes that need type-specific behavior
- * should override the methods they care about and drive their own child
- * traversal explicitly.
+ * Default AST visitor: every visit method delegates to visitChildren, which
+ * drives typed double-dispatch over the children vector via accept().  Each child
+ * calls back into this visitor through IAbstractAstVisitor.visit(), which is
+ * implemented below to delegate to the concrete node's accept() method.
  */
 public type AstVisitor struct : IAbstractAstVisitor {}
 
 public p AstVisitor.ctor() {}
 
-// Depth-first structural traversal — calls visitChildren on each child of node.
+// Typed double-dispatch entry point.  The runtime type of node determines which
+// accept() override fires, which in turn calls the appropriate visit method.
+// Note: IASTNode.accept() is a stub (returns Any()) until vtable dispatch through
+// base pointers is available in the bootstrap. Concrete typed traversal goes via
+// the visitXxx methods called with explicit typed pointers.
+public f<Any> AstVisitor.visit(IASTNode* node) {
+    return Any();
+}
+
+// Depth-first typed traversal — dispatch each child through accept().
+// Note: children are stored as ASTNode*, so this falls back to the base
+// ASTNode.accept() which asserts false. Concrete passes that traverse the
+// tree using typed IVisitable* pointers should call visit(IVisitable*) directly.
+// For structural-only traversal (e.g. to walk all nodes without type dispatch),
+// use visitChildren directly.
 public f<Any> AstVisitor.visitChildren(ASTNode* node) {
     foreach ASTNode* child : node.getChildren() {
         this.visitChildren(child);

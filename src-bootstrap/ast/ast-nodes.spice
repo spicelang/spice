@@ -1,8 +1,9 @@
 // Std imports
 import "std/data/vector";
+import "std/type/any";
 
 // Own imports
-//import "bootstrap/ast/abstract-ast-visitor";
+import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/reader/code-loc";
 import "bootstrap/ast/ast-node-intf";
 //import "bootstrap/symboltablebuilder/qual-type";
@@ -12,9 +13,9 @@ import "bootstrap/ast/ast-node-intf";
 public const string MEMBER_ACCESS_TOKEN = ".";
 public const string SCOPE_ACCESS_TOKEN = "::";
 
-/*public type IVisitable interface {
+public type IVisitable interface {
     f<Any> accept(IAbstractAstVisitor*);
-}*/
+}
 
 // =========================================================== ASTNode ===========================================================
 
@@ -34,9 +35,10 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
 // pointers, so it is enough to let the implicitly appended member destruction free the vector storage.
 public p ASTNode.dtor() {}
 
-/*public f<Any> ASTNode.accept(AbstractAstVisitor* _) {
+public f<Any> ASTNode.accept(IAbstractAstVisitor* _) {
     assert false; // Please override at child level
-}*/
+    return Any();
+}
 
 // Register a child node and set its parent to this node.
 public p ASTNode.addChild(ASTNode* child) {
@@ -47,6 +49,10 @@ public p ASTNode.addChild(ASTNode* child) {
 
 public f<const Vector<ASTNode*>&> ASTNode.getChildren() {
     return this.children;
+}
+
+public f<String> ASTNode.getCodeLocStr() {
+    return this.codeLoc.toString();
 }
 
 public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
@@ -60,7 +66,7 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
 
 // ========================================================== EntryNode ==========================================================
 
-public type ASTEntryNode struct/*: IVisitable*/ {
+public type ASTEntryNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -68,6 +74,10 @@ public type ASTEntryNode struct/*: IVisitable*/ {
 public p ASTEntryNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTEntryNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= TopLevelDefNode =======================================================
 
@@ -103,7 +113,7 @@ public p ASTExprNode.ctor(CodeLoc codeLoc) {
 
 // ======================================================== MainFctDefNode =======================================================
 
-public type ASTMainFctDefNode struct/*: IVisitable*/ {
+public type ASTMainFctDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -111,10 +121,14 @@ public type ASTMainFctDefNode struct/*: IVisitable*/ {
 public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTMainFctDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= FctNameNode =========================================================
 
-public type ASTFctNameNode struct/*: IVisitable*/ {
+public type ASTFctNameNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -122,6 +136,10 @@ public type ASTFctNameNode struct/*: IVisitable*/ {
 public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== FctDefBaseNode =======================================================
 
@@ -135,7 +153,7 @@ public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
 
 // ========================================================== FctDefNode =========================================================
 
-public type ASTFctDefNode struct/*: IVisitable*/ {
+public type ASTFctDefNode struct : IVisitable {
     compose public ASTFctDefBaseNode node
 
 }
@@ -143,10 +161,14 @@ public type ASTFctDefNode struct/*: IVisitable*/ {
 public p ASTFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
 }
+public f<Any> ASTFctDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ProcDefNode ========================================================
 
-public type ASTProcDefNode struct/*: IVisitable*/ {
+public type ASTProcDefNode struct : IVisitable {
     compose public ASTFctDefBaseNode node
 
 }
@@ -154,10 +176,14 @@ public type ASTProcDefNode struct/*: IVisitable*/ {
 public p ASTProcDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
 }
+public f<Any> ASTProcDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= StructDefNode =======================================================
 
-public type ASTStructDefNode struct/*: IVisitable*/ {
+public type ASTStructDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -165,10 +191,14 @@ public type ASTStructDefNode struct/*: IVisitable*/ {
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== InterfaceDefNode =====================================================
 
-public type ASTInterfaceDefNode struct/*: IVisitable*/ {
+public type ASTInterfaceDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -176,10 +206,14 @@ public type ASTInterfaceDefNode struct/*: IVisitable*/ {
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== EnumDefNode ========================================================
 
-public type ASTEnumDefNode struct/*: IVisitable*/ {
+public type ASTEnumDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -187,10 +221,14 @@ public type ASTEnumDefNode struct/*: IVisitable*/ {
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= GenericTypeDefNode ====================================================
 
-public type ASTGenericTypeDefNode struct/*: IVisitable*/ {
+public type ASTGenericTypeDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -198,10 +236,14 @@ public type ASTGenericTypeDefNode struct/*: IVisitable*/ {
 public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== AliasDefNode =======================================================
 
-public type ASTAliasDefNode struct/*: IVisitable*/ {
+public type ASTAliasDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -209,10 +251,14 @@ public type ASTAliasDefNode struct/*: IVisitable*/ {
 public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== GlobalVarDefNode =====================================================
 
-public type ASTGlobalVarDefNode struct/*: IVisitable*/ {
+public type ASTGlobalVarDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -220,10 +266,14 @@ public type ASTGlobalVarDefNode struct/*: IVisitable*/ {
 public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ExtDeclNode ========================================================
 
-public type ASTExtDeclNode struct/*: IVisitable*/ {
+public type ASTExtDeclNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -231,10 +281,14 @@ public type ASTExtDeclNode struct/*: IVisitable*/ {
 public p ASTExtDeclNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTExtDeclNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= ImportDefNode =======================================================
 
-public type ASTImportDefNode struct/*: IVisitable*/ {
+public type ASTImportDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
 }
@@ -242,10 +296,14 @@ public type ASTImportDefNode struct/*: IVisitable*/ {
 public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
+public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== UnsafeBlockNode ========================================================
 
-public type ASTUnsafeBlockNode struct/*: IVisitable*/ {
+public type ASTUnsafeBlockNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -253,10 +311,14 @@ public type ASTUnsafeBlockNode struct/*: IVisitable*/ {
 public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTUnsafeBlockNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ForLoopNode ========================================================
 
-public type ASTForLoopNode struct/*: IVisitable*/ {
+public type ASTForLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -264,10 +326,14 @@ public type ASTForLoopNode struct/*: IVisitable*/ {
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTForLoopNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== ForeachLoopNode ======================================================
 
-public type ASTForeachLoopNode struct/*: IVisitable*/ {
+public type ASTForeachLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -275,10 +341,14 @@ public type ASTForeachLoopNode struct/*: IVisitable*/ {
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTForeachLoopNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= WhileLoopNode =======================================================
 
-public type ASTWhileLoopNode struct/*: IVisitable*/ {
+public type ASTWhileLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -286,10 +356,14 @@ public type ASTWhileLoopNode struct/*: IVisitable*/ {
 public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-public type ASTDoWhileLoopNode struct/*: IVisitable*/ {
+public type ASTDoWhileLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -297,10 +371,14 @@ public type ASTDoWhileLoopNode struct/*: IVisitable*/ {
 public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTDoWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== IfStmtNode ========================================================
 
-public type ASTIfStmtNode struct/*: IVisitable*/ {
+public type ASTIfStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -308,10 +386,14 @@ public type ASTIfStmtNode struct/*: IVisitable*/ {
 public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTIfStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ElseStmtNode =======================================================
 
-public type ASTElseStmtNode struct/*: IVisitable*/ {
+public type ASTElseStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -319,10 +401,14 @@ public type ASTElseStmtNode struct/*: IVisitable*/ {
 public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTElseStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= SwitchStmtNode ======================================================
 
-public type ASTSwitchStmtNode struct/*: IVisitable*/ {
+public type ASTSwitchStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -330,10 +416,14 @@ public type ASTSwitchStmtNode struct/*: IVisitable*/ {
 public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= CaseBranchNode ======================================================
 
-public type ASTCaseBranchNode struct/*: IVisitable*/ {
+public type ASTCaseBranchNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -341,10 +431,14 @@ public type ASTCaseBranchNode struct/*: IVisitable*/ {
 public p ASTCaseBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTCaseBranchNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== DefaultBranchNode ====================================================
 
-public type ASTDefaultBranchNode struct/*: IVisitable*/ {
+public type ASTDefaultBranchNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -352,10 +446,14 @@ public type ASTDefaultBranchNode struct/*: IVisitable*/ {
 public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTDefaultBranchNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
-public type ASTAnonymousBlockStmtNode struct/*: IVisitable*/ {
+public type ASTAnonymousBlockStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -363,10 +461,14 @@ public type ASTAnonymousBlockStmtNode struct/*: IVisitable*/ {
 public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTAnonymousBlockStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== StmtLstNode ========================================================
 
-public type ASTStmtLstNode struct/*: IVisitable*/ {
+public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -374,10 +476,14 @@ public type ASTStmtLstNode struct/*: IVisitable*/ {
 public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== TypeLstNode ========================================================
 
-public type ASTTypeLstNode struct/*: IVisitable*/ {
+public type ASTTypeLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -385,10 +491,14 @@ public type ASTTypeLstNode struct/*: IVisitable*/ {
 public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTTypeLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ==================================================== TypeLstWithEllipsisNode ==================================================
 
-public type ASTTypeLstWithEllipsisNode struct/*: IVisitable*/ {
+public type ASTTypeLstWithEllipsisNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -396,10 +506,14 @@ public type ASTTypeLstWithEllipsisNode struct/*: IVisitable*/ {
 public p ASTTypeLstWithEllipsisNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== TypeAltsLstNode ======================================================
 
-public type ASTTypeAltsLstNode struct/*: IVisitable*/ {
+public type ASTTypeAltsLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -407,10 +521,14 @@ public type ASTTypeAltsLstNode struct/*: IVisitable*/ {
 public p ASTTypeAltsLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ParamLstNode =======================================================
 
-public type ASTParamLstNode struct/*: IVisitable*/ {
+public type ASTParamLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -418,10 +536,14 @@ public type ASTParamLstNode struct/*: IVisitable*/ {
 public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // =========================================================== ArgLstNode ========================================================
 
-public type ASTArgLstNode struct/*: IVisitable*/ {
+public type ASTArgLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -429,10 +551,14 @@ public type ASTArgLstNode struct/*: IVisitable*/ {
 public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== EnumItemLstNode ======================================================
 
-public type ASTEnumItemLstNode struct/*: IVisitable*/ {
+public type ASTEnumItemLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -440,10 +566,14 @@ public type ASTEnumItemLstNode struct/*: IVisitable*/ {
 public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== EnumItemNode =======================================================
 
-public type ASTEnumItemNode struct/*: IVisitable*/ {
+public type ASTEnumItemNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -451,10 +581,14 @@ public type ASTEnumItemNode struct/*: IVisitable*/ {
 public p ASTEnumItemNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // =========================================================== FieldNode =========================================================
 
-public type ASTFieldNode struct/*: IVisitable*/ {
+public type ASTFieldNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -462,10 +596,14 @@ public type ASTFieldNode struct/*: IVisitable*/ {
 public p ASTFieldNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= SignatureNode =======================================================
 
-public type ASTSignatureNode struct/*: IVisitable*/ {
+public type ASTSignatureNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -473,10 +611,14 @@ public type ASTSignatureNode struct/*: IVisitable*/ {
 public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== DeclStmtNode =======================================================
 
-public type ASTDeclStmtNode struct/*: IVisitable*/ {
+public type ASTDeclStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -484,10 +626,14 @@ public type ASTDeclStmtNode struct/*: IVisitable*/ {
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ExprStmtNode =======================================================
 
-public type ASTExprStmtNode struct/*: IVisitable*/ {
+public type ASTExprStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -495,10 +641,14 @@ public type ASTExprStmtNode struct/*: IVisitable*/ {
 public p ASTExprStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== QualifierLstNode =====================================================
 
-public type ASTQualifierLstNode struct/*: IVisitable*/ {
+public type ASTQualifierLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -506,6 +656,10 @@ public type ASTQualifierLstNode struct/*: IVisitable*/ {
 public p ASTQualifierLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTQualifierLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= QualifierNode =======================================================
 
@@ -520,7 +674,7 @@ type QualifierType enum {
     COMPOSE
 }
 
-public type ASTQualifierNode struct/*: IVisitable*/ {
+public type ASTQualifierNode struct : IVisitable {
     compose public ASTNode node
     public QualifierType qualifierType = QualifierType::NONE
 }
@@ -528,10 +682,14 @@ public type ASTQualifierNode struct/*: IVisitable*/ {
 public p ASTQualifierNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ModAttrNode ========================================================
 
-public type ASTModAttrNode struct/*: IVisitable*/ {
+public type ASTModAttrNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -539,10 +697,14 @@ public type ASTModAttrNode struct/*: IVisitable*/ {
 public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // =================================================== TopLevelDefAttrNode ================================================
 
-public type ASTTopLevelDefAttrNode struct/*: IVisitable*/ {
+public type ASTTopLevelDefAttrNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -550,10 +712,14 @@ public type ASTTopLevelDefAttrNode struct/*: IVisitable*/ {
 public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== LambdaAttrNode =======================================================
 
-public type ASTLambdaAttrNode struct/*: IVisitable*/ {
+public type ASTLambdaAttrNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -561,10 +727,14 @@ public type ASTLambdaAttrNode struct/*: IVisitable*/ {
 public p ASTLambdaAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== AttrLstNode ========================================================
 
-public type ASTAttrLstNode struct/*: IVisitable*/ {
+public type ASTAttrLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -572,10 +742,14 @@ public type ASTAttrLstNode struct/*: IVisitable*/ {
 public p ASTAttrLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTAttrLstNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ============================================================ AttrNode =========================================================
 
-public type ASTAttrNode struct/*: IVisitable*/ {
+public type ASTAttrNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -583,10 +757,14 @@ public type ASTAttrNode struct/*: IVisitable*/ {
 public p ASTAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
+public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= CaseConstantNode ====================================================
 
-public type ASTCaseConstantNode struct/*: IVisitable*/ {
+public type ASTCaseConstantNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -594,10 +772,14 @@ public type ASTCaseConstantNode struct/*: IVisitable*/ {
 public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= ReturnStmtNode ======================================================
 
-public type ASTReturnStmtNode struct/*: IVisitable*/ {
+public type ASTReturnStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -605,10 +787,14 @@ public type ASTReturnStmtNode struct/*: IVisitable*/ {
 public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= BreakStmtNode =======================================================
 
-public type ASTBreakStmtNode struct/*: IVisitable*/ {
+public type ASTBreakStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -616,10 +802,14 @@ public type ASTBreakStmtNode struct/*: IVisitable*/ {
 public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== ContinueStmtNode =====================================================
 
-public type ASTContinueStmtNode struct/*: IVisitable*/ {
+public type ASTContinueStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -627,10 +817,14 @@ public type ASTContinueStmtNode struct/*: IVisitable*/ {
 public p ASTContinueStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTContinueStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= FallthroughStmtNode ===================================================
 
-public type ASTFallthroughStmtNode struct/*: IVisitable*/ {
+public type ASTFallthroughStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -638,10 +832,14 @@ public type ASTFallthroughStmtNode struct/*: IVisitable*/ {
 public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= AssertStmtNode ======================================================
 
-public type ASTAssertStmtNode struct/*: IVisitable*/ {
+public type ASTAssertStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
 }
@@ -649,10 +847,14 @@ public type ASTAssertStmtNode struct/*: IVisitable*/ {
 public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
+public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= AssignExprNode =======================================================
 
-public type ASTAssignExprNode struct/*: IVisitable*/ {
+public type ASTAssignExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -660,10 +862,14 @@ public type ASTAssignExprNode struct/*: IVisitable*/ {
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== TernaryExprNode ======================================================
 
-public type ASTTernaryExprNode struct/*: IVisitable*/ {
+public type ASTTernaryExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -671,10 +877,14 @@ public type ASTTernaryExprNode struct/*: IVisitable*/ {
 public p ASTTernaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= LogicalOrExprNode =====================================================
 
-public type ASTLogicalOrExprNode struct/*: IVisitable*/ {
+public type ASTLogicalOrExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -682,10 +892,14 @@ public type ASTLogicalOrExprNode struct/*: IVisitable*/ {
 public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= LogicalAndExprNode ====================================================
 
-public type ASTLogicalAndExprNode struct/*: IVisitable*/ {
+public type ASTLogicalAndExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -693,10 +907,14 @@ public type ASTLogicalAndExprNode struct/*: IVisitable*/ {
 public p ASTLogicalAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= BitwiseOrExprNode =====================================================
 
-public type ASTBitwiseOrExprNode struct/*: IVisitable*/ {
+public type ASTBitwiseOrExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -704,10 +922,14 @@ public type ASTBitwiseOrExprNode struct/*: IVisitable*/ {
 public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= BitwiseXorExprNode ====================================================
 
-public type ASTBitwiseXorExprNode struct/*: IVisitable*/ {
+public type ASTBitwiseXorExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -715,10 +937,14 @@ public type ASTBitwiseXorExprNode struct/*: IVisitable*/ {
 public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= BitwiseAndExprNode ====================================================
 
-public type ASTBitwiseAndExprNode struct/*: IVisitable*/ {
+public type ASTBitwiseAndExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -726,10 +952,14 @@ public type ASTBitwiseAndExprNode struct/*: IVisitable*/ {
 public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== EqualityExprNode =====================================================
 
-public type ASTEqualityExprNode struct/*: IVisitable*/ {
+public type ASTEqualityExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -737,10 +967,14 @@ public type ASTEqualityExprNode struct/*: IVisitable*/ {
 public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= RelationalExprNode ====================================================
 
-public type ASTRelationalExprNode struct/*: IVisitable*/ {
+public type ASTRelationalExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -748,10 +982,14 @@ public type ASTRelationalExprNode struct/*: IVisitable*/ {
 public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= ShiftExprNode =======================================================
 
-public type ASTShiftExprNode struct/*: IVisitable*/ {
+public type ASTShiftExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -759,10 +997,14 @@ public type ASTShiftExprNode struct/*: IVisitable*/ {
 public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== AdditiveExprNode =====================================================
 
-public type ASTAdditiveExprNode struct/*: IVisitable*/ {
+public type ASTAdditiveExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -770,10 +1012,14 @@ public type ASTAdditiveExprNode struct/*: IVisitable*/ {
 public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
-public type ASTMultiplicativeExprNode struct/*: IVisitable*/ {
+public type ASTMultiplicativeExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -781,10 +1027,14 @@ public type ASTMultiplicativeExprNode struct/*: IVisitable*/ {
 public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== CastExprNode =======================================================
 
-public type ASTCastExprNode struct/*: IVisitable*/ {
+public type ASTCastExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -792,10 +1042,14 @@ public type ASTCastExprNode struct/*: IVisitable*/ {
 public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
-public type ASTPrefixUnaryExprNode struct/*: IVisitable*/ {
+public type ASTPrefixUnaryExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -803,10 +1057,14 @@ public type ASTPrefixUnaryExprNode struct/*: IVisitable*/ {
 public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
-public type ASTPostfixUnaryExprNode struct/*: IVisitable*/ {
+public type ASTPostfixUnaryExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -814,10 +1072,14 @@ public type ASTPostfixUnaryExprNode struct/*: IVisitable*/ {
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= AtomicExprNode ======================================================
 
-public type ASTAtomicExprNode struct/*: IVisitable*/ {
+public type ASTAtomicExprNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -825,10 +1087,14 @@ public type ASTAtomicExprNode struct/*: IVisitable*/ {
 public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // =========================================================== ValueNode =========================================================
 
-public type ASTValueNode struct/*: IVisitable*/ {
+public type ASTValueNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -836,10 +1102,14 @@ public type ASTValueNode struct/*: IVisitable*/ {
 public p ASTValueNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== ConstantNode =======================================================
 
-public type ASTConstantNode struct/*: IVisitable*/ {
+public type ASTConstantNode struct : IVisitable {
     compose public ASTExprNode node
     CompileTimeValue compileTimeValue
 }
@@ -847,10 +1117,14 @@ public type ASTConstantNode struct/*: IVisitable*/ {
 public p ASTConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== FctCallNode ========================================================
 
-public type ASTFctCallNode struct/*: IVisitable*/ {
+public type ASTFctCallNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -858,10 +1132,14 @@ public type ASTFctCallNode struct/*: IVisitable*/ {
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ==================================================== ArrayInitializationNode ==================================================
 
-public type ASTArrayInitializationNode struct/*: IVisitable*/ {
+public type ASTArrayInitializationNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -869,10 +1147,14 @@ public type ASTArrayInitializationNode struct/*: IVisitable*/ {
 public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ==================================================== StructInstantiationNode ==================================================
 
-public type ASTStructInstantiationNode struct/*: IVisitable*/ {
+public type ASTStructInstantiationNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -880,6 +1162,10 @@ public type ASTStructInstantiationNode struct/*: IVisitable*/ {
 public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= LambdaBaseNode ======================================================
 
@@ -893,7 +1179,7 @@ public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
 
 // ========================================================= LambdaFuncNode ======================================================
 
-public type ASTLambdaFuncNode struct/*: IVisitable*/ {
+public type ASTLambdaFuncNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
 }
@@ -901,10 +1187,14 @@ public type ASTLambdaFuncNode struct/*: IVisitable*/ {
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
+public f<Any> ASTLambdaFuncNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= LambdaProcNode ======================================================
 
-public type ASTLambdaProcNode struct/*: IVisitable*/ {
+public type ASTLambdaProcNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
 }
@@ -912,10 +1202,14 @@ public type ASTLambdaProcNode struct/*: IVisitable*/ {
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
+public f<Any> ASTLambdaProcNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================= LambdaExprNode =======================================================
 
-public type ASTLambdaExprNode struct/*: IVisitable*/ {
+public type ASTLambdaExprNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
 }
@@ -923,10 +1217,14 @@ public type ASTLambdaExprNode struct/*: IVisitable*/ {
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
+public f<Any> ASTLambdaExprNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ========================================================== DataTypeNode =======================================================
 
-public type ASTDataTypeNode struct/*: IVisitable*/ {
+public type ASTDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -934,10 +1232,14 @@ public type ASTDataTypeNode struct/*: IVisitable*/ {
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================== BaseDataTypeNode =====================================================
 
-public type ASTBaseDataTypeNode struct/*: IVisitable*/ {
+public type ASTBaseDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -945,20 +1247,28 @@ public type ASTBaseDataTypeNode struct/*: IVisitable*/ {
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ======================================================= CustomDataTypeNode ====================================================
 
-public type ASTCustomDataTypeNode struct/*: IVisitable*/ {
+public type ASTCustomDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 }
 
 public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
-public type ASTFunctionDataTypeNode struct/*: IVisitable*/ {
+public type ASTFunctionDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -966,6 +1276,10 @@ public type ASTFunctionDataTypeNode struct/*: IVisitable*/ {
 public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
+public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
+    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+}
+
 
 #[test, test.name="ASTNodes Smoke test"]
 public f<bool> testASTNodesSmoke() {

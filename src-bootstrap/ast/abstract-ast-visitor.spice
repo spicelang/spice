@@ -2,9 +2,12 @@
 import "std/type/any";
 
 // Own imports
+import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/ast-node-intf";
 
 public type IAbstractAstVisitor interface {
+    f<Any> visit(IASTNode*);
     f<Any> visitEntry(ASTEntryNode*);
     f<Any> visitMainFctDef(ASTMainFctDefNode*);
     f<Any> visitFctDef(ASTFctDefNode*);
