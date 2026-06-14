@@ -191,10 +191,10 @@ void Driver::runBinary() const {
   if (cliOptions.printDebugOutput)
     std::cout << "Running executable ...\n\n";
 
-  // Run executable
+  // Run executable, inheriting our standard streams so its output goes straight to the terminal
   std::filesystem::path executablePath = cliOptions.outputPath;
   executablePath.make_preferred();
-  const auto [output, exitCode] = SystemUtil::exec(executablePath.string());
+  const int exitCode = SystemUtil::run(executablePath.string());
   if (exitCode != EXIT_SUCCESS)
     throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(exitCode));
 }

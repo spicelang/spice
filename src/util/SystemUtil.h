@@ -24,6 +24,7 @@ struct ExternalBinaryFinderResult {
 class SystemUtil {
 public:
   static ExecResult exec(const std::string &command, bool redirectStdErrToStdOut = false);
+  static int run(const std::string &executablePath);
   static bool isCommandAvailable(const std::string &cmd);
   static bool isGraphvizInstalled();
   static ExternalBinaryFinderResult findLinkerInvoker();
