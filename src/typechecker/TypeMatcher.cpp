@@ -39,11 +39,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
     if (candidateType.matchesInterfaceImplementedByStruct(requestedType))
       return true;
     // Normal equality check
-    if (candidateType.matches(requestedType, true, !strictQualifierMatching, true))
-      return true;
-    // As a fallback, check if the right one is a struct that composes the struct on the left as its
-    // first field. This is kept last so the common (non-composing) path does not pay for the lookup.
-    return candidateType.matchesComposedBaseOfStruct(requestedType);
+    return candidateType.matches(requestedType, true, !strictQualifierMatching, true);
   }
 
   // Check if the candidate type itself is generic

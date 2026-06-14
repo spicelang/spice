@@ -1632,9 +1632,18 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   case COMB(TY_BYTE, TY_BYTE):     // fallthrough
   case COMB(TY_CHAR, TY_CHAR):     // fallthrough
   case COMB(TY_STRING, TY_STRING): // fallthrough
-  case COMB(TY_BOOL, TY_BOOL):     // fallthrough
-  case COMB(TY_PTR, TY_PTR):
+  case COMB(TY_BOOL, TY_BOOL):
     return rhs; // Identity cast
+  case COMB(TY_PTR, TY_PTR): {
+    // Handle safe struct-pointer upcasts: cast<Base*>(derived) / cast<Interface*>(struct). The pointer must be
+    // advanced to the embedded subobject (past any vtable prefix) instead of being passed through unchanged.
+    const QualType lhsContained = lhsSTy.getContained();
+    const QualType rhsContained = rhsSTy.getContained();
+    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) ||
+        lhsContained.matchesComposedBaseOfStruct(rhsContained))
+      return {.value = irGenerator->getUpcastedStructPtr(rhsV(), lhsSTy, rhsSTy)};
+    return rhs;
+  }
   case COMB(TY_DOUBLE, TY_INT):
   case COMB(TY_DOUBLE, TY_SHORT):
   case COMB(TY_DOUBLE, TY_LONG):

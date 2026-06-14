@@ -53,7 +53,7 @@ f<T*> Parser.createNode<T>() {
         __placement_new<T>(node, this.lexer.getCodeLoc());
     }
     // Upcast to the composed ASTNode base. This is what the parent/child book-keeping operates on.
-    ASTNode* nodeBase = node;
+    ASTNode* nodeBase = cast<ASTNode*>(node);
 
     // If this is not the entry node, we need to add the new node to its parent
     if !isRootNode {
@@ -68,7 +68,7 @@ f<T*> Parser.createNode<T>() {
 
 f<T*> Parser.concludeNode<T>(T* node) {
     assert !this.parentStack.isEmpty();
-    ASTNode* nodeBase = node;
+    ASTNode* nodeBase = cast<ASTNode*>(node);
     assert this.parentStack.top() == nodeBase;
     this.parentStack.pop();
     return node;

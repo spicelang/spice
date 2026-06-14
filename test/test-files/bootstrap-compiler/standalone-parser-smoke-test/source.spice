@@ -50,7 +50,7 @@ f<int> main() {
     ASTEntryNode* entry = parser.parse();
     assert entry != nil<ASTEntryNode*>;
 
-    ASTNode* root = entry;
+    ASTNode* root = cast<ASTNode*>(entry);
     const Vector<ASTNode*>& topLevelDefs = root.getChildren();
     assert topLevelDefs.getSize() == 10l;
     assert countNodes(root) == 919l;
@@ -64,7 +64,7 @@ f<int> main() {
     Lexer lexer2 = Lexer(filePath);
     Parser parser2 = Parser(lexer2);
     ASTEntryNode* entry2 = parser2.parse();
-    ASTNode* root2 = entry2;
+    ASTNode* root2 = cast<ASTNode*>(entry2);
     const Vector<ASTNode*>& topLevelDefs2 = root2.getChildren();
     assert topLevelDefs2.getSize() == 10l;
     assert countNodes(root2) == 919l;

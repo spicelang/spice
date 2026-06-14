@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:18:5:
+Wrong data type for operator: Cannot apply '=' operator on types Base* and Derived*
+
+18  Base* b = &der;
+    ^^^^^^^^^^^^^^

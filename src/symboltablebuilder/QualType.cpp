@@ -496,9 +496,11 @@ bool QualType::matchesInterfaceImplementedByStruct(const QualType &structType) c
 
 /**
  * Check if the current (struct) type is a base of the given struct type, embedded via the 'compose'
- * qualifier. Only first-field compositions are considered, because only those sit at offset 0 and can
- * therefore be reached without adjusting the pointer value. The check follows the chain of first-field
- * compositions transitively, so a base that is composed several levels deep is still matched.
+ * qualifier as its first field. The compiler does not perform implicit struct-to-composed-base upcasts;
+ * this matcher only gates the explicit 'cast<Base*>(derived)' conversion (and the matching IR pointer
+ * adjustment). Only first-field compositions are considered, because those are the ones reachable by
+ * advancing the pointer along the first-field chain. The check follows that chain transitively, so a base
+ * that is composed several levels deep is still matched.
  */
 bool QualType::matchesComposedBaseOfStruct(const QualType &structType) const {
   if (!is(TY_STRUCT) || !structType.is(TY_STRUCT))
@@ -508,7 +510,7 @@ bool QualType::matchesComposedBaseOfStruct(const QualType &structType) const {
   if (spiceStruct == nullptr || spiceStruct->fieldTypes.empty())
     return false;
 
-  // Only the first field is guaranteed to be located at offset 0
+  // Only the first field can be a composed base that is reachable along the first-field chain
   const QualType &firstFieldType = spiceStruct->fieldTypes.front();
   if (!firstFieldType.isComposition())
     return false;

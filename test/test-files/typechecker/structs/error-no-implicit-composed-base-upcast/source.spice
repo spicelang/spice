@@ -1,0 +1,20 @@
+// The compiler must not perform implicit struct-to-composed-base upcasts. A struct that composes another
+// struct as its first field is NOT implicitly convertible to that base; the base has to be reached
+// explicitly (e.g. via the composed field). This keeps pointer identity explicit and avoids silent,
+// layout-dependent conversions.
+
+type Base struct {
+    int baseVal
+}
+
+type Derived struct {
+    compose Base base
+    int derivedVal
+}
+
+f<int> main() {
+    Derived der;
+    // The next line is a composed-base upcast and must be rejected
+    Base* b = &der;
+    return b.baseVal;
+}
