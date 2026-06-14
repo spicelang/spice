@@ -9,6 +9,9 @@
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#if OS_MACOS
+extern char **environ;
+#endif
 #elif OS_WINDOWS
 #include <process.h>
 #include <windows.h>
