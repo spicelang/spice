@@ -1,0 +1,65 @@
+// Explicit 'cast<Base*>(derived)' is allowed in a safe context (no unsafe block) when Base is a composed
+// base of the derived struct, or an interface it implements. The compiler advances the pointer to the
+// embedded subobject - importantly past any vtable prefix that an implemented interface adds in front of
+// the composed base, so the base no longer sits at offset 0. Implicit upcasts remain disallowed.
+
+type IMarker interface {
+    f<int> marker();
+}
+
+type Base struct {
+    int baseVal
+}
+
+p Base.init(int v) {
+    this.baseVal = v;
+}
+
+f<int> Base.get() {
+    return this.baseVal;
+}
+
+// Implements an interface (vtable pointer prefix at offset 0) AND composes Base, so Base is at offset != 0.
+type Derived struct : IMarker {
+    compose Base base
+    int derivedVal
+}
+
+p Derived.init(int b, int d) {
+    this.base.init(b);
+    this.derivedVal = d;
+}
+
+f<int> Derived.marker() {
+    return this.derivedVal;
+}
+
+// Two levels of composition, to exercise the transitive walk Leaf -> Derived -> Base.
+type Leaf struct : IMarker {
+    compose Derived derived
+    int leafVal
+}
+
+p Leaf.init(int b, int d, int l) {
+    this.derived.init(b, d);
+    this.leafVal = l;
+}
+
+f<int> Leaf.marker() {
+    return this.leafVal;
+}
+
+f<int> main() {
+    Derived der;
+    der.init(7, 99);
+    Base* b = cast<Base*>(&der); // safe upcast, must shift past the vtable prefix
+    printf("derived->base:  %d\n", b.get());
+
+    Leaf leaf;
+    leaf.init(1, 2, 3);
+    Base* lb = cast<Base*>(&leaf); // transitive upcast Leaf -> Derived -> Base
+    printf("leaf->base:     %d\n", lb.get());
+
+    IMarker* m = cast<IMarker*>(&der); // explicit interface upcast
+    printf("derived->iface: %d\n", m.marker());
+}

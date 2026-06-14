@@ -74,7 +74,7 @@ public f<T*> BlockAllocator.reserve<T>() {
 
     // Track the object so it can be destructed in the allocator's dtor and update the offset to be ready
     // to store the next object. The object is not constructed yet, but its address is already stable.
-    Base* basePtr = ptr;
+    Base* basePtr = cast<Base*>(ptr);
     this.allocatedObjects.pushBack(basePtr);
     this.offsetInBlock += objSize;
     return ptr;

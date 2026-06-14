@@ -183,6 +183,7 @@ private:
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
+  llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;

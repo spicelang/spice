@@ -61,7 +61,7 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
         return true;
     }
     // Succeed if the given qual type is generic and matches the current one
-    if requestedType.hasAnyGenericParts() && requestedType == *this {
+    if requestedType.hasAnyGenericParts() && requestedType == this.qualType {
         return true;
     }
     // Check type conditions

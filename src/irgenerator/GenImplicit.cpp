@@ -53,6 +53,64 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   return src;
 }
 
+llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const {
+  // Adjusts a pointer to a struct instance so it points at the embedded subobject the destination type
+  // refers to. This backs the explicit 'cast<Base*>(derived)' / 'cast<Interface*>(struct)' conversions.
+  // When the struct carries a vtable prefix (because it implements interfaces), the composed base no longer
+  // sits at offset 0, so the pointer has to be advanced via a GEP. For subobjects that already sit at offset
+  // 0 (e.g. the leading interface field), insertStructGEP() with index 0 is a no-op and returns the pointer
+  // unchanged, so no superfluous IR is emitted. If the given pair of types is not such an upcast, the
+  // pointer is returned unchanged.
+  QualType dstPointee = dstType.removeReferenceWrapper();
+  QualType srcPointee = srcType.removeReferenceWrapper();
+  // Both sides are pointers ('structPtr' is the pointer value itself), so look one level deeper
+  if (dstPointee.isPtr() && srcPointee.isPtr()) {
+    dstPointee = dstPointee.getContained();
+    srcPointee = srcPointee.getContained();
+  }
+  // Bail out if this is not an interface/composed-base upcast that requires a pointer adjustment
+  if (!srcPointee.is(TY_STRUCT))
+    return structPtr;
+  if (!dstPointee.matchesInterfaceImplementedByStruct(srcPointee) && !dstPointee.matchesComposedBaseOfStruct(srcPointee))
+    return structPtr;
+
+  QualType walkType = srcPointee;
+  while (!walkType.matches(dstPointee, false, true, true)) {
+    assert(walkType.is(TY_STRUCT));
+    Scope *structScope = walkType.getBodyScope();
+    assert(structScope != nullptr);
+    const Struct *spiceStruct = walkType.getStruct(nullptr);
+    assert(spiceStruct != nullptr);
+    llvm::Type *llvmStructType = walkType.toLLVMType(sourceFile);
+    // Implicit (interface) fields are inserted before the explicit fields, so their count is the difference
+    // between the total field count and the number of explicit fields.
+    const size_t implicitFieldCount = structScope->getFieldCount() - spiceStruct->fieldTypes.size();
+
+    // Case 1: the destination is an interface implemented directly by the struct -> step into its implicit field
+    if (dstPointee.is(TY_INTERFACE)) {
+      bool found = false;
+      for (size_t i = 0; i < implicitFieldCount; i++) {
+        const SymbolTableEntry *implicitField = structScope->lookupField(i);
+        if (dstPointee.matches(implicitField->getQualType(), false, true, true)) {
+          structPtr = insertStructGEP(llvmStructType, structPtr, implicitField->orderIndex);
+          found = true;
+          break;
+        }
+      }
+      assert(found);
+      (void)found;
+      return structPtr;
+    }
+
+    // Case 2: the destination is a composed base struct -> step into the first explicit (composed) field
+    const SymbolTableEntry *baseField = structScope->lookupField(implicitFieldCount);
+    assert(baseField != nullptr && baseField->getQualType().isComposition());
+    structPtr = insertStructGEP(llvmStructType, structPtr, baseField->orderIndex);
+    walkType = baseField->getQualType();
+  }
+  return structPtr;
+}
+
 void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   // Do not clean up if the block is already terminated
   if (blockAlreadyTerminated)

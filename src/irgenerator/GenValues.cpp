@@ -159,7 +159,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
         // Unwrap as far as possible and remove reference wrappers if possible
         QualType::unwrapBoth(expectedTy, actualTy);
-        return expectedTy.matchesInterfaceImplementedByStruct(actualTy) || expectedTy.matchesComposedBaseOfStruct(actualTy);
+        return expectedTy.matchesInterfaceImplementedByStruct(actualTy);
       };
 
       if (matchFct(expectedSTy, actualSTy)) {

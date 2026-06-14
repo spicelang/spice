@@ -151,15 +151,6 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
       return lhsType;
   }
-  // Allow baseStruct* = derivedStruct* or baseStruct& = derivedStruct where derivedStruct composes
-  // baseStruct as its first field (and is therefore located at the same address)
-  if (typesCompatible && lhsType.isBase(TY_STRUCT) && rhsType.isBase(TY_STRUCT)) {
-    QualType lhsTypeCopy = lhsType;
-    QualType rhsTypeCopy = rhsType;
-    QualType::unwrapBothWithRefWrappers(lhsTypeCopy, rhsTypeCopy);
-    if (lhsTypeCopy.matchesComposedBaseOfStruct(rhsTypeCopy))
-      return lhsType;
-  }
   // Allow type* = heap type* straight away. This is used for initializing non-owning pointers to heap allocations
   if (lhsType.isPtr() && rhsType.isHeap() && lhsType.matches(rhsType, false, true, true)) {
     TypeQualifiers rhsQualifiers = rhsType.getQualifiers();
@@ -721,6 +712,17 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
   // Allow casts char* -> string and char[] -> string
   if (lhsType.is(TY_STRING) && rhsType.isOneOf({TY_PTR, TY_ARRAY}) && rhsType.getContained().is(TY_CHAR))
     return lhsType;
+  // Allow safe upcasts baseStruct* <- derivedStruct* and interface* <- struct* without requiring an unsafe
+  // block. These are the only struct-pointer casts where the target subobject is guaranteed to be present;
+  // the IR generator advances the pointer to that subobject (past any vtable prefix). The reverse direction
+  // (down/sibling casts) is not covered here and still falls through to the unsafe any* -> any* rule below.
+  if (lhsType.isPtr() && rhsType.isPtr()) {
+    const QualType lhsContained = lhsType.getContained();
+    const QualType rhsContained = rhsType.getContained();
+    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) ||
+        lhsContained.matchesComposedBaseOfStruct(rhsContained))
+      return lhsType;
+  }
   // Allow casts any* -> any*
   if (lhsType.isOneOf({TY_PTR, TY_STRING}) && rhsType.isOneOf({TY_PTR, TY_STRING})) {
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
