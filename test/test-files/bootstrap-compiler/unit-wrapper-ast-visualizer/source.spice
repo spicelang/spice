@@ -1,0 +1,7 @@
+import "bootstrap/visualizer/ast-visualizer";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testASTVisualizerSmoke();
+    printf("All assertions passed!");
+}

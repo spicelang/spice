@@ -1,7 +1,9 @@
 // Std imports
 import "std/data/vector";
+import "std/type/any";
 
 // Own imports
+import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/model/function-intf";
 import "bootstrap/model/struct-intf";
 import "bootstrap/model/interface-intf";
@@ -35,11 +37,12 @@ public type CompileTimeValue struct {
     long longValue = 0l
     byte byteValue = cast<byte>(0)
     char charValue = '\0'
-    unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
+    unsigned long stringValueOffset = 0ul // Offset into vector of strings in GlobalResourceManager
     bool boolValue = false
 }
 
 public type IASTNode interface {
+    public f<Any> accept(IAbstractAstVisitor*);
     public f<Vector<IASTNode*>> getChildren();
     public f<Vector<Vector<const IFunction*>>> getOpFctPointers();
     public p customItemsInitialization(unsigned long /*manifestationCount*/);
