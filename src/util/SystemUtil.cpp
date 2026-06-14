@@ -6,8 +6,14 @@
 #include <iostream> // IWYU pragma: keep (usage in Windows-only code)
 #include <vector>
 #if OS_UNIX
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#if OS_MACOS
+extern char **environ;
+#endif
 #elif OS_WINDOWS
+#include <process.h>
 #include <windows.h>
 #else
 #error "Unsupported platform"
@@ -53,6 +59,36 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
 
   const int status = pclose(pipe);
   return {result.str(), transformStatusToExitCode(status)};
+}
+
+/**
+ * Execute an external binary, inheriting the parent's standard streams.
+ * Unlike exec(), this does not capture the child's output: its stdin, stdout and stderr are
+ * connected directly to ours, so the program behaves as if invoked from the terminal.
+ *
+ * @param executablePath Path to the executable to run
+ * @return Exit code of the executed binary
+ */
+int SystemUtil::run(const std::string &executablePath) {
+#if OS_UNIX
+  // No file actions are given, so the child inherits our stdin/stdout/stderr
+  const char *argv[] = {executablePath.c_str(), nullptr};
+  pid_t pid;
+  if (posix_spawn(&pid, executablePath.c_str(), nullptr, nullptr, const_cast<char *const *>(argv), environ) != 0)
+    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // GCOV_EXCL_LINE
+  int status;
+  if (waitpid(pid, &status, 0) == -1)
+    throw CompilerError(IO_ERROR, "Failed to wait for: " + executablePath); // GCOV_EXCL_LINE
+  return transformStatusToExitCode(status);
+#elif OS_WINDOWS
+  // _P_WAIT inherits the parent's standard streams and returns the child's exit code
+  const intptr_t exitCode = _spawnl(_P_WAIT, executablePath.c_str(), executablePath.c_str(), nullptr);
+  if (exitCode == -1)
+    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // GCOV_EXCL_LINE
+  return static_cast<int>(exitCode);
+#else
+#error "Unsupported platform"
+#endif
 }
 
 /**
