@@ -179,6 +179,7 @@ private:
   llvm::Attribute::AttrKind getExtAttrKindForType(const QualType &type) const;
   bool isSymbolDSOLocal(bool isPublic) const;
   llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
+  llvm::GlobalValue::LinkageTypes getVTableLinkageType(bool isPublic) const;
   void attachComdatToSymbol(llvm::GlobalVariable *global, const std::string &comdatName, bool isPublic) const;
 
   // Generate implicit

@@ -27,7 +27,7 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const
   // Set global attributes
   global->setConstant(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setLinkage(getVTableLinkageType(isPublic));
   global->setDSOLocal(isSymbolDSOLocal(isPublic));
   attachComdatToSymbol(global, globalName, isPublic);
 
@@ -83,7 +83,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   // Set global attributes
   global->setConstant(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setLinkage(getVTableLinkageType(isPublic));
   global->setDSOLocal(isSymbolDSOLocal(isPublic));
   global->setAlignment(llvm::MaybeAlign(8));
   attachComdatToSymbol(global, mangledName, isPublic);
@@ -113,7 +113,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   // Set global attributes
   global->setConstant(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-  global->setLinkage(getSymbolLinkageType(isPublic));
+  global->setLinkage(getVTableLinkageType(isPublic));
   global->setDSOLocal(isSymbolDSOLocal(isPublic));
   global->setAlignment(llvm::MaybeAlign(8));
   attachComdatToSymbol(global, mangledName, isPublic);
