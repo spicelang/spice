@@ -15,7 +15,7 @@ env:
 jobs:
   build-linux-x86:
     name: C++ CI - Linux/x86_64
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout
@@ -175,7 +175,7 @@ jobs:
 
   build-linux-aarch64:
     name: C++ CI - Linux/AArch64
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
 
     steps:
       - name: Checkout
