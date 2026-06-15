@@ -15,7 +15,7 @@ env:
 jobs:
   build-linux-x86-asan:
     name: C++ CI - Linux/x86_64 with ASAN
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout
