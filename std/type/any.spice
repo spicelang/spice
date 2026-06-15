@@ -46,6 +46,13 @@ public type Any struct {
 public p Any.ctor() {}
 
 /**
+ * Construct an Any holding the given value of type T.
+ */
+public p Any.ctor<T>(const T& value) {
+    this.set(value);
+}
+
+/**
  * Copy-construct an Any, deep-copying the payload so that both instances own
  * independent storage. Non-trivial payloads are copied via their copy ctor.
  */
