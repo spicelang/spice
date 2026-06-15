@@ -1,0 +1,183 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+@anon.array.0 = private unnamed_addr constant [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1]
+@printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 4
+@printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 4
+
+define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) {
+  %a = alloca ptr, align 8
+  %b = alloca ptr, align 8
+  %temp = alloca i32, align 4
+  store ptr %0, ptr %a, align 8
+  store ptr %1, ptr %b, align 8
+  %3 = load ptr, ptr %a, align 8
+  %4 = load i32, ptr %3, align 4
+  store i32 %4, ptr %temp, align 4
+  %5 = load ptr, ptr %a, align 8
+  %6 = load ptr, ptr %b, align 8
+  %7 = load i32, ptr %6, align 4
+  store i32 %7, ptr %5, align 4
+  %8 = load ptr, ptr %b, align 8
+  %9 = load i32, ptr %temp, align 4
+  store i32 %9, ptr %8, align 4
+  ret void
+}
+
+define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) {
+  %array = alloca ptr, align 8
+  %sortFct = alloca { ptr, ptr, i64 }, align 8
+  %i = alloca i32, align 4
+  %j = alloca i32, align 4
+  store ptr %0, ptr %array, align 8
+  store { ptr, ptr, i64 } %1, ptr %sortFct, align 8
+  store i32 0, ptr %i, align 4
+  br label %for.head.L8
+
+for.head.L8:                                      ; preds = %for.tail.L8, %2
+  %3 = load i32, ptr %i, align 4
+  %4 = sext i32 %3 to i64
+  %5 = icmp slt i64 %4, 9
+  br i1 %5, label %for.body.L8, label %for.exit.L8
+
+for.body.L8:                                      ; preds = %for.head.L8
+  store i32 0, ptr %j, align 4
+  br label %for.head.L9
+
+for.head.L9:                                      ; preds = %for.tail.L9, %for.body.L8
+  %6 = load i32, ptr %i, align 4
+  %7 = sext i32 %6 to i64
+  %8 = sub nsw i64 10, %7
+  %9 = sub nsw i64 %8, 1
+  %10 = load i32, ptr %j, align 4
+  %11 = sext i32 %10 to i64
+  %12 = icmp slt i64 %11, %9
+  br i1 %12, label %for.body.L9, label %for.exit.L9
+
+for.body.L9:                                      ; preds = %for.head.L9
+  %13 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %sortFct, i32 0, i32 1
+  %captures = load ptr, ptr %13, align 8
+  %14 = load i32, ptr %j, align 4
+  %15 = load ptr, ptr %array, align 8
+  %16 = getelementptr inbounds [10 x i32], ptr %15, i64 0, i32 %14
+  %17 = load i32, ptr %16, align 4
+  %18 = load i32, ptr %j, align 4
+  %19 = add nsw i32 %18, 1
+  %20 = load ptr, ptr %array, align 8
+  %21 = getelementptr inbounds [10 x i32], ptr %20, i64 0, i32 %19
+  %22 = load i32, ptr %21, align 4
+  %fct = load ptr, ptr %sortFct, align 8
+  %23 = call i1 %fct(ptr %captures, i32 %17, i32 %22)
+  br i1 %23, label %if.then.L10, label %if.exit.L10
+
+if.then.L10:                                      ; preds = %for.body.L9
+  %24 = load i32, ptr %j, align 4
+  %25 = load ptr, ptr %array, align 8
+  %26 = getelementptr inbounds [10 x i32], ptr %25, i64 0, i32 %24
+  %27 = load i32, ptr %j, align 4
+  %28 = add nsw i32 %27, 1
+  %29 = load ptr, ptr %array, align 8
+  %30 = getelementptr inbounds [10 x i32], ptr %29, i64 0, i32 %28
+  call void @_Z4swapRiRi(ptr noundef %26, ptr noundef %30)
+  br label %if.exit.L10
+
+if.exit.L10:                                      ; preds = %if.then.L10, %for.body.L9
+  br label %for.tail.L9
+
+for.tail.L9:                                      ; preds = %if.exit.L10
+  %31 = load i32, ptr %j, align 4
+  %32 = add nsw i32 %31, 1
+  store i32 %32, ptr %j, align 4
+  br label %for.head.L9
+
+for.exit.L9:                                      ; preds = %for.head.L9
+  br label %for.tail.L8
+
+for.tail.L8:                                      ; preds = %for.exit.L9
+  %33 = load i32, ptr %i, align 4
+  %34 = add nsw i32 %33, 1
+  store i32 %34, ptr %i, align 4
+  br label %for.head.L8
+
+for.exit.L8:                                      ; preds = %for.head.L8
+  ret void
+}
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
+  %result = alloca i32, align 4
+  %array = alloca [10 x i32], align 4
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  store i32 0, ptr %result, align 4
+  store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
+  store ptr @_Z15lambda.L19C17.0ii, ptr %fat.ptr, align 8
+  %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
+  store ptr null, ptr %1, align 8
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 0, ptr %2, align 8
+  %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  call void @_Z4sortRA10_iPFbiiE(ptr noundef %array, { ptr, ptr, i64 } noundef %3)
+  call void @_Z10printArrayRA10_i(ptr noundef %array)
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
+}
+
+define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) {
+  %captures = alloca ptr, align 8
+  %a = alloca i32, align 4
+  %b = alloca i32, align 4
+  store ptr %0, ptr %captures, align 8
+  store i32 %1, ptr %a, align 4
+  store i32 %2, ptr %b, align 4
+  %4 = load i32, ptr %a, align 4
+  %5 = load i32, ptr %b, align 4
+  %6 = icmp sgt i32 %4, %5
+  ret i1 %6
+}
+
+define private void @_Z10printArrayRA10_i(ptr noundef %0) {
+  %array = alloca ptr, align 8
+  %i = alloca i32, align 4
+  store ptr %0, ptr %array, align 8
+  store i32 0, ptr %i, align 4
+  br label %for.head.L24
+
+for.head.L24:                                     ; preds = %for.tail.L24, %1
+  %2 = load i32, ptr %i, align 4
+  %3 = sext i32 %2 to i64
+  %4 = icmp slt i64 %3, 10
+  br i1 %4, label %for.body.L24, label %for.exit.L24
+
+for.body.L24:                                     ; preds = %for.head.L24
+  %5 = load i32, ptr %i, align 4
+  %6 = load ptr, ptr %array, align 8
+  %7 = getelementptr inbounds [10 x i32], ptr %6, i64 0, i32 %5
+  %8 = load i32, ptr %7, align 4
+  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %8)
+  br label %for.tail.L24
+
+for.tail.L24:                                     ; preds = %for.body.L24
+  %10 = load i32, ptr %i, align 4
+  %11 = add nsw i32 %10, 1
+  store i32 %11, ptr %i, align 4
+  br label %for.head.L24
+
+for.exit.L24:                                     ; preds = %for.head.L24
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
+  ret void
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
