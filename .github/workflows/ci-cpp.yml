@@ -276,102 +276,6 @@ jobs:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
-  build-macos-x86:
-    name: C++ CI - MacOS/x86_64
-    runs-on: macos-26-intel
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
-      - name: Setup Mold
-        uses: rui314/setup-mold@v1
-
-      - name: Setup Dependencies
-        run: |
-          brew update
-          brew install ccache graphviz
-          mkdir -p ~/.cache/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v5
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-x64
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            ../llvm
-          cmake --build .
-
-      - name: Download Libs
-        run: ./setup-deps.sh
-
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -Wattributes \
-            ..
-          cmake --build . --target spicetest
-
-      - name: Run Test target
-        working-directory: build/test
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIR: ${{ github.workspace }}/llvm/llvm/include
-          LLVM_BUILD_INCLUDE_DIR: ${{ github.workspace }}/llvm/build/include
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
-        run: ./spicetest --is-github-actions
-
-      - name: Save CCache
-        uses: actions/cache/save@v5
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-
   build-windows-x86:
     name: C++ CI - Windows/x86_64
     runs-on: windows-2025-vs2026
@@ -469,6 +373,102 @@ jobs:
         if: always()
         with:
           path: ~/AppData/Local/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
+  build-macos-x86:
+    name: C++ CI - MacOS/x86_64
+    runs-on: macos-26-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+          java-package: jre
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Setup Dependencies
+        run: |
+          brew update
+          brew install ccache graphviz
+          mkdir -p ~/.cache/ccache
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/llvm/build
+          key: llvm-${{ env.LLVM_VERSION }}-macos-x64
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: ./setup-deps.sh
+
+      - name: Build test target
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -Wattributes \
+            ..
+          cmake --build . --target spicetest
+
+      - name: Run Test target
+        working-directory: build/test
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIR: ${{ github.workspace }}/llvm/llvm/include
+          LLVM_BUILD_INCLUDE_DIR: ${{ github.workspace }}/llvm/build/include
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+        run: ./spicetest --is-github-actions
+
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
   build-macos-aarch64:
