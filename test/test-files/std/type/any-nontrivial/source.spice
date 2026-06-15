@@ -58,6 +58,13 @@ f<int> main() {
         a = b;
         Obj& ra3 = a.get<Obj>();
         assert ra3.tag == 7;
+
+        // The value constructor must deep-copy the payload via its copy ctor too,
+        // and its destruction must be tracked just like any other Any
+        Obj viaCtorSrc = Obj(42);
+        Any viaCtor = Any(viaCtorSrc);
+        assert viaCtor.has<Obj>();
+        assert viaCtor.get<Obj>().tag == 42;
     }
 
     // Every constructed object must have been destroyed exactly once

@@ -35,6 +35,12 @@ f<int> main() {
     assert scalar.getTypeId() == typeid<int>();
     assert scalar.isStoredInline();
 
+    // The value constructor stores the payload directly, just like any()
+    Any ctorScalar = Any(42);
+    assert ctorScalar.has<int>();
+    assert ctorScalar.get<int>() == 42;
+    assert ctorScalar.isStoredInline();
+
     // Inline pointer payload (exactly 8 bytes -> inline, survives the round-trip)
     long target = 7l;
     long* targetPtr = &target;
@@ -56,6 +62,11 @@ f<int> main() {
         assert smallBack.ptr == &target;
         assert *smallBack.ptr == 7l;
     }
+
+    // The value constructor also takes the heap path for oversized payloads
+    Any ctorSmall = Any(small);
+    assert !ctorSmall.isStoredInline();
+    assert ctorSmall.get<Small>().tag == 99;
 
     // Heap struct payload (larger)
     Large large = Large{1l, 2l, 3l, 4l, 5l, 6l, 7l};
