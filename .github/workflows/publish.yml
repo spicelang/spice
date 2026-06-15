@@ -440,13 +440,118 @@ jobs:
           name: spice-macos-arm64
           path: ./build/spice**
 
+  build-compiler-macos-x86:
+    name: Build compiler - MacOS/x86_64
+    runs-on: macos-26-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+          java-package: jre
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Setup Dependencies
+        run: |
+          brew install ccache
+          mkdir -p ~/.cache/ccache
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/llvm/build
+          key: llvm-${{ env.LLVM_VERSION }}-macos-x64-all-targets
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -Wno-dev \
+            -Wattributes \
+            ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: ./setup-deps.sh
+
+      - name: Build compiler
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_ALL_TARGETS=ON \
+            -DSPICE_LTO=ON \
+            -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
+          cmake --build . --target spice
+
+      - name: Process build output
+        working-directory: build
+        run: |
+          mv ./src/spice spice
+          chmod +x spice
+
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: spice-macos-x64
+          path: ./build/spice**
+
   build-artifacts:
     name: Build artifacts
     needs: [
       build-compiler-linux-x86,
       build-compiler-linux-aarch64,
       build-compiler-windows-x86,
-      build-compiler-macos-aarch64
+      build-compiler-macos-aarch64,
+      build-compiler-macos-x86
     ]
     runs-on: ubuntu-latest
     env:
@@ -505,6 +610,7 @@ jobs:
           mv spice-windows-static-x64 spice-windows-amd64
           mv spice-linux-x64 spice-linux-amd64
           mv spice-macos-arm64 spice-darwin-arm64
+          mv spice-macos-x64 spice-darwin-amd64
           chmod -R +x ./
 
       - name: Run GoReleaser
