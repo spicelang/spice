@@ -1,4 +1,42 @@
-ext f<int> rand();
+// Imports
+import "std/math/fct";
+
+// Internal generator state (xorshift64*). Seeded with a fixed non-zero default so that
+// an unseeded program still produces a well-defined, reproducible sequence.
+unsigned long RAND_STATE = 0x2545f4914f6cdd1dul;
+
+/**
+ * Advance the internal xorshift64* generator and return the next raw 64-bit value.
+ *
+ * @return Next raw pseudo-random value
+ */
+f<unsigned long> nextRaw() {
+    unsigned long x = RAND_STATE;
+    x ^= x >> 12ul;
+    x ^= x << 25ul;
+    x ^= x >> 27ul;
+    RAND_STATE = x;
+    return x * 0x2545f4914f6cdd1dul;
+}
+
+/**
+ * Seed the pseudo-random number generator.
+ * Note: A seed of 0 is replaced by a fixed non-zero constant, as the generator cannot escape the all-zero state.
+ *
+ * @param seedValue Seed value
+ */
+public p seed(unsigned long seedValue) {
+    RAND_STATE = seedValue == 0ul ? 0x9e3779b97f4a7c15ul : seedValue;
+}
+
+/**
+ * Generate a raw pseudo-random unsigned long, uniformly distributed over the whole 64-bit range.
+ *
+ * @return Random unsigned long
+ */
+public f<unsigned long> randULong() {
+    return nextRaw();
+}
 
 /**
  * Generates a random integer between min and max
@@ -9,5 +47,56 @@ ext f<int> rand();
  */
 public f<int> randInt(int min, int max) {
     if min > max { return max; }
-    return rand() % (max - min + 1) + min;
+    unsigned long range = cast<unsigned long>(max - min) + 1ul;
+    return min + cast<int>(nextRaw() % range);
+}
+
+/**
+ * Generate a random double, uniformly distributed in the half-open interval [0, 1).
+ *
+ * @return Random double in [0, 1)
+ */
+public f<double> randDouble() {
+    // Use the upper 53 bits (the mantissa width of a double) and scale by 2^-53
+    return cast<double>(nextRaw() >> 11ul) * (1.0 / 9007199254740992.0);
+}
+
+/**
+ * Generate a random double, uniformly distributed in the half-open interval [min, max).
+ * Note: If min > max, the function always returns max
+ *
+ * @param min Lower bound (inclusive)
+ * @param max Upper bound (exclusive)
+ * @return Random double in [min, max)
+ */
+public f<double> randDouble(double min, double max) {
+    if min > max { return max; }
+    return min + randDouble() * (max - min);
+}
+
+/**
+ * Generate a random boolean value with equal probability for true and false.
+ *
+ * @return Random boolean
+ */
+public f<bool> randBool() {
+    return (nextRaw() & 1ul) == 1ul;
+}
+
+/**
+ * Generate a normally distributed random double with the given mean and standard deviation,
+ * using the Box-Muller transform.
+ *
+ * @param mean Mean of the distribution
+ * @param stdDev Standard deviation of the distribution
+ * @return Normally distributed random double
+ */
+public f<double> randGaussian(double mean, double stdDev) {
+    double u1 = randDouble();
+    double u2 = randDouble();
+    // Guard against ln(0), as randDouble() can return exactly 0.0
+    if u1 < 1.0e-300 { u1 = 1.0e-300; }
+    double magnitude = stdDev * sqrt(-2.0 * ln(u1));
+    // cos expects degrees, so 2*PI*u2 radians correspond to 360*u2 degrees
+    return mean + magnitude * cos(360.0 * u2);
 }
