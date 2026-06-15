@@ -1,0 +1,42 @@
+import "std/math/fct";
+
+f<int> main() {
+    // signum
+    assert signum(5) == 1;
+    assert signum(-5) == -1;
+    assert signum(0) == 0;
+    assert signum(-3.5) == -1.0;
+    assert signum(3.5) == 1.0;
+    assert signum(0.0) == 0.0;
+    assert signum(-7l) == -1l;
+
+    // fma
+    assert almostEqual(fma(2.0, 3.0, 4.0), 10.0);
+    assert almostEqual(fma(-2.0, 3.0, 1.0), -5.0);
+
+    // lerp
+    assert almostEqual(lerp(0.0, 10.0, 0.0), 0.0);
+    assert almostEqual(lerp(0.0, 10.0, 1.0), 10.0);
+    assert almostEqual(lerp(0.0, 10.0, 0.5), 5.0);
+    assert almostEqual(lerp(2.0, 4.0, 0.25), 2.5);
+
+    // isqrt
+    assert isqrt(0) == 0;
+    assert isqrt(1) == 1;
+    assert isqrt(16) == 4;
+    assert isqrt(17) == 4;
+    assert isqrt(99) == 9;
+    assert isqrt(100) == 10;
+    assert isqrt(-5) == 0;
+    assert isqrt(1000000000000l) == 1000000l;
+
+    // array max / min
+    int[6] ints = [ 3, 7, 1, 9, 2, 5 ];
+    assert max(ints, len(ints)) == 9;
+    assert min(ints, len(ints)) == 1;
+    double[4] doubles = [ 2.5, -1.5, 3.25, 0.0 ];
+    assert almostEqual(max(doubles, len(doubles)), 3.25);
+    assert almostEqual(min(doubles, len(doubles)), -1.5);
+
+    printf("All assertions passed!");
+}

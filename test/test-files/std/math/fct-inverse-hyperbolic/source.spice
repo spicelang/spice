@@ -1,0 +1,25 @@
+import "std/math/fct";
+
+f<int> main() {
+    // asinh
+    assert almostEqual(asinh(0.0), 0.0);
+    assert almostEqual(asinh(1.0), 0.881373587);
+    assert almostEqual(asinh(-1.0), -0.881373587);
+    assert almostEqual(asinh(2.0), 1.443635475);
+
+    // acosh
+    assert almostEqual(acosh(1.0), 0.0);
+    assert almostEqual(acosh(2.0), 1.316957897);
+    assert almostEqual(acosh(10.0), 2.993222846);
+    assert acosh(0.5) == 0.0; // out of domain convention
+
+    // atanh
+    assert almostEqual(atanh(0.0), 0.0);
+    assert almostEqual(atanh(0.5), 0.549306144);
+    assert almostEqual(atanh(-0.5), -0.549306144);
+    assert atanh(1.0) == 0.0; // out of domain convention
+    assert atanh(-1.0) == 0.0;
+    assert atanh(2.0) == 0.0;
+
+    printf("All assertions passed!");
+}

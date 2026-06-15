@@ -14,3 +14,9 @@ public const double SQRT_2 = 1.41421356237309504880;
 public const double SQRT_E = 1.64872127070012814685;
 public const double SQRT_PI = 1.7724538509055160273;
 public const double SQRT_PHI = 1.27201964951406896425;
+
+public const double TAU = 6.28318530717958647692;  // 2 * PI
+public const double PHI = 1.61803398874989484820;  // Golden ratio
+
+public const double INV_PI = 0.31830988618379067154;     // 1 / PI
+public const double INV_SQRT_2 = 0.70710678118654752440;  // 1 / SQRT_2

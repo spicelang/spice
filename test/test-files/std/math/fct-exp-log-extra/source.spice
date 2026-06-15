@@ -1,0 +1,23 @@
+import "std/math/fct";
+
+f<int> main() {
+    // exp2
+    assert almostEqual(exp2(0.0), 1.0);
+    assert almostEqual(exp2(10.0), 1024.0, 1.0e-3);
+    assert almostEqual(exp2(-1.0), 0.5);
+
+    // expm1 (accurate near zero)
+    assert almostEqual(expm1(0.0), 0.0);
+    assert almostEqual(expm1(1.0), 1.718281828);
+    assert almostEqual(expm1(0.0001), 0.0001000050);
+    assert almostEqual(expm1(-0.5), -0.393469340);
+
+    // log1p (accurate near zero)
+    assert almostEqual(log1p(0.0), 0.0);
+    assert almostEqual(log1p(1.0), 0.693147180);
+    assert almostEqual(log1p(0.0001), 0.0000999950);
+    assert log1p(-1.0) == 0.0; // out of domain convention
+    assert log1p(-2.0) == 0.0;
+
+    printf("All assertions passed!");
+}

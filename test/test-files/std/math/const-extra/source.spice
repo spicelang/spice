@@ -1,0 +1,9 @@
+import "std/math/const";
+
+f<int> main() {
+    assert TAU > 6.283185 && TAU < 6.283186;
+    assert PHI > 1.618033 && PHI < 1.618034;
+    assert INV_PI > 0.318309 && INV_PI < 0.318310;
+    assert INV_SQRT_2 > 0.707106 && INV_SQRT_2 < 0.707107;
+    printf("All assertions passed!");
+}

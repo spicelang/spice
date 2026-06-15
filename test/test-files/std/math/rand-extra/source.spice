@@ -1,0 +1,59 @@
+import "std/math/rand";
+import "std/math/fct";
+
+f<int> main() {
+    // Reproducibility: the same seed yields the same sequence
+    seed(42ul);
+    double a1 = randDouble();
+    double a2 = randDouble();
+    seed(42ul);
+    assert randDouble() == a1;
+    assert randDouble() == a2;
+
+    // randDouble range [0, 1)
+    seed(123ul);
+    for int i = 0; i < 1000; i++ {
+        double r = randDouble();
+        assert r >= 0.0 && r < 1.0;
+    }
+
+    // randDouble(min, max) range
+    for int i = 0; i < 1000; i++ {
+        double r = randDouble(-5.0, 5.0);
+        assert r >= -5.0 && r < 5.0;
+    }
+    assert randDouble(5.0, 1.0) == 1.0; // min > max convention
+
+    // randInt range [min, max]
+    for int i = 0; i < 1000; i++ {
+        int n = randInt(1, 6);
+        assert n >= 1 && n <= 6;
+    }
+    assert randInt(10, 1) == 1; // min > max convention
+
+    // randULong reproducibility
+    seed(7ul);
+    unsigned long u = randULong();
+    seed(7ul);
+    assert randULong() == u;
+
+    // randBool produces both values across many draws
+    seed(999ul);
+    bool sawTrue = false;
+    bool sawFalse = false;
+    for int i = 0; i < 100; i++ {
+        if randBool() {
+            sawTrue = true;
+        } else {
+            sawFalse = true;
+        }
+    }
+    assert sawTrue && sawFalse;
+
+    // randGaussian returns finite values
+    for int i = 0; i < 1000; i++ {
+        assert isFinite(randGaussian(0.0, 1.0));
+    }
+
+    printf("All assertions passed!");
+}

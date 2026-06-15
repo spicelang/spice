@@ -1,0 +1,29 @@
+import "std/math/fct";
+
+f<int> main() {
+    // inf / nan construction and detection
+    assert isInf(inf());
+    assert isInf(-inf());
+    assert !isFinite(inf());
+    assert isNan(nan());
+    assert !isNan(inf());
+    assert !isInf(nan());
+    assert isFinite(0.0);
+    assert isFinite(-123.456);
+    assert !isFinite(nan());
+    assert !isNan(1.0);
+    assert !isInf(1.0e300); // large but finite
+
+    // signbit
+    assert signbit(-1.0);
+    assert !signbit(1.0);
+    assert signbit(-inf());
+    assert !signbit(inf());
+
+    // copysign
+    assert copysign(3.0, -2.0) == -3.0;
+    assert copysign(-3.0, 2.0) == 3.0;
+    assert copysign(3.0, 5.0) == 3.0;
+
+    printf("All assertions passed!");
+}
