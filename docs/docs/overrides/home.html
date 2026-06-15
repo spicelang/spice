@@ -69,7 +69,7 @@
 	.tx-hero .tx-hero__pills {
 		display: flex;
 		flex-wrap: wrap;
-		row-gap: .4rem;
+		row-gap: .6rem;
 		margin: 1rem;
 		list-style: none;
 		padding: 0;
@@ -202,7 +202,7 @@
 	 * Shared section layout
 	 * -------------------------------------------------------------------- */
 	.tx-section {
-		padding: 2.5rem 0 1rem;
+		padding: 2.5rem .8rem 1rem;
 	}
 
 	.tx-section__header {
@@ -239,8 +239,20 @@
 	 * -------------------------------------------------------------------- */
 	.tx-features {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		grid-template-columns: 1fr;
 		gap: 1rem;
+	}
+
+	@media screen and (min-width:45em) {
+		.tx-features {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media screen and (min-width:60em) {
+		.tx-features {
+			grid-template-columns: repeat(3, 1fr);
+		}
 	}
 
 	.tx-card {
@@ -450,6 +462,7 @@
 	}
 
 	.tx-cta .md-button {
+		margin: .35rem .3rem 0;
 		color: #fff;
 		border-color: rgba(255, 255, 255, .8);
 		transition: transform .15s ease, background-color .15s ease, color .15s ease;
