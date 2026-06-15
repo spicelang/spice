@@ -20,15 +20,15 @@ To upgrade to the latest release later, run:
 brew upgrade --cask spice
 ```
 
-!!! info "Apple Silicon only"
-    The Homebrew cask currently only ships an ARM64 (Apple Silicon) build. On Intel Macs, please use the archive file
-    below or build from source.
+The cask ships builds for both Apple Silicon (ARM64) and Intel (x86_64) Macs, and Homebrew automatically selects the
+one matching your machine.
 
 ### Install from archive file
-Currently, it is only possible to install spice on macOS via the tar.gz archive, uploaded to the GitHub release.
+Alternatively, you can install Spice on macOS via the tar.gz archive, uploaded to the GitHub release.
 This archive file contains all resources that Spice needs to run.
 
 [Download ARM64](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_arm64.tar.gz){ .md-button .md-button--primary .md-button--small }
+[Download x86_64](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_amd64.tar.gz){ .md-button .md-button--primary .md-button--small }
 
 ### Use
 ```sh

@@ -16,9 +16,6 @@ builds:
       # Only offer amd64 support on Windows
       - goos: windows
         goarch: arm64
-      # Only offer arm64 support on macOS
-      - goos: darwin
-        goarch: amd64
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
