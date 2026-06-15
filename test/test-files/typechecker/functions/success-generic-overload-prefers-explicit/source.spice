@@ -1,0 +1,15 @@
+type T dyn;
+
+int Selected = 0;
+
+p foo(byte*& ptr) { Selected = 1; }
+p foo<T>(T*& ptr) { Selected = 2; }
+
+f<int> main() {
+    byte* ptr = nil<byte*>;
+    // Both the explicit 'foo(byte*&)' and the generic substitution 'foo<byte>(byte*&)'
+    // match. The explicitly declared (non-generic) overload must be preferred, mirroring
+    // C++ overload resolution where a non-template wins over a template specialization.
+    foo(ptr);
+    assert Selected == 1;
+}

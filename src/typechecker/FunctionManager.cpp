@@ -2,6 +2,7 @@
 
 #include "FunctionManager.h"
 
+#include <algorithm>
 #include <limits>
 
 #include <ast/ASTNodes.h>
@@ -312,7 +313,8 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
   if (matches.empty())
     return nullptr;
 
-  // Tie-breaking: if multiple candidates match, narrow them by qualifier specificity (see breakOverloadTie).
+  // Tie-breaking: if multiple candidates match, narrow them by qualifier specificity and by preferring
+  // explicitly declared overloads over generic substitutions (see breakOverloadTie).
   breakOverloadTie(matches, reqArgs);
 
   // Check if more than one function matches the requirements
@@ -519,7 +521,8 @@ const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Functi
  * the argument qualifiers. This resolves the typical copy-vs-move ctor ambiguity where both a `const T&`
  * (copy) and a `T&` (move) ctor match a non-const lvalue argument - we prefer the non-const-ref candidate
  * (move) since it requires no constification. When the argument is const, we prefer the const-ref candidate
- * (copy) since binding to a non-const ref would require const-loss.
+ * (copy) since binding to a non-const ref would require const-loss. As a secondary criterion, an explicitly
+ * declared (non-generic) overload is preferred over a generic substitution that matches equally well.
  *
  * Modifies `matches` in place, removing any candidate that scores worse than the best one. A no-op if there
  * are fewer than two candidates.
@@ -567,6 +570,21 @@ void FunctionManager::breakOverloadTie(std::vector<Function *> &matches, const A
     if (scoreSpecificity(m) == bestScore)
       filtered.push_back(m);
   matches = std::move(filtered);
+
+  // Secondary tie-break: prefer an explicitly declared (non-generic) overload over a generic substitution
+  // when both match equally well, mirroring C++ overload resolution where a non-template wins over a
+  // template specialization. This resolves e.g. the copy ctor 'Any.ctor(const Any&)' vs. the value ctor
+  // 'Any.ctor<Any>(const Any&)' ambiguity when copy-constructing from another value of the same type. It is
+  // applied after the qualifier-specificity narrowing above, so a more specific generic match still wins.
+  // A generic substitution that loses here and was only inserted for this very match is removed from its
+  // declaration's manifestation list again, so the IR generator never emits a manifestation that was never
+  // type-checked (and so we leave no dead code behind).
+  if (matches.size() > 1 && std::ranges::any_of(matches, [](const Function *m) { return !m->isGenericSubstantiation(); })) {
+    for (Function *m : matches)
+      if (m->isGenericSubstantiation() && m->isNewlyInserted)
+        std::erase(*m->declNode->getFctManifestations(m->name), m);
+    std::erase_if(matches, [](const Function *m) { return m->isGenericSubstantiation(); });
+  }
 }
 
 /**
