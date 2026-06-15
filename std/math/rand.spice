@@ -3,7 +3,7 @@ import "std/math/fct";
 
 // Internal generator state (xorshift64*). Seeded with a fixed non-zero default so that
 // an unseeded program still produces a well-defined, reproducible sequence.
-unsigned long randState = 0x2545f4914f6cdd1dul;
+unsigned long RAND_STATE = 0x2545f4914f6cdd1dul;
 
 /**
  * Advance the internal xorshift64* generator and return the next raw 64-bit value.
@@ -11,11 +11,11 @@ unsigned long randState = 0x2545f4914f6cdd1dul;
  * @return Next raw pseudo-random value
  */
 f<unsigned long> nextRaw() {
-    unsigned long x = randState;
+    unsigned long x = RAND_STATE;
     x ^= x >> 12ul;
     x ^= x << 25ul;
     x ^= x >> 27ul;
-    randState = x;
+    RAND_STATE = x;
     return x * 0x2545f4914f6cdd1dul;
 }
 
@@ -26,7 +26,7 @@ f<unsigned long> nextRaw() {
  * @param seedValue Seed value
  */
 public p seed(unsigned long seedValue) {
-    randState = seedValue == 0ul ? 0x9e3779b97f4a7c15ul : seedValue;
+    RAND_STATE = seedValue == 0ul ? 0x9e3779b97f4a7c15ul : seedValue;
 }
 
 /**
