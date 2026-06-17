@@ -251,7 +251,7 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
@@ -349,7 +349,7 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja `
-            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER_LAUNCHER=ccache `
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
             -DSPICE_BUILT_BY="ghactions" `
@@ -446,7 +446,7 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
@@ -542,7 +542,7 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
