@@ -52,7 +52,7 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
     }
 
     // Set parentNodeId for children
-    
+    dyn restoreParentNodeId = SaveAndRestore(this.parentNodeId, nodeId);
 
     // Visit all the children
     const Vector<ASTNode*> children/* = node.getChildren()*/;

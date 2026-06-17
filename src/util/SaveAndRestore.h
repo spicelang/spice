@@ -20,9 +20,6 @@ template <typename T> struct SaveAndRestore {
   // Destructor
   ~SaveAndRestore() { value = std::move(oldValue); }
 
-  // Public methods
-  const T &get() { return oldValue; }
-
 private:
   // Private members
   T &value;

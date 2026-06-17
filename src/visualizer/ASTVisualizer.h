@@ -3,7 +3,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include <CompilerPass.h>
 #include <ast/ASTNodes.h>

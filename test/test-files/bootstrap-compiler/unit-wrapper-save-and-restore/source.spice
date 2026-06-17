@@ -1,0 +1,9 @@
+import "bootstrap/util/save-and-restore";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    assert testSaveAndRestoreRestoreOriginalValue();
+    assert testSaveAndRestoreApplyAndRestoreNewValue();
+    assert testSaveAndRestoreNestedGuards();
+    printf("All assertions passed!");
+}
