@@ -75,13 +75,11 @@ public:
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
   static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);
   static std::string toCamelCase(std::string input);
-  static consteval const char *getDefaultExecutableName() {
-#if OS_WINDOWS
-    return ".\\source.exe";
-#else
-    return "./source";
-#endif
-  }
+  /// Create (and clean) a per-test directory for build artifacts (object files, cache, executable). Using a unique directory
+  /// per test case keeps concurrently running test processes (e.g. via gtest-parallel) from clobbering each other's files.
+  static std::filesystem::path prepareArtifactDir(const TestCase &testCase);
+  /// Path of the linked test executable inside the given per-test artifact directory.
+  static std::filesystem::path getExecutablePath(const std::filesystem::path &artifactDir);
   static bool isDisabled(const TestCase &testCase);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);

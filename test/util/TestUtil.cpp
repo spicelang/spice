@@ -215,6 +215,37 @@ std::string TestUtil::toCamelCase(std::string input) {
 }
 
 /**
+ * Create a clean, per-test directory for build artifacts (object files, compiler cache and the linked executable).
+ * The directory name is derived from the unique test suite/case name, so concurrently running test processes (e.g. when the
+ * suite is driven by gtest-parallel) never write to the same files.
+ *
+ * @param testCase Test case to prepare the artifact directory for
+ * @return Path to the prepared artifact directory
+ */
+std::filesystem::path TestUtil::prepareArtifactDir(const TestCase &testCase) {
+  const std::string dirName = toCamelCase(testCase.testSuite) + "_" + toCamelCase(testCase.testName);
+  const std::filesystem::path artifactDir = std::filesystem::path("./test-tmp") / dirName;
+  std::error_code ec;
+  std::filesystem::remove_all(artifactDir, ec); // Clean up leftovers from a previous run
+  std::filesystem::create_directories(artifactDir);
+  return artifactDir;
+}
+
+/**
+ * Get the path of the linked test executable inside the given per-test artifact directory.
+ *
+ * @param artifactDir Per-test artifact directory
+ * @return Path to the executable
+ */
+std::filesystem::path TestUtil::getExecutablePath(const std::filesystem::path &artifactDir) {
+#if OS_WINDOWS
+  return artifactDir / "source.exe";
+#else
+  return artifactDir / "source";
+#endif
+}
+
+/**
  * Check if the provided test case is disabled
  *
  * @param testCase Test case to check
@@ -249,11 +280,14 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
  * @param gdbOutput GDB output to modify
  */
 void TestUtil::eraseGDBHeader(std::string &gdbOutput) {
-  // Remove header
+  // Remove the header up to and including the "Reading symbols from <path>" line. The executable lives in a per-test artifact
+  // directory, so its path is not stable across runs and must not be part of the comparison.
   size_t pos = gdbOutput.find(GDB_READING_SYMBOLS_MESSAGE);
   if (pos != std::string::npos) {
-    if (const size_t lineStart = gdbOutput.rfind('\n', pos); lineStart != std::string::npos)
-      gdbOutput.erase(0, lineStart + 1);
+    if (const size_t lineEnd = gdbOutput.find('\n', pos); lineEnd != std::string::npos)
+      gdbOutput.erase(0, lineEnd + 1);
+    else
+      gdbOutput.clear();
   }
 
   // Remove inferior message
