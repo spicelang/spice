@@ -41,15 +41,23 @@ add_custom_target(spicetest_leakcheck COMMAND valgrind --leak-check=full --error
 set(SPICE_TEST_ARGS "" CACHE STRING "Arguments forwarded to spicetest when run via the spicetest_parallel target")
 find_program(PYTHON3_EXECUTABLE NAMES python3 python)
 if (PYTHON3_EXECUTABLE)
-    # The test runner needs a few environment variables at runtime: the compiler reads SPICE_STD_DIR / SPICE_BOOTSTRAP_DIR via
-    # SystemUtil, and the bootstrap-compiler tests shell-expand LLVM_LIB_DIR in their linker command. add_custom_target has no
-    # ENVIRONMENT property, so the env is injected into the command itself via "cmake -E env" to make sure it reaches the
-    # spicetest child processes spawned by gtest-parallel. Arguments after "--" are forwarded to each spicetest process.
+    set(_llvm_build_include "${LLVM_BINARY_DIR}/include")
+    set(LLVM_INCLUDE_DIR_VALUE "")
+    foreach (_dir IN LISTS LLVM_INCLUDE_DIRS)
+        if (NOT _dir STREQUAL _llvm_build_include)
+            set(LLVM_INCLUDE_DIR_VALUE "${_dir}")
+        endif ()
+    endforeach ()
+    if (NOT LLVM_INCLUDE_DIR_VALUE)
+        set(LLVM_INCLUDE_DIR_VALUE "${_llvm_build_include}")
+    endif ()
+
     add_custom_target(spicetest_parallel
             COMMAND ${CMAKE_COMMAND} -E env
             SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
             SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
             LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
+            LLVM_INCLUDE_DIR=${LLVM_INCLUDE_DIR_VALUE}
             ${PYTHON3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/deps/gtest-parallel/gtest-parallel $<TARGET_FILE:spicetest> -- ${SPICE_TEST_ARGS}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS spicetest
