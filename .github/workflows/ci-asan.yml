@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  LLVM_VERSION: "llvmorg-22.1.7"
+  LLVM_VERSION: "llvmorg-22.1.8"
   GCC_VERSION: "16"
 
 jobs:
