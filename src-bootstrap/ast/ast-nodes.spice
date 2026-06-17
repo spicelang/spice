@@ -64,6 +64,10 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
     // Do custom work (override in subclasses to add per-node behavior)
 }
 
+public f<const CodeLoc&> ASTNode.getCodeLoc() {
+    return this.codeLoc;
+}
+
 // ========================================================== EntryNode ==========================================================
 
 public type ASTEntryNode struct {
