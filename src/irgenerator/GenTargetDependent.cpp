@@ -15,11 +15,10 @@ std::string IRGenerator::getSysCallAsmString(uint8_t numRegs) const {
     if (targetTriple.getArch() == llvm::Triple::ArchType::x86_64) {
       static constexpr const char *regs[] = {"%rax", "%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"};
       for (uint8_t i = 0; i < numRegs; i++) {
-        // macOS syscall numbers are offset by 0x2000000
+        asmString << "movq $" << std::to_string(i) << ", " << regs[i] << "\n";
+        // macOS x86_64 syscall numbers are offset by 0x2000000 (BSD syscall class). "$$" emits a literal '$'.
         if (i == 0)
-          asmString << "movq $(" << std::to_string(0x2000000) << " + " << std::to_string(i) << "), " << regs[i] << "\n";
-        else
-          asmString << "movq $" << std::to_string(i) << ", " << regs[i] << "\n";
+          asmString << "addq $$" << std::to_string(0x2000000) << ", %rax\n";
       }
       asmString << "syscall\n";
     } else if (targetTriple.isAArch64()) {
