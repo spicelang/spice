@@ -65,13 +65,6 @@ public p Any.ctor(const Any& original) {
 }
 
 /**
- * Construct an Any holding the given value of type T.
- */
-public p Any.ctor<T>(const T& value) {
-    this.set(value);
-}
-
-/**
  * Deep-copy assignment. Destroys and releases the currently held payload first.
  */
 public p operator=<T>(Any& this, const Any& newValue) {
