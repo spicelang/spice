@@ -1,0 +1,68 @@
+// Generic type defs
+type T dyn;
+
+/**
+ * RAII helper to save a value and restore it when the object of this class goes out of scope
+ *
+ * @tparam T Value type
+ */
+public type SaveAndRestore<T> struct {
+    T& value
+    T oldValue
+}
+
+public p SaveAndRestore.ctor(T& value) {
+    this.value = value;
+    this.oldValue = value;
+}
+
+public p SaveAndRestore.ctor(T& value, const T& newValue) {
+    this.value = value;
+    this.oldValue = value;
+    T newValueCopy = newValue;
+    value = newValueCopy;
+}
+
+public p SaveAndRestore.dtor() {
+    this.value = this.oldValue;
+}
+
+#[test, test.name="Single-arg ctor restores the original value on scope exit"]
+public f<bool> testSaveAndRestoreRestoreOriginalValue() {
+    int value = 5;
+    {
+        SaveAndRestore<int>(value);
+        assert value == 5;
+        value = 42;
+        assert value == 42;
+    }
+    assert value == 5;
+    return true;
+}
+
+#[test, test.name="Two-arg ctor applies the new value and restores the old one"]
+public f<bool> testSaveAndRestoreApplyAndRestoreNewValue() {
+    int value = 7;
+    {
+        SaveAndRestore<int>(value, 99);
+        assert value == 99;
+    }
+    assert value == 7;
+    return true;
+}
+
+#[test, test.name="Nested guards restore values in reverse order"]
+public f<bool> testSaveAndRestoreNestedGuards() {
+    int value = 1;
+    {
+        SaveAndRestore<int>(value, 2);
+        assert value == 2;
+        {
+            SaveAndRestore<int>(value, 3);
+            assert value == 3;
+        }
+        assert value == 2;
+    }
+    assert value == 1;
+    return true;
+}
