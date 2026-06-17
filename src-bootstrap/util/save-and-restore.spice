@@ -31,7 +31,7 @@ public p SaveAndRestore.dtor() {
 public f<bool> testSaveAndRestoreRestoreOriginalValue() {
     int value = 5;
     {
-        SaveAndRestore<int> guard = SaveAndRestore<int>(value);
+        SaveAndRestore<int>(value);
         assert value == 5;
         value = 42;
         assert value == 42;
@@ -44,7 +44,7 @@ public f<bool> testSaveAndRestoreRestoreOriginalValue() {
 public f<bool> testSaveAndRestoreApplyAndRestoreNewValue() {
     int value = 7;
     {
-        SaveAndRestore<int> guard = SaveAndRestore<int>(value, 99);
+        SaveAndRestore<int>(value, 99);
         assert value == 99;
     }
     assert value == 7;
@@ -55,10 +55,10 @@ public f<bool> testSaveAndRestoreApplyAndRestoreNewValue() {
 public f<bool> testSaveAndRestoreNestedGuards() {
     int value = 1;
     {
-        SaveAndRestore<int> outer = SaveAndRestore<int>(value, 2);
+        SaveAndRestore<int>(value, 2);
         assert value == 2;
         {
-            SaveAndRestore<int> inner = SaveAndRestore<int>(value, 3);
+            SaveAndRestore<int>(value, 3);
             assert value == 3;
         }
         assert value == 2;
