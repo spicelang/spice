@@ -1,0 +1,143 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'x == 6' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'foo2(x)' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
+  %result = alloca i32, align 4
+  %z = alloca i32, align 4
+  %w = alloca i32, align 4
+  %captures = alloca { i32, i32 }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %foo1 = alloca { ptr, ptr, i64 }, align 8
+  %captures1 = alloca { i32, i32 }, align 8
+  %fat.ptr2 = alloca { ptr, ptr, i64 }, align 8
+  %foo2 = alloca { ptr, ptr, i64 }, align 8
+  %x = alloca i32, align 4
+  store i32 0, ptr %result, align 4
+  store i32 2, ptr %z, align 4
+  store i32 3, ptr %w, align 4
+  %1 = load i32, ptr %w, align 4
+  store i32 %1, ptr %captures, align 4
+  %2 = load i32, ptr %z, align 4
+  %3 = getelementptr inbounds nuw { i32, i32 }, ptr %captures, i32 0, i32 1
+  store i32 %2, ptr %3, align 4
+  store ptr @_Z14lambda.L4C20.0Ri, ptr %fat.ptr, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
+  store ptr %captures, ptr %4, align 8
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 8, ptr %5, align 8
+  %6 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %6, ptr %foo1, align 8
+  %7 = load i32, ptr %w, align 4
+  store i32 %7, ptr %captures1, align 4
+  %8 = load i32, ptr %z, align 4
+  %9 = getelementptr inbounds nuw { i32, i32 }, ptr %captures1, i32 0, i32 1
+  store i32 %8, ptr %9, align 4
+  store ptr @_Z14lambda.L7C26.0Ri, ptr %fat.ptr2, align 8
+  %10 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr2, i32 0, i32 1
+  store ptr %captures1, ptr %10, align 8
+  %11 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr2, i32 0, i32 2
+  store i64 8, ptr %11, align 8
+  %12 = load { ptr, ptr, i64 }, ptr %fat.ptr2, align 8
+  store { ptr, ptr, i64 } %12, ptr %foo2, align 8
+  store i32 1, ptr %x, align 4
+  %13 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %foo1, i32 0, i32 1
+  %captures3 = load ptr, ptr %13, align 8
+  %fct = load ptr, ptr %foo1, align 8
+  call void %fct(ptr %captures3, ptr %x)
+  %14 = load i32, ptr %x, align 4
+  %15 = icmp eq i32 %14, 6
+  br i1 %15, label %assert.exit.L13, label %assert.then.L13, !prof !5
+
+assert.then.L13:                                  ; preds = %0
+  %16 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L13:                                  ; preds = %0
+  %17 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %foo2, i32 0, i32 1
+  %captures4 = load ptr, ptr %17, align 8
+  %fct5 = load ptr, ptr %foo2, align 8
+  %18 = call i1 %fct5(ptr %captures4, ptr %x)
+  br i1 %18, label %assert.exit.L14, label %assert.then.L14, !prof !5
+
+assert.then.L14:                                  ; preds = %assert.exit.L13
+  %19 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L14:                                  ; preds = %assert.exit.L13
+  %20 = load i32, ptr %x, align 4
+  %21 = icmp eq i32 %20, 11
+  br i1 %21, label %assert.exit.L15, label %assert.then.L15, !prof !5
+
+assert.then.L15:                                  ; preds = %assert.exit.L14
+  %22 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L15:                                  ; preds = %assert.exit.L14
+  %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %24 = load i32, ptr %result, align 4
+  ret i32 %24
+}
+
+define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+  %captures = alloca ptr, align 8
+  %x = alloca ptr, align 8
+  store ptr %0, ptr %captures, align 8
+  store ptr %1, ptr %x, align 8
+  %3 = load ptr, ptr %captures, align 8
+  %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
+  %4 = load i32, ptr %z, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = add nsw i32 %4, %5
+  %7 = load ptr, ptr %x, align 8
+  %8 = load i32, ptr %7, align 4
+  %9 = add nsw i32 %8, %6
+  store i32 %9, ptr %7, align 4
+  ret void
+}
+
+define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+  %result = alloca i1, align 1
+  %captures = alloca ptr, align 8
+  %x = alloca ptr, align 8
+  store ptr %0, ptr %captures, align 8
+  store ptr %1, ptr %x, align 8
+  %3 = load ptr, ptr %captures, align 8
+  %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
+  %4 = load i32, ptr %z, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = add nsw i32 %4, %5
+  %7 = load ptr, ptr %x, align 8
+  %8 = load i32, ptr %7, align 4
+  %9 = add nsw i32 %8, %6
+  store i32 %9, ptr %7, align 4
+  ret i1 true
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #2
+
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 1048575, i32 1}

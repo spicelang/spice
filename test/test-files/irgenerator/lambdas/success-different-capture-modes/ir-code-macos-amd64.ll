@@ -1,0 +1,76 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"Hello from inside: %d\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [23 x i8] c"Hello from inside: %d\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [24 x i8] c"Hello from outside: %d\0A\00", align 4
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
+  %result = alloca i32, align 4
+  %i = alloca i32, align 4
+  %j = alloca i32, align 4
+  %captures = alloca { ptr, i32 }, align 8
+  %fat.ptr = alloca { ptr, ptr, i64 }, align 8
+  %lambda = alloca { ptr, ptr, i64 }, align 8
+  store i32 0, ptr %result, align 4
+  store i32 123, ptr %i, align 4
+  store i32 321, ptr %j, align 4
+  store ptr %i, ptr %captures, align 8
+  %1 = load i32, ptr %j, align 4
+  %2 = getelementptr inbounds nuw { ptr, i32 }, ptr %captures, i32 0, i32 1
+  store i32 %1, ptr %2, align 4
+  store ptr @_Z14lambda.L4C18.0v, ptr %fat.ptr, align 8
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
+  store ptr %captures, ptr %3, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2
+  store i64 16, ptr %4, align 8
+  %5 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
+  store { ptr, ptr, i64 } %5, ptr %lambda, align 8
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %lambda, i32 0, i32 1
+  %captures1 = load ptr, ptr %6, align 8
+  %fct = load ptr, ptr %lambda, align 8
+  call void %fct(ptr %captures1)
+  %7 = load i32, ptr %i, align 4
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7)
+  %9 = load i32, ptr %result, align 4
+  ret i32 %9
+}
+
+define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) %0) {
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %captures, align 8
+  %2 = load ptr, ptr %captures, align 8
+  %j = getelementptr inbounds nuw { ptr, i32 }, ptr %2, i32 0, i32 1
+  %3 = load ptr, ptr %2, align 8
+  %4 = load i32, ptr %3, align 4
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
+  %6 = load ptr, ptr %2, align 8
+  %7 = load i32, ptr %6, align 4
+  %8 = add nsw i32 %7, 1
+  store i32 %8, ptr %6, align 4
+  %9 = load ptr, ptr %2, align 8
+  %10 = load i32, ptr %9, align 4
+  %11 = load i32, ptr %j, align 4
+  %12 = add nsw i32 %10, %11
+  store i32 %12, ptr %9, align 4
+  %13 = load ptr, ptr %2, align 8
+  %14 = load i32, ptr %13, align 4
+  %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %14)
+  ret void
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 2}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
