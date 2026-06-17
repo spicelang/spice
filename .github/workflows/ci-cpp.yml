@@ -100,11 +100,11 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'Debug' || 'Release' }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_RUN_COVERAGE=ON \
+            -DSPICE_RUN_COVERAGE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'ON' || 'OFF' }} \
             -Wattributes \
             ..
           cmake --build . --target spicetest
