@@ -96,6 +96,38 @@ f<int> main() {
 Multiple structs can be composed; if two composed structs expose the same field name, the compiler will require an
 explicit qualifier to disambiguate.
 
+## Forward declarations
+
+A forward declaration lets you name a struct before its full definition is available. This is useful when two structs
+need to refer to each other across source files — one file can hold the forward declaration with no imports, breaking
+the circular dependency:
+
+**`b-fwd.spice`** — no imports, no fields:
+```spice
+public forward type B struct;
+```
+
+**`a.spice`** — imports the forward declaration, uses `B` as a pointer:
+```spice
+import "b-fwd" as bfwd;
+
+public type A struct {
+    bfwd::B* b
+}
+```
+
+**`b.spice`** — imports the full definition of `A`, completes `B`:
+```spice
+import "a" as a;
+
+public type B struct {
+    a::A* a
+}
+```
+
+A forward-declared type may only be used as a pointer (`B*`) or reference (`B&`). Using it as a value type (e.g.
+`B b;`) is a compile error, because the size of the struct is not yet known.
+
 ## Adding behavior
 
 Structs can be extended with [methods](methods.md), [constructors and destructors](constructors-destructors.md), and
