@@ -103,9 +103,6 @@ jobs:
 
       - name: Run Test target with ASAN
         working-directory: build
-        # spicetest_parallel derives SPICE_STD_DIR / SPICE_BOOTSTRAP_DIR / LLVM_LIB_DIR / LLVM_INCLUDE_DIR itself; ASAN_OPTIONS is
-        # forwarded through gtest-parallel to each spicetest process. --is-github-actions / --skip-sanitizer-tests are passed via
-        # SPICE_TEST_ARGS.
         env:
           ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1:abort_on_error=1:print_summary=1"
         run: cmake --build . --target spicetest_parallel

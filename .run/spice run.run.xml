@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="spice run" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="run -d -O0 -ir ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
     <envs>
-      <env name="LLVM_INCLUDE_DIR" value="$PROJECT_DIR$/../llvm-project-latest/llvm/include" />
+      <env name="LLVM_INCLUDE_DIRS" value="-I$PROJECT_DIR$/../llvm-project-latest/llvm/include -I$PROJECT_DIR$/../llvm-project-latest/build/include" />
       <env name="LLVM_LIB_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/lib" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />
       <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src-bootstrap" />
