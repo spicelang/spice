@@ -204,8 +204,9 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Check if this name already exists
   bool upgradingForwardDecl = false;
   if (SymbolTableEntry *existing = rootScope->lookupStrict(node->structName)) {
-    if (auto *fwdNode = dynamic_cast<ForwardDeclNode *>(existing->declNode)) {
+    if (existing->declNode->isForwardDecl()) {
       // Upgrade: reuse the forward declaration's entry, scope, and typeId
+      auto *fwdNode = static_cast<ForwardDeclNode *>(existing->declNode);
       upgradingForwardDecl = true;
       node->entry = existing;
       node->structScope = fwdNode->typeScope;
@@ -269,7 +270,8 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Check if this name already exists
   bool upgradingForwardDecl = false;
   if (SymbolTableEntry *existing = rootScope->lookupStrict(node->interfaceName)) {
-    if (auto *fwdNode = dynamic_cast<ForwardDeclNode *>(existing->declNode)) {
+    if (existing->declNode->isForwardDecl()) {
+      auto *fwdNode = static_cast<ForwardDeclNode *>(existing->declNode);
       upgradingForwardDecl = true;
       node->entry = existing;
       node->interfaceScope = fwdNode->typeScope;
@@ -321,7 +323,7 @@ std::any SymbolTableBuilder::visitForwardDecl(ForwardDeclNode *node) {
 
   // Check for duplicate that is not itself a forward declaration
   if (const SymbolTableEntry *existing = rootScope->lookupStrict(node->typeName)) {
-    if (!dynamic_cast<const ForwardDeclNode *>(existing->declNode))
+    if (!existing->declNode->isForwardDecl())
       throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->typeName + "'");
     // Duplicate forward declaration is silently accepted (idempotent)
     return nullptr;

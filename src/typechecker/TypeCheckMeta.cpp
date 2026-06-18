@@ -307,8 +307,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
     // Reject bare-value usage of an incomplete (forward-declared only) type
     if (registryEntry->targetScope->isForwardDeclScope) {
-      const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
-      assert(dataTypeNode != nullptr);
+      assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
+      const auto *dataTypeNode = static_cast<DataTypeNode *>(node->parent->parent);
       const bool isPointerOrRef = !dataTypeNode->tmQueue.empty() &&
                                   (dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_PTR ||
                                    dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_REF);

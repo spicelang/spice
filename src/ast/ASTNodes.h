@@ -168,6 +168,7 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
+  [[nodiscard]] virtual bool isForwardDecl() const { return false; }
   [[nodiscard]] virtual bool isParam() const { return false; }
   [[nodiscard]] virtual bool isStmtLst() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
@@ -473,6 +474,7 @@ public:
 
   // Other methods
   GET_CHILDREN(attrs, qualifierLst);
+  [[nodiscard]] bool isForwardDecl() const override { return true; }
 
   // Public members
   TopLevelDefAttrNode *attrs = nullptr;
