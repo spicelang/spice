@@ -1,0 +1,18 @@
+// Repeating a forward declaration of the same type and same kind is idempotent: it should not error,
+// and the duplicate node must end up with the same entry/scope/typeId so subsequent passes do not crash.
+
+forward type Foo struct;
+forward type Foo struct;
+
+type Foo struct {
+    int value
+}
+
+p useFoo(Foo* foo) {
+    printf("ok\n");
+}
+
+f<int> main() {
+    useFoo(nil<Foo*>);
+    return 0;
+}

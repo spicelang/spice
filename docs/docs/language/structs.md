@@ -116,9 +116,11 @@ public type A struct {
 }
 ```
 
-**`b.spice`** — imports the full definition of `A`, completes `B`:
+**`b.spice`** — imports the full definition of `A`. It also imports `b-fwd` so that the full type `B` reuses the
+forward declaration's type id (otherwise `A.b` and a freshly created `B` would have non-matching type ids):
 ```spice
 import "a" as a;
+import "b-fwd";
 
 public type B struct {
     a::A* a

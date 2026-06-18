@@ -340,8 +340,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       entryType = entryType.getWithTemplateTypes(templateTypes);
     }
 
-    // Check if struct is defined before the current code location, if defined in the same source file
-    const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
+    // Check if struct is defined before the current code location, if defined in the same source file.
+    // For types upgraded from a forward declaration, use the forward decl's location so uses sandwiched between
+    // the forward declaration and the full definition are accepted.
+    const CodeLoc &declCodeLoc = entry->forwardDeclCodeLoc != nullptr ? *entry->forwardDeclCodeLoc : entry->declNode->codeLoc;
     const CodeLoc &codeLoc = node->codeLoc;
     if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc) {
       if (entryType.is(TY_STRUCT)) {
