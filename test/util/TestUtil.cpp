@@ -239,10 +239,15 @@ std::filesystem::path TestUtil::prepareArtifactDir(const TestCase &testCase) {
  */
 std::filesystem::path TestUtil::getExecutablePath(const std::filesystem::path &artifactDir) {
 #if OS_WINDOWS
-  return artifactDir / "source.exe";
+  std::filesystem::path executablePath = artifactDir / "source.exe";
 #else
-  return artifactDir / "source";
+  std::filesystem::path executablePath = artifactDir / "source";
 #endif
+  // Normalize to native separators. The artifact dir is built from a literal "./test-tmp" prefix, so the path string still
+  // contains forward slashes. When the executable is later run through a shell, the Windows command interpreter treats '/' as
+  // an option switch and fails with "'.' is not recognized as an internal or external command".
+  executablePath.make_preferred();
+  return executablePath;
 }
 
 /**
