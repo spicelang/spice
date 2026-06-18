@@ -56,6 +56,7 @@ public:
   std::any visitProcDef(const ProcDefNode *node) override;
   std::any visitStructDef(const StructDefNode *node) override;
   std::any visitInterfaceDef(const InterfaceDefNode *node) override;
+  std::any visitForwardDecl(const ForwardDeclNode *node) override { return visitChildren(node); }
   std::any visitEnumDef(const EnumDefNode *node) override;
   std::any visitGenericTypeDef(const GenericTypeDefNode *node) override;
   std::any visitAliasDef(const AliasDefNode *node) override;

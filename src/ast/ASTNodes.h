@@ -168,6 +168,7 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
+  [[nodiscard]] virtual bool isForwardDecl() const { return false; }
   [[nodiscard]] virtual bool isParam() const { return false; }
   [[nodiscard]] virtual bool isStmtLst() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
@@ -458,6 +459,32 @@ public:
   SymbolTableEntry *entry = nullptr;
   std::vector<Interface *> interfaceManifestations;
   Scope *interfaceScope = nullptr;
+};
+
+// ======================================================== ForwardDeclNode =======================================================
+
+class ForwardDeclNode final : public TopLevelDefNode {
+public:
+  // Constructors
+  using TopLevelDefNode::TopLevelDefNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForwardDecl(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitForwardDecl(this); }
+
+  // Other methods
+  GET_CHILDREN(attrs, qualifierLst);
+  [[nodiscard]] bool isForwardDecl() const override { return true; }
+
+  // Public members
+  TopLevelDefAttrNode *attrs = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
+  bool isStruct = true; // false → interface
+  std::string typeName;
+  uint64_t typeId = 0;
+  SymbolTableEntry *entry = nullptr;
+  Scope *typeScope = nullptr;
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_STRUCT);
 };
 
 // ========================================================== EnumDefNode ========================================================

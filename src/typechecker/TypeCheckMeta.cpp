@@ -305,6 +305,17 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
 
+    // Reject bare-value usage of an incomplete (forward-declared only) type
+    if (registryEntry->targetScope->isForwardDeclScope) {
+      const auto *dataTypeNode = spice_pointer_cast<DataTypeNode *>(node->parent->parent);
+      const bool isPointerOrRef = !dataTypeNode->tmQueue.empty() &&
+                                  (dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_PTR ||
+                                   dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_REF);
+      if (!isPointerOrRef)
+        SOFT_ERROR_QT(node, FORWARD_DECL_USED_AS_VALUE,
+                      "Type '" + node->fqTypeName + "' is only forward-declared; it can only be used as a pointer or reference")
+    }
+
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
@@ -328,8 +339,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       entryType = entryType.getWithTemplateTypes(templateTypes);
     }
 
-    // Check if struct is defined before the current code location, if defined in the same source file
-    const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
+    // Check if struct is defined before the current code location, if defined in the same source file.
+    // For types upgraded from a forward declaration, use the forward decl's location so uses sandwiched between
+    // the forward declaration and the full definition are accepted.
+    const CodeLoc &declCodeLoc = entry->forwardDeclCodeLoc != nullptr ? *entry->forwardDeclCodeLoc : entry->declNode->codeLoc;
     const CodeLoc &codeLoc = node->codeLoc;
     if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc) {
       if (entryType.is(TY_STRUCT)) {

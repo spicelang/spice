@@ -370,7 +370,10 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(node->entry != nullptr);
   const TypeChainElementData data = {.bodyScope = node->structScope};
   const Type *type = TypeRegistry::getOrInsert(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
-  node->entry->updateType(QualType(type, node->qualifiers), false);
+  // If the entry was upgraded from a forward declaration, the existing type was already set to the opaque
+  // forward-decl type. Overwriting is expected here.
+  const bool overwrite = node->entry->forwardDeclCodeLoc != nullptr;
+  node->entry->updateType(QualType(type, node->qualifiers), overwrite);
 
   // Change to struct scope
   currentScope = node->structScope;
@@ -452,7 +455,10 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   const Type *type = TypeRegistry::getOrInsert(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
   const QualType interfaceType(type, node->qualifiers);
   assert(node->entry != nullptr);
-  node->entry->updateType(interfaceType, false);
+  // If the entry was upgraded from a forward declaration, the existing type was already set to the opaque
+  // forward-decl type. Overwriting is expected here.
+  const bool overwrite = node->entry->forwardDeclCodeLoc != nullptr;
+  node->entry->updateType(interfaceType, overwrite);
 
   // Change to interface scope
   currentScope = node->interfaceScope;

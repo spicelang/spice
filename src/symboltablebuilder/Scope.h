@@ -125,6 +125,7 @@ public:
   bool isGenericScope = false;
   bool isAsyncScope = false;
   bool isDtorScope = false;
+  bool isForwardDeclScope = false;
 
 private:
   // Private members

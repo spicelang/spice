@@ -31,6 +31,7 @@ public:
   std::any visitFctName(FctNameNode *node) override { return buildNode(node); }
   std::any visitStructDef(StructDefNode *node) override { return buildNode(node); }
   std::any visitInterfaceDef(InterfaceDefNode *node) override { return buildNode(node); }
+  std::any visitForwardDecl(ForwardDeclNode *node) override { return buildNode(node); }
   std::any visitEnumDef(EnumDefNode *node) override { return buildNode(node); }
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override { return buildNode(node); }
   std::any visitAliasDef(AliasDefNode *node) override { return buildNode(node); }

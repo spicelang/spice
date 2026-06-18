@@ -1,0 +1,7 @@
+import "a";
+import "b-fwd"; // also import the forward declaration so the full type B reuses its typeId
+
+// B holds a pointer to A — no cycle because we used b-fwd for A
+public type B struct {
+    A* a
+}

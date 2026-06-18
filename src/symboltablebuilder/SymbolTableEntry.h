@@ -50,6 +50,10 @@ public:
   const std::string name;
   Scope *scope;
   ASTNode *declNode;
+  // For struct/interface entries that were upgraded from a forward declaration: the codeLoc of the forward decl.
+  // nullptr otherwise. Used so that ordering checks ("structs must be defined before usage") accept uses that
+  // appear between the forward declaration and the full definition in the same source file.
+  const CodeLoc *forwardDeclCodeLoc = nullptr;
   const size_t orderIndex;
   const bool global;
   bool isVolatile = false;

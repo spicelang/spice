@@ -56,6 +56,7 @@ public:
   std::any visitStructDefCheck(StructDefNode *node);
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitInterfaceDefPrepare(InterfaceDefNode *node);
+  std::any visitForwardDecl(ForwardDeclNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitEnumDefPrepare(EnumDefNode *node);
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;

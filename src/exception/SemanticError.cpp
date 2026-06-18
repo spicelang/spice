@@ -250,6 +250,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Test function with wrong return type";
   case LAMBDA_CAPTURE_ESCAPE:
     return "Lambda may outlive its captures";
+  case FORWARD_DECL_USED_AS_VALUE:
+    return "Cannot use forward-declared type as a value type";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

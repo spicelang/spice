@@ -1,0 +1,7 @@
+import "fwd" as fwd;
+import "impl" as impl;
+
+f<int> main() {
+    impl::Foo* fooPtr = nil<impl::Foo*>;
+    printf("Forward declared struct used as pointer: %p\n", fooPtr);
+}
