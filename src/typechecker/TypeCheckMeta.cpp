@@ -305,6 +305,18 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
 
+    // Reject bare-value usage of an incomplete (forward-declared only) type
+    if (registryEntry->targetScope->isForwardDeclScope) {
+      const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
+      assert(dataTypeNode != nullptr);
+      const bool isPointerOrRef = !dataTypeNode->tmQueue.empty() &&
+                                  (dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_PTR ||
+                                   dataTypeNode->tmQueue.front().modifierType == DataTypeNode::TypeModifierType::TYPE_REF);
+      if (!isPointerOrRef)
+        SOFT_ERROR_QT(node, FORWARD_DECL_USED_AS_VALUE,
+                      "Type '" + node->fqTypeName + "' is only forward-declared; it can only be used as a pointer or reference")
+    }
+
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;

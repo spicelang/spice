@@ -15,6 +15,7 @@ class FctDefNode;
 class ProcDefNode;
 class StructDefNode;
 class InterfaceDefNode;
+class ForwardDeclNode;
 class EnumDefNode;
 class GenericTypeDefNode;
 class AliasDefNode;
@@ -104,6 +105,7 @@ public:
   virtual std::any visitFctName(const FctNameNode *node);
   virtual std::any visitStructDef(const StructDefNode *node);
   virtual std::any visitInterfaceDef(const InterfaceDefNode *node);
+  virtual std::any visitForwardDecl(const ForwardDeclNode *node);
   virtual std::any visitEnumDef(const EnumDefNode *node);
   virtual std::any visitGenericTypeDef(const GenericTypeDefNode *node);
   virtual std::any visitAliasDef(const AliasDefNode *node);

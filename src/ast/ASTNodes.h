@@ -460,6 +460,31 @@ public:
   Scope *interfaceScope = nullptr;
 };
 
+// ======================================================== ForwardDeclNode =======================================================
+
+class ForwardDeclNode final : public TopLevelDefNode {
+public:
+  // Constructors
+  using TopLevelDefNode::TopLevelDefNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForwardDecl(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitForwardDecl(this); }
+
+  // Other methods
+  GET_CHILDREN(attrs, qualifierLst);
+
+  // Public members
+  TopLevelDefAttrNode *attrs = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
+  bool isStruct = true; // false → interface
+  std::string typeName;
+  uint64_t typeId = 0;
+  SymbolTableEntry *entry = nullptr;
+  Scope *typeScope = nullptr;
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_STRUCT);
+};
+
 // ========================================================== EnumDefNode ========================================================
 
 class EnumDefNode final : public TopLevelDefNode {

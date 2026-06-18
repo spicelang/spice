@@ -1,0 +1,8 @@
+import "a";
+import "b";
+
+f<int> main() {
+    A* aPtr = nil<A*>;
+    B* bPtr = nil<B*>;
+    printf("A: %p, B: %p\n", aPtr, bPtr);
+}

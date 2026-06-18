@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:5:
+Cannot use forward-declared type as a value type: Type 'Foo' is only forward-declared; it can only be used as a pointer or reference
+
+4  Foo s; // Error: cannot
+   ^^^

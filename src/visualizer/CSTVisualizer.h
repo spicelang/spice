@@ -32,6 +32,7 @@ public:
   std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override { return buildRule(ctx); }
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override { return buildRule(ctx); }
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override { return buildRule(ctx); }
+  std::any visitForwardDecl(SpiceParser::ForwardDeclContext *ctx) override { return buildRule(ctx); }
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override { return buildRule(ctx); }
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override { return buildRule(ctx); }
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override { return buildRule(ctx); }

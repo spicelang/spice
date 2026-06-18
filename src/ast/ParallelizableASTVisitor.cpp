@@ -31,6 +31,8 @@ std::any ParallelizableASTVisitor::visitStructDef(const StructDefNode *node) { r
 
 std::any ParallelizableASTVisitor::visitInterfaceDef(const InterfaceDefNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitForwardDecl(const ForwardDeclNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitEnumDef(const EnumDefNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitGenericTypeDef(const GenericTypeDefNode *node) { return visitChildren(node); }
