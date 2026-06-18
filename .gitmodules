@@ -11,3 +11,6 @@
 [submodule "deps/googletest"]
 	path = deps/googletest
 	url = https://github.com/google/googletest.git
+[submodule "deps/gtest-parallel"]
+	path = deps/gtest-parallel
+	url = https://github.com/google/gtest-parallel.git

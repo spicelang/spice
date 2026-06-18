@@ -116,6 +116,15 @@ void execTestCase(const TestCase &testCase) {
   if (explicitlySelectedTarget)
     cliOptions.isNativeTarget = false;
 
+  // Redirect all build artifacts to a per-test directory. Driver::enrich() resets these to shared paths (e.g. "./" and a
+  // shared temp cache dir), which would cause concurrently running test processes to clobber each other's object files and
+  // executables. Using a unique directory per test keeps parallel runs (e.g. via gtest-parallel) collision-free.
+  const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
+  const std::filesystem::path executablePath = TestUtil::getExecutablePath(artifactDir);
+  cliOptions.outputDir = artifactDir;
+  cliOptions.cacheDir = artifactDir / "cache";
+  std::filesystem::create_directories(cliOptions.cacheDir);
+
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
 
@@ -238,7 +247,7 @@ void execTestCase(const TestCase &testCase) {
       mainSourceFile->concludeCompilation();
 
       // Prepare linker
-      resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
+      resourceManager.linker.outputPath = executablePath;
 
       // Prepare and run linker
       resourceManager.linker.prepare();
@@ -266,7 +275,7 @@ void execTestCase(const TestCase &testCase) {
       std::stringstream cmd;
       if (testDriverCliOptions.enableLeakDetection)
         cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
-      cmd << TestUtil::getDefaultExecutableName();
+      cmd << executablePath.string();
       if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
       const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
@@ -296,7 +305,7 @@ void execTestCase(const TestCase &testCase) {
             std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
             EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
             gdbScriptPath.make_preferred();
-            const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
+            const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + executablePath.string();
             const auto [output, exitCode] = SystemUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
