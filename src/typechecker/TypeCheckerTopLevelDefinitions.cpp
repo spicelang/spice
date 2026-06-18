@@ -46,6 +46,9 @@ std::any TypeChecker::visitForwardDecl(ForwardDeclNode *node) {
     return nullptr;
 
   assert(node->entry != nullptr && node->typeScope != nullptr);
+  // A duplicate forward declaration shares its entry with the original; the entry's type is already populated.
+  if (!node->entry->getQualType().isOneOf({TY_INVALID, TY_DYN}))
+    return nullptr;
   const TypeChainElementData data = {.bodyScope = node->typeScope};
   const SuperType superType = node->isStruct ? TY_STRUCT : TY_INTERFACE;
   const Type *type = TypeRegistry::getOrInsert(superType, node->typeName, node->typeId, data, {});
