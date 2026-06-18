@@ -196,42 +196,64 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   return nullptr;
 }
 
+/**
+ * Resolve an already-existing symbol when a struct or interface definition is being built.
+ *
+ * Handles three cases:
+ * - an in-file forward declaration of the same kind exists: upgrade it by reusing its entry, scope and typeId,
+ *   un-mark the scope as forward-declared and remember the forward decl's codeLoc for later ordering checks.
+ * - a non-forward-decl symbol, or a forward decl of the wrong kind, exists: throw a duplicate-symbol error.
+ * - a matching forward declaration was imported from another file: adopt its typeId so that type identity is
+ *   preserved across files (e.g. when breaking circular imports via a forward-decl-only header file).
+ *
+ * @param node Struct or interface definition node being built
+ * @param name Type name
+ * @param isStruct true for a struct definition, false for an interface definition
+ * @param entry [out] reused forward-decl entry when upgrading, otherwise left untouched
+ * @param scope [out] reused forward-decl scope when upgrading, otherwise left untouched
+ * @param typeId [in,out] adopted from a matching forward declaration when one exists
+ * @return true if an in-file forward declaration was upgraded (entry and scope reused)
+ */
+bool SymbolTableBuilder::resolveForwardDeclaration(TopLevelDefNode *node, const std::string &name, bool isStruct,
+                                                   SymbolTableEntry *&entry, Scope *&scope, uint64_t &typeId) {
+  if (SymbolTableEntry *existing = rootScope->lookupStrict(name)) {
+    if (!existing->declNode->isForwardDecl())
+      throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + name + "'");
+    auto *fwdNode = static_cast<ForwardDeclNode *>(existing->declNode);
+    if (fwdNode->isStruct != isStruct)
+      throw SemanticError(node, DUPLICATE_SYMBOL,
+                          "'" + name + "' was forward-declared as " + (fwdNode->isStruct ? "a struct" : "an interface") +
+                              ", cannot define it as " + (isStruct ? "a struct" : "an interface"));
+    // Upgrade: reuse the forward declaration's entry, scope, and typeId
+    entry = existing;
+    scope = fwdNode->typeScope;
+    scope->isForwardDeclScope = false;
+    typeId = fwdNode->typeId;
+    // Preserve the forward declaration's codeLoc so ordering checks accept uses between forward decl and full def
+    existing->forwardDeclCodeLoc = &fwdNode->codeLoc;
+    // Update the entry to point to the full definition now
+    existing->declNode = node;
+    return true;
+  }
+
+  // A matching forward declaration may have been imported from another source file. Adopt its typeId.
+  if (const NameRegistryEntry *importedFwd = sourceFile->getNameRegistryEntry(name);
+      importedFwd != nullptr && importedFwd->targetEntry != nullptr && importedFwd->targetEntry->declNode->isForwardDecl()) {
+    const auto *fwdNode = static_cast<const ForwardDeclNode *>(importedFwd->targetEntry->declNode);
+    if (fwdNode->isStruct == isStruct)
+      typeId = fwdNode->typeId;
+  }
+  return false;
+}
+
 std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Visit attributes
   if (node->attrs)
     visit(node->attrs);
 
-  // Check if this name already exists
-  bool upgradingForwardDecl = false;
-  if (SymbolTableEntry *existing = rootScope->lookupStrict(node->structName)) {
-    if (existing->declNode->isForwardDecl()) {
-      // Upgrade: reuse the forward declaration's entry, scope, and typeId
-      auto *fwdNode = static_cast<ForwardDeclNode *>(existing->declNode);
-      if (!fwdNode->isStruct)
-        throw SemanticError(node, DUPLICATE_SYMBOL,
-                            "'" + node->structName + "' was forward-declared as an interface, cannot define it as a struct");
-      upgradingForwardDecl = true;
-      node->entry = existing;
-      node->structScope = fwdNode->typeScope;
-      node->structScope->isForwardDeclScope = false;
-      node->typeId = fwdNode->typeId;
-      // Preserve the forward declaration's codeLoc so ordering checks accept uses between forward decl and full def
-      existing->forwardDeclCodeLoc = &fwdNode->codeLoc;
-      // Update the entry to point to the full definition now
-      existing->declNode = node;
-    } else {
-      throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->structName + "'");
-    }
-  } else if (const NameRegistryEntry *importedFwd = sourceFile->getNameRegistryEntry(node->structName);
-             importedFwd != nullptr && importedFwd->targetEntry != nullptr &&
-             importedFwd->targetEntry->declNode->isForwardDecl()) {
-    // A matching forward declaration was imported from another source file. Adopt its typeId so that
-    // type identity is preserved across the file that holds the forward declaration and the file that
-    // holds the full definition (e.g. when breaking circular imports via a forward-decl-only header file).
-    const auto *fwdNode = static_cast<const ForwardDeclNode *>(importedFwd->targetEntry->declNode);
-    if (fwdNode->isStruct)
-      node->typeId = fwdNode->typeId;
-  }
+  // Check if this name already exists; upgrade a matching forward declaration if present
+  const bool upgradingForwardDecl =
+      resolveForwardDeclaration(node, node->structName, true, node->entry, node->structScope, node->typeId);
 
   if (!upgradingForwardDecl) {
     // Create scope for the struct
@@ -281,32 +303,9 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   if (node->attrs)
     visit(node->attrs);
 
-  // Check if this name already exists
-  bool upgradingForwardDecl = false;
-  if (SymbolTableEntry *existing = rootScope->lookupStrict(node->interfaceName)) {
-    if (existing->declNode->isForwardDecl()) {
-      auto *fwdNode = static_cast<ForwardDeclNode *>(existing->declNode);
-      if (fwdNode->isStruct)
-        throw SemanticError(node, DUPLICATE_SYMBOL,
-                            "'" + node->interfaceName + "' was forward-declared as a struct, cannot define it as an interface");
-      upgradingForwardDecl = true;
-      node->entry = existing;
-      node->interfaceScope = fwdNode->typeScope;
-      node->interfaceScope->isForwardDeclScope = false;
-      node->typeId = fwdNode->typeId;
-      existing->forwardDeclCodeLoc = &fwdNode->codeLoc;
-      existing->declNode = node;
-    } else {
-      throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
-    }
-  } else if (const NameRegistryEntry *importedFwd = sourceFile->getNameRegistryEntry(node->interfaceName);
-             importedFwd != nullptr && importedFwd->targetEntry != nullptr &&
-             importedFwd->targetEntry->declNode->isForwardDecl()) {
-    // Adopt the imported forward declaration's typeId for cross-file type identity (see visitStructDef)
-    const auto *fwdNode = static_cast<const ForwardDeclNode *>(importedFwd->targetEntry->declNode);
-    if (!fwdNode->isStruct)
-      node->typeId = fwdNode->typeId;
-  }
+  // Check if this name already exists; upgrade a matching forward declaration if present
+  const bool upgradingForwardDecl =
+      resolveForwardDeclaration(node, node->interfaceName, false, node->entry, node->interfaceScope, node->typeId);
 
   if (!upgradingForwardDecl) {
     // Create scope for the interface
