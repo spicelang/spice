@@ -733,7 +733,7 @@ jobs:
           tag: ${{ github.ref }}
 
       - name: Deploy to WinGet
-        uses: vedantmgoyal2009/winget-releaser@v2
+        uses: vedantmgoyal9/winget-releaser@v2
         continue-on-error: true
         with:
           identifier: ChilliBits.Spice
