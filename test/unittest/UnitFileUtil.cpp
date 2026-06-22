@@ -10,45 +10,59 @@ namespace spice::testing {
 
 using namespace spice::compiler;
 
-const auto TEST_FILE_NAME = "file-util-test-file.txt";
-const std::filesystem::path TEST_FILE_PATH = std::filesystem::temp_directory_path() / TEST_FILE_NAME;
-const std::string ERROR_MESSAGE = "[Error|Compiler]:\nI/O Error: Failed to open file: " + TEST_FILE_PATH.string();
+class FileUtilTest : public ::testing::Test {
+protected:
+  std::filesystem::path testFilePath;
+  std::string errorMessage;
 
-TEST(FileUtilTest, WriteToAndReadFromFile) {
+  void SetUp() override {
+    const auto *testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    const std::string fileName = std::string("spice-file-util-") + testInfo->name() + ".txt";
+    testFilePath = std::filesystem::temp_directory_path() / fileName;
+    errorMessage = "[Error|Compiler]:\nI/O Error: Failed to open file: " + testFilePath.string();
+    std::error_code ec;
+    std::filesystem::remove(testFilePath, ec);
+  }
+
+  void TearDown() override {
+    std::error_code ec;
+    std::filesystem::remove(testFilePath, ec);
+  }
+};
+
+TEST_F(FileUtilTest, WriteToAndReadFromFile) {
   const std::string expectedFileContent = "This is some test content";
-  FileUtil::writeToFile(TEST_FILE_PATH, expectedFileContent);
-  ASSERT_TRUE(exists(TEST_FILE_PATH));
-  const std::string actualFileContent = FileUtil::getFileContent(TEST_FILE_PATH);
+  FileUtil::writeToFile(testFilePath, expectedFileContent);
+  ASSERT_TRUE(exists(testFilePath));
+  const std::string actualFileContent = FileUtil::getFileContent(testFilePath);
   ASSERT_EQ(expectedFileContent, actualFileContent);
-  remove(TEST_FILE_PATH);
 }
 
-TEST(FileUtilTest, ReadFromFileNonExisting) {
-  ASSERT_TRUE(!exists(TEST_FILE_PATH));
+TEST_F(FileUtilTest, ReadFromFileNonExisting) {
+  ASSERT_TRUE(!exists(testFilePath));
   try {
-    FileUtil::getFileContent(TEST_FILE_PATH);
+    FileUtil::getFileContent(testFilePath);
     FAIL();
   } catch (CompilerError &error) {
-    ASSERT_EQ(ERROR_MESSAGE, error.what());
+    ASSERT_EQ(errorMessage, error.what());
   }
 }
 
-TEST(FileUtilTest, GetLineCount) {
+TEST_F(FileUtilTest, GetLineCount) {
   const std::string expectedFileContent = "Line 1\nLine2\nLine3\n\nLine 5";
-  FileUtil::writeToFile(TEST_FILE_PATH, expectedFileContent);
-  ASSERT_TRUE(exists(TEST_FILE_PATH));
-  const size_t lineCount = FileUtil::getLineCount(TEST_FILE_PATH);
+  FileUtil::writeToFile(testFilePath, expectedFileContent);
+  ASSERT_TRUE(exists(testFilePath));
+  const size_t lineCount = FileUtil::getLineCount(testFilePath);
   ASSERT_EQ(5, lineCount);
-  remove(TEST_FILE_PATH);
 }
 
-TEST(FileUtilTest, GetLineCountNonExisting) {
-  ASSERT_TRUE(!exists(TEST_FILE_PATH));
+TEST_F(FileUtilTest, GetLineCountNonExisting) {
+  ASSERT_TRUE(!exists(testFilePath));
   try {
-    FileUtil::getLineCount(TEST_FILE_PATH);
+    FileUtil::getLineCount(testFilePath);
     FAIL();
   } catch (CompilerError &error) {
-    ASSERT_EQ(ERROR_MESSAGE, error.what());
+    ASSERT_EQ(errorMessage, error.what());
   }
 }
 
