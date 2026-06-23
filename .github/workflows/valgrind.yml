@@ -1,0 +1,104 @@
+# Valgrind leak check
+name: Valgrind
+
+on:
+  workflow_dispatch:
+
+env:
+  LLVM_VERSION: "llvmorg-22.1.8"
+  GCC_VERSION: "16"
+
+jobs:
+  valgrind-linux-x86:
+    name: Valgrind - Linux/x86_64
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup Dependencies
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install valgrind ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/llvm/build
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: ./setup-deps.sh
+
+      - name: Build test target
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -Wattributes \
+            ..
+          cmake --build . --target spicetest
+
+      - name: Run test target with Valgrind
+        working-directory: build/test
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+        run: valgrind -q --leak-check=full --suppressions=${{ github.workspace }}/valgrind.supp ./spicetest --is-github-actions --leak-detection
+
+      - name: Save CCache
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
