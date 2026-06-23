@@ -15,6 +15,7 @@ f<int> main(int argc, string[] argv) {
 
     CliOptions options;
     parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--ho", options.sayHi, "Say ho to the user");
     parser.addFlag("--callback", callback, "Call a callback function");
     parser.addFlag("-cb", p(const bool& value) {
         printf("CB called with value %d\n", value);

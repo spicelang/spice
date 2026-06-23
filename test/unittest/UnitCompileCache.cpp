@@ -408,6 +408,59 @@ TEST_F(CompileCacheTest, DependencyChangeInvalidatesDependentCacheKey) {
   ASSERT_EQ(utilsKeyV1, manager.computeCacheKey(utilsSrc, {mathKeyV1}));
 }
 
+// Provokes a real (non-mocked) regression: compile a two-file program once to populate the cache,
+// then edit only the dependent file's source and recompile in a fresh GlobalResourceManager (this
+// stands in for a new process run). The unchanged dependency must hit the cache for its object
+// file, but its exported symbols still have to be resolvable by the dependent, since the dependent
+// itself isn't a cache hit and needs to type-check against them. Before the fix, cache-restored
+// files skipped SymbolTableBuilder/TypeChecker entirely, leaving their exportedNameRegistry empty
+// and causing "undefined function" errors for every symbol the cache-hit dependency exported.
+TEST_F(CompileCacheTest, CacheHitDependencyStillExposesSymbolsToChangedDependent) {
+  cliOptions.targetTriple = llvm::Triple(llvm::Triple::normalize(llvm::sys::getProcessTriple()));
+  cliOptions.isNativeTarget = true;
+
+  const std::filesystem::path mathPath = outputDir / "math.spice";
+  const std::filesystem::path mainPath = outputDir / "main.spice";
+
+  // The dependency stays untouched across both compiler runs.
+  writeDummyFile(mathPath, "public f<int> add(int a, int b) {\n    return a + b;\n}\n");
+  writeDummyFile(mainPath, "import \"math\";\n\nf<int> main() {\n    return add(1, 2);\n}\n");
+
+  // First "process run": compiles both files from scratch and populates the cache.
+  {
+    GlobalResourceManager resourceManager(cliOptions);
+    SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, mainPath, false);
+    mainFile->runFrontEnd();
+    mainFile->runMiddleEnd();
+    ASSERT_TRUE(resourceManager.errorManager.softErrors.empty());
+    for (SourceFile *dependency : mainFile->dependencies | std::views::values)
+      dependency->runBackEnd();
+    mainFile->runBackEnd();
+  }
+
+  // Edit only main.spice. math.spice is unchanged, so it must still cache-hit on the next run.
+  writeDummyFile(mainPath, "import \"math\";\n\nf<int> main() {\n    return add(1, 2) + 1;\n}\n");
+
+  // Second "process run" (fresh GlobalResourceManager, nothing carried over in memory).
+  {
+    GlobalResourceManager resourceManager(cliOptions);
+    SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, mainPath, false);
+    mainFile->runFrontEnd();
+
+    SourceFile *mathFile = mainFile->dependencies.at("math");
+    ASSERT_TRUE(mathFile->restoredFromCache);
+    // This is the crux of the bug: a cache-restored file must still expose its symbols.
+    ASSERT_NE(nullptr, mathFile->getNameRegistryEntry("add"));
+
+    mainFile->runMiddleEnd();
+    ASSERT_TRUE(resourceManager.errorManager.softErrors.empty());
+
+    for (SourceFile *dependency : mainFile->dependencies | std::views::values)
+      dependency->runBackEnd();
+    mainFile->runBackEnd();
+  }
+}
+
 } // namespace spice::testing
 
 // LCOV_EXCL_STOP

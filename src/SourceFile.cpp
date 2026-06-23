@@ -247,8 +247,10 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runSymbolTableBuilder() {
-  // Skip if restored from the cache or this stage has already been done
-  if (restoredFromCache || previousStage >= SYMBOL_TABLE_BUILDER)
+  // Skip if this stage has already been done. Unlike the later stages, this one must still run even if the file was
+  // restored from the cache: it's the only pass that populates exportedNameRegistry, and a dependant that isn't itself
+  // a cache hit needs that registry to resolve the symbols it imports from this file.
+  if (previousStage >= SYMBOL_TABLE_BUILDER)
     return;
 
   Timer timer(&compilerOutput.times.symbolTableBuilder);
@@ -268,8 +270,10 @@ void SourceFile::runSymbolTableBuilder() {
 }
 
 void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
-  // Skip if restored from the cache or this stage has already been done
-  if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
+  // Skip if this stage has already been done. Unlike the later (codegen) stages, this one must still run even if the
+  // file was restored from the cache: it's what populates the FunctionManager/StructManager manifestations that a
+  // dependant which isn't itself a cache hit needs for overload resolution and generic substantiation.
+  if (previousStage >= TYPE_CHECKER_PRE)
     return;
 
   // Type-check all dependencies first
@@ -289,8 +293,9 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache, this stage has already been done, or not all dependants finished type checking
-  if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
+  // Skip if not all dependants finished type checking yet. This still has to run for files restored from the cache,
+  // for the same reason as runTypeCheckerPre (see comment there).
+  if (!haveAllDependantsBeenTypeChecked())
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
