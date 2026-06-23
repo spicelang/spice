@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <random>
+#include <ranges>
 
 #include <gtest/gtest.h>
 
