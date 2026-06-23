@@ -758,13 +758,18 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
     values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
-  for (const CompileTimeValue *value : linkerFlagValues)
-    resourceManager.linker.addLinkerFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
+  for (const CompileTimeValue *value : linkerFlagValues) {
+    const std::string &flag = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+    resourceManager.linker.addLinkerFlag(flag);
+    sourceFile->sourceLinkerFlags.push_back(flag);
+  }
 
   // core.linker.additionalSource
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
     const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
-    resourceManager.linker.addAdditionalSourcePath(sourceFile->filePath.parent_path() / stringValue);
+    const std::filesystem::path additionalSourcePath = sourceFile->filePath.parent_path() / stringValue;
+    resourceManager.linker.addAdditionalSourcePath(additionalSourcePath);
+    sourceFile->sourceAdditionalSourcePaths.push_back(additionalSourcePath);
   }
 
   return nullptr;
