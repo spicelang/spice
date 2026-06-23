@@ -1,0 +1,145 @@
+# Valgrind suppressions for the Spice compiler test suite.
+#
+# All entries here are false positives: the allocations are owned by
+# llvm::Module or llvm::LLVMContext objects that live on SourceFile and
+# are properly destroyed when the SourceFile goes out of scope.  Valgrind
+# cannot follow LLVM's intrusive-list / tagged-pointer ownership chains and
+# therefore reports them as "possibly lost".
+#
+# Usage:
+#   valgrind --suppressions=valgrind.supp ...
+#
+# Pattern coverage:
+#   - llvm::Function / llvm::User objects inserted into a Module
+#     (sanitizer pass injections, stdlib declarations, IR codegen)
+#   - llvm::BasicBlock objects (attached to functions via switchToBlock)
+#   - llvm::MDTuple / TBAA metadata nodes (owned by LLVMContext)
+#   - llvm::ValueSymbolTable name buckets (owned by Value/Function)
+#   - llvm::Function::BuildLazyArguments (owned by Function)
+
+# ---------------------------------------------------------------------------
+# llvm::Function::Function allocated via Module::getOrInsertFunction
+# Covers: sanitizer ctor/init injection, StdFunctionManager declarations,
+#         visitProcDef / visitFctDef function creation.
+# ---------------------------------------------------------------------------
+{
+   llvm_Function_getOrInsertFunction
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm8FunctionC1EPNS_12FunctionTypeENS_11GlobalValue12LinkageTypesEjRKNS_5TwineEPNS_6ModuleE
+   fun:_ZN4llvm6Module18getOrInsertFunctionENS_9StringRefEPNS_12FunctionTypeENS_13AttributeListE
+   ...
+}
+
+{
+   llvm_Function_getOrInsertFunction_noattr
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm8FunctionC1EPNS_12FunctionTypeENS_11GlobalValue12LinkageTypesEjRKNS_5TwineEPNS_6ModuleE
+   fun:_ZN4llvm6Module18getOrInsertFunctionENS_9StringRefEPNS_12FunctionTypeE
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# llvm::User-derived instructions (Load, Store, Alloca, GEP, BranchInst,
+# ConstantArray, LandingPadInst, …) inserted into a BasicBlock/Function.
+# Owned by the parent Function via the instruction list.
+# ---------------------------------------------------------------------------
+{
+   llvm_User_intrusive_operands
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm4User3newEmNS0_35IntrusiveOperandsAllocMarkerE
+   ...
+}
+
+{
+   llvm_User_hung_off_uses
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm4User3newEmNS0_33HungOffOperandsAllocMarkerE
+   ...
+}
+
+{
+   llvm_User_allocHungoffUses
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm4User16allocHungoffUsesEjb
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# llvm::BasicBlock::Create — created without a parent, then immediately
+# inserted via switchToBlock(). The window where no parent is set is too
+# short for LLVM to register ownership before Valgrind snapshots the heap.
+# ---------------------------------------------------------------------------
+{
+   llvm_BasicBlock_Create
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm10BasicBlock6CreateERNS_11LLVMContextERKNS_5TwineEPNS_8FunctionEPS0_
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# llvm::Function::BuildLazyArguments — argument list lazily allocated the
+# first time Function::args() is iterated (e.g. in TypeFinder::run during
+# Module::print).  Owned by the Function.
+# ---------------------------------------------------------------------------
+{
+   llvm_Function_BuildLazyArguments
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNK4llvm8Function19BuildLazyArgumentsEv
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# llvm::MDTuple / metadata nodes — created by MDBuilder (TBAA roots,
+# branch-weight metadata, type metadata).  Owned by LLVMContext.
+# ---------------------------------------------------------------------------
+{
+   llvm_MDTuple_getImpl
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm7MDTuple7getImplERNS_11LLVMContextENS_8ArrayRefIPNS_8MetadataEEENS4_11StorageTypeEb
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# llvm::ValueSymbolTable name bucket (calloc path) — the symbol table grows
+# its hash-bucket array when a named Value is added to a Function.  Owned by
+# the Function's ValueSymbolTable.
+# ---------------------------------------------------------------------------
+{
+   llvm_ValueSymbolTable_calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_ZN4llvm13StringMapImpl16LookupBucketForENS_9StringRefERj
+   fun:_ZN4llvm16ValueSymbolTable15createValueNameENS_9StringRefEPNS_5ValueE
+   ...
+}
+
+# ---------------------------------------------------------------------------
+# sanitizer-specific patterns (ThreadSanitizer, AddressSanitizer, …)
+# that inject ctor/init/appendToGlobalArray structures into the Module.
+# ---------------------------------------------------------------------------
+{
+   llvm_sanitizer_ctor_create
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4llvm8FunctionC1EPNS_12FunctionTypeENS_11GlobalValue12LinkageTypesEjRKNS_5TwineEPNS_6ModuleE
+   fun:_ZN4llvm20createSanitizerCtorERNS_6ModuleENS_9StringRefE
+   ...
+}
