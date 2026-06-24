@@ -28,11 +28,10 @@ for the Spice language.
 ## Initial setup
 
 There are helper scripts for common tasks, but the underlying CMake commands are also available for manual use.
-The scripts are available on Linux (file extension `.sh`) and Windows (file extension `.bat`), but the CMake commands
-are cross-platform.
+The scripts are Python-based and cross-platform.
 
 - First-time local setup (can be skipped if environment is already configured):
-    - `./dev-setup.sh`
+    - `python dev-setup.py`
 
 ## Building the project
 

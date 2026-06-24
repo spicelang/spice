@@ -18,9 +18,9 @@ Reuse one of these directories so artifacts stay organized (per `AGENTS.md`):
 - `cmake-build-debug/` — day-to-day development and testing
 - `cmake-build-release/` — optimized builds for benchmarking
 
-The `./build.sh` helper instead builds into `build/` with `Release` + Ninja and
+The `python build.py` helper instead builds into `build/` with `Release` + Ninja and
 moves the binaries to the repo root; prefer the directories above for agent work
-unless the user explicitly wants `build.sh`.
+unless the user explicitly wants `build.py`.
 
 ## Prerequisites
 
@@ -31,8 +31,8 @@ A configured LLVM build must be reachable. `find_package(LLVM)` locates it via
 export LLVM_DIR=$PWD/llvm/build-release/lib/cmake/llvm
 ```
 
-If LLVM and third-party libs are missing, run `./dev-setup.sh` once (slow: it
-clones and builds LLVM). `./setup-deps.sh` alone fetches just the header-only
+If LLVM and third-party libs are missing, run `python dev-setup.py` once (slow: it
+clones and builds LLVM). `python setup-deps.py` alone fetches just the header-only
 deps (json, CLI11) into `lib/`.
 
 ## Configure (first time / after CMakeLists changes)

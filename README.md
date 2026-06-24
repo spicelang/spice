@@ -65,18 +65,14 @@ There is a batch/shell script called `dev-setup` to help you with that. It will 
 Use this command to run it:
 
 ```sh
-./dev-setup.sh # Linux
-# or
-.\dev-setup.bat # Windows
+python dev-setup.py # Linux/macOS/Windows
 ```
 
 #### Re-build Spice
 There is also a batch/shell script to rebuild Spice. Use the following command to run it:
 
 ```sh
-./build.sh # Linux
-# or
-.\build.bat # Windows
+python build.py # Linux/macOS/Windows
 ```
 
 You can find the build output in the `build` subdirectory.
