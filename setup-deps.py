@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Download third-party dependencies (git submodules + ANTLR jar)."""
-import os
 import subprocess
 import urllib.request
 from pathlib import Path
