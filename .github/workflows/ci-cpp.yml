@@ -44,7 +44,7 @@ jobs:
         uses: rui314/setup-mold@v1
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -59,7 +59,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-x64
@@ -114,7 +114,7 @@ jobs:
         run: ./spicetest --is-github-actions
 
       - name: Save CCache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: ~/.cache/ccache
@@ -168,7 +168,7 @@ jobs:
         uses: rui314/setup-mold@v1
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -179,7 +179,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
@@ -229,7 +229,7 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Save CCache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: ~/.cache/ccache
@@ -259,7 +259,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/AppData/Local/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -270,7 +270,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-win-x64
@@ -323,7 +323,7 @@ jobs:
           cmake --build . --target spicetest_parallel
 
       - name: Save CCache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: ~/AppData/Local/ccache
@@ -356,7 +356,7 @@ jobs:
           mkdir -p ~/.cache/ccache
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -367,7 +367,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-macos-x64
@@ -414,7 +414,7 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Save CCache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: ~/.cache/ccache
@@ -447,7 +447,7 @@ jobs:
           mkdir -p ~/.cache/ccache
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
@@ -458,7 +458,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/llvm/build
           key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64
@@ -505,7 +505,7 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Save CCache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: ~/.cache/ccache
