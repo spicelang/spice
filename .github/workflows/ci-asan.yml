@@ -82,7 +82,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build test target with ASAN
         env:

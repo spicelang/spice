@@ -17,19 +17,19 @@ cd spice
 ```
 
 ### Run setup script for setting up your dev environment
-To build Spice, you can use the `dev-setup.sh` for Linux/macOS or the `dev-setup.bat` for Windows. This will prepare your dev environment, install the correct LLVM version and builds the Spice executable for the first time to the `build` directory.
+To build Spice, you can use the `dev-setup.py` script. This will prepare your dev environment, install the correct LLVM version and builds the Spice executable for the first time to the `build` directory.
 
 === ":fontawesome-brands-linux: Linux"
     ```sh
-    ./dev-setup.sh
+    python dev-setup.py
     ```
 === ":fontawesome-brands-apple: macOS"
     ```sh
-    ./dev-setup.bat
+    python dev-setup.py
     ```
 === ":fontawesome-brands-windows: Windows"
     ```sh
-    .\dev-setup.bat
+    python dev-setup.py
     ```
 
 ### Use

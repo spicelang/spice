@@ -81,7 +81,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build compiler
         env:
@@ -194,7 +194,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build compiler
         env:
@@ -298,7 +298,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: .\setup-deps.bat
+        run: python setup-deps.py
 
       - name: Build compiler
         env:
@@ -402,7 +402,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build compiler
         env:
@@ -506,7 +506,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build compiler
         env:

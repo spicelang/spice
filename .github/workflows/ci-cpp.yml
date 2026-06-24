@@ -86,7 +86,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build test target
         env:
@@ -124,8 +124,8 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: build
         run: |
-          sudo chmod +x coverage.sh
-          ./coverage.sh
+          sudo chmod +x coverage.py
+          python coverage.py
 
       - name: Upload coverage report - coverage.spicelang.com
         uses: sebastianpopp/ftp-action@releases/v2
@@ -206,7 +206,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build test target
         env:
@@ -297,7 +297,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: .\setup-deps.bat
+        run: python setup-deps.py
 
       - name: Build test target
         env:
@@ -391,7 +391,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build test target
         env:
@@ -482,7 +482,7 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: ./setup-deps.sh
+        run: python setup-deps.py
 
       - name: Build test target
         env:
