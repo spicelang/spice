@@ -97,6 +97,7 @@ jobs:
             -DSPICE_LINK_STATIC=ON \
             -DSPICE_LTO=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
             ..
           cmake --build . --target spice
@@ -210,6 +211,7 @@ jobs:
             -DSPICE_LINK_STATIC=ON \
             -DSPICE_LTO=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
             ..
           cmake --build . --target spice
@@ -315,6 +317,7 @@ jobs:
             -DSPICE_ALL_TARGETS=ON `
             -DSPICE_LINK_STATIC=ON `
             -DSPICE_VERSION="${{ github.ref_name }}" `
+            -DSPICE_GIT_HASH="${{ github.sha }}" `
             -DSPICE_BUILT_BY="ghactions" `
             ..
           cmake --build . --target spice
@@ -417,6 +420,7 @@ jobs:
             -DSPICE_ALL_TARGETS=ON \
             -DSPICE_LTO=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
             ..
           cmake --build . --target spice
@@ -521,6 +525,7 @@ jobs:
             -DSPICE_ALL_TARGETS=ON \
             -DSPICE_LTO=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
+            -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
             ..
           cmake --build . --target spice
