@@ -1,7 +1,6 @@
 // Std imports
 import "std/data/vector";
 import "std/text/stringstream";
-import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -51,7 +50,6 @@ public type Function struct {
     public bool implicitDefault = false
     public bool isVirtual = false
     public bool isNewlyInserted = false
-    public llvm::Function* llvmFunction = nil<llvm::Function*>
     public unsigned long vtableIndex = 0ul
 }
 

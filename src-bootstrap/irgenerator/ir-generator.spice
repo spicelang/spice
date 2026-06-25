@@ -1,9 +1,12 @@
 // Std imports
 import "std/data/vector";
 import "std/data/stack";
+import "std/data/unordered-map";
 
 // Own imports
 import "src/bindings/llvm/llvm" as llvm;
+import "bootstrap/model/function";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
 
 type CommonLLVMTypes struct {
     llvm::StructType fatPtrType
@@ -25,6 +28,9 @@ public type IRGenerator struct {
     llvm::Instruction* allocaInsertInst = nil<llvm::Instruction*>
     bool blockAlreadyTerminated = false
     //Vector<DeferredLogic> deferredVTableInitializations
+    // IR-side state: separate from semantic objects to keep the type-checker model clean
+    UnorderedMap<SymbolTableEntry*, Stack<llvm::Value*>> addressMap
+    UnorderedMap<Function*, llvm::Function*> llvmFunctions
 }
 
 public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
@@ -73,4 +79,91 @@ public f<llvm::Value> IRGenerator.insertLoad(llvm::Type llvmType, llvm::Value pt
 public p IRGenerator.insertStore(llvm::Value value, llvm::Value ptr, bool isVolatile) {
     assert ptr.getType().isPointerTy();
     this.builder.createStore(value, ptr, isVolatile);
+}
+
+/**
+ * Retrieve the current IR address of a symbol table entry
+ *
+ * @param entry Symbol table entry
+ * @return IR address, or nil if not yet allocated
+ */
+public f<llvm::Value*> IRGenerator.getAddress(SymbolTableEntry* entry) {
+    if !this.addressMap.contains(entry) { return nil<llvm::Value*>; }
+    Stack<llvm::Value*>& stack = this.addressMap.get(entry);
+    return stack.isEmpty() ? nil<llvm::Value*> : stack.top();
+}
+
+/**
+ * Set or update the IR address of a symbol table entry.
+ * If no address has been recorded yet, the address is pushed onto a new stack;
+ * otherwise the top of the existing stack is replaced.
+ *
+ * @param entry Symbol table entry
+ * @param address IR address to record
+ */
+public p IRGenerator.updateAddress(SymbolTableEntry* entry, llvm::Value* address) {
+    assert address != nil<llvm::Value*>;
+    if !this.addressMap.contains(entry) {
+        Stack<llvm::Value*> stack;
+        stack.push(address);
+        this.addressMap.upsert(entry, stack);
+    } else {
+        Stack<llvm::Value*>& stack = this.addressMap.get(entry);
+        if stack.isEmpty() {
+            stack.push(address);
+        } else {
+            stack.pop();
+            stack.push(address);
+        }
+    }
+}
+
+/**
+ * Push a new IR address onto the stack for a symbol table entry.
+ * Used for lambda captures that temporarily shadow an outer address.
+ *
+ * @param entry Symbol table entry
+ * @param address IR address to push
+ */
+public p IRGenerator.pushAddress(SymbolTableEntry* entry, llvm::Value* address) {
+    assert address != nil<llvm::Value*>;
+    if !this.addressMap.contains(entry) {
+        Stack<llvm::Value*> stack;
+        this.addressMap.upsert(entry, stack);
+    }
+    this.addressMap.get(entry).push(address);
+}
+
+/**
+ * Pop the top IR address from the stack for a symbol table entry.
+ * Used to restore the outer address after a lambda capture scope exits.
+ *
+ * @param entry Symbol table entry
+ */
+public p IRGenerator.popAddress(SymbolTableEntry* entry) {
+    assert this.addressMap.contains(entry);
+    Stack<llvm::Value*>& stack = this.addressMap.get(entry);
+    assert !stack.isEmpty();
+    stack.pop();
+}
+
+/**
+ * Retrieve the LLVM function for a Spice function
+ *
+ * @param spiceFunc Spice function
+ * @return LLVM function, or nil if not yet generated
+ */
+public f<llvm::Function*> IRGenerator.getLLVMFunction(Function* spiceFunc) {
+    return this.llvmFunctions.contains(spiceFunc) ? this.llvmFunctions.get(spiceFunc) : nil<llvm::Function*>;
+}
+
+/**
+ * Register the LLVM function generated for a Spice function
+ *
+ * @param spiceFunc Spice function
+ * @param llvmFunction Generated LLVM function
+ */
+public p IRGenerator.setLLVMFunction(Function* spiceFunc, llvm::Function* llvmFunction) {
+    assert llvmFunction != nil<llvm::Function*>;
+    this.llvmFunctions.upsert(spiceFunc, llvmFunction);
 }

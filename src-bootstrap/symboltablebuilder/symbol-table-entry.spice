@@ -1,6 +1,4 @@
 // Std imports
-import "std/data/stack";
-import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -33,7 +31,6 @@ public type SymbolTableEntry struct {
     public bool isImplicitField = false
     // Private fields
     QualType qualType
-    Stack<llvm::Value*> memAddress
     Lifecycle lifecycle
 }
 
@@ -99,54 +96,6 @@ public p SymbolTableEntry.updateState(const LifecycleState& newState, ASTNode* n
  */
 public f<const CodeLoc &> SymbolTableEntry.getDeclCodeLoc() {
     return this.declNode.codeLoc;
-}
-
-/**
- * Retrieve the address of the assigned value
- *
- * @return Address of the value in memory
- */
-public f<llvm::Value*> SymbolTableEntry.getAddress() {
-    return this.memAddress.isEmpty() ? nil<llvm::Value*> : this.memAddress.top();
-}
-
-/**
- * Update the address of a symbol. This is used to save the allocated address where the symbol lives.
- *
- * @param address Address of the symbol in memory
- */
-public p SymbolTableEntry.updateAddress(llvm::Value* address) {
-    assert address != nil<llvm::Value*>;
-    // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-    const ScopeType currentScopeType = this.scope.getScopeType();
-    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
-    assert (currentScopeType != ScopeType::STRUCT && currentScopeType != ScopeType::INTERFACE) || this.qualType.isOneOf(fctOptions, len(fctOptions));
-    if this.memAddress.isEmpty() {
-        this.memAddress.push(address);
-    } else {
-        // Replace the top element. The host compiler does not treat a reference returned from a method call
-        // (Stack.top()) as an assignable lvalue, so we pop and push instead of `this.memAddress.top() = address`.
-        this.memAddress.pop();
-        this.memAddress.push(address);
-    }
-}
-
-/**
- * Push a new address to the stack
- *
- * @param address Address to push
- */
-public p SymbolTableEntry.pushAddress(llvm::Value* address) {
-    assert address != nil<llvm::Value*>;
-    this.memAddress.push(address);
-}
-
-/**
- * Remove the last address from the stack
- */
-public p SymbolTableEntry.popAddress() {
-    assert !this.memAddress.isEmpty();
-    this.memAddress.pop();
 }
 
 /**
