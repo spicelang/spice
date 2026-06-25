@@ -111,7 +111,7 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
   return structPtr;
 }
 
-void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
+void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
   // Do not clean up if the block is already terminated
   if (blockAlreadyTerminated)
     return;
@@ -123,12 +123,12 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
   // Deallocate all heap variables that go out of scope and are currently owned
   for (const SymbolTableEntry *entry : heapVarsToFree)
-    generateDeallocCall(entry->getAddress());
+    generateDeallocCall(getAddress(entry));
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
     for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
-      llvm::Value *address = var->getAddress();
+      llvm::Value *address = getAddress(var);
       if (address != nullptr)
         builder.CreateLifetimeEnd(address);
     }
@@ -205,7 +205,7 @@ void IRGenerator::generateProcDeclAndCall(const Function *proc, const std::vecto
 }
 
 void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
-                                         const std::vector<llvm::Value *> &args) const {
+                                         const std::vector<llvm::Value *> &args) {
   // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
   llvm::Value *structAddr;
   if (entry->isField()) {
@@ -214,11 +214,11 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
     assert(thisVar != nullptr);
     assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
     llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
-    llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
+    llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), getAddress(thisVar));
     // Add field offset
     structAddr = insertStructGEP(thisType, thisPtr, entry->orderIndex);
   } else {
-    structAddr = entry->getAddress();
+    structAddr = getAddress(entry);
     // For optional parameter initializers we need this exception
     if (!structAddr)
       return;
@@ -330,7 +330,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
     // Allocate space for the parameter
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
-    thisEntry->updateAddress(thisAddress);
+    updateAddress(thisEntry, thisAddress);
     // Store the value at the new address
     insertStore(fct->arg_begin(), thisAddress);
     // Generate debug info
@@ -429,7 +429,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     // Allocate space for the parameter
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
-    thisEntry->updateAddress(thisAddress);
+    updateAddress(thisEntry, thisAddress);
     // Store the value at the new address
     insertStore(fct->arg_begin(), thisAddress);
     // Generate debug info
@@ -462,7 +462,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   // Get struct address
   const SymbolTableEntry *thisEntry = bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
   const QualType structSymbolType = thisEntry->getQualType().getBase();
@@ -540,7 +540,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   // Get struct address
   const SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
@@ -628,7 +628,7 @@ void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction)
   // Get struct address
   const SymbolTableEntry *thisEntry = moveCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
@@ -697,7 +697,7 @@ void IRGenerator::generateDefaultMoveCtor(const Function *moveCtorFunction) {
   generateImplicitProcedure(generateBody, moveCtorFunction);
 }
 
-void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
+void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   // Retrieve struct scope
   Scope *structScope = dtorFunction->bodyScope->parent;
   assert(structScope != nullptr);
@@ -705,7 +705,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) const {
   // Get struct address
   const SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
   assert(thisEntry != nullptr);
-  llvm::Value *thisPtrPtr = thisEntry->getAddress();
+  llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
   llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);

@@ -121,7 +121,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   return spiceStruct->vTableData.vtable = global;
 }
 
-void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) const {
+void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   // Retrieve virtual method count
   assert(spiceStruct->scope);
   const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
@@ -138,8 +138,9 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) const
   arrayValues.push_back(llvm::Constant::getNullValue(ptrTy)); // nullptr as safety guard
   arrayValues.push_back(spiceStruct->vTableData.typeInfo);    // TypeInfo to identify the type for the VTable
   for (Function *virtualMethod : virtualMethods) {
-    assert(spiceStruct->scope->type == ScopeType::INTERFACE || virtualMethod->llvmFunction != nullptr);
-    arrayValues.push_back(virtualMethod->llvmFunction ? virtualMethod->llvmFunction : llvm::Constant::getNullValue(ptrTy));
+    llvm::Function *llvmFunc = getLLVMFunction(virtualMethod);
+    assert(spiceStruct->scope->type == ScopeType::INTERFACE || llvmFunc != nullptr);
+    arrayValues.push_back(llvmFunc ? llvmFunc : llvm::Constant::getNullValue(ptrTy));
   }
 
   // Generate VTable struct

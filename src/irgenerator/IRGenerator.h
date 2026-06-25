@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <stack>
+#include <unordered_map>
+
 #include <CompilerPass.h>
 #include <ast/ASTNodes.h>
 #include <ast/ParallelizableASTVisitor.h>
@@ -17,6 +20,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class ExprNode;
+class Function;
 
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
@@ -134,6 +138,14 @@ public:
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions);
+  // Address management for symbol table entries
+  [[nodiscard]] llvm::Value *getAddress(const SymbolTableEntry *entry);
+  void updateAddress(SymbolTableEntry *entry, llvm::Value *address);
+  void pushAddress(SymbolTableEntry *entry, llvm::Value *address);
+  void popAddress(SymbolTableEntry *entry);
+  // LLVM function management for Spice functions
+  [[nodiscard]] llvm::Function *getLLVMFunction(const Function *spiceFunc);
+  void setLLVMFunction(const Function *spiceFunc, llvm::Function *llvmFunction);
 
   // Builtin function handlers
   std::any visitBuiltinCall(const FctCallNode *node);
@@ -186,13 +198,13 @@ private:
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
-  void generateScopeCleanup(const StmtLstNode *node) const;
+  void generateScopeCleanup(const StmtLstNode *node);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   void generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const;
   void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
-                              const std::vector<llvm::Value *> &args) const;
+                              const std::vector<llvm::Value *> &args);
   void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
@@ -203,7 +215,7 @@ private:
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
   void generateMoveCtorBodyPreamble(const Function *moveCtorFunction);
   void generateDefaultMoveCtor(const Function *moveCtorFunction);
-  void generateDtorBodyPreamble(const Function *dtorFunction) const;
+  void generateDtorBodyPreamble(const Function *dtorFunction);
   void generateDefaultDtor(const Function *dtorFunction);
   void generateTestMain();
 
@@ -215,7 +227,7 @@ private:
   llvm::Constant *generateTypeInfoName(StructBase *spiceStruct) const;
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
-  void generateVTableInitializer(const StructBase *spiceStruct) const;
+  void generateVTableInitializer(const StructBase *spiceStruct);
 
   // Generate code instrumentation
   void enableFunctionInstrumentation(llvm::Function *function) const;
@@ -239,6 +251,9 @@ private:
   bool blockAlreadyTerminated = false;
   bool isInCtorBody = false;
   std::vector<DeferredLogic> deferredVTableInitializations;
+  // IR-side state: separate from semantic objects to keep the type-checker model clean
+  std::unordered_map<const SymbolTableEntry *, std::stack<llvm::Value *>> addressMap;
+  std::unordered_map<const Function *, llvm::Function *> llvmFunctions;
 };
 
 } // namespace spice::compiler

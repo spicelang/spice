@@ -72,7 +72,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
     if (result.ptr) { // The operation allocated more memory
       if (lhs.entry)
-        lhs.entry->updateAddress(result.ptr);
+        updateAddress(lhs.entry, result.ptr);
     } else if (result.value) { // The operation only updated the value
       // Store the result
       lhs.value = result.value;
@@ -178,7 +178,7 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
         resultPtr = insertAlloca(anonymousSymbol->getQualType());
         insertStore(resultValue, resultPtr);
       }
-      anonymousSymbol->updateAddress(resultPtr);
+      updateAddress(anonymousSymbol, resultPtr);
     }
   }
 
@@ -877,7 +877,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   if (entry->global && accessScope->isImportedBy(rootScope)) {
     // External global variables need to be declared and allocated in the current module
     llvm::Value *varAddress = module->getOrInsertGlobal(entry->name, varType);
-    entry->updateAddress(varAddress);
+    updateAddress(entry, varAddress);
   }
 
   // Check if enum item
@@ -887,7 +887,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
     return LLVMExprResult{.constant = constantItemValue, .entry = entry};
   }
 
-  llvm::Value *address = entry->getAddress();
+  llvm::Value *address = getAddress(entry);
   assert(address != nullptr);
 
   // If this is a function/procedure reference, return it as value. The fat pointer must point at a thunk that

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <stack>
 #include <string>
 #include <utility>
 
@@ -12,10 +11,6 @@
 #include <nlohmann/json.hpp>
 
 // Forward declarations
-namespace llvm {
-class Value;
-} // namespace llvm
-
 namespace spice::compiler {
 
 // Forward declarations
@@ -37,10 +32,6 @@ public:
   void updateType(const QualType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, const ASTNode *node);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] llvm::Value *getAddress() const;
-  void updateAddress(llvm::Value *address);
-  void pushAddress(llvm::Value *address);
-  void popAddress();
   [[nodiscard]] bool isField() const;
   [[nodiscard]] const Lifecycle &getLifecycle() const { return lifecycle; }
   [[nodiscard]] bool isInitialized() const { return lifecycle.isInitialized(); }
@@ -66,7 +57,6 @@ public:
 private:
   // Members
   QualType qualType;
-  std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;
 };
 

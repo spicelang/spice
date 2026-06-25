@@ -1762,7 +1762,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     if (anonymousSymbol != nullptr) {
       resultPtr = irGenerator->insertAlloca(result->getType());
       irGenerator->insertStore(result, resultPtr);
-      anonymousSymbol->updateAddress(resultPtr);
+      irGenerator->updateAddress(anonymousSymbol, resultPtr);
     }
   }
 
