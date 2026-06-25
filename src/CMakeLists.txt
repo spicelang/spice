@@ -139,6 +139,14 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 target_compile_definitions(spicecore PRIVATE ${LLVM_DEFINITIONS_LIST})
 # Enable pedantic warnings
 target_compile_options(spicecore PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
+# Scope volatile build-info defines to the two TUs that actually use them, so ccache isn't busted on every commit.
+set(_SPICE_BUILD_INFO_DEFS
+    -DSPICE_VERSION="${SPICE_VERSION}"
+    -DSPICE_GIT_HASH="${SPICE_GIT_HASH}"
+    -DSPICE_BUILT_BY="${SPICE_BUILT_BY}"
+)
+set_property(SOURCE util/CommonUtil.cpp APPEND PROPERTY COMPILE_OPTIONS ${_SPICE_BUILD_INFO_DEFS})
+set_property(SOURCE irgenerator/IRGenerator.cpp APPEND PROPERTY COMPILE_OPTIONS ${_SPICE_BUILD_INFO_DEFS})
 # RawStringOStream derives from the polymorphic LLVM type llvm::raw_pwrite_stream. Compiling it with
 # RTTI emits a type_info that references "typeinfo for llvm::raw_pwrite_stream", which does not exist
 # when LLVM is built without RTTI (the default). The class is never used with dynamic_cast/typeid, so

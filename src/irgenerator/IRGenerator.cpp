@@ -14,6 +14,8 @@
 
 namespace spice::compiler {
 
+const std::string PRODUCER_STRING = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
+
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),
       builder(sourceFile->builder), module(sourceFile->llvmModule.get()), conversionManager(sourceFile, this),
