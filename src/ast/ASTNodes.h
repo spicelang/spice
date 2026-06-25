@@ -2005,7 +2005,7 @@ public:
     QualTypeList templateTypes;
     QualType thisType = QualType(TY_DYN); // Is filled if method or ctor call
     ArgList args;
-    Function *callee = nullptr; // Stays nullptr if function pointer call
+    const Function *callee = nullptr; // Stays nullptr if function pointer call
     Scope *calleeParentScope = nullptr;
     CompileTimeValue compileTimeValue;
     bool compileTimeValueSet = false;

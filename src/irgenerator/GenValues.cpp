@@ -64,7 +64,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   const FctCallNode::FctCallData &data = node->data.at(manIdx);
 
-  Function *spiceFunc = data.callee;
+  const Function *spiceFunc = data.callee;
   assert(data.isFctPtrCall() || spiceFunc != nullptr); // If not a function pointer call, we must have a function
   std::string mangledName;
   if (!data.isFctPtrCall())

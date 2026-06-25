@@ -94,7 +94,7 @@ public:
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
   void ensureSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
-  [[nodiscard]] std::vector<Function *> getVirtualMethods();
+  [[nodiscard]] std::vector<const Function *> getVirtualMethods();
   [[nodiscard]] std::vector<const Struct *> getAllStructManifestationsInDeclarationOrder() const;
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] bool isInCaseBranch() const;

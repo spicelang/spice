@@ -276,11 +276,11 @@ size_t Scope::getFieldCount() const {
  *
  * @return List of virtual method pointers
  */
-std::vector<Function *> Scope::getVirtualMethods() {
+std::vector<const Function *> Scope::getVirtualMethods() {
   assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
 
   // Collect all virtual methods
-  std::vector<Function *> methods;
+  std::vector<const Function *> methods;
   for (auto &[fctId, manifestationList] : functions) {
     assert(!manifestationList.empty());
     for (auto &[mangledName, function] : manifestationList)

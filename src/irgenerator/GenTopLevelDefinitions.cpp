@@ -141,7 +141,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (Function *manifestation : node->manifestations) {
+  for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
@@ -300,7 +300,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (Function *manifestation : node->manifestations) {
+  for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
