@@ -94,7 +94,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Update the symbol table entry
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
-  resultEntry->updateAddress(resultAddress);
+  updateAddress(resultEntry, resultAddress);
   // Generate debug info
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress);
   // Store the default result value
@@ -109,7 +109,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     // Allocate space for it
     llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
     // Update the symbol table entry
-    paramSymbol->updateAddress(paramAddress);
+    updateAddress(paramSymbol, paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
@@ -121,7 +121,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = insertLoad(fct->getReturnType(), resultEntry->getAddress());
+    llvm::Value *result = insertLoad(fct->getReturnType(), getAddress(resultEntry));
     builder.CreateRet(result);
   }
 
@@ -210,8 +210,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
-    node->entry->updateAddress(func);
-    manifestation->llvmFunction = func;
+    updateAddress(node->entry, func);
+    setLLVMFunction(manifestation, func);
     assert(func->empty());
 
     // Set attributes to function
@@ -240,7 +240,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
     SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
-    resultEntry->updateAddress(resultAddr);
+    updateAddress(resultEntry, resultAddr);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
 
@@ -253,7 +253,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
-      paramSymbol->updateAddress(paramAddress);
+      updateAddress(paramSymbol, paramAddress);
       // Set source location
       diGenerator.setSourceLocation(paramSymbol->declNode);
       // Store the value at the new address
@@ -274,7 +274,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
-      llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
+      llvm::Value *result = insertLoad(returnType, getAddress(resultEntry));
       builder.CreateRet(result);
     }
 
@@ -364,8 +364,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
-    node->entry->updateAddress(proc);
-    manifestation->llvmFunction = proc;
+    updateAddress(node->entry, proc);
+    setLLVMFunction(manifestation, proc);
     assert(proc->empty());
 
     // Set attributes to procedure
@@ -399,7 +399,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
-      paramSymbol->updateAddress(paramAddress);
+      updateAddress(paramSymbol, paramAddress);
       // Set source location
       diGenerator.setSourceLocation(paramSymbol->declNode);
       // Store the value at the new address
@@ -625,7 +625,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
     var->setInitializer(constantValue);
   }
 
-  node->entry->updateAddress(varAddress);
+  updateAddress(node->entry, varAddress);
 
   // Add debug info
   diGenerator.generateGlobalVarDebugInfo(var, node->entry);

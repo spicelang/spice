@@ -85,7 +85,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     Scope *structScope = baseType.getBodyScope();
 
     // Get address of the referenced variable / struct instance
-    thisPtr = firstFragEntry->getAddress();
+    thisPtr = getAddress(firstFragEntry);
 
     // Auto de-reference 'this' pointer
     QualType firstFragmentType = firstFragEntry->getQualType();
@@ -130,7 +130,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   // site knowing statically whether it captures (e.g. when it was retrieved from the std Lambda wrapper).
   llvm::Value *fctPtr = nullptr;
   if (data.isFctPtrCall()) {
-    llvm::Value *fatPtr = firstFragEntry->getAddress();
+    llvm::Value *fatPtr = getAddress(firstFragEntry);
     // Load fctPtr
     fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
     // Load the captures pointer and add it to the argument list
@@ -178,7 +178,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
           // Attach address of copy to anonymous symbol
           SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode, SIZE_MAX);
-          anonymousSymbol->updateAddress(valueCopyPtr);
+          updateAddress(anonymousSymbol, valueCopyPtr);
 
           argValues.push_back(newValue);
         } else {
@@ -251,7 +251,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(firstFragEntry != nullptr);
     QualType firstFragType = firstFragEntry->getQualType();
     if (!fctPtr)
-      fctPtr = firstFragEntry->getAddress();
+      fctPtr = getAddress(firstFragEntry);
     autoDeReferencePtr(fctPtr, firstFragType);
     llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
 
@@ -279,11 +279,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (anonymousSymbol != nullptr) {
       if (data.isCtorCall()) {
-        anonymousSymbol->updateAddress(thisPtr);
+        updateAddress(anonymousSymbol, thisPtr);
       } else {
         resultPtr = insertAlloca(callInst->getType());
         insertStore(callInst, resultPtr);
-        anonymousSymbol->updateAddress(resultPtr);
+        updateAddress(anonymousSymbol, resultPtr);
       }
     }
   }
@@ -475,7 +475,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     // Attach address to anonymous symbol to keep track of de-allocation
     SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (returnSymbol != nullptr)
-      returnSymbol->updateAddress(structAddr);
+      updateAddress(returnSymbol, structAddr);
 
     return LLVMExprResult{.ptr = structAddr};
   }
@@ -561,7 +561,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-  resultEntry->updateAddress(resultAddr);
+  updateAddress(resultEntry, resultAddr);
   // Generate debug info
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
 
@@ -579,7 +579,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
-      paramSymbol->updateAddress(paramAddress);
+      updateAddress(paramSymbol, paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
@@ -605,14 +605,14 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
+    llvm::Value *result = insertLoad(returnType, getAddress(resultEntry));
     builder.CreateRet(result);
   }
 
   // Pop capture addresses
   if (hasCaptures)
     for (const auto &capture : captures | std::views::values)
-      capture.capturedSymbol->popAddress();
+      popAddress(capture.capturedSymbol);
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -723,7 +723,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
-      paramSymbol->updateAddress(paramAddress);
+      updateAddress(paramSymbol, paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
@@ -754,7 +754,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Pop capture addresses
   if (hasCaptures)
     for (const auto &capture : captures | std::views::values)
-      capture.capturedSymbol->popAddress();
+      popAddress(capture.capturedSymbol);
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -869,7 +869,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
-      paramSymbol->updateAddress(paramAddress);
+      updateAddress(paramSymbol, paramAddress);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
     // Generate debug info
@@ -897,7 +897,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Pop capture addresses
   if (hasCaptures)
     for (const auto &val : captures | std::views::values)
-      val.capturedSymbol->popAddress();
+      popAddress(val.capturedSymbol);
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -994,9 +994,9 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       const Capture &capture = captures.begin()->second;
       if (capture.getMode() == BY_VALUE) {
         llvm::Type *varType = capture.capturedSymbol->getQualType().toLLVMType(sourceFile);
-        capturesPtr = insertLoad(varType, capture.capturedSymbol->getAddress());
+        capturesPtr = insertLoad(varType, getAddress(capture.capturedSymbol));
       } else {
-        capturesPtr = capture.capturedSymbol->getAddress();
+        capturesPtr = getAddress(capture.capturedSymbol);
       }
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
@@ -1005,7 +1005,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       for (const auto &capture : bodyScope->symbolTable.captures | std::views::values) {
         const SymbolTableEntry *capturedEntry = capture.capturedSymbol;
         // Get address or value of captured variable, depending on the capturing mode
-        llvm::Value *capturedValue = capturedEntry->getAddress();
+        llvm::Value *capturedValue = getAddress(capturedEntry);
         assert(capturedValue != nullptr);
         if (capture.getMode() == BY_VALUE) {
           llvm::Type *captureType = capturedEntry->getQualType().toLLVMType(sourceFile);
@@ -1059,7 +1059,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
   if (captures.size() == 1 && (firstCapture.capturedSymbol->getQualType().isPtr() || firstCapture.getMode() == BY_REFERENCE)) {
     // Interpret capturesPtr as ptr to the first and only capture
     llvm::Value *captureAddress = val;
-    firstCapture.capturedSymbol->pushAddress(captureAddress);
+    pushAddress(firstCapture.capturedSymbol, captureAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), captureAddress);
   } else {
@@ -1070,7 +1070,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
     for (const auto &[name, capture] : captures) {
       const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
       llvm::Value *captureAddress = insertStructGEP(structType, capturesPtr, captureIdx, valueName);
-      capture.capturedSymbol->pushAddress(captureAddress);
+      pushAddress(capture.capturedSymbol, captureAddress);
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
       captureIdx++;

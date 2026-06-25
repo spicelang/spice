@@ -52,48 +52,6 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode
 const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 /**
- * Retrieve the address of the assigned value
- *
- * @return Address of the value in memory
- */
-llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? nullptr : memAddress.top(); }
-
-/**
- * Update the address of a symbol. This is used to save the allocated address where the symbol lives.
- *
- * @param address Address of the symbol in memory
- */
-void SymbolTableEntry::updateAddress(llvm::Value *address) {
-  assert(address != nullptr);
-  assert(address->getType()->isPointerTy());
-  // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-  assert((scope->type != ScopeType::STRUCT && scope->type != ScopeType::INTERFACE) ||
-         qualType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  if (memAddress.empty())
-    memAddress.push(address);
-  else
-    memAddress.top() = address;
-}
-
-/**
- * Push a new address to the stack
- *
- * @param address Address to push
- */
-void SymbolTableEntry::pushAddress(llvm::Value *address) {
-  assert(address != nullptr);
-  memAddress.push(address);
-}
-
-/**
- * Remove the last address from the stack
- */
-void SymbolTableEntry::popAddress() {
-  assert(!memAddress.empty());
-  memAddress.pop();
-}
-
-/**
  * Check if this symbol is a struct field
  *
  * @return Struct field or not

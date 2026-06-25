@@ -116,7 +116,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
     // If an anonymous symbol exists, set its address
     if (SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode))
-      returnSymbol->updateAddress(iteratorPtr);
+      updateAddress(returnSymbol, iteratorPtr);
   } else { // The iteratorAssignExpr is of type Iterator
     iteratorPtr = resolveAddress(iteratorAssignNode);
   }
@@ -135,7 +135,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     visit(idxDeclNode);
     // Get address of idx variable
     idxEntry = idxDeclNode->entries.at(manIdx);
-    idxAddress = idxEntry->getAddress();
+    idxAddress = getAddress(idxEntry);
     assert(idxAddress != nullptr);
   }
 
@@ -144,7 +144,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   visit(itemDeclNode);
   // Get address of item variable
   SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
-  llvm::Value *itemAddress = itemEntry->getAddress();
+  llvm::Value *itemAddress = getAddress(itemEntry);
   assert(itemAddress != nullptr);
 
   // Create jump from original to head block

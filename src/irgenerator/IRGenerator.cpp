@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
+#include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 
@@ -438,7 +439,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 
       // Store lhs pointer to rhs
       llvm::Value *refAddress = insertAlloca(builder.getPtrTy());
-      lhsEntry->updateAddress(refAddress);
+      updateAddress(lhsEntry, refAddress);
       insertStore(rhsAddress, refAddress);
 
       return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
@@ -468,7 +469,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     assert(lhsEntry != nullptr);
     // Directly set the address to the lhs entry (temp stealing)
     llvm::Value *rhsAddress = resolveAddress(rhs);
-    lhsEntry->updateAddress(rhsAddress);
+    updateAddress(lhsEntry, rhsAddress);
     rhs.entry = lhsEntry;
     return rhs;
   }
@@ -477,7 +478,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
     lhsAddress = insertAlloca(lhsEntry->getQualType());
-    lhsEntry->updateAddress(lhsAddress);
+    updateAddress(lhsEntry, lhsAddress);
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
@@ -672,6 +673,44 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
   // MachO does not support comdat annotations
   if (isPublic && cliOptions.targetTriple.getObjectFormat() != llvm::Triple::MachO)
     global->setComdat(module->getOrInsertComdat(comdatName));
+}
+
+llvm::Value *IRGenerator::getAddress(const SymbolTableEntry *entry) {
+  const auto it = addressMap.find(entry);
+  if (it == addressMap.end() || it->second.empty())
+    return nullptr;
+  return it->second.top();
+}
+
+void IRGenerator::updateAddress(SymbolTableEntry *entry, llvm::Value *address) {
+  assert(address != nullptr);
+  assert(address->getType()->isPointerTy());
+  auto &stack = addressMap[entry];
+  if (stack.empty())
+    stack.push(address);
+  else
+    stack.top() = address;
+}
+
+void IRGenerator::pushAddress(SymbolTableEntry *entry, llvm::Value *address) {
+  assert(address != nullptr);
+  addressMap[entry].push(address);
+}
+
+void IRGenerator::popAddress(SymbolTableEntry *entry) {
+  auto it = addressMap.find(entry);
+  assert(it != addressMap.end() && !it->second.empty());
+  it->second.pop();
+}
+
+llvm::Function *IRGenerator::getLLVMFunction(const Function *spiceFunc) {
+  const auto it = llvmFunctions.find(spiceFunc);
+  return it != llvmFunctions.end() ? it->second : nullptr;
+}
+
+void IRGenerator::setLLVMFunction(const Function *spiceFunc, llvm::Function *llvmFunction) {
+  assert(llvmFunction != nullptr);
+  llvmFunctions[spiceFunc] = llvmFunction;
 }
 
 std::string IRGenerator::getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions) {

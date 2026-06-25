@@ -9,8 +9,6 @@
 #include <symboltablebuilder/TypeChain.h>
 #include <util/GlobalDefinitions.h>
 
-#include <llvm/IR/Function.h>
-
 namespace spice::compiler {
 
 // Forward declarations
@@ -87,7 +85,6 @@ public:
   bool implicitDefault = false;
   bool isVirtual = false;
   bool isNewlyInserted = false;
-  llvm::Function *llvmFunction = nullptr;
   size_t vtableIndex = 0;
 };
 

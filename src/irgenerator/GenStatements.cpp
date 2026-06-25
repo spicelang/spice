@@ -50,7 +50,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     if (node->calledCopyCtor) {
       // Allocate memory
       varAddress = insertAlloca(varTy);
-      varEntry->updateAddress(varAddress);
+      updateAddress(varEntry, varAddress);
       // Call copy ctor
       llvm::Value *rhsAddress = resolveAddress(node->assignExpr);
       assert(rhsAddress != nullptr);
@@ -59,13 +59,13 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       // Assign rhs to lhs
       [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr, node, true);
       assert(assignResult.entry == varEntry);
-      varAddress = varEntry->getAddress();
-      varEntry->updateAddress(varAddress);
+      varAddress = getAddress(varEntry);
+      updateAddress(varEntry, varAddress);
     }
   } else { // Default value
     // Allocate memory
     varAddress = insertAlloca(varTy);
-    varEntry->updateAddress(varAddress);
+    updateAddress(varEntry, varAddress);
 
     if (node->calledInitCtor) {
       // Call no-args constructor
@@ -130,7 +130,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
       llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);
-      llvm::Value *returnValueAddr = resultEntry->getAddress();
+      llvm::Value *returnValueAddr = getAddress(resultEntry);
       returnValue = insertLoad(resultSTy, returnValueAddr);
     }
   }
