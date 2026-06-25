@@ -30,7 +30,7 @@ public type IRGenerator struct {
     //Vector<DeferredLogic> deferredVTableInitializations
     // IR-side state: separate from semantic objects to keep the type-checker model clean
     UnorderedMap<SymbolTableEntry*, Stack<llvm::Value*>> addressMap
-    UnorderedMap<Function*, llvm::Function*> llvmFunctions
+    UnorderedMap<const Function*, llvm::Function*> llvmFunctions
 }
 
 public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
@@ -153,7 +153,7 @@ public p IRGenerator.popAddress(SymbolTableEntry* entry) {
  * @param spiceFunc Spice function
  * @return LLVM function, or nil if not yet generated
  */
-public f<llvm::Function*> IRGenerator.getLLVMFunction(Function* spiceFunc) {
+public f<llvm::Function*> IRGenerator.getLLVMFunction(const Function* spiceFunc) {
     return this.llvmFunctions.contains(spiceFunc) ? this.llvmFunctions.get(spiceFunc) : nil<llvm::Function*>;
 }
 
@@ -163,7 +163,7 @@ public f<llvm::Function*> IRGenerator.getLLVMFunction(Function* spiceFunc) {
  * @param spiceFunc Spice function
  * @param llvmFunction Generated LLVM function
  */
-public p IRGenerator.setLLVMFunction(Function* spiceFunc, llvm::Function* llvmFunction) {
+public p IRGenerator.setLLVMFunction(const Function* spiceFunc, llvm::Function* llvmFunction) {
     assert llvmFunction != nil<llvm::Function*>;
     this.llvmFunctions.upsert(spiceFunc, llvmFunction);
 }
