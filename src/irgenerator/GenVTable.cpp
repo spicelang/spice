@@ -93,7 +93,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
 
 llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   // Retrieve virtual method count
-  const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
+  const std::vector<const Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
   const size_t virtualMethodCount = virtualMethods.size();
   const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
 
@@ -124,7 +124,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
 void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   // Retrieve virtual method count
   assert(spiceStruct->scope);
-  const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
+  const std::vector<const Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
   const size_t virtualMethodCount = virtualMethods.size();
   const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
 
@@ -137,7 +137,7 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   std::vector<llvm::Constant *> arrayValues;
   arrayValues.push_back(llvm::Constant::getNullValue(ptrTy)); // nullptr as safety guard
   arrayValues.push_back(spiceStruct->vTableData.typeInfo);    // TypeInfo to identify the type for the VTable
-  for (Function *virtualMethod : virtualMethods) {
+  for (const Function *virtualMethod : virtualMethods) {
     llvm::Function *llvmFunc = getLLVMFunction(virtualMethod);
     assert(spiceStruct->scope->type == ScopeType::INTERFACE || llvmFunc != nullptr);
     arrayValues.push_back(llvmFunc ? llvmFunc : llvm::Constant::getNullValue(ptrTy));
