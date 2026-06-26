@@ -64,7 +64,7 @@ std::any PostTypeCheckingVerifier::visitDeclStmt(DeclStmtNode *node) {
   if (!node->isForEachItem) {
     // For regular declarations the per-manifestation entries vector must be fully populated
     assert(!node->entries.empty());
-    for (const SymbolTableEntry *entry : node->entries)
+    for ([[maybe_unused]] const SymbolTableEntry *entry : node->entries)
       assert(entry != nullptr);
   }
   return visitChildren(node);
@@ -72,7 +72,7 @@ std::any PostTypeCheckingVerifier::visitDeclStmt(DeclStmtNode *node) {
 
 std::any PostTypeCheckingVerifier::visitFctCall(FctCallNode *node) {
   assert(!node->data.empty());
-  for (const FctCallNode::FctCallData &d : node->data) {
+  for ([[maybe_unused]] const FctCallNode::FctCallData &d : node->data) {
     // Function pointer calls do not have a statically-resolved callee
     if (!d.isFctPtrCall())
       assert(d.callee != nullptr);
@@ -85,7 +85,7 @@ std::any PostTypeCheckingVerifier::visitAtomicExpr(AtomicExprNode *node) {
   // data is only populated for identifier accesses (not for constants / nested exprs)
   if (!node->identifierFragments.empty()) {
     assert(!node->data.empty());
-    for (const AtomicExprNode::VarAccessData &d : node->data)
+    for ([[maybe_unused]] const AtomicExprNode::VarAccessData &d : node->data)
       assert(d.entry != nullptr);
   }
   return visitChildren(node);
@@ -93,7 +93,7 @@ std::any PostTypeCheckingVerifier::visitAtomicExpr(AtomicExprNode *node) {
 
 std::any PostTypeCheckingVerifier::visitStructInstantiation(StructInstantiationNode *node) {
   assert(!node->instantiatedStructs.empty());
-  for (const Struct *s : node->instantiatedStructs)
+  for ([[maybe_unused]] const Struct *s : node->instantiatedStructs)
     assert(s != nullptr);
   return visitChildren(node);
 }
