@@ -353,12 +353,12 @@ jobs:
         run: |
           brew update
           brew install ccache graphviz
-          mkdir -p ~/.cache/ccache
+          mkdir -p ~/Library/Caches/ccache
 
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:
-          path: ~/.cache/ccache
+          path: ~/Library/Caches/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -417,7 +417,7 @@ jobs:
         uses: actions/cache/save@v6
         if: always()
         with:
-          path: ~/.cache/ccache
+          path: ~/Library/Caches/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
   build-macos-aarch64:
@@ -444,12 +444,12 @@ jobs:
         run: |
           brew update
           brew install ccache graphviz
-          mkdir -p ~/.cache/ccache
+          mkdir -p ~/Library/Caches/ccache
 
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:
-          path: ~/.cache/ccache
+          path: ~/Library/Caches/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
@@ -508,5 +508,5 @@ jobs:
         uses: actions/cache/save@v6
         if: always()
         with:
-          path: ~/.cache/ccache
+          path: ~/Library/Caches/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
