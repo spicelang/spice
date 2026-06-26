@@ -29,7 +29,7 @@ public type IRGenerator struct {
     bool blockAlreadyTerminated = false
     //Vector<DeferredLogic> deferredVTableInitializations
     // IR-side state: separate from semantic objects to keep the type-checker model clean
-    UnorderedMap<SymbolTableEntry*, Stack<llvm::Value*>> addressMap
+    UnorderedMap<const SymbolTableEntry*, Stack<llvm::Value*>> addressMap
     UnorderedMap<const Function*, llvm::Function*> llvmFunctions
 }
 
@@ -87,7 +87,7 @@ public p IRGenerator.insertStore(llvm::Value value, llvm::Value ptr, bool isVola
  * @param entry Symbol table entry
  * @return IR address, or nil if not yet allocated
  */
-public f<llvm::Value*> IRGenerator.getAddress(SymbolTableEntry* entry) {
+public f<llvm::Value*> IRGenerator.getAddress(const SymbolTableEntry* entry) {
     if !this.addressMap.contains(entry) { return nil<llvm::Value*>; }
     Stack<llvm::Value*>& stack = this.addressMap.get(entry);
     return stack.isEmpty() ? nil<llvm::Value*> : stack.top();
@@ -101,7 +101,7 @@ public f<llvm::Value*> IRGenerator.getAddress(SymbolTableEntry* entry) {
  * @param entry Symbol table entry
  * @param address IR address to record
  */
-public p IRGenerator.updateAddress(SymbolTableEntry* entry, llvm::Value* address) {
+public p IRGenerator.updateAddress(const SymbolTableEntry* entry, llvm::Value* address) {
     assert address != nil<llvm::Value*>;
     if !this.addressMap.contains(entry) {
         Stack<llvm::Value*> stack;
@@ -125,7 +125,7 @@ public p IRGenerator.updateAddress(SymbolTableEntry* entry, llvm::Value* address
  * @param entry Symbol table entry
  * @param address IR address to push
  */
-public p IRGenerator.pushAddress(SymbolTableEntry* entry, llvm::Value* address) {
+public p IRGenerator.pushAddress(const SymbolTableEntry* entry, llvm::Value* address) {
     assert address != nil<llvm::Value*>;
     if !this.addressMap.contains(entry) {
         Stack<llvm::Value*> stack;
@@ -140,7 +140,7 @@ public p IRGenerator.pushAddress(SymbolTableEntry* entry, llvm::Value* address) 
  *
  * @param entry Symbol table entry
  */
-public p IRGenerator.popAddress(SymbolTableEntry* entry) {
+public p IRGenerator.popAddress(const SymbolTableEntry* entry) {
     assert this.addressMap.contains(entry);
     Stack<llvm::Value*>& stack = this.addressMap.get(entry);
     assert !stack.isEmpty();
