@@ -2,7 +2,9 @@
 
 #include "PostTypeCheckingVerifier.h"
 
+#include <algorithm>
 #include <cassert>
+#include <ranges>
 
 #include <ast/ASTNodes.h>
 
@@ -64,20 +66,17 @@ std::any PostTypeCheckingVerifier::visitDeclStmt(DeclStmtNode *node) {
   if (!node->isForEachItem) {
     // For regular declarations the per-manifestation entries vector must be fully populated
     assert(!node->entries.empty());
-    for ([[maybe_unused]] const SymbolTableEntry *entry : node->entries)
-      assert(entry != nullptr);
+    assert(std::ranges::all_of(node->entries, [](const SymbolTableEntry *e) { return e != nullptr; }));
   }
   return visitChildren(node);
 }
 
 std::any PostTypeCheckingVerifier::visitFctCall(FctCallNode *node) {
   assert(!node->data.empty());
-  for ([[maybe_unused]] const FctCallNode::FctCallData &d : node->data) {
+  assert(std::ranges::all_of(node->data, [](const FctCallNode::FctCallData &d) {
     // Function pointer calls do not have a statically-resolved callee
-    if (!d.isFctPtrCall())
-      assert(d.callee != nullptr);
-    assert(d.calleeParentScope != nullptr);
-  }
+    return (d.isFctPtrCall() || d.callee != nullptr) && d.calleeParentScope != nullptr;
+  }));
   return visitChildren(node);
 }
 
@@ -85,16 +84,14 @@ std::any PostTypeCheckingVerifier::visitAtomicExpr(AtomicExprNode *node) {
   // data is only populated for identifier accesses (not for constants / nested exprs)
   if (!node->identifierFragments.empty()) {
     assert(!node->data.empty());
-    for ([[maybe_unused]] const AtomicExprNode::VarAccessData &d : node->data)
-      assert(d.entry != nullptr);
+    assert(std::ranges::all_of(node->data, [](const AtomicExprNode::VarAccessData &d) { return d.entry != nullptr; }));
   }
   return visitChildren(node);
 }
 
 std::any PostTypeCheckingVerifier::visitStructInstantiation(StructInstantiationNode *node) {
   assert(!node->instantiatedStructs.empty());
-  for ([[maybe_unused]] const Struct *s : node->instantiatedStructs)
-    assert(s != nullptr);
+  assert(std::ranges::all_of(node->instantiatedStructs, [](const Struct *s) { return s != nullptr; }));
   return visitChildren(node);
 }
 
