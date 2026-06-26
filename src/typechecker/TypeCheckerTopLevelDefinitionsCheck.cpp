@@ -65,8 +65,20 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Visit parameters
     // This happens once in the type checker prepare stage. This second time is only required if we have a generic function
-    if (node->hasParams)
+    if (node->hasParams) {
       visit(node->paramLst);
+      // Annotate function/procedure-typed params with lambda-capture info from the resolved manifestation type.
+      // This must happen in the TypeChecker so that the IRGenerator can treat SymbolTableEntry as immutable.
+      for (size_t i = 0; i < manifestation->paramList.size(); i++) {
+        const DeclStmtNode *param = node->paramLst->params.at(i);
+        const QualType paramType = manifestation->getParamTypes().at(i);
+        if (paramType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramType.hasLambdaCaptures()) {
+          SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+          assert(paramSymbol != nullptr);
+          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
+        }
+      }
+    }
 
     // Visit statements in new scope
     visit(node->body);
@@ -115,8 +127,20 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Visit parameters
     // This happens once in the type checker prepare stage. This second time is only required if we have a generic procedure
-    if (node->hasParams)
+    if (node->hasParams) {
       visit(node->paramLst);
+      // Annotate function/procedure-typed params with lambda-capture info from the resolved manifestation type.
+      // This must happen in the TypeChecker so that the IRGenerator can treat SymbolTableEntry as immutable.
+      for (size_t i = 0; i < manifestation->paramList.size(); i++) {
+        const DeclStmtNode *param = node->paramLst->params.at(i);
+        const QualType paramType = manifestation->getParamTypes().at(i);
+        if (paramType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramType.hasLambdaCaptures()) {
+          SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+          assert(paramSymbol != nullptr);
+          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
+        }
+      }
+    }
 
     // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required
     if (node->isCtor)
