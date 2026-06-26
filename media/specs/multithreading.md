@@ -6,149 +6,164 @@
 - [x] Add tests for the feature
 - [x] Support running those threads
 - [x] Add tests for the feature
-- [x] Support the `tid()` call
+- [x] Support retrieving the thread id (`Thread.getId()` / `getThreadId()`)
 - [x] Add tests for the feature
 - [x] Support thread joining
 - [x] Add tests for the feature
-- [x] Add arbitrary benchmark test (`generator/arbitrary/success-fibonacci-threaded` test case)
-- [ ] Add mutexes and `sync` qualifier
-- [ ] Add tests for the feature
+- [x] Add arbitrary benchmark test (`benchmark/success-fibonacci-threaded` test case)
+- [x] Add mutexes (`Mutex` and `LockGuard` in `std/os/mutex`)
+- [x] Add tests for the feature
+- [x] Add thread pools (`ThreadPool` in `std/os/thread-pool`)
+- [x] Add tests for the feature
 - [ ] Implement variable volatility
 - [ ] Add support for pipes (paused due to the work on generics)
 - [ ] Add `stash` and `pick` builtin
-- [ ] Add documentation
+- [x] Add documentation (`docs/docs/language/threads.md`)
 
 ## Syntax
 
-### Push work to a new anonymous thread
-This enables the programmer to execute portions of code in another thread that runs in parallel to the original one. The block
-immediately returns after launching the new thread and continues executing the code after the thread block.
+Multithreading in Spice is not a dedicated grammar construct. Instead, it is implemented as a lightweight std library
+on top of POSIX threads (pthreads): `std/os/thread` provides the `Thread` struct, `std/os/thread-pool` provides
+`ThreadPool`, and `std/os/mutex` provides `Mutex`/`LockGuard`. A thread routine is simply a procedure lambda
+(`p() [[async]] { ... }`); the `[[async]]` attribute marks the lambda as safe to hand off to another thread.
+
+### Spawning a thread
+This enables the programmer to execute a procedure in another thread that runs in parallel to the original one.
+Construct a `Thread` from a `p() [[async]]` lambda and call `run()` to start it. `run()` returns immediately; the
+calling thread continues executing the code after it.
 
 ```spice
-import "std/os/thread" as t;
+import "std/os/thread";
 
-// ...
-
-thread {
-    printf("Thread Id: %d", tid());
-    // Do something
+f<int> main() {
+    Thread thread = Thread(p() [[async]] {
+        // Do something
+    });
+    thread.run();
 }
 ```
 
-Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`).
-This is the id, which Spice assigned to the anonymous thread.
-
 ### Waiting for a thread to terminate
-To wait for another thread to end its execution, the builtin `join(byte*...)` can be used. The program will suspend the execution
-when calling `join` until the thread with the given tid has terminated.
+To wait for a thread to end its execution, call the `join()` method on the `Thread` instance. The calling thread
+suspends until the target thread has terminated.
 
 ```spice
-byte* t1;
-byte* t2;
-byte* t3;
+import "std/os/thread";
 
-t1 = thread {
-    join(t2, t3);
-    printf("Thread 1");
-};
+f<int> main() {
+    Thread thread1 = Thread(p() [[async]] {
+        // Do something
+    });
+    thread1.run();
+    Thread thread2 = Thread(p() [[async]] {
+        // Do something
+    });
+    thread2.run();
+    // Do something
+    thread1.join();
+    thread2.join();
+}
+```
 
-t2 = thread {
-    printf("Thread 2");
-};
+### Thread ids
+To get the id of a thread, call `getId()` on the `Thread` instance (only valid after `run()` was called). To get the
+id of the current thread from within the thread routine, call the free function `getThreadId()`.
 
-t3 = thread {
-    printf("Thread 3");
-};
+```spice
+import "std/os/thread";
+
+f<int> main() {
+    Thread thread1 = Thread(p() [[async]] {
+        printf("Running on thread: %d\n", getThreadId());
+    });
+    thread1.run();
+    printf("Thread 1 ID: %d\n", thread1.getId());
+    thread1.join();
+}
 ```
 
 ### Captures
-Variables from outside the thread, that are used within a thread are called `captures`. For being thread-safe, we need to know
-whether it is only a reading capture or it also needs write access. If we write to a capture from within a thread, we need to mark
-the allocation of the variable as `volatile`. This works, by marking a captured variable as `volatile` in the symbol table and
-generate the corresponding volatile allocation at the point of declaration.
+Variables from outside the thread routine that are used within it are called `captures`. Since `p() [[async]]` is a
+lambda, captured variables are taken over by the `Lambda<p()>` that backs the `Thread`, which takes ownership of any
+captured state so it remains valid even after the enclosing stack frame returns. Mutable shared state that is
+written from multiple threads must still be protected with a `Mutex` (see below); Spice does not yet track or
+enforce a `volatile`/read-vs-write distinction for captures automatically.
 
 ### Thread synchronization
-To really become thread-safe, Spice needs support for Mutexes and synchronized functions/procedures/methods.
-
-Synchronizing functions/procedures/methods could be achieved by providing the qualifier `sync`, which can be attached to them and
-mark them as synchronized. There could be an instance of `Mutex` for each occurrence of the `sync` keyword, that will track the
-accessing threads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
-
-A minimalistic implementation could look like this:
+Spice provides a `Mutex` type (`std/os/mutex`) for protecting shared state between threads. It is backed by a POSIX
+`pthread_mutex_t`, so `acquire()` blocks (the OS parks the thread) until the mutex becomes available, rather than
+busy-waiting.
 
 ```spice
-import "std/os/cpu" as cpu;
+import "std/os/mutex";
 
-type Mutex struct {
-	bool occupied
-}
-
-p Mutex.acquire() {
-	while this.occupied {
-		cpu.yield();
-	}
-	this.occupied = true;
-}
-
-p Mutex.abandon() {
-	this.occupied = false;
-}
-```
-
-### Communication between threads (requires generics)
-_Inspired by Goroutines and Channels from the Go programming language_
-
-For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a
-temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin
-function `stash(Pipe<any>, any)` and received by calling the `pick(Pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
-currently has no value present, the execution will pause until there is a new value for that pipe. 
-
-```spice
 f<int> main() {
-    Pipe<int> intPipe;
-    
-    byte* t1 = thread {
-        int stashValue = 12345;
-        stash(intPipe, stashValue);
-    };
-    
-    byte* t2 = thread {
-        int receivedValue = pick(intPipe);
-        printf("Received value: %d", receivedValue); // Output: 12345
-    };
+    Mutex m;
+
+    m.acquire();      // Block until we hold the mutex
+    // critical section: only one thread can be here at a time
+    m.release();      // Hand it off to the next waiter
 }
 ```
+
+`tryAcquire()` attempts to take the mutex without blocking and returns `bool`. For RAII-style locking, use
+`LockGuard`, which acquires the mutex in its constructor and releases it in its destructor, so the mutex is freed
+no matter how the scope is exited (early `return`, `panic`, etc.):
+
+```spice
+import "std/os/mutex";
+
+p criticalWork(Mutex& m) {
+    LockGuard _ = LockGuard(m);
+    // critical section
+}
+```
+
+A `Mutex` owns its underlying pthread handle, so it must be shared by reference (`Mutex&`) across threads rather than
+by value, typically by placing it inside a struct whose pointer/reference the thread routine captures.
 
 ### Thread pools
-To support thread pools in Spice, a std module called `std/os/threadpool` is planned. <br>
-We probably need Spice support for function pointers to realize thread pools efficiently. Furthermore, it would be useful to have
-the `Queue` data structure to manage the tasks to execute. And for realizing Queues, we probably first need to support generics.
-
-Idea: https://stackoverflow.com/questions/18627817/is-there-any-method-other-than-pthread-create-to-assign-work-to-the-same-thread
-
-This std module could contain a struct called `ThreadPool`:
+Spice offers thread pools via the `std/os/thread-pool` module (`ThreadPool` struct). A thread pool spawns a fixed
+number of worker threads up front (defaulting to the CPU core count) and keeps them alive until told to stop. Idle
+workers pull queued jobs (`p()` lambdas) and execute them in parallel.
 
 ```spice
-import "std/data/queue" as queue;
+import "std/os/thread-pool";
+import "std/time/delay";
 
-type ThreadPool struct {
-	unsigned int threadCount // Number of threads in the thread pool
-	unsigned long taskCount // Counter, which gets incremented when a task comes in
-	queue::Queue<void*> taskQueue // Queue of tasks to execute. Whenever a thread has no work to do it pops an item from the queue and executes that.
+f<int> main() {
+    ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
+    tp.enqueue(p() [[async]] {
+        delay(50);
+        printf("Hello from task 1\n");
+    });
+    tp.enqueue(p() [[async]] {
+        delay(100);
+        printf("Hello from task 2\n");
+    });
+    tp.start(); // Kicks off the worker threads and returns immediately
+    tp.join();  // Wait for all queued tasks to finish
 }
-
-f<int> setThreadCount(); // Add or remove threads from the thread pool
-f<int> getThreadCount(); // Return thread count
-f<int> getTaskCount(); // Return how many tasks were already executed
-p pushWork(void*); // Pushes a function pointer to the queue of tasks
-f<bool> hasTasks(); // Returns true if the task list contains at least one item
-f<int> getQueueSize(); // Returns the number of items in the task queue
 ```
+
+Other `ThreadPool` methods: `pause()`/`resume()` to temporarily stop/continue dispatching new jobs to workers,
+`stop()` to let workers finish their current job and then exit, and `getRunningJobCount()`/`getQueuedJobCount()`/
+`getWorkerThreadCount()` for introspection.
+
+### Communication between threads (requires generics) — not yet implemented
+_Inspired by Goroutines and Channels from the Go programming language_
+
+For communication between threads, a `Pipe<T>` type is planned. A pipe would act as a temporary buffer queue for one
+or multiple values, pushed via a `stash(Pipe<any>, any)` builtin and received via a `pick(Pipe<any>)` builtin, which
+would block until a value is available. This depends on generics support and has not been started yet; no `Pipe`
+type, nor `stash`/`pick` builtins, currently exist in the language or standard library.
 
 ### Reference points in the implementation
 
-- Thread definition node in ANTLR grammar: [here](https://github.com/spicelang/spice/blob/main/src/grammar/Spice.g4#L14)
-- Semantic analysis of threads: [here](https://github.com/spicelang/spice/blob/main/src/analyzer/AnalyzerVisitor.cpp#L730)
-- Code gen for threads: [here](https://github.com/spicelang/spice/blob/main/src/generator/GeneratorVisitor.cpp#L605)
-- Tests for threads: [here](https://github.com/spicelang/spice/tree/main/test/test-files/analyzer/threads) and [here](https://github.com/spicelang/spice/tree/main/test/test-files/generator/threads)
-- Fully fledged functional test: [here](https://github.com/spicelang/spice/tree/main/test/test-files/generator/arbitrary/success-fibonacci-threaded)
+- `Thread` struct: [std/os/thread.spice](https://github.com/spicelang/spice/blob/main/std/os/thread.spice)
+- `ThreadPool` struct: [std/os/thread-pool.spice](https://github.com/spicelang/spice/blob/main/std/os/thread-pool.spice)
+- `Mutex` / `LockGuard`: [std/os/mutex.spice](https://github.com/spicelang/spice/blob/main/std/os/mutex.spice)
+- User-facing documentation: [docs/docs/language/threads.md](https://github.com/spicelang/spice/blob/main/docs/docs/language/threads.md)
+- Tests for thread pools: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/thread-pool)
+- Tests for mutexes: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/mutex)
+- Fully fledged functional test using `Thread` directly: [here](https://github.com/spicelang/spice/tree/main/test/test-files/benchmark/success-fibonacci-threaded)
