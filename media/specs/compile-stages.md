@@ -15,6 +15,7 @@ graph TD;
     ImportCollector-->
     SymbolTableBuilder-->
     TypeChecker-->
+    PostTypeCheckingVerifier-->
     DepGraphVisualizer-->
     IRGenerator-->
     DefaultIROptimizer-->
@@ -63,20 +64,26 @@ graph TD;
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, fill types in symbol table
 
-9.  **Dependency Graph Visualizer** <br>
+9.  **Post-TypeChecker Annotation Verifier** *(debug builds only)* <br>
+    Input/Output: AST -> AST <br>
+    Note: Asserts that the TypeChecker has fully annotated the AST before codegen begins — entry pointers are non-null,
+    per-manifestation vectors are correctly sized, and every non-function-pointer call has a resolved callee. Compiled
+    out in release builds (`NDEBUG`).
+
+10. **Dependency Graph Visualizer** <br>
     Input/Output: AST -> AST <br>
     Note: Prints the compile unit dependency graph (DAG) as Dot code
 
-10. **IR Generator** <br>
+11. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-11. **IR Optimizer** <br>
+12. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not invoked.
 
-12. **Object Emitter** <br>
+13. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 
@@ -118,15 +125,18 @@ Source file A imports B and C.
 13. Type Checker for A (check)
 14. Type Checker for B (check)
 15. Type Checker for C (check)
-16. IR Generator for B
-17. IR Optimizer for B
-18. Object Emitter for B
-19. IR Generator for C
-20. IR Optimizer for C 
-21. Object Emitter for C 
-22. IR Generator for A 
-23. IR Optimizer for A 
-24. Object Emitter for A
+16. Post-TypeChecker Annotation Verifier for A *(debug only)*
+17. Post-TypeChecker Annotation Verifier for B *(debug only)*
+18. Post-TypeChecker Annotation Verifier for C *(debug only)*
+19. IR Generator for B
+20. IR Optimizer for B
+21. Object Emitter for B
+22. IR Generator for C
+23. IR Optimizer for C 
+24. Object Emitter for C 
+25. IR Generator for A 
+26. IR Optimizer for A 
+27. Object Emitter for A
 
 ## Note for parallelization:
 
