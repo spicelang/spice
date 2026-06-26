@@ -39,7 +39,7 @@ class SourceFile;
 class IRGenerator final : CompilerPass, public ParallelizableASTVisitor {
 public:
   // Type definitions
-  using ParamInfoList = std::vector<std::pair<std::string, SymbolTableEntry *>>;
+  using ParamInfoList = std::vector<std::pair<std::string, const SymbolTableEntry *>>;
 
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
@@ -139,9 +139,9 @@ public:
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions);
   // Address management for symbol table entries
   [[nodiscard]] llvm::Value *getAddress(const SymbolTableEntry *entry);
-  void updateAddress(SymbolTableEntry *entry, llvm::Value *address);
-  void pushAddress(SymbolTableEntry *entry, llvm::Value *address);
-  void popAddress(SymbolTableEntry *entry);
+  void updateAddress(const SymbolTableEntry *entry, llvm::Value *address);
+  void pushAddress(const SymbolTableEntry *entry, llvm::Value *address);
+  void popAddress(const SymbolTableEntry *entry);
   // LLVM function management for Spice functions
   [[nodiscard]] llvm::Function *getLLVMFunction(const Function *spiceFunc);
   void setLLVMFunction(const Function *spiceFunc, llvm::Function *llvmFunction);
@@ -167,10 +167,10 @@ private:
   void verifyFunction(const llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   LLVMExprResult doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node);
-  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ExprNode *rhsNode, const ASTNode *node,
-                              bool isDecl = false);
-  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs, const QualType &rhsSType,
-                              const ASTNode *node, bool isDecl);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, const SymbolTableEntry *lhsEntry, const ExprNode *rhsNode,
+                              const ASTNode *node, bool isDecl = false);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, const SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
+                              const QualType &rhsSType, const ASTNode *node, bool isDecl);
   void generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress, bool isVolatile) const;
   void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType);
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant) const;

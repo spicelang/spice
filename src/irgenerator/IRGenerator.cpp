@@ -413,12 +413,12 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ExprNode *rhsNode, const ASTNode *node) {
   // Get entry of left side
   auto exprResult = std::any_cast<LLVMExprResult>(visit(lhsNode));
-  SymbolTableEntry *entry = exprResult.entry;
+  const SymbolTableEntry *entry = exprResult.entry;
   llvm::Value *lhsAddress = entry != nullptr && entry->getQualType().isRef() ? exprResult.refPtr : resolveAddress(exprResult);
   return doAssignment(lhsAddress, entry, rhsNode, node);
 }
 
-LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ExprNode *rhsNode,
+LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTableEntry *lhsEntry, const ExprNode *rhsNode,
                                          const ASTNode *node, bool isDecl) {
   // Get symbol type of right side
   const QualType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
@@ -426,7 +426,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, node, isDecl);
 }
 
-LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
+LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
                                          const QualType &rhsSType, const ASTNode *node, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
@@ -684,7 +684,7 @@ llvm::Value *IRGenerator::getAddress(const SymbolTableEntry *entry) {
   return it->second.top();
 }
 
-void IRGenerator::updateAddress(SymbolTableEntry *entry, llvm::Value *address) {
+void IRGenerator::updateAddress(const SymbolTableEntry *entry, llvm::Value *address) {
   assert(address != nullptr);
   assert(address->getType()->isPointerTy());
   auto &stack = addressMap[entry];
@@ -694,12 +694,12 @@ void IRGenerator::updateAddress(SymbolTableEntry *entry, llvm::Value *address) {
     stack.top() = address;
 }
 
-void IRGenerator::pushAddress(SymbolTableEntry *entry, llvm::Value *address) {
+void IRGenerator::pushAddress(const SymbolTableEntry *entry, llvm::Value *address) {
   assert(address != nullptr);
   addressMap[entry].push(address);
 }
 
-void IRGenerator::popAddress(SymbolTableEntry *entry) {
+void IRGenerator::popAddress(const SymbolTableEntry *entry) {
   auto it = addressMap.find(entry);
   assert(it != addressMap.end() && !it->second.empty());
   it->second.pop();

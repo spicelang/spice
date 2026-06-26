@@ -21,7 +21,7 @@ struct LLVMExprResult {
   llvm::Constant *constant = nullptr;
   llvm::Value *ptr = nullptr;
   llvm::Value *refPtr = nullptr;
-  SymbolTableEntry *entry = nullptr;
+  const SymbolTableEntry *entry = nullptr;
   const ExprNode *node = nullptr;
 
   [[nodiscard]] bool isTemporary() const { return entry == nullptr || entry->anonymous; }

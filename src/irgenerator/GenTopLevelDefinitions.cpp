@@ -28,7 +28,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   assert(currentScope != nullptr);
 
   // Visit parameters
-  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+  std::vector<std::pair<std::string, const SymbolTableEntry *>> paramInfoList;
   QualTypeList paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
@@ -38,7 +38,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     paramTypes.reserve(numOfParams);
     for (DeclStmtNode *param : node->paramLst->params) {
       // Get symbol table entry of param
-      SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
+      const SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
       auto paramType = any_cast<llvm::Type *>(visit(param->dataType));
@@ -92,7 +92,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Allocate result variable
   llvm::Value *resultAddress = insertAlloca(QualType(TY_INT), RETURN_VARIABLE_NAME);
   // Update the symbol table entry
-  SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+  const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   updateAddress(resultEntry, resultAddress);
   // Generate debug info
@@ -164,10 +164,10 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(currentScope != nullptr);
 
     // Get 'this' entry
-    std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+    std::vector<std::pair<std::string, const SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
     if (manifestation->isMethod()) {
-      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      const SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
@@ -182,7 +182,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       for (; argIdx < numOfParams; argIdx++) {
         const DeclStmtNode *param = node->paramLst->params.at(argIdx);
         // Get symbol table entry of param
-        SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+        const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Retrieve type of param
@@ -235,7 +235,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Declare result variable
     llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
-    SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
     updateAddress(resultEntry, resultAddr);
     // Generate debug info
@@ -321,10 +321,10 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(currentScope != nullptr);
 
     // Get 'this' entry
-    std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+    std::vector<std::pair<std::string, const SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
     if (manifestation->isMethod()) {
-      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      const SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
@@ -339,7 +339,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       for (; argIdx < numOfParams; argIdx++) {
         const DeclStmtNode *param = node->paramLst->params.at(argIdx);
         // Get symbol table entry of param
-        SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+        const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Retrieve type of param
