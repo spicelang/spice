@@ -134,6 +134,7 @@ public:
 private:
   void runTypeCheckerPre();
   void runTypeCheckerPost();
+  void runPostTypeCheckingVerifier();
 
 public:
   void runDependencyGraphVisualizer();

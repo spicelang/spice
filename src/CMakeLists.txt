@@ -68,6 +68,7 @@ set(SOURCES
         typechecker/StructManager.cpp
         typechecker/InterfaceManager.cpp
         typechecker/TypeMatcher.cpp
+        typechecker/PostTypeCheckingVerifier.cpp
         # Dependency graph visualizer
         visualizer/DependencyGraphVisualizer.cpp
         # IR generator

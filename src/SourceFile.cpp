@@ -21,6 +21,7 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
+#include <typechecker/PostTypeCheckingVerifier.h>
 #include <typechecker/StructManager.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CompilerWarning.h>
@@ -324,6 +325,11 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Check if all dyn variables were type-inferred successfully
   globalScope->ensureSuccessfulTypeInference();
 
+#ifndef NDEBUG
+  // In debug builds, verify that the TypeChecker fully annotated the AST
+  runPostTypeCheckingVerifier();
+#endif
+
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, typeCheckerRuns);
@@ -335,6 +341,11 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Dump symbol table
   if (cliOptions.dump.dumpSymbolTable)
     dumpOutput(compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
+}
+
+void SourceFile::runPostTypeCheckingVerifier() {
+  PostTypeCheckingVerifier verifier(resourceManager, this);
+  verifier.verify(ast);
 }
 
 void SourceFile::runDependencyGraphVisualizer() {
