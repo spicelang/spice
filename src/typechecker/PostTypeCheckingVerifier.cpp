@@ -7,6 +7,7 @@
 #include <ranges>
 
 #include <ast/ASTNodes.h>
+#include <typechecker/Builtins.h>
 
 namespace spice::compiler {
 
@@ -43,7 +44,7 @@ std::any PostTypeCheckingVerifier::visitEnumDef(EnumDefNode *node) {
 }
 
 std::any PostTypeCheckingVerifier::visitEnumItem(EnumItemNode *node) {
-  assert(node->entry != nullptr);
+  // EnumItemNode::entry is intentionally not stored on the node; the entry lives in the enum scope.
   return visitChildren(node);
 }
 
@@ -63,35 +64,47 @@ std::any PostTypeCheckingVerifier::visitSignature(SignatureNode *node) {
 }
 
 std::any PostTypeCheckingVerifier::visitDeclStmt(DeclStmtNode *node) {
-  if (!node->isForEachItem) {
-    // For regular declarations the per-manifestation entries vector must be fully populated
+  // entries is resized to manifestationCount; unsubstantiated generic slots remain null.
+  // We can only assert the vector was populated at all.
+  if (!node->isForEachItem)
     assert(!node->entries.empty());
-    assert(std::ranges::all_of(node->entries, [](const SymbolTableEntry *e) { return e != nullptr; }));
-  }
   return visitChildren(node);
 }
 
 std::any PostTypeCheckingVerifier::visitFctCall(FctCallNode *node) {
+  // Builtin calls (printf, len, panic, etc.) return early in the TypeChecker before
+  // populating callee/calleeParentScope — skip them, matching the IRGenerator's behavior.
+  for (const auto &[builtinFctName, _] : BUILTIN_FUNCTIONS)
+    if (node->fqFunctionName == builtinFctName)
+      return visitChildren(node);
+
   assert(!node->data.empty());
+  // calleeParentScope is set for every visited non-fct-ptr non-builtin slot; use it as the
+  // "was this slot actually resolved?" indicator. Unsubstantiated/uncompiled slots have it null.
   assert(std::ranges::all_of(node->data, [](const FctCallNode::FctCallData &d) {
-    // Function pointer calls do not have a statically-resolved callee
-    return (d.isFctPtrCall() || d.callee != nullptr) && d.calleeParentScope != nullptr;
+    return d.calleeParentScope == nullptr || d.callee != nullptr;
   }));
   return visitChildren(node);
 }
 
 std::any PostTypeCheckingVerifier::visitAtomicExpr(AtomicExprNode *node) {
-  // data is only populated for identifier accesses (not for constants / nested exprs)
-  if (!node->identifierFragments.empty()) {
+  // data is only populated for identifier accesses (not for constants / nested exprs).
+  // Within identifier accesses, only substantiated manifestation slots have accessScope set;
+  // unsubstantiated generic slots are left at the default-initialized nullptr.
+  if (!node->fqIdentifier.empty()) {
     assert(!node->data.empty());
-    assert(std::ranges::all_of(node->data, [](const AtomicExprNode::VarAccessData &d) { return d.entry != nullptr; }));
+    assert(std::ranges::all_of(node->data, [](const AtomicExprNode::VarAccessData &d) {
+      return d.accessScope == nullptr || d.entry != nullptr;
+    }));
   }
   return visitChildren(node);
 }
 
 std::any PostTypeCheckingVerifier::visitStructInstantiation(StructInstantiationNode *node) {
+  // instantiatedStructs is resized to manifestationCount; unsubstantiated generic slots remain null.
+  // We can only safely assert the vector was populated — element-level null checks would false-positive
+  // on unsubstantiated generic manifestation slots.
   assert(!node->instantiatedStructs.empty());
-  assert(std::ranges::all_of(node->instantiatedStructs, [](const Struct *s) { return s != nullptr; }));
   return visitChildren(node);
 }
 
