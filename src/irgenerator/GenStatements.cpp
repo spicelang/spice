@@ -37,7 +37,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Get variable entry
-  SymbolTableEntry *varEntry = node->entries.at(manIdx);
+  const SymbolTableEntry *varEntry = node->entries.at(manIdx);
   assert(varEntry != nullptr);
   const QualType varSymbolType = varEntry->getQualType();
 

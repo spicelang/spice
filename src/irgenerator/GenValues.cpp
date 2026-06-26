@@ -71,7 +71,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     mangledName = spiceFunc->getMangledName();
 
   // Get entry of the first fragment
-  SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
+  const SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
 
   // Get this type
   std::vector<llvm::Value *> argValues;
@@ -96,7 +96,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
       const std::string identifier = node->functionNameFragments.at(i);
       // Retrieve field entry
-      SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+      const SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr);
       QualType fieldEntryType = fieldEntry->getQualType();
       assert(fieldEntryType.getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
@@ -177,7 +177,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
           llvm::Value *newValue = insertLoad(valueType, valueCopyPtr);
 
           // Attach address of copy to anonymous symbol
-          SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode, SIZE_MAX);
+          const SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(argNode, SIZE_MAX);
           updateAddress(anonymousSymbol, valueCopyPtr);
 
           argValues.push_back(newValue);
@@ -273,7 +273,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Attach address to anonymous symbol to keep track of de-allocation
-  SymbolTableEntry *anonymousSymbol = nullptr;
+  const SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
     anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node);
@@ -473,7 +473,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     }
 
     // Attach address to anonymous symbol to keep track of de-allocation
-    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node);
+    const SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node);
     if (returnSymbol != nullptr)
       updateAddress(returnSymbol, structAddr);
 
@@ -508,7 +508,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
-      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);
@@ -558,7 +558,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   allocaInsertInst = nullptr;
 
   // Declare result variable
-  SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+  const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
   updateAddress(resultEntry, resultAddr);
@@ -663,7 +663,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
-      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);
@@ -805,7 +805,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
-      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);

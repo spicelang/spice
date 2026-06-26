@@ -266,7 +266,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
 
   // Get 'this' entry
   std::vector<llvm::Type *> paramTypes;
-  SymbolTableEntry *thisEntry = nullptr;
+  const SymbolTableEntry *thisEntry = nullptr;
   if (spiceFunc->isMethod()) {
     thisEntry = spiceFunc->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);
@@ -366,7 +366,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
 
   // Get 'this' entry
   std::vector<llvm::Type *> paramTypes;
-  SymbolTableEntry *thisEntry = nullptr;
+  const SymbolTableEntry *thisEntry = nullptr;
   if (spiceProc->isMethod()) {
     thisEntry = spiceProc->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);

@@ -1755,7 +1755,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     return {.constant = builder.getTrue()};
 
   // Attach address to anonymous symbol to keep track of de-allocation
-  SymbolTableEntry *anonymousSymbol = nullptr;
+  const SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (opFct->returnType.is(TY_STRUCT)) {
     anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node, opIdx);
