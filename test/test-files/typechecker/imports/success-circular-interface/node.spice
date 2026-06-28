@@ -1,0 +1,9 @@
+import "visitor" as visitor;
+
+public type Node struct {
+    public int id
+}
+
+public f<int> Node.accept(Visitor* v) {
+    return v.visit(this);
+}

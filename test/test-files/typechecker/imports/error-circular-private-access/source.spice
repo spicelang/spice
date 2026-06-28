@@ -1,0 +1,5 @@
+import "a" as a;
+
+f<int> main() {
+    return a::callB();
+}

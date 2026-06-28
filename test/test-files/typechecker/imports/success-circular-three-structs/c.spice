@@ -1,0 +1,5 @@
+import "a" as a;
+
+public type C struct {
+    A* next
+}

@@ -1,0 +1,17 @@
+import "node" as node;
+import "visitor" as visitor;
+
+type IdVisitor struct : Visitor {}
+
+f<int> IdVisitor.visit(Node* n) {
+    return n.id;
+}
+
+f<int> main() {
+    Node n;
+    n.id = 42;
+    IdVisitor v;
+    Visitor* vp = &v;
+    printf("accept = %d\n", n.accept(vp));
+    return 0;
+}
