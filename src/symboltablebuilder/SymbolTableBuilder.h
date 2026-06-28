@@ -36,7 +36,6 @@ public:
   std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
-  std::any visitForwardDecl(ForwardDeclNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitAliasDef(AliasDefNode *node) override;
@@ -63,10 +62,6 @@ public:
   std::any visitLambdaExpr(LambdaExprNode *node) override;
 
 private:
-  // Private methods
-  bool resolveForwardDeclaration(TopLevelDefNode *node, const std::string &name, bool isStruct, SymbolTableEntry *&entry,
-                                 Scope *&scope, uint64_t &typeId);
-
   // Private members
   Scope *rootScope;
   bool hasMainFunction = false;

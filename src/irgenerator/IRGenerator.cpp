@@ -665,7 +665,7 @@ llvm::GlobalValue::LinkageTypes IRGenerator::getSymbolLinkageType(bool isPublic)
 
 llvm::GlobalValue::LinkageTypes IRGenerator::getVTableLinkageType(bool isPublic) const {
   // VTables, type infos and type info names are ODR entities that may legitimately be emitted in more than one
-  // translation unit (e.g. an interface that is forward-declared in one file and fully defined in another). Giving
+  // translation unit (e.g. an interface that is defined in one file and used from several importing files). Giving
   // them weak ODR linkage lets the linker coalesce the duplicates. On ELF this pairs with the comdat group below; on
   // MachO, which has no comdat support, the weak/coalesced linkage is what prevents a duplicate-symbol error.
   return isPublic ? llvm::GlobalValue::WeakODRLinkage : llvm::GlobalValue::PrivateLinkage;
