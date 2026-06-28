@@ -1,0 +1,3 @@
+source1::stepOne calls source2::stepTwo
+source2::stepTwo reaches source::getDouble() = 4.3
+main: getDouble() = 4.3

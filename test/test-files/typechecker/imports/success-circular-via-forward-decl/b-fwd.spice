@@ -1,2 +1,0 @@
-// Forward declaration of B only — no imports, so no cycle
-public forward type B struct;

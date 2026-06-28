@@ -1,9 +1,0 @@
-import "source1" as s1;
-
-f<int> main() {
-    s1.test();
-}
-
-f<double> getDouble() {
-    return 4.3;
-}

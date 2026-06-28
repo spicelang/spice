@@ -56,6 +56,35 @@ std::any TypeChecker::visitForwardDecl(ForwardDeclNode *node) {
   return nullptr;
 }
 
+/**
+ * Assign the opaque type to a struct or interface that is referenced before it has been prepared. This effectively acts
+ * as an implicit forward declaration and is what makes circular imports work: two structs/interfaces in mutually
+ * importing files can reference each other, so neither can be prepared strictly before the other. The full prepare pass
+ * (visitStructDefPrepare / visitInterfaceDefPrepare) assigns the identical interned type later and additionally fills in
+ * the body scope and manifestations.
+ *
+ * Only non-generic structs/interfaces can be pre-declared this way, since the opaque type carries no template types.
+ *
+ * @param entry Symbol table entry of the referenced struct or interface (its type must still be invalid)
+ */
+void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
+  assert(entry->getQualType().is(TY_INVALID));
+  ASTNode *declNode = entry->declNode;
+  if (auto *structDef = dynamic_cast<StructDefNode *>(declNode)) {
+    if (structDef->hasTemplateTypes)
+      return;
+    const TypeChainElementData data = {.bodyScope = structDef->structScope};
+    const Type *type = TypeRegistry::getOrInsert(TY_STRUCT, structDef->structName, structDef->typeId, data, {});
+    entry->updateType(QualType(type, structDef->qualifiers), false);
+  } else if (auto *interfaceDef = dynamic_cast<InterfaceDefNode *>(declNode)) {
+    if (interfaceDef->hasTemplateTypes)
+      return;
+    const TypeChainElementData data = {.bodyScope = interfaceDef->interfaceScope};
+    const Type *type = TypeRegistry::getOrInsert(TY_INTERFACE, interfaceDef->interfaceName, interfaceDef->typeId, data, {});
+    entry->updateType(QualType(type, interfaceDef->qualifiers), false);
+  }
+}
+
 std::any TypeChecker::visitEnumDef(EnumDefNode *node) {
   if (typeCheckerMode == TC_MODE_PRE)
     return visitEnumDefPrepare(node);

@@ -1,0 +1,11 @@
+import "source1" as s1;
+
+public f<double> getDouble() {
+    return 4.3;
+}
+
+f<int> main() {
+    s1::stepOne();
+    printf("main: getDouble() = %.1f\n", getDouble());
+    return 0;
+}

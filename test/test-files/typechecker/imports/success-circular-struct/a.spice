@@ -1,0 +1,6 @@
+import "b" as b;
+
+// A holds a pointer to B, which is defined in a file that imports this one back (circular import).
+public type A struct {
+    B* bField
+}

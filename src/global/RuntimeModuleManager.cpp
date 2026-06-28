@@ -18,7 +18,7 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *parentSourceFile, Ru
       isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
 
   // Add the dependency to the parent source file
-  parentSourceFile->addDependency(rtFile, parentSourceFile->ast, importName, rtFile->filePath.string());
+  parentSourceFile->addDependency(rtFile, importName);
   assert(parentSourceFile->dependencies.contains(importName));
   SourceFile *runtimeFile = parentSourceFile->dependencies.at(importName);
   modules.emplace(requestedModule, runtimeFile);
@@ -51,6 +51,8 @@ SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, Runti
 
   // Run frontend and first type checker run for the loaded source file
   moduleSourceFile->runFrontEnd();
+  // Merge the runtime module's own dependency registries (deferred tail of the front-end, see SourceFile::runMiddleEnd)
+  moduleSourceFile->mergeNameRegistriesRecursive();
   moduleSourceFile->runTypeCheckerPre();
 
   return moduleSourceFile;

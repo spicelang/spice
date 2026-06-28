@@ -1,0 +1,6 @@
+import "source2" as s2;
+
+public p stepOne() {
+    printf("source1::stepOne calls source2::stepTwo\n");
+    s2::stepTwo();
+}

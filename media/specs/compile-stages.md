@@ -53,8 +53,9 @@ graph TD;
 
 6.  **Import Collector** <br>
     Input/Output: AST -> AST <br>
-    Note: Checks, which other source file are imported by the current one. Registers external symbols. Process module attributes. 
-    [here](./better-imports.md).
+    Note: Checks which other source files are imported by the current one (recursively, allowing import cycles) and
+    processes module attributes. External symbols are merged into each file's name registry in a separate pass once
+    every reachable file has built its own symbol table - see [imports design](./better-imports.md).
 
 7.  **Symbol Table Builder** <br>
     Input/Output: AST -> AST <br>
@@ -72,7 +73,8 @@ graph TD;
 
 10. **Dependency Graph Visualizer** <br>
     Input/Output: AST -> AST <br>
-    Note: Prints the compile unit dependency graph (DAG) as Dot code
+    Note: Prints the compile unit dependency graph as Dot code (the graph may contain cycles when source files import
+    each other)
 
 11. **IR Generator** <br>
     Input/Output: AST -> IR <br>
@@ -137,6 +139,23 @@ Source file A imports B and C.
 25. IR Generator for A 
 26. IR Optimizer for A 
 27. Object Emitter for A
+
+## Circular imports
+
+The dependency graph may contain cycles, because two source files are allowed to import each other (directly or
+transitively). To support this without infinite recursion, the per-file pipeline drivers guard against re-entering a
+file that is already being processed in the same stage, and two stages are decoupled from the strict
+bottom-up/top-down ordering that a DAG would otherwise allow:
+
+- The external name registries are merged in a dedicated pass after the whole front-end has run, so a file in a cycle
+  sees the fully-built registry of its cycle peers (a dependency's own symbols are guaranteed to be registered by then).
+  A file's own symbols still take precedence over imported symbols of the same name.
+- A struct or interface that is referenced across a cycle before it has been prepared is given its opaque type on
+  demand (an implicit forward declaration); the full definition - body scope, fields and manifestations - is filled in
+  when that type is prepared.
+- The type checker treats a strongly connected component of the dependency graph as a unit: a file does not wait for
+  cycle peers before being type-checked, and the component is iterated to a fixpoint via the existing re-visit
+  mechanism instead of relying on a strict topological order.
 
 ## Note for parallelization:
 

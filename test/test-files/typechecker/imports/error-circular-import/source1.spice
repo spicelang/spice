@@ -1,5 +1,0 @@
-import "source2" as s2;
-
-p test() {
-    printf("p: %f", s2.getDouble());
-}

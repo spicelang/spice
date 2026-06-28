@@ -298,6 +298,15 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   Scope *defScope = registryEntry->targetScope->parent;
   QualType entryType = entry->getQualType();
 
+  // With circular imports, two structs/interfaces in mutually importing files can reference each other, so neither can be
+  // prepared strictly before the other. If we reach one here before it has been prepared (its type is still invalid),
+  // assign its opaque type now - an implicit forward declaration. The full prepare pass assigns the identical interned
+  // type later and additionally fills in the body and manifestations.
+  if (entryType.is(TY_INVALID)) {
+    assignDeferredOpaqueType(entry);
+    entryType = entry->getQualType();
+  }
+
   // Enums can early-return
   if (entryType.is(TY_ENUM))
     return QualType(TY_INT);

@@ -1,0 +1,6 @@
+import "a" as a;
+
+// B holds a pointer back to A, completing the cycle a <-> b without any forward declaration.
+public type B struct {
+    A* aField
+}
