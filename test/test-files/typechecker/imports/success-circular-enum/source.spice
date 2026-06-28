@@ -1,0 +1,6 @@
+import "a" as a;
+
+f<int> main() {
+    printf("green = %d\n", a::greenViaB());
+    return 0;
+}

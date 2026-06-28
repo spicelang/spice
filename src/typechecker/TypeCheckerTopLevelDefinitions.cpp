@@ -57,15 +57,15 @@ std::any TypeChecker::visitForwardDecl(ForwardDeclNode *node) {
 }
 
 /**
- * Assign the opaque type to a struct or interface that is referenced before it has been prepared. This effectively acts
- * as an implicit forward declaration and is what makes circular imports work: two structs/interfaces in mutually
- * importing files can reference each other, so neither can be prepared strictly before the other. The full prepare pass
- * (visitStructDefPrepare / visitInterfaceDefPrepare) assigns the identical interned type later and additionally fills in
- * the body scope and manifestations.
+ * Assign the opaque type to a struct, interface or enum that is referenced before it has been prepared. This effectively
+ * acts as an implicit forward declaration and is what makes circular imports work: two types in mutually importing files
+ * can reference each other, so neither can be prepared strictly before the other. The full prepare pass
+ * (visitStructDefPrepare / visitInterfaceDefPrepare / visitEnumDefPrepare) assigns the identical interned type later and
+ * additionally fills in the body scope and manifestations.
  *
  * Only non-generic structs/interfaces can be pre-declared this way, since the opaque type carries no template types.
  *
- * @param entry Symbol table entry of the referenced struct or interface (its type must still be invalid)
+ * @param entry Symbol table entry of the referenced struct, interface or enum (its type must still be invalid)
  */
 void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
   assert(entry->getQualType().is(TY_INVALID));
@@ -82,6 +82,10 @@ void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
     const TypeChainElementData data = {.bodyScope = interfaceDef->interfaceScope};
     const Type *type = TypeRegistry::getOrInsert(TY_INTERFACE, interfaceDef->interfaceName, interfaceDef->typeId, data, {});
     entry->updateType(QualType(type, interfaceDef->qualifiers), false);
+  } else if (auto *enumDef = dynamic_cast<EnumDefNode *>(declNode)) {
+    const TypeChainElementData data = {.bodyScope = enumDef->enumScope};
+    const Type *type = TypeRegistry::getOrInsert(TY_ENUM, enumDef->enumName, enumDef->typeId, data, {});
+    entry->updateType(QualType(type, enumDef->qualifiers), false);
   }
 }
 

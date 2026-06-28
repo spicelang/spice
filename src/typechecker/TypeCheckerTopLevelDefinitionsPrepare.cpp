@@ -507,7 +507,10 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   const TypeChainElementData data = {.bodyScope = node->enumScope};
   const Type *type = TypeRegistry::getOrInsert(TY_ENUM, node->enumName, node->typeId, data, {});
   assert(node->entry != nullptr);
-  node->entry->updateType(QualType(type, node->qualifiers), false);
+  // The enum may already carry its opaque type if it was referenced across a circular import before being prepared
+  // (assignDeferredOpaqueType). Overwriting it with the identical interned type is expected here.
+  const bool overwrite = node->entry->getQualType().is(TY_ENUM);
+  node->entry->updateType(QualType(type, node->qualifiers), overwrite);
 
   // Change to enum scope
   currentScope = node->enumScope;
