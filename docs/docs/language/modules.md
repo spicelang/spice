@@ -58,55 +58,48 @@ f<int> main() {
 }
 ```
 
-## Breaking circular imports with forward declarations
+## Circular imports
 
-If two source files need to import each other (e.g. struct `A` holds a pointer to `B`, and `B` holds a pointer to
-`A`), a direct import cycle would cause a compiler error. The solution is to introduce a forward-declaration file that
-sits at the bottom of the dependency graph with no imports of its own:
+Source files may import each other, directly or transitively. Spice resolves such circular imports automatically — you
+simply write the imports you need, no special handling required.
 
-**`b-fwd.spice`** — declares `B` without a body, imports nothing:
+A common case is two structs that reference each other: struct `A` (in `a.spice`) holds a pointer to `B`, and struct `B`
+(in `b.spice`) holds a pointer back to `A`.
+
+**`a.spice`:**
 ```spice
-public forward type B struct;
-```
-
-**`a.spice`** — imports only the forward declaration:
-```spice
-import "b-fwd" as bfwd;
+import "b" as b;
 
 public type A struct {
-    bfwd::B* b
+    B* bPtr
 }
 ```
 
-**`b.spice`** — imports the full definition of `A` and provides the full body of `B`. It also imports `b-fwd` so
-that the full type `B` reuses the forward declaration's type id, ensuring `A`'s `bfwd::B*` field is type-identical
-to a `B*` resolved through `b.spice`:
+**`b.spice`:**
 ```spice
 import "a" as a;
-import "b-fwd"; // re-import the forward declaration so the type ids line up
 
 public type B struct {
-    a::A* a
+    A* aPtr
 }
 ```
 
-**`main.spice`** — imports both full definitions without any cycle:
+**`main.spice`:**
 ```spice
 import "a" as a;
 import "b" as b;
 
 f<int> main() {
-    a::A* aPtr = nil<a::A*>;
-    b::B* bPtr = nil<b::B*>;
+    A aInst;
+    B bInst;
+    aInst.bPtr = &bInst;
+    bInst.aPtr = &aInst;
 }
 ```
 
-The import graph is a DAG: `main → a → b-fwd` and `main → b → a → b-fwd`. No cycle exists because `b-fwd.spice`
-imports nothing.
-
-A forward-declared type can only be used as a pointer or reference — not as a bare value — because its size is unknown
-until the full definition is imported. See [structs — forward declarations](structs.md#forward-declarations) and
-[interfaces — forward declarations](interfaces.md#forward-declarations) for more detail.
+Here `a.spice` and `b.spice` import each other, forming a cycle in the dependency graph. The compiler handles the cycle
+internally, so the `B*` field in `A` is type-identical to a `B` resolved through `b.spice`, and vice versa. Mutually
+recursive functions spread across files work the same way.
 
 ## Platform dependent imports
 If you have written code, that only works on one particular platform (e.g. two function with the same functionality, one for Linux

@@ -1,0 +1,12 @@
+import "a" as a;
+import "b" as b;
+
+f<int> main() {
+    A objA;
+    objA.aVal = 10;
+    B objB;
+    objB.bVal = 20;
+    printf("A.combinedWith(B) = %d\n", objA.combinedWith(&objB));
+    printf("B.combinedWith(A) = %d\n", objB.combinedWith(&objA));
+    return 0;
+}

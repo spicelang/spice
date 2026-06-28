@@ -1,0 +1,6 @@
+import "a" as a;
+
+// Tries to call a private function from the cyclically-imported file -> visibility error
+public f<int> exposed() {
+    return a::privateHelper();
+}

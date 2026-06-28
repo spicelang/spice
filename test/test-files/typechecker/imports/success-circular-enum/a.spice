@@ -1,0 +1,11 @@
+import "b" as b;
+
+public type Color enum {
+    RED,
+    GREEN,
+    BLUE
+}
+
+public f<int> greenViaB() {
+    return b::valueOf(Color::GREEN);
+}

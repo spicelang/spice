@@ -1,0 +1,9 @@
+import "b" as b;
+
+f<int> privateHelper() {
+    return 1;
+}
+
+public f<int> callB() {
+    return b::exposed();
+}

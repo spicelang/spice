@@ -257,11 +257,9 @@ void SourceFile::runSymbolTableBuilder() {
   Timer timer(&compilerOutput.times.symbolTableBuilder);
   timer.start();
 
-  // The symbol tables of all dependencies are present at this point, so we can merge the exported name registries in
-  for (const auto &[importName, sourceFile] : dependencies)
-    mergeNameRegistries(*sourceFile, importName);
-
-  // Build symbol table of the current file
+  // Build symbol table of the current file. The dependencies' exported name registries are merged in afterwards, in a
+  // separate pass (mergeNameRegistriesRecursive), once every reachable file has built its own registry. This deferral
+  // is what makes circular imports work: with a cycle, a dependency's registry is not fully populated yet at this point.
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
   symbolTableBuilder.visit(ast);
 
@@ -274,8 +272,12 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   // Skip if this stage has already been done. Unlike the later (codegen) stages, this one must still run even if the
   // file was restored from the cache: it's what populates the FunctionManager/StructManager manifestations that a
   // dependant which isn't itself a cache hit needs for overload resolution and generic substantiation.
-  if (previousStage >= TYPE_CHECKER_PRE)
+  // The typeCheckerPreRunning guard breaks the recursion on a circular import: a cyclic back-edge returns immediately
+  // instead of recursing forever. The file is still pre-checked once the in-progress invocation reaches it, and any
+  // cross-file references left unresolved (because a cycle peer was not pre-checked yet) are fixed up by the post run.
+  if (previousStage >= TYPE_CHECKER_PRE || typeCheckerPreRunning)
     return;
+  typeCheckerPreRunning = true;
 
   // Type-check all dependencies first
   for (SourceFile *sourceFile : dependencies | std::views::values)
@@ -289,15 +291,24 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   typeChecker.visit(ast);
 
   previousStage = TYPE_CHECKER_PRE;
+  typeCheckerPreRunning = false;
   timer.stop();
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
+  // Re-entrancy guard: within an import cycle, a dependency's post-run recurses back into this file's post-run. The
+  // in-flight fixpoint loop below already revisits this file, so the nested call must be a no-op to avoid unbounded
+  // mutual recursion. Convergence is driven by the reVisitRequested flags propagating across the cycle.
+  if (typeCheckerPostRunning)
+    return;
+
   // Skip if not all dependants finished type checking yet. This still has to run for files restored from the cache,
   // for the same reason as runTypeCheckerPre (see comment there).
   if (!haveAllDependantsBeenTypeChecked())
     return;
+
+  typeCheckerPostRunning = true;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
   timer.start();
@@ -319,6 +330,8 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     for (SourceFile *sourceFile : dependencies | std::views::values)
       sourceFile->runTypeCheckerPost();
   }
+
+  typeCheckerPostRunning = false;
 
   checkForSoftErrors();
 
@@ -613,6 +626,12 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runMiddleEnd() {
+  // Merge the exported name registries of all (transitive) dependencies into the respective importing files. This is
+  // the deferred tail of the front-end: it must run after every reachable file has built its own registry, which is
+  // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
+  // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
+  mergeNameRegistriesRecursive();
+  CHECK_ABORT_FLAG_V()
   // We need two runs here due to generics.
   // The first run to determine all concrete function/struct/interface substantiations
   runTypeCheckerPre(); // Visit the dependency tree from bottom to top
@@ -626,6 +645,12 @@ void SourceFile::runMiddleEnd() {
 }
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
+  // Guard against re-entering a file that is already running its back end. Circular imports form a cycle in the
+  // dependency graph, so the deps-first recursion below would otherwise loop forever.
+  if (backEndStarted)
+    return;
+  backEndStarted = true;
+
   // Run backend for all dependencies first
   for (SourceFile *sourceFile : dependencies | std::views::values)
     sourceFile->runBackEnd();
@@ -654,20 +679,16 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   }
 }
 
-void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName,
-                               const std::string &path) {
-  // Check if this would cause a circular dependency
-  std::stack<const SourceFile *> dependencyCircle;
-  if (isAlreadyImported(path, dependencyCircle)) {
-    // Build the error message
-    std::stringstream errorMessage;
-    errorMessage << "Circular import detected while importing '" << sourceFile->fileName << "':\n\n";
-    errorMessage << CommonUtil::getCircularImportMessage(dependencyCircle);
-    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, errorMessage.str());
-  }
+void SourceFile::addDependency(SourceFile *sourceFile, const std::string &dependencyName) {
+  // Circular imports are explicitly supported, so cycles are not rejected here. Source files are deduplicated by path
+  // in GlobalResourceManager::createSourceFile, so a cyclic import resolves to the same SourceFile instance and the
+  // pipeline drivers guard against re-entering a file that is already in progress.
 
-  // Add the dependency
-  sourceFile->isMainFile = false;
+  // Add the dependency. Do not demote the compilation root (parent == nullptr) to a non-main file: with a circular
+  // import the root can be imported by one of its own transitive dependencies, yet it must remain the main file (the
+  // isMainFile flag drives getRootSourceFile, object emission, timing, etc.).
+  if (sourceFile->parent != nullptr)
+    sourceFile->isMainFile = false;
   dependencies.emplace(dependencyName, sourceFile);
 
   // Add the dependant
@@ -676,24 +697,6 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {
   return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second == sourceFile; });
-}
-
-bool SourceFile::isAlreadyImported(const std::string &filePathSearch, // NOLINT(misc-no-recursion)
-                                   std::stack<const SourceFile *> &circle) const {
-  circle.push(this);
-
-  // Check if the current source file corresponds to the path to search
-  if (std::filesystem::equivalent(filePath, filePathSearch))
-    return true;
-
-  // Check dependants recursively
-  for (const SourceFile *dependant : dependants)
-    if (dependant->isAlreadyImported(filePathSearch, circle))
-      return true;
-
-  // If no dependant was found, remove the current source file from the circle to continue with the next sibling
-  circle.pop();
-  return false;
 }
 
 SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
@@ -752,9 +755,11 @@ void SourceFile::checkForSoftErrors() const {
 }
 
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache (no scope tree available)
-  if (restoredFromCache)
+  // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
+  // imports from recursing infinitely, since the dependency graph may contain cycles.
+  if (restoredFromCache || warningsCollected)
     return;
+  warningsCollected = true;
   // Print warnings for all dependencies
   for (SourceFile *sourceFile : dependencies | std::views::values)
     if (!sourceFile->isStdFile)
@@ -781,7 +786,39 @@ bool SourceFile::isRT(RuntimeModule runtimeModule) const {
 }
 
 bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });
+  return std::ranges::all_of(dependants, [this](const SourceFile *dependant) {
+    // Ignore dependants that are part of the same import cycle (i.e. this file transitively depends on them). They
+    // cannot be type-checked before us either, so waiting on them would deadlock the whole cycle. Such a strongly
+    // connected component is type-checked as a unit and converges through the reVisitRequested fixpoint loop instead.
+    if (dependsOn(dependant))
+      return true;
+    return dependant->totalTypeCheckerRuns >= 1;
+  });
+}
+
+/**
+ * Check whether this source file transitively depends on (imports) the given other source file.
+ * Used to detect strongly connected components (import cycles) in the dependency graph.
+ *
+ * @param other Potential (transitive) dependency
+ * @return true if this file reaches the other file by following dependency edges
+ */
+bool SourceFile::dependsOn(const SourceFile *other) const {
+  std::unordered_set<const SourceFile *> visited;
+  std::queue<const SourceFile *> worklist;
+  worklist.push(this);
+  visited.insert(this);
+  while (!worklist.empty()) {
+    const SourceFile *current = worklist.front();
+    worklist.pop();
+    for (const SourceFile *dependency : current->dependencies | std::views::values) {
+      if (dependency == other)
+        return true;
+      if (visited.insert(dependency).second)
+        worklist.push(dependency);
+    }
+  }
+  return false;
 }
 
 /**
@@ -808,10 +845,40 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     newName += originalName;
     exportedNameRegistry.emplace(newName,
                                  NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
-    // Add the shortened name, considering the name collision
-    const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
-    addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
+    // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always
+    // shadows imported symbols of the same name. Since this merge runs after the file built its own registry (so that
+    // circular imports work), we must explicitly avoid letting an import overwrite or erase such an own symbol - the old
+    // ordering achieved this implicitly by registering own symbols last with keep-on-collision.
+    const auto existing = exportedNameRegistry.find(originalName);
+    const bool existingIsOwn =
+        existing != exportedNameRegistry.end() && existing->second.targetScope->sourceFile->globalScope == globalScope;
+    if (!existingIsOwn) {
+      const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
+      addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
+    }
   }
+}
+
+/**
+ * Recursively merge the exported name registries of all (transitive) dependencies into the respective importing source
+ * files. Each file merges its direct dependencies' registries exactly once (guarded by registriesMerged), so this is
+ * safe to call on overlapping subgraphs and on graphs that contain cycles (circular imports).
+ *
+ * Must only be called once every reachable file has built its own exported name registry (i.e. after the front-end).
+ */
+void SourceFile::mergeNameRegistriesRecursive() { // NOLINT(misc-no-recursion)
+  if (registriesMerged)
+    return;
+  registriesMerged = true;
+
+  // Merge the direct dependencies' registries into this file. Their own registries are fully built by now, so the
+  // order in which the reachable files are visited does not matter (even across import cycles).
+  for (const auto &[importName, dependency] : dependencies)
+    mergeNameRegistries(*dependency, importName);
+
+  // Recurse into the dependencies to cover the rest of the reachable graph
+  for (SourceFile *dependency : dependencies | std::views::values)
+    dependency->mergeNameRegistriesRecursive();
 }
 
 void SourceFile::dumpCacheStats() {

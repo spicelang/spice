@@ -1,0 +1,5 @@
+import "source" as s;
+
+public p stepTwo() {
+    printf("source2::stepTwo reaches source::getDouble() = %.1f\n", s::getDouble());
+}

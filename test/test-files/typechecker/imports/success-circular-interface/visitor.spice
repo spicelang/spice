@@ -1,0 +1,5 @@
+import "node" as node;
+
+public type Visitor interface {
+    public f<int> visit(Node*);
+}

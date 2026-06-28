@@ -1,0 +1,14 @@
+import "a" as a;
+import "b" as b;
+
+f<int> main() {
+    B bInst;
+    A aInst;
+    // Cross-file type identity: the field aInst.bField (typed B* via a.spice) must be assignable from a B* whose type
+    // was resolved through b.spice. They must share the same type, which only holds if the circular import is handled.
+    aInst.bField = &bInst;
+    bInst.aField = &aInst;
+    printf("aInst.bField == &bInst: %d\n", aInst.bField == &bInst);
+    printf("bInst.aField == &aInst: %d\n", bInst.aField == &aInst);
+    return 0;
+}

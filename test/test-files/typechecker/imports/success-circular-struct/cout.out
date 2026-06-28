@@ -1,0 +1,2 @@
+aInst.bField == &bInst: 1
+bInst.aField == &aInst: 1

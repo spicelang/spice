@@ -95,7 +95,7 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   // Create the imported source file
   const auto importedSourceFile = resourceManager.createSourceFile(sourceFile, node->importName, importPath, isStd);
   // Register it as a dependency to the current source file
-  sourceFile->addDependency(importedSourceFile, node, node->importName, importPath.generic_string());
+  sourceFile->addDependency(importedSourceFile, node->importName);
 
   return nullptr;
 }

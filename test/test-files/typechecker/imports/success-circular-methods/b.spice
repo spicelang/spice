@@ -1,0 +1,14 @@
+import "a" as a;
+
+public type B struct {
+    public int bVal
+}
+
+public f<int> B.getBVal() {
+    return this.bVal;
+}
+
+// Uses A, completing the cycle
+public f<int> B.combinedWith(A* other) {
+    return this.bVal + other.getAVal();
+}

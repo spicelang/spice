@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ../b.spice:5:12:
+Insufficient symbol visibility: Function 'f<int> privateHelper()' has insufficient visibility
+
+5  return a::privateHelper();
+          ^^^^^^^^^^^^^^^^^^

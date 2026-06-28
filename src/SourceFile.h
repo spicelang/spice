@@ -152,9 +152,8 @@ public:
   void runBackEnd();
 
   // Public methods
-  void addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName, const std::string &path);
+  void addDependency(SourceFile *sourceFile, const std::string &dependencyName);
   [[nodiscard]] bool imports(const SourceFile *sourceFile) const;
-  [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch, std::stack<const SourceFile *> &circle) const;
   SourceFile *requestRuntimeModule(RuntimeModule runtimeModule);
   bool isRuntimeModuleAvailable(RuntimeModule runtimeModule) const;
   void addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
@@ -206,10 +205,19 @@ private:
   std::unordered_map<const Type *, llvm::Type *> typeToLLVMTypeMapping;
   uint8_t importedRuntimeModules = 0;
   uint8_t totalTypeCheckerRuns = 0;
+  // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
+  // imports). These flags prevent re-entering a file that is already being processed in the same stage.
+  bool registriesMerged = false;
+  bool typeCheckerPreRunning = false;
+  bool typeCheckerPostRunning = false;
+  bool backEndStarted = false;
+  bool warningsCollected = false;
 
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;
+  [[nodiscard]] bool dependsOn(const SourceFile *other) const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
+  void mergeNameRegistriesRecursive();
   void dumpCacheStats();
   void dumpCompilationStats() const;
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;

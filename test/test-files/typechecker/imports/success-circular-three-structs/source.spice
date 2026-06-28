@@ -1,0 +1,15 @@
+import "a" as a;
+import "b" as b;
+import "c" as c;
+
+f<int> main() {
+    A objA;
+    B objB;
+    C objC;
+    objA.next = &objB;
+    objB.next = &objC;
+    objC.next = &objA;
+    // Walk the ring A -> B -> C -> A and check we arrive back at objA
+    printf("ring closes back to A: %d\n", objA.next.next.next == &objA);
+    return 0;
+}

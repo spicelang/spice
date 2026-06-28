@@ -1,6 +1,0 @@
-import "b-fwd";
-
-// A holds a pointer to B (which is only forward-declared here)
-public type A struct {
-    B* b
-}

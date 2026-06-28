@@ -1,0 +1,5 @@
+import "b" as b;
+
+public type A struct {
+    B* next
+}

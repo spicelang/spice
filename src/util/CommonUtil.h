@@ -13,9 +13,6 @@ class Triple;
 
 namespace spice::compiler {
 
-// Forward declarations
-class SourceFile;
-
 /**
  * Util for general simplification of tasks
  */
@@ -28,7 +25,6 @@ public:
   static std::string formatBytes(size_t bytes);
   static std::string demangleTypeName(const char *mangledName);
   static bool isValidMangledName(const std::string &mangledName);
-  static std::string getCircularImportMessage(std::stack<const SourceFile *> &sourceFiles);
   static int getCurrentYear();
   static std::string buildVersionInfo();
 };
