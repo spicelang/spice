@@ -1,0 +1,91 @@
+// Generic type definition
+type T dyn;
+
+// Assigning a value THROUGH an already-bound reference must run the value's copy-assignment
+// operator (or copy ctor) instead of shallow-copying the struct. A shallow copy would make the
+// referent alias the rhs' owned heap buffer and double-free once one of them is destructed.
+// This used to crash for non-trivially-copyable structs (e.g. String) assigned through a reference.
+
+// A heap-owning struct that has a copy ctor + dtor but NO operator=, to cover the copy-ctor path
+// of an assign-through. String (imported) covers the copy-assignment-operator path.
+public type Box struct {
+    heap byte* data
+}
+public p Box.ctor(int value) {
+    unsafe {
+        this.data = sAllocUnsafe(sizeof<int>());
+        int* slot = cast<int*>(this.data);
+        *slot = value;
+    }
+}
+public p Box.ctor(const Box& other) {
+    unsafe {
+        this.data = sAllocUnsafe(sizeof<int>());
+        int* dstSlot = cast<int*>(this.data);
+        const int* srcSlot = cast<const int*>(other.data);
+        *dstSlot = *srcSlot;
+    }
+}
+public p Box.dtor() {
+    sDealloc(this.data);
+}
+public f<int> Box.get() {
+    unsafe {
+        int* slot = cast<int*>(this.data);
+        return *slot;
+    }
+}
+
+// Assign-through a String reference (copy-assignment operator path).
+p assignString(String& target, const String& source) {
+    String copy = source;
+    target = copy; // String& = String -> must deep-copy via operator=, not alias
+}
+
+// Assign-through a Box reference (copy-ctor path).
+p assignBox(Box& target, const Box& source) {
+    Box copy = source;
+    target = copy; // Box& = Box -> must deep-copy via the copy ctor, not alias
+}
+
+// Generic RAII helper mirroring the bootstrap compiler's SaveAndRestore, which is the real-world
+// pattern that exposed the double-free: it stores a reference, applies a new value through it on
+// construction and restores the old value through it on destruction.
+type SaveAndRestore<T> struct {
+    T& value
+    T oldValue
+}
+p SaveAndRestore.ctor(T& value, const T& newValue) {
+    this.value = value;
+    this.oldValue = value;
+    T newValueCopy = newValue;
+    value = newValueCopy;
+}
+p SaveAndRestore.dtor() {
+    this.value = this.oldValue;
+}
+
+f<int> main() {
+    // 1) Plain assign-through a String reference.
+    String a = String("orig");
+    String b = String("newval");
+    assignString(a, b);
+    printf("string: a=%s b=%s\n", a.getRaw(), b.getRaw());
+
+    // 2) Plain assign-through a copy-ctor-only Box reference.
+    Box boxA = Box(1);
+    Box boxB = Box(2);
+    assignBox(boxA, boxB);
+    printf("box: a=%d b=%d\n", boxA.get(), boxB.get());
+
+    // 3) SaveAndRestore<String>: apply a new value through a reference, restore on scope exit.
+    String parent = String("outer");
+    {
+        String inner = String("inner");
+        SaveAndRestore<String>(parent, inner);
+        printf("guard inside: %s\n", parent.getRaw());
+    }
+    printf("guard restored: %s\n", parent.getRaw());
+
+    printf("All assertions passed!");
+}

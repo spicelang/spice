@@ -430,7 +430,12 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
                                          const QualType &rhsSType, const ASTNode *node, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
-  const bool needsCopy = !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
+  // A non-temporary struct value assigned by value needs a deep copy. This holds whether the destination is a direct
+  // lvalue or the value behind an already-bound reference (assign-through): the binding cases of a reference assignment
+  // (declaration/initial field ref/return value) all return early above before this is consumed, so the remaining
+  // reference assignments are assign-throughs that must copy into the referent instead of shallow-copying (which would
+  // alias the rhs' owned members and double-free).
+  const bool needsCopy = rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
     assert(lhsEntry != nullptr);

@@ -1,0 +1,5 @@
+string: a=newval b=newval
+box: a=2 b=2
+guard inside: inner
+guard restored: outer
+All assertions passed!
