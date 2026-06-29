@@ -1,0 +1,7 @@
+import "b" as b;
+
+public type MyInt alias int;
+
+public f<int> viaB() {
+    return b::takesAlias(5);
+}

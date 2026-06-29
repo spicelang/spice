@@ -2,6 +2,8 @@
 
 #include "TypeChecker.h"
 
+#include <unordered_set>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
@@ -13,6 +15,28 @@ namespace spice::compiler {
 
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
     : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), warnings(sourceFile->compilerOutput.warnings) {
+}
+
+/**
+ * Check whether the given struct and all of its by-value struct fields are manifested, transitively. While a circular
+ * import is still being prepared, a by-value struct field may (transitively) reference a struct that is not manifested
+ * yet; generating implicit special members for such a struct recurses through isTriviallyConstructible and would
+ * dereference a null struct lookup. A genuine infinite-size containment cycle among these structs is reported
+ * separately by the infinite-size check during struct preparation, so a containment cycle here is treated as manifested.
+ */
+static bool structFullyManifested(const Struct *spiceStruct, const ASTNode *node, std::unordered_set<const Scope *> &visited) {
+  for (const QualType &fieldType : spiceStruct->fieldTypes) {
+    if (!fieldType.is(TY_STRUCT))
+      continue;
+    const Struct *fieldStruct = fieldType.getStruct(node);
+    if (fieldStruct == nullptr)
+      return false;
+    // Recurse into each field struct once. A containment cycle (already visited) is fine here - it is reported
+    // separately as an infinite-size error. Leaf structs never touch the set, so the common case stays allocation-free.
+    if (visited.insert(fieldStruct->scope).second && !structFullyManifested(fieldStruct, node, visited))
+      return false;
+  }
+  return true;
 }
 
 std::any TypeChecker::visitEntry(EntryNode *node) {
@@ -31,6 +55,11 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   if (isPrepare) {
     const std::vector<const Struct *> manifestations = rootScope->getAllStructManifestationsInDeclarationOrder();
     for (const Struct *manifestation : manifestations) {
+      // Skip while a by-value struct field is (transitively) not manifested yet (circular import still in progress). A
+      // genuine infinite-size cycle among such structs is reported by the infinite-size check during preparation.
+      std::unordered_set<const Scope *> visitedScopes;
+      if (!structFullyManifested(manifestation, node, visitedScopes))
+        continue;
       // Check if we need to create a default ctor, copy ctor, move ctor or dtor
       createDefaultCtorIfRequired(*manifestation, manifestation->scope);
       createDefaultCopyCtorIfRequired(*manifestation, manifestation->scope);

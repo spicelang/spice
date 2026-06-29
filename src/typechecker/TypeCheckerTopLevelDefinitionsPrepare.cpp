@@ -2,6 +2,8 @@
 
 #include "TypeChecker.h"
 
+#include <unordered_set>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
@@ -315,6 +317,36 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   return nullptr;
 }
 
+/**
+ * Determine whether a field type (transitively) contains a struct with the given origin body scope by value, which would
+ * give the origin struct an infinite size. Only by-value struct fields are followed; pointers and references break the
+ * cycle and have a fixed size. Struct types that are not manifested yet (e.g. still being prepared as part of a circular
+ * import) end a branch - such a cycle is still detected once the last struct in it is prepared, when all the others are
+ * manifested.
+ *
+ * @param fieldType Type of the field to inspect
+ * @param originScope Body scope of the struct whose infinite size we are checking for
+ * @param node Accessing AST node (for struct lookup diagnostics)
+ * @param visited Set of already-visited struct scopes, to keep the walk finite
+ * @return true if the origin struct is reachable by value, i.e. it has infinite size
+ */
+static bool fieldContainsStructByValue(const QualType &fieldType, const Scope *originScope, const ASTNode *node,
+                                       std::unordered_set<const Scope *> &visited) {
+  if (!fieldType.is(TY_STRUCT))
+    return false;
+  const Scope *fieldScope = fieldType.getBodyScope();
+  if (fieldScope == originScope)
+    return true;
+  if (fieldScope == nullptr || !visited.insert(fieldScope).second)
+    return false;
+  const Struct *spiceStruct = fieldType.getStruct(node);
+  if (spiceStruct == nullptr)
+    return false; // Not manifested yet; the cycle is caught once the last struct in it is prepared
+  return std::ranges::any_of(spiceStruct->fieldTypes, [&](const QualType &memberType) {
+    return fieldContainsStructByValue(memberType, originScope, node, visited);
+  });
+}
+
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
@@ -383,15 +415,19 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Retrieve field types
   QualTypeList fieldTypes;
   fieldTypes.reserve(node->fields.size());
+  // Shared across all fields: the origin (node->structScope) is constant, so a struct already proven not to reach it
+  // via one field need not be re-walked for another.
+  std::unordered_set<const Scope *> visitedScopes;
   for (FieldNode *field : node->fields) {
     // Visit field type
     auto fieldType = std::any_cast<QualType>(visit(field));
     if (fieldType.is(TY_UNRESOLVED))
       sourceFile->checkForSoftErrors(); // We get into trouble if we continue without the field type -> abort
 
-    // Check for struct with infinite size.
-    // This can happen if the struct A has a field with type A
-    if (fieldType.is(TY_STRUCT) && fieldType.getBodyScope() == node->structScope)
+    // Check for struct with infinite size. This happens if a struct (transitively, through by-value struct fields)
+    // contains itself - either directly (struct A has a field of type A) or through a cycle of structs in mutually
+    // importing files (A has a field of type B and B has a field of type A).
+    if (fieldContainsStructByValue(fieldType, node->structScope, field, visitedScopes))
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types
@@ -587,6 +623,17 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
 
 std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
+
+  // The alias may already have been prepared on demand because it was referenced across a circular import
+  // (assignDeferredOpaqueType). In that case there is nothing left to do.
+  if (node->entry->getQualType().is(TY_ALIAS))
+    return nullptr;
+
+  // Ensure the aliased-type subtree is sized for manifestations before it is visited below. On the normal path
+  // visitEntry already sized the whole file to 1, so this is a no-op; on the on-demand path (a cross-import reference
+  // reaching this alias before its own file's visitEntry ran) it establishes the precondition setEvaluatedSymbolType
+  // requires.
+  node->dataType->resizeToNumberOfManifestations(1);
 
   // Update type of alias entry
   const Type *type = TypeRegistry::getOrInsert(TY_ALIAS, node->aliasName, node->typeId, {}, {});
