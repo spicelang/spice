@@ -1,0 +1,5 @@
+[Error|Semantic] ../a.spice:5:5:
+Struct with infinite size: Struct with infinite size detected
+
+5  public B inner
+   ^^^^^^^^^^^^^^

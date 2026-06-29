@@ -2,6 +2,8 @@
 
 #include "TypeChecker.h"
 
+#include <unordered_set>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
@@ -315,6 +317,36 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   return nullptr;
 }
 
+/**
+ * Determine whether a field type (transitively) contains a struct with the given origin body scope by value, which would
+ * give the origin struct an infinite size. Only by-value struct fields are followed; pointers and references break the
+ * cycle and have a fixed size. Struct types that are not manifested yet (e.g. still being prepared as part of a circular
+ * import) end a branch - such a cycle is still detected once the last struct in it is prepared, when all the others are
+ * manifested.
+ *
+ * @param fieldType Type of the field to inspect
+ * @param originScope Body scope of the struct whose infinite size we are checking for
+ * @param node Accessing AST node (for struct lookup diagnostics)
+ * @param visited Set of already-visited struct scopes, to keep the walk finite
+ * @return true if the origin struct is reachable by value, i.e. it has infinite size
+ */
+static bool fieldContainsStructByValue(const QualType &fieldType, const Scope *originScope, const ASTNode *node,
+                                       std::unordered_set<const Scope *> &visited) {
+  if (!fieldType.is(TY_STRUCT))
+    return false;
+  const Scope *fieldScope = fieldType.getBodyScope();
+  if (fieldScope == originScope)
+    return true;
+  if (fieldScope == nullptr || !visited.insert(fieldScope).second)
+    return false;
+  const Struct *spiceStruct = fieldType.getStruct(node);
+  if (spiceStruct == nullptr)
+    return false; // Not manifested yet; the cycle is caught once the last struct in it is prepared
+  return std::ranges::any_of(spiceStruct->fieldTypes, [&](const QualType &memberType) {
+    return fieldContainsStructByValue(memberType, originScope, node, visited);
+  });
+}
+
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
@@ -389,9 +421,11 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     if (fieldType.is(TY_UNRESOLVED))
       sourceFile->checkForSoftErrors(); // We get into trouble if we continue without the field type -> abort
 
-    // Check for struct with infinite size.
-    // This can happen if the struct A has a field with type A
-    if (fieldType.is(TY_STRUCT) && fieldType.getBodyScope() == node->structScope)
+    // Check for struct with infinite size. This happens if a struct (transitively, through by-value struct fields)
+    // contains itself - either directly (struct A has a field of type A) or through a cycle of structs in mutually
+    // importing files (A has a field of type B and B has a field of type A).
+    std::unordered_set<const Scope *> visitedScopes;
+    if (fieldContainsStructByValue(fieldType, node->structScope, field, visitedScopes))
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types

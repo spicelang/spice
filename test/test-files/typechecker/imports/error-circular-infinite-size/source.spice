@@ -1,0 +1,6 @@
+import "a" as a;
+
+f<int> main() {
+    A a;
+    return 0;
+}

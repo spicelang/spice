@@ -338,6 +338,7 @@ bool QualType::isTriviallyConstructible(const ASTNode *node) const {
   if (is(TY_STRUCT)) {
     // If the struct has a ctor, it is a non-trivially constructible one
     const Struct *spiceStruct = getStruct(node);
+    assert(spiceStruct != nullptr); // Callers must ensure the struct is manifested (see allByValueStructFieldsManifested)
     if (FunctionManager::hasAnyNonCopyCtor(spiceStruct->scope))
       return false;
 

@@ -1,0 +1,6 @@
+import "b" as b;
+
+// A contains B by value and B contains A by value -> the struct would have infinite size.
+public type A struct {
+    public B inner
+}

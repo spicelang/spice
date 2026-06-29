@@ -1,0 +1,5 @@
+import "a" as a;
+
+public type B struct {
+    public A inner
+}
