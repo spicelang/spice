@@ -36,7 +36,7 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
 public p ASTNode.dtor() {}
 
 public f<Any> ASTNode.accept(IAbstractAstVisitor* _) {
-    assert false; // Please override at child level
+    assert false; // Concrete node types must override accept()
     return Any();
 }
 
@@ -79,7 +79,7 @@ public p ASTEntryNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTEntryNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitEntry(this);
 }
 
 
@@ -126,7 +126,7 @@ public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTMainFctDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitMainFctDef(this);
 }
 
 
@@ -141,7 +141,7 @@ public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitFctName(this);
 }
 
 
@@ -166,7 +166,7 @@ public p ASTFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
 }
 public f<Any> ASTFctDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitFctDef(this);
 }
 
 
@@ -181,7 +181,7 @@ public p ASTProcDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
 }
 public f<Any> ASTProcDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitProcDef(this);
 }
 
 
@@ -196,7 +196,7 @@ public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitStructDef(this);
 }
 
 
@@ -211,7 +211,7 @@ public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitInterfaceDef(this);
 }
 
 
@@ -226,7 +226,7 @@ public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitEnumDef(this);
 }
 
 
@@ -241,7 +241,7 @@ public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitGenericTypeDef(this);
 }
 
 
@@ -256,7 +256,7 @@ public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAliasDef(this);
 }
 
 
@@ -271,7 +271,7 @@ public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitGlobalVarDef(this);
 }
 
 
@@ -286,7 +286,7 @@ public p ASTExtDeclNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTExtDeclNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitExtDecl(this);
 }
 
 
@@ -301,7 +301,7 @@ public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
 }
 public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitImportDef(this);
 }
 
 
@@ -316,7 +316,7 @@ public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTUnsafeBlockNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitUnsafeBlock(this);
 }
 
 
@@ -331,7 +331,7 @@ public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTForLoopNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitForLoop(this);
 }
 
 
@@ -346,7 +346,7 @@ public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTForeachLoopNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitForeachLoop(this);
 }
 
 
@@ -361,7 +361,7 @@ public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitWhileLoop(this);
 }
 
 
@@ -376,7 +376,7 @@ public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTDoWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitDoWhileLoop(this);
 }
 
 
@@ -391,7 +391,7 @@ public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTIfStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitIfStmt(this);
 }
 
 
@@ -406,7 +406,7 @@ public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTElseStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitElseStmt(this);
 }
 
 
@@ -421,7 +421,7 @@ public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitSwitchStmt(this);
 }
 
 
@@ -436,7 +436,7 @@ public p ASTCaseBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTCaseBranchNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitCaseBranch(this);
 }
 
 
@@ -451,7 +451,7 @@ public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTDefaultBranchNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitDefaultBranch(this);
 }
 
 
@@ -466,7 +466,7 @@ public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTAnonymousBlockStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAnonymousBlockStmt(this);
 }
 
 
@@ -481,7 +481,7 @@ public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitStmtLst(this);
 }
 
 
@@ -496,7 +496,7 @@ public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTTypeLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitTypeLst(this);
 }
 
 
@@ -511,7 +511,7 @@ public p ASTTypeLstWithEllipsisNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitTypeLstWithEllipsis(this);
 }
 
 
@@ -526,7 +526,7 @@ public p ASTTypeAltsLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitTypeAltsLst(this);
 }
 
 
@@ -541,7 +541,7 @@ public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitParamLst(this);
 }
 
 
@@ -556,7 +556,7 @@ public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitArgLst(this);
 }
 
 
@@ -571,7 +571,7 @@ public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitEnumItemLst(this);
 }
 
 
@@ -586,7 +586,7 @@ public p ASTEnumItemNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitEnumItem(this);
 }
 
 
@@ -601,7 +601,7 @@ public p ASTFieldNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitField(this);
 }
 
 
@@ -616,7 +616,7 @@ public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitSignature(this);
 }
 
 
@@ -631,7 +631,7 @@ public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitDeclStmt(this);
 }
 
 
@@ -646,7 +646,7 @@ public p ASTExprStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitExprStmt(this);
 }
 
 
@@ -661,7 +661,7 @@ public p ASTQualifierLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTQualifierLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitQualifierLst(this);
 }
 
 
@@ -687,7 +687,7 @@ public p ASTQualifierNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitQualifier(this);
 }
 
 
@@ -702,7 +702,7 @@ public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitModAttr(this);
 }
 
 
@@ -717,7 +717,7 @@ public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitTopLevelDefinitionAttr(this);
 }
 
 
@@ -732,7 +732,7 @@ public p ASTLambdaAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLambdaAttr(this);
 }
 
 
@@ -747,7 +747,7 @@ public p ASTAttrLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTAttrLstNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAttrLst(this);
 }
 
 
@@ -762,7 +762,7 @@ public p ASTAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
 }
 public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAttr(this);
 }
 
 
@@ -777,7 +777,7 @@ public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitCaseConstant(this);
 }
 
 
@@ -792,7 +792,7 @@ public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitReturnStmt(this);
 }
 
 
@@ -807,7 +807,7 @@ public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitBreakStmt(this);
 }
 
 
@@ -822,7 +822,7 @@ public p ASTContinueStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTContinueStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitContinueStmt(this);
 }
 
 
@@ -837,7 +837,7 @@ public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitFallthroughStmt(this);
 }
 
 
@@ -852,7 +852,7 @@ public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
 }
 public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAssertStmt(this);
 }
 
 
@@ -867,7 +867,7 @@ public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAssignExpr(this);
 }
 
 
@@ -882,7 +882,7 @@ public p ASTTernaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitTernaryExpr(this);
 }
 
 
@@ -897,7 +897,7 @@ public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLogicalOrExpr(this);
 }
 
 
@@ -912,7 +912,7 @@ public p ASTLogicalAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLogicalAndExpr(this);
 }
 
 
@@ -927,7 +927,7 @@ public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitBitwiseOrExpr(this);
 }
 
 
@@ -942,7 +942,7 @@ public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitBitwiseXorExpr(this);
 }
 
 
@@ -957,7 +957,7 @@ public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitBitwiseAndExpr(this);
 }
 
 
@@ -972,7 +972,7 @@ public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitEqualityExpr(this);
 }
 
 
@@ -987,7 +987,7 @@ public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitRelationalExpr(this);
 }
 
 
@@ -1002,7 +1002,7 @@ public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitShiftExpr(this);
 }
 
 
@@ -1017,7 +1017,7 @@ public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAdditiveExpr(this);
 }
 
 
@@ -1032,7 +1032,7 @@ public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitMultiplicativeExpr(this);
 }
 
 
@@ -1047,7 +1047,7 @@ public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitCastExpr(this);
 }
 
 
@@ -1062,7 +1062,7 @@ public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitPrefixUnaryExpr(this);
 }
 
 
@@ -1077,7 +1077,7 @@ public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitPostfixUnaryExpr(this);
 }
 
 
@@ -1092,7 +1092,7 @@ public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitAtomicExpr(this);
 }
 
 
@@ -1107,7 +1107,7 @@ public p ASTValueNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitValue(this);
 }
 
 
@@ -1122,7 +1122,7 @@ public p ASTConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitConstant(this);
 }
 
 
@@ -1137,7 +1137,7 @@ public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitFctCall(this);
 }
 
 
@@ -1152,7 +1152,7 @@ public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitArrayInitialization(this);
 }
 
 
@@ -1167,7 +1167,7 @@ public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitStructInstantiation(this);
 }
 
 
@@ -1192,7 +1192,7 @@ public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
 public f<Any> ASTLambdaFuncNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLambdaFunc(this);
 }
 
 
@@ -1207,7 +1207,7 @@ public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
 public f<Any> ASTLambdaProcNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLambdaProc(this);
 }
 
 
@@ -1222,7 +1222,7 @@ public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
 }
 public f<Any> ASTLambdaExprNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitLambdaExpr(this);
 }
 
 
@@ -1237,7 +1237,7 @@ public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitDataType(this);
 }
 
 
@@ -1252,7 +1252,7 @@ public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitBaseDataType(this);
 }
 
 
@@ -1266,7 +1266,7 @@ public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitCustomDataType(this);
 }
 
 
@@ -1281,7 +1281,7 @@ public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
 }
 public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
-    return Any(); // dispatch through ASTNode* not yet available; call visitXxx typed methods directly
+    return visitor.visitFunctionDataType(this);
 }
 
 

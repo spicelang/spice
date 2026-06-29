@@ -5,6 +5,7 @@ import "std/type/any";
 import "std/text/stringstream";
 
 // Own imports
+import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/ast/ast-node-intf";
 import "bootstrap/ast/abstract-ast-visitor";
@@ -25,11 +26,9 @@ public type ASTVisualizer struct : IAbstractAstVisitor {
 }
 
 // Typed double-dispatch entry point.
-// Note: node.accept(this) requires IASTNode.accept(IAbstractAstVisitor*) to resolve
-// ASTVisualizer as IAbstractAstVisitor — currently a stub until interface subtype
-// dispatch is supported. Tree traversal goes through typed visitXxx calls instead.
+// Calls accept() on the IASTNode interface pointer, which dispatches to the correct visitXxx override.
 public f<Any> ASTVisualizer.visit(IASTNode* node) {
-    return Any();
+    return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
 // ─── private helpers ──────────────────────────────────────────────────────────
@@ -39,7 +38,7 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
 
     // Prepare strings
     const dyn typeName = String(typename<T>());
-    //const CodeLoc& codeLoc = node.getCodeLoc();
+    // Note: getCodeLocStr() is not accessible on generic T* — codeLoc is empty in bootstrap
     String codeLocStr;
     const String nodeName = typeName.getSubstring(typeName.rfind("::") + 2l);
     const String nodeId = codeLocStr + "_" + nodeName;
@@ -55,13 +54,8 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
     // Set parentNodeId for children
     SaveAndRestore<String>(this.parentNodeId, nodeId);
 
-    // Visit all the children
-    const Vector<ASTNode*> children/* = node.getChildren()*/;
-    foreach ASTNode* child : children {
-        assert child != nil<ASTNode*>;
-        const Any res/* = this.visit(child)*/;
-        output << " " << res.get<String>();
-    }
+    // Note: getChildren() is not accessible on generic T* in the bootstrap.
+    // Full child traversal requires concrete typed access or IVisitable vtable dispatch.
 
     return Any(output.str());
 }
