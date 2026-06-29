@@ -116,6 +116,13 @@ public type SourceFile struct : ISourceFile {
     UnorderedMap<const Type*, llvm::Type*> llvmTypeMapping
     unsigned int importedRuntimeModules = 0
     unsigned short totalTypeCheckerRuns = 0s
+    // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
+    // imports). These flags prevent re-entering a file that is already being processed in the same stage.
+    bool registriesMerged = false
+    bool typeCheckerPreRunning = false
+    bool typeCheckerPostRunning = false
+    bool backEndStarted = false
+    bool warningsCollected = false
 }
 
 public p SourceFile.ctor(IGlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const FilePath& filePath, bool isStdFile) {
@@ -174,7 +181,7 @@ public p SourceFile.runParser() {
 
 public p SourceFile.runASTVisualizer(string* output) {
     // Only execute if enabled
-    if this.resotredFromCache || (!this.cliOptions.dump.dumpAST && !this.cliOptions.testMode) {
+    if this.restoredFromCache || (!this.cliOptions.dump.dumpAST && !this.cliOptions.testMode) {
         return;
     }
     // Check if this stage has already been done
@@ -188,7 +195,7 @@ public p SourceFile.runASTVisualizer(string* output) {
     // Generate dot code for this source file
     String dotCode;
     this.visualizerPreamble(dotCode);
-    ASTVisualizer visualizer = ASTVisualizer(this.resouceManager, this);
+    ASTVisualizer visualizer = ASTVisualizer(this.resourceManager, this);
     dotCode += visualizer.visit(this.ast);
     dotCode += "}";
 
@@ -242,14 +249,9 @@ public p SourceFile.runSymbolTableBuilder() {
     Timer timer;
     timer.start();
 
-    // The symbol tables of all dependencies are present at this point, so we can merge the exported name registries in
-    foreach dyn dependency : this.dependencies {
-        const String& importName = dependency.getFirst();
-        const SourceFile* sourceFile = dependency.getSecond();
-        this.mergeNameRegistries(*sourceFile, importName);
-    }
-
-    // Build the symbol table
+    // Build the symbol table. The dependencies' exported name registries are merged in afterwards, in a separate pass
+    // (mergeNameRegistriesRecursive), once every reachable file has built its own registry. This deferral is what makes
+    // circular imports work: with a cycle, a dependency's registry is not fully populated yet at this point.
     SymbolTableBuilder symbolTableBuilder = SymbolTableBuilder(this.resourceManager, this);
     symbolTableBuilder.visit(this.ast);
 
@@ -260,10 +262,12 @@ public p SourceFile.runSymbolTableBuilder() {
 }
 
 p SourceFile.runTypeCheckerPre() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::TYPE_CHECKER_PRE {
+    // The typeCheckerPreRunning guard breaks the recursion on a circular import: a cyclic back-edge returns immediately
+    // instead of recursing forever.
+    if this.previousStage >= CompileStageType::TYPE_CHECKER_PRE || this.typeCheckerPreRunning {
         return;
     }
+    this.typeCheckerPreRunning = true;
 
     // Type-check all dependencies first
     foreach dyn dependency : this.dependencies {
@@ -279,17 +283,26 @@ p SourceFile.runTypeCheckerPre() {
     typeChecker.visit(this.ast);
 
     this.previousStage = CompileStageType::TYPE_CHECKER_PRE;
+    this.typeCheckerPreRunning = false;
     timer.stop();
     this.compilerOutput.times.typeCheckerPre = timer.getDurationInMillis();
     this.printStatusMessage("Type Checker Pre", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPre);
 }
 
 p SourceFile.runTypeCheckerPost() {
-    // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
-    // Also skip if there are source files, that include this source file, which have not been type checked yet.
-    if this.restoredFromCache || !this.haveAllDependantsBeenTypeChecked() {
+    // Re-entrancy guard: within an import cycle, a dependency's post-run recurses back into this file's post-run. The
+    // in-flight fixpoint loop below already revisits this file, so the nested call must be a no-op to avoid unbounded
+    // mutual recursion. Convergence is driven by the reVisitRequested flags propagating across the cycle.
+    if this.typeCheckerPostRunning {
         return;
     }
+
+    // Skip if not all dependants finished type checking yet.
+    if !this.haveAllDependantsBeenTypeChecked() {
+        return;
+    }
+
+    this.typeCheckerPostRunning = true;
 
     Timer timer;
     timer.start();
@@ -312,6 +325,8 @@ p SourceFile.runTypeCheckerPost() {
             sourceFile.runTypeCheckerPost();
         }
     }
+
+    this.typeCheckerPostRunning = false;
 
     this.checkForSoftErrors();
 
@@ -481,11 +496,23 @@ public p SourceFile.runFrontEnd() {
 }
 
 public p SourceFile.runMiddleEnd() {
+    // Merge the exported name registries of all (transitive) dependencies into the respective importing files. This is
+    // the deferred tail of the front-end: it must run after every reachable file has built its own registry, which is
+    // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
+    // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
+    this.mergeNameRegistriesRecursive();
     this.runTypeCheckerPre();
     this.runTypeCheckerPost();
 }
 
 public p SourceFile.runBackEnd() {
+    // Guard against re-entering a file that is already running its back end. Circular imports form a cycle in the
+    // dependency graph, so the deps-first recursion below would otherwise loop forever.
+    if this.backEndStarted {
+        return;
+    }
+    this.backEndStarted = true;
+
     // Run backend for all dependencies first
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
@@ -507,17 +534,14 @@ public p SourceFile.runBackEnd() {
 }
 
 public p SourceFile.addDependency(SourceFile* sourceFile, const ASTNode* declNode, const String& dependencyName, const String& path) {
-    // Check if this would cause a circular dependency
-    Stack<const SourceFile*> dependencyCircle;
-    if this.isAlreadyImported(path, dependencyCircle) {
-        // Build error message
-        String errorMessage = "Circular dependency detected while importing '" + sourceFile.fileName + "':\n\n";
-        errorMessage += getCircularImportMessage(dependencyCircle);
-        panic(Error(errorMessage));
-    }
+    // Circular imports are explicitly supported, so cycles are not rejected here. Source files are deduplicated by path
+    // in GlobalResourceManager::createSourceFile, so a cyclic import resolves to the same SourceFile instance and the
+    // pipeline drivers guard against re-entering a file that is already in progress.
 
-    // Add the dependency
-    sourceFile.isMainFile = false;
+    // Add the dependency. Do not demote the compilation root (parent == nullptr) to a non-main file.
+    if sourceFile.parent != nil<SourceFile*> {
+        sourceFile.isMainFile = false;
+    }
     this.dependencies.upsert(dependencyName, sourceFile);
 
     // Add the dependant
@@ -530,26 +554,6 @@ public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
             return true;
         }
     }
-    return false;
-}
-
-f<bool> SourceFile.isAlreadyImported(const FilePath& filePathSearch, Stack<const SourceFile*>& circle) {
-    circle.push(this);
-
-    // Check if the current source file corresponds to the path to search
-    if this.filePath == filePathSearch {
-        return true;
-    }
-
-    // Check dependants recursively
-    foreach dyn dependant : this.dependants {
-        if dependant.isAlreadyImported(filePathSearch, circle) {
-            return true;
-        }
-    }
-
-    // If no dependant was found, remote the current source file from the circle to continue with the next sibling
-    circle.pop();
     return false;
 }
 
@@ -603,6 +607,12 @@ public p SourceFile.checkForSoftErrors() {
 }
 
 public p SourceFile.collectAndPrintWarnings() {
+    // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
+    // imports from recursing infinitely, since the dependency graph may contain cycles.
+    if this.restoredFromCache || this.warningsCollected {
+        return;
+    }
+    this.warningsCollected = true;
     // Print warnings for all dependencies
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
@@ -635,7 +645,12 @@ public f<const SourceFile*> SourceFile.getRootSourceFile() {
 }*/
 
 f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
-    foreach SourceFile* dependant : dependants {
+    foreach const SourceFile* dependant : dependants {
+        // Ignore dependants that are part of the same import cycle (i.e. this file transitively depends on them). They
+        // cannot be type-checked before us either, so waiting on them would deadlock the whole cycle.
+        if this.dependsOn(dependant) {
+            continue;
+        }
         if dependant.totalTypeCheckerRuns == 0s {
             return false;
         }
@@ -652,7 +667,7 @@ p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, const Str
         const String& originalName = item.getFirst();
         const NameRegistryEntry& entry = item.getSecond();
         // Skip if we introduce a transitive dependency
-        if entry.targetScope.sourceFile.globalScope != importedSourceFile.globalScoppe {
+        if entry.targetScope.sourceFile.globalScope != importedSourceFile.globalScope {
             continue;
         }
         // Add the fully qualified name
@@ -660,10 +675,73 @@ p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, const Str
         newName += SCOPE_ACCESS_TOKEN;
         newName += originalName;
         this.exportedNameRegistry.insert(newName, NameRegistryEntry(newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry));
-        // Add the shortened name, considering the name collision
-        const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
-        this.addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
+        // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always
+        // shadows imported symbols of the same name. Since this merge runs after the file built its own registry (so that
+        // circular imports work), we must explicitly avoid letting an import overwrite or erase such an own symbol.
+        const NameRegistryEntry* existing = this.exportedNameRegistry.contains(originalName) ? &this.exportedNameRegistry.get(originalName) : nil<NameRegistryEntry*>;
+        const bool existingIsOwn = existing != nil<NameRegistryEntry*> && existing.targetScope.sourceFile.globalScope == this.globalScope;
+        if !existingIsOwn {
+            const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
+            this.addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
+        }
     }
+}
+
+/**
+ * Recursively merge the exported name registries of all (transitive) dependencies into the respective importing source
+ * files. Each file merges its direct dependencies' registries exactly once (guarded by registriesMerged), so this is
+ * safe to call on overlapping subgraphs and on graphs that contain cycles (circular imports).
+ *
+ * Must only be called once every reachable file has built its own exported name registry (i.e. after the front-end).
+ */
+p SourceFile.mergeNameRegistriesRecursive() {
+    if this.registriesMerged {
+        return;
+    }
+    this.registriesMerged = true;
+
+    // Merge the direct dependencies' registries into this file. Their own registries are fully built by now, so the
+    // order in which the reachable files are visited does not matter (even across import cycles).
+    foreach dyn dependency : this.dependencies {
+        const String& importName = dependency.getFirst();
+        const SourceFile* sourceFile = dependency.getSecond();
+        this.mergeNameRegistries(*sourceFile, importName);
+    }
+
+    // Recurse into the dependencies to cover the rest of the reachable graph
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.mergeNameRegistriesRecursive();
+    }
+}
+
+/**
+ * Check whether this source file transitively depends on (imports) the given other source file.
+ * Used to detect strongly connected components (import cycles) in the dependency graph.
+ *
+ * @param other Potential (transitive) dependency
+ * @return true if this file reaches the other file by following dependency edges
+ */
+f<bool> SourceFile.dependsOn(const SourceFile* other) {
+    UnorderedMap<const SourceFile*, bool> visited;
+    Vector<const SourceFile*> worklist;
+    worklist.pushBack(this);
+    visited.upsert(this, true);
+    while !worklist.isEmpty() {
+        const SourceFile* current = worklist.back();
+        worklist.popBack();
+        foreach dyn dep : current.dependencies {
+            const SourceFile* dependency = dep.getSecond();
+            if dependency == other {
+                return true;
+            }
+            if !visited.contains(dependency) {
+                visited.upsert(dependency, true);
+                worklist.pushBack(dependency);
+            }
+        }
+    }
+    return false;
 }
 
 p SourceFile.dumpCacheStats() {
