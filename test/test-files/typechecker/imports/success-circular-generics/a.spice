@@ -1,0 +1,26 @@
+import "b" as b;
+
+type T dyn;
+
+public type Box<T> struct {
+    public T value
+}
+
+public p Box.ctor(T val) {
+    this.value = val;
+}
+
+// Reads the item from a Container of the same type T across the circular import boundary.
+public f<T> Box.take(Container<T>* c) {
+    return c.item;
+}
+
+// Swaps: returns a new Box whose value is taken from c, leaving this box's value.
+public f<Box<T>> Box.swapWith(Container<T>* c) {
+    return Box<T>{c.item};
+}
+
+// Generic free function: transfers the item from a Container into a new Box.
+public f<Box<T>> boxOf<T>(Container<T>* c) {
+    return Box<T>{c.item};
+}

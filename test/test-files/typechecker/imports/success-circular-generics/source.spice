@@ -1,0 +1,39 @@
+import "a" as a;
+import "b" as b;
+
+f<int> main() {
+    // Substantiate Box<int> and Container<int> across the circular import boundary.
+    // Box is defined in a.spice (which imports b.spice), Container in b.spice (which imports a.spice).
+    Box<int> intBox = Box<int>(10);
+    Container<int> intContainer = Container<int>(32);
+
+    // Box.take() and Box.swapWith() cross the import boundary: their method bodies reference
+    // Container<T> from b.spice. The generic parameter T is substantiated with int here.
+    int taken = intBox.take(&intContainer);
+    Box<int> swapped = intBox.swapWith(&intContainer);
+    // boxOf<int>() is a generic free function in a.spice that also references Container<T>.
+    Box<int> boxed = boxOf<int>(&intContainer);
+
+    printf("intBox.take(intContainer) = %d\n", taken);
+    printf("intBox.swapWith(intContainer).value = %d\n", swapped.value);
+    printf("boxOf(intContainer).value = %d\n", boxed.value);
+    printf("intContainer.get() = %d\n", intContainer.get());
+
+    // Mutate via Container.set and re-read through Box.take to verify the mutation is visible
+    // across the generic type boundary (the Container<int> instance must share type identity
+    // with the Container<int> seen from inside Box.take).
+    intContainer.set(99);
+    int takenAfterSet = intBox.take(&intContainer);
+    printf("after set(99): intBox.take(intContainer) = %d\n", takenAfterSet);
+
+    // Substantiate with double to verify independent re-instantiation of both generic types.
+    Box<double> dblBox = Box<double>(1.5);
+    Container<double> dblContainer = Container<double>(2.5);
+    double takenDbl = dblBox.take(&dblContainer);
+    Box<double> boxedDbl = boxOf<double>(&dblContainer);
+
+    printf("dblBox.take(dblContainer) = %.1f\n", takenDbl);
+    printf("boxOf(dblContainer).value = %.1f\n", boxedDbl.value);
+
+    return 0;
+}
