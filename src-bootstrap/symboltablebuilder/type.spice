@@ -4,7 +4,7 @@ import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/ast/ast-node-intf";
+import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-intf";
