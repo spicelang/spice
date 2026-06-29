@@ -142,6 +142,24 @@ public f<Any> ASTVisualizer.visitFunctionDataType(ASTFunctionDataTypeNode* node)
 
 #[test, test.name="ASTVisualizer Smoke test"]
 public f<bool> testASTVisualizerSmoke() {
+    const CodeLoc loc = CodeLoc(1l, 1l, "test.spice");
+
+    // Verify that ASTVisualizer can be constructed and that parentNodeId starts empty
+    ASTVisualizer viz = ASTVisualizer();
+    assert viz.parentNodeId.isEmpty();
+
+    // Verify parentNodeId can be mutated (required by buildNode's SaveAndRestore logic)
+    viz.parentNodeId = String("_TestParent");
+    assert !viz.parentNodeId.isEmpty();
+    assert viz.parentNodeId == String("_TestParent");
+
+    // Verify that a second visualizer is independent
+    ASTVisualizer viz2 = ASTVisualizer();
+    assert viz2.parentNodeId.isEmpty();
+
+    // Note: buildNode() returns Any(String), which triggers a bootstrap compiler
+    // double-free bug on non-trivial Any return values. Full content checks are
+    // deferred until the bootstrap IRGenerator correctly handles non-trivial returns.
 
     return true;
 }

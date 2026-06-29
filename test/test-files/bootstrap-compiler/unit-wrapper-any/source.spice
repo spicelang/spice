@@ -1,0 +1,36 @@
+import "std/type/any";
+import "bootstrap/util/save-and-restore";
+
+// Minimal reproducer for the bootstrap double-free bug:
+// A generic function that holds multiple String locals, uses SaveAndRestore<String>,
+// and returns Any(String) triggers a bitwise copy of the non-trivial Any on return,
+// causing the heap-boxed String destructor to fire twice.
+// This mirrors the pattern in ASTVisualizer.buildNode<T>.
+type BugT dyn;
+
+f<Any> buildNodeMirror<BugT>(const BugT& _, String& parentId) {
+    const String typeName = String(typename<BugT>());
+    const String nodeId = String("_") + typeName;
+    SaveAndRestore<String>(parentId, nodeId);
+    return Any(nodeId);
+}
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    assert testAnyTrivialPayloadIntRoundTrips();
+    assert testAnyEmptyState();
+    assert testAnyCopyTrivialIndependent();
+    assert testAnyResetClearsPayload();
+    assert testAnyNonTrivialPayloadStringRoundTrips();
+
+    // Bug reproducer: returning Any(String) from a generic function that also
+    // uses SaveAndRestore<String> triggers a double-free in the bootstrap compiler.
+    // This is expected to crash until the bootstrap IRGenerator correctly handles
+    // non-trivial return values from generic function instantiations.
+    String parentState;
+    Any bugResult = buildNodeMirror<int>(0, parentState);
+    assert !bugResult.isEmpty();
+    assert bugResult.has<String>();
+
+    printf("All assertions passed!");
+}
