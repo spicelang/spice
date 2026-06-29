@@ -96,5 +96,21 @@ f<int> main() {
     assert !scalar.has<int>();
     assert scalar.get<long>() == 123l;
 
+    // Copy of an inline (trivial) payload is independent: mutating the copy must not
+    // affect the original (exercises the inline copyPayloadFrom path)
+    Any inlineOrig = Any(7);
+    Any inlineCopy = inlineOrig;
+    assert inlineCopy.get<int>() == 7;
+    inlineCopy.set(99);
+    assert inlineOrig.get<int>() == 7;
+    assert inlineCopy.get<int>() == 99;
+
+    // reset() clears the payload back to the empty state
+    Any toReset = Any(123);
+    assert !toReset.isEmpty();
+    toReset.reset();
+    assert toReset.isEmpty();
+    assert !toReset.has<int>();
+
     printf("Any smoke tests passed!\n");
 }

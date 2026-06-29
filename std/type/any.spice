@@ -107,7 +107,7 @@ f<byte*> Any.dataPtr() {
  * Destroys the held payload (running its destructor thunk if non-trivial),
  * releases the heap storage and resets the Any to the empty state.
  */
-p Any.reset() {
+public p Any.reset() {
     unsafe {
         // Only heap-boxed payloads can be non-trivial and need destruction. An
         // inline payload is always trivial, and a moved-from Any has a nil
@@ -249,59 +249,4 @@ public f<Any> any<T>(const T& value) {
     Any box = Any();
     box.set(value);
     return box;
-}
-
-// ─── tests ────────────────────────────────────────────────────────────────────
-
-#[test, test.name="Any trivial payload (int) round-trips correctly"]
-public f<bool> testAnyTrivialPayloadIntRoundTrips() {
-    Any box = Any(42);
-    assert !box.isEmpty();
-    assert box.has<int>();
-    assert box.get<int>() == 42;
-    return true;
-}
-
-#[test, test.name="Any empty state is detectable"]
-public f<bool> testAnyEmptyState() {
-    Any empty = Any();
-    assert empty.isEmpty();
-    assert !empty.has<int>();
-    return true;
-}
-
-#[test, test.name="Any copy of trivial payload is independent"]
-public f<bool> testAnyCopyTrivialIndependent() {
-    Any original = Any(7);
-    Any copy = original;
-    assert copy.get<int>() == 7;
-    copy.set(99);
-    assert original.get<int>() == 7;
-    assert copy.get<int>() == 99;
-    return true;
-}
-
-#[test, test.name="Any reset clears the payload"]
-public f<bool> testAnyResetClearsPayload() {
-    Any box = Any(123);
-    assert !box.isEmpty();
-    box.reset();
-    assert box.isEmpty();
-    return true;
-}
-
-// Inline Any(String) works fine; the double-free only triggers when Any(String)
-// is returned across a generic function boundary (see unit-wrapper-any/source.spice).
-#[test, test.name="Any non-trivial payload (String) stores and retrieves correctly"]
-public f<bool> testAnyNonTrivialPayloadStringRoundTrips() {
-    Any box = Any(String("hello"));
-    assert !box.isEmpty();
-    assert box.has<String>();
-    String& stored = box.get<String>();
-    assert stored == String("hello");
-    Any copy = box;
-    assert copy.has<String>();
-    String& copiedStr = copy.get<String>();
-    assert copiedStr == String("hello");
-    return true;
 }
