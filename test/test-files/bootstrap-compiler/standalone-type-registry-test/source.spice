@@ -6,7 +6,7 @@
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/global/type-registry";
-import "bootstrap/ast/ast-node-intf";
+import "bootstrap/ast/ast-nodes";
 
 f<int> main() {
     TypeRegistry reg = TypeRegistry();
