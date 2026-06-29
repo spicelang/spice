@@ -1,12 +1,94 @@
 // Std imports
 import "std/type/any";
 
+// Own imports
+import "bootstrap/ast/ast-nodes";
+
 /**
- * Dependency-free visitor interface. Declared here (without importing ast-nodes.spice or
- * ast-node-intf.spice) so that ast-nodes.spice can import this file and declare
- * accept(IAbstractAstVisitor*) on every node without creating a circular dependency.
+ * Full visitor interface. Declared in a separate file so that ast-nodes.spice can import
+ * it and call typed visitXxx methods from accept() overrides, without going through the
+ * larger abstract-ast-visitor.spice which brings in additional dependencies.
  *
- * The full IAbstractAstVisitor with typed visit methods lives in abstract-ast-visitor.spice,
- * which extends this interface.
+ * Circular imports are supported: ast-nodes.spice imports this file, and this file imports
+ * ast-nodes.spice. The compiler handles the cycle natively.
  */
-public type IAbstractAstVisitor interface {}
+public type IAbstractAstVisitor interface {
+    public f<Any> visit(IASTNode*);
+    public f<Any> visitEntry(ASTEntryNode*);
+    public f<Any> visitMainFctDef(ASTMainFctDefNode*);
+    public f<Any> visitFctDef(ASTFctDefNode*);
+    public f<Any> visitProcDef(ASTProcDefNode*);
+    public f<Any> visitFctName(ASTFctNameNode*);
+    public f<Any> visitStructDef(ASTStructDefNode*);
+    public f<Any> visitInterfaceDef(ASTInterfaceDefNode*);
+    public f<Any> visitEnumDef(ASTEnumDefNode*);
+    public f<Any> visitGenericTypeDef(ASTGenericTypeDefNode*);
+    public f<Any> visitAliasDef(ASTAliasDefNode*);
+    public f<Any> visitGlobalVarDef(ASTGlobalVarDefNode*);
+    public f<Any> visitExtDecl(ASTExtDeclNode*);
+    public f<Any> visitImportDef(ASTImportDefNode*);
+    public f<Any> visitUnsafeBlock(ASTUnsafeBlockNode*);
+    public f<Any> visitForLoop(ASTForLoopNode*);
+    public f<Any> visitForeachLoop(ASTForeachLoopNode*);
+    public f<Any> visitWhileLoop(ASTWhileLoopNode*);
+    public f<Any> visitDoWhileLoop(ASTDoWhileLoopNode*);
+    public f<Any> visitIfStmt(ASTIfStmtNode*);
+    public f<Any> visitElseStmt(ASTElseStmtNode*);
+    public f<Any> visitSwitchStmt(ASTSwitchStmtNode*);
+    public f<Any> visitCaseBranch(ASTCaseBranchNode*);
+    public f<Any> visitDefaultBranch(ASTDefaultBranchNode*);
+    public f<Any> visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode*);
+    public f<Any> visitStmtLst(ASTStmtLstNode*);
+    public f<Any> visitTypeLst(ASTTypeLstNode*);
+    public f<Any> visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode*);
+    public f<Any> visitTypeAltsLst(ASTTypeAltsLstNode*);
+    public f<Any> visitParamLst(ASTParamLstNode*);
+    public f<Any> visitArgLst(ASTArgLstNode*);
+    public f<Any> visitEnumItemLst(ASTEnumItemLstNode*);
+    public f<Any> visitEnumItem(ASTEnumItemNode*);
+    public f<Any> visitField(ASTFieldNode*);
+    public f<Any> visitSignature(ASTSignatureNode*);
+    public f<Any> visitDeclStmt(ASTDeclStmtNode*);
+    public f<Any> visitExprStmt(ASTExprStmtNode*);
+    public f<Any> visitQualifierLst(ASTQualifierLstNode*);
+    public f<Any> visitQualifier(ASTQualifierNode*);
+    public f<Any> visitModAttr(ASTModAttrNode*);
+    public f<Any> visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode*);
+    public f<Any> visitLambdaAttr(ASTLambdaAttrNode*);
+    public f<Any> visitAttrLst(ASTAttrLstNode*);
+    public f<Any> visitAttr(ASTAttrNode*);
+    public f<Any> visitCaseConstant(ASTCaseConstantNode*);
+    public f<Any> visitReturnStmt(ASTReturnStmtNode*);
+    public f<Any> visitBreakStmt(ASTBreakStmtNode*);
+    public f<Any> visitContinueStmt(ASTContinueStmtNode*);
+    public f<Any> visitFallthroughStmt(ASTFallthroughStmtNode*);
+    public f<Any> visitAssertStmt(ASTAssertStmtNode*);
+    public f<Any> visitAssignExpr(ASTAssignExprNode*);
+    public f<Any> visitTernaryExpr(ASTTernaryExprNode*);
+    public f<Any> visitLogicalOrExpr(ASTLogicalOrExprNode*);
+    public f<Any> visitLogicalAndExpr(ASTLogicalAndExprNode*);
+    public f<Any> visitBitwiseOrExpr(ASTBitwiseOrExprNode*);
+    public f<Any> visitBitwiseXorExpr(ASTBitwiseXorExprNode*);
+    public f<Any> visitBitwiseAndExpr(ASTBitwiseAndExprNode*);
+    public f<Any> visitEqualityExpr(ASTEqualityExprNode*);
+    public f<Any> visitRelationalExpr(ASTRelationalExprNode*);
+    public f<Any> visitShiftExpr(ASTShiftExprNode*);
+    public f<Any> visitAdditiveExpr(ASTAdditiveExprNode*);
+    public f<Any> visitMultiplicativeExpr(ASTMultiplicativeExprNode*);
+    public f<Any> visitCastExpr(ASTCastExprNode*);
+    public f<Any> visitPrefixUnaryExpr(ASTPrefixUnaryExprNode*);
+    public f<Any> visitPostfixUnaryExpr(ASTPostfixUnaryExprNode*);
+    public f<Any> visitAtomicExpr(ASTAtomicExprNode*);
+    public f<Any> visitValue(ASTValueNode*);
+    public f<Any> visitConstant(ASTConstantNode*);
+    public f<Any> visitFctCall(ASTFctCallNode*);
+    public f<Any> visitArrayInitialization(ASTArrayInitializationNode*);
+    public f<Any> visitStructInstantiation(ASTStructInstantiationNode*);
+    public f<Any> visitLambdaFunc(ASTLambdaFuncNode*);
+    public f<Any> visitLambdaProc(ASTLambdaProcNode*);
+    public f<Any> visitLambdaExpr(ASTLambdaExprNode*);
+    public f<Any> visitDataType(ASTDataTypeNode*);
+    public f<Any> visitBaseDataType(ASTBaseDataTypeNode*);
+    public f<Any> visitCustomDataType(ASTCustomDataTypeNode*);
+    public f<Any> visitFunctionDataType(ASTFunctionDataTypeNode*);
+}

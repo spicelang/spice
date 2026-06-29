@@ -14,7 +14,7 @@ import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/ast/ast-node-intf";
+import "bootstrap/ast/ast-nodes";
 
 f<int> main() {
     // Build a real, interned type and wrap it in a QualType - the type layer the model builds on.
