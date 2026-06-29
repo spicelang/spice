@@ -87,11 +87,8 @@ void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
     const Type *type = TypeRegistry::getOrInsert(TY_ENUM, enumDef->enumName, enumDef->typeId, data, {});
     entry->updateType(QualType(type, enumDef->qualifiers), false);
   } else if (auto *aliasDef = dynamic_cast<AliasDefNode *>(declNode)) {
-    // An alias additionally needs its aliased type resolved, so prepare it fully on demand. The alias's own file may not
-    // have been visited yet, so its aliased-type subtree is not sized for manifestations - size it first. Both calls are
-    // idempotent: the real prepare pass for the alias's own file re-sizes to the same count and visitAliasDefPrepare
-    // skips the now-prepared alias.
-    aliasDef->dataType->resizeToNumberOfManifestations(1);
+    // An alias additionally needs its aliased type resolved, so prepare it fully on demand. visitAliasDefPrepare is
+    // idempotent: the real prepare pass for the alias's own file skips it once the type is no longer invalid.
     visitAliasDefPrepare(aliasDef);
   }
 }

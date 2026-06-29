@@ -25,13 +25,15 @@ TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sou
  * separately by the infinite-size check during struct preparation, so a containment cycle here is treated as manifested.
  */
 static bool structFullyManifested(const Struct *spiceStruct, const ASTNode *node, std::unordered_set<const Scope *> &visited) {
-  if (!visited.insert(spiceStruct->scope).second)
-    return true; // Containment cycle - reported separately as an infinite-size error
   for (const QualType &fieldType : spiceStruct->fieldTypes) {
     if (!fieldType.is(TY_STRUCT))
       continue;
     const Struct *fieldStruct = fieldType.getStruct(node);
-    if (fieldStruct == nullptr || !structFullyManifested(fieldStruct, node, visited))
+    if (fieldStruct == nullptr)
+      return false;
+    // Recurse into each field struct once. A containment cycle (already visited) is fine here - it is reported
+    // separately as an infinite-size error. Leaf structs never touch the set, so the common case stays allocation-free.
+    if (visited.insert(fieldStruct->scope).second && !structFullyManifested(fieldStruct, node, visited))
       return false;
   }
   return true;

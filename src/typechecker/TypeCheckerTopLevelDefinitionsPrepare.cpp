@@ -415,6 +415,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Retrieve field types
   QualTypeList fieldTypes;
   fieldTypes.reserve(node->fields.size());
+  // Shared across all fields: the origin (node->structScope) is constant, so a struct already proven not to reach it
+  // via one field need not be re-walked for another.
+  std::unordered_set<const Scope *> visitedScopes;
   for (FieldNode *field : node->fields) {
     // Visit field type
     auto fieldType = std::any_cast<QualType>(visit(field));
@@ -424,7 +427,6 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Check for struct with infinite size. This happens if a struct (transitively, through by-value struct fields)
     // contains itself - either directly (struct A has a field of type A) or through a cycle of structs in mutually
     // importing files (A has a field of type B and B has a field of type A).
-    std::unordered_set<const Scope *> visitedScopes;
     if (fieldContainsStructByValue(fieldType, node->structScope, field, visitedScopes))
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
@@ -626,6 +628,12 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   // (assignDeferredOpaqueType). In that case there is nothing left to do.
   if (node->entry->getQualType().is(TY_ALIAS))
     return nullptr;
+
+  // Ensure the aliased-type subtree is sized for manifestations before it is visited below. On the normal path
+  // visitEntry already sized the whole file to 1, so this is a no-op; on the on-demand path (a cross-import reference
+  // reaching this alias before its own file's visitEntry ran) it establishes the precondition setEvaluatedSymbolType
+  // requires.
+  node->dataType->resizeToNumberOfManifestations(1);
 
   // Update type of alias entry
   const Type *type = TypeRegistry::getOrInsert(TY_ALIAS, node->aliasName, node->typeId, {}, {});
