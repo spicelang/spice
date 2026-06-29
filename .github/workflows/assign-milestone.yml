@@ -1,0 +1,48 @@
+name: Assign Milestone
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  assign-milestone:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Determine the next minor version from the latest release tag
+            const { data: latestRelease } = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const match = latestRelease.tag_name.match(/^v?(\d+)\.(\d+)\.\d+$/);
+            if (!match) {
+              core.warning(`Could not parse latest release tag: ${latestRelease.tag_name}`);
+              return;
+            }
+            const nextMilestone = `${match[1]}.${parseInt(match[2]) + 1}.0`;
+
+            const { data: milestones } = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+            });
+
+            const target = milestones.find(m => m.title === nextMilestone);
+            if (!target) {
+              core.warning(`Milestone ${nextMilestone} not found or not open`);
+              return;
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              milestone: target.number,
+            });
