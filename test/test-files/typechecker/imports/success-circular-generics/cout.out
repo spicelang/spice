@@ -1,0 +1,7 @@
+intBox.take(intContainer) = 32
+intBox.swapWith(intContainer).value = 32
+boxOf(intContainer).value = 32
+intContainer.get() = 32
+after set(99): intBox.take(intContainer) = 99
+dblBox.take(dblContainer) = 2.5
+boxOf(dblContainer).value = 2.5

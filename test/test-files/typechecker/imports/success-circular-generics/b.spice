@@ -1,0 +1,24 @@
+import "a" as a;
+
+type T dyn;
+
+// Container is the type referenced by a.spice's generic Box methods. b.spice does NOT
+// reference Box<T> in its own method signatures: when b.spice is first loaded, a.spice
+// is mid-processing (typeCheckerPreRunning), so its generic types are not yet declared.
+// The circular dependency is still load-bearing: type identity between Container<int>
+// resolved through a.spice and through b.spice must be the same type.
+public type Container<T> struct {
+    public T item
+}
+
+public p Container.ctor(T val) {
+    this.item = val;
+}
+
+public f<T> Container.get() {
+    return this.item;
+}
+
+public p Container.set(T val) {
+    this.item = val;
+}
