@@ -1,30 +1,30 @@
-import "std/io/cli-parser";
+import "std/type/any";
+import "bootstrap/util/save-and-restore";
 
-type CliOptions struct {
-    bool sayHi = false
+// Minimal reproducer for the bootstrap double-free bug:
+// A generic function that holds multiple String locals, uses SaveAndRestore<String>,
+// and returns Any(String) triggers a bitwise copy of the non-trivial Any on return,
+// causing the heap-boxed String destructor to fire twice.
+// This mirrors the pattern in ASTVisualizer.buildNode<T>.
+type BugT dyn;
+
+f<Any> buildNodeMirror<BugT>(const BugT& _, String& parentId) {
+    const String typeName = String(typename<BugT>());
+    const String nodeId = String("_") + typeName;
+    SaveAndRestore<String>(parentId, nodeId);
+    return Any(nodeId);
 }
 
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    // Bug reproducer: returning Any(String) from a generic function that also
+    // uses SaveAndRestore<String> triggers a double-free.
+    // This is expected to crash until the bootstrap IRGenerator correctly handles
+    // non-trivial return values from generic function instantiations.
+    String parentState;
+    Any bugResult = buildNodeMirror<int>(0, parentState);
+    assert !bugResult.isEmpty();
+    assert bugResult.has<String>();
 
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2026");
-
-    CliOptions options;
-    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
-    parser.addFlag("--ho", options.sayHi, "Say ho to the user");
-    parser.addFlag("--callback", callback, "Call a callback function");
-    parser.addFlag("-cb", p(const bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
-
-    result = parser.parse(argc, argv);
-
-    // Print hi if requested
-    if options.sayHi {
-        printf("Hi!\n");
-    }
+    printf("All assertions passed!");
 }

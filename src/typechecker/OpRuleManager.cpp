@@ -55,6 +55,13 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(ASTNode *node
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
     return performStructAssign(node, lhs, rhs, rhsType, isDecl, isReturn);
+  // Allow assignment through an already-bound reference to a struct. Unlike binding a reference (declaration/return,
+  // which pass isDecl/isReturn and fall through to the common rules below), an assign-through must run the struct's
+  // copy-assignment operator / copy ctor on the referenced value instead of rebinding or shallow-copying it. Otherwise
+  // the referent would alias the rhs' owned members (heap buffers) and double-free once one of them is destructed.
+  if (!isDecl && !isReturn && lhsType.isRef() && lhsType.getContained().is(TY_STRUCT) && lhs.entry != nullptr &&
+      lhs.entry->isInitialized() && lhsType.getContained().matches(rhsType.removeReferenceWrapper(), false, true, true))
+    return performStructAssign(node, lhs, rhs, lhsType.getContained(), isDecl, isReturn);
 
   // Check common type combinations
   const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, isReturn);
@@ -352,7 +359,8 @@ QualType OpRuleManager::getLogicalAndResultType(const ASTNode *node, const ExprR
   return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, std::size(LOGICAL_AND_OP_RULES), "&&", lhsType, rhsType);
 }
 
-ExprResult OpRuleManager::getBitwiseOrResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
+ExprResult OpRuleManager::getBitwiseOrResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                 size_t opIdx) const {
   // Check if there is an overloaded operator function available
   const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_BITWISE_OR, {lhs, rhs}, opIdx);
   if (!resultType.type.is(TY_INVALID))
@@ -719,8 +727,7 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
   if (lhsType.isPtr() && rhsType.isPtr()) {
     const QualType lhsContained = lhsType.getContained();
     const QualType rhsContained = rhsType.getContained();
-    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) ||
-        lhsContained.matchesComposedBaseOfStruct(rhsContained))
+    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) || lhsContained.matchesComposedBaseOfStruct(rhsContained))
       return lhsType;
   }
   // Allow casts any* -> any*

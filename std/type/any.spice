@@ -107,7 +107,7 @@ f<byte*> Any.dataPtr() {
  * Destroys the held payload (running its destructor thunk if non-trivial),
  * releases the heap storage and resets the Any to the empty state.
  */
-p Any.reset() {
+public p Any.reset() {
     unsafe {
         // Only heap-boxed payloads can be non-trivial and need destruction. An
         // inline payload is always trivial, and a moved-from Any has a nil

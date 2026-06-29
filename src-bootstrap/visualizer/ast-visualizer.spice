@@ -38,7 +38,7 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
     const dyn typeName = String(typename<T>());
     // Note: getCodeLocStr() is not accessible on generic T* — codeLoc is empty in bootstrap
     String codeLocStr;
-    const String nodeName = typeName.getSubstring(typeName.rfind("::") + 2l);
+    const String nodeName = typeName.getSubstring(typeName.find("AST") + 3l);
     const String nodeId = codeLocStr + "_" + nodeName;
 
     // Build result
@@ -142,6 +142,32 @@ public f<Any> ASTVisualizer.visitFunctionDataType(ASTFunctionDataTypeNode* node)
 
 #[test, test.name="ASTVisualizer Smoke test"]
 public f<bool> testASTVisualizerSmoke() {
+    const CodeLoc loc = CodeLoc(1l, 1l, "test.spice");
+
+    // Verify that ASTVisualizer can be constructed and that parentNodeId starts empty
+    ASTVisualizer viz = ASTVisualizer();
+    assert viz.parentNodeId.isEmpty();
+
+    // buildNode on a root node (no parent set yet) returns an Any holding the node's DOT
+    // declaration and emits no parent edge. It also recovers the C++ node name ("EntryNode")
+    // from the bootstrap typename ("public ASTEntryNode").
+    ASTEntryNode entry = ASTEntryNode(loc);
+    Any rootResult = viz.buildNode(&entry);
+    assert rootResult.has<String>();
+    String rootDot = rootResult.get<String>();
+    assert rootDot.contains("_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
+    assert !rootDot.contains("->"); // no parent edge for a root node
+    // buildNode's SaveAndRestore must restore parentNodeId (was empty) after returning
+    assert viz.parentNodeId.isEmpty();
+
+    // With a parent set, buildNode emits a parent edge and restores parentNodeId afterwards.
+    viz.parentNodeId = String("_Root");
+    Any childResult = viz.buildNode(&entry);
+    assert childResult.has<String>();
+    String childDot = childResult.get<String>();
+    assert childDot.contains("_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
+    assert childDot.contains("_Root -> _EntryNode;"); // parent edge present
+    assert viz.parentNodeId == String("_Root");       // parentNodeId restored after buildNode
 
     return true;
 }
