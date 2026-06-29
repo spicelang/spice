@@ -1,0 +1,6 @@
+import "a" as a;
+
+f<int> main() {
+    printf("viaB = %d\n", a::viaB());
+    return 0;
+}

@@ -1,0 +1,6 @@
+import "a" as a;
+
+// Uses the alias MyInt defined in the cyclically-imported file a
+public f<int> takesAlias(MyInt x) {
+    return x + 1;
+}

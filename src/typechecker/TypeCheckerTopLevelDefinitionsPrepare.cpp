@@ -622,6 +622,11 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
 std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
+  // The alias may already have been prepared on demand because it was referenced across a circular import
+  // (assignDeferredOpaqueType). In that case there is nothing left to do.
+  if (node->entry->getQualType().is(TY_ALIAS))
+    return nullptr;
+
   // Update type of alias entry
   const Type *type = TypeRegistry::getOrInsert(TY_ALIAS, node->aliasName, node->typeId, {}, {});
   node->entry->updateType(QualType(type, node->qualifiers), false);
