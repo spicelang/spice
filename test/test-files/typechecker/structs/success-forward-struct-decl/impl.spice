@@ -1,4 +1,0 @@
-// Full definition of Foo (matches the forward declaration in fwd.spice)
-public type Foo struct {
-    int value
-}

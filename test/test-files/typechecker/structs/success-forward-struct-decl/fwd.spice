@@ -1,2 +1,0 @@
-// Forward declaration of Foo - no body, no imports
-public forward type Foo struct;

@@ -43,8 +43,6 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
       entryNode->importDefs.push_back(std::any_cast<ImportDefNode *>(visit(importDefCtx)));
     else if (auto *extDeclCtx = dynamic_cast<SpiceParser::ExtDeclContext *>(child))
       entryNode->topLevelDefs.push_back(std::any_cast<ExtDeclNode *>(visit(extDeclCtx)));
-    else if (auto *fwdDeclCtx = dynamic_cast<SpiceParser::ForwardDeclContext *>(child))
-      entryNode->topLevelDefs.push_back(std::any_cast<ForwardDeclNode *>(visit(fwdDeclCtx)));
     else if (auto *modAttrCtx = dynamic_cast<SpiceParser::ModAttrContext *>(child))
       entryNode->modAttrs.push_back(std::any_cast<ModAttrNode *>(visit(modAttrCtx)));
     else if (const auto *eofCtx = dynamic_cast<TerminalNode *>(child);
@@ -216,24 +214,6 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     interfaceDefNode->signatures.push_back(std::any_cast<SignatureNode *>(visit(signature)));
 
   return concludeNode(interfaceDefNode);
-}
-
-std::any ASTBuilder::visitForwardDecl(SpiceParser::ForwardDeclContext *ctx) {
-  const auto forwardDeclNode = createNode<ForwardDeclNode>(ctx);
-
-  // Determine if this is a struct or interface forward declaration
-  forwardDeclNode->isStruct = ctx->STRUCT() != nullptr;
-  forwardDeclNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
-  forwardDeclNode->typeId = resourceManager.getNextCustomTypeId();
-  forwardDeclNode->qualifiers = TypeQualifiers::of(forwardDeclNode->isStruct ? TY_STRUCT : TY_INTERFACE);
-
-  // Visit children
-  if (ctx->topLevelDefAttr())
-    forwardDeclNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
-  if (ctx->qualifierLst())
-    forwardDeclNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
-
-  return concludeNode(forwardDeclNode);
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {

@@ -1,5 +1,0 @@
-[Error|Semantic] ./source.spice:6:1:
-Duplicate symbol: 'Foo' was forward-declared as a struct, cannot define it as an interface
-
-6  type Foo interface {
-   ^^^^^^^^^^^^^^^^^^^^

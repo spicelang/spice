@@ -177,20 +177,6 @@ f<int> main() {
 }
 ```
 
-## Forward declarations
-
-A forward declaration lets you name an interface before its full definition is available, so that other types can hold
-a pointer or reference to it without creating a circular import:
-
-```spice
-public forward type IShape interface;
-```
-
-A forward-declared interface may only be used as a pointer (`IShape*`) or reference (`IShape&`). The full interface
-definition must be provided in another file that is imported before the forward-declared type is actually called
-through. See [structs — forward declarations](structs.md#forward-declarations) for an end-to-end example of the
-pattern.
-
 ## Standard library interfaces
 
 The standard library ships two interfaces you will encounter frequently:

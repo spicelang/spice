@@ -21,8 +21,6 @@ std::any ASTVisitor::visitStructDef(StructDefNode *node) { return visitChildren(
 
 std::any ASTVisitor::visitInterfaceDef(InterfaceDefNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitForwardDecl(ForwardDeclNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitEnumDef(EnumDefNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitGenericTypeDef(GenericTypeDefNode *node) { return visitChildren(node); }

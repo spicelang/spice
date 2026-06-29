@@ -41,21 +41,6 @@ std::any TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitForwardDecl(ForwardDeclNode *node) {
-  if (typeCheckerMode != TC_MODE_PRE)
-    return nullptr;
-
-  assert(node->entry != nullptr && node->typeScope != nullptr);
-  // A duplicate forward declaration shares its entry with the original; the entry's type is already populated.
-  if (!node->entry->getQualType().isOneOf({TY_INVALID, TY_DYN}))
-    return nullptr;
-  const TypeChainElementData data = {.bodyScope = node->typeScope};
-  const SuperType superType = node->isStruct ? TY_STRUCT : TY_INTERFACE;
-  const Type *type = TypeRegistry::getOrInsert(superType, node->typeName, node->typeId, data, {});
-  node->entry->updateType(QualType(type, node->qualifiers), false);
-  return nullptr;
-}
-
 /**
  * Assign the opaque type to a struct, interface, enum or alias that is referenced before it has been prepared. This
  * effectively acts as an implicit forward declaration and is what makes circular imports work: two types in mutually

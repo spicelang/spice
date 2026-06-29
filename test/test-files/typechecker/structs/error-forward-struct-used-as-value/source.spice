@@ -1,5 +1,0 @@
-forward type Foo struct;
-
-f<int> main() {
-    Foo s; // Error: cannot use forward-declared type as a value type
-}

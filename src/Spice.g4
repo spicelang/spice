@@ -3,7 +3,7 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | forwardDecl | modAttr)* EOF;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
 mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst;
 functionDef: topLevelDefAttr? qualifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 procedureDef: topLevelDefAttr? qualifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
@@ -15,7 +15,6 @@ genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: qualifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN typeLstWithEllipsis? RPAREN SEMICOLON;
-forwardDecl: topLevelDefAttr? qualifierLst? FORWARD TYPE TYPE_IDENTIFIER (STRUCT | INTERFACE) SEMICOLON;
 importDef: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 
 // Control structures
@@ -145,7 +144,6 @@ NIL: 'nil';
 MAIN: 'main';
 CAST: 'cast';
 EXT: 'ext';
-FORWARD: 'forward';
 TRUE: 'true';
 FALSE: 'false';
 
