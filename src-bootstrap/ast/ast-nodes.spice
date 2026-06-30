@@ -106,10 +106,6 @@ public f<const Vector<ASTNode*>&> ASTNode.getChildren() {
     return this.children;
 }
 
-public f<String> ASTNode.getCodeLocStr() {
-    return this.codeLoc.toString();
-}
-
 public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
     // Resize children
     foreach ASTNode* child : this.children {
@@ -117,10 +113,6 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
         child.resizeToNumberOfManifestations(manifestationCount);
     }
     // Do custom work (override in subclasses to add per-node behavior)
-}
-
-public f<const CodeLoc&> ASTNode.getCodeLoc() {
-    return this.codeLoc;
 }
 
 // ========================================================== EntryNode ==========================================================
@@ -136,7 +128,6 @@ public p ASTEntryNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTEntryNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEntry(this);
 }
-
 
 // ======================================================= TopLevelDefNode =======================================================
 
