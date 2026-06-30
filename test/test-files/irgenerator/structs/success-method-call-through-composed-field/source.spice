@@ -1,0 +1,42 @@
+type CodeLoc struct {
+    int line
+}
+
+p CodeLoc.ctor(int line) {
+    this.line = line;
+}
+
+p CodeLoc.show() {
+    printf("Line %d\n", this.line);
+}
+
+type ASTNode struct {
+    CodeLoc codeLoc
+}
+
+p ASTNode.ctor(const CodeLoc& codeLoc) {
+    this.codeLoc = codeLoc;
+}
+
+type ASTEntryNode struct {
+    compose ASTNode node
+    String name
+}
+
+p ASTEntryNode.ctor(const CodeLoc& codeLoc, const String& name) {
+    this.node = ASTNode(codeLoc);
+    this.name = name;
+}
+
+// Calls a method on a field that is only reachable through the 'node' composition,
+// chained in the same fct-call expression (entry.codeLoc.show()).
+p callShow(const ASTEntryNode* entry) {
+    entry.codeLoc.show();
+}
+
+f<int> main() {
+    CodeLoc codeLoc = CodeLoc(5);
+    String name = String("name");
+    ASTEntryNode entryNode = ASTEntryNode(codeLoc, name);
+    callShow(&entryNode);
+}

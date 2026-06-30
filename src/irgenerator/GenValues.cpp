@@ -95,16 +95,26 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Traverse through structs - the first fragment is already looked up and the last one is the function name
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
       const std::string identifier = node->functionNameFragments.at(i);
-      // Retrieve field entry
-      const SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+      // Retrieve field entry, also looking through composed fields
+      std::vector<size_t> indexPath;
+      const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupInComposedFields(identifier, indexPath);
       assert(fieldEntry != nullptr);
       QualType fieldEntryType = fieldEntry->getQualType();
       assert(fieldEntryType.getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
       // Get struct type and scope
       structScope = fieldEntryType.getBase().getBodyScope();
       assert(structScope != nullptr);
-      // Get address of field
-      thisPtr = insertStructGEP(structTy, thisPtr, fieldEntry->orderIndex);
+      // Get address of field. If the field was found directly (no composition involved), keep using the
+      // single-index helper, since it elides the GEP entirely for fields at offset 0. Otherwise, step through
+      // all composed fields on the way in a single GEP.
+      if (indexPath.size() == 1) {
+        thisPtr = insertStructGEP(structTy, thisPtr, static_cast<unsigned int>(indexPath.front()));
+      } else {
+        std::vector<llvm::Value *> indices = {builder.getInt64(0)};
+        for (const size_t index : indexPath)
+          indices.push_back(builder.getInt32(index));
+        thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
+      }
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType);
       structTy = fieldEntryType.getBase().toLLVMType(sourceFile);
