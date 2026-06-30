@@ -1,30 +1,36 @@
-import "std/type/any";
-import "bootstrap/util/save-and-restore";
+import "bootstrap/reader/code-loc";
 
-// Minimal reproducer for the bootstrap double-free bug:
-// A generic function that holds multiple String locals, uses SaveAndRestore<String>,
-// and returns Any(String) triggers a bitwise copy of the non-trivial Any on return,
-// causing the heap-boxed String destructor to fire twice.
-// This mirrors the pattern in ASTVisualizer.buildNode<T>.
-type BugT dyn;
+type T dyn;
 
-f<Any> buildNodeMirror<BugT>(const BugT& _, String& parentId) {
-    const String typeName = String(typename<BugT>());
-    const String nodeId = String("_") + typeName;
-    SaveAndRestore<String>(parentId, nodeId);
-    return Any(nodeId);
+type ASTNode struct {
+    CodeLoc codeLoc
 }
 
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    // Bug reproducer: returning Any(String) from a generic function that also
-    // uses SaveAndRestore<String> triggers a double-free.
-    // This is expected to crash until the bootstrap IRGenerator correctly handles
-    // non-trivial return values from generic function instantiations.
-    String parentState;
-    Any bugResult = buildNodeMirror<int>(0, parentState);
-    assert !bugResult.isEmpty();
-    assert bugResult.has<String>();
+p ASTNode.ctor(const CodeLoc& codeLoc) {
+    this.codeLoc = codeLoc;
+}
 
-    printf("All assertions passed!");
+type ASTEntryNode struct {
+    compose ASTNode node
+    String name
+}
+
+p ASTEntryNode.ctor(const CodeLoc& codeLoc, const String& name) {
+    this.node = ASTNode(codeLoc);
+    this.name = name;
+}
+
+p foo<T>(const T* node) {
+    // !!! Works
+    const CodeLoc& codeLoc = node.codeLoc;
+    printf("%s\n", codeLoc.toString());
+    // !!! Does not work
+    printf("%s\n", node.codeLoc.toString());
+}
+
+f<int> main() {
+    CodeLoc codeLoc = CodeLoc(1l, 2l);
+    String name = String("name");
+    ASTEntryNode entryNode = ASTEntryNode(codeLoc, name);
+    foo(&entryNode);
 }
