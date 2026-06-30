@@ -1,0 +1,11 @@
+# Build LLVM for Spice
+
+Command
+
+```sh
+cd <llvm-root-dir>
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3" -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt;libunwind" -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" -DCOMPILER_RT_BUILD_SANITIZERS=ON -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -GNinja ../llvm
+cmake --build .
+```

@@ -392,8 +392,9 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
     const std::string &identifier = node->functionNameFragments.at(i);
 
-    // Retrieve field entry
-    SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+    // Retrieve field entry, also looking through composed fields
+    std::vector<size_t> indexPath;
+    SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupInComposedFields(identifier, indexPath);
     if (!fieldEntry) {
       std::stringstream errorMsg;
       errorMsg << "The type '";

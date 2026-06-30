@@ -1,6 +1,14 @@
-import "bootstrap/reader/code-loc";
+type CodeLoc struct {
+    int line
+}
 
-type T dyn;
+p CodeLoc.ctor(int line) {
+    this.line = line;
+}
+
+p CodeLoc.show() {
+    printf("Line %d\n", this.line);
+}
 
 type ASTNode struct {
     CodeLoc codeLoc
@@ -20,17 +28,15 @@ p ASTEntryNode.ctor(const CodeLoc& codeLoc, const String& name) {
     this.name = name;
 }
 
-p foo<T>(const T* node) {
-    // !!! Works
-    const CodeLoc& codeLoc = node.codeLoc;
-    printf("%s\n", codeLoc.toString());
-    // !!! Does not work
-    printf("%s\n", node.codeLoc.toString());
+// Calls a method on a field that is only reachable through the 'node' composition,
+// chained in the same fct-call expression (entry.codeLoc.show()).
+p callShow(const ASTEntryNode* entry) {
+    entry.codeLoc.show();
 }
 
 f<int> main() {
-    CodeLoc codeLoc = CodeLoc(1l, 2l);
+    CodeLoc codeLoc = CodeLoc(5);
     String name = String("name");
     ASTEntryNode entryNode = ASTEntryNode(codeLoc, name);
-    foo(&entryNode);
+    callShow(&entryNode);
 }

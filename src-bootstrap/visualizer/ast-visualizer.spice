@@ -36,8 +36,7 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
 
     // Prepare strings
     const dyn typeName = String(typename<T>());
-    // Note: getCodeLocStr() is not accessible on generic T* — codeLoc is empty in bootstrap
-    String codeLocStr;
+    String codeLocStr = node.codeLoc.toString();
     const String nodeName = typeName.getSubstring(typeName.find("AST") + 3l);
     const String nodeId = codeLocStr + "_" + nodeName;
 
@@ -149,13 +148,14 @@ public f<bool> testASTVisualizerSmoke() {
     assert viz.parentNodeId.isEmpty();
 
     // buildNode on a root node (no parent set yet) returns an Any holding the node's DOT
-    // declaration and emits no parent edge. It also recovers the C++ node name ("EntryNode")
-    // from the bootstrap typename ("public ASTEntryNode").
+    // declaration and emits no parent edge. The node id is prefixed with the node's code
+    // location ("L1C1", from 'loc') and it recovers the C++ node name ("EntryNode") from
+    // the bootstrap typename ("public ASTEntryNode").
     ASTEntryNode entry = ASTEntryNode(loc);
     Any rootResult = viz.buildNode(&entry);
     assert rootResult.has<String>();
     String rootDot = rootResult.get<String>();
-    assert rootDot.contains("_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
+    assert rootDot.contains("L1C1_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
     assert !rootDot.contains("->"); // no parent edge for a root node
     // buildNode's SaveAndRestore must restore parentNodeId (was empty) after returning
     assert viz.parentNodeId.isEmpty();
@@ -165,9 +165,9 @@ public f<bool> testASTVisualizerSmoke() {
     Any childResult = viz.buildNode(&entry);
     assert childResult.has<String>();
     String childDot = childResult.get<String>();
-    assert childDot.contains("_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
-    assert childDot.contains("_Root -> _EntryNode;"); // parent edge present
-    assert viz.parentNodeId == String("_Root");       // parentNodeId restored after buildNode
+    assert childDot.contains("L1C1_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];");
+    assert childDot.contains("_Root -> L1C1_EntryNode;"); // parent edge present
+    assert viz.parentNodeId == String("_Root");           // parentNodeId restored after buildNode
 
     return true;
 }
