@@ -12,12 +12,12 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
 define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !23 {
   %this = alloca ptr, align 8
-  store ptr %0, ptr %this, align 8, !dbg !43
-    #dbg_declare(ptr %this, !44, !DIExpression(), !43)
-  %2 = load ptr, ptr %this, align 8, !dbg !43
-  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !43
-  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !43
-  ret void, !dbg !43
+    #dbg_declare(ptr %this, !43, !DIExpression(), !45)
+  store ptr %0, ptr %this, align 8, !dbg !45
+  %2 = load ptr, ptr %this, align 8, !dbg !45
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !45
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !45
+  ret void, !dbg !45
 }
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
@@ -28,8 +28,8 @@ define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) !dbg !46 {
   %2 = alloca %struct.String, align 8
   %ts = alloca %struct.TestStruct, align 8
     #dbg_declare(ptr %result, !50, !DIExpression(), !51)
-  store ptr %0, ptr %ref, align 8, !dbg !52
-    #dbg_declare(ptr %ref, !53, !DIExpression(), !52)
+    #dbg_declare(ptr %ref, !52, !DIExpression(), !53)
+  store ptr %0, ptr %ref, align 8, !dbg !53
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.0), !dbg !54
   store i64 6, ptr %ts, align 8, !dbg !55
   %3 = load %struct.String, ptr %2, align 8, !dbg !55
@@ -39,37 +39,37 @@ define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) !dbg !46 {
   %6 = load i32, ptr %5, align 4, !dbg !55
   %7 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !55
   store i32 %6, ptr %7, align 4, !dbg !55
-    #dbg_declare(ptr %ts, !56, !DIExpression(), !57)
-  %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !58
-  ret %struct.TestStruct %8, !dbg !59
+    #dbg_declare(ptr %ts, !56, !DIExpression(), !55)
+  %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !57
+  ret %struct.TestStruct %8, !dbg !58
 }
 
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 !dbg !60 {
+define dso_local noundef i32 @main() #1 !dbg !59 {
   %result = alloca i32, align 4
   %test = alloca i32, align 4
   %res = alloca %struct.TestStruct, align 8
-    #dbg_declare(ptr %result, !63, !DIExpression(), !64)
-  store i32 0, ptr %result, align 4, !dbg !64
+    #dbg_declare(ptr %result, !62, !DIExpression(), !63)
+  store i32 0, ptr %result, align 4, !dbg !63
+    #dbg_declare(ptr %test, !64, !DIExpression(), !65)
   store i32 987654, ptr %test, align 4, !dbg !65
-    #dbg_declare(ptr %test, !66, !DIExpression(), !67)
-  %1 = call noundef %struct.TestStruct @_Z3fctRi(ptr noundef %test), !dbg !68
-  store %struct.TestStruct %1, ptr %res, align 8, !dbg !68
-    #dbg_declare(ptr %res, !69, !DIExpression(), !70)
-  %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !71
-  %2 = load i64, ptr %lng.addr, align 8, !dbg !71
-  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %2), !dbg !71
-  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
-  %5 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %5), !dbg !72
-  %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !73
-  %7 = load i32, ptr %i.addr, align 4, !dbg !73
-  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7), !dbg !73
-  call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !74
-  %9 = load i32, ptr %result, align 4, !dbg !74
-  ret i32 %9, !dbg !74
+  %1 = call noundef %struct.TestStruct @_Z3fctRi(ptr noundef %test), !dbg !66
+  store %struct.TestStruct %1, ptr %res, align 8, !dbg !66
+    #dbg_declare(ptr %res, !67, !DIExpression(), !66)
+  %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !68
+  %2 = load i64, ptr %lng.addr, align 8, !dbg !68
+  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %2), !dbg !68
+  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !69
+  %5 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !69
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %5), !dbg !69
+  %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !70
+  %7 = load i32, ptr %i.addr, align 4, !dbg !70
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7), !dbg !70
+  call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !71
+  %9 = load i32, ptr %result, align 4, !dbg !71
+  ret i32 %9, !dbg !71
 }
 
 ; Function Attrs: nofree nounwind
@@ -128,35 +128,32 @@ attributes #2 = { nofree nounwind }
 !40 = !DIDerivedType(tag: DW_TAG_member, name: "i", scope: !27, file: !7, line: 6, baseType: !41, size: 32, offset: 256)
 !41 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !42 = !{}
-!43 = !DILocation(line: 3, column: 1, scope: !23)
-!44 = !DILocalVariable(name: "this", arg: 1, scope: !23, file: !7, line: 3, type: !45)
-!45 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
+!43 = !DILocalVariable(name: "this", arg: 1, scope: !23, file: !7, line: 3, type: !44)
+!44 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
+!45 = !DILocation(line: 3, column: 1, scope: !23)
 !46 = distinct !DISubprogram(name: "fct", linkageName: "_Z3fctRi", scope: !7, file: !7, line: 9, type: !47, scopeLine: 9, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !42)
 !47 = !DISubroutineType(types: !48)
 !48 = !{!27, !49}
 !49 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !41, size: 64)
 !50 = !DILocalVariable(name: "result", scope: !46, file: !7, line: 9, type: !27)
 !51 = !DILocation(line: 9, column: 1, scope: !46)
-!52 = !DILocation(line: 9, column: 19, scope: !46)
-!53 = !DILocalVariable(name: "ref", arg: 1, scope: !46, file: !7, line: 9, type: !49)
+!52 = !DILocalVariable(name: "ref", arg: 1, scope: !46, file: !7, line: 9, type: !49)
+!53 = !DILocation(line: 9, column: 19, scope: !46)
 !54 = !DILocation(line: 10, column: 44, scope: !46)
 !55 = !DILocation(line: 10, column: 60, scope: !46)
 !56 = !DILocalVariable(name: "ts", scope: !46, file: !7, line: 10, type: !27)
-!57 = !DILocation(line: 10, column: 5, scope: !46)
-!58 = !DILocation(line: 11, column: 12, scope: !46)
-!59 = !DILocation(line: 12, column: 1, scope: !46)
-!60 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 14, type: !61, scopeLine: 14, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !42)
-!61 = !DISubroutineType(types: !62)
-!62 = !{!41}
-!63 = !DILocalVariable(name: "result", scope: !60, file: !7, line: 14, type: !41)
-!64 = !DILocation(line: 14, column: 1, scope: !60)
-!65 = !DILocation(line: 15, column: 16, scope: !60)
-!66 = !DILocalVariable(name: "test", scope: !60, file: !7, line: 15, type: !41)
-!67 = !DILocation(line: 15, column: 5, scope: !60)
-!68 = !DILocation(line: 16, column: 32, scope: !60)
-!69 = !DILocalVariable(name: "res", scope: !60, file: !7, line: 16, type: !27)
-!70 = !DILocation(line: 16, column: 5, scope: !60)
-!71 = !DILocation(line: 17, column: 26, scope: !60)
-!72 = !DILocation(line: 18, column: 28, scope: !60)
-!73 = !DILocation(line: 19, column: 25, scope: !60)
-!74 = !DILocation(line: 20, column: 1, scope: !60)
+!57 = !DILocation(line: 11, column: 12, scope: !46)
+!58 = !DILocation(line: 12, column: 1, scope: !46)
+!59 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 14, type: !60, scopeLine: 14, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !42)
+!60 = !DISubroutineType(types: !61)
+!61 = !{!41}
+!62 = !DILocalVariable(name: "result", scope: !59, file: !7, line: 14, type: !41)
+!63 = !DILocation(line: 14, column: 1, scope: !59)
+!64 = !DILocalVariable(name: "test", scope: !59, file: !7, line: 15, type: !41)
+!65 = !DILocation(line: 15, column: 16, scope: !59)
+!66 = !DILocation(line: 16, column: 32, scope: !59)
+!67 = !DILocalVariable(name: "res", scope: !59, file: !7, line: 16, type: !27)
+!68 = !DILocation(line: 17, column: 26, scope: !59)
+!69 = !DILocation(line: 18, column: 28, scope: !59)
+!70 = !DILocation(line: 19, column: 25, scope: !59)
+!71 = !DILocation(line: 20, column: 1, scope: !59)

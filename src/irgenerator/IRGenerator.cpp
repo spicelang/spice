@@ -69,7 +69,7 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
 llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
     llvm::AllocaInst *allocaInst = builder.CreateAlloca(llvmType, nullptr, varName);
-    allocaInst->setDebugLoc(llvm::DebugLoc());
+    allocaInst->dropLocation(); // Part of prologue
     allocaInst->moveAfter(allocaInsertInst);
     allocaInsertInst = allocaInst;
   } else { // This is the first alloca inst in the current function -> insert at the entry block
@@ -79,7 +79,7 @@ llvm::AllocaInst *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::str
 
     // Allocate the size of the given LLVM type
     allocaInsertInst = builder.CreateAlloca(llvmType, nullptr, varName);
-    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
+    allocaInsertInst->dropLocation(); // Part of prologue
 
     // Restore old basic block
     builder.SetInsertPoint(currentBlock);
@@ -363,7 +363,6 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block, llvm::Function *parentF
 }
 
 void IRGenerator::terminateBlock(const StmtLstNode *stmtLstNode) {
-  diGenerator.setSourceLocation(stmtLstNode->closingBraceCodeLoc);
   generateScopeCleanup(stmtLstNode);
   blockAlreadyTerminated = true;
 }
@@ -440,13 +439,16 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
   if (isRefAssign) {
     assert(lhsEntry != nullptr);
     if (isDecl) { // Reference gets initially assigned
-      // Get address of right side
-      llvm::Value *rhsAddress = resolveAddress(rhs);
-      assert(rhsAddress != nullptr);
-
       // Store lhs pointer to rhs
       llvm::Value *refAddress = insertAlloca(builder.getPtrTy());
       updateAddress(lhsEntry, refAddress);
+
+      // Generate debug info for variable declaration
+      diGenerator.generateLocalVarDebugInfo(lhsEntry->name, refAddress);
+
+      // Get address of right side
+      llvm::Value *rhsAddress = resolveAddress(rhs);
+      assert(rhsAddress != nullptr);
       insertStore(rhsAddress, refAddress);
 
       return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
@@ -478,6 +480,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
     llvm::Value *rhsAddress = resolveAddress(rhs);
     updateAddress(lhsEntry, rhsAddress);
     rhs.entry = lhsEntry;
+    // Generate debug info for variable declaration
+    diGenerator.generateLocalVarDebugInfo(lhsEntry->name, rhsAddress);
     return rhs;
   }
 
@@ -486,6 +490,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
     assert(lhsEntry != nullptr);
     lhsAddress = insertAlloca(lhsEntry->getQualType());
     updateAddress(lhsEntry, lhsAddress);
+    // Generate debug info for variable declaration
+    diGenerator.generateLocalVarDebugInfo(lhsEntry->name, lhsAddress);
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs

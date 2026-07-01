@@ -76,80 +76,80 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
   %34 = add i64 %17, 4, !dbg !18
   %35 = inttoptr i64 %34 to ptr, !dbg !18
   store i8 0, ptr %35, align 1, !dbg !18
+    #dbg_declare(ptr %asan_local_stack_base, !20, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !18)
   store ptr %20, ptr %12, align 8, !dbg !18
-    #dbg_declare(ptr %asan_local_stack_base, !20, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !22)
-  %36 = load ptr, ptr %12, align 8, !dbg !23
-  %37 = ptrtoint ptr %36 to i64, !dbg !24
-  %38 = lshr i64 %37, 3, !dbg !24
-  %39 = add i64 %38, 2147450880, !dbg !24
-  %40 = inttoptr i64 %39 to ptr, !dbg !24
-  %41 = load i8, ptr %40, align 1, !dbg !24
-  %42 = icmp ne i8 %41, 0, !dbg !24
-  br i1 %42, label %43, label %49, !dbg !24, !prof !19
+  %36 = load ptr, ptr %12, align 8, !dbg !22
+  %37 = ptrtoint ptr %36 to i64, !dbg !23
+  %38 = lshr i64 %37, 3, !dbg !23
+  %39 = add i64 %38, 2147450880, !dbg !23
+  %40 = inttoptr i64 %39 to ptr, !dbg !23
+  %41 = load i8, ptr %40, align 1, !dbg !23
+  %42 = icmp ne i8 %41, 0, !dbg !23
+  br i1 %42, label %43, label %49, !dbg !23, !prof !19
 
 43:                                               ; preds = %33
-  %44 = and i64 %37, 7, !dbg !24
-  %45 = add i64 %44, 3, !dbg !24
-  %46 = trunc i64 %45 to i8, !dbg !24
-  %47 = icmp sge i8 %46, %41, !dbg !24
-  br i1 %47, label %48, label %49, !dbg !24
+  %44 = and i64 %37, 7, !dbg !23
+  %45 = add i64 %44, 3, !dbg !23
+  %46 = trunc i64 %45 to i8, !dbg !23
+  %47 = icmp sge i8 %46, %41, !dbg !23
+  br i1 %47, label %48, label %49, !dbg !23
 
 48:                                               ; preds = %43
-  call void @__asan_report_store4(i64 %37) #4, !dbg !24
+  call void @__asan_report_store4(i64 %37) #4, !dbg !23
   unreachable
 
 49:                                               ; preds = %43, %33
-  store i32 123, ptr %36, align 4, !dbg !24
-  call void @_Z8sDeallocRPh(ptr noundef %12), !dbg !25
-  %50 = load ptr, ptr %12, align 8, !dbg !27
-  %51 = ptrtoint ptr %50 to i64, !dbg !28
-  %52 = lshr i64 %51, 3, !dbg !28
-  %53 = add i64 %52, 2147450880, !dbg !28
-  %54 = inttoptr i64 %53 to ptr, !dbg !28
-  %55 = load i8, ptr %54, align 1, !dbg !28
-  %56 = icmp ne i8 %55, 0, !dbg !28
-  br i1 %56, label %57, label %63, !dbg !28, !prof !19
+  store i32 123, ptr %36, align 4, !dbg !23
+  call void @_Z8sDeallocRPh(ptr noundef %12), !dbg !24
+  %50 = load ptr, ptr %12, align 8, !dbg !26
+  %51 = ptrtoint ptr %50 to i64, !dbg !27
+  %52 = lshr i64 %51, 3, !dbg !27
+  %53 = add i64 %52, 2147450880, !dbg !27
+  %54 = inttoptr i64 %53 to ptr, !dbg !27
+  %55 = load i8, ptr %54, align 1, !dbg !27
+  %56 = icmp ne i8 %55, 0, !dbg !27
+  br i1 %56, label %57, label %63, !dbg !27, !prof !19
 
 57:                                               ; preds = %49
-  %58 = and i64 %51, 7, !dbg !28
-  %59 = add i64 %58, 3, !dbg !28
-  %60 = trunc i64 %59 to i8, !dbg !28
-  %61 = icmp sge i8 %60, %55, !dbg !28
-  br i1 %61, label %62, label %63, !dbg !28
+  %58 = and i64 %51, 7, !dbg !27
+  %59 = add i64 %58, 3, !dbg !27
+  %60 = trunc i64 %59 to i8, !dbg !27
+  %61 = icmp sge i8 %60, %55, !dbg !27
+  br i1 %61, label %62, label %63, !dbg !27
 
 62:                                               ; preds = %57
-  call void @__asan_report_store4(i64 %51) #4, !dbg !28
+  call void @__asan_report_store4(i64 %51) #4, !dbg !27
   unreachable
 
 63:                                               ; preds = %57, %49
-  store i32 321, ptr %50, align 4, !dbg !28
-  call void @_Z8sDeallocRPh(ptr %12), !dbg !29
-  %64 = add i64 %17, 4, !dbg !29
-  %65 = inttoptr i64 %64 to ptr, !dbg !29
-  store i8 -8, ptr %65, align 1, !dbg !29
-  %66 = load i32, ptr %result, align 4, !dbg !29
-  store i64 1172321806, ptr %11, align 8, !dbg !29
-  %67 = icmp ne i64 %6, 0, !dbg !29
-  br i1 %67, label %68, label %74, !dbg !29
+  store i32 321, ptr %50, align 4, !dbg !27
+  call void @_Z8sDeallocRPh(ptr %12), !dbg !28
+  %64 = add i64 %17, 4, !dbg !28
+  %65 = inttoptr i64 %64 to ptr, !dbg !28
+  store i8 -8, ptr %65, align 1, !dbg !28
+  %66 = load i32, ptr %result, align 4, !dbg !28
+  store i64 1172321806, ptr %11, align 8, !dbg !28
+  %67 = icmp ne i64 %6, 0, !dbg !28
+  br i1 %67, label %68, label %74, !dbg !28
 
 68:                                               ; preds = %63
-  %69 = add i64 %17, 0, !dbg !29
-  %70 = inttoptr i64 %69 to ptr, !dbg !29
-  store i64 -723401728380766731, ptr %70, align 1, !dbg !29
-  %71 = getelementptr i8, ptr %7, i64 56, !dbg !29
-  %72 = load i64, ptr %71, align 8, !dbg !29
-  %73 = inttoptr i64 %72 to ptr, !dbg !29
-  store i8 0, ptr %73, align 1, !dbg !29
-  br label %77, !dbg !29
+  %69 = add i64 %17, 0, !dbg !28
+  %70 = inttoptr i64 %69 to ptr, !dbg !28
+  store i64 -723401728380766731, ptr %70, align 1, !dbg !28
+  %71 = getelementptr i8, ptr %7, i64 56, !dbg !28
+  %72 = load i64, ptr %71, align 8, !dbg !28
+  %73 = inttoptr i64 %72 to ptr, !dbg !28
+  store i8 0, ptr %73, align 1, !dbg !28
+  br label %77, !dbg !28
 
 74:                                               ; preds = %63
-  %75 = add i64 %17, 0, !dbg !29
-  %76 = inttoptr i64 %75 to ptr, !dbg !29
-  store i64 0, ptr %76, align 1, !dbg !29
-  br label %77, !dbg !29
+  %75 = add i64 %17, 0, !dbg !28
+  %76 = inttoptr i64 %75 to ptr, !dbg !28
+  store i64 0, ptr %76, align 1, !dbg !28
+  br label %77, !dbg !28
 
 77:                                               ; preds = %74, %68
-  ret i32 %66, !dbg !29
+  ret i32 %66, !dbg !28
 }
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
@@ -414,11 +414,10 @@ attributes #4 = { nomerge }
 !19 = !{!"branch_weights", i32 1, i32 1048575}
 !20 = !DILocalVariable(name: "iPtr", scope: !10, file: !11, line: 4, type: !21)
 !21 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !14, size: 64)
-!22 = !DILocation(line: 4, column: 5, scope: !10)
-!23 = !DILocation(line: 5, column: 6, scope: !10)
-!24 = !DILocation(line: 5, column: 13, scope: !10)
-!25 = !DILocation(line: 7, column: 35, scope: !26)
-!26 = distinct !DILexicalBlock(scope: !10, file: !11, line: 6, column: 5)
-!27 = !DILocation(line: 9, column: 6, scope: !10)
-!28 = !DILocation(line: 9, column: 13, scope: !10)
-!29 = !DILocation(line: 10, column: 1, scope: !10)
+!22 = !DILocation(line: 5, column: 6, scope: !10)
+!23 = !DILocation(line: 5, column: 13, scope: !10)
+!24 = !DILocation(line: 7, column: 35, scope: !25)
+!25 = distinct !DILexicalBlock(scope: !10, file: !11, line: 6, column: 5)
+!26 = !DILocation(line: 9, column: 6, scope: !10)
+!27 = !DILocation(line: 9, column: 13, scope: !10)
+!28 = !DILocation(line: 10, column: 1, scope: !10)

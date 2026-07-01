@@ -49,22 +49,22 @@ define dso_local noundef i32 @main() #0 !dbg !9 {
   call void @__tysan_instrument_mem_inst(ptr %ptr, ptr null, i64 8, i1 false), !dbg !17
   call void @__tysan_instrument_with_shadow_update(ptr %result, ptr @__tysan_v1_int_o_0, i1 true, i64 4, i32 2), !dbg !17
   store i32 0, ptr %result, align 4, !dbg !17, !tbaa !20
-  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !24
-  store i64 100, ptr %l, align 8, !dbg !24, !tbaa !25
-    #dbg_declare(ptr %l, !27, !DIExpression(), !29)
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !30
-  store ptr %l, ptr %ptr, align 8, !dbg !30, !tbaa !32
-    #dbg_declare(ptr %ptr, !34, !DIExpression(), !37)
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !38
-  %1 = load ptr, ptr %ptr, align 8, !dbg !38
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !38
-  %2 = load double, ptr %1, align 8, !dbg !38, !tbaa !39
-  %3 = fadd double %2, 2.000000e+00, !dbg !38
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !38
-  store double %3, ptr %1, align 8, !dbg !38
-  call void @__tysan_instrument_with_shadow_update(ptr %result, ptr null, i1 true, i64 4, i32 1), !dbg !41
-  %4 = load i32, ptr %result, align 4, !dbg !41
-  ret i32 %4, !dbg !41
+    #dbg_declare(ptr %l, !24, !DIExpression(), !26)
+  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !26
+  store i64 100, ptr %l, align 8, !dbg !26, !tbaa !27
+    #dbg_declare(ptr %ptr, !29, !DIExpression(), !33)
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !33
+  store ptr %l, ptr %ptr, align 8, !dbg !33, !tbaa !34
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !36
+  %1 = load ptr, ptr %ptr, align 8, !dbg !36
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !36
+  %2 = load double, ptr %1, align 8, !dbg !36, !tbaa !37
+  %3 = fadd double %2, 2.000000e+00, !dbg !36
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !36
+  store double %3, ptr %1, align 8, !dbg !36
+  call void @__tysan_instrument_with_shadow_update(ptr %result, ptr null, i1 true, i64 4, i32 1), !dbg !39
+  %4 = load i32, ptr %result, align 4, !dbg !39
+  ret i32 %4, !dbg !39
 }
 
 declare void @__tysan_init()
@@ -119,21 +119,19 @@ attributes #2 = { nounwind }
 !21 = !{!"int", !22, i64 0}
 !22 = !{!"omnipotent byte", !23, i64 0}
 !23 = !{!"Simple Spice TBAA"}
-!24 = !DILocation(line: 4, column: 14, scope: !9)
-!25 = !{!26, !26, i64 0}
-!26 = !{!"long", !22, i64 0}
-!27 = !DILocalVariable(name: "l", scope: !9, file: !10, line: 4, type: !28)
-!28 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!29 = !DILocation(line: 4, column: 5, scope: !9)
-!30 = !DILocation(line: 6, column: 37, scope: !31)
-!31 = distinct !DILexicalBlock(scope: !9, file: !10, line: 5, column: 5)
-!32 = !{!33, !33, i64 0}
-!33 = !{!"double*", !22, i64 0}
-!34 = !DILocalVariable(name: "ptr", scope: !31, file: !10, line: 6, type: !35)
-!35 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !36, size: 64)
-!36 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
-!37 = !DILocation(line: 6, column: 8, scope: !31)
-!38 = !DILocation(line: 7, column: 9, scope: !31)
-!39 = !{!40, !40, i64 0}
-!40 = !{!"double", !22, i64 0}
-!41 = !DILocation(line: 9, column: 1, scope: !9)
+!24 = !DILocalVariable(name: "l", scope: !9, file: !10, line: 4, type: !25)
+!25 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!26 = !DILocation(line: 4, column: 14, scope: !9)
+!27 = !{!28, !28, i64 0}
+!28 = !{!"long", !22, i64 0}
+!29 = !DILocalVariable(name: "ptr", scope: !30, file: !10, line: 6, type: !31)
+!30 = distinct !DILexicalBlock(scope: !9, file: !10, line: 5, column: 5)
+!31 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !32, size: 64)
+!32 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
+!33 = !DILocation(line: 6, column: 37, scope: !30)
+!34 = !{!35, !35, i64 0}
+!35 = !{!"double*", !22, i64 0}
+!36 = !DILocation(line: 7, column: 9, scope: !30)
+!37 = !{!38, !38, i64 0}
+!38 = !{!"double", !22, i64 0}
+!39 = !DILocation(line: 9, column: 1, scope: !9)

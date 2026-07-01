@@ -110,10 +110,10 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
     // Update the symbol table entry
     updateAddress(paramSymbol, paramAddress);
-    // Store the value at the new address
-    insertStore(&arg, paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    insertStore(&arg, paramAddress);
   }
 
   // Visit function body
@@ -253,10 +253,10 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       updateAddress(paramSymbol, paramAddress);
       // Set source location
       diGenerator.setSourceLocation(paramSymbol->declNode);
-      // Store the value at the new address
-      insertStore(&arg, paramAddress);
       // Generate debug info to declare variable
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+      // Store the value at the new address
+      insertStore(&arg, paramAddress);
     }
 
     // Store the default values for optional function args
@@ -396,10 +396,10 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       updateAddress(paramSymbol, paramAddress);
       // Set source location
       diGenerator.setSourceLocation(paramSymbol->declNode);
-      // Store the value at the new address
-      insertStore(&arg, paramAddress);
       // Generate debug info to declare variable
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+      // Store the value at the new address
+      insertStore(&arg, paramAddress);
     }
 
     // Store the default values for optional procedure args
