@@ -8,8 +8,6 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY, node);
 
@@ -20,8 +18,6 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
 }
 
 std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bHead = createBlock("for.head." + codeLine);
@@ -75,8 +71,6 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 }
 
 std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bHead = createBlock("foreach.head." + codeLine);
@@ -152,6 +146,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to head block
   switchToBlock(bHead);
+  diGenerator.setSourceLocation(node);
   // Call .isValid() on iterator
   assert(node->isValidFct);
   llvm::Function *isValidFct = stdFunctionManager.getIteratorIsValidFct(node->isValidFct);
@@ -203,6 +198,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to tail block
   switchToBlock(bTail);
+  diGenerator.setSourceLocation(node);
   // Call .next() on iterator
   assert(node->nextFct);
   llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(node->nextFct);
@@ -223,8 +219,6 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 }
 
 std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bHead = createBlock("while.head." + codeLine);
@@ -268,8 +262,6 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
 }
 
 std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bBody = createBlock("dowhile.body." + codeLine);
@@ -313,8 +305,6 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
 }
 
 std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // If we have a compile time decision, only evaluate the respective branch
   if (node->doCompileThenBranch(manIdx) && !node->doCompileElseBranch(manIdx)) {
     ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
@@ -368,8 +358,6 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
 }
 
 std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   if (node->ifStmt) { // It is an else if branch
     visit(node->ifStmt);
   } else { // It is an else branch
@@ -384,8 +372,6 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
 }
 
 std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Create blocks
   std::vector<llvm::BasicBlock *> bCases;
   bCases.reserve(node->caseBranches.size());
@@ -458,8 +444,6 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
 }
 
 std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Change to case body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
@@ -470,8 +454,6 @@ std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
 }
 
 std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Change to default body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
@@ -482,8 +464,6 @@ std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
 }
 
 std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Change scope
   node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
   node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions

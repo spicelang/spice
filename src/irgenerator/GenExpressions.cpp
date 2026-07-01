@@ -9,11 +9,11 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Visit ternary expression
   if (node->ternaryExpr)
     return visit(node->ternaryExpr);
+
+  diGenerator.setSourceLocation(node);
 
   // Assign or compound assign operation
   if (node->op != AssignExprNode::AssignOp::OP_NONE) {
@@ -86,11 +86,11 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 }
 
 std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (!node->falseExpr)
     return visit(node->condition);
+
+  diGenerator.setSourceLocation(node);
 
   // It is a ternary
   // Retrieve the condition value
@@ -186,11 +186,11 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
 }
 
 std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a logical or expression
   // Create exit block for short-circuiting
@@ -240,11 +240,11 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
 }
 
 std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a logical and expression
   // Create exit block for short-circuiting
@@ -294,11 +294,11 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
 }
 
 std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a bitwise or expression
   // Evaluate first operand
@@ -320,11 +320,11 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
 }
 
 std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a bitwise xor expression
   // Evaluate first operand
@@ -346,11 +346,11 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
 }
 
 std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a bitwise and expression
   // Evaluate first operand
@@ -372,11 +372,11 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
 }
 
 std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is an equality expression
   // Evaluate lhs
@@ -406,11 +406,11 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
 }
 
 std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a relational expression
   // Evaluate lhs
@@ -446,11 +446,11 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
 }
 
 std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is a shift expression
   // Evaluate first operand
@@ -491,11 +491,11 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
 }
 
 std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is an additive expression
   // Evaluate first operand
@@ -536,11 +536,11 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
 }
 
 std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (node->operands.size() == 1)
     return visit(node->operands.front());
+
+  diGenerator.setSourceLocation(node);
 
   // It is an additive expression
   // Evaluate first operand
@@ -583,11 +583,11 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
 }
 
 std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if only one operand is present -> loop through
   if (!node->isCast)
     return visit(node->prefixUnaryExpr);
+
+  diGenerator.setSourceLocation(node);
 
   // It is a cast expression
   // Retrieve target symbol type
@@ -606,11 +606,11 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
 }
 
 std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PrefixUnaryExprNode::PrefixUnaryOp::OP_NONE)
     return visit(node->postfixUnaryExpr);
+
+  diGenerator.setSourceLocation(node);
 
   // Evaluate lhs
   const ExprNode *lhsNode = node->prefixUnaryExpr;
@@ -702,11 +702,11 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 }
 
 std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::PostfixUnaryOp::OP_NONE)
     return visit(node->atomicExpr);
+
+  diGenerator.setSourceLocation(node);
 
   // Evaluate lhs
   const ExprNode *lhsNode = node->postfixUnaryExpr;
@@ -847,8 +847,6 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 }
 
 std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // If constant
   if (node->constant) {
     const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
@@ -862,6 +860,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   // Is assign expression
   if (node->assignExpr)
     return visit(node->assignExpr);
+
+  diGenerator.setSourceLocation(node);
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());
