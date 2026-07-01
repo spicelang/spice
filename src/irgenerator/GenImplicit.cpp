@@ -112,6 +112,8 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
 }
 
 void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
+  diGenerator.setSourceLocation(node->closingBraceCodeLoc);
+
   // Do not clean up if the block is already terminated
   if (blockAlreadyTerminated)
     return;
@@ -331,10 +333,10 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
     updateAddress(thisEntry, thisAddress);
-    // Store the value at the new address
-    insertStore(fct->arg_begin(), thisAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
+    // Store the value at the new address
+    insertStore(fct->arg_begin(), thisAddress);
   }
 
   // Generate body
@@ -430,10 +432,10 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
     updateAddress(thisEntry, thisAddress);
-    // Store the value at the new address
-    insertStore(fct->arg_begin(), thisAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
+    // Store the value at the new address
+    insertStore(fct->arg_begin(), thisAddress);
   }
 
   // Generate body

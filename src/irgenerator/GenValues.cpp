@@ -590,11 +590,11 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       captureStructPtrPtr = paramAddress;
     else
       updateAddress(paramSymbol, paramAddress);
-    // Store the value at the new address
-    insertStore(&arg, paramAddress);
     // Generate debug info
     if (!isCapturesStruct)
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args
@@ -734,11 +734,11 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       captureStructPtrPtr = paramAddress;
     else
       updateAddress(paramSymbol, paramAddress);
-    // Store the value at the new address
-    insertStore(&arg, paramAddress);
     // Generate debug info
     if (!isCapturesStruct)
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args
@@ -880,11 +880,11 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       captureStructPtrPtr = paramAddress;
     else
       updateAddress(paramSymbol, paramAddress);
-    // Store the value at the new address
-    insertStore(&arg, paramAddress);
     // Generate debug info
     if (!isCapturesStruct)
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args

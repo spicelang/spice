@@ -23,7 +23,6 @@ std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
   }
 
   // Generate cleanup code of this scope, e.g. dtor calls for struct instances
-  diGenerator.setSourceLocation(node->getNextOuterStmtLst()->closingBraceCodeLoc);
   generateScopeCleanup(node);
 
   return nullptr;
@@ -51,6 +50,8 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       // Allocate memory
       varAddress = insertAlloca(varTy);
       updateAddress(varEntry, varAddress);
+      // Generate debug info for variable declaration
+      diGenerator.generateLocalVarDebugInfo(node->varName, varAddress);
       // Call copy ctor
       llvm::Value *rhsAddress = resolveAddress(node->assignExpr);
       assert(rhsAddress != nullptr);
@@ -67,6 +68,9 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     varAddress = insertAlloca(varTy);
     updateAddress(varEntry, varAddress);
 
+    // Generate debug info for variable declaration
+    diGenerator.generateLocalVarDebugInfo(node->varName, varAddress);
+
     if (node->calledInitCtor) {
       // Call no-args constructor
       generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
@@ -82,10 +86,6 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
 
   // Attach the variable name to the LLVM value.
   varAddress->setName(varEntry->name);
-
-  // Generate debug info for variable declaration
-  diGenerator.setSourceLocation(node);
-  diGenerator.generateLocalVarDebugInfo(node->varName, varAddress);
 
   return nullptr;
 }
