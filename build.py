@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """Build the Spice compiler and test runner into the build/ directory."""
+import argparse
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+parser = argparse.ArgumentParser(description="Build the Spice compiler and test runner.")
+parser.add_argument(
+    "-b", "--build-type",
+    choices=["Release", "Debug", "DebWithRelInfo"],
+    default="Release",
+    help="CMake build type (default: Release)",
+)
+args = parser.parse_args()
 
 build_dir = Path("build")
 build_dir.mkdir(exist_ok=True)
@@ -11,7 +21,7 @@ build_dir.mkdir(exist_ok=True)
 os.environ.setdefault("LLVM_DIR", str(Path("llvm/build-release/lib/cmake/llvm").resolve()))
 
 subprocess.run(
-    ["cmake", "-DCMAKE_BUILD_TYPE=Release", "-GNinja", ".."],
+    ["cmake", f"-DCMAKE_BUILD_TYPE={args.build_type}", "-GNinja", ".."],
     cwd=build_dir,
     check=True,
 )
