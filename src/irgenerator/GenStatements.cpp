@@ -13,11 +13,13 @@ namespace spice::compiler {
 std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
   // Generate instructions in the scope
   for (const StmtNode *stmt : node->statements) {
-    if (!stmt)
-      continue;
     // Check if we can cancel generating instructions for this code branch
     if (blockAlreadyTerminated || stmt->unreachable)
       break;
+
+    // Set source location for debug info
+    diGenerator.setSourceLocation(stmt);
+
     // Visit child
     visit(stmt);
   }
@@ -33,8 +35,6 @@ std::any IRGenerator::visitTypeAltsLst(const TypeAltsLstNode *node) {
 }
 
 std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Get variable entry
   const SymbolTableEntry *varEntry = node->entries.at(manIdx);
   assert(varEntry != nullptr);
@@ -111,8 +111,6 @@ std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
 }
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
     const ExprNode *returnExpr = node->assignExpr;
@@ -151,8 +149,6 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 }
 
 std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Jump to destination block
   const size_t blockIdx = breakBlocks.size() - node->breakTimes;
   insertJump(breakBlocks.at(blockIdx));
@@ -161,8 +157,6 @@ std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
 }
 
 std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Jump to destination block
   const size_t blockIdx = continueBlocks.size() - node->continueTimes;
   insertJump(continueBlocks.at(blockIdx));
@@ -171,8 +165,6 @@ std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
 }
 
 std::any IRGenerator::visitFallthroughStmt(const FallthroughStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Jump to destination block
   insertJump(fallthroughBlocks.top());
 
@@ -183,8 +175,6 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   // Do not generate assertions in release mode
   if (cliOptions.buildMode == BuildMode::RELEASE)
     return nullptr;
-
-  diGenerator.setSourceLocation(node);
 
   // Create blocks
   const std::string &codeLine = node->codeLoc.toPrettyLine();

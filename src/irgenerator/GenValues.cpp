@@ -51,12 +51,12 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
 }
 
 std::any IRGenerator::visitConstant(const ConstantNode *node) {
+  if (currentScope != rootScope)
+    diGenerator.setSourceLocation(node);
   return getConst(node->getCompileTimeValue(manIdx), node->getEvaluatedSymbolType(manIdx), node);
 }
 
 std::any IRGenerator::visitFctCall(const FctCallNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Check if this is a builtin call
   for (const auto &[builtinFctName, _] : BUILTIN_FUNCTIONS)
     if (node->fqFunctionName == builtinFctName)
@@ -931,9 +931,6 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 }
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {
-  // Only set the source location if this is not the root scope
-  if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
-    diGenerator.setSourceLocation(node);
   // Retrieve symbol type
   const QualType symbolType = node->getEvaluatedSymbolType(manIdx);
   assert(!symbolType.is(TY_DYN)); // Symbol type should not be dyn anymore at this point

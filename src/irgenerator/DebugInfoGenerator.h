@@ -6,6 +6,9 @@
 #include <stack>
 #include <unordered_map>
 
+#include <ast/ASTNodes.h>
+#include <util/GlobalDefinitions.h>
+
 #include <llvm/IR/DIBuilder.h>
 
 namespace spice::compiler {
@@ -16,7 +19,6 @@ class SymbolTableEntry;
 class QualType;
 class Function;
 class Struct;
-class ASTNode;
 struct CodeLoc;
 
 class DebugInfoGenerator {
@@ -36,7 +38,7 @@ public:
                                      const CodeLoc &codeLoc) const;
   void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber = SIZE_MAX);
   void setSourceLocation(const CodeLoc &codeLoc);
-  void setSourceLocation(const ASTNode *node);
+  ALWAYS_INLINE void setSourceLocation(const ASTNode *node) { setSourceLocation(node->codeLoc); }
   void finalize() const;
 
 private:

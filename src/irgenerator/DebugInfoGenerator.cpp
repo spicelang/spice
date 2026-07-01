@@ -2,7 +2,6 @@
 
 #include "DebugInfoGenerator.h"
 
-#include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <irgenerator/IRGenerator.h>
 #include <irgenerator/NameMangling.h>
@@ -266,8 +265,6 @@ void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
   const llvm::DILocation *diCodeLoc = llvm::DILocation::get(scope->getContext(), codeLoc.line, codeLoc.col, scope);
   irGenerator->builder.SetCurrentDebugLocation(diCodeLoc);
 }
-
-void DebugInfoGenerator::setSourceLocation(const ASTNode *node) { setSourceLocation(node->codeLoc); }
 
 void DebugInfoGenerator::finalize() const {
   if (irGenerator->cliOptions.instrumentation.generateDebugInfo)
