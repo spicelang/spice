@@ -21,7 +21,7 @@ build_dir.mkdir(exist_ok=True)
 os.environ.setdefault("LLVM_DIR", str(Path("llvm/build-release/lib/cmake/llvm").resolve()))
 
 subprocess.run(
-    ["cmake", f"-DCMAKE_BUILD_TYPE={args.build_type}", "-GNinja", ".."],
+    ["cmake", f"-DCMAKE_BUILD_TYPE={args.build_type}", "-DSPICE_ENABLE_TPDE=ON", "-GNinja", ".."],
     cwd=build_dir,
     check=True,
 )

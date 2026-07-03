@@ -558,11 +558,12 @@ void SourceFile::runObjectEmitter() {
   if (cliOptions.backend == Backend::TPDE) {
     llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *llvmModule;
     objectEmitter = std::make_unique<TPDEObjectEmitter>(module);
-  } else
-#endif
-  {
+  } else {
     objectEmitter = std::make_unique<LLVMObjectEmitter>(resourceManager, this);
   }
+#else
+  objectEmitter = std::make_unique<LLVMObjectEmitter>(resourceManager, this);
+#endif
 
   // Emit object for this source file
   objectEmitter->emit(objectFilePath);
