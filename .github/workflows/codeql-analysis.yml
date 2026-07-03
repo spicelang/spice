@@ -93,6 +93,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_LINK_STATIC=OFF \
             -Wattributes \
             ..
