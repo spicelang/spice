@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -99,6 +99,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_RUN_COVERAGE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'ON' || 'OFF' }} \
             -Wattributes \
             ..
@@ -158,7 +159,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -219,6 +220,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_TEST_ARGS=--is-github-actions \
             -Wattributes \
             ..

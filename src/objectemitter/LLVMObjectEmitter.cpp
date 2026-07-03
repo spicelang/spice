@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
-#include "ObjectEmitter.h"
+#include "LLVMObjectEmitter.h"
 
 #include <SourceFile.h>
 #include <driver/Driver.h>
+#include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
 #include <util/RawStringOStream.h>
 
@@ -13,11 +14,11 @@
 
 namespace spice::compiler {
 
-ObjectEmitter::ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
+LLVMObjectEmitter::LLVMObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile),
       module(cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule) {}
 
-void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
+void LLVMObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   const std::string objectPathString = objectPath.string();
 
   // Open file output stream
@@ -36,7 +37,7 @@ void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   stream.flush();
 }
 
-void ObjectEmitter::getASMString(std::string &output) const {
+void LLVMObjectEmitter::getASMString(std::string &output) const {
   RawStringOStream ostream(output);
   llvm::legacy::PassManager passManager;
   constexpr auto fileType = llvm::CodeGenFileType::AssemblyFile;

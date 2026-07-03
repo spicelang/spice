@@ -1,0 +1,74 @@
+// TEST: --backend=tpde
+
+// Integration test for the experimental TPDE compiler backend.
+//
+// Auto-skipped when Spice is built without -DSPICE_ENABLE_TPDE=ON (see TestUtil::isDisabled).
+// The program deliberately encodes its final answer in the process exit code so the test does
+// not depend on the runtime's printf/string-constant layout (which currently interacts poorly
+// with TPDE's ELF relocation of small .rodata sections — tracked separately).
+//
+// The single computed exit code exercises: integer arithmetic (+, -, *, /, %), signed values,
+// for-loops with break, while-loops, do-while, if/else, nested user-defined function calls,
+// boolean short-circuit operators, and unary negation.
+
+f<int> mulByTwo(int x) {
+    return x + x;
+}
+
+f<int> abs(int x) {
+    if x < 0 {
+        return -x;
+    }
+    return x;
+}
+
+f<int> gcd(int a, int b) {
+    while b != 0 {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+f<int> main() {
+    // for-loop + arithmetic: sum of squares 1..5 = 1+4+9+16+25 = 55
+    int sumOfSquares = 0;
+    for int i = 1; i <= 5; i++ {
+        sumOfSquares += i * i;
+    }
+
+    // helper call: gcd(48, 18) = 6
+    int g = gcd(48, 18);
+
+    // do-while: product = 2^6 = 64
+    int product = 1;
+    int j = 0;
+    do {
+        j += 1;
+        product = mulByTwo(product);
+    } while j < 6;
+
+    // unary negation + branching + boolean logic
+    int absVal = abs(-17);
+    int mod = 100 % 7;   // = 2
+    bool cond = absVal > 10 && mod == 2;
+
+    // for-loop + break: truncated sum = 1+2+3+4 = 10
+    int truncated = 0;
+    for int n = 1; n <= 100; n++ {
+        if n > 4 {
+            break;
+        }
+        truncated += n;
+    }
+
+    // Combine: 55 + 6 + 64 = 125; if cond => -= 2 => 123; += 10 => 133
+    int r = sumOfSquares + g + product;
+    if cond {
+        r -= mod;
+    } else {
+        r += 1000;
+    }
+    return r + truncated;
+}

@@ -48,3 +48,14 @@ To build Spice, you can use the `dev-setup.py` script. This will prepare your de
     cd build
     .\spice [options] <input>
     ```
+
+### Optional build flags
+
+The following CMake options are available when configuring the build (pass them as `-D<name>=ON` to `cmake`):
+
+| Flag                      | Description                                                                                            |
+|---------------------------|--------------------------------------------------------------------------------------------------------|
+| `SPICE_UNITY_BUILD`       | Enable CMake unity builds for the compiler executable.                                                 |
+| `SPICE_LTO`               | Link-time optimization for the compiler executable.                                                    |
+| `SPICE_LINK_STATIC`       | Statically link the compiler executable.                                                               |
+| `SPICE_ENABLE_TPDE`       | Enable the experimental [TPDE backend](../how-to/experimental-backends.md) as an alternative to LLVM.  |

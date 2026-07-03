@@ -268,6 +268,16 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
       if (arg.starts_with("--sanitizer"))
         return true;
   }
+#ifndef SPICE_ENABLE_TPDE
+  // TPDE-only tests select the backend via a `// TEST: --backend=tpde` header. Skip them when
+  // the compiler was built without the experimental TPDE support — otherwise Driver::parse
+  // would reject the flag and the test would report a false-positive CLI error.
+  std::vector<std::string> testArgs;
+  parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
+  for (const std::string &arg : testArgs)
+    if (arg == "--backend=tpde" || arg == "--backend=TPDE")
+      return true;
+#endif
 #ifdef OS_WINDOWS
   if (exists(testCase.testPath / CTL_SKIP_WINDOWS))
     return true;

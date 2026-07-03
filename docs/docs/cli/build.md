@@ -52,3 +52,4 @@ You can apply following options to the `build` subcommand:
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |
 | -            | `--use-tbaa-metadata`     | Generate metadata for type-based alias analysis to enhance optimizations                                             |
 | -            | `--output-container`      | Format of the compilation output container. <br> Valid values: `exec` (default), `obj`, `lib`, `dylib`)              |
+| -            | `--backend`               | Codegen backend. <br> Valid values: `llvm` (default), `tpde` (experimental — [see how-to](../how-to/experimental-backends.md); requires opt-in build with `-DSPICE_ENABLE_TPDE=ON`). |

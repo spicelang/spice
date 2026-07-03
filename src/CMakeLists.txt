@@ -91,7 +91,7 @@ set(SOURCES
         # IR optimizer
         iroptimizer/IROptimizer.cpp
         # Object emitter
-        objectemitter/ObjectEmitter.cpp
+        objectemitter/LLVMObjectEmitter.cpp
         # Linker
         linker/BitcodeLinker.cpp
         linker/ExternalLinkerInterface.cpp
@@ -122,12 +122,32 @@ set(SOURCES
 
 # Initialize ANTLR
 antlr_target(Spice Spice.g4 VISITOR PACKAGE spice::compiler)
+
 # Create libspicecore library
 add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 # Add the current directory as include dir
 target_include_directories(spicecore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Link ANTLR runtime and header-only dependencies
 target_link_libraries(spicecore PUBLIC antlr4_static nlohmann_json::nlohmann_json CLI11::CLI11)
+
+# Optional TPDE backend — compiled into its own static library so TPDE's -fno-rtti requirement
+# (propagated by tpde::tpde_llvm as a usage requirement) does not leak into spicecore, which
+# depends on RTTI (dynamic_cast, typeid).
+if (SPICE_ENABLE_TPDE)
+    # tpde::tpde_llvm publishes -fno-rtti as an INTERFACE_COMPILE_OPTION (when LLVM is built without RTTI).
+    # Spice code relies on typeid/dynamic_cast, so we cannot let that option propagate. Wrap the emitter in
+    # its own static library and consume TPDE via a shim interface target that carries only the include
+    # directories and link libraries — no compile options.
+    get_target_property(_tpde_include_dirs tpde_llvm_impl INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(_tpde_system_dirs  tpde_llvm_impl INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+    add_library(spice_tpde STATIC objectemitter/TPDEObjectEmitter.cpp)
+    target_include_directories(spice_tpde SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    # PRIVATE link so TPDE's interface-scoped -fno-rtti does not propagate onwards.
+    target_link_libraries(spice_tpde PRIVATE tpde::tpde_llvm spicecore)
+    # We compile this TU with -fno-rtti to match TPDE's ABI expectations.
+    target_compile_options(spice_tpde PRIVATE -fno-rtti)
+    target_compile_definitions(spice_tpde PRIVATE SPICE_ENABLE_TPDE)
+endif ()
 # Add include directories
 target_include_directories(spicecore
     SYSTEM PUBLIC
@@ -160,6 +180,9 @@ set_source_files_properties(util/RawStringOStream.cpp PROPERTIES COMPILE_OPTIONS
 add_executable(spice main.cpp)
 # Link with spicecore, antlr and llvm
 target_link_libraries(spice PRIVATE spicecore ${LLVM_LIBS})
+if (SPICE_ENABLE_TPDE)
+    target_link_libraries(spice PRIVATE spice_tpde)
+endif ()
 # Enable pedantic warnings
 target_compile_options(spice PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
 

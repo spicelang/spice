@@ -15,7 +15,10 @@
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <linker/BitcodeLinker.h>
-#include <objectemitter/ObjectEmitter.h>
+#include <objectemitter/LLVMObjectEmitter.h>
+#ifdef SPICE_ENABLE_TPDE
+#include <objectemitter/TPDEObjectEmitter.h>
+#endif
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
@@ -547,13 +550,26 @@ void SourceFile::runObjectEmitter() {
   std::filesystem::path objectFilePath = cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
-  // Emit object for this source file
-  const ObjectEmitter objectEmitter(resourceManager, this);
-  objectEmitter.emit(objectFilePath);
+  // Pick a concrete emitter based on the selected backend. The TPDE emitter is compiled into a
+  // sibling library (spice_tpde) that keeps its -fno-rtti requirement out of spicecore; the
+  // AbstractObjectEmitter base gives us a single interface both branches produce.
+  std::unique_ptr<AbstractObjectEmitter> objectEmitter;
+#ifdef SPICE_ENABLE_TPDE
+  if (cliOptions.backend == Backend::TPDE) {
+    llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *llvmModule;
+    objectEmitter = std::make_unique<TPDEObjectEmitter>(module);
+  } else
+#endif
+  {
+    objectEmitter = std::make_unique<LLVMObjectEmitter>(resourceManager, this);
+  }
 
-  // Save assembly string in the compiler output
+  // Emit object for this source file
+  objectEmitter->emit(objectFilePath);
+
+  // Save assembly string in the compiler output (TPDE emits a placeholder note)
   if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
-    objectEmitter.getASMString(compilerOutput.asmString);
+    objectEmitter->getASMString(compilerOutput.asmString);
 
   // Dump assembly code
   if (cliOptions.dump.dumpAssembly)

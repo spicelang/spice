@@ -49,6 +49,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Invalid output container";
   case INVALID_SANITIZER:
     return "Invalid sanitizer";
+  case INVALID_BACKEND:
+    return "Invalid backend";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

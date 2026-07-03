@@ -32,6 +32,19 @@ include(LLVMOptions.cmake)
 add_subdirectory(deps/json EXCLUDE_FROM_ALL)
 add_subdirectory(deps/cli11 EXCLUDE_FROM_ALL)
 
+# Experimental TPDE backend (opt-in via SPICE_ENABLE_TPDE)
+if (SPICE_ENABLE_TPDE)
+    # Skip TPDE's own test suite (requires `lit`) and force LLVM support ON.
+    set(TPDE_INCLUDE_TESTS OFF CACHE BOOL "" FORCE)
+    set(TPDE_ENABLE_LLVM ON CACHE BOOL "" FORCE)
+    set(TPDE_ENABLE_ENCODEGEN ON CACHE BOOL "" FORCE)
+    # Spice itself links LLVM statically (see LLVMOptions.cmake). TPDE defaults to shared LLVM; align it
+    # with Spice's convention so both sides can be linked into the same executable.
+    set(TPDE_LINK_LLVM_STATIC ON CACHE BOOL "" FORCE)
+    add_subdirectory(deps/tpde EXCLUDE_FROM_ALL)
+    message(STATUS "Spice: TPDE submodule added; will link tpde::tpde_llvm")
+endif ()
+
 # Coverage
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.py ${CMAKE_CURRENT_BINARY_DIR}/coverage.py SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gcovr.cfg ${CMAKE_CURRENT_BINARY_DIR}/gcovr.cfg SYMBOLIC)

@@ -62,6 +62,13 @@ const char *const OUTPUT_CONTAINER_OBJECT_FILE = "obj";
 const char *const OUTPUT_CONTAINER_STATIC_LIBRARY = "lib";
 const char *const OUTPUT_CONTAINER_SHARED_LIBRARY = "dylib";
 
+enum class Backend : uint8_t {
+  LLVM = 0, // Standard LLVM CodeGen backend (default)
+  TPDE = 1, // Experimental TPDE backend — fast, -O0-quality codegen (opt-in via SPICE_ENABLE_TPDE)
+};
+const char *const BACKEND_LLVM = "llvm";
+const char *const BACKEND_TPDE = "tpde";
+
 /**
  * Representation of the various cli options
  */
@@ -101,6 +108,7 @@ struct CliOptions {
   bool useTBAAMetadata = false;
   OptLevel optLevel = OptLevel::O0; // The default optimization level for debug build mode is O0
   bool useLTO = false;
+  Backend backend = Backend::LLVM;  // Codegen backend selection (TPDE is experimental, opt-in at build time)
   bool noEntryFct = false;
   bool generateTestMain = false;
   bool staticLinking = false;
