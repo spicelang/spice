@@ -91,7 +91,7 @@ set(SOURCES
         # IR optimizer
         iroptimizer/IROptimizer.cpp
         # Object emitter
-        objectemitter/ObjectEmitter.cpp
+        objectemitter/LLVMObjectEmitter.cpp
         # Linker
         linker/BitcodeLinker.cpp
         linker/ExternalLinkerInterface.cpp

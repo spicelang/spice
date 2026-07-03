@@ -13,9 +13,11 @@
 
 #include <tpde-llvm/LLVMCompiler.hpp>
 
-namespace spice::compiler::tpde_backend {
+namespace spice::compiler {
 
-void emitObjectFile(llvm::Module &module, const std::filesystem::path &objectPath) {
+TPDEObjectEmitter::TPDEObjectEmitter(llvm::Module &module) : module(module) {}
+
+void TPDEObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   const std::string objectPathString = objectPath.string();
 
   // Create a TPDE compiler for the module's target triple
@@ -38,10 +40,10 @@ void emitObjectFile(llvm::Module &module, const std::filesystem::path &objectPat
   out.flush();
 }
 
-void getAssemblyString(std::string &output) {
+void TPDEObjectEmitter::getASMString(std::string &output) const {
   // TPDE emits ELF bytes directly and does not expose an assembly listing.
   output = "; Assembly listing is not available under the TPDE backend.\n"
            "; Use --backend=llvm to obtain assembly output.\n";
 }
 
-} // namespace spice::compiler::tpde_backend
+} // namespace spice::compiler

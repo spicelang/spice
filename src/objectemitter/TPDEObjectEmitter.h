@@ -3,7 +3,8 @@
 #pragma once
 
 #include <filesystem>
-#include <string>
+
+#include <objectemitter/AbstractObjectEmitter.h>
 
 // Forward declarations
 namespace llvm {
@@ -13,23 +14,29 @@ namespace llvm {
 namespace spice::compiler {
 
 /**
- * Thin functional entry-point that compiles an LLVM module to an ELF object via TPDE.
+ * Object emitter backed by the experimental TPDE compiler back-end framework.
  *
- * Kept intentionally free of Spice-specific headers so the translation unit can be compiled
- * with -fno-rtti (TPDE's compile-option ABI), while the rest of the compiler keeps RTTI enabled.
+ * Consumes an llvm::Module directly and emits an ELF object at roughly -O0 code quality but
+ * significantly faster than LLVM CodeGen at -O0. Only compiled when SPICE_ENABLE_TPDE is defined
+ * (gated by the SPICE_ENABLE_TPDE CMake option). Supported targets: ELF on x86_64 or aarch64;
+ * small code model; PIC relocation only; no LTO.
  *
- * Only compiled when SPICE_ENABLE_TPDE is defined.
+ * Kept deliberately free of Spice-internal headers other than AbstractObjectEmitter so this class
+ * (and its TU) can be compiled with -fno-rtti to match TPDE's ABI without dragging in RTTI-heavy
+ * Spice code.
  */
-namespace tpde_backend {
+class TPDEObjectEmitter final : public AbstractObjectEmitter {
+public:
+  // Constructors
+  explicit TPDEObjectEmitter(llvm::Module &module);
 
-/// Compile @p module to an ELF object at @p objectPath.
-/// Throws spice::compiler::CompilerError on failure.
-void emitObjectFile(llvm::Module &module, const std::filesystem::path &objectPath);
+  // Public methods
+  void emit(const std::filesystem::path &objectPath) const override;
+  void getASMString(std::string &output) const override;
 
-/// Return a placeholder assembly listing. TPDE emits object bytes directly and does not
-/// expose an assembly stage; @p output is set to a human-readable note.
-void getAssemblyString(std::string &output);
-
-} // namespace tpde_backend
+private:
+  // Private members
+  llvm::Module &module;
+};
 
 } // namespace spice::compiler

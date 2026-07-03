@@ -15,7 +15,7 @@
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <linker/BitcodeLinker.h>
-#include <objectemitter/ObjectEmitter.h>
+#include <objectemitter/LLVMObjectEmitter.h>
 #ifdef SPICE_ENABLE_TPDE
 #include <objectemitter/TPDEObjectEmitter.h>
 #endif
@@ -550,26 +550,26 @@ void SourceFile::runObjectEmitter() {
   std::filesystem::path objectFilePath = cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
+  // Pick a concrete emitter based on the selected backend. The TPDE emitter is compiled into a
+  // sibling library (spice_tpde) that keeps its -fno-rtti requirement out of spicecore; the
+  // AbstractObjectEmitter base gives us a single interface both branches produce.
+  std::unique_ptr<AbstractObjectEmitter> objectEmitter;
 #ifdef SPICE_ENABLE_TPDE
   if (cliOptions.backend == Backend::TPDE) {
-    // Emit object for this source file using the experimental TPDE backend
     llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *llvmModule;
-    tpde_backend::emitObjectFile(module, objectFilePath);
-
-    // Save (placeholder) assembly string in the compiler output — TPDE has no asm listing
-    if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
-      tpde_backend::getAssemblyString(compilerOutput.asmString);
+    objectEmitter = std::make_unique<TPDEObjectEmitter>(module);
   } else
 #endif
   {
-    // Emit object for this source file
-    const ObjectEmitter objectEmitter(resourceManager, this);
-    objectEmitter.emit(objectFilePath);
-
-    // Save assembly string in the compiler output
-    if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
-      objectEmitter.getASMString(compilerOutput.asmString);
+    objectEmitter = std::make_unique<LLVMObjectEmitter>(resourceManager, this);
   }
+
+  // Emit object for this source file
+  objectEmitter->emit(objectFilePath);
+
+  // Save assembly string in the compiler output (TPDE emits a placeholder note)
+  if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
+    objectEmitter->getASMString(compilerOutput.asmString);
 
   // Dump assembly code
   if (cliOptions.dump.dumpAssembly)
