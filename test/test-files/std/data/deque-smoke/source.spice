@@ -4,7 +4,7 @@ f<int> main() {
     Deque<int> d;
     assert d.isEmpty();
     assert d.getSize() == 0;
-    assert d.getCapacity() == 5;
+    assert d.getCapacity() == 0;
 
     // pushBack
     d.pushBack(1);

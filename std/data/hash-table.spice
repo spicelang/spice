@@ -5,6 +5,9 @@ import "std/iterator/iterable";
 import "std/iterator/iterator";
 import "std/data/pair";
 
+// Default bucket count used when the hash table is grown lazily on first insert
+const unsigned long DEFAULT_BUCKET_COUNT = 100l;
+
 // Generic types for key and value
 type K dyn;
 type V dyn;
@@ -45,12 +48,16 @@ public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
 }
 
 /**
- * Construct an empty hash table with the given number of buckets
+ * Construct an empty hash table with the given number of buckets. Passing 0 keeps the
+ * hash table in an unallocated state; the bucket vector is materialized lazily on the
+ * first insertion using DEFAULT_BUCKET_COUNT.
  *
  * @param bucketCount Number of buckets to allocate
  */
-public p HashTable.ctor(unsigned long bucketCount = 100l) {
-    this.buckets = Vector<LinkedList<HashEntry<K, V>>>(bucketCount);
+public p HashTable.ctor(unsigned long bucketCount = 0l) {
+    this.buckets.ctor();
+    if bucketCount == 0l { return; }
+    this.buckets.reserve(bucketCount);
     for unsigned long i = 0l; i < bucketCount; i++ {
         this.buckets.pushBack(LinkedList<HashEntry<K, V>>());
     }
@@ -64,6 +71,10 @@ public p HashTable.ctor(unsigned long bucketCount = 100l) {
  * @param value The value to insert
  */
 public p HashTable.upsert(const K& key, const V& value) {
+    // Grow the bucket vector on the first insert
+    if this.buckets.getSize() == 0l {
+        this.growBuckets(DEFAULT_BUCKET_COUNT);
+    }
     const LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     foreach const HashEntry<K, V>& entry : bucket {
         if entry.key == key {
@@ -82,6 +93,7 @@ public p HashTable.upsert(const K& key, const V& value) {
  * @return The value associated with the key
  */
 public f<V&> HashTable.get(const K& key) {
+    if this.buckets.getSize() == 0l { panic(Error("The provided key was not found")); }
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if entry.key == key {
             return entry.value;
@@ -98,6 +110,7 @@ public f<V&> HashTable.get(const K& key) {
  * @return Optional<T>, containing the value associated with the key or empty if the key is not found
  */
 public f<Result<V>> HashTable.getSafe(const K& key) {
+    if this.buckets.getSize() == 0l { return err<V>(Error("The provided key was not found")); }
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if entry.key == key {
             return ok(entry.value);
@@ -113,6 +126,7 @@ public f<Result<V>> HashTable.getSafe(const K& key) {
  * @param key The key to remove
  */
 public p HashTable.remove(const K& key) {
+    if this.buckets.getSize() == 0l { return; }
     LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     for unsigned long i = 0l; i < bucket.getSize(); i++ {
         if bucket.get(i).key == key {
@@ -129,6 +143,7 @@ public p HashTable.remove(const K& key) {
  * @return True if the key is found, false otherwise
  */
 public f<bool> HashTable.contains(const K& key) {
+    if this.buckets.getSize() == 0l { return false; }
     foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if entry.key == key {
             return true;
@@ -173,6 +188,13 @@ inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
 
 inline f<unsigned long> HashTable.hash(const K& key) {
     return hash(key) % this.buckets.getSize();
+}
+
+p HashTable.growBuckets(unsigned long bucketCount) {
+    this.buckets.reserve(bucketCount);
+    for unsigned long i = 0l; i < bucketCount; i++ {
+        this.buckets.pushBack(LinkedList<HashEntry<K, V>>());
+    }
 }
 
 /**

@@ -1,12 +1,12 @@
 import "std/data/priority-queue";
 
 f<int> main() {
-    // Default ctor: empty priority queue with INITIAL_CAPACITY=5
+    // Default ctor: empty priority queue with no backing allocation
     PriorityQueue<int> pq;
     assert pq.isEmpty();
     assert !pq.isFull();
     assert pq.getSize() == 0;
-    assert pq.getCapacity() == 5;
+    assert pq.getCapacity() == 0;
 
     // push/peek/getSize - the largest item bubbles to the top regardless of insertion order
     pq.push(3);

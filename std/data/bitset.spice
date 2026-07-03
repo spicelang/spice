@@ -7,7 +7,8 @@ const unsigned long ALL_ONES = 0xFFFFFFFFFFFFFFFFul;
  * machine word. Compared to a set of integers it is far denser and offers fast bitwise
  * operations (and/or/xor/not) over the whole sequence.
  *
- * The number of bits is fixed at construction time.
+ * The number of bits is fixed at construction time. A default-constructed BitSet (`numBits == 0`)
+ * stays in an unallocated state (words = nil, numWords = 0) — no heap traffic until sized up.
  *
  * Time complexity:
  * Access (test/set/clear/flip): O(1)
@@ -18,9 +19,9 @@ const unsigned long ALL_ONES = 0xFFFFFFFFFFFFFFFFul;
  * count(), any() and all() never observe stale padding bits.
  */
 public type BitSet struct {
-    heap unsigned long* words   // Backing storage, one bit per logical bit
-    unsigned long numBits       // Number of logical bits in the set
-    unsigned long numWords      // Number of allocated words
+    heap unsigned long* words = nil<heap unsigned long*> // Backing storage; nil while unallocated
+    unsigned long numBits = 0l                           // Number of logical bits in the set
+    unsigned long numWords = 0l                          // Number of allocated words; 0 while unallocated
 }
 
 /**
@@ -29,12 +30,13 @@ public type BitSet struct {
  * @param numBits Number of bits in the set
  */
 public p BitSet.ctor(unsigned long numBits = 0l) {
+    this.words = nil<heap unsigned long*>;
     this.numBits = numBits;
     this.numWords = (numBits + BITS_PER_WORD - 1l) / BITS_PER_WORD;
-    // Always allocate at least one word so the backing pointer stays valid
-    const unsigned long allocWords = this.numWords == 0l ? 1l : this.numWords;
+    // Leave the backing storage unallocated for the empty bit set
+    if this.numWords == 0l { return; }
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof<unsigned long>() * allocWords);
+        Result<heap byte*> allocResult = sAlloc(sizeof<unsigned long>() * this.numWords);
         this.words = cast<heap unsigned long*>(allocResult.unwrap());
     }
     this.clearAll();
@@ -67,6 +69,7 @@ public p BitSet.ctor(unsigned long numBits, bool initialValue) {
  */
 public p BitSet.ctor(const BitSet& original) {
     this.ctor(original.numBits);
+    if this.numWords == 0l { return; }
     unsafe {
         sCopy(cast<heap byte*>(original.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
     }
@@ -80,14 +83,23 @@ public p BitSet.ctor(const BitSet& original) {
 public p operator=(BitSet& this, const BitSet& newValue) {
     if &this == &newValue { return; }
     if this.numWords != newValue.numWords {
-        const unsigned long allocWords = newValue.numWords == 0l ? 1l : newValue.numWords;
-        unsafe {
-            Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.words), sizeof<unsigned long>() * allocWords);
-            this.words = cast<heap unsigned long*>(allocResult.unwrap());
+        if newValue.numWords == 0l {
+            // Drop our buffer to match the unallocated source
+            unsafe {
+                heap byte*& oldAddress = cast<heap byte*>(this.words);
+                sDealloc(oldAddress);
+                this.words = nil<heap unsigned long*>;
+            }
+        } else {
+            unsafe {
+                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.words), sizeof<unsigned long>() * newValue.numWords);
+                this.words = cast<heap unsigned long*>(allocResult.unwrap());
+            }
         }
     }
     this.numBits = newValue.numBits;
     this.numWords = newValue.numWords;
+    if newValue.numWords == 0l { return; }
     unsafe {
         sCopy(cast<heap byte*>(newValue.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
     }

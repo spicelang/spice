@@ -17,11 +17,15 @@ const unsigned int RESIZE_FACTOR = 2;
 /**
  * Heap-allocated builtin String type to enable dynamic modification in contrast
  * to the primitive string type.
+ *
+ * An empty String stays in an unallocated default state: `contents` is nil and
+ * `capacity` is 0. The heap buffer is only allocated once the first character
+ * is stored, keeping default-constructed and empty strings free of heap traffic.
  */
 public type String struct {
-    heap char* contents    // Pointer to the first char
-    unsigned long capacity // Allocated number of chars (without null terminator)
-    unsigned long length   // Used number of chars
+    heap char* contents = nil<heap char*> // Pointer to the first char; nil while unallocated
+    unsigned long capacity = 0l           // Allocated number of chars (without null terminator); 0 while unallocated
+    unsigned long length = 0l             // Used number of chars
 }
 
 // Generic type definitions
@@ -37,7 +41,12 @@ type StrTyChar    String|string|char;
  * @param value Initial raw string value
  */
 public p String.ctor(const string value = "") {
+    this.contents = nil<heap char*>;
+    this.capacity = 0l;
     this.length = getRawLength(value);
+    // Leave the buffer unallocated for an empty initial value
+    if this.length == 0l { return; }
+
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
 
     unsafe {
@@ -77,8 +86,11 @@ public p String.ctor(const char value) {
  * @param original String to copy
  */
 public p String.ctor(const String& original) {
+    this.contents = nil<heap char*>;
     this.length = original.length;
     this.capacity = original.capacity;
+    // Mirror an unallocated source: leave the buffer as nil
+    if original.capacity == 0l { return; }
 
     unsafe {
         // Allocate space
@@ -100,8 +112,19 @@ public p operator=(String& this, const String& newValue) {
     this.length = newValue.length;
     this.capacity = newValue.capacity;
 
+    // If the source has no allocation, drop our buffer as well and stay unallocated
+    if newValue.capacity == 0l {
+        unsafe {
+            if this.contents != nil<heap char*> {
+                free(this.contents);
+                this.contents = nil<heap char*>;
+            }
+        }
+        return;
+    }
+
     unsafe {
-        // Allocate space
+        // Allocate space (realloc(nil, N) is defined as malloc(N))
         unsigned long requiredBytes = newValue.capacity + 1l; // +1 because of null terminator
         this.contents = realloc(this.contents, requiredBytes);
         this.checkForOOM();
@@ -117,7 +140,12 @@ public p operator=(String& this, const String& newValue) {
  * @param initialSize Number of characters to pre-allocate space for
  */
 public p String.ctor<IntLong>(IntLong initialSize) {
+    this.contents = nil<heap char*>;
+    this.capacity = 0l;
     this.length = cast<unsigned long>(initialSize);
+    // Stay unallocated when no space was requested
+    if initialSize == 0 { return; }
+
     this.capacity = initialSize > INITIAL_ALLOC_COUNT ? cast<unsigned long>(initialSize * RESIZE_FACTOR) : INITIAL_ALLOC_COUNT;
 
     unsafe {
@@ -135,6 +163,7 @@ public p String.ctor<IntLong>(IntLong initialSize) {
  * Destruct the String, freeing its heap-allocated character buffer
  */
 public p String.dtor() {
+    if this.contents == nil<heap char*> { return; }
     free(this.contents);
     this.contents = nil<heap char*>;
 }
@@ -148,7 +177,8 @@ public p String.append(const string appendix) {
     const unsigned long appendixLength = getRawLength(appendix);
     // Check if we need to re-allocate memory
     while this.capacity < this.length + appendixLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
+        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
+        this.resize(newCapacity);
     }
 
     // Save data
@@ -177,7 +207,8 @@ public p String.append(const String& appendix) {
 public p String.append(const char c) {
     // Check if we need to re-allocate memory
     if this.capacity < this.length + 1l {
-        this.resize(this.capacity * RESIZE_FACTOR);
+        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
+        this.resize(newCapacity);
     }
 
     // Insert the char at the right position
@@ -194,7 +225,8 @@ p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLeng
     }
     // Check if we need to re-allocate memory
     while this.capacity < this.length + strLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
+        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
+        this.resize(newCapacity);
     }
     this.length += strLength;
     unsafe {
@@ -437,6 +469,8 @@ public f<char&> operator[](String& str, unsigned int idx) {
  * @return Raw immutable string
  */
 public inline f<string> String.getRaw() {
+    // Return a canonical empty raw string when the buffer is unallocated
+    if this.contents == nil<heap char*> { return ""; }
     unsafe {
         return cast<string>(this.contents);
     }
@@ -481,6 +515,8 @@ public inline f<bool> String.isFull() {
  */
 public p String.clear() {
     this.length = 0l;
+    // Nothing to null-terminate while we are still unallocated
+    if this.contents == nil<heap char*> { return; }
     unsafe {
         this.contents[0] = '\0';
     }
@@ -669,7 +705,8 @@ public f<bool> String.replace(
 
     // Resize the string if required
     while this.capacity < finalLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
+        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
+        this.resize(newCapacity);
     }
 
     unsafe {

@@ -1,12 +1,12 @@
 import "std/data/queue";
 
 f<int> main() {
-    // Default ctor: empty queue with INITIAL_CAPACITY=5
+    // Default ctor: empty queue with no backing allocation
     Queue<int> q;
     assert q.isEmpty();
     assert !q.isFull();
     assert q.getSize() == 0;
-    assert q.getCapacity() == 5;
+    assert q.getCapacity() == 0;
 
     // push/front/back/getSize
     q.push(1);

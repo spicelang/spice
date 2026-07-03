@@ -1,7 +1,7 @@
 import "std/data/queue";
 
 f<int> main() {
-    // 1. Wrap without resize: capacity stays at INITIAL_CAPACITY=5
+    // 1. Wrap without resize: capacity stays at the initial 5 after the first push
     Queue<int> q1;
     q1.push(1); q1.push(2); q1.push(3);
     assert q1.pop() == 1;
