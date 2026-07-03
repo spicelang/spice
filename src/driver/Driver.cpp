@@ -177,10 +177,24 @@ void Driver::enrich() const {
   cliOptions.buildVars["spice.link_static"] = boolToString(cliOptions.staticLinking);
   cliOptions.buildVars["spice.is_native_target"] = boolToString(cliOptions.isNativeTarget);
   cliOptions.buildVars["spice.target_triple"] = cliOptions.targetTriple.str();
+  cliOptions.buildVars["spice.backend"] = cliOptions.backend == Backend::TPDE ? BACKEND_TPDE : BACKEND_LLVM;
 
   // Prevent incompatible option combinations
   if (cliOptions.staticLinking && cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY)
     throw CliError(INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library");
+
+  // Guards for the experimental TPDE backend — ELF only, x86_64/aarch64 only, no LTO
+  if (cliOptions.backend == Backend::TPDE) {
+    if (cliOptions.useLTO)
+      throw CliError(INCOMPATIBLE_OPTIONS, "The TPDE backend does not support LTO");
+    if (!cliOptions.targetTriple.isOSLinux())
+      throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports ELF targets (Linux)");
+    const llvm::Triple::ArchType arch = cliOptions.targetTriple.getArch();
+    if (arch != llvm::Triple::x86_64 && arch != llvm::Triple::aarch64)
+      throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports x86_64 and aarch64");
+    if (cliOptions.optLevel != OptLevel::O0)
+      std::cout << "\033[33mWarning: the TPDE backend does not optimize; -O flag will be ignored\033[0m\n";
+  }
 }
 
 /**
@@ -401,6 +415,30 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   subCmd->add_flag_callback("-Os", [&] { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
   subCmd->add_flag_callback("-Oz", [&] { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
   subCmd->add_flag<bool>("-lto", cliOptions.useLTO, "Enable link time optimization (LTO)");
+
+  // --backend
+  const auto backendCallback = [&](const CLI::results_t &results) {
+    std::string inputString = results.front();
+    std::ranges::transform(inputString, inputString.begin(), tolower);
+
+    if (inputString == BACKEND_LLVM) {
+      cliOptions.backend = Backend::LLVM;
+    } else if (inputString == BACKEND_TPDE) {
+#ifdef SPICE_ENABLE_TPDE
+      cliOptions.backend = Backend::TPDE;
+#else
+      throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET,
+                     "The TPDE backend is not available in this build. Rebuild the compiler with "
+                     "-DSPICE_ENABLE_TPDE=ON.");
+#endif
+    } else {
+      throw CliError(INVALID_BACKEND, inputString);
+    }
+
+    return true;
+  };
+  subCmd->add_option("--backend", backendCallback,
+                     "Codegen backend: llvm (default), tpde (experimental — fast, unoptimized; requires opt-in build)");
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");

@@ -21,6 +21,9 @@ set(SOURCES
 add_executable(spicetest ${SOURCES})
 # Link with spicecore, gtest, gmock and llvm
 target_link_libraries(spicetest PRIVATE spicecore GTest::gtest GTest::gmock ${LLVM_LIBS})
+if (SPICE_ENABLE_TPDE)
+    target_link_libraries(spicetest PRIVATE spice_tpde)
+endif ()
 # Enable pedantic warnings
 target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
 # Add test for IDEs

@@ -74,6 +74,7 @@ void execTestCase(const TestCase &testCase) {
       /* useTBAAMetadata */ false,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ false,
+      /* backend= */ Backend::LLVM,
       /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,

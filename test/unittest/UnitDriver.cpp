@@ -236,6 +236,105 @@ TEST(DriverTest, IncompatibleOptions) {
   }
 }
 
+TEST(DriverTest, BackendLlvmAcceptedWhenTpdeDisabled) {
+  // The default `llvm` backend must always be selectable, regardless of SPICE_ENABLE_TPDE.
+  const char *argv[] = {"spice", "build", "--backend=llvm", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_EQ(Backend::LLVM, cliOptions.backend);
+  ASSERT_EQ("llvm", cliOptions.buildVars["spice.backend"]);
+}
+
+TEST(DriverTest, BackendTpdeRejectedWhenBuildOptionDisabled) {
+#ifdef SPICE_ENABLE_TPDE
+  GTEST_SKIP() << "TPDE backend is enabled in this build; rejection path is not exercised.";
+#else
+  const char *argv[] = {"spice", "build", "--backend=tpde", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+
+  try {
+    driver.parse(argc, argv);
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Feature is not supported for this target: "
+                          "The TPDE backend is not available in this build. Rebuild the compiler with "
+                          "-DSPICE_ENABLE_TPDE=ON.";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
+}
+
+TEST(DriverTest, BackendTpdeRejectsLtoCombination) {
+#ifndef SPICE_ENABLE_TPDE
+  GTEST_SKIP() << "TPDE backend is disabled in this build; combination guard is not exercised.";
+#else
+  const char *argv[] = {"spice", "build", "--backend=tpde", "-lto", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Incompatible options: The TPDE backend does not support LTO";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
+}
+
+TEST(DriverTest, BackendTpdeRejectsNonElfTarget) {
+#ifndef SPICE_ENABLE_TPDE
+  GTEST_SKIP() << "TPDE backend is disabled in this build; target guard is not exercised.";
+#else
+  const char *argv[] = {"spice", "build", "--backend=tpde", "--target=x86_64-pc-windows-msvc",
+                        "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Feature is not supported for this target: "
+                          "The TPDE backend only supports ELF targets (Linux)";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
+}
+
+TEST(DriverTest, BackendTpdeRejectsUnsupportedArch) {
+#ifndef SPICE_ENABLE_TPDE
+  GTEST_SKIP() << "TPDE backend is disabled in this build; arch guard is not exercised.";
+#else
+  // Linux/RISC-V — supported OS, but arch is not one of TPDE's supported set (x86_64, aarch64).
+  const char *argv[] = {"spice", "build", "--backend=tpde", "--target=riscv64-unknown-linux-gnu",
+                        "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Feature is not supported for this target: "
+                          "The TPDE backend only supports x86_64 and aarch64";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
+}
+
 using DriverInvalidEnumTestParam = std::pair<const char *, const char *>;
 class DriverTest : public ::testing::TestWithParam<DriverInvalidEnumTestParam> {};
 
@@ -265,6 +364,10 @@ const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
     DriverInvalidEnumTestParam{
         "--output-container=unknown",
         "[Error|CLI] Invalid output container: unknown",
+    },
+    DriverInvalidEnumTestParam{
+        "--backend=unknown",
+        "[Error|CLI] Invalid backend: unknown",
     });
 INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 

@@ -16,6 +16,9 @@
 #include <iroptimizer/IROptimizer.h>
 #include <linker/BitcodeLinker.h>
 #include <objectemitter/ObjectEmitter.h>
+#ifdef SPICE_ENABLE_TPDE
+#include <objectemitter/TPDEObjectEmitter.h>
+#endif
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
@@ -547,13 +550,26 @@ void SourceFile::runObjectEmitter() {
   std::filesystem::path objectFilePath = cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
-  // Emit object for this source file
-  const ObjectEmitter objectEmitter(resourceManager, this);
-  objectEmitter.emit(objectFilePath);
+#ifdef SPICE_ENABLE_TPDE
+  if (cliOptions.backend == Backend::TPDE) {
+    // Emit object for this source file using the experimental TPDE backend
+    llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *llvmModule;
+    tpde_backend::emitObjectFile(module, objectFilePath);
 
-  // Save assembly string in the compiler output
-  if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
-    objectEmitter.getASMString(compilerOutput.asmString);
+    // Save (placeholder) assembly string in the compiler output — TPDE has no asm listing
+    if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
+      tpde_backend::getAssemblyString(compilerOutput.asmString);
+  } else
+#endif
+  {
+    // Emit object for this source file
+    const ObjectEmitter objectEmitter(resourceManager, this);
+    objectEmitter.emit(objectFilePath);
+
+    // Save assembly string in the compiler output
+    if (cliOptions.isNativeTarget && (cliOptions.dump.dumpAssembly || cliOptions.testMode))
+      objectEmitter.getASMString(compilerOutput.asmString);
+  }
 
   // Dump assembly code
   if (cliOptions.dump.dumpAssembly)
