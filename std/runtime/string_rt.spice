@@ -41,8 +41,6 @@ type StrTyChar    String|string|char;
  * @param value Initial raw string value
  */
 public p String.ctor(const string value = "") {
-    this.contents = nil<heap char*>;
-    this.capacity = 0l;
     this.length = getRawLength(value);
     // Leave the buffer unallocated for an empty initial value
     if this.length == 0l { return; }
@@ -86,7 +84,6 @@ public p String.ctor(const char value) {
  * @param original String to copy
  */
 public p String.ctor(const String& original) {
-    this.contents = nil<heap char*>;
     this.length = original.length;
     this.capacity = original.capacity;
     // Mirror an unallocated source: leave the buffer as nil
@@ -140,8 +137,6 @@ public p operator=(String& this, const String& newValue) {
  * @param initialSize Number of characters to pre-allocate space for
  */
 public p String.ctor<IntLong>(IntLong initialSize) {
-    this.contents = nil<heap char*>;
-    this.capacity = 0l;
     this.length = cast<unsigned long>(initialSize);
     // Stay unallocated when no space was requested
     if initialSize == 0 { return; }

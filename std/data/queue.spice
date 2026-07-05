@@ -59,11 +59,6 @@ public p Queue.ctor(unsigned int initAllocItems) {
  * @param initAllocItems Number of items to pre-allocate space for
  */
 public p Queue.ctor(unsigned long initAllocItems = 0l) {
-    this.contents = nil<heap T*>;
-    this.capacity = 0l;
-    this.size = 0l;
-    this.idxFront = 0l;
-    this.idxBack = 0l;
     // Leave the buffer unallocated when no capacity was requested
     if initAllocItems == 0l { return; }
     // Allocate space for the initial number of elements

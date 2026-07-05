@@ -35,9 +35,6 @@ public type Vector<T> struct : IIterable<T> {
  * @param initialCapacity Number of items to pre-allocate space for
  */
 public p Vector.ctor(unsigned long initialCapacity = 0l) {
-    this.contents = nil<heap T*>;
-    this.capacity = 0l;
-    this.size = 0l;
     // Leave the buffer unallocated when no capacity was requested
     if initialCapacity == 0l { return; }
     // Allocate space for the initial number of elements

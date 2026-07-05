@@ -30,7 +30,6 @@ public type BitSet struct {
  * @param numBits Number of bits in the set
  */
 public p BitSet.ctor(unsigned long numBits = 0l) {
-    this.words = nil<heap unsigned long*>;
     this.numBits = numBits;
     this.numWords = (numBits + BITS_PER_WORD - 1l) / BITS_PER_WORD;
     // Leave the backing storage unallocated for the empty bit set
