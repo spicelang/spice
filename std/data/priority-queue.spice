@@ -16,12 +16,13 @@ type T dyn;
  * Peek:   O(1)
  *
  * Priority queues pre-allocate space using an initial size and a resize factor to not have to
- * re-allocate with every item pushed.
+ * re-allocate with every item pushed. A default-constructed priority queue stays in an unallocated
+ * state (contents = nil, capacity = 0) until the first push.
  */
 public type PriorityQueue<T> struct {
-    heap T* contents        // Pointer to the first data element
-    unsigned long capacity  // Allocated number of items
-    unsigned long size = 0l // Current number of items
+    heap T* contents = nil<heap T*> // Pointer to the first data element; nil while unallocated
+    unsigned long capacity = 0l     // Allocated number of items; 0 while unallocated
+    unsigned long size = 0l         // Current number of items
 }
 
 /**
@@ -56,7 +57,9 @@ public p PriorityQueue.ctor(unsigned int initAllocItems) {
  *
  * @param initAllocItems Number of items to pre-allocate space for
  */
-public p PriorityQueue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
+public p PriorityQueue.ctor(unsigned long initAllocItems = 0l) {
+    // Leave the buffer unallocated when no capacity was requested
+    if initAllocItems == 0l { return; }
     // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
     unsafe {
@@ -73,6 +76,7 @@ public p PriorityQueue.ctor(unsigned long initAllocItems = INITIAL_CAPACITY) {
  */
 public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
     this.ctor(original.capacity);
+    if original.size == 0l { return; }
     // Copying the underlying array verbatim preserves the heap property
     const unsigned long itemSize = sizeof<T>();
     unsafe {
@@ -89,13 +93,23 @@ public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
 public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
-        unsafe {
-            Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-            this.contents = cast<heap T*>(allocResult.unwrap());
+        if newValue.capacity == 0l {
+            // Drop our buffer to match the unallocated source
+            unsafe {
+                heap byte*& oldAddress = cast<heap byte*>(this.contents);
+                sDealloc(oldAddress);
+                this.contents = nil<heap T*>;
+            }
+        } else {
+            unsafe {
+                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
+                this.contents = cast<heap T*>(allocResult.unwrap());
+            }
         }
         this.capacity = newValue.capacity;
     }
     this.size = newValue.size;
+    if newValue.size == 0l { return; }
     unsafe {
         sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
     }
@@ -105,8 +119,8 @@ public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) 
  * Add an item to the priority queue
  */
 public p PriorityQueue.push(const T& item) {
-    // Check if we need to re-allocate memory
-    if this.isFull() {
+    // Check if we need to (re-)allocate memory. Treat an unallocated priority queue the same as a full one.
+    if this.size == this.capacity {
         const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * cast<unsigned long>(RESIZE_FACTOR);
         this.resize(newCapacity);
     }
@@ -183,12 +197,14 @@ public f<bool> PriorityQueue.isEmpty() {
 }
 
 /**
- * Checks if the priority queue exhausts its capacity and needs to resize at the next call of push
+ * Checks if the priority queue exhausts its capacity and needs to resize at the next call of push.
+ * A priority queue with no allocated capacity is not considered full — the next push will simply
+ * bootstrap the buffer.
  *
  * @return Full or not full
  */
 public f<bool> PriorityQueue.isFull() {
-    return this.size == this.capacity;
+    return this.capacity != 0l && this.size == this.capacity;
 }
 
 /**
@@ -294,6 +310,16 @@ p PriorityQueue.siftDown(unsigned long index) {
  * Re-allocates heap space for the priority queue contents
  */
 p PriorityQueue.resize(unsigned long itemCount) {
+    // Free the buffer if we are shrinking down to zero capacity
+    if itemCount == 0l {
+        unsafe {
+            heap byte*& oldAddress = cast<heap byte*>(this.contents);
+            sDealloc(oldAddress);
+            this.contents = nil<heap T*>;
+        }
+        this.capacity = 0l;
+        return;
+    }
     // Allocate the new memory
     const unsigned long itemSize = sizeof<T>();
     unsafe {

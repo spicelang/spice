@@ -20,12 +20,14 @@ public type UnorderedSet<V> struct : IIterable<V> {
 }
 
 /**
- * Construct an empty unordered set with the given number of buckets
+ * Construct an empty unordered set with the given number of buckets. Passing 0 keeps the
+ * underlying hash table in an unallocated state; buckets are allocated lazily on the first
+ * insertion.
  *
  * @param bucketCount Number of buckets in the underlying hash table
  */
-public p UnorderedSet.ctor(unsigned long bucketCount = 100l) {
-    this.hashTable = HashTable<V, bool>(bucketCount);
+public p UnorderedSet.ctor(unsigned long bucketCount = 0l) {
+    this.hashTable.ctor(bucketCount);
 }
 
 /**

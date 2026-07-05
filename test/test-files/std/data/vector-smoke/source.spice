@@ -4,7 +4,7 @@ f<int> main() {
     Vector<int> v;
     assert v.isEmpty();
     assert v.getSize() == 0;
-    assert v.getCapacity() == 5;
+    assert v.getCapacity() == 0;
 
     // pushBack and indexed access
     v.pushBack(10);

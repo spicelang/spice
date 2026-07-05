@@ -20,12 +20,14 @@ public type UnorderedMap<K, V> struct : IIterable<Pair<K, V>> {
 }
 
 /**
- * Construct an empty unordered map with the given number of buckets
+ * Construct an empty unordered map with the given number of buckets. Passing 0 keeps the
+ * underlying hash table in an unallocated state; buckets are allocated lazily on the first
+ * insertion.
  *
  * @param bucketCount Number of buckets in the underlying hash table
  */
-public p UnorderedMap.ctor(unsigned long bucketCount = 100l) {
-    this.hashTable = HashTable<K, V>(bucketCount);
+public p UnorderedMap.ctor(unsigned long bucketCount = 0l) {
+    this.hashTable.ctor(bucketCount);
 }
 
 /**

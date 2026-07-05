@@ -5,7 +5,7 @@ f<int> main() {
     assert s.isEmpty();
     assert !s.isFull();
     assert s.getSize() == 0;
-    assert s.getCapacity() == 5;
+    assert s.getCapacity() == 0;
 
     // push/top/getSize
     s.push(1);
