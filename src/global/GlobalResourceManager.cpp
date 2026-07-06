@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <driver/Driver.h>
+#include <global/TypeNameDisambiguator.h>
 #include <global/TypeRegistry.h>
 #include <symboltablebuilder/Scope.h> // IWYU pragma: keep - Scope
 #include <typechecker/FunctionManager.h>
@@ -55,6 +56,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 GlobalResourceManager::~GlobalResourceManager() {
   // Notify all global components to prepare to destroy
   TypeRegistry::clear();
+  TypeNameDisambiguator::clear();
   FunctionManager::cleanup();
   StructManager::cleanup();
   InterfaceManager::cleanup();
