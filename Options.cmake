@@ -126,7 +126,21 @@ if (SPICE_LINK_STATIC)
     endif ()
     message(STATUS "Spice: Static linking for Spice is enabled.")
     set(BUILD_SHARED_LIBS OFF)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+    if (WIN32)
+        # MinGW/PE has no -static-pie equivalent; PE binaries get ASLR via /DYNAMICBASE
+        # regardless of static linking, so plain -static is fine here.
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+    else ()
+        # Use -static-pie instead of plain -static: keeps the binary fully self-contained (no
+        # runtime dependency on shared libc/libstdc++) while still producing a position-independent
+        # executable (ASLR-capable), which plain -static cannot do. Note: -static-pie already
+        # implies a full static link (libgcc/libstdc++ included) — combining it with the separate
+        # -static-libgcc/-static-libstdc++ flags confuses the gcc driver's spec logic and silently
+        # produces a dynamically-linked, crashing binary instead, so those flags are deliberately
+        # omitted here.
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-pie")
+    endif ()
 else ()
     message(STATUS "Spice: Static linking for Spice is disabled.")
 endif ()
