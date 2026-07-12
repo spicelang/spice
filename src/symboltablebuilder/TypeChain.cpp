@@ -3,6 +3,7 @@
 #include "TypeChain.h"
 
 #include <exception/CompilerError.h>
+#include <global/TypeNameDisambiguator.h>
 
 namespace spice::compiler {
 
@@ -80,7 +81,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
     break;
   case TY_STRUCT: // fall-through
   case TY_INTERFACE:
-    name << subType;
+    name << subType << TypeNameDisambiguator::getDisambiguationSuffix(subType, typeId);
     if (!templateTypes.empty()) {
       name << "<";
       for (size_t i = 0; i < templateTypes.size(); i++) {

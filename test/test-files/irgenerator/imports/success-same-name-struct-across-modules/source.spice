@@ -1,0 +1,17 @@
+import "source2";
+import "source3";
+
+// Regression test for issue #1253: two independently-imported modules each declare a package-private generic
+// 'Node<T>'. Both get instantiated (via the shared runtime generics 'sMove'/'sDelete') for the same concrete
+// type argument. The compiler must keep the two 'Node<int>' types apart - both in the type checker (distinct
+// manifestation signatures) and in codegen (distinct mangled names) - otherwise this either fails to compile
+// with a bogus 'heap Node<int>* = heap Node<int>*' mismatch or clashes at link time.
+f<int> main() {
+    StackA<int> a = StackA<int>();
+    a.push(10);
+    a.push(20);
+    StackB<int> b = StackB<int>();
+    b.push(30);
+    b.push(40);
+    printf("%d %d %d %d\n", a.pop(), a.pop(), b.pop(), b.pop());
+}

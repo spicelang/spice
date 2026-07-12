@@ -3,6 +3,7 @@
 #include "NameMangling.h"
 
 #include <exception/CompilerError.h>
+#include <global/TypeNameDisambiguator.h>
 #include <model/Function.h>
 #include <model/GenericType.h>
 #include <model/Interface.h>
@@ -245,7 +246,11 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   case TY_STRUCT: // fall-through
   case TY_INTERFACE: {
     bool nestedType = false;
-    mangleName(out, chainElement.subType, nestedType);
+    // Append a disambiguation suffix for same-named but distinct structs/interfaces (see issue #1253), so that two
+    // independent types sharing a name do not end up with the same mangled name (and thus clash at link time).
+    const std::string name =
+        chainElement.subType + TypeNameDisambiguator::getDisambiguationSuffix(chainElement.subType, chainElement.typeId);
+    mangleName(out, name, nestedType);
     if (!chainElement.templateTypes.empty()) {
       out << "I";
       for (const QualType &templateType : chainElement.templateTypes)

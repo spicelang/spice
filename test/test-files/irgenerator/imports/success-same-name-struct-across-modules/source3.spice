@@ -1,0 +1,30 @@
+type T dyn;
+
+// Package-private struct, intentionally sharing its name with the one in source2.spice.
+type Node<T> struct {
+    T value
+    heap Node<T>* next = nil<heap Node<T>*>
+}
+
+public type StackB<T> struct {
+    heap Node<T>* top = nil<heap Node<T>*>
+}
+
+public p StackB.push<T>(const T& v) {
+    heap Node<T>* newNode;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
+        newNode = cast<heap Node<T>*>(allocResult.unwrap());
+    }
+    newNode.value = v;
+    newNode.next = this.top;
+    this.top = newNode;
+}
+
+public f<T> StackB.pop<T>() {
+    T value = this.top.value;
+    heap Node<T>* oldTop = this.top;
+    this.top = sMove(this.top.next);
+    sDelete(oldTop);
+    return value;
+}

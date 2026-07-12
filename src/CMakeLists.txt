@@ -27,6 +27,7 @@ set(SOURCES
         global/CacheManager.cpp
         global/RuntimeModuleManager.cpp
         global/TypeRegistry.cpp
+        global/TypeNameDisambiguator.cpp
         # Driver
         driver/Driver.cpp
         # CST visualizer

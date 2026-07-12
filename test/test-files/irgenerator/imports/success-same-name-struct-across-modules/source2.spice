@@ -1,0 +1,31 @@
+type T dyn;
+
+// Package-private struct, intentionally sharing its name with the one in source3.spice.
+// Its (implicit) destructor and the sMove/sDelete instantiations for it must stay distinct from source3's.
+type Node<T> struct {
+    T value
+    heap Node<T>* next = nil<heap Node<T>*>
+}
+
+public type StackA<T> struct {
+    heap Node<T>* top = nil<heap Node<T>*>
+}
+
+public p StackA.push<T>(const T& v) {
+    heap Node<T>* newNode;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
+        newNode = cast<heap Node<T>*>(allocResult.unwrap());
+    }
+    newNode.value = v;
+    newNode.next = this.top;
+    this.top = newNode;
+}
+
+public f<T> StackA.pop<T>() {
+    T value = this.top.value;
+    heap Node<T>* oldTop = this.top;
+    this.top = sMove(this.top.next); // Shared generic 'sMove<Node<int>>' - must not conflate with source3's Node
+    sDelete(oldTop);                 // Shared generic 'sDelete<Node<int>>' - must call THIS Node's destructor
+    return value;
+}
