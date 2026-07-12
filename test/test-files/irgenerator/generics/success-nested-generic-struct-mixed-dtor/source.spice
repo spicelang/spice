@@ -1,0 +1,45 @@
+type K dyn;
+type V dyn;
+type T dyn;
+
+// Regression test for GitHub issue #1255.
+// A generic struct with an explicit destructor, used as a nested field in another generic
+// struct where one type parameter is inherited generic (T) and the other is a fixed concrete
+// type (bool). This mirrors Set<V> wrapping RedBlackTree<V, bool> in the standard library.
+// Adding the explicit dtor used to make the outer struct's default-dtor synthesis partially
+// substantiate a bogus manifestation of the field dtor (Inner<K, bool>, with K left generic)
+// while the outer struct was still a generic preset. That manifestation was later treated as
+// fully substantiated and crashed name mangling during IR generation.
+type Inner<K, V> struct {
+    K* keyPtr = nil<K*>
+    V* valPtr = nil<V*>
+    long tag = 0l
+}
+
+p Inner.dtor() {
+    const bool hasKey = this.keyPtr != nil<K*>;
+    const bool hasVal = this.valPtr != nil<V*>;
+    printf("Inner dtor, tag=%d, hasKey=%d, hasVal=%d\n", this.tag, hasKey, hasVal);
+}
+
+p Inner.bump() {
+    this.tag++;
+}
+
+type Outer<T> struct {
+    Inner<T, bool> inner
+}
+
+p Outer.ctor() {}
+
+p Outer.touch() {
+    this.inner.bump();
+}
+
+f<int> main() {
+    Outer<int> o = Outer<int>();
+    o.touch();
+    o.touch();
+    o.touch();
+    printf("tag=%d\n", o.inner.tag);
+}
