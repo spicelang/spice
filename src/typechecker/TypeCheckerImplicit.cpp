@@ -316,10 +316,21 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     hasFieldsToDeAllocate |= fieldType.needsDeAllocation();
     if (fieldType.is(TY_STRUCT)) {
       Scope *fieldScope = fieldType.getBodyScope();
-      // Lookup dtor function
-      const Function *dtorFct = FunctionManager::match(fieldScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
-      hasFieldsToDestruct |= dtorFct != nullptr;
-      requestRevisitIfRequired(dtorFct);
+      // While the outer struct is still a generic preset, a field type that is itself generic (e.g.
+      // RedBlackTree<V, bool>, the internal field of Set<V>) cannot be matched to a concrete dtor yet. Since a
+      // dtor takes no arguments, matching it against the still-generic 'this' type would partially substantiate a
+      // bogus manifestation (e.g. RedBlackTree<K, bool>, with K left generic) that is wrongly treated as fully
+      // substantiated later on and crashes name mangling during IR generation. In that case we only record that
+      // the field has a dtor via a direct scan; the concrete dtor is matched later, per manifestation, in
+      // createDtorBodyPreamble.
+      if (fieldType.hasAnyGenericParts()) {
+        hasFieldsToDestruct |= FunctionManager::hasDtor(fieldScope);
+      } else {
+        // Lookup dtor function
+        const Function *dtorFct = FunctionManager::match(fieldScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
+        hasFieldsToDestruct |= dtorFct != nullptr;
+        requestRevisitIfRequired(dtorFct);
+      }
     }
   }
 
