@@ -98,7 +98,6 @@ jobs:
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_ASAN=ON \
             -DSPICE_TEST_ARGS="--is-github-actions;--skip-sanitizer-tests" \
-            -Wattributes \
             ..
           cmake --build . --target spicetest
 

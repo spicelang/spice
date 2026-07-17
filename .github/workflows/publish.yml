@@ -75,8 +75,6 @@ jobs:
             -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -DLLVM_ENABLE_ZLIB=OFF \
             -DLLVM_ENABLE_ZSTD=OFF \
-            -Wno-dev \
-            -Wattributes \
             ../llvm
           cmake --build .
 
@@ -189,8 +187,6 @@ jobs:
             -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -DLLVM_ENABLE_ZLIB=OFF \
             -DLLVM_ENABLE_ZSTD=OFF \
-            -Wno-dev \
-            -Wattributes \
             ../llvm
           cmake --build .
 
@@ -294,8 +290,6 @@ jobs:
             -DLLVM_INCLUDE_TESTS=OFF `
             -DLLVM_INCLUDE_EXAMPLES=OFF `
             -DLLVM_INCLUDE_BENCHMARKS=OFF `
-            -Wno-dev `
-            -Wattributes `
             ../llvm
           cmake --build .
 
@@ -399,8 +393,6 @@ jobs:
             -DLLVM_INCLUDE_TESTS=OFF \
             -DLLVM_INCLUDE_EXAMPLES=OFF \
             -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            -Wno-dev \
-            -Wattributes \
             ../llvm
           cmake --build .
 
@@ -504,8 +496,6 @@ jobs:
             -DLLVM_INCLUDE_TESTS=OFF \
             -DLLVM_INCLUDE_EXAMPLES=OFF \
             -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            -Wno-dev \
-            -Wattributes \
             ../llvm
           cmake --build .
 
