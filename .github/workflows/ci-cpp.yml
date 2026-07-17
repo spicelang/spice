@@ -101,7 +101,6 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_RUN_COVERAGE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'ON' || 'OFF' }} \
-            -Wattributes \
             ..
           cmake --build . --target spicetest
 
@@ -222,7 +221,6 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_TEST_ARGS=--is-github-actions \
-            -Wattributes \
             ..
           cmake --build . --target spicetest
 
@@ -315,7 +313,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
             -DSPICE_BUILT_BY="ghactions" `
             -DSPICE_TEST_ARGS=--is-github-actions `
-            -Wattributes `
             ..
           cmake --build . --target spicetest
 
@@ -407,7 +404,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_TEST_ARGS=--is-github-actions \
-            -Wattributes \
             ..
           cmake --build . --target spicetest
 
@@ -498,7 +494,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_TEST_ARGS=--is-github-actions \
-            -Wattributes \
             ..
           cmake --build . --target spicetest
 
