@@ -18,7 +18,7 @@ $_ZTV3Car = comdat any
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"Is driving: %d\00", align 4
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
-define private fastcc void @_ZN3Car4ctorEv(ptr noundef nonnull writeonly align 8 captures(none) dereferenceable(16) initializes((0, 9)) %0) unnamed_addr #0 {
+define private fastcc void @_ZN3Car4ctorEv(ptr nofree noundef nonnull writeonly align 8 captures(none) dereferenceable(16) initializes((0, 9)) %0) unnamed_addr #0 {
   store ptr getelementptr inbounds nuw (i8, ptr @_ZTV3Car, i64 16), ptr %0, align 8
   %2 = getelementptr inbounds nuw i8, ptr %0, i64 8
   store i1 false, ptr %2, align 8
@@ -26,14 +26,14 @@ define private fastcc void @_ZN3Car4ctorEv(ptr noundef nonnull writeonly align 8
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
-define private void @_ZN3Car5driveEi(ptr noundef nonnull writeonly align 8 captures(none) dereferenceable(16) initializes((8, 9)) %0, i32 %1) #0 {
+define private void @_ZN3Car5driveEi(ptr nofree noundef nonnull writeonly align 8 captures(none) dereferenceable(16) initializes((8, 9)) %0, i32 %1) #0 {
   %driving.addr = getelementptr inbounds nuw i8, ptr %0, i64 8
   store i1 true, ptr %driving.addr, align 8
   ret void
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
-define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull readonly align 8 captures(none) dereferenceable(16) %0) #1 {
+define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr nofree noundef nonnull readonly align 8 captures(none) dereferenceable(16) %0) #1 {
   %driving.addr = getelementptr inbounds nuw i8, ptr %0, i64 8
   %2 = load i1, ptr %driving.addr, align 8
   ret i1 %2

@@ -1,20 +1,20 @@
 ; ModuleID = 'lto-module'
 source_filename = "lto-module"
 
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
-@str = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition '(functionInModuleB(1, 2) == 3)' evaluated to false.\00", align 1
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4, !guid !0
+@str = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition '(functionInModuleB(1, 2) == 3)' evaluated to false.\00", align 1, !guid !1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local noundef i32 @_Z17functionInModuleBii(i32 noundef %0, i32 noundef %1) local_unnamed_addr #0 {
+define dso_local noundef i32 @_Z17functionInModuleBii(i32 noundef %0, i32 noundef %1) local_unnamed_addr #0 !guid !7 {
   %3 = add nsw i32 %0, %1
   ret i32 %3
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() local_unnamed_addr #1 {
+define dso_local noundef i32 @main() local_unnamed_addr #1 !guid !8 {
   %1 = tail call noundef i32 @_Z17functionInModuleBii(i32 noundef 1, i32 noundef 2) #4
   %2 = icmp eq i32 %1, 3
-  br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !5
+  br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !9
 
 assert.then.L6:                                   ; preds = %0
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
@@ -41,12 +41,16 @@ attributes #2 = { nofree nounwind }
 attributes #3 = { cold nofree noreturn nounwind }
 attributes #4 = { nounwind }
 
-!llvm.ident = !{!0}
-!llvm.module.flags = !{!1, !2, !3, !4}
+!llvm.ident = !{!2}
+!llvm.module.flags = !{!3, !4, !5, !6}
 
-!0 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!1 = !{i32 8, !"PIC Level", i32 2}
-!2 = !{i32 7, !"PIE Level", i32 2}
-!3 = !{i32 7, !"uwtable", i32 2}
-!4 = !{i32 7, !"frame-pointer", i32 2}
-!5 = !{!"branch_weights", i32 1048575, i32 1}
+!0 = !{i64 8758518801926450658}
+!1 = !{i64 -3005221672275489307}
+!2 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!3 = !{i32 8, !"PIC Level", i32 2}
+!4 = !{i32 7, !"PIE Level", i32 2}
+!5 = !{i32 7, !"uwtable", i32 2}
+!6 = !{i32 7, !"frame-pointer", i32 2}
+!7 = !{i64 1143632153537408826}
+!8 = !{i64 -2624081020897602054}
+!9 = !{!"branch_weights", i32 1048575, i32 1}

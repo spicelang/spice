@@ -13,7 +13,7 @@ MetadataGenerator::MetadataGenerator(IRGenerator *irGenerator)
     : irGenerator(irGenerator), mdBuilder(irGenerator->context), tbaaRoot(mdBuilder.createTBAARoot("Simple Spice TBAA")),
       omnipotentByte(mdBuilder.createTBAAScalarTypeNode("omnipotent byte", tbaaRoot)) {}
 
-void MetadataGenerator::generateBranchWeightsMetadata(llvm::BranchInst *jumpInst, Likelihood likeliness) {
+void MetadataGenerator::generateBranchWeightsMetadata(llvm::CondBrInst *jumpInst, Likelihood likeliness) {
   assert(likeliness != Likelihood::UNSPECIFIED);
   const bool likely = likeliness == Likelihood::LIKELY;
   llvm::MDNode *profMetadata = likely ? mdBuilder.createLikelyBranchWeights() : mdBuilder.createUnlikelyBranchWeights();

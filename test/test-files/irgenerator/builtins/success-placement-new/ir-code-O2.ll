@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [7 x i8] c"%d %d\0A\00", align 4
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
-define private fastcc void @_ZN5Point4ctorEii(ptr noundef nonnull writeonly align 4 captures(none) dereferenceable(8) initializes((0, 8)) %0, i32 noundef range(i32 0, 8) %1, i32 noundef range(i32 0, 12) %2) unnamed_addr #0 {
+define private fastcc void @_ZN5Point4ctorEii(ptr nofree noundef nonnull writeonly align 4 captures(none) dereferenceable(8) initializes((0, 8)) %0, i32 noundef range(i32 0, 8) %1, i32 noundef range(i32 0, 12) %2) unnamed_addr #0 {
   %4 = getelementptr inbounds nuw i8, ptr %0, i64 4
   store i32 %1, ptr %0, align 4
   store i32 %2, ptr %4, align 4

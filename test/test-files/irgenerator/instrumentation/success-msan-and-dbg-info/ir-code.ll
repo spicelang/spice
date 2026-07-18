@@ -137,7 +137,7 @@ declare void @__msan_poison_stack(ptr, i64)
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
 declare void @llvm.donothing() #4
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immarg) #5
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable }
@@ -145,7 +145,7 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 attributes #2 = { nofree nounwind }
 attributes #3 = { nounwind uwtable "frame-pointer"="all" }
 attributes #4 = { nocallback nofree nosync nounwind willreturn memory(none) }
-attributes #5 = { nocallback nofree nounwind willreturn memory(argmem: write) }
+attributes #5 = { nocallback nofree nosync nounwind willreturn memory(argmem: write) }
 attributes #6 = { nomerge }
 
 !llvm.module.flags = !{!7, !8, !9, !10, !11, !12, !13}

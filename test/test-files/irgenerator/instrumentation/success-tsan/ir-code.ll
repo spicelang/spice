@@ -10,7 +10,7 @@ source_filename = "source.spice"
 
 ; Function Attrs: sanitize_thread
 define private void @_Z6workerv() #0 {
-  %1 = call ptr @llvm.returnaddress(i32 0)
+  %1 = call ptr @llvm.returnaddress.p0(i32 0)
   call void @__tsan_func_entry(ptr %1)
   %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
@@ -41,7 +41,7 @@ for.exit.L8:                                      ; preds = %for.head.L8
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_thread uwtable
 define dso_local noundef i32 @main() #1 {
-  %1 = call ptr @llvm.returnaddress(i32 0)
+  %1 = call ptr @llvm.returnaddress.p0(i32 0)
   call void @__tsan_func_entry(ptr %1)
   %result = alloca i32, align 4
   %thread1 = alloca %struct.Thread, align 8
@@ -76,7 +76,7 @@ define dso_local noundef i32 @main() #1 {
 
 define private void @_Z6workerv.fatthunk(ptr %0) personality ptr @__gcc_personality_v0 {
 entry:
-  %1 = call ptr @llvm.returnaddress(i32 0)
+  %1 = call ptr @llvm.returnaddress.p0(i32 0)
   call void @__tsan_func_entry(ptr %1)
   invoke void @_Z6workerv()
           to label %.noexc unwind label %tsan_cleanup
@@ -442,7 +442,7 @@ declare ptr @__tsan_memcpy(ptr, ptr, i64) #3
 declare ptr @__tsan_memset(ptr, i32, i64) #3
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
-declare ptr @llvm.returnaddress(i32 immarg) #4
+declare ptr @llvm.returnaddress.p0(i32 immarg) #4
 
 declare i32 @__gcc_personality_v0(...)
 

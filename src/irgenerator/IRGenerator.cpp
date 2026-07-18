@@ -378,7 +378,7 @@ void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueB
                                  Likelihood likelihood /*=UNSPECIFIED*/) {
   if (blockAlreadyTerminated)
     return;
-  llvm::BranchInst *jumpInst = builder.CreateCondBr(condition, trueBlock, falseBlock);
+  llvm::CondBrInst *jumpInst = builder.CreateCondBr(condition, trueBlock, falseBlock);
   blockAlreadyTerminated = true;
 
   if (likelihood != Likelihood::UNSPECIFIED)

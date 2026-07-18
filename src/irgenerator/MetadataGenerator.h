@@ -6,7 +6,7 @@
 
 // Forward declarations
 namespace llvm {
-class BranchInst;
+class CondBrInst;
 } // namespace llvm
 
 namespace spice::compiler {
@@ -22,7 +22,7 @@ public:
   explicit MetadataGenerator(IRGenerator *irGenerator);
 
   // Public methods
-  void generateBranchWeightsMetadata(llvm::BranchInst *jumpInst, Likelihood likeliness);
+  void generateBranchWeightsMetadata(llvm::CondBrInst *jumpInst, Likelihood likeliness);
   void generateTypeMetadata(llvm::Instruction *inst, const QualType &type);
   void generateTBAAMetadata(llvm::Instruction *inst, const QualType &type);
 

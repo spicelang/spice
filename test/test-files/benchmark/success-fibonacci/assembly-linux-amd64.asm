@@ -1,6 +1,7 @@
+	.att_syntax
 	.file	"source.spice"
 	.text
-	.p2align	4                               # -- Begin function _Z4fiboi
+	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z4fiboi
 	.type	.L_Z4fiboi,@function
 .L_Z4fiboi:                             # @_Z4fiboi
 # %bb.0:
@@ -37,7 +38,7 @@
 	.size	.L_Z4fiboi, .Lfunc_end0-.L_Z4fiboi
                                         # -- End function
 	.globl	main                            # -- Begin function main
-	.p2align	4
+	.prefalign	4, .Lfunc_end1, nop
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc
