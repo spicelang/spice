@@ -9,12 +9,12 @@ source_filename = "source.spice"
 @str = private unnamed_addr constant [45 x i8] c"Started all threads. Waiting for results ...\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc noundef range(i32 -2147483647, -2147483648) i32 @_Z3fibi(i32 noundef %0) unnamed_addr #0 {
+define private fastcc noundef i32 @_Z3fibi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 3
   br i1 %2, label %common.ret, label %if.exit.L4
 
 common.ret.loopexit:                              ; preds = %if.exit.L4
-  %3 = add nsw i32 %7, 1
+  %3 = add i32 %7, 1
   br label %common.ret
 
 common.ret:                                       ; preds = %common.ret.loopexit, %1
@@ -27,7 +27,7 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
   %4 = add nsw i32 %.tr4, -1
   %5 = tail call fastcc noundef i32 @_Z3fibi(i32 noundef %4)
   %6 = add nsw i32 %.tr4, -2
-  %7 = add nsw i32 %5, %accumulator.tr3
+  %7 = add i32 %5, %accumulator.tr3
   %8 = icmp samesign ult i32 %.tr4, 5
   br i1 %8, label %common.ret.loopexit, label %if.exit.L4
 }
@@ -84,7 +84,7 @@ for.body.L11:
 }
 
 ; Function Attrs: nofree nounwind
-define private void @_Z15lambda.L12C29.0v(ptr readnone captures(none) %0) #2 {
+define private void @_Z15lambda.L12C29.0v(ptr nofree readnone captures(none) %0) #2 {
   %2 = tail call fastcc noundef i32 @_Z3fibi(i32 noundef 30)
   %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %2)
   ret void
@@ -95,7 +95,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 }) local_unnamed_addr
 
-; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 
 declare void @_ZN6Thread3runEv(ptr) local_unnamed_addr
@@ -105,14 +105,14 @@ declare void @_ZN6Thread4joinEv(ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #2
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immarg) #4
 
 attributes #0 = { nofree nosync nounwind memory(none) }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: write) }
+attributes #3 = { mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #4 = { nocallback nofree nosync nounwind willreturn memory(argmem: write) }
 attributes #5 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

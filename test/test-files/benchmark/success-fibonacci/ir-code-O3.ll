@@ -11,7 +11,7 @@ define private fastcc noundef i32 @_Z4fiboi(i32 noundef %0) unnamed_addr #0 {
 common.ret:                                       ; preds = %if.exit.L2, %1
   %accumulator.tr.lcssa = phi i32 [ 0, %1 ], [ %6, %if.exit.L2 ]
   %.tr.lcssa = phi i32 [ %0, %1 ], [ %5, %if.exit.L2 ]
-  %accumulator.ret.tr = add nsw i32 %.tr.lcssa, %accumulator.tr.lcssa
+  %accumulator.ret.tr = add i32 %.tr.lcssa, %accumulator.tr.lcssa
   ret i32 %accumulator.ret.tr
 
 if.exit.L2:                                       ; preds = %1, %if.exit.L2
@@ -20,7 +20,7 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
   %3 = add nsw i32 %.tr5, -1
   %4 = tail call fastcc noundef i32 @_Z4fiboi(i32 noundef %3)
   %5 = add nsw i32 %.tr5, -2
-  %6 = add nsw i32 %4, %accumulator.tr4
+  %6 = add i32 %4, %accumulator.tr4
   %7 = icmp samesign ult i32 %.tr5, 4
   br i1 %7, label %common.ret, label %if.exit.L2
 }

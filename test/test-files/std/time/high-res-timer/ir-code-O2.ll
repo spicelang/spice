@@ -114,7 +114,7 @@ declare void @_ZN5Timer4stopEv(ptr) local_unnamed_addr
 
 declare void @_ZN5Timer4ctorEiPm(ptr, i32, ptr) local_unnamed_addr
 
-; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 
 declare void @_ZN5Timer5pauseEv(ptr) local_unnamed_addr
@@ -127,7 +127,7 @@ declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_add
 attributes #0 = { nofree nounwind }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { cold nofree noreturn nounwind }
-attributes #3 = { mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #3 = { mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #4 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
