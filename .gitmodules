@@ -16,4 +16,4 @@
 	url = https://github.com/google/gtest-parallel.git
 [submodule "deps/tpde"]
 	path = deps/tpde
-	url = https://github.com/tpde2/tpde.git
+	url = https://github.com/marcauberer/tpde.git
