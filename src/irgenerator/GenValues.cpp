@@ -205,23 +205,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
       }
 
-      // Decayed array params expect the address of a writable array, because the callee may assign through the
-      // parameter. If one of the paths above produced the array itself (e.g. as the result of an implicit cast) or the
-      // address of a read-only constant (e.g. an array literal, which is emitted as a global constant), it has to be
-      // moved into a mutable stack slot first. This matches how C frontends materialize array compound literals.
-      if (llvm::Value *&argValue = argValues.back(); expectedSTy.isDecayedArray()) {
-        llvm::Type *arrayType = expectedSTy.toLLVMType(sourceFile);
-        const auto *global = llvm::dyn_cast<llvm::GlobalVariable>(argValue);
-        if (!argValue->getType()->isPointerTy()) {
-          llvm::Value *argAddress = insertAlloca(arrayType, "arg.decay");
-          insertStore(argValue, argAddress);
-          argValue = argAddress;
-        } else if (global != nullptr && global->isConstant()) {
-          llvm::Value *argAddress = insertAlloca(arrayType, "arg.decay");
-          generateShallowCopy(argValue, arrayType, argAddress, false);
-          argValue = argAddress;
-        }
-      }
+      // Decayed array params expect the address of a writable array, which not all of the paths above produce
+      if (llvm::Value *&argValue = argValues.back(); expectedSTy.isDecayedArray())
+        argValue = materializeDecayedArrayArg(argValue, expectedSTy);
     }
   }
 

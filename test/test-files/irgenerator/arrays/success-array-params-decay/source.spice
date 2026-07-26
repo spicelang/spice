@@ -13,6 +13,16 @@ p setFirst(int[4] values, int newValue) {
     values[0] = newValue;
 }
 
+type Offset struct {
+    int base
+}
+
+// Array params of overloaded operators decay just like the ones of regular functions
+f<int> operator+(Offset offset, int[2] values) {
+    values[0] += offset.base;
+    return values[0] + values[1];
+}
+
 f<int> sumMatrix(bool[2][3] matrix) {
     int total = 0;
     for int i = 0; i < 3; i++ {
@@ -41,4 +51,11 @@ f<int> main() {
     // Lambdas use the same calling convention
     f<int>(int[4]) lambda = f<int>(int[4] values) { return values[3]; };
     printf("Lambda: %d\n", lambda(numbers));
+
+    // Array literals are global constants, so they have to be copied to a writable stack slot before being
+    // handed to a callee that assigns through the param. This holds for calls ...
+    setFirst([ 1, 2, 3, 4 ], 5);
+    // ... as well as for overloaded operators
+    Offset offset = Offset{ 100 };
+    printf("Operator: %d\n", offset + [ 7, 8 ]);
 }

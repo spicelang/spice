@@ -1730,6 +1730,10 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   argValues[0] = passAsAddress(paramTypes[0]) ? opV[1]() : opV[0]();
   if constexpr (N == 2)
     argValues[1] = passAsAddress(paramTypes[1]) ? opV[3]() : opV[2]();
+  // Decayed array params expect the address of a writable array, which the resolvers above do not guarantee
+  for (size_t i = 0; i < N; i++)
+    if (paramTypes[i].isDecayedArray())
+      argValues[i] = irGenerator->materializeDecayedArrayArg(argValues[i], paramTypes[i]);
 
   // Function is not defined in the current module -> declare it
   if (!irGenerator->module->getFunction(mangledName)) {

@@ -475,6 +475,45 @@ bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &
   return true;
 }
 
+/**
+ * Materialize an argument that is passed to a decayed array parameter, so that the callee receives the address of a
+ * writable array.
+ *
+ * Two cases need fixing up: if the argument was produced as the array itself instead of its address, it has to be put
+ * into memory. And if it was produced as the address of a read-only constant - array literals are emitted as global
+ * constants - it has to be copied into a mutable stack slot, because the callee may assign through the parameter. The
+ * latter matches how C frontends materialize array compound literals.
+ *
+ * @param argValue Value that was produced for the argument
+ * @param paramType Type of the parameter
+ * @return Address of the array to hand to the callee
+ */
+llvm::Value *IRGenerator::materializeDecayedArrayArg(llvm::Value *argValue, const QualType &paramType) {
+  assert(paramType.isDecayedArray());
+  llvm::Type *paramArrayType = paramType.toLLVMType(sourceFile);
+
+  // The array itself was produced (e.g. as the result of an implicit cast) -> put it into memory
+  if (!argValue->getType()->isPointerTy()) {
+    llvm::Value *argAddress = insertAlloca(paramArrayType, "arg.decay");
+    insertStore(argValue, argAddress);
+    return argAddress;
+  }
+
+  // Look through constant offsets, because the implicit array-to-array cast GEPs into the global constant
+  const auto *global = llvm::dyn_cast<llvm::GlobalVariable>(argValue->stripInBoundsConstantOffsets());
+  if (global == nullptr || !global->isConstant())
+    return argValue;
+
+  // Copy the constant into a mutable stack slot. Function matching does not enforce that the argument array has the
+  // same size as the parameter array, so copy the smaller of the two to never read past the end of the global.
+  const llvm::DataLayout &dataLayout = module->getDataLayout();
+  llvm::Type *globalType = global->getValueType();
+  const bool globalIsSmaller = dataLayout.getTypeAllocSize(globalType) < dataLayout.getTypeAllocSize(paramArrayType);
+  llvm::Value *argAddress = insertAlloca(paramArrayType, "arg.decay");
+  generateShallowCopy(argValue, globalIsSmaller ? globalType : paramArrayType, argAddress, false);
+  return argAddress;
+}
+
 void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const {
   assert(function->arg_size() == paramInfo.size());
   for (size_t i = 0; i < paramInfo.size(); i++) {
