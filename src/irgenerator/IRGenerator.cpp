@@ -688,6 +688,27 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
     global->setComdat(module->getOrInsertComdat(comdatName));
 }
 
+/**
+ * Attach the inlining and size-optimization function attributes to a function we emit.
+ *
+ * The size levels are not communicated to LLVM by the pass pipeline alone - since Os and Oz both select the O2
+ * pipeline, 'optsize' and 'minsize' on the individual function are what actually distinguishes them. Without 'minsize',
+ * Oz is indistinguishable from Os.
+ *
+ * @param fct Function to attach the attributes to
+ * @param isAlwaysInline Whether the function was declared as inline
+ */
+void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) const {
+  if (isAlwaysInline)
+    fct->addFnAttr(llvm::Attribute::AlwaysInline);
+
+  if (cliOptions.optLevel >= OptLevel::Os) {
+    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
+    if (cliOptions.optLevel == OptLevel::Oz)
+      fct->addFnAttr(llvm::Attribute::MinSize);
+  }
+}
+
 llvm::Value *IRGenerator::getAddress(const SymbolTableEntry *entry) {
   const auto it = addressMap.find(entry);
   if (it == addressMap.end() || it->second.empty())

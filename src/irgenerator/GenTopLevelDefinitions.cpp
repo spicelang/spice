@@ -62,8 +62,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   if (cliOptions.optLevel == OptLevel::O0)
     fct->addFnAttr(llvm::Attribute::OptimizeNone);
-  else if (cliOptions.optLevel >= OptLevel::Os)
-    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
+  addCommonFctAttrs(fct);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
   enableFunctionInstrumentation(fct);
 
@@ -217,8 +216,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Set attributes to function
     func->setDSOLocal(isSymbolDSOLocal(isPublic));
     func->setLinkage(linkage);
-    if (manifestation->entry->getQualType().isInline())
-      func->addFnAttr(llvm::Attribute::AlwaysInline);
+    addCommonFctAttrs(func, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(func);
     // Set attributes to function parameters and return value
     setParamAttrs(func, paramInfoList);
@@ -371,8 +369,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Set attributes to procedure
     proc->setLinkage(getSymbolLinkageType(isPublic));
     proc->setDSOLocal(isSymbolDSOLocal(isPublic));
-    if (manifestation->entry->getQualType().isInline())
-      proc->addFnAttr(llvm::Attribute::AlwaysInline);
+    addCommonFctAttrs(proc, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(proc);
 
     // Set attributes to function parameters
