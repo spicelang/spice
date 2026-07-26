@@ -173,8 +173,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       };
 
       if (matchFct(expectedSTy, actualSTy)) {
-        // Resolve address if actual type is reference, otherwise value
-        if (actualSTy.isRef()) {
+        // Resolve address if actual type is reference or a decaying array, otherwise value
+        if (actualSTy.isRef() || expectedSTy.isDecayedArray()) {
           argValues.push_back(resolveAddress(argNode));
         } else if (copyCtor) {
           assert(!actualSTy.isTriviallyCopyable(node));
@@ -203,6 +203,24 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       } else { // Need implicit cast
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
+      }
+
+      // Decayed array params expect the address of a writable array, because the callee may assign through the
+      // parameter. If one of the paths above produced the array itself (e.g. as the result of an implicit cast) or the
+      // address of a read-only constant (e.g. an array literal, which is emitted as a global constant), it has to be
+      // moved into a mutable stack slot first. This matches how C frontends materialize array compound literals.
+      if (llvm::Value *&argValue = argValues.back(); expectedSTy.isDecayedArray()) {
+        llvm::Type *arrayType = expectedSTy.toLLVMType(sourceFile);
+        const auto *global = llvm::dyn_cast<llvm::GlobalVariable>(argValue);
+        if (!argValue->getType()->isPointerTy()) {
+          llvm::Value *argAddress = insertAlloca(arrayType, "arg.decay");
+          insertStore(argValue, argAddress);
+          argValue = argAddress;
+        } else if (global != nullptr && global->isConstant()) {
+          llvm::Value *argAddress = insertAlloca(arrayType, "arg.decay");
+          generateShallowCopy(argValue, arrayType, argAddress, false);
+          argValue = argAddress;
+        }
       }
     }
   }
@@ -236,7 +254,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (data.isFctPtrCall())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer (always present in the uniform lambda ABI)
     for (const QualType &paramType : paramSTypes)
-      argTypes.push_back(paramType.toLLVMType(sourceFile));
+      argTypes.push_back(paramType.getParamLLVMType(sourceFile));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
     if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
@@ -521,7 +539,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getParamLLVMType(sourceFile);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -581,6 +599,9 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     // Get parameter info
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Decayed array params already carry the address of the array, so they do not need a local copy
+    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      continue;
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
@@ -676,7 +697,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getParamLLVMType(sourceFile);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -725,6 +746,9 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Decayed array params already carry the address of the array, so they do not need a local copy
+    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      continue;
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
@@ -818,7 +842,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       const SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(sourceFile);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getParamLLVMType(sourceFile);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -871,6 +895,9 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Decayed array params already carry the address of the array, so they do not need a local copy
+    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      continue;
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);

@@ -1,0 +1,44 @@
+// Fixed-size array params decay to a pointer to the caller's array, like in C.
+// Therefore no copy is made and writes through the param are visible to the caller.
+
+f<int> sum(int[4] values) {
+    int total = 0;
+    for int i = 0; i < 4; i++ {
+        total += values[i];
+    }
+    return total;
+}
+
+p setFirst(int[4] values, int newValue) {
+    values[0] = newValue;
+}
+
+f<int> sumMatrix(bool[2][3] matrix) {
+    int total = 0;
+    for int i = 0; i < 3; i++ {
+        for int j = 0; j < 2; j++ {
+            total += matrix[i][j] ? 1 : 0;
+        }
+    }
+    return total;
+}
+
+f<int> main() {
+    int[4] numbers = [ 1, 2, 3, 4 ];
+    printf("Sum: %d\n", sum(numbers));
+    printf("Length: %d\n", len(numbers));
+
+    // The callee writes into the caller's array
+    setFirst(numbers, 10);
+    printf("Sum after write: %d\n", sum(numbers));
+
+    bool[2][3] matrix;
+    matrix[0][0] = true;
+    matrix[1][1] = true;
+    matrix[2][0] = true;
+    printf("Matrix sum: %d\n", sumMatrix(matrix));
+
+    // Lambdas use the same calling convention
+    f<int>(int[4]) lambda = f<int>(int[4] values) { return values[3]; };
+    printf("Lambda: %d\n", lambda(numbers));
+}

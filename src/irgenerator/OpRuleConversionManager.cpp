@@ -1722,10 +1722,14 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   // Get arg values
   const QualTypeList &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
+  // References and decayed arrays are passed as address, everything else as value
+  const auto passAsAddress = [](const QualType &paramType) {
+    return paramType.isRef() || paramType.isDecayedArray();
+  };
   llvm::Value *argValues[N];
-  argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();
+  argValues[0] = passAsAddress(paramTypes[0]) ? opV[1]() : opV[0]();
   if constexpr (N == 2)
-    argValues[1] = paramTypes[1].isRef() ? opV[3]() : opV[2]();
+    argValues[1] = passAsAddress(paramTypes[1]) ? opV[3]() : opV[2]();
 
   // Function is not defined in the current module -> declare it
   if (!irGenerator->module->getFunction(mangledName)) {
@@ -1737,7 +1741,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     for (const QualType &paramType : opFct->getParamTypes())
-      argTypes.push_back(paramType.toLLVMType(irGenerator->sourceFile));
+      argTypes.push_back(paramType.getParamLLVMType(irGenerator->sourceFile));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);

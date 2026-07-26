@@ -40,3 +40,23 @@ bool itemValue = myBoolArray[i -= 2];
 
 printf("Value: %u", itemValue);
 ```
+
+## Arrays as parameters
+
+Like in C, an array parameter decays to a pointer to the callers array. No copy is made when calling the function, so
+assigning to an item of the parameter modifies the array of the caller:
+
+```spice
+p setFirst(int[3] values) {
+    values[0] = 42; // Modifies the array of the caller
+}
+
+f<int> main() {
+    int[3] numbers = [ 1, 2, 3 ];
+    setFirst(numbers);
+    printf("First item: %d", numbers[0]); // Prints 42
+}
+```
+
+If you want the callee to work on its own copy, pass a copy explicitly. To hand over an array of arbitrary size, use an
+unsized array parameter (e.g. `int[]`) instead, which is a plain pointer without a known item count.
