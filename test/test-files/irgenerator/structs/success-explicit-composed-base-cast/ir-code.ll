@@ -68,7 +68,7 @@ define void @_ZN7Derived4ctorERK7Derived(ptr noundef nonnull align 8 dereference
   ret void
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
 define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1, i32 noundef %2) {
@@ -182,7 +182,7 @@ define dso_local noundef i32 @main() #2 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #3 = { nofree nounwind }
 

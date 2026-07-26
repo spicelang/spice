@@ -31,7 +31,7 @@ define void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8
   ret void
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
 define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
@@ -72,7 +72,7 @@ define dso_local noundef i32 @main() #3 {
 }
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
 attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 

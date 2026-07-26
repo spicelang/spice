@@ -1,7 +1,8 @@
+	.att_syntax
 	.file	"source.spice"
 	.text
 	.globl	main                            # -- Begin function main
-	.p2align	4
+	.prefalign	4, .Lfunc_end0, nop
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc

@@ -1,6 +1,7 @@
+	.att_syntax
 	.file	"source.spice"
 	.text
-	.p2align	4                               # -- Begin function _Z3fibi
+	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z3fibi
 	.type	.L_Z3fibi,@function
 .L_Z3fibi:                              # @_Z3fibi
 # %bb.0:
@@ -37,7 +38,7 @@
 	.size	.L_Z3fibi, .Lfunc_end0-.L_Z3fibi
                                         # -- End function
 	.globl	main                            # -- Begin function main
-	.p2align	4
+	.prefalign	4, .Lfunc_end1, nop
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc
@@ -216,7 +217,7 @@ main:                                   # @main
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
-	.p2align	4                               # -- Begin function _Z15lambda.L12C29.0v
+	.prefalign	4, .Lfunc_end2, nop     # -- Begin function _Z15lambda.L12C29.0v
 	.type	.L_Z15lambda.L12C29.0v,@function
 .L_Z15lambda.L12C29.0v:                 # @_Z15lambda.L12C29.0v
 # %bb.0:

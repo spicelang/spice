@@ -123,14 +123,12 @@ llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
   switch (cliOptions.optLevel) {
   case OptLevel::O1:
     return llvm::OptimizationLevel::O1;
+  case OptLevel::Os: // fallthrough - Os = O2 + optsize function attribute
+  case OptLevel::Oz: // fallthrough - Oz = O2 + optsize + minsize function attributes
   case OptLevel::O2:
     return llvm::OptimizationLevel::O2;
   case OptLevel::O3:
     return llvm::OptimizationLevel::O3;
-  case OptLevel::Os:
-    return llvm::OptimizationLevel::Os;
-  case OptLevel::Oz:
-    return llvm::OptimizationLevel::Oz;
   default:
     return llvm::OptimizationLevel::O0;
   }

@@ -152,14 +152,14 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
   ret i32 %66, !dbg !28
 }
 
-; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
+; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn memory(readwrite, inaccessiblemem: none, errnomem: none, target_mem: none)
 declare void @llvm.lifetime.start.p0(ptr captures(none)) #1
 
 declare ptr @_Z12sAllocUnsafem(i64)
 
 declare void @_Z8sDeallocRPh(ptr)
 
-; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn
+; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn memory(readwrite, inaccessiblemem: none, errnomem: none, target_mem: none)
 declare void @llvm.lifetime.end.p0(ptr captures(none)) #1
 
 declare void @__asan_report_load_n(i64, i64)
@@ -383,7 +383,7 @@ define internal void @asan.module_ctor() #3 comdat {
 declare void @__asan_version_mismatch_check_v8()
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
-attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn }
+attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn memory(readwrite, inaccessiblemem: none, errnomem: none, target_mem: none) }
 attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #3 = { nounwind uwtable "frame-pointer"="all" }
 attributes #4 = { nomerge }
