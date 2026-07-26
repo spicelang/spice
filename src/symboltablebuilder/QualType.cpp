@@ -242,6 +242,19 @@ bool QualType::isArray() const { return type->isArray(); }
 bool QualType::isArrayOf(SuperType superType) const { return isArray() && getContained().is(superType); }
 
 /**
+ * Check if the underlying type is an array that decays to a pointer to itself when passed to a function.
+ *
+ * Fixed-size arrays are the only aggregates that Spice used to hand to LLVM as first-class aggregate arguments. That
+ * left the ABI lowering of the individual elements to the backend, which is neither a stable contract nor efficient,
+ * because the whole array had to be loaded at the call site and stored again in the callee prologue. Instead, we now
+ * decay them to a pointer to the array, just like C/C++ frontends do. Arrays of unknown size are plain pointers
+ * already, so there is nothing to decay for them.
+ *
+ * @return Decays to a pointer or not
+ */
+bool QualType::isDecayedArray() const { return isArray() && getArraySize() != ARRAY_SIZE_UNKNOWN; }
+
+/**
  * Check if the underlying type is a const reference
  *
  * @return Const reference or not
@@ -663,6 +676,18 @@ std::string QualType::getName(bool withSize, bool ignorePublic, bool withAliases
  * @return LLVM type
  */
 llvm::Type *QualType::toLLVMType(SourceFile *sourceFile) const { return sourceFile->getLLVMType(type); }
+
+/**
+ * Convert the type to the LLVM type to use for a parameter of this type in a function signature
+ *
+ * @param sourceFile Source file
+ * @return LLVM type
+ */
+llvm::Type *QualType::getParamLLVMType(SourceFile *sourceFile) const {
+  // Take the context from the converted type, so that we always end up in the same context as toLLVMType()
+  llvm::Type *llvmType = toLLVMType(sourceFile);
+  return isDecayedArray() ? llvm::PointerType::get(llvmType->getContext(), 0) : llvmType;
+}
 
 /**
  * Retrieve the pointer type to this type

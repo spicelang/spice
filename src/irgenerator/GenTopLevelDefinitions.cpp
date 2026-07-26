@@ -41,11 +41,11 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       const SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      auto paramType = any_cast<llvm::Type *>(visit(param->dataType));
+      const QualType paramSymbolType = paramSymbol->getQualType();
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
-      paramSymbolTypes.push_back(paramSymbol->getQualType());
-      paramTypes.push_back(paramType);
+      paramSymbolTypes.push_back(paramSymbolType);
+      paramTypes.push_back(paramSymbolType.getParamLLVMType(sourceFile));
     }
   }
 
@@ -106,6 +106,9 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     assert(paramSymbol != nullptr);
+    // Decayed array params already carry the address of the array, so they do not need a local copy
+    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      continue;
     // Allocate space for it
     llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
     // Update the symbol table entry
@@ -186,7 +189,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
+        llvm::Type *paramType = paramSymbolType.getParamLLVMType(sourceFile);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -247,6 +250,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       const size_t argNumber = arg.getArgNo();
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
+      // Decayed array params already carry the address of the array, so they do not need a local copy
+      if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+        continue;
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
@@ -343,7 +349,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
+        llvm::Type *paramType = paramSymbolType.getParamLLVMType(sourceFile);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -390,6 +396,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       const size_t argNumber = arg.getArgNo();
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
+      // Decayed array params already carry the address of the array, so they do not need a local copy
+      if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+        continue;
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
       // Update the symbol table entry
@@ -442,6 +451,67 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   assert(currentScope == rootScope);
 
   return nullptr;
+}
+
+/**
+ * Bind a function argument that carries a decayed array to its parameter symbol. Since the argument already is the
+ * address of the array, it can be used as the address of the parameter directly, without allocating a local copy.
+ *
+ * @param arg Argument of the LLVM function
+ * @param paramName Name of the parameter
+ * @param paramSymbol Symbol table entry of the parameter
+ * @return Whether the argument was bound (false if the parameter does not carry a decayed array)
+ */
+bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName,
+                                        const SymbolTableEntry *paramSymbol) {
+  if (paramSymbol == nullptr || !paramSymbol->getQualType().isDecayedArray())
+    return false;
+
+  arg.setName(paramName);
+  updateAddress(paramSymbol, &arg);
+  // Set source location and generate debug info to declare the variable
+  diGenerator.setSourceLocation(paramSymbol->declNode);
+  diGenerator.generateLocalVarDebugInfo(paramName, &arg, arg.getArgNo() + 1);
+  return true;
+}
+
+/**
+ * Materialize an argument that is passed to a decayed array parameter, so that the callee receives the address of a
+ * writable array.
+ *
+ * Two cases need fixing up: if the argument was produced as the array itself instead of its address, it has to be put
+ * into memory. And if it was produced as the address of a read-only constant - array literals are emitted as global
+ * constants - it has to be copied into a mutable stack slot, because the callee may assign through the parameter. The
+ * latter matches how C frontends materialize array compound literals.
+ *
+ * @param argValue Value that was produced for the argument
+ * @param paramType Type of the parameter
+ * @return Address of the array to hand to the callee
+ */
+llvm::Value *IRGenerator::materializeDecayedArrayArg(llvm::Value *argValue, const QualType &paramType) {
+  assert(paramType.isDecayedArray());
+  llvm::Type *paramArrayType = paramType.toLLVMType(sourceFile);
+
+  // The array itself was produced (e.g. as the result of an implicit cast) -> put it into memory
+  if (!argValue->getType()->isPointerTy()) {
+    llvm::Value *argAddress = insertAlloca(paramArrayType, "arg.decay");
+    insertStore(argValue, argAddress);
+    return argAddress;
+  }
+
+  // Look through constant offsets, because the implicit array-to-array cast GEPs into the global constant
+  const auto *global = llvm::dyn_cast<llvm::GlobalVariable>(argValue->stripInBoundsConstantOffsets());
+  if (global == nullptr || !global->isConstant())
+    return argValue;
+
+  // Copy the constant into a mutable stack slot. Function matching does not enforce that the argument array has the
+  // same size as the parameter array, so copy the smaller of the two to never read past the end of the global.
+  const llvm::DataLayout &dataLayout = module->getDataLayout();
+  llvm::Type *globalType = global->getValueType();
+  const bool globalIsSmaller = dataLayout.getTypeAllocSize(globalType) < dataLayout.getTypeAllocSize(paramArrayType);
+  llvm::Value *argAddress = insertAlloca(paramArrayType, "arg.decay");
+  generateShallowCopy(argValue, globalIsSmaller ? globalType : paramArrayType, argAddress, false);
+  return argAddress;
 }
 
 void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const {
@@ -639,7 +709,7 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   std::vector<llvm::Type *> argTypes;
   argTypes.reserve(spiceFunc->paramList.size());
   for (const QualType &paramType : spiceFunc->getParamTypes())
-    argTypes.push_back(paramType.toLLVMType(sourceFile));
+    argTypes.push_back(paramType.getParamLLVMType(sourceFile));
 
   // Declare function
   const bool isVarArg = node->argTypeLst && node->argTypeLst->hasEllipsis;

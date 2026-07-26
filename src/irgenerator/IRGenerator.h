@@ -183,6 +183,8 @@ private:
   llvm::Function *getOrCreateFatFctPtrThunk(llvm::Function *target);
   llvm::Type *buildCapturesContainerType(const CaptureMap &captures) const;
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
+  bool bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName, const SymbolTableEntry *paramSymbol);
+  llvm::Value *materializeDecayedArrayArg(llvm::Value *argValue, const QualType &paramType);
   void setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const;
   void setFunctionReturnValAttrs(llvm::Function *function, const QualType &returnType) const;
   void setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const;

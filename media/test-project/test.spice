@@ -1,36 +1,14 @@
-import "bootstrap/reader/code-loc";
+const int VERTEX_COUNT = 4;
 
-type T dyn;
-
-type ASTNode struct {
-    CodeLoc codeLoc
+public f<bool> isSafe(bool[VERTEX_COUNT][VERTEX_COUNT] graph, int[] color) {
+    for int i = 0; i < VERTEX_COUNT; i++ {
+        for int j = i + 1; j < VERTEX_COUNT; j++ {
+            if graph[i][j] && color[j] == color[i] {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
-p ASTNode.ctor(const CodeLoc& codeLoc) {
-    this.codeLoc = codeLoc;
-}
-
-type ASTEntryNode struct {
-    compose ASTNode node
-    String name
-}
-
-p ASTEntryNode.ctor(const CodeLoc& codeLoc, const String& name) {
-    this.node = ASTNode(codeLoc);
-    this.name = name;
-}
-
-p foo<T>(const T* node) {
-    // !!! Works
-    const CodeLoc& codeLoc = node.codeLoc;
-    printf("%s\n", codeLoc.toString());
-    // !!! Does not work
-    printf("%s\n", node.codeLoc.toString());
-}
-
-f<int> main() {
-    CodeLoc codeLoc = CodeLoc(1l, 2l);
-    String name = String("name");
-    ASTEntryNode entryNode = ASTEntryNode(codeLoc, name);
-    foo(&entryNode);
-}
+f<int> main() {}

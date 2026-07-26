@@ -87,6 +87,7 @@ public:
   [[nodiscard]] bool isRefTo(SuperType superType) const;
   [[nodiscard]] bool isArray() const;
   [[nodiscard]] bool isArrayOf(SuperType superType) const;
+  [[nodiscard]] bool isDecayedArray() const;
   [[nodiscard]] bool isConstRef() const;
   [[nodiscard]] bool isIterator(const ASTNode *node) const;
   [[nodiscard]] bool isIterable(const ASTNode *node) const;
@@ -114,6 +115,7 @@ public:
 
   // LLVM helpers
   [[nodiscard]] llvm::Type *toLLVMType(SourceFile *sourceFile) const;
+  [[nodiscard]] llvm::Type *getParamLLVMType(SourceFile *sourceFile) const;
 
   // Get new type, based on this one
   [[nodiscard]] QualType toPtr(const ASTNode *node) const;
