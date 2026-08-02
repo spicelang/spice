@@ -706,7 +706,7 @@ void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) co
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
 
   // Explicitly inlined functions must not be marked as 'optnone', because that is incompatible with 'alwaysinline'.
-  // This matches the behaviour of other frontends: an inline request is honored, even at O0.
+  // This matches the behavior of other frontends: an inline request is honored, even at O0.
   if (isAlwaysInline) {
     fct->addFnAttr(llvm::Attribute::AlwaysInline);
   } else if (cliOptions.optLevel == OptLevel::O0) {

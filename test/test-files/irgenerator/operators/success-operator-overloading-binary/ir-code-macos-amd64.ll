@@ -18,7 +18,8 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 4
 @printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 
-define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 noundef %1) #0 {
   %this = alloca ptr, align 8
   %initialValue = alloca i64, align 8
   store ptr %0, ptr %this, align 8
@@ -32,7 +33,8 @@ define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferencea
   ret void
 }
 
-define private noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %result = alloca i64, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -42,7 +44,8 @@ define private noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 d
   ret i64 %3
 }
 
-define private noundef %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -59,7 +62,8 @@ define private noundef %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Count
   ret %struct.Counter %7
 }
 
-define private noundef %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -76,7 +80,8 @@ define private noundef %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Coun
   ret %struct.Counter %7
 }
 
-define private noundef %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -93,7 +98,8 @@ define private noundef %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counte
   ret %struct.Counter %7
 }
 
-define private noundef %struct.Counter @_Z6op.div7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z6op.div7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -110,7 +116,8 @@ define private noundef %struct.Counter @_Z6op.div7Counter7Counter(%struct.Counte
   ret %struct.Counter %7
 }
 
-define private noundef %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -127,7 +134,8 @@ define private noundef %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Counte
   ret %struct.Counter %7
 }
 
-define private noundef %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
   %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
@@ -144,7 +152,8 @@ define private noundef %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counte
   ret %struct.Counter %7
 }
 
-define private void @_Z12op.plusequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z12op.plusequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) #0 {
   %c1 = alloca ptr, align 8
   %c2 = alloca %struct.Counter, align 8
   store ptr %0, ptr %c1, align 8
@@ -159,7 +168,8 @@ define private void @_Z12op.plusequalR7Counter7Counter(ptr noundef %0, %struct.C
   ret void
 }
 
-define private void @_Z13op.minusequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z13op.minusequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) #0 {
   %c1 = alloca ptr, align 8
   %c2 = alloca %struct.Counter, align 8
   store ptr %0, ptr %c1, align 8
@@ -174,7 +184,8 @@ define private void @_Z13op.minusequalR7Counter7Counter(ptr noundef %0, %struct.
   ret void
 }
 
-define private void @_Z11op.mulequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z11op.mulequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) #0 {
   %c1 = alloca ptr, align 8
   %c2 = alloca %struct.Counter, align 8
   store ptr %0, ptr %c1, align 8
@@ -189,7 +200,8 @@ define private void @_Z11op.mulequalR7Counter7Counter(ptr noundef %0, %struct.Co
   ret void
 }
 
-define private void @_Z11op.divequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z11op.divequalR7Counter7Counter(ptr noundef %0, %struct.Counter noundef %1) #0 {
   %c1 = alloca ptr, align 8
   %c2 = alloca %struct.Counter, align 8
   store ptr %0, ptr %c1, align 8
@@ -204,7 +216,8 @@ define private void @_Z11op.divequalR7Counter7Counter(ptr noundef %0, %struct.Co
   ret void
 }
 
-define private noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 noundef %1) #0 {
   %result = alloca ptr, align 8
   %c = alloca ptr, align 8
   %summand = alloca i32, align 4
@@ -223,7 +236,7 @@ define private noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 nound
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %counter1 = alloca %struct.Counter, align 8
   %counter2 = alloca %struct.Counter, align 8
@@ -313,14 +326,15 @@ assert.exit.L86:                                  ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

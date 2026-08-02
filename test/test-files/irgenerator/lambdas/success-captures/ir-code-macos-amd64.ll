@@ -87,7 +87,8 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
   ret i32 %24
 }
 
-define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #1 {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -104,7 +105,8 @@ define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8)
   ret void
 }
 
-define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #1 {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
@@ -123,14 +125,15 @@ define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

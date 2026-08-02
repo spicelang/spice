@@ -13,7 +13,8 @@ source_filename = "source.spice"
 @fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
 @testName0 = private unnamed_addr constant [8 x i8] c"testAdd\00", align 4
 
-define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -25,7 +26,8 @@ define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) {
   ret i32 %5
 }
 
-define dso_local noundef zeroext i1 @_Z7testAddv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local noundef zeroext i1 @_Z7testAddv() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 @_Z3addii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, 4
@@ -41,13 +43,13 @@ assert.exit.L7:                                   ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #1
+declare void @exit(i32) #2
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define i32 @main() #2 {
+define i32 @main() #3 {
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 1, i32 1)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 1, ptr @fileName0)
   %3 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName0)
@@ -62,9 +64,10 @@ define i32 @main() #2 {
   ret i32 %11
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { cold noreturn nounwind }
-attributes #2 = { mustprogress noinline nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
+attributes #3 = { mustprogress noinline nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
