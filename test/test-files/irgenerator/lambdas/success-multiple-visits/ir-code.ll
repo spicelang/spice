@@ -4,7 +4,8 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
 
-define private void @_Z4testv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4testv() #0 {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -31,7 +32,8 @@ define private void @_Z4testv() {
   ret void
 }
 
-define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) %0) #0 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
@@ -43,9 +45,10 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private void @_Z4testi(i32 noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4testi(i32 noundef %0) #0 {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -72,7 +75,8 @@ define private void @_Z4testi(i32 noundef %0) {
   ret void
 }
 
-define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) %0) #0 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
@@ -84,7 +88,7 @@ define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) 
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   call void @_Z4testv()
@@ -93,8 +97,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %1
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

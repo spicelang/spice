@@ -22,7 +22,8 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
-define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) !dbg !46 {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) #1 !dbg !46 {
   %result = alloca %struct.TestStruct, align 8
   %ref = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
@@ -47,7 +48,7 @@ define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) !dbg !46 {
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 !dbg !59 {
+define dso_local noundef i32 @main() #2 !dbg !59 {
   %result = alloca i32, align 4
   %test = alloca i32, align 4
   %res = alloca %struct.TestStruct, align 8
@@ -73,13 +74,14 @@ define dso_local noundef i32 @main() #1 !dbg !59 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 declare ptr @_ZN6String6getRawEv(ptr)
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!16, !17, !18, !19, !20, !21}
 !llvm.ident = !{!22}

@@ -6,14 +6,16 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
-define private noundef i32 @_Z4testPKc(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
   %result = alloca i32, align 4
   %_input = alloca ptr, align 8
   store ptr %0, ptr %_input, align 8
   ret i32 12
 }
 
-define private noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -26,7 +28,8 @@ define private noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 deref
   ret i32 %5
 }
 
-define private noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) #0 {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -39,7 +42,7 @@ define private noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %testFct = alloca { ptr, ptr, i64 }, align 8
@@ -61,17 +64,19 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %8
 }
 
-define private i32 @_Z4testPKc.fatthunk(ptr %0, ptr %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private i32 @_Z4testPKc.fatthunk(ptr %0, ptr %1) #0 {
 entry:
   %2 = call i32 @_Z4testPKc(ptr %1)
   ret i32 %2
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

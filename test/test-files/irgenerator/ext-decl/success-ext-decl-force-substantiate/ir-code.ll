@@ -51,7 +51,8 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %16
 }
 
-define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load volatile ptr, ptr %captures, align 8
@@ -63,9 +64,10 @@ define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8)
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
@@ -83,7 +85,8 @@ define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8)
 }
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

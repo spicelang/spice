@@ -21,7 +21,8 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
-define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -29,7 +30,8 @@ define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 
   ret void
 }
 
-define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %_ = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -43,7 +45,7 @@ define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -52,7 +54,7 @@ define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 derefer
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -64,7 +66,8 @@ define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef
   ret void
 }
 
-define private noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -73,7 +76,8 @@ define private noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3get
   ret ptr %item.addr
 }
 
-define private noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca %struct.Pair, align 8
   %this = alloca ptr, align 8
   %2 = alloca %struct.Pair, align 8
@@ -87,7 +91,8 @@ define private noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContained
 
 declare void @_ZN4PairImR20ExampleContainedTypeE4ctorEmR20ExampleContainedType(ptr, i64, ptr)
 
-define private noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -102,13 +107,15 @@ define private noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTy
   ret i1 %5
 }
 
-define private void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   ret void
 }
 
-define private noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %result = alloca %struct.ExampleTypeIterator, align 8
   %this = alloca ptr, align 8
   %2 = alloca %struct.ExampleTypeIterator, align 8
@@ -119,7 +126,7 @@ define private noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11ge
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %eit = alloca %struct.ExampleIterableType, align 8
   %i = alloca i32, align 4
@@ -175,15 +182,16 @@ assert.exit.L50:                                  ; preds = %foreach.exit.L46
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
-attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
-attributes #3 = { cold noreturn nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
+attributes #4 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

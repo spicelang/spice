@@ -3,7 +3,8 @@ source_filename = "source.spice"
 
 %struct.Test = type { i32 }
 
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -14,7 +15,8 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable
   ret void
 }
 
-define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -30,7 +32,8 @@ define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferen
   ret void
 }
 
-define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -40,7 +43,7 @@ define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %t = alloca %struct.Test, align 8
@@ -63,7 +66,8 @@ assign.copy.end:                                  ; preds = %assign.copy, %0
   ret i32 %3
 }
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

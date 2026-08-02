@@ -12,7 +12,8 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 4
 
-define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -31,7 +32,8 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
   ret void
 }
 
-define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -50,7 +52,8 @@ define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereference
   ret void
 }
 
-define private noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -58,7 +61,7 @@ define private noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 derefe
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   %1 = alloca %struct.Vector, align 8
@@ -85,14 +88,15 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

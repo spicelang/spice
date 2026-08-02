@@ -13,7 +13,8 @@ source_filename = "source.spice"
 @printf.str.5 = private unnamed_addr constant [14 x i8] c"Operator: %d\0A\00", align 4
 @anon.array.2 = private unnamed_addr constant [2 x i32] [i32 7, i32 8]
 
-define private noundef i32 @_Z3sumA4_i(ptr noundef %values) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z3sumA4_i(ptr noundef %values) #0 {
   %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
@@ -46,7 +47,8 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %10
 }
 
-define private void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) #0 {
   %newValue = alloca i32, align 4
   store i32 %0, ptr %newValue, align 4
   %2 = getelementptr inbounds [4 x i32], ptr %values, i64 0, i32 0
@@ -55,7 +57,8 @@ define private void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) {
   ret void
 }
 
-define private noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr noundef %values) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr noundef %values) #0 {
   %result = alloca i32, align 4
   %offset = alloca %struct.Offset, align 8
   store %struct.Offset %0, ptr %offset, align 4
@@ -73,7 +76,8 @@ define private noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr
   ret i32 %10
 }
 
-define private noundef i32 @_Z9sumMatrixA3_A2_b(ptr noundef %matrix) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z9sumMatrixA3_A2_b(ptr noundef %matrix) #0 {
   %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
@@ -129,7 +133,7 @@ for.exit.L28:                                     ; preds = %for.head.L28
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %numbers = alloca [4 x i32], align 4
   %matrix = alloca [3 x [2 x i1]], align 1
@@ -182,9 +186,10 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-define private i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) #0 {
   %result = alloca i32, align 4
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -194,11 +199,12 @@ define private i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) {
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

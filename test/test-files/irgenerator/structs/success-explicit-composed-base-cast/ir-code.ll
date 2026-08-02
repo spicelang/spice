@@ -20,7 +20,8 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [20 x i8] c"leaf->base:     %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [20 x i8] c"derived->iface: %d\0A\00", align 4
 
-define private void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable(4) %0, i32 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable(4) %0, i32 noundef %1) #0 {
   %this = alloca ptr, align 8
   %v = alloca i32, align 4
   store ptr %0, ptr %this, align 8
@@ -32,7 +33,8 @@ define private void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable
   ret void
 }
 
-define private noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -43,7 +45,7 @@ define private noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferen
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN7Derived4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN7Derived4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -54,7 +56,7 @@ define void @_ZN7Derived4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) 
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN7Derived4ctorERK7Derived(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+define void @_ZN7Derived4ctorERK7Derived(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -69,9 +71,10 @@ define void @_ZN7Derived4ctorERK7Derived(ptr noundef nonnull align 8 dereference
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
 
-define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1, i32 noundef %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1, i32 noundef %2) #0 {
   %this = alloca ptr, align 8
   %b = alloca i32, align 4
   %d = alloca i32, align 4
@@ -89,7 +92,8 @@ define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereference
   ret void
 }
 
-define private noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -100,7 +104,7 @@ define private noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 der
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN4Leaf4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
+define void @_ZN4Leaf4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -112,7 +116,8 @@ define void @_ZN4Leaf4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0)
   ret void
 }
 
-define private void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceable(32) %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceable(32) %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
   %this = alloca ptr, align 8
   %b = alloca i32, align 4
   %d = alloca i32, align 4
@@ -133,7 +138,8 @@ define private void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceab
   ret void
 }
 
-define private noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 dereferenceable(32) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -144,7 +150,7 @@ define private noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 derefe
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #2 {
+define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
   %der = alloca %struct.Derived, align 8
   %b = alloca ptr, align 8
@@ -179,12 +185,13 @@ define dso_local noundef i32 @main() #2 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
-attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #3 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
+attributes #2 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

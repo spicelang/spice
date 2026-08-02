@@ -9,7 +9,8 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
-define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
   %intRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
   store ptr %0, ptr %intRef, align 8
@@ -27,9 +28,10 @@ define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
   %result = alloca i32, align 4
   %doubleRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
@@ -48,7 +50,7 @@ define private noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %1 = alloca %struct.Struct, align 8
@@ -92,11 +94,12 @@ assert.exit.L24:                                  ; preds = %assert.exit.L20
 }
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { cold noreturn nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

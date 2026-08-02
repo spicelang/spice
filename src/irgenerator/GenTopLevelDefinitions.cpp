@@ -55,19 +55,12 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module);
   fct->setDSOLocal(true);
 
-  // Add function attributes
+  // Add function attributes. The main function is the entry point, so nobody can call or inline it.
   fct->addFnAttr(llvm::Attribute::MustProgress);
   fct->addFnAttr(llvm::Attribute::NoInline);
   fct->addFnAttr(llvm::Attribute::NoRecurse);
-  fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (cliOptions.optLevel == OptLevel::O0)
-    fct->addFnAttr(llvm::Attribute::OptimizeNone);
   addCommonFctAttrs(fct);
-  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
   enableFunctionInstrumentation(fct);
-
-  // Add return value attributes
-  fct->addRetAttr(llvm::Attribute::NoUndef);
 
   // Add return value attributes
   fct->addRetAttr(llvm::Attribute::NoUndef);

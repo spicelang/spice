@@ -16,7 +16,8 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %1
 }
 
-define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -25,7 +26,8 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
   ret void
 }
 
-define private noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -53,10 +55,11 @@ if.exit.L18:                                      ; preds = %if.then.L18, %1
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

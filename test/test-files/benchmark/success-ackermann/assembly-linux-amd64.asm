@@ -4,12 +4,15 @@
 	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z3ackii
 	.type	.L_Z3ackii,@function
 .L_Z3ackii:                             # @_Z3ackii
+	.cfi_startproc
 # %bb.0:
 	movl	%esi, %eax
 	testl	%edi, %edi
 	je	.LBB0_6
 # %bb.1:
 	pushq	%rbx
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbx, -16
 	movl	%edi, %ebx
 	jmp	.LBB0_2
 	.p2align	4
@@ -31,11 +34,14 @@
 	jne	.LBB0_2
 .LBB0_5:
 	popq	%rbx
+	.cfi_def_cfa_offset 8
+	.cfi_restore %rbx
 .LBB0_6:                                # %if.then.L2
 	incl	%eax
 	retq
 .Lfunc_end0:
 	.size	.L_Z3ackii, .Lfunc_end0-.L_Z3ackii
+	.cfi_endproc
                                         # -- End function
 	.globl	main                            # -- Begin function main
 	.prefalign	4, .Lfunc_end1, nop
@@ -52,7 +58,7 @@ main:                                   # @main
 	movl	$3, %esi
 	movl	$10, %edx
 	movl	%eax, %ecx
-	movb	$0, %al
+	xorl	%eax, %eax
 	callq	printf@PLT
 	xorl	%eax, %eax
 	popq	%rcx

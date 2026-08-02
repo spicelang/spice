@@ -20,7 +20,8 @@ source_filename = "source.spice"
 @anon.string.6 = private unnamed_addr constant [5 x i8] c"quit\00", align 4
 @anon.string.7 = private unnamed_addr constant [22 x i8] c"com.spicelang.Example\00", align 4
 
-define private void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) #0 {
   %widget = alloca %struct.GtkWidget, align 8
   store %struct.GtkWidget %0, ptr %widget, align 8
   call void @_Z6gPrintPKc(ptr noundef @anon.string.0)
@@ -29,7 +30,8 @@ define private void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) {
 
 declare void @_Z6gPrintPKc(ptr)
 
-define private void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %struct.GtkWindow noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %struct.GtkWindow noundef %1) #0 {
   %widget = alloca %struct.GtkWidget, align 8
   %window = alloca %struct.GtkWindow, align 8
   store %struct.GtkWidget %0, ptr %widget, align 8
@@ -40,7 +42,8 @@ define private void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %
 
 declare void @_ZN9GtkWindow7destroyEv(ptr)
 
-define private void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef nonnull align 1 dereferenceable(1) %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef nonnull align 1 dereferenceable(1) %1) #0 {
   %app = alloca %struct.GtkApplication, align 8
   %data = alloca ptr, align 8
   %spiceStdDir = alloca %struct.Result, align 8
@@ -129,7 +132,8 @@ declare void @_ZN9GtkWindow14setApplicationE14GtkApplication(ptr, %struct.GtkApp
 
 declare %struct.GtkButton @_ZN10GtkBuilder9getObjectI9GtkButtonEE9GtkButtonPKc(ptr, ptr)
 
-define private void @_Z8btnClick9GtkWidget.fatthunk(ptr %0, %struct.GtkWidget %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8btnClick9GtkWidget.fatthunk(ptr %0, %struct.GtkWidget %1) #0 {
 entry:
   call void @_Z8btnClick9GtkWidget(%struct.GtkWidget %1)
   ret void
@@ -137,7 +141,8 @@ entry:
 
 declare void @_ZN9GtkButton18setOnClickCallbackEPFv9GtkWidgetE(ptr, { ptr, ptr, i64 })
 
-define private void @_Z4quit9GtkWidget9GtkWindow.fatthunk(ptr %0, %struct.GtkWidget %1, %struct.GtkWindow %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4quit9GtkWidget9GtkWindow.fatthunk(ptr %0, %struct.GtkWidget %1, %struct.GtkWindow %2) #0 {
 entry:
   call void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget %1, %struct.GtkWindow %2)
   ret void
@@ -152,7 +157,7 @@ declare void @_ZN10GtkBuilder4dtorEv(ptr noundef nonnull align 8 dereferenceable
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main(i32 %0, ptr %1) #0 {
+define dso_local noundef i32 @main(i32 %0, ptr %1) #1 {
   %result = alloca i32, align 4
   %argc = alloca i32, align 4
   %argv = alloca ptr, align 8
@@ -178,7 +183,8 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 {
 
 declare void @_ZN14GtkApplication4ctorEPKc(ptr, ptr)
 
-define private void @_Z8activate14GtkApplicationPh.fatthunk(ptr %0, %struct.GtkApplication %1, ptr %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8activate14GtkApplicationPh.fatthunk(ptr %0, %struct.GtkApplication %1, ptr %2) #0 {
 entry:
   call void @_Z8activate14GtkApplicationPh(%struct.GtkApplication %1, ptr %2)
   ret void
@@ -190,7 +196,8 @@ declare i32 @_ZN14GtkApplication3runEiPPKc(ptr, i32, ptr)
 
 declare void @_ZN14GtkApplication4dtorEv(ptr noundef nonnull align 8 dereferenceable(8))
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

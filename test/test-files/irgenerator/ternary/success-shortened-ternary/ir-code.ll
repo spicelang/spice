@@ -5,23 +5,25 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-define private noundef zeroext i1 @_Z2f1v() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z2f1v() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 false
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private noundef zeroext i1 @_Z2f2v() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z2f2v() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 true
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z2f1v()
@@ -43,8 +45,9 @@ cond.exit.L12C26:                                 ; preds = %cond.false.L12C26, 
   ret i32 %6
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

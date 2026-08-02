@@ -3,12 +3,14 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %f\0A\00", align 4
 
-define private noundef double @_Z6getArgv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef double @_Z6getArgv() #0 {
   %result = alloca double, align 8
   ret double 4.300000e+00
 }
 
-define private noundef double @_Z4testv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef double @_Z4testv() #0 {
   %result = alloca double, align 8
   %arg = alloca double, align 8
   %1 = call noundef double @_Z6getArgv()
@@ -19,7 +21,7 @@ define private noundef double @_Z4testv() {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef double @_Z4testv()
@@ -29,10 +31,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

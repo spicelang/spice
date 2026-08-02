@@ -34,7 +34,8 @@ define void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
-define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -42,9 +43,10 @@ define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
-define private void @_Z3fooR5ITest(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z3fooR5ITest(ptr noundef %0) #2 {
   %test = alloca ptr, align 8
   store ptr %0, ptr %test, align 8
   %2 = load ptr, ptr %test, align 8
@@ -56,7 +58,7 @@ define private void @_Z3fooR5ITest(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #3 {
+define dso_local noundef i32 @main() #4 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %t1 = alloca %struct.Test, align 8
@@ -73,8 +75,9 @@ define dso_local noundef i32 @main() #3 {
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
-attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { noinline nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
+attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

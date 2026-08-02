@@ -8,7 +8,7 @@ source_filename = "source.spice"
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: mustprogress nofree noinline norecurse nounwind uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %1 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 noundef 1)
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i32 noundef 0)
@@ -17,7 +17,7 @@ define dso_local noundef i32 @main() local_unnamed_addr #1 {
 }
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { mustprogress nofree noinline norecurse nounwind uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

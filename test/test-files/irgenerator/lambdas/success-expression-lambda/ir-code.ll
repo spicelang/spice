@@ -5,7 +5,8 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 4
 @printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 4
 
-define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) #0 {
   %a = alloca ptr, align 8
   %b = alloca ptr, align 8
   %temp = alloca i32, align 4
@@ -24,7 +25,8 @@ define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) {
   ret void
 }
 
-define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
   %array = alloca ptr, align 8
   %sortFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
@@ -104,7 +106,7 @@ for.exit.L8:                                      ; preds = %for.head.L8
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %array = alloca [10 x i32], align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
@@ -122,7 +124,8 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %4
 }
 
-define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) #0 {
   %captures = alloca ptr, align 8
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -135,7 +138,8 @@ define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) {
   ret i1 %6
 }
 
-define private void @_Z10printArrayRA10_i(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z10printArrayRA10_i(ptr noundef %0) #0 {
   %array = alloca ptr, align 8
   %i = alloca i32, align 4
   store ptr %0, ptr %array, align 8
@@ -168,10 +172,11 @@ for.exit.L24:                                     ; preds = %for.head.L24
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

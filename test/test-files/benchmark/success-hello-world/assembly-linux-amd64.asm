@@ -10,7 +10,7 @@ main:                                   # @main
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	leaq	.Lprintf.str.0(%rip), %rdi
-	movb	$0, %al
+	xorl	%eax, %eax
 	callq	printf@PLT
 	xorl	%eax, %eax
 	popq	%rcx

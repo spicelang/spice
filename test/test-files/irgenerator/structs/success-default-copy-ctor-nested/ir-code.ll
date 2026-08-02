@@ -8,7 +8,8 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 
-define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -16,7 +17,8 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceabl
   ret void
 }
 
-define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -34,7 +36,7 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
+define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -43,7 +45,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
+define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -52,7 +54,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceab
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
+define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -61,7 +63,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0)
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
+define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -70,7 +72,7 @@ define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
   %outer2 = alloca %struct.Outer, align 8
@@ -94,11 +96,12 @@ define dso_local noundef i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
-attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

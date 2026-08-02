@@ -11,22 +11,9 @@ source_filename = "source.spice"
 @str.4 = private unnamed_addr constant [84 x i8] c"Assertion failed: Condition 'isInRange(duration, 20000l, 5000)' evaluated to false.\00", align 1
 
 ; Function Attrs: nofree nounwind
-define private fastcc noundef zeroext i1 @_Z9isInRangemmj(i64 noundef %0, i64 noundef range(i64 10, 20001) %1, i32 noundef range(i32 3, 5001) %2) unnamed_addr #0 {
-land.exit.L6C12:
-  %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef %1, i32 noundef %2, i64 noundef %0)
-  %4 = zext nneg i32 %2 to i64
-  %5 = sub nsw i64 %1, %4
-  %.not = icmp uge i64 %0, %5
-  %6 = add nuw nsw i64 %1, %4
-  %7 = icmp ule i64 %0, %6
-  %land_phi = select i1 %.not, i1 %7, i1 false
-  ret i1 %land_phi
-}
-
-; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: noinline norecurse nounwind uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
   %t = alloca %struct.Timer, align 8
   %duration = alloca i64, align 8
@@ -46,8 +33,10 @@ assert.exit.L12:                                  ; preds = %0
   call void @_Z5delayi(i32 noundef 10) #4
   call void @_ZN5Timer4stopEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
   %4 = call noundef i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
-  %5 = call fastcc noundef zeroext i1 @_Z9isInRangemmj(i64 noundef %4, i64 noundef 10, i32 noundef 3) #4
-  br i1 %5, label %assert.exit.L16, label %assert.then.L16, !prof !5
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef 10, i32 noundef 3, i64 noundef %4)
+  %6 = add i64 %4, -7
+  %land_phi.i = icmp ult i64 %6, 7
+  br i1 %land_phi.i, label %assert.exit.L16, label %assert.then.L16, !prof !5
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
   %puts1 = call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
@@ -58,9 +47,9 @@ assert.exit.L16:                                  ; preds = %assert.exit.L12
   store i64 0, ptr %duration, align 8
   call void @_ZN5Timer4ctorEiPm(ptr noundef nonnull align 8 dereferenceable(32) %1, i32 noundef 0, ptr noundef nonnull align 8 dereferenceable(8) %duration) #4
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %t, ptr noundef nonnull align 8 dereferenceable(32) %1, i64 32, i1 false)
-  %6 = call noundef i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
-  %7 = icmp eq i64 %6, 0
-  br i1 %7, label %assert.exit.L21, label %assert.then.L21, !prof !5
+  %7 = call noundef i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
+  %8 = icmp eq i64 %7, 0
+  br i1 %8, label %assert.exit.L21, label %assert.then.L21, !prof !5
 
 assert.then.L21:                                  ; preds = %assert.exit.L16
   %puts2 = call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
@@ -68,9 +57,9 @@ assert.then.L21:                                  ; preds = %assert.exit.L16
   unreachable
 
 assert.exit.L21:                                  ; preds = %assert.exit.L16
-  %8 = load i64, ptr %duration, align 8
-  %9 = icmp eq i64 %8, 0
-  br i1 %9, label %assert.exit.L22, label %assert.then.L22, !prof !5
+  %9 = load i64, ptr %duration, align 8
+  %10 = icmp eq i64 %9, 0
+  br i1 %10, label %assert.exit.L22, label %assert.then.L22, !prof !5
 
 assert.then.L22:                                  ; preds = %assert.exit.L21
   %puts3 = call i32 @puts(ptr nonnull dereferenceable(1) @str.3)
@@ -85,9 +74,11 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
   call void @_ZN5Timer6resumeEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
   call void @_Z5delayi(i32 noundef 10) #4
   call void @_ZN5Timer4stopEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
-  %10 = load i64, ptr %duration, align 8
-  %11 = call fastcc noundef zeroext i1 @_Z9isInRangemmj(i64 noundef %10, i64 noundef 20000, i32 noundef 5000) #4
-  br i1 %11, label %assert.exit.L30, label %assert.then.L30, !prof !5
+  %11 = load i64, ptr %duration, align 8
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef 20000, i32 noundef 5000, i64 noundef %11)
+  %13 = add i64 %11, -15000
+  %land_phi.i6 = icmp ult i64 %13, 10001
+  br i1 %land_phi.i6, label %assert.exit.L30, label %assert.then.L30, !prof !5
 
 assert.then.L30:                                  ; preds = %assert.exit.L22
   %puts4 = call i32 @puts(ptr nonnull dereferenceable(1) @str.4)
@@ -95,7 +86,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L22
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L22
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
   ret i32 0
 }
 
@@ -125,7 +116,7 @@ declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
 declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { noinline norecurse nounwind uwtable }
 attributes #2 = { cold nofree noreturn nounwind }
 attributes #3 = { mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #4 = { nounwind }

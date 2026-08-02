@@ -19,7 +19,8 @@ define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 derefe
 
 declare void @_Z8sDeallocRPh(ptr)
 
-define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   %res = alloca %struct.Result, align 8
   store ptr %0, ptr %this, align 8
@@ -40,7 +41,7 @@ declare %struct.Result @_Z6sAllocm(i64)
 declare ptr @_ZN6ResultIPhE6unwrapEv(ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %sPtr = alloca ptr, align 8
   %s = alloca %struct.StructWithHeapFields, align 8
@@ -65,11 +66,12 @@ define dso_local noundef i32 @main() #1 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

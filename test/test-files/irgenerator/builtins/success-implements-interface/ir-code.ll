@@ -13,7 +13,8 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [41 x i8] c"Implements interface (ITest, Test2): %d\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [40 x i8] c"Implements interface (ITest, bool): %d\0A\00", align 4
 
-define private void @_ZN5Test17methodAEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN5Test17methodAEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -21,10 +22,10 @@ define private void @_ZN5Test17methodAEv(ptr noundef nonnull align 8 dereference
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef 1)
@@ -34,8 +35,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %4
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -971,6 +971,7 @@ llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
 
   llvm::Function *thunk = llvm::Function::Create(thunkType, llvm::Function::PrivateLinkage, thunkName, module);
   thunk->setDSOLocal(true);
+  addCommonFctAttrs(thunk);
 
   // Save insert markers, because we emit the thunk body in the middle of generating another function
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();

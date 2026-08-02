@@ -5,12 +5,14 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 4
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 4
 
-define private noundef zeroext i1 @_Z7condFctv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z7condFctv() #0 {
   %result = alloca i1, align 1
   ret i1 false
 }
 
-define private noundef ptr @_Z7trueFctv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_Z7trueFctv() #0 {
   %result = alloca ptr, align 8
   br i1 false, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
@@ -25,18 +27,19 @@ assert.exit.L6:                                   ; preds = %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #1
+declare void @exit(i32) #2
 
-define private noundef ptr @_Z8falseFctv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_Z8falseFctv() #0 {
   %result = alloca ptr, align 8
   ret ptr @anon.string.1
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #2 {
+define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z7condFctv()
@@ -57,9 +60,10 @@ cond.exit.L14C26:                                 ; preds = %cond.false.L14C26, 
   ret i32 %5
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { cold noreturn nounwind }
-attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
