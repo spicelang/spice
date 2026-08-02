@@ -6,7 +6,8 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [7 x i8] c"%d %d\0A\00", align 4
 
-define private void @_ZN5Point4ctorEii(ptr noundef nonnull align 4 dereferenceable(8) %0, i32 noundef %1, i32 noundef %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN5Point4ctorEii(ptr noundef nonnull align 4 dereferenceable(8) %0, i32 noundef %1, i32 noundef %2) #0 {
   %this = alloca ptr, align 8
   %x = alloca i32, align 4
   %y = alloca i32, align 4
@@ -29,7 +30,7 @@ define private void @_ZN5Point4ctorEii(ptr noundef nonnull align 4 dereferenceab
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %i = alloca ptr, align 8
   %storage = alloca ptr, align 8
@@ -61,12 +62,13 @@ define dso_local noundef i32 @main() #0 {
 declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 declare void @_Z8sDeallocRPh(ptr)
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

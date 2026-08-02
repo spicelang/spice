@@ -5,7 +5,8 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 't == 6' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
-define private void @_Z3fooIRiEvRi(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z3fooIRiEvRi(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -15,7 +16,8 @@ define private void @_Z3fooIRiEvRi(ptr noundef %0) {
   ret void
 }
 
-define private void @_Z3barRi(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z3barRi(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -26,7 +28,7 @@ define private void @_Z3barRi(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca i32, align 4
   store i32 0, ptr %result, align 4
@@ -59,14 +61,15 @@ assert.exit.L15:                                  ; preds = %assert.exit.L13
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

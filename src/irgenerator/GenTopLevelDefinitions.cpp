@@ -55,20 +55,12 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module);
   fct->setDSOLocal(true);
 
-  // Add function attributes
+  // Add function attributes. The main function is the entry point, so nobody can call or inline it.
   fct->addFnAttr(llvm::Attribute::MustProgress);
   fct->addFnAttr(llvm::Attribute::NoInline);
   fct->addFnAttr(llvm::Attribute::NoRecurse);
-  fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (cliOptions.optLevel == OptLevel::O0)
-    fct->addFnAttr(llvm::Attribute::OptimizeNone);
-  else if (cliOptions.optLevel >= OptLevel::Os)
-    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
-  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+  addCommonFctAttrs(fct);
   enableFunctionInstrumentation(fct);
-
-  // Add return value attributes
-  fct->addRetAttr(llvm::Attribute::NoUndef);
 
   // Add return value attributes
   fct->addRetAttr(llvm::Attribute::NoUndef);
@@ -217,8 +209,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Set attributes to function
     func->setDSOLocal(isSymbolDSOLocal(isPublic));
     func->setLinkage(linkage);
-    if (manifestation->entry->getQualType().isInline())
-      func->addFnAttr(llvm::Attribute::AlwaysInline);
+    addCommonFctAttrs(func, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(func);
     // Set attributes to function parameters and return value
     setParamAttrs(func, paramInfoList);
@@ -371,8 +362,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Set attributes to procedure
     proc->setLinkage(getSymbolLinkageType(isPublic));
     proc->setDSOLocal(isSymbolDSOLocal(isPublic));
-    if (manifestation->entry->getQualType().isInline())
-      proc->addFnAttr(llvm::Attribute::AlwaysInline);
+    addCommonFctAttrs(proc, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(proc);
 
     // Set attributes to function parameters

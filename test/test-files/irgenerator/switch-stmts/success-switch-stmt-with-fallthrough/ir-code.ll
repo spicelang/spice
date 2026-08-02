@@ -7,7 +7,8 @@ source_filename = "source.spice"
 @printf.str.3 = private unnamed_addr constant [22 x i8] c"Input is at least 2.\0A\00", align 4
 @printf.str.4 = private unnamed_addr constant [22 x i8] c"Input is at least 1.\0A\00", align 4
 
-define private void @_Z12isBiggerThani(i32 noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z12isBiggerThani(i32 noundef %0) #0 {
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
   %2 = load i32, ptr %input, align 4
@@ -44,10 +45,10 @@ switch.exit.L2:                                   ; preds = %switch.case.L19, %1
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   call void @_Z12isBiggerThani(i32 noundef 3)
@@ -57,8 +58,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %1
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -24,7 +24,8 @@ source_filename = "source.spice"
 @printf.str.9 = private unnamed_addr constant [9 x i8] c"0 is %s\0A\00", align 4
 @printf.str.10 = private unnamed_addr constant [10 x i8] c"10 is %s\0A\00", align 4
 
-define private noundef ptr @_Z13digitToStringj(i32 noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_Z13digitToStringj(i32 noundef %0) #0 {
   %result = alloca ptr, align 8
   %number = alloca i32, align 4
   store i32 %0, ptr %number, align 4
@@ -81,7 +82,7 @@ switch.exit.L2:                                   ; No predecessors!
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef ptr @_Z13digitToStringj(i32 noundef 1)
@@ -111,10 +112,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -13,7 +13,8 @@ source_filename = "source.spice"
 @_ZTV3Car = private unnamed_addr constant { [4 x ptr] } { [4 x ptr] [ptr null, ptr @_ZTI3Car, ptr @_ZN3Car5driveEi, ptr @_ZN3Car9isDrivingEv] }, align 8
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"Is driving: %d\00", align 4
 
-define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -26,7 +27,8 @@ define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(
   ret void
 }
 
-define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) #0 {
   %this = alloca ptr, align 8
   %_param = alloca i32, align 4
   store ptr %0, ptr %this, align 8
@@ -37,7 +39,8 @@ define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable
   ret void
 }
 
-define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -48,7 +51,7 @@ define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %car = alloca %struct.Car, align 8
   %driveable = alloca ptr, align 8
@@ -72,10 +75,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

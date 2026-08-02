@@ -6,7 +6,8 @@ source_filename = "source.spice"
 @anon.string.2 = private unnamed_addr constant [59 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
 
-define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr, ptr, i64 } noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
   %l1 = alloca { ptr, ptr, i64 }, align 8
   %l2 = alloca { ptr, ptr, i64 }, align 8
   %x = alloca i32, align 4
@@ -53,13 +54,13 @@ assert.exit.L6:                                   ; preds = %assert.exit.L5
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #1
+declare void @exit(i32) #2
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #2 {
+define dso_local noundef i32 @main() #3 {
   %result = alloca i32, align 4
   %z = alloca i32, align 4
   %w = alloca i32, align 4
@@ -104,7 +105,8 @@ define dso_local noundef i32 @main() #2 {
   ret i32 %16
 }
 
-define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -121,7 +123,8 @@ define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8
   ret void
 }
 
-define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
@@ -139,9 +142,10 @@ define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) 
   ret i1 true
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { cold noreturn nounwind }
-attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

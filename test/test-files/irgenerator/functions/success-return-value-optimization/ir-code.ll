@@ -9,7 +9,8 @@ source_filename = "source.spice"
 @anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 4' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -17,7 +18,8 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable
   ret void
 }
 
-define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %old = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -32,13 +34,15 @@ define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferen
   ret void
 }
 
-define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   ret void
 }
 
-define private noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   store %struct.Test %0, ptr %old, align 4
@@ -46,7 +50,8 @@ define private noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) {
   ret %struct.Test %2
 }
 
-define private noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %2 = alloca %struct.Test, align 8
@@ -57,7 +62,8 @@ define private noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) {
   ret %struct.Test %4
 }
 
-define private noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   %old1 = alloca %struct.Test, align 8
@@ -67,7 +73,8 @@ define private noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) {
   ret %struct.Test %2
 }
 
-define private noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %old1 = alloca ptr, align 8
@@ -82,7 +89,7 @@ define private noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %arg.copy = alloca %struct.Test, align 8
@@ -162,14 +169,15 @@ assert.exit.L44:                                  ; preds = %assert.exit.L41
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

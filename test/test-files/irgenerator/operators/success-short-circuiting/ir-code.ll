@@ -6,23 +6,25 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [30 x i8] c"Logical and evaluated to: %d\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 4
 
-define private noundef zeroext i1 @_Z12functionTruev() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z12functionTruev() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 true
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private noundef zeroext i1 @_Z13functionFalsev() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z13functionFalsev() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 false
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z13functionFalsev()
@@ -51,8 +53,9 @@ lor.exit.L16C45:                                  ; preds = %lor.1.L16C45, %land
   ret i32 %9
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

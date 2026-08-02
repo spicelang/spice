@@ -7,7 +7,8 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 4
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 4
 
-define private noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -17,7 +18,8 @@ define private noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8
   ret ptr %3
 }
 
-define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %text = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -30,7 +32,7 @@ define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dere
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %letter = alloca %struct.Letter, align 8
   store i32 0, ptr %result, align 4
@@ -43,10 +45,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

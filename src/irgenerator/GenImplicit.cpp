@@ -290,14 +290,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
   const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
   llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
   fct->addFnAttr(llvm::Attribute::MustProgress);
-  fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (cliOptions.optLevel == OptLevel::O0) {
-    fct->addFnAttr(llvm::Attribute::OptimizeNone);
-    fct->addFnAttr(llvm::Attribute::NoInline);
-  } else if (cliOptions.optLevel >= OptLevel::Os) {
-    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
-  }
-  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+  addCommonFctAttrs(fct);
 
   // Set attributes to 'this' param
   if (spiceFunc->isMethod()) {
@@ -390,14 +383,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
   llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
   fct->addFnAttr(llvm::Attribute::MustProgress);
-  fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (cliOptions.optLevel == OptLevel::O0) {
-    fct->addFnAttr(llvm::Attribute::OptimizeNone);
-    fct->addFnAttr(llvm::Attribute::NoInline);
-  } else if (cliOptions.optLevel >= OptLevel::Os) {
-    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
-  }
-  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+  addCommonFctAttrs(fct);
 
   // Set attributes to 'this' param
   if (spiceProc->isMethod()) {

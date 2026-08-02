@@ -545,6 +545,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Set attributes to function
   lambda->setLinkage(llvm::Function::PrivateLinkage);
   lambda->setDSOLocal(true);
+  addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
@@ -700,6 +701,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Set attributes to function
   lambda->setLinkage(llvm::Function::PrivateLinkage);
   lambda->setDSOLocal(true);
+  addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
@@ -849,6 +851,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Set attributes to function
   lambda->setLinkage(llvm::Function::PrivateLinkage);
   lambda->setDSOLocal(true);
+  addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
 
   // In case of captures, add attribute to captures argument
@@ -968,6 +971,7 @@ llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
 
   llvm::Function *thunk = llvm::Function::Create(thunkType, llvm::Function::PrivateLinkage, thunkName, module);
   thunk->setDSOLocal(true);
+  addCommonFctAttrs(thunk);
 
   // Save insert markers, because we emit the thunk body in the middle of generating another function
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();

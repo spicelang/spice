@@ -9,7 +9,8 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 4
 
-define private void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenceable(24) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8
@@ -21,7 +22,7 @@ define private void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereference
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %mike = alloca %struct.Person, align 8
   store i32 0, ptr %result, align 4
@@ -43,10 +44,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

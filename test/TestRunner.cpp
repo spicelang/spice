@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -14,6 +15,7 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <llvm/IR/Module.h>
 #include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTable.h>
@@ -31,7 +33,51 @@ namespace spice::testing {
 
 extern TestDriverCliOptions testDriverCliOptions;
 
-void execTestCase(const TestCase &testCase) {
+namespace {
+
+/**
+ * Re-run the IR generator for the given source file, discarding the module that was built for it before.
+ *
+ * Since the IR generator emits parts of the IR depending on the selected opt level, a module can only be used to check
+ * the dump of the opt level it was generated for.
+ *
+ * @param sourceFile Source file to re-generate the IR for
+ */
+void reGenerateIR(SourceFile *sourceFile) {
+  // Rewind the stage marker, so that the IR generator does not consider this file as already done
+  sourceFile->previousStage = DEP_GRAPH_VISUALIZER;
+  sourceFile->runIRGenerator();
+}
+
+/**
+ * Re-run the IR generator for the given source file and all its (transitive) dependencies, dependencies first.
+ *
+ * This is only required for LTO builds, where the modules of all source files are merged into the LTO module, which is
+ * the one that gets dumped. Without LTO, only the module of the main source file ends up in the dump, so re-generating
+ * the dependencies would be wasted work.
+ *
+ * @param sourceFile Source file to re-generate the IR for
+ * @param visitedSet Already visited source files (guards against cycles, caused by circular imports)
+ */
+void reGenerateIRForLTO(SourceFile *sourceFile, std::unordered_set<const SourceFile *> &visitedSet) { // NOLINT(misc-no-recursion)
+  if (!visitedSet.insert(sourceFile).second)
+    return;
+
+  // Re-generate the dependencies first, mirroring the order of SourceFile::runBackEnd()
+  for (SourceFile *dependency : sourceFile->dependencies | std::views::values)
+    reGenerateIRForLTO(dependency, visitedSet);
+
+  reGenerateIR(sourceFile);
+
+  // The optimizer stages of the main source file are driven by the test runner itself. All other files run their
+  // pre-link optimization as part of their own back end, so it has to be repeated here.
+  if (!sourceFile->isMainFile)
+    sourceFile->runPreLinkIROptimizer();
+}
+
+} // namespace
+
+static void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
   if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
@@ -175,6 +221,8 @@ void execTestCase(const TestCase &testCase) {
     for (SourceFile *sourceFile : mainSourceFile->dependencies | std::views::values)
       sourceFile->runBackEnd();
 
+    // Keep track of the opt level the IR in the module was generated with
+    OptLevel generatedOptLevel = cliOptions.optLevel;
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
@@ -184,6 +232,23 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath / REF_NAME_OPT_IR[i],
           [&] {
             cliOptions.optLevel = static_cast<OptLevel>(i);
+
+            // The IR generator emits parts of the IR depending on the selected opt level, so the IR has to be
+            // generated from scratch whenever we check the dump of an opt level other than the one the current module
+            // was built for. Otherwise all dumps would show the IR for the opt level that was active when the IR
+            // generator ran for the first time.
+            if (cliOptions.optLevel != generatedOptLevel) {
+              if (cliOptions.useLTO) {
+                // The bitcode linker moves the module of every source file into the LTO module, so all of them have to
+                // be re-generated. The LTO module itself is started from scratch to not link the same symbols twice.
+                resourceManager.ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, resourceManager.ltoContext);
+                std::unordered_set<const SourceFile *> visitedSet;
+                reGenerateIRForLTO(mainSourceFile, visitedSet);
+              } else {
+                reGenerateIR(mainSourceFile);
+              }
+              generatedOptLevel = cliOptions.optLevel;
+            }
 
             if (cliOptions.useLTO) {
               mainSourceFile->runPreLinkIROptimizer();

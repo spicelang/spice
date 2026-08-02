@@ -688,6 +688,39 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
     global->setComdat(module->getOrInsertComdat(comdatName));
 }
 
+/**
+ * Attach the function attributes that all functions we emit have in common.
+ *
+ * Spice does not know exceptions and we never emit landing pads, so none of our functions can unwind. We still request
+ * an unwind table, so that debuggers and profilers are able to produce correct stack traces.
+ *
+ * The size levels are not communicated to LLVM by the pass pipeline alone - since Os and Oz both select the O2
+ * pipeline, 'optsize' and 'minsize' on the individual function are what actually distinguishes them. Without 'minsize',
+ * Oz is indistinguishable from Os.
+ *
+ * @param fct Function to attach the attributes to
+ * @param isAlwaysInline Whether the function was declared as inline
+ */
+void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) const {
+  fct->addFnAttr(llvm::Attribute::NoUnwind);
+  fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+
+  // Explicitly inlined functions must not be marked as 'optnone', because that is incompatible with 'alwaysinline'.
+  // This matches the behavior of other frontends: an inline request is honored, even at O0.
+  if (isAlwaysInline) {
+    fct->addFnAttr(llvm::Attribute::AlwaysInline);
+  } else if (cliOptions.optLevel == OptLevel::O0) {
+    fct->addFnAttr(llvm::Attribute::OptimizeNone);
+    fct->addFnAttr(llvm::Attribute::NoInline); // 'optnone' requires 'noinline'
+  }
+
+  if (cliOptions.optLevel >= OptLevel::Os) {
+    fct->addFnAttr(llvm::Attribute::OptimizeForSize);
+    if (cliOptions.optLevel == OptLevel::Oz)
+      fct->addFnAttr(llvm::Attribute::MinSize);
+  }
+}
+
 llvm::Value *IRGenerator::getAddress(const SymbolTableEntry *entry) {
   const auto it = addressMap.find(entry);
   if (it == addressMap.end() || it->second.empty())

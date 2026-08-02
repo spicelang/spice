@@ -30,7 +30,8 @@ define dso_local noundef i32 @main() #0 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8
@@ -64,17 +65,18 @@ assert.exit.L14:                                  ; preds = %assert.exit.L13
 }
 
 ; Function Attrs: nounwind
-declare i32 @memcmp(ptr, ptr, i64) #2
+declare i32 @memcmp(ptr, ptr, i64) #3
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { nounwind }
-attributes #3 = { cold noreturn nounwind }
+attributes #2 = { noinline nounwind optnone uwtable }
+attributes #3 = { nounwind }
+attributes #4 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

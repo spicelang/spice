@@ -10,7 +10,8 @@ source_filename = "source.spice"
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 
-define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8
@@ -44,18 +45,18 @@ assert.exit.L9:                                   ; preds = %assert.exit.L8
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: nounwind
-declare i32 @memcmp(ptr, ptr, i64) #1
+declare i32 @memcmp(ptr, ptr, i64) #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #3 {
+define dso_local noundef i32 @main() #4 {
   %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
@@ -71,10 +72,11 @@ define dso_local noundef i32 @main() #3 {
   ret i32 %5
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { nounwind }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

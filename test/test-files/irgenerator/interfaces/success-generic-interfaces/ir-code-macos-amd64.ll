@@ -17,7 +17,8 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 4
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
-define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2, i32 noundef %3) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2, i32 noundef %3) #0 {
   %this = alloca ptr, align 8
   %firstName = alloca ptr, align 8
   %lastName = alloca ptr, align 8
@@ -49,7 +50,8 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
   ret void
 }
 
-define private noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   %a = alloca ptr, align 8
@@ -83,7 +85,7 @@ if.exit.L27:                                      ; preds = %if.exit.L26
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %mike = alloca %struct.Person, align 8
   %1 = alloca i64, align 8
@@ -104,10 +106,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

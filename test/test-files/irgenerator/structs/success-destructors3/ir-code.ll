@@ -8,7 +8,8 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 4
 @anon.string.1 = private unnamed_addr constant [5 x i8] c"test\00", align 4
 
-define private void @_Z4testv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4testv() #0 {
   %1 = alloca %struct.String, align 8
   %t = alloca ptr, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
@@ -23,11 +24,12 @@ define private void @_Z4testv() {
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
-define private void @_Z4testRK6String(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z4testRK6String(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -37,7 +39,7 @@ define private void @_Z4testRK6String(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %1 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
@@ -49,8 +51,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %2
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

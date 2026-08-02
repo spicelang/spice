@@ -6,16 +6,18 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 4
 
-define private noundef i32 @_Z8testFuncv() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z8testFuncv() #0 {
   %result = alloca i32, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 1
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-define private noundef i32 @_Z8testFuncPKc(ptr noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z8testFuncPKc(ptr noundef %0) #0 {
   %result = alloca i32, align 4
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8
@@ -25,7 +27,7 @@ define private noundef i32 @_Z8testFuncPKc(ptr noundef %0) {
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
@@ -39,8 +41,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %5
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -3,18 +3,20 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-define private noundef zeroext i1 @_Z10condition1v() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z10condition1v() #0 {
   %result = alloca i1, align 1
   ret i1 false
 }
 
-define private noundef zeroext i1 @_Z10condition2v() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef zeroext i1 @_Z10condition2v() #0 {
   %result = alloca i1, align 1
   ret i1 true
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z10condition1v()
@@ -33,10 +35,11 @@ land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

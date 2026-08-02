@@ -6,7 +6,8 @@ source_filename = "source.spice"
 @anon.array.1 = private unnamed_addr constant [4 x i64] [i64 10, i64 12, i64 14, i64 16]
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 4
 
-define private noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %0, i64 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %0, i64 noundef %1) #0 {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -45,7 +46,8 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %0, i64 noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %0, i64 noundef %1) #0 {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -84,7 +86,8 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private void @_Z9printDataIPiEvlPi(i64 noundef %0, ptr noundef %1) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private void @_Z9printDataIPiEvlPi(i64 noundef %0, ptr noundef %1) #0 {
   %arrayLength = alloca i64, align 8
   %list = alloca ptr, align 8
   %i = alloca i64, align 8
@@ -118,10 +121,10 @@ for.exit.L12:                                     ; preds = %for.head.L12
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
+define dso_local noundef i32 @main() #2 {
   %result = alloca i32, align 4
   %numberList1 = alloca [7 x i16], align 2
   %result1 = alloca i32, align 4
@@ -155,8 +158,9 @@ define dso_local noundef i32 @main() #1 {
   ret i32 %15
 }
 
-attributes #0 = { nofree nounwind }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
-; Function Attrs: nofree nosync nounwind memory(none)
+; Function Attrs: nofree nosync nounwind memory(none) uwtable
 define private fastcc noundef i32 @_Z4fiboi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 2
   br i1 %2, label %common.ret, label %if.exit.L2
@@ -25,9 +25,9 @@ if.exit.L2:                                       ; preds = %1, %if.exit.L2
   br i1 %7, label %common.ret, label %if.exit.L2
 }
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: mustprogress nofree noinline norecurse nounwind uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc noundef i32 @_Z4fiboi(i32 noundef 30) #3
+  %1 = tail call fastcc noundef i32 @_Z4fiboi(i32 noundef 30)
   %2 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %1)
   ret i32 0
 }
@@ -35,10 +35,9 @@ define dso_local noundef i32 @main() local_unnamed_addr #1 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { nofree nosync nounwind memory(none) }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { nofree nosync nounwind memory(none) uwtable }
+attributes #1 = { mustprogress nofree noinline norecurse nounwind uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

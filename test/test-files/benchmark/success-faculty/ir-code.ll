@@ -3,7 +3,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 4
 
-define private noundef i32 @_Z7facultyi(i32 noundef %0) {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z7facultyi(i32 noundef %0) #0 {
   %result = alloca i32, align 4
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
@@ -26,7 +27,7 @@ if.exit.L2:                                       ; preds = %1
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %input = alloca i32, align 4
   %faculty = alloca i32, align 4
@@ -43,10 +44,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

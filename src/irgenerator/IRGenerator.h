@@ -194,6 +194,7 @@ private:
   llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
   llvm::GlobalValue::LinkageTypes getVTableLinkageType(bool isPublic) const;
   void attachComdatToSymbol(llvm::GlobalVariable *global, const std::string &comdatName, bool isPublic) const;
+  void addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline = false) const;
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);

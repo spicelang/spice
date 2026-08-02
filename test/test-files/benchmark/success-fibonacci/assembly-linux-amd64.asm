@@ -4,10 +4,16 @@
 	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z4fiboi
 	.type	.L_Z4fiboi,@function
 .L_Z4fiboi:                             # @_Z4fiboi
+	.cfi_startproc
 # %bb.0:
 	pushq	%r14
+	.cfi_def_cfa_offset 16
 	pushq	%rbx
+	.cfi_def_cfa_offset 24
 	pushq	%rax
+	.cfi_def_cfa_offset 32
+	.cfi_offset %rbx, -24
+	.cfi_offset %r14, -16
 	movl	%edi, %r14d
 	xorl	%ebx, %ebx
 	cmpl	$2, %edi
@@ -31,11 +37,15 @@
 	addl	%ecx, %ebx
 	movl	%ebx, %eax
 	addq	$8, %rsp
+	.cfi_def_cfa_offset 24
 	popq	%rbx
+	.cfi_def_cfa_offset 16
 	popq	%r14
+	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
 	.size	.L_Z4fiboi, .Lfunc_end0-.L_Z4fiboi
+	.cfi_endproc
                                         # -- End function
 	.globl	main                            # -- Begin function main
 	.prefalign	4, .Lfunc_end1, nop
@@ -49,7 +59,7 @@ main:                                   # @main
 	callq	.L_Z4fiboi
 	leaq	.Lprintf.str.0(%rip), %rdi
 	movl	%eax, %esi
-	movb	$0, %al
+	xorl	%eax, %eax
 	callq	printf@PLT
 	xorl	%eax, %eax
 	popq	%rcx

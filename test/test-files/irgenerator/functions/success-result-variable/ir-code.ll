@@ -3,7 +3,8 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 4
 
-define private noundef i32 @_Z6getAgev() {
+; Function Attrs: noinline nounwind optnone uwtable
+define private noundef i32 @_Z6getAgev() #0 {
   %result = alloca i32, align 4
   %i = alloca i1, align 1
   %b = alloca i1, align 1
@@ -35,7 +36,7 @@ if.exit.L4:                                       ; preds = %if.exit.L7
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %age = alloca i32, align 4
   store i32 0, ptr %result, align 4
@@ -48,10 +49,11 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

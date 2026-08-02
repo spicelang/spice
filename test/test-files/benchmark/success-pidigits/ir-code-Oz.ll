@@ -3,29 +3,33 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+; Function Attrs: minsize mustprogress nofree noinline norecurse nounwind optsize uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #0 {
-  br label %for.body.L19
+  br label %for.head.L19
 
-for.body.L19:                                     ; preds = %0, %for.tail.L19
-  %i.035 = phi i32 [ 0, %0 ], [ %30, %for.tail.L19 ]
-  %printedDigits.034 = phi i32 [ 0, %0 ], [ %printedDigits.1, %for.tail.L19 ]
-  %q.033 = phi i64 [ 1, %0 ], [ %q.1, %for.tail.L19 ]
-  %x.032 = phi i64 [ 3, %0 ], [ %x.1, %for.tail.L19 ]
-  %m.031 = phi i64 [ 3, %0 ], [ %m.1, %for.tail.L19 ]
-  %k.030 = phi i64 [ 1, %0 ], [ %k.1, %for.tail.L19 ]
-  %t.029 = phi i64 [ 1, %0 ], [ %t.1, %for.tail.L19 ]
-  %r.028 = phi i64 [ 0, %0 ], [ %r.1, %for.tail.L19 ]
-  %1 = shl nsw i64 %q.033, 2
-  %2 = sub i64 %1, %t.029
-  %3 = add i64 %2, %r.028
-  %4 = mul nsw i64 %t.029, %m.031
+for.head.L19:                                     ; preds = %for.tail.L19, %0
+  %r.0 = phi i64 [ 0, %0 ], [ %r.1, %for.tail.L19 ]
+  %t.0 = phi i64 [ 1, %0 ], [ %t.1, %for.tail.L19 ]
+  %k.0 = phi i64 [ 1, %0 ], [ %k.1, %for.tail.L19 ]
+  %m.0 = phi i64 [ 3, %0 ], [ %m.1, %for.tail.L19 ]
+  %x.0 = phi i64 [ 3, %0 ], [ %x.1, %for.tail.L19 ]
+  %q.0 = phi i64 [ 1, %0 ], [ %q.1, %for.tail.L19 ]
+  %printedDigits.0 = phi i32 [ 0, %0 ], [ %printedDigits.1, %for.tail.L19 ]
+  %i.0 = phi i32 [ 0, %0 ], [ %30, %for.tail.L19 ]
+  %exitcond.not = icmp eq i32 %i.0, 20
+  br i1 %exitcond.not, label %for.exit.L19, label %for.body.L19
+
+for.body.L19:                                     ; preds = %for.head.L19
+  %1 = shl nsw i64 %q.0, 2
+  %2 = sub i64 %r.0, %t.0
+  %3 = add i64 %2, %1
+  %4 = mul nsw i64 %m.0, %t.0
   %5 = icmp slt i64 %3, %4
   br i1 %5, label %if.then.L20, label %if.else.L20
 
 if.then.L20:                                      ; preds = %for.body.L19
-  %6 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef %m.031)
-  %7 = icmp eq i32 %printedDigits.034, 0
+  %6 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 noundef %m.0)
+  %7 = icmp eq i32 %printedDigits.0, 0
   br i1 %7, label %if.then.L22, label %if.exit.L22
 
 if.then.L22:                                      ; preds = %if.then.L20
@@ -33,47 +37,46 @@ if.then.L22:                                      ; preds = %if.then.L20
   br label %if.exit.L22
 
 if.exit.L22:                                      ; preds = %if.then.L22, %if.then.L20
-  %8 = add nsw i32 %printedDigits.034, 1
-  %9 = mul nsw i64 %q.033, 10
-  %10 = sub nsw i64 %r.028, %4
+  %8 = add nsw i32 %printedDigits.0, 1
+  %9 = mul nsw i64 %q.0, 10
+  %10 = sub nsw i64 %r.0, %4
   %11 = mul nsw i64 %10, 10
-  %12 = mul nsw i64 %q.033, 3
-  %13 = add nsw i64 %r.028, %12
+  %12 = mul nsw i64 %q.0, 3
+  %13 = add nsw i64 %12, %r.0
   %14 = mul nsw i64 %13, 10
-  %15 = sdiv i64 %14, %t.029
-  %.neg = mul i64 %m.031, -10
+  %15 = sdiv i64 %14, %t.0
+  %.neg = mul i64 %m.0, -10
   %16 = add i64 %15, %.neg
   br label %for.tail.L19
 
 if.else.L20:                                      ; preds = %for.body.L19
-  %17 = mul nsw i64 %k.030, %q.033
-  %18 = shl nsw i64 %q.033, 1
-  %19 = add nsw i64 %r.028, %18
-  %20 = mul nsw i64 %19, %x.032
-  %21 = mul nsw i64 %t.029, %x.032
-  %22 = add nsw i64 %k.030, 1
-  %23 = mul nsw i64 %k.030, 7
+  %17 = mul nsw i64 %q.0, %k.0
+  %18 = shl nsw i64 %q.0, 1
+  %19 = add nsw i64 %18, %r.0
+  %20 = mul nsw i64 %19, %x.0
+  %21 = mul nsw i64 %x.0, %t.0
+  %22 = add nsw i64 %k.0, 1
+  %23 = mul nsw i64 %k.0, 7
   %24 = add nsw i64 %23, 2
-  %25 = mul nsw i64 %24, %q.033
-  %26 = mul nsw i64 %r.028, %x.032
+  %25 = mul nsw i64 %q.0, %24
+  %26 = mul nsw i64 %x.0, %r.0
   %27 = add nsw i64 %25, %26
   %28 = sdiv i64 %27, %21
-  %29 = add nsw i64 %x.032, 2
+  %29 = add nsw i64 %x.0, 2
   br label %for.tail.L19
 
 for.tail.L19:                                     ; preds = %if.exit.L22, %if.else.L20
   %r.1 = phi i64 [ %11, %if.exit.L22 ], [ %20, %if.else.L20 ]
-  %t.1 = phi i64 [ %t.029, %if.exit.L22 ], [ %21, %if.else.L20 ]
-  %k.1 = phi i64 [ %k.030, %if.exit.L22 ], [ %22, %if.else.L20 ]
+  %t.1 = phi i64 [ %t.0, %if.exit.L22 ], [ %21, %if.else.L20 ]
+  %k.1 = phi i64 [ %k.0, %if.exit.L22 ], [ %22, %if.else.L20 ]
   %m.1 = phi i64 [ %16, %if.exit.L22 ], [ %28, %if.else.L20 ]
-  %x.1 = phi i64 [ %x.032, %if.exit.L22 ], [ %29, %if.else.L20 ]
+  %x.1 = phi i64 [ %x.0, %if.exit.L22 ], [ %29, %if.else.L20 ]
   %q.1 = phi i64 [ %9, %if.exit.L22 ], [ %17, %if.else.L20 ]
-  %printedDigits.1 = phi i32 [ %8, %if.exit.L22 ], [ %printedDigits.034, %if.else.L20 ]
-  %30 = add nuw nsw i32 %i.035, 1
-  %exitcond.not = icmp eq i32 %30, 20
-  br i1 %exitcond.not, label %for.exit.L19, label %for.body.L19
+  %printedDigits.1 = phi i32 [ %8, %if.exit.L22 ], [ %printedDigits.0, %if.else.L20 ]
+  %30 = add nuw nsw i32 %i.0, 1
+  br label %for.head.L19
 
-for.exit.L19:                                     ; preds = %for.tail.L19
+for.exit.L19:                                     ; preds = %for.head.L19
   ret i32 0
 }
 
@@ -83,7 +86,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { minsize mustprogress nofree noinline norecurse nounwind optsize uwtable }
 attributes #1 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
