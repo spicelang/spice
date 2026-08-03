@@ -560,34 +560,38 @@ static constexpr UnaryOpRule POSTFIX_MINUS_MINUS_OP_RULES[] = {
 
 // Cast op rules
 static constexpr BinaryOpRule CAST_OP_RULES[] = {
-    BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // (double) double -> double
-    BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // (double) int -> double
-    BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // (double) short -> double
-    BinaryOpRule(TY_DOUBLE, TY_LONG, TY_DOUBLE, false),   // (double) long -> double
-    BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // (int) double -> int
-    BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // (int) int -> int
-    BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // (int) short -> int
-    BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),         // (int) long -> int
-    BinaryOpRule(TY_INT, TY_BYTE, TY_INT, false),         // (int) byte -> int
-    BinaryOpRule(TY_INT, TY_CHAR, TY_INT, false),         // (int) char -> int
-    BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_SHORT, false),   // (short) double -> short
-    BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT, false),      // (short) int -> short
-    BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // (short) short -> short
-    BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT, false),     // (short) long -> short
-    BinaryOpRule(TY_LONG, TY_DOUBLE, TY_LONG, false),     // (long) double -> long
-    BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // (long) int -> long
-    BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // (long) short -> long
-    BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // (long) long -> long
-    BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE, false),        // (byte) int -> byte
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // (byte) byte -> byte
-    BinaryOpRule(TY_BYTE, TY_CHAR, TY_BYTE, false),       // (byte) char -> byte
-    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),        // (char) int -> char
-    BinaryOpRule(TY_CHAR, TY_SHORT, TY_CHAR, false),      // (char) short -> char
-    BinaryOpRule(TY_CHAR, TY_LONG, TY_CHAR, false),       // (char) long -> char
-    BinaryOpRule(TY_CHAR, TY_BYTE, TY_CHAR, false),       // (char) byte -> char
-    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // (char) char -> char
-    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // (string) string -> string
-    BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // (bool) bool -> bool
+    BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // cast<double>(double) -> double
+    BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // cast<double>(int) -> double
+    BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // cast<double>(short) -> double
+    BinaryOpRule(TY_DOUBLE, TY_LONG, TY_DOUBLE, false),   // cast<double>(long) -> double
+    BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // cast<int>(double) -> int
+    BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // cast<int>(int) -> int
+    BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // cast<int>(short) -> int
+    BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),         // cast<int>(long) -> int
+    BinaryOpRule(TY_INT, TY_BYTE, TY_INT, false),         // cast<int>(byte) -> int
+    BinaryOpRule(TY_INT, TY_CHAR, TY_INT, false),         // cast<int>(char) -> int
+    BinaryOpRule(TY_INT, TY_BOOL, TY_INT, false),         // cast<int>(bool) -> int
+    BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_SHORT, false),   // cast<short>(double) -> short
+    BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT, false),      // cast<short>(int) -> short
+    BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // cast<short>(short) -> short
+    BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT, false),     // cast<short>(long) -> short
+    BinaryOpRule(TY_SHORT, TY_BOOL, TY_SHORT, false),     // cast<short>(bool) -> short
+    BinaryOpRule(TY_LONG, TY_DOUBLE, TY_LONG, false),     // cast<long>(double) -> long
+    BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // cast<long>(int) -> long
+    BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // cast<long>(short) -> long
+    BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // cast<long>(long) -> long
+    BinaryOpRule(TY_LONG, TY_BOOL, TY_LONG, false),       // cast<long>(bool) -> long
+    BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE, false),        // cast<byte>(int) -> byte
+    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // cast<byte>(byte) -> byte
+    BinaryOpRule(TY_BYTE, TY_CHAR, TY_BYTE, false),       // cast<byte>(char) -> byte
+    BinaryOpRule(TY_BYTE, TY_BOOL, TY_BYTE, false),       // cast<byte>(bool) -> byte
+    BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),        // cast<char>(int) -> char
+    BinaryOpRule(TY_CHAR, TY_SHORT, TY_CHAR, false),      // cast<char>(short) -> char
+    BinaryOpRule(TY_CHAR, TY_LONG, TY_CHAR, false),       // cast<char>(long) -> char
+    BinaryOpRule(TY_CHAR, TY_BYTE, TY_CHAR, false),       // cast<char>(byte) -> char
+    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // cast<char>(char) -> char
+    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // cast<string>(string) -> string
+    BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // cast<bool>(bool) -> bool
 };
 
 /**
