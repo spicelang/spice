@@ -570,17 +570,21 @@ static constexpr BinaryOpRule CAST_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),         // (int) long -> int
     BinaryOpRule(TY_INT, TY_BYTE, TY_INT, false),         // (int) byte -> int
     BinaryOpRule(TY_INT, TY_CHAR, TY_INT, false),         // (int) char -> int
+    BinaryOpRule(TY_INT, TY_BOOL, TY_INT, false),         // (int) bool -> int
     BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_SHORT, false),   // (short) double -> short
     BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT, false),      // (short) int -> short
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // (short) short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT, false),     // (short) long -> short
+    BinaryOpRule(TY_SHORT, TY_BOOL, TY_SHORT, false),     // (short) bool -> short
     BinaryOpRule(TY_LONG, TY_DOUBLE, TY_LONG, false),     // (long) double -> long
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // (long) int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // (long) short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // (long) long -> long
+    BinaryOpRule(TY_LONG, TY_BOOL, TY_LONG, false),       // (long) bool -> long
     BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE, false),        // (byte) int -> byte
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // (byte) byte -> byte
     BinaryOpRule(TY_BYTE, TY_CHAR, TY_BYTE, false),       // (byte) char -> byte
+    BinaryOpRule(TY_BYTE, TY_BOOL, TY_BYTE, false),       // (byte) bool -> byte
     BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR, false),        // (char) int -> char
     BinaryOpRule(TY_CHAR, TY_SHORT, TY_CHAR, false),      // (char) short -> char
     BinaryOpRule(TY_CHAR, TY_LONG, TY_CHAR, false),       // (char) long -> char

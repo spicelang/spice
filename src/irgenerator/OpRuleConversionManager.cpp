@@ -1668,6 +1668,12 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     return {.value = builder.CreateIntCast(rhsV(), lhsT, lhsSTy.isSigned())};
   case COMB(TY_BYTE, TY_CHAR):
     return {.value = rhsV()};
+  case COMB(TY_INT, TY_BOOL):   // fallthrough
+  case COMB(TY_SHORT, TY_BOOL): // fallthrough
+  case COMB(TY_LONG, TY_BOOL):  // fallthrough
+  case COMB(TY_BYTE, TY_BOOL):
+    // Bool is always unsigned (0 or 1), so zero-extend rather than sign-extend to avoid true -> -1
+    return {.value = builder.CreateZExt(rhsV(), lhsT)};
   case COMB(TY_CHAR, TY_INT):   // fallthrough
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
