@@ -696,10 +696,9 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
     returnType = spiceFunc->returnType.toLLVMType(sourceFile);
 
   // Get arg types
-  const QualTypeList paramTypes = spiceFunc->getParamTypes();
   std::vector<llvm::Type *> argTypes;
-  argTypes.reserve(paramTypes.size());
-  for (const QualType &paramType : paramTypes)
+  argTypes.reserve(spiceFunc->paramList.size());
+  for (const QualType &paramType : spiceFunc->getParamTypes())
     argTypes.push_back(paramType.getParamLLVMType(sourceFile));
 
   // Declare function
@@ -712,13 +711,6 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   // Add noundef attribute to all parameters
   for (size_t i = 0; i < argTypes.size(); i++)
     fct->addParamAttr(i, llvm::Attribute::NoUndef);
-
-  // Add zext/sext attribute to parameters and the return value where required
-  for (size_t i = 0; i < paramTypes.size(); i++)
-    if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramTypes.at(i)); extAttrKind != llvm::Attribute::None)
-      fct->addParamAttr(i, extAttrKind);
-  if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(spiceFunc->returnType); extAttrKind != llvm::Attribute::None)
-    fct->addRetAttr(extAttrKind);
 
   // If the function should be imported as dll, add the dll attribute
   if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_CORE_LINKER_DLL))
