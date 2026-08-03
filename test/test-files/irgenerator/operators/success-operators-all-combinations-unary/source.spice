@@ -158,31 +158,30 @@ p castTest() {
     castInner<int, long>(1l, 1);
     castInner<int, byte>(cast<byte>(1), 1);
     castInner<int, char>('A', 65);
+    castInner<int, bool>(true, 1);
+    castInner<int, bool>(false, 0);
     // Lhs short
     castInner<short, double>(1.0, 1s);
     castInner<short, int>(1, 1s);
     castInner<short, long>(1l, 1s);
+    castInner<short, bool>(true, 1s);
+    castInner<short, bool>(false, 0s);
     // Lhs long
     castInner<long, double>(1.0, 1l);
     castInner<long, int>(1, 1l);
     castInner<long, short>(1s, 1l);
+    castInner<long, bool>(true, 1l);
+    castInner<long, bool>(false, 0l);
     // Lhs byte
     castInner<byte, int>(56, cast<byte>(56));
     castInner<byte, char>('8', cast<byte>(56));
+    castInner<byte, bool>(true, cast<byte>(1));
+    castInner<byte, bool>(false, cast<byte>(0));
     // Lhs char
     castInner<char, int>(57, '9');
     castInner<char, short>(57s, '9');
     castInner<char, long>(57l, '9');
     castInner<char, byte>(cast<byte>(57), '9');
-    // Lhs bool
-    castInner<byte, bool>(true, cast<byte>(1));
-    castInner<byte, bool>(false, cast<byte>(0));
-    castInner<short, bool>(true, 1s);
-    castInner<short, bool>(false, 0s);
-    castInner<int, bool>(true, 1);
-    castInner<int, bool>(false, 0);
-    castInner<long, bool>(true, 1l);
-    castInner<long, bool>(false, 0l);
     // Special casts
     // cast<const char*>(string)
     //String str = String("test");
