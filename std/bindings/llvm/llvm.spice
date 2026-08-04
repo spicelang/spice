@@ -12,7 +12,7 @@ ext f<int> snprintf(char*, unsigned long, string, ...);
 
 // ===== External type definitions =====
 type VoidPtr alias byte*;
-type LLVMBool alias bool;
+type LLVMBool alias int;
 type LLVMContextRef alias VoidPtr;
 type LLVMModuleRef alias VoidPtr;
 type LLVMBuilderRef alias VoidPtr;
@@ -411,7 +411,7 @@ ext f<LLVMContextRef> LLVMGetModuleContext(LLVMModuleRef /*M*/);
 ext p LLVMDisposeModule(LLVMModuleRef /*M*/);
 ext f<LLVMBuilderRef> LLVMCreateBuilderInContext(LLVMContextRef /*C*/);
 ext p LLVMDisposeBuilder(LLVMBuilderRef /*B*/);
-ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, bool /*IsVarArg*/);
+ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, LLVMBool /*IsVarArg*/);
 ext f<LLVMTypeRef> LLVMInt1TypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMInt8TypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMInt16TypeInContext(LLVMContextRef /*C*/);
@@ -426,10 +426,10 @@ ext f<LLVMValueRef> LLVMConstStructInContext(LLVMContextRef /*C*/, LLVMValueRef*
 ext f<LLVMValueRef> LLVMConstArray2(LLVMTypeRef /*ElementTy*/, LLVMValueRef* /*ConstantVals*/, unsigned long /*Length*/);
 ext p LLVMDumpModule(LLVMModuleRef /*M*/);
 ext p LLVMDumpType(LLVMTypeRef /*Val*/);
-ext f<LLVMTypeRef> LLVMStructTypeInContext(LLVMContextRef /*C*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, bool /*Packed*/);
+ext f<LLVMTypeRef> LLVMStructTypeInContext(LLVMContextRef /*C*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, LLVMBool /*Packed*/);
 ext f<LLVMTypeRef> LLVMStructCreateNamed(LLVMContextRef /*C*/, string /*Name*/);
 ext f<string> LLVMGetStructName(LLVMTypeRef /*Ty*/);
-ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, bool /*Packed*/);
+ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, LLVMBool /*Packed*/);
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
 ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
 ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
@@ -597,7 +597,7 @@ public type StructType struct {
 }
 
 public p StructType.ctor(const LLVMContext& context, const Vector<Type>& elementTypes, bool packed = false) {
-    this.self = LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), packed);
+    this.self = LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), cast<LLVMBool>(packed));
 }
 
 public p StructType.ctor(const LLVMContext& context, string name = "") {
@@ -609,7 +609,7 @@ public f<string> StructType.getName() {
 }
 
 public p StructType.setBody(const Vector<Type>& elementTypes, bool packed = false) {
-    LLVMStructSetBody(this.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), packed);
+    LLVMStructSetBody(this.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), cast<LLVMBool>(packed));
 }
 
 public p StructType.dump() {
@@ -729,7 +729,7 @@ public f<string> Module.print() {
 
 public f<string> Module.printToFile(string filename) {
     string errorMessage;
-    if LLVMPrintModuleToFile(this.self, filename, errorMessage) {
+    if LLVMPrintModuleToFile(this.self, filename, errorMessage) != 0 {
         return errorMessage;
     }
     return "";
@@ -824,39 +824,39 @@ public f<Type> IRBuilder.getPtrTy() {
     return Type{ LLVMPointerTypeInContext(this.ctx, 0) };
 }
 
-public f<Value> IRBuilder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt1<ShortIntLong>(ShortIntLong value, bool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), cast<LLVMBool>(isSigned)) };
 }
 
-public f<Value> IRBuilder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt8<ShortIntLong>(ShortIntLong value, bool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt8TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), cast<LLVMBool>(isSigned)) };
 }
 
-public f<Value> IRBuilder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt16<ShortIntLong>(ShortIntLong value, bool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt16TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), cast<LLVMBool>(isSigned)) };
 }
 
-public f<Value> IRBuilder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt32<ShortIntLong>(ShortIntLong value, bool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt32TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), cast<LLVMBool>(isSigned)) };
 }
 
-public f<Value> IRBuilder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt64<ShortIntLong>(ShortIntLong value, bool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt64TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), isSigned) };
+    return Value{ LLVMConstInt(typeRef, cast<unsigned long>(value), cast<LLVMBool>(isSigned)) };
 }
 
 public f<Value> IRBuilder.getFalse() {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, 0l, false) };
+    return Value{ LLVMConstInt(typeRef, 0l, 0) };
 }
 
 public f<Value> IRBuilder.getTrue() {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
-    return Value{ LLVMConstInt(typeRef, 1l, false) };
+    return Value{ LLVMConstInt(typeRef, 1l, 0) };
 }
 
 public f<Value> IRBuilder.getDouble(double value) {
@@ -871,7 +871,7 @@ public f<Value> IRBuilder.getNull(Type ty) {
 public f<Value> IRBuilder.getStruct(const Vector<Value>& values, bool packed = false) {
     unsafe {
         LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
-        LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, cast<unsigned int>(values.getSize()), packed);
+        LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, cast<unsigned int>(values.getSize()), cast<LLVMBool>(packed));
         return Value{ valueRef };
     }
 }
@@ -1084,7 +1084,7 @@ public p TargetMachine.dtor() {
 
 public f<LLVMError> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {
     string errorMessage;
-    const bool errorOccurred = LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage);
+    const bool errorOccurred = LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage) != 0;
     assert !errorOccurred;
     return LLVMError(errorMessage);
 }
@@ -1116,23 +1116,23 @@ public p PassBuilderOptions.dtor() {
 }
 
 public p PassBuilderOptions.setDebugLogging(bool enabled) {
-    LLVMPassBuilderOptionsSetDebugLogging(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetDebugLogging(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setLoopInterleaving(bool enabled) {
-    LLVMPassBuilderOptionsSetLoopInterleaving(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetLoopInterleaving(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setLoopVectorization(bool enabled) {
-    LLVMPassBuilderOptionsSetLoopVectorization(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetLoopVectorization(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setSLPVectorization(bool enabled) {
-    LLVMPassBuilderOptionsSetSLPVectorization(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetSLPVectorization(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setLoopUnrolling(bool enabled) {
-    LLVMPassBuilderOptionsSetLoopUnrolling(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetLoopUnrolling(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
@@ -1140,11 +1140,11 @@ public p PassBuilderOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMss
 }
 
 public p PassBuilderOptions.setCallGraphProfile(bool enabled) {
-    LLVMPassBuilderOptionsSetCallGraphProfile(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetCallGraphProfile(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setMergeFunctions(bool enabled) {
-    LLVMPassBuilderOptionsSetMergeFunctions(this.internalOptions, enabled);
+    LLVMPassBuilderOptionsSetMergeFunctions(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setInlinerThreshold(int threshold) {
@@ -1217,17 +1217,17 @@ public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, 
     unsafe {
         LLVMTypeRef returnTypeRef = returnType.self;
         LLVMTypeRef* paramTypesRef = cast<LLVMTypeRef*>(paramTypes.getDataPtr());
-        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, cast<unsigned int>(paramTypes.getSize()), isVarArg);
+        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, cast<unsigned int>(paramTypes.getSize()), cast<LLVMBool>(isVarArg));
         return Type{ typeRef };
     }
 }
 
 public f<bool> verifyModule(Module module, string* outMessage, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
-    return LLVMVerifyModule(module.self, action, outMessage);
+    return LLVMVerifyModule(module.self, action, outMessage) != 0;
 }
 
 public f<bool> verifyFunction(Function function, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
-    return LLVMVerifyFunction(function.self, action);
+    return LLVMVerifyFunction(function.self, action) != 0;
 }
 
 public p viewFunctionCFG(Function function) {
@@ -1296,7 +1296,7 @@ public f<heap string> getHostCPUFeatures() {
 
 public f<Target> getTargetFromTriple(Triple triple, string* outError) {
     Target target;
-    const bool errorOccurred = LLVMGetTargetFromTriple(triple.value, &target.self, outError);
+    const bool errorOccurred = LLVMGetTargetFromTriple(triple.value, &target.self, outError) != 0;
     assert !errorOccurred;
     return target;
 }
