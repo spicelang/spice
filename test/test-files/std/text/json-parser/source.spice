@@ -118,6 +118,12 @@ f<int> main() {
     Result<JsonValue*> trailRes = parseJson(String("42 garbage"));
     assert !trailRes.isOk();
 
+    // The error message stays valid after the parser is gone
+    const Error trailErr = trailRes.getErr();
+    assert isRawEqual(trailErr.message, "Trailing data after JSON value");
+    const Error badErr = badRes.getErr();
+    assert isRawEqual(badErr.message, "Unexpected character in JSON input");
+
     // Incomplete number literals must be rejected
     Result<JsonValue*> bareMinusRes = parseJson(String("-"));
     assert !bareMinusRes.isOk();
@@ -133,6 +139,20 @@ f<int> main() {
     assert !rawNewlineRes.isOk();
     Result<JsonValue*> rawTabRes = parseJson(String("\"a\tb\""));
     assert !rawTabRes.isOk();
+
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteJsonValue(n);
+    deleteJsonValue(t);
+    deleteJsonValue(falseVal);
+    deleteJsonValue(i);
+    deleteJsonValue(neg);
+    deleteJsonValue(e);
+    deleteJsonValue(s);
+    deleteJsonValue(q);
+    deleteJsonValue(arr);
+    deleteJsonValue(emptyArr);
+    deleteJsonValue(emptyObj);
+    deleteJsonValue(obj);
 
     printf("All assertions passed!");
 }

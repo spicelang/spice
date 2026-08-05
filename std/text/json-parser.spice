@@ -14,7 +14,7 @@ import "std/type/type-conversion";
 public type JsonParser struct {
     String input
     unsigned long pos
-    String errorMessage
+    string errorMessage  // always points to a string literal, so it outlives the parser
     bool hasError
 }
 
@@ -26,6 +26,7 @@ public type JsonParser struct {
 public p JsonParser.ctor(const String& input) {
     this.input = input;
     this.pos = 0l;
+    this.errorMessage = "";
     this.hasError = false;
 }
 
@@ -38,10 +39,13 @@ public f<Result<JsonValue*>> JsonParser.parse() {
     this.skipWhitespace();
     JsonValue* value = this.parseValue();
     if this.hasError {
-        return err<JsonValue*>(Error(this.errorMessage.getRaw()));
+        // Nothing is handed out, so the partially built tree is ours to release
+        deleteJsonValue(value);
+        return err<JsonValue*>(Error(this.errorMessage));
     }
     this.skipWhitespace();
     if this.pos < this.input.getLength() {
+        deleteJsonValue(value);
         return err<JsonValue*>(Error("Trailing data after JSON value"));
     }
     return ok(value);
@@ -50,8 +54,10 @@ public f<Result<JsonValue*>> JsonParser.parse() {
 /**
  * Parse a JSON document.
  *
- * On success returns the root JsonValue (heap-allocated; the caller owns it).
- * On failure returns an error describing the first problem encountered.
+ * On success returns the root JsonValue, which the caller owns and releases
+ * again with `deleteJsonValue` from "std/text/json-value". On failure the
+ * partially built tree is released by the parser and an error describing the
+ * first problem encountered is returned.
  */
 public f<Result<JsonValue*>> parseJson(const String& input) {
     JsonParser parser = JsonParser(input);
@@ -85,7 +91,7 @@ p JsonParser.skipWhitespace() {
 
 p JsonParser.fail(string msg) {
     if !this.hasError {
-        this.errorMessage = String(msg);
+        this.errorMessage = msg;
         this.hasError = true;
     }
 }
@@ -161,9 +167,13 @@ f<JsonValue*> JsonParser.parseNumber() {
 }
 
 f<JsonValue*> JsonParser.parseStringValue() {
+    // `s` has to stay alive until the end of the scope, so that it gets cleaned up
+    JsonValue* stringValue = nil<JsonValue*>;
     const String s = this.parseStringLiteral();
-    if this.hasError { return nil<JsonValue*>; }
-    return __new<JsonValue>(s);
+    if !this.hasError {
+        stringValue = __new<JsonValue>(s);
+    }
+    return stringValue;
 }
 
 f<String> JsonParser.parseStringLiteral() {
@@ -223,7 +233,7 @@ f<String> JsonParser.parseStringLiteral() {
 
 f<JsonValue*> JsonParser.parseArray() {
     this.pos++; // consume '['
-    heap JsonValue* arr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    JsonValue* arr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
     this.skipWhitespace();
     if this.pos < this.input.getLength() && this.input[this.pos] == ']' {
         this.pos++;
@@ -232,11 +242,15 @@ f<JsonValue*> JsonParser.parseArray() {
     while true {
         this.skipWhitespace();
         JsonValue* item = this.parseValue();
-        if this.hasError { return nil<JsonValue*>; }
+        if this.hasError {
+            deleteJsonValue(arr);
+            return nil<JsonValue*>;
+        }
         arr.addArrayItem(item);
         this.skipWhitespace();
         if this.pos >= this.input.getLength() {
             this.fail("Unterminated array");
+            deleteJsonValue(arr);
             return nil<JsonValue*>;
         }
         const char c = this.input[this.pos];
@@ -249,6 +263,7 @@ f<JsonValue*> JsonParser.parseArray() {
             return arr;
         }
         this.fail("Expected ',' or ']' in array");
+        deleteJsonValue(arr);
         return nil<JsonValue*>;
     }
     return nil<JsonValue*>;
@@ -256,46 +271,61 @@ f<JsonValue*> JsonParser.parseArray() {
 
 f<JsonValue*> JsonParser.parseObject() {
     this.pos++; // consume '{'
-    heap JsonValue* obj = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    JsonValue* obj = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
     this.skipWhitespace();
     if this.pos < this.input.getLength() && this.input[this.pos] == '}' {
         this.pos++;
         return obj;
     }
-    while true {
+    // Leaving a scope early skips the cleanup of the locals it holds, so the loop body
+    // always runs into its own end while `key` is alive
+    bool expectMoreFields = true;
+    while expectMoreFields && !this.hasError {
+        expectMoreFields = false;
         this.skipWhitespace();
         if this.pos >= this.input.getLength() || this.input[this.pos] != '"' {
             this.fail("Expected string key in object");
-            return nil<JsonValue*>;
+        } else {
+            const String key = this.parseStringLiteral();
+            if !this.hasError {
+                this.parseObjectFieldValue(obj, key, expectMoreFields);
+            }
         }
-        const String key = this.parseStringLiteral();
-        if this.hasError { return nil<JsonValue*>; }
-        this.skipWhitespace();
-        if this.pos >= this.input.getLength() || this.input[this.pos] != ':' {
-            this.fail("Expected ':' in object");
-            return nil<JsonValue*>;
-        }
-        this.pos++; // consume ':'
-        this.skipWhitespace();
-        JsonValue* value = this.parseValue();
-        if this.hasError { return nil<JsonValue*>; }
-        obj.addObjectField(key, value);
-        this.skipWhitespace();
-        if this.pos >= this.input.getLength() {
-            this.fail("Unterminated object");
-            return nil<JsonValue*>;
-        }
-        const char c = this.input[this.pos];
-        if c == ',' {
-            this.pos++;
-            continue;
-        }
-        if c == '}' {
-            this.pos++;
-            return obj;
-        }
-        this.fail("Expected ',' or '}' in object");
+    }
+    if this.hasError {
+        deleteJsonValue(obj);
         return nil<JsonValue*>;
     }
-    return nil<JsonValue*>;
+    return obj;
+}
+
+// Parse the ':' separator, the field value and the separator that follows it.
+// `moreFields` is set when another field is expected after this one.
+p JsonParser.parseObjectFieldValue(JsonValue* obj, const String& key, bool& moreFields) {
+    this.skipWhitespace();
+    if this.pos >= this.input.getLength() || this.input[this.pos] != ':' {
+        this.fail("Expected ':' in object");
+        return;
+    }
+    this.pos++; // consume ':'
+    this.skipWhitespace();
+    JsonValue* value = this.parseValue();
+    if this.hasError { return; }
+    obj.addObjectField(key, value);
+    this.skipWhitespace();
+    if this.pos >= this.input.getLength() {
+        this.fail("Unterminated object");
+        return;
+    }
+    const char c = this.input[this.pos];
+    if c == ',' {
+        this.pos++;
+        moreFields = true;
+        return;
+    }
+    if c == '}' {
+        this.pos++;
+        return;
+    }
+    this.fail("Expected ',' or '}' in object");
 }
