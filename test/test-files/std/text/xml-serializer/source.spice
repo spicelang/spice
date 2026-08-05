@@ -43,5 +43,12 @@ f<int> main() {
     expectedPrettyXml += "</root>";
     assert prettySerializer.serialize(prettyXml) == expectedPrettyXml;
 
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteXmlNode(serSelf);
+    deleteXmlNode(serText);
+    deleteXmlNode(serRound);
+    deleteXmlNode(reparsedRoot);
+    deleteXmlNode(prettyXml);
+
     printf("All assertions passed!");
 }

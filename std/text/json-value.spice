@@ -20,6 +20,16 @@ public type JsonValueKind enum {
  * parsed. Numbers are stored as `double`; integers are representable up to
  * 2^53. Object fields preserve insertion order.
  *
+ * Destroying a value recursively destroys everything below it, so a whole tree
+ * is released with a single `deleteJsonValue` call on its root. Accessors like
+ * `getField` hand out borrowed pointers that stay owned by their parent, while
+ * `addArrayItem` and `addObjectField` take ownership of what they are given.
+ *
+ * Note that the root cannot simply be held in a `heap JsonValue*` and left to
+ * the compiler: the `heap` qualifier only emits a raw deallocation when the
+ * variable goes out of scope and never runs the destructor of the pointee, so
+ * the children below the root would be lost.
+ *
  * Parsing lives in "std/text/json-parser" and serialization in
  * "std/text/json-serializer", so programs only pull in what they use.
  */
@@ -78,6 +88,45 @@ public p JsonValue.ctor(double value) {
 public p JsonValue.ctor(const String& value) {
     this.kind = JsonValueKind::JSON_STRING;
     this.stringValue = value;
+}
+
+/**
+ * Destruct the JSON value, releasing every array item and object field it owns.
+ * Since the children are destroyed the same way, this tears down the whole
+ * subtree below the value.
+ */
+public p JsonValue.dtor() {
+    for unsigned long i = 0l; i < this.arrayItems.getSize(); i++ {
+        deleteJsonValue(this.arrayItems.get(i));
+    }
+    for unsigned long i = 0l; i < this.objectValues.getSize(); i++ {
+        deleteJsonValue(this.objectValues.get(i));
+    }
+    // Vector does not destruct its items, so the keys have to be released by hand
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        String& key = this.objectKeys.get(i);
+        key.dtor();
+    }
+}
+
+/**
+ * Destroys a heap-allocated JSON value together with everything it owns and sets
+ * the given handle to nil, so releasing a whole tree only takes one call on its root.
+ *
+ * Note that this is what `sDelete` would normally be used for. It cannot be used
+ * here, because a value tree is destroyed recursively and the compiler does not
+ * emit an explicit dtor that is only reached through `sDestruct`.
+ *
+ * @param value Handle of the value to destroy
+ */
+public p deleteJsonValue(JsonValue*& value) {
+    if value == nil<JsonValue*> { return; }
+    value.dtor();
+    unsafe {
+        heap byte* raw = cast<heap byte*>(value);
+        sDealloc(raw);
+    }
+    value = nil<JsonValue*>;
 }
 
 // --- Kind inspection -------------------------------------------------------
@@ -245,9 +294,9 @@ public f<JsonValue*> JsonValue.getObjectValue(unsigned long idx) {
  */
 public f<bool> JsonValue.hasField(string key) {
     if this.kind != JsonValueKind::JSON_OBJECT { return false; }
-    const String keyStr = String(key);
+    // Comparing against the raw key avoids building a String that would have to be cleaned up
     for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == keyStr { return true; }
+        if this.objectKeys.get(i) == key { return true; }
     }
     return false;
 }
@@ -261,9 +310,9 @@ public f<bool> JsonValue.hasField(string key) {
  */
 public f<JsonValue*> JsonValue.getField(string key) {
     assert this.kind == JsonValueKind::JSON_OBJECT;
-    const String keyStr = String(key);
+    // Comparing against the raw key avoids building a String that would have to be cleaned up
     for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == keyStr {
+        if this.objectKeys.get(i) == key {
             return this.objectValues.get(i);
         }
     }

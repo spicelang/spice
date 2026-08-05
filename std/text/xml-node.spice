@@ -14,7 +14,17 @@ public type XmlNodeKind enum {
  * Element nodes carry a tag name, ordered attributes and ordered child nodes
  * (which may themselves be elements or text). Text nodes carry only the
  * decoded character data. Children are owned as heap pointers so the parsed
- * tree is reached via `XmlNode*` (`heap` on the root).
+ * tree is reached via `XmlNode*`.
+ *
+ * Destroying a node recursively destroys everything below it, so a whole tree
+ * is released with a single `deleteXmlNode` call on its root. Accessors like
+ * `getChild` and `findChild` hand out borrowed pointers that stay owned by
+ * their parent, while `addChild` takes ownership of what it is given.
+ *
+ * Note that the root cannot simply be held in a `heap XmlNode*` and left to the
+ * compiler: the `heap` qualifier only emits a raw deallocation when the variable
+ * goes out of scope and never runs the destructor of the pointee, so the
+ * children below the root would be lost.
  *
  * Parsing lives in "std/text/xml-parser" and serialization in
  * "std/text/xml-serializer", so programs only pull in what they use.
@@ -42,6 +52,46 @@ public p XmlNode.ctor() {
  */
 public p XmlNode.ctor(XmlNodeKind kind) {
     this.kind = kind;
+}
+
+/**
+ * Destruct the XML node, releasing every child node and attribute it owns.
+ * Since the children are destroyed the same way, this tears down the whole
+ * subtree below the node.
+ */
+public p XmlNode.dtor() {
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        deleteXmlNode(this.children.get(i));
+    }
+    // Vector does not destruct its items, so the attributes have to be released by hand
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        String& key = this.attributeKeys.get(i);
+        key.dtor();
+    }
+    for unsigned long i = 0l; i < this.attributeValues.getSize(); i++ {
+        String& value = this.attributeValues.get(i);
+        value.dtor();
+    }
+}
+
+/**
+ * Destroys a heap-allocated XML node together with everything it owns and sets
+ * the given handle to nil, so releasing a whole tree only takes one call on its root.
+ *
+ * Note that this is what `sDelete` would normally be used for. It cannot be used
+ * here, because a node tree is destroyed recursively and the compiler does not
+ * emit an explicit dtor that is only reached through `sDestruct`.
+ *
+ * @param node Handle of the node to destroy
+ */
+public p deleteXmlNode(XmlNode*& node) {
+    if node == nil<XmlNode*> { return; }
+    node.dtor();
+    unsafe {
+        heap byte* raw = cast<heap byte*>(node);
+        sDealloc(raw);
+    }
+    node = nil<XmlNode*>;
 }
 
 // --- Kind inspection -------------------------------------------------------
@@ -149,9 +199,9 @@ public f<const String&> XmlNode.getAttributeValue(unsigned long idx) {
  */
 public f<bool> XmlNode.hasAttribute(string name) {
     if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
-    const String nameStr = String(name);
+    // Comparing against the raw name avoids building a String that would have to be cleaned up
     for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == nameStr { return true; }
+        if this.attributeKeys.get(i) == name { return true; }
     }
     return false;
 }
@@ -165,9 +215,9 @@ public f<bool> XmlNode.hasAttribute(string name) {
  */
 public f<const String&> XmlNode.getAttribute(string name) {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
-    const String nameStr = String(name);
+    // Comparing against the raw name avoids building a String that would have to be cleaned up
     for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == nameStr {
+        if this.attributeKeys.get(i) == name {
             return this.attributeValues.get(i);
         }
     }
@@ -237,10 +287,10 @@ public p XmlNode.addChild(XmlNode* child) {
  */
 public f<XmlNode*> XmlNode.findChild(string name) {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
-    const String nameStr = String(name);
+    // Comparing against the raw name avoids building a String that would have to be cleaned up
     for unsigned long i = 0l; i < this.children.getSize(); i++ {
         XmlNode* child = this.children.get(i);
-        if child.kind == XmlNodeKind::XML_ELEMENT && child.name == nameStr {
+        if child.kind == XmlNodeKind::XML_ELEMENT && child.name == name {
             return child;
         }
     }

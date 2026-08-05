@@ -70,5 +70,14 @@ f<int> main() {
     JsonValue* precReparsed = precReparsedRes.unwrap();
     assert precReparsed.getNumber() == 1.23456789;
 
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteJsonValue(compact);
+    deleteJsonValue(emptyArrSer);
+    deleteJsonValue(emptyObjSer);
+    deleteJsonValue(reParsed);
+    deleteJsonValue(pretty);
+    deleteJsonValue(prec);
+    deleteJsonValue(precReparsed);
+
     printf("All assertions passed!");
 }

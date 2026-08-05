@@ -77,6 +77,10 @@ f<int> main() {
     Result<XmlNode*> mismatchRes = parseXml(String("<a></b>"));
     assert !mismatchRes.isOk();
 
+    // The error message stays valid after the parser is gone
+    const Error mismatchErr = mismatchRes.getErr();
+    assert isRawEqual(mismatchErr.message, "Mismatched closing tag");
+
     Result<XmlNode*> dupAttrRes = parseXml(String("<a x='1' x='2'/>"));
     assert !dupAttrRes.isOk();
 
@@ -99,6 +103,13 @@ f<int> main() {
     assert prologRes.isOk();
     XmlNode* prologRoot = prologRes.unwrap();
     assert prologRoot.getName() == String("root");
+
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteXmlNode(empty);
+    deleteXmlNode(a);
+    deleteXmlNode(msg);
+    deleteXmlNode(book);
+    deleteXmlNode(prologRoot);
 
     printf("All assertions passed!");
 }
