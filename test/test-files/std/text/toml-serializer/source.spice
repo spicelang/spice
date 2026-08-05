@@ -1,0 +1,169 @@
+import "std/text/toml-value";
+import "std/text/toml-serializer";
+import "std/text/toml-parser";
+
+f<int> main() {
+    TomlSerializer serializer;
+
+    // Serialization of single values
+    TomlValue strVal = TomlValue(String("a\"b\nc"));
+    assert serializer.serializeValue(&strVal) == String("\"a\\\"b\\nc\"");
+    TomlValue intVal = TomlValue(42l);
+    assert serializer.serializeValue(&intVal) == String("42");
+    TomlValue negVal = TomlValue(-17l);
+    assert serializer.serializeValue(&negVal) == String("-17");
+    TomlValue boolVal = TomlValue(true);
+    assert serializer.serializeValue(&boolVal) == String("true");
+    TomlValue dtVal = TomlValue(TomlValueKind::TOML_DATETIME, String("1979-05-27T07:32:00Z"));
+    assert serializer.serializeValue(&dtVal) == String("1979-05-27T07:32:00Z");
+
+    // Floats always stay recognizable as floats
+    TomlValue fracVal = TomlValue(-3.5);
+    assert serializer.serializeValue(&fracVal) == String("-3.5");
+    TomlValue integralVal = TomlValue(42.0);
+    assert serializer.serializeValue(&integralVal) == String("42.0");
+    TomlValue zeroVal = TomlValue(0.0);
+    assert serializer.serializeValue(&zeroVal) == String("0.0");
+    TomlValue infVal = TomlValue(tomlInfinity());
+    assert serializer.serializeValue(&infVal) == String("inf");
+    TomlValue negInfVal = TomlValue(-tomlInfinity());
+    assert serializer.serializeValue(&negInfVal) == String("-inf");
+    TomlValue nanVal = TomlValue(tomlNaN());
+    assert serializer.serializeValue(&nanVal) == String("nan");
+
+    // Values built programmatically serialize as expected
+    TomlValue arrVal = TomlValue(TomlValueKind::TOML_ARRAY);
+    arrVal.addArrayItem(__new<TomlValue>(1l));
+    arrVal.addArrayItem(__new<TomlValue>(String("two")));
+    assert serializer.serializeValue(&arrVal) == String("[1, \"two\"]");
+
+    TomlValue emptyArrVal = TomlValue(TomlValueKind::TOML_ARRAY);
+    assert serializer.serializeValue(&emptyArrVal) == String("[]");
+
+    TomlValue inlineVal = TomlValue(TomlValueKind::TOML_TABLE);
+    inlineVal.addTableField(String("a"), __new<TomlValue>(true));
+    inlineVal.addTableField(String("b"), __new<TomlValue>(String("x")));
+    assert serializer.serializeValue(&inlineVal) == String("{a = true, b = \"x\"}");
+
+    // Keys that are not bare keys get quoted
+    TomlValue keyVal = TomlValue(TomlValueKind::TOML_TABLE);
+    keyVal.addTableField(String("bare-key_1"), __new<TomlValue>(1l));
+    keyVal.addTableField(String("needs quoting"), __new<TomlValue>(2l));
+    keyVal.addTableField(String(""), __new<TomlValue>(3l));
+    assert serializer.serializeValue(&keyVal) == String("{bare-key_1 = 1, \"needs quoting\" = 2, \"\" = 3}");
+
+    // A document lays sub-tables out as sections
+    TomlValue root = TomlValue();
+    root.addTableField(String("title"), __new<TomlValue>(String("Example")));
+    TomlValue* owner = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+    owner.addTableField(String("name"), __new<TomlValue>(String("Tom")));
+    root.addTableField(String("owner"), owner);
+    String expectedDoc = String("title = \"Example\"\n");
+    expectedDoc += "\n";
+    expectedDoc += "[owner]\n";
+    expectedDoc += "name = \"Tom\"\n";
+    assert serializer.serialize(root) == expectedDoc;
+
+    // An empty root table produces an empty document
+    TomlValue emptyRoot = TomlValue();
+    assert serializer.serialize(emptyRoot) == String("");
+
+    // A full document round-trips through the parser
+    String doc = String("title = \"TOML Example\"\n");
+    doc += "ports = [8001, 8002]\n";
+    doc += "\n";
+    doc += "[owner]\n";
+    doc += "name = \"Tom\"\n";
+    doc += "dob = 1979-05-27T07:32:00Z\n";
+    doc += "\n";
+    doc += "[owner.address]\n";
+    doc += "city = \"NYC\"\n";
+    doc += "\n";
+    doc += "[[fruit]]\n";
+    doc += "name = \"apple\"\n";
+    doc += "\n";
+    doc += "[fruit.physical]\n";
+    doc += "color = \"red\"\n";
+    doc += "\n";
+    doc += "[[fruit]]\n";
+    doc += "name = \"banana\"\n";
+    Result<TomlValue*> parsedRes = parseToml(doc);
+    assert parsedRes.isOk();
+    TomlValue* parsed = parsedRes.unwrap();
+    assert serializer.serialize(parsed) == doc;
+
+    // Serialize -> parse -> serialize is stable
+    String onceSerialized = serializer.serialize(parsed);
+    Result<TomlValue*> reParsedRes = parseToml(onceSerialized);
+    assert reParsedRes.isOk();
+    TomlValue* reParsed = reParsedRes.unwrap();
+    assert serializer.serialize(reParsed) == doc;
+
+    // Empty sub-tables keep their section header
+    Result<TomlValue*> emptySectionRes = parseToml(String("[a]\n\n[a.b]\n"));
+    assert emptySectionRes.isOk();
+    TomlValue* emptySection = emptySectionRes.unwrap();
+    assert serializer.serialize(emptySection) == String("[a]\n\n[a.b]\n");
+
+    // Arrays that hold something other than tables stay on a single line
+    Result<TomlValue*> mixedRes = parseToml(String("a = [{x = 1}, 2]\nb = []\n"));
+    assert mixedRes.isOk();
+    TomlValue* mixed = mixedRes.unwrap();
+    assert serializer.serialize(mixed) == String("a = [{x = 1}, 2]\nb = []\n");
+
+    // The inline mode emits everything as key/value pairs
+    TomlSerializer inlineSerializer = TomlSerializer(true);
+    String expectedInline = String("title = \"TOML Example\"\n");
+    expectedInline += "ports = [8001, 8002]\n";
+    expectedInline += "owner = {name = \"Tom\", dob = 1979-05-27T07:32:00Z, address = {city = \"NYC\"}}\n";
+    expectedInline += "fruit = [{name = \"apple\", physical = {color = \"red\"}}, {name = \"banana\"}]\n";
+    String inlineOut = inlineSerializer.serialize(parsed);
+    assert inlineOut == expectedInline;
+
+    // Inline output round-trips to the very same value tree
+    Result<TomlValue*> inlineReparsedRes = parseToml(inlineOut);
+    assert inlineReparsedRes.isOk();
+    TomlValue* inlineReparsed = inlineReparsedRes.unwrap();
+    assert serializer.serialize(inlineReparsed) == doc;
+
+    // Non-integral floats keep full precision across a serialize/parse round-trip
+    Result<TomlValue*> precRes = parseToml(String("a = 1.23456789\n"));
+    TomlValue* precRoot = precRes.unwrap();
+    String precSerialized = serializer.serialize(precRoot);
+    Result<TomlValue*> precReparsedRes = parseToml(precSerialized);
+    TomlValue* precReparsedRoot = precReparsedRes.unwrap();
+    TomlValue* precReparsed = precReparsedRoot.getField("a");
+    assert precReparsed.getFloat() == 1.23456789;
+
+    // Keys that need quoting also work in section headers
+    Result<TomlValue*> quotedRes = parseToml(String("[\"weird.key\".sub]\nx = 1\n"));
+    assert quotedRes.isOk();
+    TomlValue* quoted = quotedRes.unwrap();
+    assert serializer.serialize(quoted) == String("[\"weird.key\"]\n\n[\"weird.key\".sub]\nx = 1\n");
+
+    // Control characters are escaped
+    TomlValue ctrlVal = TomlValue(String("a\001b\177c"));
+    assert serializer.serializeValue(&ctrlVal) == String("\"a\\u0001b\\u007Fc\"");
+    Result<TomlValue*> ctrlRes = parseToml(String("a = \"\\u0001\\u007F\"\n"));
+    assert ctrlRes.isOk();
+    TomlValue* ctrlRoot = ctrlRes.unwrap();
+    TomlValue* ctrl = ctrlRoot.getField("a");
+    assert ctrl.getString() == String("\001\177");
+
+    // Multi-byte UTF-8 is passed through instead of being escaped
+    TomlValue utf8Val = TomlValue(String("\303\251"));
+    assert serializer.serializeValue(&utf8Val) == String("\"\303\251\"");
+
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteTomlValue(parsed);
+    deleteTomlValue(reParsed);
+    deleteTomlValue(emptySection);
+    deleteTomlValue(mixed);
+    deleteTomlValue(inlineReparsed);
+    deleteTomlValue(precRoot);
+    deleteTomlValue(precReparsedRoot);
+    deleteTomlValue(quoted);
+    deleteTomlValue(ctrlRoot);
+
+    printf("All assertions passed!");
+}

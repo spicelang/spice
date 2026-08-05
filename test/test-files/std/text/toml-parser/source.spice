@@ -1,0 +1,389 @@
+import "std/text/toml-value";
+import "std/text/toml-parser";
+
+f<int> main() {
+    // Strings
+    Result<TomlValue*> basicRes = parseToml(String("s = \"hello\\nworld\"\n"));
+    assert basicRes.isOk();
+    TomlValue* basicRoot = basicRes.unwrap();
+    assert basicRoot.isTable();
+    assert basicRoot.getTableSize() == 1;
+    TomlValue* basic = basicRoot.getField("s");
+    assert basic.isString();
+    assert basic.getString() == String("hello\nworld");
+
+    Result<TomlValue*> literalRes = parseToml(String("s = 'C:\\Users\\nodejs'\n"));
+    TomlValue* literalRoot = literalRes.unwrap();
+    TomlValue* literal = literalRoot.getField("s");
+    assert literal.getString() == String("C:\\Users\\nodejs");
+
+    // Multi-line basic string: the line break right after the delimiter is trimmed
+    String mlDoc = String("s = \"\"\"\n");
+    mlDoc += "Roses are red\n";
+    mlDoc += "Violets are blue\"\"\"\n";
+    Result<TomlValue*> mlRes = parseToml(mlDoc);
+    TomlValue* mlRoot = mlRes.unwrap();
+    TomlValue* ml = mlRoot.getField("s");
+    assert ml.getString() == String("Roses are red\nViolets are blue");
+
+    // A backslash at the end of a line trims the line break and the following whitespace
+    String contDoc = String("s = \"\"\"\\\n");
+    contDoc += "    The quick brown \\\n";
+    contDoc += "    fox jumps\"\"\"\n";
+    Result<TomlValue*> contRes = parseToml(contDoc);
+    TomlValue* contRoot = contRes.unwrap();
+    TomlValue* cont = contRoot.getField("s");
+    assert cont.getString() == String("The quick brown fox jumps");
+
+    // Multi-line literal string
+    String mlLitDoc = String("s = '''\n");
+    mlLitDoc += "no \\escapes\n";
+    mlLitDoc += "here'''\n";
+    Result<TomlValue*> mlLitRes = parseToml(mlLitDoc);
+    TomlValue* mlLitRoot = mlLitRes.unwrap();
+    TomlValue* mlLit = mlLitRoot.getField("s");
+    assert mlLit.getString() == String("no \\escapes\nhere");
+
+    // Up to two quotes directly before the closing delimiter still belong to the content
+    Result<TomlValue*> quoteRes = parseToml(String("s = \"\"\"a\"\"\"\"\n"));
+    TomlValue* quoteRoot = quoteRes.unwrap();
+    TomlValue* quoted = quoteRoot.getField("s");
+    assert quoted.getString() == String("a\"");
+
+    // Unicode escapes are encoded as UTF-8
+    Result<TomlValue*> uniRes = parseToml(String("s = \"\\u00E9\\U0001F600\"\n"));
+    TomlValue* uniRoot = uniRes.unwrap();
+    TomlValue* uni = uniRoot.getField("s");
+    assert uni.getString() == String("\303\251\360\237\230\200");
+
+    // Raw multi-byte UTF-8 passes through unchanged
+    Result<TomlValue*> rawRes = parseToml(String("s = \"\303\251\"\n"));
+    TomlValue* rawRoot = rawRes.unwrap();
+    TomlValue* raw = rawRoot.getField("s");
+    assert raw.getString() == String("\303\251");
+
+    // Integers
+    Result<TomlValue*> intRes = parseToml(String("a = 42\nb = -17\nc = +99\nd = 1_000_000\ne = 0\n"));
+    TomlValue* intRoot = intRes.unwrap();
+    TomlValue* intA = intRoot.getField("a");
+    assert intA.isInteger();
+    assert intA.getInteger() == 42l;
+    TomlValue* intB = intRoot.getField("b");
+    assert intB.getInteger() == -17l;
+    TomlValue* intC = intRoot.getField("c");
+    assert intC.getInteger() == 99l;
+    TomlValue* intD = intRoot.getField("d");
+    assert intD.getInteger() == 1000000l;
+    TomlValue* intE = intRoot.getField("e");
+    assert intE.getInteger() == 0l;
+
+    Result<TomlValue*> radixRes = parseToml(String("h = 0xdead_BEEF\no = 0o755\nb = 0b1101\n"));
+    TomlValue* radixRoot = radixRes.unwrap();
+    TomlValue* hexVal = radixRoot.getField("h");
+    assert hexVal.getInteger() == 3735928559l;
+    TomlValue* octVal = radixRoot.getField("o");
+    assert octVal.getInteger() == 493l;
+    TomlValue* binVal = radixRoot.getField("b");
+    assert binVal.getInteger() == 13l;
+
+    // Floats
+    Result<TomlValue*> floatRes = parseToml(String("a = 3.14\nb = -0.01\nc = 5e+22\nd = 6.626e-34\ne = 224_617.445_991\n"));
+    TomlValue* floatRoot = floatRes.unwrap();
+    TomlValue* floatA = floatRoot.getField("a");
+    assert floatA.isFloat();
+    assert floatA.getFloat() == 3.14;
+    TomlValue* floatB = floatRoot.getField("b");
+    assert floatB.getFloat() == -0.01;
+    TomlValue* floatC = floatRoot.getField("c");
+    assert floatC.getFloat() == 5.0e+22;
+    TomlValue* floatD = floatRoot.getField("d");
+    assert floatD.getFloat() == 6.626e-34;
+    TomlValue* floatE = floatRoot.getField("e");
+    assert floatE.getFloat() == 224617.445991;
+
+    Result<TomlValue*> specialRes = parseToml(String("a = inf\nb = -inf\nc = nan\n"));
+    TomlValue* specialRoot = specialRes.unwrap();
+    TomlValue* posInf = specialRoot.getField("a");
+    assert posInf.getFloat() == tomlInfinity();
+    TomlValue* negInf = specialRoot.getField("b");
+    assert negInf.getFloat() == -tomlInfinity();
+    TomlValue* notANumber = specialRoot.getField("c");
+    assert tomlIsNaN(notANumber.getFloat());
+    assert !tomlIsNaN(3.0);
+
+    // Booleans
+    Result<TomlValue*> boolRes = parseToml(String("t = true\nf = false\n"));
+    TomlValue* boolRoot = boolRes.unwrap();
+    TomlValue* boolT = boolRoot.getField("t");
+    assert boolT.isBool();
+    assert boolT.getBool() == true;
+    TomlValue* boolF = boolRoot.getField("f");
+    assert boolF.getBool() == false;
+
+    // Date-times are kept in their lexical form
+    String dtDoc = String("odt = 1979-05-27T07:32:00Z\n");
+    dtDoc += "odt2 = 1979-05-27T00:32:00.999999-07:00\n";
+    dtDoc += "ldt = 1979-05-27T07:32:00\n";
+    dtDoc += "spaced = 1979-05-27 07:32:00\n";
+    dtDoc += "ld = 1979-05-27\n";
+    dtDoc += "lt = 07:32:00.5\n";
+    Result<TomlValue*> dtRes = parseToml(dtDoc);
+    assert dtRes.isOk();
+    TomlValue* dtRoot = dtRes.unwrap();
+    TomlValue* odt = dtRoot.getField("odt");
+    assert odt.isDateTime();
+    assert odt.getDateTime() == String("1979-05-27T07:32:00Z");
+    TomlValue* odt2 = dtRoot.getField("odt2");
+    assert odt2.getDateTime() == String("1979-05-27T00:32:00.999999-07:00");
+    TomlValue* ldt = dtRoot.getField("ldt");
+    assert ldt.getDateTime() == String("1979-05-27T07:32:00");
+    TomlValue* spaced = dtRoot.getField("spaced");
+    assert spaced.getDateTime() == String("1979-05-27 07:32:00");
+    TomlValue* ld = dtRoot.getField("ld");
+    assert ld.getDateTime() == String("1979-05-27");
+    TomlValue* lt = dtRoot.getField("lt");
+    assert lt.getDateTime() == String("07:32:00.5");
+
+    // A trailing comment must not become part of the value
+    Result<TomlValue*> dateCommentRes = parseToml(String("d = 1979-05-27 # birthday\n"));
+    TomlValue* dateCommentRoot = dateCommentRes.unwrap();
+    TomlValue* dateComment = dateCommentRoot.getField("d");
+    assert dateComment.getDateTime() == String("1979-05-27");
+
+    // Arrays, including nested, heterogeneous and multi-line ones with a trailing comma
+    String arrDoc = String("nums = [1, 2, 3]\n");
+    arrDoc += "empty = []\n";
+    arrDoc += "nested = [[1, 2], [\"a\"]]\n";
+    arrDoc += "mixed = [1, \"two\", 3.0, true]\n";
+    arrDoc += "multi = [\n  1, # first\n  2,\n]\n";
+    Result<TomlValue*> arrRes = parseToml(arrDoc);
+    assert arrRes.isOk();
+    TomlValue* arrRoot = arrRes.unwrap();
+    TomlValue* nums = arrRoot.getField("nums");
+    assert nums.isArray();
+    assert nums.getArraySize() == 3;
+    TomlValue* num0 = nums.getArrayItem(0);
+    assert num0.getInteger() == 1l;
+    TomlValue* empty = arrRoot.getField("empty");
+    assert empty.getArraySize() == 0;
+    TomlValue* nested = arrRoot.getField("nested");
+    TomlValue* nested0 = nested.getArrayItem(0);
+    assert nested0.getArraySize() == 2;
+    TomlValue* mixed = arrRoot.getField("mixed");
+    assert mixed.getArraySize() == 4;
+    TomlValue* mixed1 = mixed.getArrayItem(1);
+    assert mixed1.getString() == String("two");
+    TomlValue* multi = arrRoot.getField("multi");
+    assert multi.getArraySize() == 2;
+
+    // Inline tables
+    Result<TomlValue*> inlineRes = parseToml(String("point = { x = 1, y = 2 }\nblank = {}\n"));
+    assert inlineRes.isOk();
+    TomlValue* inlineRoot = inlineRes.unwrap();
+    TomlValue* point = inlineRoot.getField("point");
+    assert point.isTable();
+    assert point.getTableSize() == 2;
+    TomlValue* pointX = point.getField("x");
+    assert pointX.getInteger() == 1l;
+    TomlValue* blank = inlineRoot.getField("blank");
+    assert blank.getTableSize() == 0;
+
+    // Bare, quoted and dotted keys
+    String keyDoc = String("bare-key_1 = 1\n");
+    keyDoc += "\"quoted key\" = 2\n";
+    keyDoc += "'literal key' = 3\n";
+    keyDoc += "physical.color = \"orange\"\n";
+    keyDoc += "physical.shape = \"round\"\n";
+    Result<TomlValue*> keyRes = parseToml(keyDoc);
+    assert keyRes.isOk();
+    TomlValue* keyRoot = keyRes.unwrap();
+    assert keyRoot.hasField("bare-key_1");
+    assert keyRoot.hasField("quoted key");
+    assert keyRoot.hasField("literal key");
+    TomlValue* physical = keyRoot.getField("physical");
+    assert physical.isTable();
+    assert physical.getTableSize() == 2;
+    TomlValue* color = physical.getField("color");
+    assert color.getString() == String("orange");
+
+    // Tables, nested tables and comments
+    String tableDoc = String("# a comment\n");
+    tableDoc += "title = \"TOML Example\"\n";
+    tableDoc += "\n";
+    tableDoc += "[owner] # trailing comment\n";
+    tableDoc += "name = \"Tom\"\n";
+    tableDoc += "\n";
+    tableDoc += "[owner.address]\n";
+    tableDoc += "city = \"NYC\"\n";
+    tableDoc += "\n";
+    tableDoc += "[servers.alpha]\n";
+    tableDoc += "ip = \"10.0.0.1\"\n";
+    Result<TomlValue*> tableRes = parseToml(tableDoc);
+    assert tableRes.isOk();
+    TomlValue* tableRoot = tableRes.unwrap();
+    assert tableRoot.getTableSize() == 3;
+    TomlValue* owner = tableRoot.getField("owner");
+    assert owner.isTable();
+    TomlValue* ownerName = owner.getField("name");
+    assert ownerName.getString() == String("Tom");
+    TomlValue* address = owner.getField("address");
+    TomlValue* city = address.getField("city");
+    assert city.getString() == String("NYC");
+    // Super-tables are created implicitly
+    TomlValue* servers = tableRoot.getField("servers");
+    assert servers.isTable();
+    TomlValue* alpha = servers.getField("alpha");
+    TomlValue* alphaIp = alpha.getField("ip");
+    assert alphaIp.getString() == String("10.0.0.1");
+    // Table entries keep their insertion order
+    assert tableRoot.getTableKey(0l) == String("title");
+    assert tableRoot.getTableKey(1l) == String("owner");
+    assert tableRoot.getTableKey(2l) == String("servers");
+
+    // Arrays of tables, including sub-tables of the most recent element
+    String aotDoc = String("[[fruit]]\n");
+    aotDoc += "name = \"apple\"\n";
+    aotDoc += "\n";
+    aotDoc += "[fruit.physical]\n";
+    aotDoc += "color = \"red\"\n";
+    aotDoc += "\n";
+    aotDoc += "[[fruit.variety]]\n";
+    aotDoc += "name = \"red delicious\"\n";
+    aotDoc += "\n";
+    aotDoc += "[[fruit]]\n";
+    aotDoc += "name = \"banana\"\n";
+    Result<TomlValue*> aotRes = parseToml(aotDoc);
+    assert aotRes.isOk();
+    TomlValue* aotRoot = aotRes.unwrap();
+    TomlValue* fruits = aotRoot.getField("fruit");
+    assert fruits.isArray();
+    assert fruits.getArraySize() == 2;
+    TomlValue* apple = fruits.getArrayItem(0);
+    assert apple.isTable();
+    TomlValue* appleName = apple.getField("name");
+    assert appleName.getString() == String("apple");
+    TomlValue* applePhysical = apple.getField("physical");
+    TomlValue* appleColor = applePhysical.getField("color");
+    assert appleColor.getString() == String("red");
+    TomlValue* appleVarieties = apple.getField("variety");
+    assert appleVarieties.getArraySize() == 1;
+    TomlValue* banana = fruits.getArrayItem(1);
+    TomlValue* bananaName = banana.getField("name");
+    assert bananaName.getString() == String("banana");
+    assert !banana.hasField("physical");
+
+    // Defining a super-table after one of its sub-tables is allowed
+    Result<TomlValue*> superRes = parseToml(String("[a.b]\nx = 1\n[a]\ny = 2\n"));
+    assert superRes.isOk();
+    TomlValue* superTree = superRes.unwrap();
+    deleteTomlValue(superTree);
+
+    // An empty document yields an empty root table
+    Result<TomlValue*> emptyRes = parseToml(String("\n# nothing here\n\n"));
+    assert emptyRes.isOk();
+    TomlValue* emptyRoot = emptyRes.unwrap();
+    assert emptyRoot.getTableSize() == 0;
+
+    // CRLF line endings are accepted
+    Result<TomlValue*> crlfRes = parseToml(String("a = 1\r\n[t]\r\nb = 2\r\n"));
+    assert crlfRes.isOk();
+    TomlValue* crlfTree = crlfRes.unwrap();
+    deleteTomlValue(crlfTree);
+
+    // --- Malformed input surfaces an error ---------------------------------
+
+    Result<TomlValue*> noValueRes = parseToml(String("a = \n"));
+    assert !noValueRes.isOk();
+    Result<TomlValue*> noEqualsRes = parseToml(String("a 1\n"));
+    assert !noEqualsRes.isOk();
+    Result<TomlValue*> dupKeyRes = parseToml(String("a = 1\na = 2\n"));
+    assert !dupKeyRes.isOk();
+    Result<TomlValue*> dupTableRes = parseToml(String("[a]\n[a]\n"));
+    assert !dupTableRes.isOk();
+    Result<TomlValue*> clashRes = parseToml(String("[a]\nb = 1\n[a.b.c]\n"));
+    assert !clashRes.isOk();
+    Result<TomlValue*> aotClashRes = parseToml(String("a = [1]\n[[a]]\n"));
+    assert !aotClashRes.isOk();
+    Result<TomlValue*> trailingRes = parseToml(String("a = 1 b = 2\n"));
+    assert !trailingRes.isOk();
+    Result<TomlValue*> unclosedTableRes = parseToml(String("[a\n"));
+    assert !unclosedTableRes.isOk();
+    Result<TomlValue*> emptyHeaderRes = parseToml(String("[]\n"));
+    assert !emptyHeaderRes.isOk();
+
+    // Numbers
+    Result<TomlValue*> leadingZeroRes = parseToml(String("a = 01\n"));
+    assert !leadingZeroRes.isOk();
+    Result<TomlValue*> doubleUnderscoreRes = parseToml(String("a = 1__0\n"));
+    assert !doubleUnderscoreRes.isOk();
+    Result<TomlValue*> trailingUnderscoreRes = parseToml(String("a = 1_\n"));
+    assert !trailingUnderscoreRes.isOk();
+    Result<TomlValue*> trailingDotRes = parseToml(String("a = 1.\n"));
+    assert !trailingDotRes.isOk();
+    Result<TomlValue*> bareExpRes = parseToml(String("a = 1e\n"));
+    assert !bareExpRes.isOk();
+    Result<TomlValue*> emptyHexRes = parseToml(String("a = 0x\n"));
+    assert !emptyHexRes.isOk();
+    Result<TomlValue*> signedHexRes = parseToml(String("a = -0x1\n"));
+    assert !signedHexRes.isOk();
+
+    // Strings
+    Result<TomlValue*> unterminatedRes = parseToml(String("a = \"oops\n"));
+    assert !unterminatedRes.isOk();
+    Result<TomlValue*> badEscapeRes = parseToml(String("a = \"\\q\"\n"));
+    assert !badEscapeRes.isOk();
+    Result<TomlValue*> badUnicodeRes = parseToml(String("a = \"\\u00Z1\"\n"));
+    assert !badUnicodeRes.isOk();
+    Result<TomlValue*> surrogateRes = parseToml(String("a = \"\\uD800\"\n"));
+    assert !surrogateRes.isOk();
+    Result<TomlValue*> rawNewlineRes = parseToml(String("a = \"x\ny\"\n"));
+    assert !rawNewlineRes.isOk();
+    // Tabs on the other hand are legal inside strings
+    Result<TomlValue*> tabRes = parseToml(String("a = \"x\ty\"\n"));
+    assert tabRes.isOk();
+    TomlValue* tabTree = tabRes.unwrap();
+    deleteTomlValue(tabTree);
+
+    // Arrays and inline tables
+    Result<TomlValue*> unterminatedArrRes = parseToml(String("a = [1, 2\n"));
+    assert !unterminatedArrRes.isOk();
+    Result<TomlValue*> inlineCommaRes = parseToml(String("a = {b = 1,}\n"));
+    assert !inlineCommaRes.isOk();
+    Result<TomlValue*> inlineBreakRes = parseToml(String("a = {\nb = 1}\n"));
+    assert !inlineBreakRes.isOk();
+    Result<TomlValue*> dupInlineRes = parseToml(String("a = {b = 1, b = 2}\n"));
+    assert !dupInlineRes.isOk();
+
+    // Bad booleans and dates
+    Result<TomlValue*> badBoolRes = parseToml(String("a = tru\n"));
+    assert !badBoolRes.isOk();
+    Result<TomlValue*> badDateRes = parseToml(String("a = 2024-13\n"));
+    assert !badDateRes.isOk();
+    Result<TomlValue*> badTimeRes = parseToml(String("a = 07:32\n"));
+    assert !badTimeRes.isOk();
+
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteTomlValue(basicRoot);
+    deleteTomlValue(literalRoot);
+    deleteTomlValue(mlRoot);
+    deleteTomlValue(contRoot);
+    deleteTomlValue(mlLitRoot);
+    deleteTomlValue(quoteRoot);
+    deleteTomlValue(uniRoot);
+    deleteTomlValue(rawRoot);
+    deleteTomlValue(intRoot);
+    deleteTomlValue(radixRoot);
+    deleteTomlValue(floatRoot);
+    deleteTomlValue(specialRoot);
+    deleteTomlValue(boolRoot);
+    deleteTomlValue(dtRoot);
+    deleteTomlValue(dateCommentRoot);
+    deleteTomlValue(arrRoot);
+    deleteTomlValue(inlineRoot);
+    deleteTomlValue(keyRoot);
+    deleteTomlValue(tableRoot);
+    deleteTomlValue(aotRoot);
+    deleteTomlValue(emptyRoot);
+
+    printf("All assertions passed!");
+}
