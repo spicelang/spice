@@ -2,10 +2,13 @@
 
 #include "TypeNameDisambiguator.h"
 
+#include <util/Concurrency.h>
+
 namespace spice::compiler {
 
 // Static member initialization
 std::unordered_map<std::string, std::vector<uint64_t>> TypeNameDisambiguator::claimedTypeIds = {};
+std::mutex TypeNameDisambiguator::claimedTypeIdsMutex;
 
 /**
  * Get the disambiguation suffix for a struct/interface type with the given name and type id.
@@ -18,6 +21,8 @@ std::unordered_map<std::string, std::vector<uint64_t>> TypeNameDisambiguator::cl
  * @return Disambiguation suffix (empty for the first claimer of the name)
  */
 std::string TypeNameDisambiguator::getDisambiguationSuffix(const std::string &name, uint64_t typeId) {
+  ConditionalLock lock(claimedTypeIdsMutex);
+
   std::vector<uint64_t> &ids = claimedTypeIds[name];
 
   // Find the index of the type id among the ones already claiming this name

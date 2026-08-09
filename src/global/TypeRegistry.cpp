@@ -8,12 +8,14 @@
 #include <sstream>
 
 #include <symboltablebuilder/Type.h>
+#include <util/Concurrency.h>
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
 
 // Static member initialization
 std::unordered_map<uint64_t, std::unique_ptr<Type>> TypeRegistry::types = {};
+std::mutex TypeRegistry::typesMutex;
 
 /**
  * Compute the hash for a type (aka type id)
@@ -31,6 +33,8 @@ uint64_t TypeRegistry::getTypeHash(const Type &type) { return std::hash<Type>{}(
  */
 const Type *TypeRegistry::getOrInsert(const Type &&type) {
   const uint64_t hash = getTypeHash(type);
+
+  ConditionalLock lock(typesMutex);
 
   // Check if type already exists
   const auto it = types.find(hash);

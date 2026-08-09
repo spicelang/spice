@@ -19,6 +19,10 @@ include(Conditionals.cmake)
 # Parse CMake args
 include(Options.cmake)
 
+# Find the system threading library (used by the parallel back end)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Find LLVM
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Spice: Found LLVM ${LLVM_PACKAGE_VERSION}")

@@ -2,6 +2,7 @@
 
 #include "SourceFile.h"
 
+#include <algorithm>
 #include <queue>
 #include <unordered_set>
 
@@ -28,8 +29,10 @@
 #include <typechecker/StructManager.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CompilerWarning.h>
+#include <util/Concurrency.h>
 #include <util/FileUtil.h>
 #include <util/SystemUtil.h>
+#include <util/ThreadPool.h>
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
@@ -547,7 +550,7 @@ void SourceFile::runObjectEmitter() {
   timer.start();
 
   // Deduce an object file path
-  std::filesystem::path objectFilePath = cliOptions.outputDir / filePath.filename();
+  objectFilePath = cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
   // Pick a concrete emitter based on the selected backend. The TPDE emitter is compiled into a
@@ -576,8 +579,8 @@ void SourceFile::runObjectEmitter() {
   if (cliOptions.dump.dumpAssembly)
     dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
-  // Add the object file to the linker objects
-  resourceManager.linker.addFileToLinkage(objectFilePath);
+  // The object file is registered with the linker in concludeCompilation and not here, because this stage may run on a
+  // worker thread of the parallel back end and the linker input order has to stay deterministic.
 
   previousStage = OBJECT_EMITTER;
   timer.stop();
@@ -587,8 +590,8 @@ void SourceFile::runObjectEmitter() {
 void SourceFile::concludeCompilation() {
   // Handle cache-restored files: register all cached objects with linker
   if (restoredFromCache) {
-    for (const auto &objectFilePath : cachedObjectFilePaths)
-      resourceManager.linker.addFileToLinkage(objectFilePath);
+    for (const auto &cachedObjectFilePath : cachedObjectFilePaths)
+      resourceManager.linker.addFileToLinkage(cachedObjectFilePath);
     for (const auto &flag : sourceLinkerFlags)
       resourceManager.linker.addLinkerFlag(flag);
     for (const auto &path : sourceAdditionalSourcePaths)
@@ -598,6 +601,12 @@ void SourceFile::concludeCompilation() {
 
   if (previousStage >= FINISHED)
     return;
+
+  // Add the emitted object file to the linker objects. This happens here and not in runObjectEmitter, because
+  // concludeCompilation is always driven serially and in dependency order, while the object emitter may run on a worker
+  // thread of the parallel back end.
+  if (!objectFilePath.empty())
+    resourceManager.linker.addFileToLinkage(objectFilePath);
 
   // Cache the source file
   if (!cliOptions.ignoreCache)
@@ -661,17 +670,21 @@ void SourceFile::runMiddleEnd() {
   CHECK_ABORT_FLAG_V()
 }
 
-void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
-  // Guard against re-entering a file that is already running its back end. Circular imports form a cycle in the
+void SourceFile::collectBackEndSourceFiles(std::vector<SourceFile *> &backEndSourceFiles) { // NOLINT(misc-no-recursion)
+  // Guard against collecting a file that already went through the back end. Circular imports form a cycle in the
   // dependency graph, so the deps-first recursion below would otherwise loop forever.
   if (backEndStarted)
     return;
   backEndStarted = true;
 
-  // Run backend for all dependencies first
+  // Collect all dependencies first, so that they end up in front of this file in the resulting list
   for (SourceFile *sourceFile : dependencies | std::views::values)
-    sourceFile->runBackEnd();
+    sourceFile->collectBackEndSourceFiles(backEndSourceFiles);
 
+  backEndSourceFiles.push_back(this);
+}
+
+void SourceFile::runBackEndForThisFile() {
   runIRGenerator();
   CHECK_ABORT_FLAG_V()
   if (cliOptions.useLTO) {
@@ -686,8 +699,46 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     CHECK_ABORT_FLAG_V()
   }
   runObjectEmitter();
+}
+
+void SourceFile::runBackEnd() {
+  // Flatten the dependency graph into the order the back end used to recurse in: every file comes after all of its
+  // dependencies, and files that already ran their back end are skipped.
+  std::vector<SourceFile *> backEndSourceFiles;
+  collectBackEndSourceFiles(backEndSourceFiles);
+
+  // Nothing to do if this file and all of its dependencies already went through the back end
+  if (backEndSourceFiles.empty())
+    return;
+
+  // Unlike the front end and the middle end, the back end has no cross-file data dependencies: every source file owns
+  // its own LLVMContext, IRBuilder, TargetMachine and llvm::Module, and references to symbols of other files are emitted
+  // as declarations into the local module. So the per-file pipelines can simply be spread over a worker pool.
+  // Exceptions, in which the back end stays serial:
+  // - LTO, because all source files share the LTO context and module of the GlobalResourceManager
+  // - dump modes, because they write to the console/output dir and their ordering is part of the user-visible output
+  const bool dumpRequested = cliOptions.dump.dumpIR || cliOptions.dump.dumpAssembly || cliOptions.dump.dumpObjectFile;
+  const size_t jobCount = std::min(resourceManager.getCompileJobCount(), backEndSourceFiles.size());
+  const bool runParallel = jobCount > 1 && !cliOptions.useLTO && !dumpRequested;
+
+  if (runParallel) {
+    ThreadPool &threadPool = resourceManager.getThreadPool(jobCount);
+    const ParallelSection parallelSection;
+    for (SourceFile *sourceFile : backEndSourceFiles)
+      threadPool.submit([sourceFile] { sourceFile->runBackEndForThisFile(); });
+    threadPool.waitForAll(); // Re-throws the exception of the first failing source file, if there was one
+  } else {
+    for (SourceFile *sourceFile : backEndSourceFiles) {
+      sourceFile->runBackEndForThisFile();
+      CHECK_ABORT_FLAG_V()
+    }
+  }
   CHECK_ABORT_FLAG_V()
-  concludeCompilation();
+
+  // Conclude the compilation of all source files. This registers the emitted object files with the linker and writes the
+  // compilation cache, both of which have to happen serially and in a fixed order to stay deterministic.
+  for (SourceFile *sourceFile : backEndSourceFiles)
+    sourceFile->concludeCompilation();
 
   if (isMainFile) {
     resourceManager.totalTimer.stop();

@@ -393,7 +393,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   // --llvm-args
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs
-  subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+  subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount,
+                                     "Number of source files to compile in parallel in the back end (0 = auto)");
   // --build-var
   CLI::Option *buildVarOption = subCmd->add_option_function<std::vector<std::string>>(
       "--build-var,-b", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");

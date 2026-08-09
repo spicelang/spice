@@ -9,6 +9,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/Concurrency.h>
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
@@ -58,6 +59,9 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  */
 Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
                                    const ASTNode *node) {
+  // The IR generator lowers interface types through QualType::getInterface, so this may run on multiple threads at once
+  const ConditionalLock lock(symbolRegistryMutex);
+
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
   if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {

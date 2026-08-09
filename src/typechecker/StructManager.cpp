@@ -9,6 +9,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
+#include <util/Concurrency.h>
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
@@ -62,6 +63,10 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  */
 Struct *StructManager::match(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
                              const ASTNode *node) {
+  // The IR generator lowers struct types through QualType::getStruct, so this may run on multiple threads at once. The
+  // lock is recursive, because matching a struct recurses into matching its field and interface types.
+  const ConditionalLock lock(symbolRegistryMutex);
+
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, qt, reqTemplateTypes);
   if (const auto it = lookupCache.find(cacheKey); it != lookupCache.end()) {

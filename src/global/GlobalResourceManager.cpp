@@ -2,6 +2,9 @@
 
 #include "GlobalResourceManager.h"
 
+#include <cassert>
+#include <thread>
+
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <global/TypeNameDisambiguator.h>
@@ -77,6 +80,35 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
 }
 
 uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }
+
+/**
+ * Determine how many source files may be compiled at the same time, based on the --jobs/-j cli option
+ *
+ * @return Number of compile jobs (always >= 1)
+ */
+size_t GlobalResourceManager::getCompileJobCount() const {
+  // An explicit job count always wins
+  if (cliOptions.compileJobCount > 0)
+    return cliOptions.compileJobCount;
+
+  // Otherwise derive the job count from the machine. hardware_concurrency may return 0 if it cannot be determined, in
+  // which case we fall back to a serial back end.
+  const unsigned int hardwareConcurrency = std::thread::hardware_concurrency();
+  return hardwareConcurrency > 0 ? hardwareConcurrency : 1;
+}
+
+/**
+ * Get the worker pool for parallel compiler passes. The pool is created on first use and re-used afterwards.
+ *
+ * @param threadCount Number of worker threads to create the pool with
+ * @return Thread pool
+ */
+ThreadPool &GlobalResourceManager::getThreadPool(size_t threadCount) {
+  assert(threadCount > 0);
+  if (!threadPool)
+    threadPool = std::make_unique<ThreadPool>(threadCount);
+  return *threadPool;
+}
 
 size_t GlobalResourceManager::getTotalLineCount() const {
   const auto acc = [](size_t sum, const auto &sourceFile) { return sum + FileUtil::getLineCount(sourceFile.second->filePath); };
