@@ -717,7 +717,7 @@ void SourceFile::runBackEnd() {
   // Exceptions, in which the back end stays serial:
   // - LTO, because all source files share the LTO context and module of the GlobalResourceManager
   // - dump modes, because they write to the console/output dir and their ordering is part of the user-visible output
-  const bool dumpRequested = cliOptions.dump.dumpIR || cliOptions.dump.dumpAssembly || cliOptions.dump.dumpObjectFile;
+  const bool dumpRequested = cliOptions.dump.dumpIR || cliOptions.dump.dumpAssembly || cliOptions.dump.dumpObjectFiles;
   const size_t jobCount = std::min(resourceManager.getCompileJobCount(), backEndSourceFiles.size());
   const bool runParallel = jobCount > 1 && !cliOptions.useLTO && !dumpRequested;
 

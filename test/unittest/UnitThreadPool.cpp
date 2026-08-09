@@ -24,7 +24,7 @@ TEST(ThreadPoolTest, RunsAllSubmittedTasks) {
     pool.submit([&executedTasks] { executedTasks++; });
   pool.waitForAll();
 
-  EXPECT_EQ(1000u, executedTasks);
+  EXPECT_EQ(1000u, executedTasks.load());
   EXPECT_EQ(4u, pool.getThreadCount());
 }
 
@@ -56,7 +56,7 @@ TEST(ThreadPoolTest, IsReusableAfterFailure) {
     pool.submit([&executedTasks] { executedTasks++; });
   pool.waitForAll();
 
-  EXPECT_EQ(100u, executedTasks);
+  EXPECT_EQ(100u, executedTasks.load());
 }
 
 TEST(ConcurrencyTest, ConditionalLockOnlyLocksInParallelSection) {
@@ -74,7 +74,7 @@ TEST(ConcurrencyTest, ConditionalLockOnlyLocksInParallelSection) {
     return !couldLock;
   };
 
-  ASSERT_FALSE(concurrentPassesRunning);
+  ASSERT_FALSE(concurrentPassesRunning.load());
 
   { // Outside of a parallel section the lock is a no-op
     ConditionalLock lock(mutex);
@@ -83,12 +83,12 @@ TEST(ConcurrencyTest, ConditionalLockOnlyLocksInParallelSection) {
 
   { // Inside a parallel section the mutex is held for the lifetime of the lock
     const ParallelSection parallelSection;
-    ASSERT_TRUE(concurrentPassesRunning);
+    ASSERT_TRUE(concurrentPassesRunning.load());
     ConditionalLock lock(mutex);
     EXPECT_TRUE(isLockedByUs());
   }
 
-  EXPECT_FALSE(concurrentPassesRunning);
+  EXPECT_FALSE(concurrentPassesRunning.load());
 }
 
 TEST(ConcurrencyTest, ConditionalLockGuardsSharedMapUnderContention) {

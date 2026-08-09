@@ -82,7 +82,7 @@ public:
       allTasksDone.wait(lock, [this] { return pendingCount == 0; });
       // Reset for the next batch
       failure = std::exchange(firstException, nullptr);
-      cancelled = false;
+      canceled = false;
       nextTaskIndex = 0;
     }
     if (failure)
@@ -113,7 +113,7 @@ private:
         task = std::move(tasks.front());
         tasks.pop();
         // Do not start new work after another task has already failed
-        skip = cancelled;
+        skip = canceled;
       }
 
       if (!skip) {
@@ -126,7 +126,7 @@ private:
             firstException = std::current_exception();
             firstExceptionTaskIndex = task.index;
           }
-          cancelled = true;
+          canceled = true;
         }
       }
 
@@ -149,7 +149,7 @@ private:
   size_t firstExceptionTaskIndex = 0;
   size_t nextTaskIndex = 0;
   size_t pendingCount = 0;
-  bool cancelled = false;
+  bool canceled = false;
   bool shuttingDown = false;
 };
 
