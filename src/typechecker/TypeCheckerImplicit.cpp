@@ -117,12 +117,26 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
       Scope *bodyScope = fieldType.getBodyScope();
       // Check if we are required to call a ctor
       const bool isCtorCallRequired = !fieldType.isTriviallyConstructible(node);
-      // Lookup ctor function
-      const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
-      // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
-      if (!ctorFct && isCtorCallRequired)
-        return;
-      hasFieldsToConstruct |= ctorFct != nullptr;
+      // While the outer struct is still a generic preset, a field type that is itself generic (e.g. Inner<T, bool>,
+      // the internal field of Outer<T>) cannot be matched to a concrete ctor yet. Since a default ctor takes no
+      // arguments, matching it against the still-generic 'this' type would partially substantiate a bogus
+      // manifestation (e.g. Inner<K, bool>, with K left generic) that is wrongly treated as fully substantiated
+      // later on and crashes name mangling during IR generation (see #1255). In that case we only record that the
+      // field has a default ctor via a direct scan; the concrete ctor is matched later, per manifestation, in
+      // createCtorBodyPreamble.
+      if (fieldType.hasAnyGenericParts()) {
+        const bool hasDefaultCtor = FunctionManager::hasDefaultCtor(bodyScope);
+        if (!hasDefaultCtor && isCtorCallRequired)
+          return;
+        hasFieldsToConstruct |= hasDefaultCtor;
+      } else {
+        // Lookup ctor function
+        const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
+        // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
+        if (!ctorFct && isCtorCallRequired)
+          return;
+        hasFieldsToConstruct |= ctorFct != nullptr;
+      }
     }
   }
 
@@ -166,19 +180,27 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
 
     // If the field is of type struct, check if this struct has a copy ctor that has to be called
     if (fieldType.is(TY_STRUCT)) {
-      Scope *bodyScope = fieldType.getBodyScope();
       // A field whose copy is non-trivial forces the outer struct to have a copy ctor as well.
       const bool fieldRequiresCopyCtor = !fieldType.isTriviallyCopyable(node);
-      // Try to resolve (and substantiate) the field's copy ctor. While the outer struct is still a generic preset,
-      // a field type that is itself generic (e.g. Lambda<p(const T&)>) cannot be matched to a concrete copy ctor
-      // yet; it is matched later, per manifestation, in generateCopyCtorBodyPreamble.
-      const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
-      const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
-      // If the field requires a copy ctor, but we proved none exists, we cannot synthesize one for the outer struct.
-      // A null match only proves absence for a concrete field type - for a still-generic field it merely means the
-      // ctor is not resolvable yet, which must not abort copy ctor synthesis.
-      if (!ctorFct && fieldRequiresCopyCtor && !fieldType.hasAnyGenericParts())
-        return;
+      // While the outer struct is still a generic preset, a field type that is itself generic (e.g. Inner<T, bool>,
+      // the internal field of Outer<T>) cannot be matched to a concrete copy ctor yet. Matching it via the
+      // substantiating FunctionManager::match() below can partially substantiate a bogus manifestation (e.g.
+      // Inner<K, bool>, with K left generic) that is wrongly treated as fully substantiated later on and crashes
+      // name mangling during IR generation (see #1255). This can happen even though the copy ctor call carries an
+      // argument of the same (still-generic) field type, whenever the field struct's own generic type name
+      // collides with the outer struct's generic type name (e.g. both named 'V', as in Set<V> wrapping
+      // RedBlackTree<K,V>). The concrete copy ctor is matched later, per manifestation, in
+      // createCopyCtorBodyPreamble, and its result here is not otherwise consulted while the field type is still
+      // generic (fieldRequiresCopyCtor already reflects copy-ctor existence via the non-substantiating
+      // isTriviallyCopyable check above) - so skip the substantiating match entirely in that case.
+      if (!fieldType.hasAnyGenericParts()) {
+        Scope *bodyScope = fieldType.getBodyScope();
+        const ArgList args = {{fieldType.toConstRef(node), false /* we always have the field as storage */}};
+        const Function *ctorFct = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, fieldType, args, {}, true, node);
+        // If the field requires a copy ctor, but we proved none exists, we cannot synthesize one for the outer struct.
+        if (!ctorFct && fieldRequiresCopyCtor)
+          return;
+      }
       copyCtorRequired |= fieldRequiresCopyCtor;
     }
 
@@ -316,10 +338,21 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     hasFieldsToDeAllocate |= fieldType.needsDeAllocation();
     if (fieldType.is(TY_STRUCT)) {
       Scope *fieldScope = fieldType.getBodyScope();
-      // Lookup dtor function
-      const Function *dtorFct = FunctionManager::match(fieldScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
-      hasFieldsToDestruct |= dtorFct != nullptr;
-      requestRevisitIfRequired(dtorFct);
+      // While the outer struct is still a generic preset, a field type that is itself generic (e.g.
+      // RedBlackTree<V, bool>, the internal field of Set<V>) cannot be matched to a concrete dtor yet. Since a
+      // dtor takes no arguments, matching it against the still-generic 'this' type would partially substantiate a
+      // bogus manifestation (e.g. RedBlackTree<K, bool>, with K left generic) that is wrongly treated as fully
+      // substantiated later on and crashes name mangling during IR generation. In that case we only record that
+      // the field has a dtor via a direct scan; the concrete dtor is matched later, per manifestation, in
+      // createDtorBodyPreamble.
+      if (fieldType.hasAnyGenericParts()) {
+        hasFieldsToDestruct |= FunctionManager::hasDtor(fieldScope);
+      } else {
+        // Lookup dtor function
+        const Function *dtorFct = FunctionManager::match(fieldScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, true, node);
+        hasFieldsToDestruct |= dtorFct != nullptr;
+        requestRevisitIfRequired(dtorFct);
+      }
     }
   }
 

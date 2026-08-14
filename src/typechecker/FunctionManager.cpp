@@ -681,6 +681,14 @@ Function *FunctionManager::findMoveCtor(Scope *matchScope) {
   return nullptr;
 }
 
+bool FunctionManager::hasDefaultCtor(const Scope *matchScope) {
+  for (const auto &manifestations : matchScope->functions | std::views::values)
+    for (const auto &function : manifestations | std::views::values)
+      if (function.name == CTOR_FUNCTION_NAME && function.paramList.empty())
+        return true;
+  return false;
+}
+
 bool FunctionManager::hasDtor(const Scope *matchScope) {
   for (const auto &manifestations : matchScope->functions | std::views::values)
     for (const auto &function : manifestations | std::views::values)
