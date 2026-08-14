@@ -261,7 +261,10 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
-  if (testDriverCliOptions.skipSanitizerTests) {
+  // Sanitizer-instrumented binaries cannot run under Valgrind either (the ASan/TSan/MSan/TYSan runtime and Valgrind's
+  // instrumentation both intercept the same allocator hooks), so skip them under --leak-detection for the same reason
+  // --skip-sanitizer-tests does.
+  if (testDriverCliOptions.skipSanitizerTests || testDriverCliOptions.enableLeakDetection) {
     std::vector<std::string> testArgs;
     parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
     for (const std::string &arg : testArgs)

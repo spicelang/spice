@@ -1,0 +1,56 @@
+// TEST: --sanitizer=address
+
+import "std/data/linked-list";
+import "std/data/doubly-linked-list";
+import "std/data/binary-tree";
+import "std/data/red-black-tree";
+
+f<int> main() {
+    // A container going out of scope must free its whole internal node chain/tree (including
+    // each stored value's own heap resources), not just the head/root node's own memory block.
+    {
+        LinkedList<String> list = LinkedList<String>();
+        list.pushBack(String("first heap-allocated list value"));
+        list.pushBack(String("second heap-allocated list value"));
+        list.pushBack(String("third heap-allocated list value"));
+    }
+    printf("linked list ok\n");
+
+    {
+        DoublyLinkedList<String> list = DoublyLinkedList<String>();
+        list.pushBack(String("first heap-allocated dlist value"));
+        list.pushFront(String("second heap-allocated dlist value"));
+        list.pushBack(String("third heap-allocated dlist value"));
+    }
+    printf("doubly linked list ok\n");
+
+    {
+        BinaryTree<int> tree = BinaryTree<int>();
+        tree.insert(5);
+        tree.insert(2);
+        tree.insert(8);
+        tree.insert(1);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(9);
+    }
+    printf("binary tree ok\n");
+
+    {
+        RedBlackTree<int, String> tree = RedBlackTree<int, String>();
+        tree.insert(3, String("first heap-allocated rbt value"));
+        tree.insert(1, String("second heap-allocated rbt value"));
+        tree.insert(4, String("third heap-allocated rbt value"));
+        tree.insert(2, String("fourth heap-allocated rbt value"));
+    }
+    printf("red-black tree ok\n");
+
+    {
+        // clear() on an already-empty tree (rootNode == nil) must not crash either
+        RedBlackTree<int, String> tree = RedBlackTree<int, String>();
+        tree.clear();
+    }
+    printf("red-black tree empty clear ok\n");
+
+    return 0;
+}

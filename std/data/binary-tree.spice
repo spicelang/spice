@@ -38,6 +38,13 @@ public type BinaryTree<T> struct {
 }
 
 /**
+ * Destruct the binary tree, freeing all its nodes
+ */
+public p BinaryTree.dtor() {
+    this.freeSubtree(this.rootNode);
+}
+
+/**
  * Insert a new value into the binary tree
  *
  * @param value The value to insert
@@ -175,4 +182,20 @@ f<Node<T>*> BinaryTree.findSmallestNode<T>(Node<T>* currentNode) {
         smallestNode = smallestNode.childLeft;
     }
     return smallestNode;
+}
+
+/**
+ * Recursion helper to free a whole subtree bottom-up. Children are detached from the node
+ * before it is deleted, so the node's own (implicit) destructor never sees a dangling child
+ * pointer and can never double-free it.
+ *
+ * @param node The root of the subtree to free, or nil if there is nothing to free
+ */
+p BinaryTree.freeSubtree<T>(heap Node<T>* node) {
+    if node == nil<heap Node<T>*> { return; }
+    this.freeSubtree(node.childLeft);
+    this.freeSubtree(node.childRight);
+    node.childLeft = nil<heap Node<T>*>;
+    node.childRight = nil<heap Node<T>*>;
+    sDelete(node);
 }

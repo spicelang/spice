@@ -246,6 +246,22 @@ public inline f<T&> DoublyLinkedList.getBack() {
     return this.head.value;
 }
 
+/**
+ * Clears the list
+ */
+public inline p DoublyLinkedList.clear() {
+    while !this.isEmpty() {
+        this.removeFront();
+    }
+}
+
+/**
+ * Destructs the list, freeing all its nodes
+ */
+public p DoublyLinkedList.dtor() {
+    this.clear();
+}
+
 f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {

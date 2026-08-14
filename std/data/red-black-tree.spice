@@ -240,8 +240,32 @@ public f<bool> RedBlackTree.isEmpty() {
  * Clear all elements from the tree.
  */
 public p RedBlackTree.clear() {
-    sDelete(this.rootNode);
+    this.freeSubtree(this.rootNode);
+    this.rootNode = nil<heap Node<K, V>*>;
     this.size = 0l;
+}
+
+/**
+ * Destruct the tree, freeing all its nodes.
+ */
+public p RedBlackTree.dtor() {
+    this.freeSubtree(this.rootNode);
+}
+
+/**
+ * Recursion helper to free a whole subtree bottom-up. Children are detached from the node
+ * before it is deleted, so the node's own (implicit) destructor never sees a dangling child
+ * pointer and can never double-free it.
+ *
+ * @param node The root of the subtree to free, or nil if there is nothing to free
+ */
+p RedBlackTree.freeSubtree(heap Node<K, V>* node) {
+    if node == nil<heap Node<K, V>*> { return; }
+    this.freeSubtree(node.childLeft);
+    this.freeSubtree(node.childRight);
+    node.childLeft = nil<heap Node<K, V>*>;
+    node.childRight = nil<heap Node<K, V>*>;
+    sDelete(node);
 }
 
 /**

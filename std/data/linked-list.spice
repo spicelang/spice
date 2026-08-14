@@ -279,6 +279,13 @@ public inline p LinkedList.clear() {
     }
 }
 
+/**
+ * Destructs the list, freeing all its nodes
+ */
+public p LinkedList.dtor() {
+    this.clear();
+}
+
 f<heap Node<T>*> LinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
