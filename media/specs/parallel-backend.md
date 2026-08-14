@@ -44,7 +44,7 @@ resulting worklist is the unit of scheduling; the order it defines is what the s
 
 ### Utilities
 
-- `src/util/ThreadPool.h` — a fixed-size worker pool. Tasks are `void()` and the submitter blocks in `waitForAll()`.
+- `src/util/ThreadPool.{h,cpp}` — a fixed-size worker pool. Tasks are `void()` and the submitter blocks in `waitForAll()`.
   Two properties matter for the compiler:
   - Passes report failures by **throwing** (`LexerError`, `SemanticError`, `CompilerError`, ...). An exception escaping
     a worker thread would terminate the process, so tasks are wrapped and the exception is re-thrown on the waiting

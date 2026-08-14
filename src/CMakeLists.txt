@@ -119,6 +119,7 @@ set(SOURCES
         util/CodeLoc.cpp
         util/CompilerWarning.cpp
         util/RawStringOStream.cpp
+        util/ThreadPool.cpp
 )
 
 # Initialize ANTLR
