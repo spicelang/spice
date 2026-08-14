@@ -1,0 +1,32 @@
+type T dyn;
+
+// Self-referential generic struct with a recursive explicit dtor - see the comment in source.spice.
+public type Node<T> struct {
+    T value
+    heap Node<T>* next = nil<heap Node<T>*>
+}
+
+public p Node.ctor(const T& value) {
+    this.value = value;
+}
+
+public p Node.dtor() {
+    if this.next != nil<heap Node<T>*> {
+        sDelete(this.next);
+    }
+}
+
+// Minimal owning container with its own explicit dtor - only holds what is needed to reproduce issue #1254.
+public type Holder<T> struct {
+    heap Node<T>* node = nil<heap Node<T>*>
+}
+
+public p Holder.dtor() {
+    if this.node != nil<heap Node<T>*> {
+        sDelete(this.node);
+    }
+}
+
+public p Holder.put<T>(const T& value) {
+    this.node = __new<Node<T>>(value);
+}
