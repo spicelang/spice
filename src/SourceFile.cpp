@@ -673,12 +673,24 @@ void SourceFile::runMiddleEnd() {
   bool anySourceFileRevisitPending;
   do {
     anySourceFileRevisitPending = false;
-    for (const std::unique_ptr<SourceFile> &sourceFile : resourceManager.sourceFiles | std::views::values) {
+    // Snapshot the current files before driving any of them: runTypeCheckerPost() below can itself trigger a
+    // freshly-discovered runtime import (SourceFile::requestRuntimeModule -> GlobalResourceManager::createSourceFile),
+    // which inserts into resourceManager.sourceFiles - iterating that map while it is being mutated is undefined
+    // behavior, so a stable list of raw pointers is collected first.
+    std::vector<SourceFile *> sourceFilesSnapshot;
+    sourceFilesSnapshot.reserve(resourceManager.sourceFiles.size());
+    for (const std::unique_ptr<SourceFile> &sourceFile : resourceManager.sourceFiles | std::views::values)
+      sourceFilesSnapshot.push_back(sourceFile.get());
+    for (SourceFile *sourceFile : sourceFilesSnapshot) {
       if (sourceFile->reVisitRequested) {
         sourceFile->runTypeCheckerPost();
         anySourceFileRevisitPending = true;
       }
     }
+    // A source file created mid-sweep (see above) still needs its own pass; it starts out with reVisitRequested
+    // true, so re-looping picks it up via the snapshot taken on the next iteration.
+    if (resourceManager.sourceFiles.size() > sourceFilesSnapshot.size())
+      anySourceFileRevisitPending = true;
   } while (anySourceFileRevisitPending);
   CHECK_ABORT_FLAG_V()
   // Visualize dependency graph
