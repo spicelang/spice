@@ -1,14 +1,16 @@
 import "std/data/linked-list";
 import "source2";
 
-// Regression test for issue #1254: a self-referential generic struct (Node<T>, source2.spice - shaped like
-// std/data/binary-tree.spice with a recursive explicit dtor added) crashed the compiler with
+// Regression test for issue #1254: a self-referential generic struct (Node<T>, source2.spice) with a recursive
+// explicit dtor, plus an explicit dtor on its owning container (Holder<T>), crashed the compiler with
 // 'Assertion `manifestation->alreadyTypeChecked' failed' - but only when another, unrelated module that declares
 // and instantiates its own heap-allocating generic struct (LinkedList<T>, imported here from the std lib) was
-// also imported.
+// also imported. Note: referencing 'Node' directly by name here (instead of only through Holder) would collide
+// with linked-list.spice's own private 'Node<T>' - a separate, unrelated name-resolution quirk - so this test
+// only ever names 'Holder' at the call site.
 //
 // Root cause: the type-checker's cross-file convergence is driven by nested, per-file 'reVisitRequested' loops.
-// When BinaryTree<int>'s dtor (source2.spice) requests a new manifestation in the shared runtime module (sDelete),
+// When Holder<int>'s dtor (source2.spice) requests a new manifestation in the shared runtime module (sDelete),
 // that request can get deferred behind another importer of the runtime module that has not type-checked yet
 // (LinkedList<String>). By the time the runtime module actually processes the request - which itself recurses
 // back into Node<int>.dtor() - source2.spice's own convergence loop had already fully unwound, so the late
@@ -16,11 +18,10 @@ import "source2";
 // type-checked, which crashed the IR generator.
 f<int> main() {
     LinkedList<String> list = LinkedList<String>();
-    list.pushBack(String("hello world this is a heap string"));
+    list.pushBack(String("x"));
 
-    BinaryTree<int> bt = BinaryTree<int>();
-    bt.insert(50);
-    bt.insert(20);
+    Holder<int> holder = Holder<int>();
+    holder.put(5);
 
-    printf("bt-contains-20=%d\n", bt.contains(20));
+    printf("ok\n");
 }
