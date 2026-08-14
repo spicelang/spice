@@ -98,7 +98,9 @@ static void execTestCase(const TestCase &testCase) {
       /* outputPath= */ "",
       /* buildMode= */ BuildMode::DEBUG,
       /* outputContainer= */ OutputContainer::EXECUTABLE,
-      /* compileJobCount= */ 0,
+      // Compile serially: the test cases are already spread over processes by gtest-parallel, so a parallel back end
+      // would only oversubscribe the machine, and the reference outputs stay strictly deterministic this way.
+      /* compileJobCount= */ 1,
       /* ignoreCache */ true,
       /* llvmArgs= */ "",
       /* printDebugOutput= */ false,

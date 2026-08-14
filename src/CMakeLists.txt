@@ -119,6 +119,7 @@ set(SOURCES
         util/CodeLoc.cpp
         util/CompilerWarning.cpp
         util/RawStringOStream.cpp
+        util/ThreadPool.cpp
 )
 
 # Initialize ANTLR
@@ -129,7 +130,7 @@ add_library(spicecore STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 # Add the current directory as include dir
 target_include_directories(spicecore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Link ANTLR runtime and header-only dependencies
-target_link_libraries(spicecore PUBLIC antlr4_static nlohmann_json::nlohmann_json CLI11::CLI11)
+target_link_libraries(spicecore PUBLIC antlr4_static nlohmann_json::nlohmann_json CLI11::CLI11 Threads::Threads)
 
 # Optional TPDE backend — compiled into its own static library so TPDE's -fno-rtti requirement
 # (propagated by tpde::tpde_llvm as a usage requirement) does not leak into spicecore, which

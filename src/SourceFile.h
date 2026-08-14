@@ -151,6 +151,11 @@ public:
   void runMiddleEnd();
   void runBackEnd();
 
+private:
+  void collectBackEndSourceFiles(std::vector<SourceFile *> &backEndSourceFiles);
+  void runBackEndForThisFile();
+
+public:
   // Public methods
   void addDependency(SourceFile *sourceFile, const std::string &dependencyName);
   [[nodiscard]] bool imports(const SourceFile *sourceFile) const;
@@ -184,6 +189,7 @@ public:
   CompilerOutput compilerOutput;
   SourceFile *parent;
   std::string cacheKey;
+  std::filesystem::path objectFilePath; // Set by the object emitter, handed to the linker in concludeCompilation
   std::vector<std::filesystem::path> cachedObjectFilePaths;
   std::vector<std::string> sourceLinkerFlags;
   std::vector<std::filesystem::path> sourceAdditionalSourcePaths;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,6 +20,13 @@ namespace spice::compiler {
  *
  * The state is process-global (like TypeRegistry) and therefore must be cleared between compilations, since custom type
  * ids restart at the same value for every compilation.
+ *
+ * Note on the parallel back end: the suffix a type receives depends on the order in which the names are claimed. In
+ * practice every struct/interface name is already claimed while the type checker builds signatures and diagnostics, so
+ * the back end only ever reads back an existing claim. A name that is claimed for the very first time during back-end
+ * name mangling would however get a scheduling-dependent index, which stays consistent within one compilation but may
+ * differ between runs. Making the claim order independent of the scheduling (e.g. by ranking claimants by type id over
+ * the complete, front-end-known set of types) is a follow-up.
  */
 class TypeNameDisambiguator {
 public:
@@ -34,6 +42,9 @@ private:
   // Private members
   // Maps a simple type name to the list of distinct type ids claiming it, in first-seen order
   static std::unordered_map<std::string, std::vector<uint64_t>> claimedTypeIds;
+  // The name mangler queries this registry, so it is reached from the IR generator and therefore from the worker threads
+  // of the parallel back end.
+  static std::mutex claimedTypeIdsMutex;
 };
 
 } // namespace spice::compiler

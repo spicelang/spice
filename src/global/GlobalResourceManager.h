@@ -7,6 +7,7 @@
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
 #include <util/BlockAllocator.h>
+#include <util/ThreadPool.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/LLVMContext.h>
@@ -40,6 +41,8 @@ public:
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
   uint64_t getNextCustomTypeId();
   size_t getTotalLineCount() const;
+  [[nodiscard]] size_t getCompileJobCount() const;
+  ThreadPool &getThreadPool(size_t threadCount);
 
   // Public members
   std::string cpuName;
@@ -57,11 +60,14 @@ public:
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
   ErrorManager errorManager;
-  bool abortCompilation = false;
+  // Set by the dump logic to stop the pipeline after a requested dump. The back end may write it from a worker thread.
+  std::atomic<bool> abortCompilation = false;
 
 private:
   // Private members
   std::atomic<uint64_t> nextCustomTypeId = UINT8_MAX + 1; // Start at 256 because all primitive types come first
+  // Worker pool for the parallel back end. Created lazily, so single-job builds never spawn a thread.
+  std::unique_ptr<ThreadPool> threadPool;
 };
 
 } // namespace spice::compiler

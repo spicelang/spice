@@ -13,6 +13,7 @@
 #include <typechecker/TypeChecker.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
+#include <util/Concurrency.h>
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
@@ -146,6 +147,10 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
 const Function *FunctionManager::lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                         const ArgList &reqArgs, bool strictQualifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
+
+  // Unlike match(), lookup() is also called from the IR generator (e.g. to find a copy ctor), so it can run on multiple
+  // threads at once and has to guard the process-wide lookup machinery.
+  const ConditionalLock lock(symbolRegistryMutex);
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, {});
