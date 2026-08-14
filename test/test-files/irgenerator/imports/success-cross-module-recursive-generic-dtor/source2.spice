@@ -1,0 +1,127 @@
+// Add generic type definitions
+type T dyn;
+
+/**
+ * Node of a BinaryTree - shaped like std/data/binary-tree.spice, with a recursive explicit dtor added
+ * (see issue #1254).
+ */
+public type Node<T> struct {
+    T value
+    heap Node<T>* childLeft
+    heap Node<T>* childRight
+}
+
+/**
+ * Construct a binary tree node holding the given value and optional children
+ *
+ * @param value Value to store in the node
+ * @param childLeft Left child node, or nil if there is none
+ * @param childRight Right child node, or nil if there is none
+ */
+public p Node.ctor(const T& value, heap Node<T>* childLeft = nil<heap Node<T>*>, heap Node<T>* childRight = nil<heap Node<T>*>) {
+    this.value = value;
+    this.childLeft = childLeft;
+    this.childRight = childRight;
+}
+
+/**
+ * Recursively frees the child nodes owned by this node
+ */
+public p Node.dtor() {
+    if this.childLeft != nil<heap Node<T>*> {
+        sDelete(this.childLeft);
+    }
+    if this.childRight != nil<heap Node<T>*> {
+        sDelete(this.childRight);
+    }
+}
+
+/**
+ * A minimal binary tree, only carrying what is needed to reproduce issue #1254.
+ */
+public type BinaryTree<T> struct {
+    heap Node<T>* rootNode = nil<heap Node<T>*>
+}
+
+/**
+ * Recursively frees the whole node chain owned by this tree
+ */
+public p BinaryTree.dtor() {
+    if this.rootNode != nil<heap Node<T>*> {
+        sDelete(this.rootNode);
+    }
+}
+
+/**
+ * Insert a new value into the binary tree
+ *
+ * @param value The value to insert
+ */
+public p BinaryTree.insert<T>(const T& value) {
+    // Create the new node
+    heap Node<T>* newNode = __new<Node<T>>(value, nil<heap Node<T>*>, nil<heap Node<T>*>);
+
+    // Insert the new node
+    if this.rootNode == nil<heap Node<T>*> {
+        this.rootNode = newNode;
+    } else {
+        this.insertNode(this.rootNode, newNode);
+    }
+}
+
+/**
+ * Search for a value in the binary tree
+ *
+ * @param value The value to search for
+ * @return True if the value was found, false otherwise
+ */
+public f<bool> BinaryTree.contains<T>(const T& value) {
+    return this.containsNode(this.rootNode, value);
+}
+
+/**
+ * Recursion helper to insert a new node into the binary tree
+ *
+ * @param currentNode The current node to check
+ * @param newNode The new node to insert
+ */
+p BinaryTree.insertNode<T>(Node<T>* currentNode, heap Node<T>* newNode) {
+    if newNode.value < currentNode.value {
+        if currentNode.childLeft == nil<heap Node<T>*> {
+            currentNode.childLeft = newNode;
+        } else {
+            this.insertNode(currentNode.childLeft, newNode);
+        }
+    } else {
+        if currentNode.childRight == nil<heap Node<T>*> {
+            currentNode.childRight = newNode;
+        } else {
+            this.insertNode(currentNode.childRight, newNode);
+        }
+    }
+}
+
+/**
+ * Recursion helper to check whether a value is present in the binary tree
+ *
+ * @param currentNode The current node to check
+ * @return True if the value was found, false otherwise
+ */
+f<bool> BinaryTree.containsNode<T>(Node<T>* currentNode, const T& value) {
+    // We reached the end of the tree
+    if currentNode == nil<Node<T>*> {
+        return false;
+    }
+
+    // We found the value
+    if currentNode.value == value {
+        return true;
+    }
+
+    // Search in the left or right child
+    if value < currentNode.value {
+        return this.containsNode(currentNode.childLeft, value);
+    } else {
+        return this.containsNode(currentNode.childRight, value);
+    }
+}

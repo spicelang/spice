@@ -1,0 +1,26 @@
+import "std/data/linked-list";
+import "source2";
+
+// Regression test for issue #1254: a self-referential generic struct (Node<T>, source2.spice - shaped like
+// std/data/binary-tree.spice with a recursive explicit dtor added) crashed the compiler with
+// 'Assertion `manifestation->alreadyTypeChecked' failed' - but only when another, unrelated module that declares
+// and instantiates its own heap-allocating generic struct (LinkedList<T>, imported here from the std lib) was
+// also imported.
+//
+// Root cause: the type-checker's cross-file convergence is driven by nested, per-file 'reVisitRequested' loops.
+// When BinaryTree<int>'s dtor (source2.spice) requests a new manifestation in the shared runtime module (sDelete),
+// that request can get deferred behind another importer of the runtime module that has not type-checked yet
+// (LinkedList<String>). By the time the runtime module actually processes the request - which itself recurses
+// back into Node<int>.dtor() - source2.spice's own convergence loop had already fully unwound, so the late
+// revisit request on it was silently dropped, leaving Node<int>.dtor() fully substantiated but never
+// type-checked, which crashed the IR generator.
+f<int> main() {
+    LinkedList<String> list = LinkedList<String>();
+    list.pushBack(String("hello world this is a heap string"));
+
+    BinaryTree<int> bt = BinaryTree<int>();
+    bt.insert(50);
+    bt.insert(20);
+
+    printf("bt-contains-20=%d\n", bt.contains(20));
+}

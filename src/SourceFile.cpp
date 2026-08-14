@@ -665,6 +665,22 @@ void SourceFile::runMiddleEnd() {
   // The second run to ensure, also generic scopes are type-checked properly
   runTypeCheckerPost(); // Visit the dependency tree from top to bottom in topological order
   CHECK_ABORT_FLAG_V()
+  // The per-file convergence loop inside runTypeCheckerPost is scoped to its own call stack: a cross-file revisit
+  // request that lands on a file whose loop already unwound (e.g. a recursive generic dtor chain that closes back
+  // through a runtime module which was itself gated behind another, not-yet-checked importer) is otherwise dropped,
+  // leaving a fully-substantiated manifestation whose body was never type-checked. Sweep every source file in the
+  // program for a straggling revisit request and drive it to convergence directly, repeating until none are left.
+  bool anySourceFileRevisitPending;
+  do {
+    anySourceFileRevisitPending = false;
+    for (const std::unique_ptr<SourceFile> &sourceFile : resourceManager.sourceFiles | std::views::values) {
+      if (sourceFile->reVisitRequested) {
+        sourceFile->runTypeCheckerPost();
+        anySourceFileRevisitPending = true;
+      }
+    }
+  } while (anySourceFileRevisitPending);
+  CHECK_ABORT_FLAG_V()
   // Visualize dependency graph
   runDependencyGraphVisualizer();
   CHECK_ABORT_FLAG_V()
