@@ -1,0 +1,44 @@
+type K dyn;
+type V dyn;
+
+// Regression test for GitHub issue #1255 (copy ctor variant).
+// A generic struct with an explicit copy constructor, used as a nested field in another generic
+// struct where one type parameter is inherited generic and the other is a fixed concrete type.
+// Crucially, the outer struct's own generic type parameter is named 'K', colliding with the
+// name of the inner struct's own first template type parameter - this mirrors the real-world
+// shape of the bug (Set<V> wrapping RedBlackTree<K,V>, colliding on 'V').
+// Adding the explicit copy ctor used to make the outer struct's default-copy-ctor synthesis
+// partially substantiate a bogus manifestation of the field copy ctor (Inner<K, bool>, with K
+// left generic) while the outer struct was still a generic preset. That manifestation was later
+// treated as fully substantiated and crashed name mangling during IR generation. Without the
+// name collision, an incidental check in the argument matching rejected the bogus manifestation,
+// masking the bug - so this collision shape is required to actually reproduce it.
+type Inner<K, V> struct {
+    K* keyPtr = nil<K*>
+    V* valPtr = nil<V*>
+    long tag = 0l
+}
+
+p Inner.ctor(const Inner<K,V>& other) {
+    this.tag = other.tag;
+}
+
+p Inner.greet() {
+    printf("Inner greet\n");
+}
+
+type Outer<K> struct {
+    Inner<K, bool> inner
+}
+
+p Outer.ctor() {}
+
+p Outer.greet() {
+    this.inner.greet();
+}
+
+f<int> main() {
+    Outer<int> o = Outer<int>();
+    o.greet();
+    printf("done\n");
+}

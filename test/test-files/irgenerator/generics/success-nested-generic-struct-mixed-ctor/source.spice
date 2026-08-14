@@ -1,0 +1,42 @@
+type K dyn;
+type V dyn;
+type T dyn;
+
+// Regression test for GitHub issue #1255 (ctor variant).
+// A generic struct with an explicit, zero-arg default constructor, used as a nested field in
+// another generic struct where one type parameter is inherited generic (T) and the other is a
+// fixed concrete type (bool). This mirrors the mixed-generic dtor case in
+// success-nested-generic-struct-mixed-dtor, but for the default ctor instead.
+// Adding the explicit ctor used to make the outer struct's default-ctor synthesis partially
+// substantiate a bogus manifestation of the field ctor (Inner<K, bool>, with K left generic)
+// while the outer struct was still a generic preset. That manifestation was later treated as
+// fully substantiated and crashed name mangling during IR generation.
+type Inner<K, V> struct {
+    K* keyPtr = nil<K*>
+    V* valPtr = nil<V*>
+    long tag = 0l
+}
+
+p Inner.ctor() {
+    printf("Inner ctor\n");
+}
+
+p Inner.bump() {
+    this.tag++;
+}
+
+type Outer<T> struct {
+    Inner<T, bool> inner
+}
+
+p Outer.touch() {
+    this.inner.bump();
+}
+
+f<int> main() {
+    Outer<int> o = Outer<int>();
+    o.touch();
+    o.touch();
+    o.touch();
+    printf("tag=%d\n", o.inner.tag);
+}
