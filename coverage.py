@@ -5,7 +5,15 @@ from pathlib import Path
 
 Path("coverage").mkdir(exist_ok=True)
 
-base_args = ["gcovr", "--exclude-lines-by-pattern", "assert", "-r", "."]
+base_args = [
+    "gcovr",
+    "--exclude-lines-by-pattern",
+    "assert",
+    "--gcov-ignore-parse-errors",
+    "negative_hits.warn_once_per_file",
+    "-r",
+    ".",
+]
 
 subprocess.run(
     base_args + ["--html", "--html-details", "-s", "-o", "coverage/index.html"],
