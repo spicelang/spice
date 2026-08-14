@@ -16,7 +16,7 @@ namespace spice::compiler {
  * SourceFile::runBackEnd), and there the caches do need protection. ParallelSection flips this switch for exactly the
  * time span in which worker threads are alive.
  */
-inline std::atomic<bool> concurrentPassesRunning = false;
+inline std::atomic concurrentPassesRunning = false;
 
 /**
  * RAII marker for a section of the compiler in which passes are executed on multiple threads.

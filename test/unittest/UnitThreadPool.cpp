@@ -13,6 +13,8 @@
 #include <util/Concurrency.h>
 #include <util/ThreadPool.h>
 
+// LCOV_EXCL_START
+
 namespace spice::testing {
 
 using namespace spice::compiler;
@@ -21,7 +23,7 @@ TEST(ThreadPoolTest, RunsAllSubmittedTasks) {
   ThreadPool pool(4);
   std::atomic<size_t> executedTasks = 0;
   for (size_t i = 0; i < 1000; i++)
-    pool.submit([&executedTasks] { executedTasks++; });
+    pool.submit([&executedTasks] { ++executedTasks; });
   pool.waitForAll();
 
   EXPECT_EQ(1000u, executedTasks.load());
@@ -53,7 +55,7 @@ TEST(ThreadPoolTest, IsReusableAfterFailure) {
 
   std::atomic<size_t> executedTasks = 0;
   for (size_t i = 0; i < 100; i++)
-    pool.submit([&executedTasks] { executedTasks++; });
+    pool.submit([&executedTasks] { ++executedTasks; });
   pool.waitForAll();
 
   EXPECT_EQ(100u, executedTasks.load());
@@ -93,10 +95,10 @@ TEST(ConcurrencyTest, ConditionalLockOnlyLocksInParallelSection) {
 
 TEST(ConcurrencyTest, ConditionalLockGuardsSharedMapUnderContention) {
   ThreadPool pool(4);
-  std::mutex mutex;
   std::unordered_map<size_t, size_t> sharedMap; // Stands in for the type registry / lookup caches
 
   {
+    std::mutex mutex;
     const ParallelSection parallelSection;
     for (size_t i = 0; i < 4; i++)
       pool.submit([&] {
@@ -114,3 +116,5 @@ TEST(ConcurrencyTest, ConditionalLockGuardsSharedMapUnderContention) {
 }
 
 } // namespace spice::testing
+
+// LCOV_EXCL_STOP
