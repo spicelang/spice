@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include <string>
 
@@ -20,6 +21,33 @@ struct ExternalBinaryFinderResult {
   const char *name;
   std::string path;
 };
+
+// Directories that are searched for a linker invoker, linker or archiver executable
+static constexpr std::array<const char *, 3> BINARY_SEARCH_DIRS = {"/usr/bin/", "/usr/local/bin/", "/bin/"};
+
+// Supported linker invoker names, in order of preference
+static constexpr auto LINKER_INVOKER_NAME_CLANG = "clang";
+static constexpr auto LINKER_INVOKER_NAME_GCC = "gcc";
+static constexpr std::array LINKER_INVOKER_NAMES = {LINKER_INVOKER_NAME_CLANG, LINKER_INVOKER_NAME_GCC};
+
+// Supported linker names, in order of preference
+static constexpr auto LINKER_NAME_MOLD = "mold";
+static constexpr auto LINKER_NAME_LD_LLD = "ld.lld";
+static constexpr auto LINKER_NAME_LD64_LLD = "ld64.ddl";
+static constexpr auto LINKER_NAME_GOLD = "gold";
+static constexpr auto LINKER_NAME_LD = "ld";
+static constexpr auto LINKER_NAME_LLD = "lld";
+static constexpr std::array LINKER_NAMES_UNIX = {LINKER_NAME_LD_LLD, LINKER_NAME_LD64_LLD, LINKER_NAME_GOLD, LINKER_NAME_LD};
+static constexpr std::array LINKER_NAMES_WINDOWS = {LINKER_NAME_LLD, LINKER_NAME_LD};
+
+// Supported archiver names, in order of preference
+static constexpr auto ARCHIVER_NAME_LLVM_AR = "llvm-ar";
+static constexpr auto ARCHIVER_NAME_GCC_AR = "gcc-ar";
+static constexpr auto ARCHIVER_NAME_AR = "ar";
+static constexpr auto ARCHIVER_NAME_LLVM_LIB = "llvm-lib";
+static constexpr auto ARCHIVER_NAME_LIB = "lib";
+static constexpr std::array ARCHIVER_NAMES_UNIX = {ARCHIVER_NAME_LLVM_AR, ARCHIVER_NAME_GCC_AR, ARCHIVER_NAME_AR};
+static constexpr std::array ARCHIVER_NAMES_WINDOWS = {ARCHIVER_NAME_LLVM_LIB, ARCHIVER_NAME_LIB};
 
 class SystemUtil {
 public:

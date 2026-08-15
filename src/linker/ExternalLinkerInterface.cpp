@@ -100,8 +100,8 @@ void ExternalLinkerInterface::link() const {
   const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
   commandBuilder << linkerInvokerPath;
   const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
-  const bool isGccInvoker = std::string_view(linkerInvokerName) == "gcc";
-  const bool isClangInvoker = std::string_view(linkerInvokerName) == "clang";
+  const bool isGccInvoker = std::string_view(linkerInvokerName) == LINKER_INVOKER_NAME_GCC;
+  const bool isClangInvoker = std::string_view(linkerInvokerName) == LINKER_INVOKER_NAME_CLANG;
   // GCC does not implement MemorySanitizer or TypeSanitizer
   const Sanitizer sanitizer = cliOptions.instrumentation.sanitizer;
   if (!isClangInvoker && (sanitizer == Sanitizer::MEMORY || sanitizer == Sanitizer::TYPE)) {
@@ -109,7 +109,7 @@ void ExternalLinkerInterface::link() const {
     throw LinkerError(SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
   }
   // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
-  if (!isGccInvoker || std::string_view(linkerName) != "ld")
+  if (!isGccInvoker || std::string_view(linkerName) != LINKER_NAME_LD)
     commandBuilder << " -fuse-ld=" << linkerPath;
   // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
   if (!isGccInvoker)
