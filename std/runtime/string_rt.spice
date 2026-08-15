@@ -889,6 +889,13 @@ public f<unsigned long> getRawLength(string input) {
  * @return Equality of lhs and rhs
  */
 public f<bool> isRawEqual(string lhs, string rhs) {
+    // A nil string represents the absence of a string and must never be considered equal to a non-nil
+    // string, even an empty one (e.g. nil<string> != ""). getRawLength() cannot tell these apart, since
+    // it reports both as length 0, so the nil-ness has to be checked explicitly beforehand.
+    const bool lhsIsNil = cast<const char*>(lhs) == nil<const char*>;
+    const bool rhsIsNil = cast<const char*>(rhs) == nil<const char*>;
+    if lhsIsNil || rhsIsNil { return lhsIsNil && rhsIsNil; }
+
     unsigned long lhsLength = getRawLength(lhs);
     unsigned long rhsLength = getRawLength(rhs);
     // Return false immediately if length does not match
