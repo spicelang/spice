@@ -526,15 +526,41 @@ ext p LLVMParseCommandLineOptions(int /*argc*/, const string* /*argv*/, string /
 ext f<LLVMErrorRef> LLVMCreateStringError(string /*ErrMsg*/);
 ext f<string> LLVMGetErrorMessage(LLVMErrorRef /*Err*/);
 ext p LLVMDisposeErrorMessage(string /*ErrMsg*/);
+ext p LLVMConsumeError(LLVMErrorRef /*Err*/);
 ext f<string> LLVMCreateMessage(string /*Message*/);
 ext p LLVMDisposeMessage(string /*Message*/);
 ext p LLVMGetVersion(unsigned int* /*Major*/, unsigned int* /*Minor*/, unsigned int* /*Patch*/);
 ext p LLVMShutdown();
 
+// ===== Message =====
+
+// Helper for obtaining and disposing heap-allocated strings, allocated by LLVM
+public type Message struct {
+    string message
+}
+
+public p Message.ctor(string message = nil<string>) {
+    this.message = message;
+}
+
+public p Message.dtor() {
+    if this.message != nil<string> {
+        LLVMDisposeMessage(this.message);
+        this.message = nil<string>;
+    }
+}
+
+p Message.set(string message) {
+    this.message = message;
+}
+
+public const f<string> Message.get() {
+    return this.message;
+}
+
 // ===== LLVMError =====
 public type LLVMError struct {
     LLVMErrorRef self
-    string message = nil<string>
 }
 
 public p LLVMError.ctor(string message) {
@@ -546,11 +572,11 @@ public p LLVMError.ctor(LLVMErrorRef error) {
 }
 
 public p LLVMError.dtor() {
-    LLVMDisposeErrorMessage(this.message);
+    LLVMConsumeError(this.self);
 }
 
-public f<string> LLVMError.getMessage() {
-    return this.message = LLVMGetErrorMessage(this.self);
+public f<Message> LLVMError.getMessage() {
+    return Message(LLVMGetErrorMessage(this.self));
 }
 
 // ===== LLVMContext =====
@@ -723,8 +749,8 @@ public p Module.dump() {
     LLVMDumpModule(this.self);
 }
 
-public f<string> Module.print() {
-    return LLVMPrintModuleToString(this.self);
+public f<Message> Module.print() {
+    return Message(LLVMPrintModuleToString(this.self));
 }
 
 public f<string> Module.printToFile(string filename) {
@@ -1159,8 +1185,6 @@ public type PassInfo interface {
 // ===== AlwaysInlinerPass =====
 public type AlwaysInlinerPass struct : PassInfo {}
 
-public p AlwaysInlinerPass.ctor() {}
-
 f<string> AlwaysInlinerPass.getOption() {
     return "always-inline";
 }
@@ -1222,8 +1246,11 @@ public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, 
     }
 }
 
-public f<bool> verifyModule(Module module, string* outMessage, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
-    return LLVMVerifyModule(module.self, action, outMessage) != 0;
+public f<bool> verifyModule(Module module, Message& outMessage, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
+    string outMessageInternal;
+    const LLVMBool res = LLVMVerifyModule(module.self, action, &outMessageInternal);
+    outMessage.set(outMessageInternal);
+    return res != 0;
 }
 
 public f<bool> verifyFunction(Function function, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
