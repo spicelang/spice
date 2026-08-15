@@ -58,7 +58,7 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
     result << buffer.data();
 
   const int status = pclose(pipe);
-  return {result.str(), transformStatusToExitCode(status)};
+  return {.output = result.str(), .exitCode = transformStatusToExitCode(status)};
 }
 
 /**
@@ -124,19 +124,19 @@ bool SystemUtil::isGraphvizInstalled() { return isCommandAvailable("dot"); }
  */
 ExternalBinaryFinderResult SystemUtil::findLinkerInvoker() {
 #if OS_UNIX
-  for (const char *linkerInvokerName : {"clang", "gcc"})
-    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+  for (const char *linkerInvokerName : LINKER_INVOKER_NAMES)
+    for (const std::string path : BINARY_SEARCH_DIRS)
       if (std::filesystem::exists(path + linkerInvokerName))
-        return ExternalBinaryFinderResult{linkerInvokerName, path + linkerInvokerName};
+        return ExternalBinaryFinderResult{.name = linkerInvokerName, .path = path + linkerInvokerName};
 #elif OS_WINDOWS
-  for (const char *linkerInvokerName : {"clang", "gcc"})
+  for (const char *linkerInvokerName : LINKER_INVOKER_NAMES)
     if (isCommandAvailable(std::string(linkerInvokerName) + " -v"))
       return ExternalBinaryFinderResult{linkerInvokerName, linkerInvokerName};
 #else
 #error "Unsupported platform"
 #endif
-  const auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
-  throw LinkerError(LINKER_INVOKER_NOT_FOUND, msg);                                                     // LCOV_EXCL_LINE
+  constexpr auto msg = "No supported linker invoker was found on the system. Supported are: clang and gcc"; // LCOV_EXCL_LINE
+  throw LinkerError(LINKER_INVOKER_NOT_FOUND, msg);                                                         // LCOV_EXCL_LINE
 }
 
 /**
@@ -149,28 +149,25 @@ ExternalBinaryFinderResult SystemUtil::findLinkerInvoker() {
 ExternalBinaryFinderResult SystemUtil::findLinker([[maybe_unused]] const CliOptions &cliOptions) {
 #if OS_UNIX
   std::vector<const char *> linkerList;
-  linkerList.reserve(5);
+  linkerList.reserve(1 + LINKER_NAMES_UNIX.size());
   // mold does only support linking for unix and darwin
   if (!cliOptions.targetTriple.isOSWindows())
-    linkerList.push_back("mold");
-  linkerList.push_back("ld.lld");
-  linkerList.push_back("ld64.ddl");
-  linkerList.push_back("gold");
-  linkerList.push_back("ld");
+    linkerList.push_back(LINKER_NAME_MOLD);
+  linkerList.insert(linkerList.end(), LINKER_NAMES_UNIX.begin(), LINKER_NAMES_UNIX.end());
 
   for (const char *linkerName : linkerList)
-    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+    for (const std::string path : BINARY_SEARCH_DIRS)
       if (std::filesystem::exists(path + linkerName))
-        return ExternalBinaryFinderResult{linkerName, path + linkerName};
+        return ExternalBinaryFinderResult{.name = linkerName, .path = path + linkerName};
 #elif OS_WINDOWS
-  for (const char *linkerName : {"lld", "ld"})
+  for (const char *linkerName : LINKER_NAMES_WINDOWS)
     if (isCommandAvailable(std::string(linkerName) + " -v"))
       return ExternalBinaryFinderResult{linkerName, linkerName};
 #else
 #error "Unsupported platform"
 #endif
-  const auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
-  throw LinkerError(LINKER_NOT_FOUND, msg);                                                              // LCOV_EXCL_LINE
+  constexpr auto msg = "No supported linker was found on the system. Supported are: mold, lld, gold and ld"; // LCOV_EXCL_LINE
+  throw LinkerError(LINKER_NOT_FOUND, msg);                                                                  // LCOV_EXCL_LINE
 }
 
 /**
@@ -181,19 +178,19 @@ ExternalBinaryFinderResult SystemUtil::findLinker([[maybe_unused]] const CliOpti
  */
 ExternalBinaryFinderResult SystemUtil::findArchiver() {
 #if OS_UNIX
-  for (const char *archiverName : {"llvm-ar", "gcc-ar", "ar"})
-    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+  for (const char *archiverName : ARCHIVER_NAMES_UNIX)
+    for (const std::string path : BINARY_SEARCH_DIRS)
       if (std::filesystem::exists(path + archiverName))
-        return ExternalBinaryFinderResult{archiverName, path + archiverName};
+        return ExternalBinaryFinderResult{.name = archiverName, .path = path + archiverName};
 #elif OS_WINDOWS
-  for (const char *archiverName : {"llvm-lib", "lib"})
+  for (const char *archiverName : ARCHIVER_NAMES_WINDOWS)
     if (isCommandAvailable(std::string(archiverName) + " -v"))
       return ExternalBinaryFinderResult{archiverName, archiverName};
 #else
 #error "Unsupported platform"
 #endif
-  const auto msg = "No supported archiver was found on the system. Supported are: llvm-ar and ar"; // LCOV_EXCL_LINE
-  throw LinkerError(ARCHIVER_NOT_FOUND, msg);                                                      // LCOV_EXCL_LINE
+  constexpr auto msg = "No supported archiver was found on the system. Supported are: llvm-ar and ar"; // LCOV_EXCL_LINE
+  throw LinkerError(ARCHIVER_NOT_FOUND, msg);                                                          // LCOV_EXCL_LINE
 }
 
 /**
@@ -234,8 +231,8 @@ std::filesystem::path SystemUtil::getStdDir() {
   if (std::getenv("SPICE_STD_DIR"))
     if (const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR")); exists(stdPath))
       return stdPath;
-  const auto errMsg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // GCOV_EXCL_LINE
-  throw CompilerError(STD_NOT_FOUND, errMsg);                                                           // GCOV_EXCL_LINE
+  constexpr auto msg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // GCOV_EXCL_LINE
+  throw CompilerError(STD_NOT_FOUND, msg);                                                               // GCOV_EXCL_LINE
 }
 
 /**
@@ -249,8 +246,8 @@ std::filesystem::path SystemUtil::getBootstrapDir() {
     if (const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR")); exists(stdPath))
       return stdPath;
   }
-  const auto errMsg = "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists"; // GCOV_EXCL_LINE
-  throw CompilerError(BOOTSTRAP_NOT_FOUND, errMsg);                                                             // GCOV_EXCL_LINE
+  constexpr auto msg = "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists"; // GCOV_EXCL_LINE
+  throw CompilerError(BOOTSTRAP_NOT_FOUND, msg);                                                                 // GCOV_EXCL_LINE
 }
 
 /**
