@@ -37,6 +37,8 @@ std::string LinkerError::getMessagePrefix(LinkerErrorType errorType) {
     return "Archiver not found";
   case LINKER_ERROR:
     return "Linker error occurred";
+  case SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER:
+    return "Sanitizer not supported by linker invoker";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE
