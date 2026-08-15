@@ -38,19 +38,17 @@ void ExternalLinkerInterface::prepare() {
   case Sanitizer::NONE:
     break;
   case Sanitizer::ADDRESS:
-    addLinkerFlag("-lasan");
+    addLinkerFlag("-fsanitize=address");
     break;
   case Sanitizer::THREAD:
-    addLinkerFlag("-ltsan");
+    addLinkerFlag("-fsanitize=thread");
     break;
   case Sanitizer::MEMORY:
-    addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
-    addLinkerFlag("-lclang_rt.msan");
+    addLinkerFlag("-fsanitize=memory");
     requestLibMathLinkage();
     break;
   case Sanitizer::TYPE:
-    addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
-    addLinkerFlag("-lclang_rt.tysan");
+    addLinkerFlag("-fsanitize=type");
     break;
   }
 
@@ -103,6 +101,13 @@ void ExternalLinkerInterface::link() const {
   commandBuilder << linkerInvokerPath;
   const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
   const bool isGccInvoker = std::string_view(linkerInvokerName) == "gcc";
+  const bool isClangInvoker = std::string_view(linkerInvokerName) == "clang";
+  // GCC does not implement MemorySanitizer or TypeSanitizer
+  const Sanitizer sanitizer = cliOptions.instrumentation.sanitizer;
+  if (!isClangInvoker && (sanitizer == Sanitizer::MEMORY || sanitizer == Sanitizer::TYPE)) {
+    const std::string msg = "Memory and type sanitizers require clang as the linker invoker, but 'gcc' was selected";
+    throw LinkerError(SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
+  }
   // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
   if (!isGccInvoker || std::string_view(linkerName) != "ld")
     commandBuilder << " -fuse-ld=" << linkerPath;
