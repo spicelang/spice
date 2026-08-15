@@ -38,6 +38,32 @@ public type BinaryTree<T> struct {
 }
 
 /**
+ * Constructs an empty tree
+ */
+public p BinaryTree.ctor() {}
+
+/**
+ * Constructs a new tree as a deep copy of another tree
+ *
+ * @param other Tree to copy
+ */
+public p BinaryTree.ctor(const BinaryTree<T>& other) {
+    this.rootNode = this.cloneSubtree(other.rootNode);
+    this.isBalanced = other.isBalanced;
+}
+
+/**
+ * Move-constructs a new tree, taking ownership of another tree's nodes
+ *
+ * @param other Tree to move from
+ */
+public p BinaryTree.ctor(BinaryTree<T>& other) {
+    this.rootNode = other.rootNode;
+    this.isBalanced = other.isBalanced;
+    other.rootNode = nil<heap Node<T>*>;
+}
+
+/**
  * Destruct the binary tree, freeing all its nodes
  */
 public p BinaryTree.dtor() {
@@ -198,4 +224,18 @@ p BinaryTree.freeSubtree<T>(heap Node<T>* node) {
     node.childLeft = nil<heap Node<T>*>;
     node.childRight = nil<heap Node<T>*>;
     sDelete(node);
+}
+
+/**
+ * Recursion helper to deep-clone a whole subtree
+ *
+ * @param node The root of the subtree to clone, or nil if there is nothing to clone
+ * @return A newly allocated, deep copy of the subtree, or nil if node was nil
+ */
+f<heap Node<T>*> BinaryTree.cloneSubtree<T>(Node<T>* node) {
+    if node == nil<Node<T>*> { return nil<heap Node<T>*>; }
+    heap Node<T>* newNode = __new<Node<T>>(node.value);
+    newNode.childLeft = this.cloneSubtree(node.childLeft);
+    newNode.childRight = this.cloneSubtree(node.childRight);
+    return newNode;
 }
