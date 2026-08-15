@@ -82,9 +82,12 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
 public p Vector.ctor(const Vector<T>& original) {
     this.ctor(original.capacity);
     if original.size == 0l { return; }
-    const unsigned long itemSize = sizeof<T>();
-    unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), itemSize * original.size);
+    // Copy-construct each element individually, so non-trivial elements get their own owned resources
+    // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
+    for unsigned long index = 0ul; index < original.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], original.contents[index]);
+        }
     }
     this.size = original.size;
 }
@@ -97,6 +100,12 @@ public p Vector.ctor(const Vector<T>& original) {
 public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
     assert itemSize > 0l;
+    // Destruct our currently owned elements before they get overwritten
+    for unsigned long index = 0ul; index < this.size; index++ {
+        unsafe {
+            sDestruct(this.contents[index]);
+        }
+    }
     if newValue.capacity != this.capacity {
         if newValue.capacity == 0l {
             // Drop our buffer to match the unallocated source
@@ -115,9 +124,25 @@ public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
     }
     this.size = newValue.size;
     if newValue.size == 0l { return; }
-    unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+    // Copy-construct each element individually, so non-trivial elements get their own owned resources
+    // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
+    for unsigned long index = 0ul; index < newValue.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], newValue.contents[index]);
+        }
     }
+}
+
+/**
+ * Destructs the vector, destructing all owned elements and freeing the buffer
+ */
+public p Vector.dtor() {
+    this.clear();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+    }
+    this.capacity = 0l;
 }
 
 /**
@@ -279,6 +304,12 @@ public f<T&> Vector.back() {
  * Removes all items from the vector
  */
 public p Vector.clear() {
+    // Destruct owned elements before dropping them
+    for unsigned long index = 0ul; index < this.size; index++ {
+        unsafe {
+            sDestruct(this.contents[index]);
+        }
+    }
     this.size = 0l;
 }
 

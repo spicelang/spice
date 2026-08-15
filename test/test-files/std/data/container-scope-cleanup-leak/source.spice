@@ -4,6 +4,10 @@ import "std/data/linked-list";
 import "std/data/doubly-linked-list";
 import "std/data/binary-tree";
 import "std/data/red-black-tree";
+import "std/data/vector";
+import "std/data/unordered-map";
+import "std/data/unordered-set";
+import "std/data/pair";
 
 f<int> main() {
     // A container going out of scope must free its whole internal node chain/tree (including
@@ -51,6 +55,74 @@ f<int> main() {
         tree.clear();
     }
     printf("red-black tree empty clear ok\n");
+
+    {
+        // Vector must destruct each owned element (e.g. String) on scope exit and in clear(), not just
+        // free its own backing buffer
+        Vector<String> vec = Vector<String>();
+        vec.pushBack(String("first heap-allocated vector value"));
+        vec.pushBack(String("second heap-allocated vector value"));
+        vec.pushBack(String("third heap-allocated vector value"));
+        vec.clear();
+        vec.pushBack(String("fourth heap-allocated vector value"));
+    }
+    printf("vector ok\n");
+
+    {
+        // Copy-construction and copy-assignment must deep-copy owned elements instead of aliasing the
+        // source's heap resources, which would double-free once elements are properly destructed
+        Vector<String> original = Vector<String>();
+        original.pushBack(String("first original vector value"));
+        original.pushBack(String("second original vector value"));
+
+        Vector<String> copyConstructed = Vector<String>(original);
+
+        Vector<String> copyAssigned = Vector<String>();
+        copyAssigned.pushBack(String("value to be overwritten"));
+        copyAssigned = original;
+
+        printf("copies hold %d and %d elements\n", copyConstructed.getSize(), copyAssigned.getSize());
+    }
+    printf("vector copy ok\n");
+
+    {
+        // Iterating a hash-table-backed container must not corrupt its bucket contents. Reassigning a
+        // reference-typed local variable in Spice assigns through the reference, it does not rebind it.
+        // A handful of entries spread across the default 100 buckets still exercises the iterator's
+        // "skip empty buckets" logic, which is where the corruption used to happen.
+        // Note: keys/values are trivial (int) here on purpose. HashTable's own element type
+        // (HashEntry<K, V>) currently never gets its default dtor generated when V is non-trivial, since
+        // it is only ever reached indirectly as a nested generic field (Vector<LinkedList<HashEntry<K,
+        // V>>>), never instantiated by name directly - a separate, pre-existing gap in the compiler's
+        // generic-manifestation collection, not covered by this test.
+        UnorderedMap<int, int> map = UnorderedMap<int, int>();
+        map.upsert(3, 3 * 3);
+        map.upsert(17, 17 * 17);
+        map.upsert(42, 42 * 42);
+        map.upsert(58, 58 * 58);
+        map.upsert(91, 91 * 91);
+        int count = 0;
+        foreach Pair<int&, int&> entry : map {
+            count++;
+        }
+        printf("iterated %d map entries\n", count);
+    }
+    printf("unordered map ok\n");
+
+    {
+        UnorderedSet<int> set = UnorderedSet<int>();
+        set.insert(3);
+        set.insert(17);
+        set.insert(42);
+        set.insert(58);
+        set.insert(91);
+        int count = 0;
+        foreach int value : set {
+            count += value;
+        }
+        printf("iterated set entries, sum %d\n", count);
+    }
+    printf("unordered set ok\n");
 
     return 0;
 }
