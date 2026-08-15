@@ -43,10 +43,11 @@ f<int> main() {
     builder.createRet(builder.getInt32(0));
 
     assert !llvm::verifyFunction(func);
-    string output;
-    assert !llvm::verifyModule(module, &output);
+    llvm::Message output;
+    assert !llvm::verifyModule(module, output);
 
-    printf("Unoptimized IR:\n%s", module.print());
+    const llvm::Message unoptimizedIR = module.print();
+    printf("Unoptimized IR:\n%s", unoptimizedIR.get());
 
     llvm::PassBuilderOptions pto;
     llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
@@ -54,7 +55,8 @@ f<int> main() {
     passBuilder.addPass(llvm::AlwaysInlinerPass());
     passBuilder.run(module, targetMachine);
 
-    printf("Optimized IR:\n%s", module.print());
+    const llvm::Message optimizedIR = module.print();
+    printf("Optimized IR:\n%s", optimizedIR.get());
 
     targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
 }
