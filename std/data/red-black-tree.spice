@@ -68,6 +68,33 @@ public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
 }
 
 /**
+ * Constructs an empty tree
+ */
+public p RedBlackTree.ctor() {}
+
+/**
+ * Constructs a new tree as a deep copy of another tree
+ *
+ * @param other Tree to copy
+ */
+public p RedBlackTree.ctor(const RedBlackTree<K, V>& other) {
+    this.rootNode = this.cloneSubtree(other.rootNode, nil<Node<K, V>*>);
+    this.size = other.size;
+}
+
+/**
+ * Move-constructs a new tree, taking ownership of another tree's nodes
+ *
+ * @param other Tree to move from
+ */
+public p RedBlackTree.ctor(RedBlackTree<K, V>& other) {
+    this.rootNode = other.rootNode;
+    this.size = other.size;
+    other.rootNode = nil<heap Node<K, V>*>;
+    other.size = 0l;
+}
+
+/**
  * Insert a new key-value pair into the tree.
  *
  * @param key The key of the new element
@@ -240,8 +267,47 @@ public f<bool> RedBlackTree.isEmpty() {
  * Clear all elements from the tree.
  */
 public p RedBlackTree.clear() {
-    sDelete(this.rootNode);
+    this.freeSubtree(this.rootNode);
+    this.rootNode = nil<heap Node<K, V>*>;
     this.size = 0l;
+}
+
+/**
+ * Destruct the tree, freeing all its nodes.
+ */
+public p RedBlackTree.dtor() {
+    this.freeSubtree(this.rootNode);
+}
+
+/**
+ * Recursion helper to free a whole subtree bottom-up. Children are detached from the node
+ * before it is deleted, so the node's own (implicit) destructor never sees a dangling child
+ * pointer and can never double-free it.
+ *
+ * @param node The root of the subtree to free, or nil if there is nothing to free
+ */
+p RedBlackTree.freeSubtree(heap Node<K, V>* node) {
+    if node == nil<heap Node<K, V>*> { return; }
+    this.freeSubtree(node.childLeft);
+    this.freeSubtree(node.childRight);
+    node.childLeft = nil<heap Node<K, V>*>;
+    node.childRight = nil<heap Node<K, V>*>;
+    sDelete(node);
+}
+
+/**
+ * Recursion helper to deep-clone a whole subtree, re-parenting each cloned node to the given parent.
+ *
+ * @param node The root of the subtree to clone, or nil if there is nothing to clone
+ * @param parent The parent to assign to the cloned node
+ * @return A newly allocated, deep copy of the subtree, or nil if node was nil
+ */
+f<heap Node<K, V>*> RedBlackTree.cloneSubtree(Node<K, V>* node, Node<K, V>* parent) {
+    if node == nil<Node<K, V>*> { return nil<heap Node<K, V>*>; }
+    heap Node<K, V>* newNode = __new<Node<K, V>>(node.key, node.value, node.color, parent);
+    newNode.childLeft = this.cloneSubtree(node.childLeft, newNode);
+    newNode.childRight = this.cloneSubtree(node.childRight, newNode);
+    return newNode;
 }
 
 /**

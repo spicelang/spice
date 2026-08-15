@@ -31,6 +31,38 @@ public type DoublyLinkedList<T> struct {
 }
 
 /**
+ * Constructs an empty list
+ */
+public p DoublyLinkedList.ctor() {}
+
+/**
+ * Constructs a new list as a deep copy of another list
+ *
+ * @param other List to copy
+ */
+public p DoublyLinkedList.ctor(const DoublyLinkedList<T>& other) {
+    Node<T>* curr = other.tail;
+    while curr != nil<Node<T>*> {
+        this.pushBack(curr.value);
+        curr = curr.next;
+    }
+}
+
+/**
+ * Move-constructs a new list, taking ownership of another list's nodes
+ *
+ * @param other List to move from
+ */
+public p DoublyLinkedList.ctor(DoublyLinkedList<T>& other) {
+    this.head = other.head;
+    this.tail = other.tail;
+    this.size = other.size;
+    other.head = nil<Node<T>*>;
+    other.tail = nil<heap Node<T>*>;
+    other.size = 0l;
+}
+
+/**
  * Pushes a new item to the back of the list
  *
  * @param value Value to push
@@ -244,6 +276,22 @@ public inline f<T&> DoublyLinkedList.getFront() {
 public inline f<T&> DoublyLinkedList.getBack() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
+}
+
+/**
+ * Clears the list
+ */
+public inline p DoublyLinkedList.clear() {
+    while !this.isEmpty() {
+        this.removeFront();
+    }
+}
+
+/**
+ * Destructs the list, freeing all its nodes
+ */
+public p DoublyLinkedList.dtor() {
+    this.clear();
 }
 
 f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {

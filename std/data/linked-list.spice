@@ -36,6 +36,38 @@ public type LinkedList<T> struct : IIterable<T> {
 }
 
 /**
+ * Constructs an empty list
+ */
+public p LinkedList.ctor() {}
+
+/**
+ * Constructs a new list as a deep copy of another list
+ *
+ * @param other List to copy
+ */
+public p LinkedList.ctor(const LinkedList<T>& other) {
+    Node<T>* curr = other.tail;
+    while curr != nil<Node<T>*> {
+        this.pushBack(curr.value);
+        curr = curr.next;
+    }
+}
+
+/**
+ * Move-constructs a new list, taking ownership of another list's nodes
+ *
+ * @param other List to move from
+ */
+public p LinkedList.ctor(LinkedList<T>& other) {
+    this.tail = other.tail;
+    this.head = other.head;
+    this.size = other.size;
+    other.tail = nil<heap Node<T>*>;
+    other.head = nil<Node<T>*>;
+    other.size = 0l;
+}
+
+/**
  * Pushes a new item to the back of the list
  *
  * @param value Value to push
@@ -277,6 +309,13 @@ public inline p LinkedList.clear() {
     while !this.isEmpty() {
         this.removeFront();
     }
+}
+
+/**
+ * Destructs the list, freeing all its nodes
+ */
+public p LinkedList.dtor() {
+    this.clear();
 }
 
 f<heap Node<T>*> LinkedList.createNode(const T& value) {
