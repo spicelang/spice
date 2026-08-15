@@ -66,7 +66,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   fieldValues.push_back(typeInfoName);
   for (const QualType &interfaceType : interfaceTypes) {
     const Interface *interface = interfaceType.getInterface(nullptr);
-    assert(interface != nullptr && interface->vTableData.typeInfo != nullptr);
+    assert(interface != nullptr);
     const std::string interfaceMangledName = NameMangling::mangleTypeInfo(interface);
     llvm::Constant *global = module->getOrInsertGlobal(interfaceMangledName, builder.getPtrTy());
     fieldValues.push_back(global);

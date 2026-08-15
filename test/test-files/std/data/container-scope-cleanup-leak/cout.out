@@ -3,3 +3,10 @@ doubly linked list ok
 binary tree ok
 red-black tree ok
 red-black tree empty clear ok
+vector ok
+copies hold 2 and 2 elements
+vector copy ok
+iterated 5 map entries
+unordered map ok
+iterated set entries, sum 211
+unordered set ok

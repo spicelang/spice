@@ -217,10 +217,15 @@ public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
     this.hashTable = hashTable;
     if !this.hashTable.buckets.isEmpty() {
         // Find first bucket that contains any items
-        const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-        while this.currentBucketIdx + 1 < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
-            currentBucket = this.hashTable.buckets.get(++this.currentBucketIdx);
-        }
+        bool found = false;
+        do {
+            const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+            if !currentBucket.isEmpty() || this.currentBucketIdx + 1 >= this.hashTable.buckets.getSize() {
+                found = true;
+            } else {
+                this.currentBucketIdx++;
+            }
+        } while !found;
     }
 }
 
@@ -283,14 +288,19 @@ p HashTableIterator.moveToNextItem() {
     const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
     this.currentBucketItemIdx++;
 
-    // If the current bucket does not contain more items, move to the next bucket that contains items
+    // If the current bucket does not contain more items, move to the next bucket that contains items.
     if this.currentBucketItemIdx >= currentBucket.getSize() {
         this.currentBucketIdx++;
         if this.currentBucketIdx < this.hashTable.buckets.getSize() {
-            currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-            while this.currentBucketIdx + 1 < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
-                currentBucket = this.hashTable.buckets.get(++this.currentBucketIdx);
-            }
+            bool found = false;
+            do {
+                const LinkedList<HashEntry<K, V>>& nextBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+                if !nextBucket.isEmpty() || this.currentBucketIdx + 1 >= this.hashTable.buckets.getSize() {
+                    found = true;
+                } else {
+                    this.currentBucketIdx++;
+                }
+            } while !found;
         }
         this.currentBucketItemIdx = 0l;
     }
