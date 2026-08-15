@@ -1,0 +1,33 @@
+import "std/math/hash";
+
+// A nil string represents the absence of a string and must never be treated as
+// equal to a non-nil string, even an empty one. This is a regression test for a
+// bug where isRawEqual() (used to lower `string == nil<string>` / `!=`) reported
+// a valid pointer to an empty string as equal to nil, because it compared string
+// *content* (both being zero-length) instead of pointer nil-ness.
+f<int> main() {
+    string empty = "";
+    string n = nil<string>;
+
+    printf("empty == nil: %d\n", empty == n);
+    printf("empty != nil: %d\n", empty != n);
+    printf("nil == empty: %d\n", n == empty);
+    printf("nil != empty: %d\n", n != empty);
+    printf("nil == nil: %d\n", n == nil<string>);
+    printf("empty == empty: %d\n", empty == "");
+    printf("empty != empty: %d\n", empty != "");
+
+    // Mixed string/char* comparisons take a separate code path in the compiler
+    // and must be equally immune to the nil/empty conflation.
+    const char* c = cast<const char*>(empty);
+    printf("char* empty == nil: %d\n", c == n);
+    printf("char* empty != nil: %d\n", c != n);
+
+    // hash(string) must distinguish a nil string (special-cased to hash 0) from a
+    // non-nil, empty string (which hashes to the FNV-1a offset basis).
+    printf("hash(nil) == 0: %d\n", hash(n) == 0ul);
+    printf("hash(empty) != 0: %d\n", hash(empty) != 0ul);
+    printf("hash(empty) == hash(\"\"): %d\n", hash(empty) == hash(""));
+
+    return 0;
+}

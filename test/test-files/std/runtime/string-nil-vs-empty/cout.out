@@ -1,0 +1,12 @@
+empty == nil: 0
+empty != nil: 1
+nil == empty: 0
+nil != empty: 1
+nil == nil: 1
+empty == empty: 1
+empty != empty: 0
+char* empty == nil: 0
+char* empty != nil: 1
+hash(nil) == 0: 1
+hash(empty) != 0: 1
+hash(empty) == hash(""): 1

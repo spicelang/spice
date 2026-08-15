@@ -109,7 +109,7 @@ public f<Hash> hash(string input) {
     result = 1469598103934665603ul;
     const char* c = cast<const char*>(input);
     unsafe {
-        while c != nil<string> {
+        while *c != '\0' {
             result ^= cast<unsigned long>(cast<unsigned int>(*c++));
             result *= 1099511628211ul; // FNV prime
         }
