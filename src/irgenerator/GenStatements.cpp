@@ -133,8 +133,9 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     }
   }
 
-  // Terminate the block (with scope cleanup)
-  terminateBlock(node->getParentScopeNode());
+  // Clean up all scopes between here and the enclosing function/procedure/lambda body, then terminate the block
+  generateScopeCleanupUpTo(node, functionBodyScopes.back());
+  blockAlreadyTerminated = true;
 
   // Create return instruction
   if (returnValue != nullptr) {

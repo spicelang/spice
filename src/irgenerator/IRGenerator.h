@@ -33,6 +33,17 @@ enum class Likelihood : uint8_t {
   UNLIKELY,
 };
 
+struct CommonLLVMTypes {
+  llvm::StructType *lambdaFatPtrType = nullptr;
+};
+
+// A break/continue target: the scope to run cleanup (dtor calls) up to (inclusive) before jumping, since the
+// jump skips the normal fall-through cleanup of enclosing scopes, paired with the block to jump to.
+struct BreakContinueTarget {
+  const StmtLstNode *scope;
+  llvm::BasicBlock *block;
+};
+
 // Forward declarations
 class SourceFile;
 
@@ -242,17 +253,12 @@ private:
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   MetadataGenerator mdGenerator = MetadataGenerator(this);
-  struct CommonLLVMTypes {
-    llvm::StructType *lambdaFatPtrType = nullptr;
-  } llvmTypes;
-  // A break/continue target: the scope to run cleanup (dtor calls) up to (inclusive) before jumping, since the
-  // jump skips the normal fall-through cleanup of enclosing scopes, paired with the block to jump to.
-  struct BreakContinueTarget {
-    const StmtLstNode *scope;
-    llvm::BasicBlock *block;
-  };
+  CommonLLVMTypes llvmTypes;
   std::vector<BreakContinueTarget> breakTargets;
   std::vector<BreakContinueTarget> continueTargets;
+  // Stack of the enclosing function/procedure/lambda's own body scope, i.e. the scope a 'return' has to clean
+  // up to (inclusive), since it may be nested arbitrarily deep in blocks within that body.
+  std::vector<const StmtLstNode *> functionBodyScopes;
   std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::AllocaInst *allocaInsertInst = nullptr;
