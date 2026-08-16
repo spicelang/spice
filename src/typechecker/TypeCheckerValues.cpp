@@ -528,7 +528,11 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = spiceStruct->scope->getFieldCount() - fieldCount;
-    node->fieldLst->argInfos.clear();
+    // Per-manifestation: a struct literal inside a generic function is re-type-checked once per manifestation of
+    // that function, and the struct itself may resolve to a different concrete type each time (e.g. HashEntry<K,
+    // V> inside HashTable<K, V>.upsert()), so the copy-ctor set from one manifestation must not leak into another.
+    std::vector<Function *> &fieldCopyCtors = node->fieldCopyCtors.at(manIdx);
+    fieldCopyCtors.clear();
     for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
       ExprNode *assignExpr = node->fieldLst->args.at(i);
@@ -549,7 +553,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       // local variable) needs its value deep-copied into the field: the struct instantiation does not
       // consume/move it, so the caller keeps its own copy alive and destructs it independently.
       const auto [_, copyCtor] = opRuleManager.getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
-      node->fieldLst->argInfos.push_back(ArgLstNode::ArgInfo{copyCtor});
+      fieldCopyCtors.push_back(copyCtor);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
       // Safe to call even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
@@ -558,7 +562,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
         fieldResult.entry = nullptr;
       }
     }
-    assert(node->fieldLst->argInfos.size() == node->fieldLst->args.size());
+    assert(fieldCopyCtors.size() == node->fieldLst->args.size());
   } else {
     if (std::ranges::any_of(spiceStruct->fieldTypes, [](const QualType &fieldType) { return fieldType.isRef(); }))
       SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,

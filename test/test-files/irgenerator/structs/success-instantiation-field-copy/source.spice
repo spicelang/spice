@@ -1,5 +1,7 @@
 // TEST: --sanitizer=address
 
+import "std/data/vector";
+
 // Struct instantiation with a non-trivially-copyable field value sourced from a plain (non-temporary) local
 // variable must deep-copy that value into the field (call its copy ctor), not shallow-copy its raw bytes.
 // A shallow copy aliases the source's owned heap buffer, so once the source is destructed independently of
@@ -19,6 +21,24 @@ f<Box> buildBox(string value) {
     // its own buffer alive independently and the caller destructs it normally when the function returns.
     String local = String(value);
     return Box{local};
+}
+
+// A struct literal used inside a generic function needs its own, per-manifestation copy-ctor info: the struct
+// itself (Wrapper<T> here) resolves to a different concrete type for each T the generic function is
+// instantiated with, so a copy ctor matched for one manifestation must never be reused for another - it would
+// be called on the wrong type's memory layout.
+type T dyn;
+type Wrapper<T> struct {
+    T value
+}
+
+// Explicit (even empty) dtor, to sidestep a separate, pre-existing gap where the compiler's default-dtor
+// generation misses structs that are only ever reached through a generic manifestation (the same gap
+// std/data/hash-table.spice's HashEntry<K, V> hits) - unrelated to what this test is exercising.
+public p Wrapper.dtor() {}
+
+f<Wrapper<T>> wrap<T>(const T& value) {
+    return Wrapper<T>{value};
 }
 
 f<int> main() {
@@ -43,6 +63,20 @@ f<int> main() {
 
     Box fromReturn = buildBox("returned");
     printf("fromReturn: %s\n", fromReturn.content.getRaw());
+
+    // Two manifestations of wrap<T>, both needing a real (but different) copy ctor for their Wrapper<T>{value}
+    // struct literal.
+    String strSrc = String("wrapped-string");
+    Wrapper<String> wrappedStr = wrap<String>(strSrc);
+
+    Vector<int> vecSrc = Vector<int>();
+    vecSrc.pushBack(1);
+    vecSrc.pushBack(2);
+    vecSrc.pushBack(3);
+    Wrapper<Vector<int>> wrappedVec = wrap<Vector<int>>(vecSrc);
+
+    printf("wrappedStr: %s\n", wrappedStr.value.getRaw());
+    printf("wrappedVec: %d %d %d\n", wrappedVec.value.get(0), wrappedVec.value.get(1), wrappedVec.value.get(2));
 
     return 0;
 }
