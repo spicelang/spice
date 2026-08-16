@@ -11,7 +11,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8

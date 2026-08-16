@@ -10,7 +10,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0 {
+define internal noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0 {
   %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8
@@ -24,7 +24,7 @@ define private noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0) #0 {
+define internal noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0) #0 {
   %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8

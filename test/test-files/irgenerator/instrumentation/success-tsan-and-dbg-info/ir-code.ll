@@ -4,12 +4,12 @@ source_filename = "source.spice"
 %struct.Thread = type { %struct.Lambda, i64 }
 %struct.Lambda = type { { ptr, ptr, i64 }, ptr, i64 }
 
-@COUNTER = private global i32 0, !dbg !0
+@COUNTER = internal global i32 0, !dbg !0
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 0, ptr @tsan.module_ctor, ptr null }]
 
 ; Function Attrs: noinline nounwind optnone sanitize_thread uwtable
-define private void @_Z6workerv() #0 !dbg !15 {
+define internal void @_Z6workerv() #0 !dbg !15 {
   %1 = call ptr @llvm.returnaddress.p0(i32 0), !dbg !20
   call void @__tsan_func_entry(ptr %1), !dbg !20
   %i = alloca i32, align 4

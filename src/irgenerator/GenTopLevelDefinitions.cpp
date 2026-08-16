@@ -140,7 +140,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getQualType().isPublic();
+    bool isPublic = manifestation->entry->getQualType().isPublic();
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -192,10 +192,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Type *returnType = manifestation->returnType.toLLVMType(sourceFile);
 
     // Get function linkage
-    bool externalLinkage = isPublic;
     if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
-      externalLinkage |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
-    const auto linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+      isPublic |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
@@ -208,7 +206,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Set attributes to function
     func->setDSOLocal(isSymbolDSOLocal(isPublic));
-    func->setLinkage(linkage);
+    func->setLinkage(getSymbolLinkageType(isPublic));
     addCommonFctAttrs(func, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(func);
     // Set attributes to function parameters and return value

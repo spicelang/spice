@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Field value: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal noundef ptr @_ZN4Test8getFieldEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

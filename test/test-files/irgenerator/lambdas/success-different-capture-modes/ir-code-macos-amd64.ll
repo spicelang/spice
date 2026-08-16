@@ -38,7 +38,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
+define internal void @_Z14lambda.L4C18.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8

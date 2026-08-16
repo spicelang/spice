@@ -21,7 +21,7 @@ source_filename = "source.spice"
 @anon.string.7 = private unnamed_addr constant [22 x i8] c"com.spicelang.Example\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) #0 {
+define internal void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) #0 {
   %widget = alloca %struct.GtkWidget, align 8
   store %struct.GtkWidget %0, ptr %widget, align 8
   call void @_Z6gPrintPKc(ptr noundef @anon.string.0)
@@ -31,7 +31,7 @@ define private void @_Z8btnClick9GtkWidget(%struct.GtkWidget noundef %0) #0 {
 declare void @_Z6gPrintPKc(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %struct.GtkWindow noundef %1) #0 {
+define internal void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %struct.GtkWindow noundef %1) #0 {
   %widget = alloca %struct.GtkWidget, align 8
   %window = alloca %struct.GtkWindow, align 8
   store %struct.GtkWidget %0, ptr %widget, align 8
@@ -43,7 +43,7 @@ define private void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, %
 declare void @_ZN9GtkWindow7destroyEv(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef nonnull align 1 dereferenceable(1) %1) #0 {
+define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef nonnull align 1 dereferenceable(1) %1) #0 {
   %app = alloca %struct.GtkApplication, align 8
   %data = alloca ptr, align 8
   %spiceStdDir = alloca %struct.Result, align 8

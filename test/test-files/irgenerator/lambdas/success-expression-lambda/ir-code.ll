@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) #0 {
+define internal void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) #0 {
   %a = alloca ptr, align 8
   %b = alloca ptr, align 8
   %temp = alloca i32, align 4
@@ -26,7 +26,7 @@ define private void @_Z4swapRiRi(ptr noundef %0, ptr noundef %1) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
+define internal void @_Z4sortRA10_iPFbiiE(ptr noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
   %array = alloca ptr, align 8
   %sortFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
@@ -125,7 +125,7 @@ define dso_local noundef i32 @main() #1 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) #0 {
+define internal i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) #0 {
   %captures = alloca ptr, align 8
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -139,7 +139,7 @@ define private i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z10printArrayRA10_i(ptr noundef %0) #0 {
+define internal void @_Z10printArrayRA10_i(ptr noundef %0) #0 {
   %array = alloca ptr, align 8
   %i = alloca i32, align 4
   store ptr %0, ptr %array, align 8

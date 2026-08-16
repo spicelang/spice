@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef double @_Z15genericFunctionIidEdid(i32 noundef %0, double noundef %1) #0 {
+define internal noundef double @_Z15genericFunctionIidEdid(i32 noundef %0, double noundef %1) #0 {
   %result = alloca double, align 8
   %arg1 = alloca i32, align 4
   %arg2 = alloca double, align 8
@@ -25,7 +25,7 @@ define private noundef double @_Z15genericFunctionIidEdid(i32 noundef %0, double
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef double @_Z15genericFunctionIldEdld(i64 noundef %0, double noundef %1) #0 {
+define internal noundef double @_Z15genericFunctionIldEdld(i64 noundef %0, double noundef %1) #0 {
   %result = alloca double, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca double, align 8
@@ -44,7 +44,7 @@ define private noundef double @_Z15genericFunctionIldEdld(i64 noundef %0, double
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i64 @_Z15genericFunctionIlsEllsl(i64 noundef %0, i16 noundef signext %1, i64 noundef %2) #0 {
+define internal noundef i64 @_Z15genericFunctionIlsEllsl(i64 noundef %0, i16 noundef signext %1, i64 noundef %2) #0 {
   %result = alloca i64, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca i16, align 2

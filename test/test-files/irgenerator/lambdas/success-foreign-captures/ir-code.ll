@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
+define internal void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr, ptr, i64 } noundef %1) #0 {
   %l1 = alloca { ptr, ptr, i64 }, align 8
   %l2 = alloca { ptr, ptr, i64 }, align 8
   %x = alloca i32, align 4
@@ -106,7 +106,7 @@ define dso_local noundef i32 @main() #3 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
+define internal void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -124,7 +124,7 @@ define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
+define internal i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8

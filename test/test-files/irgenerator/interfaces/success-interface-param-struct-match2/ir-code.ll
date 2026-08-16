@@ -35,7 +35,7 @@ define void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #2 {
+define internal void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -46,7 +46,7 @@ define private void @_ZN4Test3barEv(ptr noundef nonnull align 8 dereferenceable(
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z3fooR5ITest(ptr noundef %0) #2 {
+define internal void @_Z3fooR5ITest(ptr noundef %0) #2 {
   %test = alloca ptr, align 8
   store ptr %0, ptr %test, align 8
   %2 = load ptr, ptr %test, align 8

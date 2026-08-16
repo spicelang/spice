@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z8testFuncv() #0 {
+define internal noundef i32 @_Z8testFuncv() #0 {
   %result = alloca i32, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 1
@@ -17,7 +17,7 @@ define private noundef i32 @_Z8testFuncv() #0 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z8testFuncPKc(ptr noundef %0) #0 {
+define internal noundef i32 @_Z8testFuncPKc(ptr noundef %0) #0 {
   %result = alloca i32, align 4
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8

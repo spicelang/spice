@@ -4,13 +4,13 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_Z10condition1v() #0 {
+define internal noundef zeroext i1 @_Z10condition1v() #0 {
   %result = alloca i1, align 1
   ret i1 false
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_Z10condition2v() #0 {
+define internal noundef zeroext i1 @_Z10condition2v() #0 {
   %result = alloca i1, align 1
   ret i1 true
 }

@@ -133,7 +133,7 @@ public p Token.ctor(TokenType tokenType) {
     this.tokenType = tokenType;
 }
 
-public p Token.ctor(TokenType tokenType, String text, const CodeLoc& codeLoc) {
+public p Token.ctor(TokenType tokenType, const String& text, const CodeLoc& codeLoc) {
     this.tokenType = tokenType;
     this.text = text;
     this.codeLoc = codeLoc;

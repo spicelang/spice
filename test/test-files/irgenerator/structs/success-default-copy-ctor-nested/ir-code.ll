@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"x = %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
+define internal void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceable(2) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -18,7 +18,7 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 2 dereferenceabl
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr noundef %1) #0 {
+define internal void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

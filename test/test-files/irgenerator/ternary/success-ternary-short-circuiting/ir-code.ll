@@ -6,13 +6,13 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_Z7condFctv() #0 {
+define internal noundef zeroext i1 @_Z7condFctv() #0 {
   %result = alloca i1, align 1
   ret i1 false
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_Z7trueFctv() #0 {
+define internal noundef ptr @_Z7trueFctv() #0 {
   %result = alloca ptr, align 8
   br i1 false, label %assert.exit.L6, label %assert.then.L6, !prof !5
 
@@ -33,7 +33,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 declare void @exit(i32) #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_Z8falseFctv() #0 {
+define internal noundef ptr @_Z8falseFctv() #0 {
   %result = alloca ptr, align 8
   ret ptr @anon.string.1
 }

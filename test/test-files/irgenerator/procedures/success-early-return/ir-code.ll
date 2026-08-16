@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z13executeActionb(i1 noundef zeroext %0) #0 {
+define internal void @_Z13executeActionb(i1 noundef zeroext %0) #0 {
   %input = alloca i1, align 1
   store i1 %0, ptr %input, align 1
   %2 = load i1, ptr %input, align 1

@@ -22,7 +22,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) #0 {
+define internal void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -31,7 +31,7 @@ define private void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %0, ptr noundef %1) #0 {
+define internal void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %_ = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -67,7 +67,7 @@ define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -77,7 +77,7 @@ define private noundef ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3get
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca %struct.Pair, align 8
   %this = alloca ptr, align 8
   %2 = alloca %struct.Pair, align 8
@@ -92,7 +92,7 @@ define private noundef %struct.Pair @_ZN19ExampleTypeIteratorI20ExampleContained
 declare void @_ZN4PairImR20ExampleContainedTypeE4ctorEmR20ExampleContainedType(ptr, i64, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -108,14 +108,14 @@ define private noundef zeroext i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTy
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %result = alloca %struct.ExampleTypeIterator, align 8
   %this = alloca ptr, align 8
   %2 = alloca %struct.ExampleTypeIterator, align 8

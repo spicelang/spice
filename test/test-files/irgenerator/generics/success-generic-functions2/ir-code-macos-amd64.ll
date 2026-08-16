@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %0, i64 noundef %1) #0 {
+define internal noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %0, i64 noundef %1) #0 {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -47,7 +47,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %0, i64 noundef %1) #0 {
+define internal noundef i32 @_Z10sumNumbersIlEiPll(ptr noundef %0, i64 noundef %1) #0 {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -87,7 +87,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z9printDataIPiEvlPi(i64 noundef %0, ptr noundef %1) #0 {
+define internal void @_Z9printDataIPiEvlPi(i64 noundef %0, ptr noundef %1) #0 {
   %arrayLength = alloca i64, align 8
   %list = alloca ptr, align 8
   %i = alloca i64, align 8

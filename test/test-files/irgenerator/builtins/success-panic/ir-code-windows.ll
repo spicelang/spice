@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [17 x i8] c"This is an error\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z3foov() #0 {
+define internal void @_Z3foov() #0 {
   %1 = alloca %struct.Error, align 8
   %2 = call ptr @__acrt_iob_func(i32 2)
   call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef @anon.string.1)

@@ -671,7 +671,7 @@ bool IRGenerator::isSymbolDSOLocal(bool isPublic) const {
 }
 
 llvm::GlobalValue::LinkageTypes IRGenerator::getSymbolLinkageType(bool isPublic) const {
-  return isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::PrivateLinkage;
+  return isPublic ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
 }
 
 llvm::GlobalValue::LinkageTypes IRGenerator::getVTableLinkageType(bool isPublic) const {

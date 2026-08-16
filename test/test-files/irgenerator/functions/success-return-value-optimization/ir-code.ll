@@ -10,7 +10,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -19,7 +19,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
+define internal void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %old = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -35,14 +35,14 @@ define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferen
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) #0 {
+define internal noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   store %struct.Test %0, ptr %old, align 4
@@ -51,7 +51,7 @@ define private noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) #
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
+define internal noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %2 = alloca %struct.Test, align 8
@@ -63,7 +63,7 @@ define private noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) #0 {
+define internal noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   %old1 = alloca %struct.Test, align 8
@@ -74,7 +74,7 @@ define private noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) #
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) #0 {
+define internal noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %old1 = alloca ptr, align 8

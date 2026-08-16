@@ -52,7 +52,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
+define internal void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load volatile ptr, ptr %captures, align 8
@@ -67,7 +67,7 @@ define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8)
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
+define internal void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8

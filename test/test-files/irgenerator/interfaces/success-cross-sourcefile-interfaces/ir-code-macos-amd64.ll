@@ -12,7 +12,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"Is driving: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -26,7 +26,7 @@ define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) #0 {
+define internal void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1) #0 {
   %this = alloca ptr, align 8
   %_param = alloca i32, align 4
   store ptr %0, ptr %this, align 8
@@ -38,7 +38,7 @@ define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

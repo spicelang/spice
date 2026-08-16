@@ -4,7 +4,7 @@ source_filename = "source.spice"
 %struct.Test = type { i32 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -16,7 +16,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
+define internal void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -33,7 +33,7 @@ define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferen
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8

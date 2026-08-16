@@ -8,7 +8,7 @@ source_filename = "source.spice"
 @printf.str.4 = private unnamed_addr constant [22 x i8] c"Input is at least 1.\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z12isBiggerThani(i32 noundef %0) #0 {
+define internal void @_Z12isBiggerThani(i32 noundef %0) #0 {
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
   %2 = load i32, ptr %input, align 4

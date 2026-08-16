@@ -20,7 +20,7 @@ define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 derefe
 declare void @_Z8sDeallocRPVh(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
+define internal void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   %res = alloca %struct.Result, align 8
   store ptr %0, ptr %this, align 8

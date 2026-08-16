@@ -1,7 +1,13 @@
-import "bootstrap/model/interface";
+import "std/test/lifetime-object";
 
-// Wrapper for 'spice test' unit test
+p foo(const LifetimeObject& t) {
+
+}
+
+p bar() {
+    foo(LifetimeObject());
+}
+
 f<int> main() {
-    testInterfaceSmoke();
-    printf("All assertions passed!");
+    bar();
 }

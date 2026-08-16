@@ -14,7 +14,7 @@ source_filename = "source.spice"
 @testName0 = private unnamed_addr constant [8 x i8] c"testAdd\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
+define internal noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4

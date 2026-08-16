@@ -14,7 +14,7 @@ source_filename = "source.spice"
 @anon.array.2 = private unnamed_addr constant [2 x i32] [i32 7, i32 8]
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3sumA4_i(ptr noundef %values) #0 {
+define internal noundef i32 @_Z3sumA4_i(ptr noundef %values) #0 {
   %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
@@ -48,7 +48,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) #0 {
+define internal void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) #0 {
   %newValue = alloca i32, align 4
   store i32 %0, ptr %newValue, align 4
   %2 = getelementptr inbounds [4 x i32], ptr %values, i64 0, i32 0
@@ -58,7 +58,7 @@ define private void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr noundef %values) #0 {
+define internal noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr noundef %values) #0 {
   %result = alloca i32, align 4
   %offset = alloca %struct.Offset, align 8
   store %struct.Offset %0, ptr %offset, align 4
@@ -77,7 +77,7 @@ define private noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z9sumMatrixA3_A2_b(ptr noundef %matrix) #0 {
+define internal noundef i32 @_Z9sumMatrixA3_A2_b(ptr noundef %matrix) #0 {
   %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
@@ -189,7 +189,7 @@ define dso_local noundef i32 @main() #1 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) #0 {
+define internal i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) #0 {
   %result = alloca i32, align 4
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8

@@ -17,7 +17,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z4testv() #1 {
+define internal noundef i32 @_Z4testv() #1 {
   %result = alloca i32, align 4
   ret i32 1
 }

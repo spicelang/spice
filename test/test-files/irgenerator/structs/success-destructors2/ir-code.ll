@@ -31,7 +31,7 @@ define dso_local noundef i32 @main() #0 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
+define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8

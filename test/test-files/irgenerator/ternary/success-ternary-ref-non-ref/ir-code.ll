@@ -8,7 +8,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [7 x i8] c"Dtor!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %0) #0 {
+define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -19,7 +19,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %0) #0 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %0, ptr noundef %1) #0 {
+define internal void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %_ = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -29,7 +29,7 @@ define private void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %0, ptr n
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
+define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
@@ -37,7 +37,7 @@ define private void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Test @_Z3fooRK4Test(ptr noundef %0) #0 {
+define internal noundef %struct.Test @_Z3fooRK4Test(ptr noundef %0) #0 {
   %result = alloca %struct.Test, align 8
   %t = alloca ptr, align 8
   %copy = alloca %struct.Test, align 8

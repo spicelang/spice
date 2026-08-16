@@ -13,7 +13,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -33,7 +33,7 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr noundef %1) #0 {
+define internal void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -53,7 +53,7 @@ define private void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereference
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
