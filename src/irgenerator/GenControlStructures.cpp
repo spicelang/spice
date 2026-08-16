@@ -28,9 +28,9 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY, node);
 
-  // Save the blocks for break and continue
-  breakBlocks.push_back(bExit);
-  continueBlocks.push_back(bTail);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there
+  breakTargets.emplace_back(node->body, bExit);
+  continueTargets.emplace_back(node->body, bTail);
 
   // Init statement
   visit(node->initDecl);
@@ -61,11 +61,11 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Pop basic blocks from break and continue stacks
-  assert(breakBlocks.back() == bExit);
-  breakBlocks.pop_back();
-  assert(continueBlocks.back() == bTail);
-  continueBlocks.pop_back();
+  // Pop break/continue targets
+  assert(breakTargets.back().block == bExit);
+  breakTargets.pop_back();
+  assert(continueTargets.back().block == bTail);
+  continueTargets.pop_back();
 
   return nullptr;
 }
@@ -81,9 +81,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY, node);
 
-  // Save the blocks for break and continue
-  breakBlocks.push_back(bExit);
-  continueBlocks.push_back(bTail);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there
+  breakTargets.emplace_back(node->body, bExit);
+  continueTargets.emplace_back(node->body, bTail);
 
   // Resolve iterator
   ExprNode *iteratorAssignNode = node->iteratorAssign;
@@ -209,11 +209,11 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Pop basic blocks from break and continue stacks
-  assert(breakBlocks.back() == bExit);
-  breakBlocks.pop_back();
-  assert(continueBlocks.back() == bTail);
-  continueBlocks.pop_back();
+  // Pop break/continue targets
+  assert(breakTargets.back().block == bExit);
+  breakTargets.pop_back();
+  assert(continueTargets.back().block == bTail);
+  continueTargets.pop_back();
 
   return nullptr;
 }
@@ -228,9 +228,9 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY, node);
 
-  // Save the blocks for break and continue
-  breakBlocks.push_back(bExit);
-  continueBlocks.push_back(bHead);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there
+  breakTargets.emplace_back(node->body, bExit);
+  continueTargets.emplace_back(node->body, bHead);
 
   // Jump to head block
   insertJump(bHead);
@@ -252,11 +252,11 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Pop basic blocks from break and continue stacks
-  assert(breakBlocks.back() == bExit);
-  breakBlocks.pop_back();
-  assert(continueBlocks.back() == bHead);
-  continueBlocks.pop_back();
+  // Pop break/continue targets
+  assert(breakTargets.back().block == bExit);
+  breakTargets.pop_back();
+  assert(continueTargets.back().block == bHead);
+  continueTargets.pop_back();
 
   return nullptr;
 }
@@ -271,9 +271,9 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY, node);
 
-  // Save the blocks for break and continue
-  breakBlocks.push_back(bExit);
-  continueBlocks.push_back(bFoot);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there
+  breakTargets.emplace_back(node->body, bExit);
+  continueTargets.emplace_back(node->body, bFoot);
 
   // Jump to body block
   insertJump(bBody);
@@ -295,11 +295,11 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Pop basic blocks from break and continue stacks
-  assert(breakBlocks.back() == bExit);
-  breakBlocks.pop_back();
-  assert(continueBlocks.back() == bFoot);
-  continueBlocks.pop_back();
+  // Pop break/continue targets
+  assert(breakTargets.back().block == bExit);
+  breakTargets.pop_back();
+  assert(continueTargets.back().block == bFoot);
+  continueTargets.pop_back();
 
   return nullptr;
 }
@@ -383,8 +383,9 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bExit = createBlock("switch.exit." + codeLine);
 
-  // Save the blocks for break and continue
-  breakBlocks.push_back(bExit);
+  // Save the break target. The scope to clean up to is set by each case/default branch as it is visited below,
+  // since it changes per branch (there is no single scope spanning the whole switch statement).
+  breakTargets.emplace_back(nullptr, bExit);
 
   // Visit switch expression
   llvm::Value *exprValue = resolveValue(node->assignExpr);
@@ -436,9 +437,9 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Pop basic blocks from break stack
-  assert(breakBlocks.back() == bExit);
-  breakBlocks.pop_back();
+  // Pop break target
+  assert(breakTargets.back().block == bExit);
+  breakTargets.pop_back();
 
   return nullptr;
 }
@@ -446,6 +447,9 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
 std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
   // Change to case body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
+
+  // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
+  breakTargets.back().scope = node->body;
 
   // Visit case body
   visit(node->body);
@@ -456,6 +460,9 @@ std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
 std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
   // Change to default body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
+
+  // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
+  breakTargets.back().scope = node->body;
 
   // Visit case body
   visit(node->body);

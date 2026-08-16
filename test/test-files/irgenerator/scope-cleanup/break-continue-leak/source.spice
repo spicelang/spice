@@ -1,0 +1,85 @@
+// TEST: --sanitizer=address
+
+// A jump that leaves a scope early (break/continue) must run the same cleanup (dtor calls) as falling off the
+// end of that scope normally. It has to reach further though, since it also passes through every scope nested
+// between the jump statement and its target instead of just the innermost one.
+f<int> main() {
+    // break directly out of the loop scope that owns the live local
+    unsigned long i = 0l;
+    while true {
+        String current = String("value");
+        if i == 2l {
+            printf("breaking with local: %s\n", current.getRaw());
+            break;
+        }
+        i++;
+    }
+    printf("break ok, i %d\n", i);
+
+    // continue back to the loop head, abandoning the current iteration's local
+    unsigned long total = 0l;
+    unsigned long j = 0l;
+    while j < 5l {
+        String skipMarker = String("skip");
+        j++;
+        if j % 2l == 0l {
+            continue;
+        }
+        printf("kept iteration with local: %s\n", skipMarker.getRaw());
+        total += j;
+    }
+    printf("continue ok, total %d\n", total);
+
+    // break 2 unwinds two nested loop scopes at once, each of which owns its own live local
+    unsigned long outer = 0l;
+    unsigned long inner = 0l;
+    while outer < 3l {
+        String outerLocal = String("outer");
+        inner = 0l;
+        while inner < 3l {
+            String innerLocal = String("inner");
+            if outer == 1l && inner == 1l {
+                printf("breaking 2 with locals: %s %s\n", outerLocal.getRaw(), innerLocal.getRaw());
+                break 2;
+            }
+            inner++;
+        }
+        outer++;
+    }
+    printf("break 2 ok, outer %d inner %d\n", outer, inner);
+
+    // break out of a switch nested in a loop: the loop's own local must still get cleaned up on every
+    // iteration, and the case body's local must get cleaned up on the one that breaks
+    int k = 0;
+    while k < 3 {
+        String loopLocal = String("loop");
+        switch k {
+        case 1: {
+            String caseLocal = String("case");
+            if caseLocal == "case" {
+                printf("breaking out of switch with locals: %s %s\n", loopLocal.getRaw(), caseLocal.getRaw());
+                break;
+            }
+        }
+        default: {
+            printf("default branch with local: %s\n", loopLocal.getRaw());
+        }
+        }
+        k = k + 1;
+    }
+    printf("switch break ok, k %d\n", k);
+
+    // continue nested inside an if within a for loop
+    unsigned long forTotal = 0ul;
+    for unsigned long m = 0ul; m < 5ul; m++ {
+        String forLocal = String("for");
+        if m % 2ul == 0ul {
+            continue;
+        }
+        printf("kept for iteration with local: %s\n", forLocal.getRaw());
+        forTotal += m;
+    }
+    printf("for continue ok, total %d\n", forTotal);
+
+    return 0;
+}

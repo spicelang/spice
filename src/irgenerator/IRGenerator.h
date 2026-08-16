@@ -200,6 +200,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node);
+  void generateScopeCleanupUpTo(const ASTNode *node, const StmtLstNode *targetScope);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
@@ -244,8 +245,14 @@ private:
   struct CommonLLVMTypes {
     llvm::StructType *lambdaFatPtrType = nullptr;
   } llvmTypes;
-  std::vector<llvm::BasicBlock *> breakBlocks;
-  std::vector<llvm::BasicBlock *> continueBlocks;
+  // A break/continue target: the scope to run cleanup (dtor calls) up to (inclusive) before jumping, since the
+  // jump skips the normal fall-through cleanup of enclosing scopes, paired with the block to jump to.
+  struct BreakContinueTarget {
+    const StmtLstNode *scope;
+    llvm::BasicBlock *block;
+  };
+  std::vector<BreakContinueTarget> breakTargets;
+  std::vector<BreakContinueTarget> continueTargets;
   std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::AllocaInst *allocaInsertInst = nullptr;

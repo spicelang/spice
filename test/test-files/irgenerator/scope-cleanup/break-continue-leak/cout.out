@@ -1,0 +1,15 @@
+breaking with local: value
+break ok, i 2
+kept iteration with local: skip
+kept iteration with local: skip
+kept iteration with local: skip
+continue ok, total 9
+breaking 2 with locals: outer inner
+break 2 ok, outer 1 inner 1
+default branch with local: loop
+breaking out of switch with locals: loop case
+default branch with local: loop
+switch break ok, k 3
+kept for iteration with local: for
+kept for iteration with local: for
+for continue ok, total 4
