@@ -2056,7 +2056,10 @@ public:
 
   // Other methods
   GET_CHILDREN(templateTypeLst, fieldLst);
-  void customItemsInitialization(const size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount); }
+  void customItemsInitialization(const size_t manifestationCount) override {
+    instantiatedStructs.resize(manifestationCount);
+    fieldCopyCtors.resize(manifestationCount);
+  }
 
   // Public members
   TypeLstNode *templateTypeLst = nullptr;
@@ -2065,6 +2068,11 @@ public:
   std::string fqStructName;
   std::vector<std::string> structNameFragments;
   std::vector<Struct *> instantiatedStructs;
+  // Per-manifestation (the struct itself may be/depend on a generic type, e.g. inside a generic function), per-field
+  // copy ctor to call for a field value that needs to be deep-copied instead of raw-stored. Kept here rather than on
+  // the (manifestation-unaware) shared fieldLst->argInfos, since a struct literal inside a generic function is
+  // re-type-checked once per manifestation and each needs its own copy-ctor set.
+  std::vector<std::vector<Function *>> fieldCopyCtors;
 };
 
 // ====================================================== LambdaBaseNode =========================================================

@@ -74,8 +74,8 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(ASTNode *node
   return {binOpType, nullptr};
 }
 
-QualType OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                                 bool isDecl) const {
+std::pair<QualType, Function *> OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult &lhs,
+                                                                        const ExprResult &rhs, bool imm, bool isDecl) const {
   // Retrieve types
   const QualType lhsType = lhs.type;
   const QualType rhsType = rhs.type;
@@ -89,42 +89,44 @@ QualType OpRuleManager::getFieldAssignResultType(ASTNode *node, const ExprResult
     // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
     if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
       rhs.entry->updateState(MOVED, node);
-    return rhsType;
+    return {rhsType, nullptr};
   }
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
-    return performStructAssign(node, lhs, rhs, rhsType, isDecl, false).first;
+    return performStructAssign(node, lhs, rhs, rhsType, isDecl, false);
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
     // Check is there is an overloaded operator function available
     const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
     if (!type.is(TY_INVALID))
-      return type;
+      return {type, nullptr};
 
     // In case of a return expression, we perform temp stealing
+    Function *copyCtor = nullptr;
     if (rhsType.getContained().is(TY_STRUCT) && !rhs.isTemporary())
-      typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
-    return lhsType;
+      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+    return {lhsType, copyCtor};
   }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
     const QualType rhsNonRef = rhsType.getContained().toNonConst();
     if (lhsType.matches(rhsNonRef, false, false, true))
-      return performStructAssign(node, lhs, rhs, rhsNonRef, isDecl, false).first;
+      return performStructAssign(node, lhs, rhs, rhsNonRef, isDecl, false);
   }
   // Allow immediate value to const ref of the same contained type straight away
   if (lhsType.isConstRef() && imm)
-    return rhsType;
+    return {rhsType, nullptr};
 
   // Check common type combinations
   const QualType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl, false);
   if (!resultType.is(TY_INVALID))
-    return resultType;
+    return {resultType, nullptr};
 
   // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, std::size(ASSIGN_OP_RULES), "=", lhsType, rhsType, true,
-                                 ERROR_FIELD_ASSIGN);
+  const QualType binOpType =
+      validateBinaryOperation(node, ASSIGN_OP_RULES, std::size(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, ERROR_FIELD_ASSIGN);
+  return {binOpType, nullptr};
 }
 
 QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
