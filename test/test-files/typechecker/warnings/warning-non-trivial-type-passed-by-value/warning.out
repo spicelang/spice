@@ -1,0 +1,1 @@
+[Warning] ./source.spice:7:15: Non-trivial type passed by value: Parameter 'obj' has the non-trivially copyable type 'public LifetimeObject' and is passed by value, which requires an implicit copy on every call. Consider passing it by reference instead.

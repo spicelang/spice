@@ -1,6 +1,6 @@
 import "std/test/lifetime-object";
 
-p foo(const LifetimeObject& t) {
+p foo(const LifetimeObject& _t) {
 
 }
 
