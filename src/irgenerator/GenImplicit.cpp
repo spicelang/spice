@@ -137,6 +137,26 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
   }
 }
 
+/**
+ * Generate cleanup code (dtor calls, deallocations) for every scope between the given node (exclusive) and the given
+ * target scope (inclusive). This is required for jumps that leave more than one scope at once (e.g. break/continue),
+ * since those skip the normal fall-through cleanup that visitStmtLst() generates for each of the enclosing scopes.
+ *
+ * @param node Node the jump originates from
+ * @param targetScope Outermost scope that is left by the jump; cleanup is generated for this scope as well
+ */
+void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const StmtLstNode *targetScope) {
+  assert(targetScope != nullptr);
+  const StmtLstNode *scope = node->getNextOuterStmtLst();
+  while (true) {
+    generateScopeCleanup(scope);
+    if (scope == targetScope)
+      break;
+    assert(scope->parent != nullptr);
+    scope = scope->parent->getNextOuterStmtLst();
+  }
+}
+
 void IRGenerator::generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const {
   // Retrieve metadata for the function
   const std::string mangledName = fct->getMangledName();

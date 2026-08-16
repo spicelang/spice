@@ -149,17 +149,25 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 }
 
 std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
+  const auto [targetScope, targetBlock] = breakTargets.at(breakTargets.size() - node->breakTimes);
+
+  // Clean up all scopes between here and the loop/switch statement we are breaking out of
+  generateScopeCleanupUpTo(node, targetScope);
+
   // Jump to destination block
-  const size_t blockIdx = breakBlocks.size() - node->breakTimes;
-  insertJump(breakBlocks.at(blockIdx));
+  insertJump(targetBlock);
 
   return nullptr;
 }
 
 std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
+  const auto [targetScope, targetBlock] = continueTargets.at(continueTargets.size() - node->continueTimes);
+
+  // Clean up all scopes between here and the loop statement we are continuing
+  generateScopeCleanupUpTo(node, targetScope);
+
   // Jump to destination block
-  const size_t blockIdx = continueBlocks.size() - node->continueTimes;
-  insertJump(continueBlocks.at(blockIdx));
+  insertJump(targetBlock);
 
   return nullptr;
 }
