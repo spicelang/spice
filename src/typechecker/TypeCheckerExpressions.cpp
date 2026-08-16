@@ -126,9 +126,21 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
                       falseType.getName(true))
 
+  // An anonymous entry marks a temporary (e.g. a fresh struct instantiation or a non-trivial function-call
+  // result), whose storage does not outlive this expression.
+  const bool trueIsTemporary = trueEntry != nullptr && trueEntry->anonymous;
+  const bool falseIsTemporary = falseEntry != nullptr && falseEntry->anonymous;
+
   // The result type must be a reference if one of true/false branch is of reference type. Otherwise,
-  // the copy ctor is not called correctly
-  QualType resultType = trueType.isRef() ? trueType : falseType;
+  // the copy ctor is not called correctly. This can only be done if neither branch is a temporary though:
+  // a temporary's storage ends with this expression, so the result must take a copy of it instead of
+  // referencing it, or the copy ctor call for the temporary would end up being skipped further down,
+  // leaking it.
+  QualType resultType;
+  if (!trueIsTemporary && !falseIsTemporary && (trueType.isRef() || falseType.isRef()))
+    resultType = trueType.isRef() ? trueType : falseType;
+  else
+    resultType = trueTypeModified;
   // Infer the const-ness from the more restrictive operand
   resultType.makeConst(trueType.isConst() || falseType.isConst());
 
@@ -139,7 +151,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     if (trueEntry->anonymous) {
       currentScope->symbolTable.deleteAnonymous(trueEntry->name);
       removedAnonymousSymbols = true;
-    } else if (!trueType.isRef() && !trueType.isTriviallyCopyable(node)) {
+    } else if (!resultType.isRef() && !trueTypeModified.isTriviallyCopyable(node)) {
       node->trueSideCallsCopyCtor = true;
     }
   }
@@ -147,7 +159,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     if (falseEntry->anonymous) {
       currentScope->symbolTable.deleteAnonymous(falseEntry->name);
       removedAnonymousSymbols = true;
-    } else if (!falseType.isRef() && !falseType.isTriviallyCopyable(node)) {
+    } else if (!resultType.isRef() && !falseTypeModified.isTriviallyCopyable(node)) {
       node->falseSideCallsCopyCtor = true;
     }
   }

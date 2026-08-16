@@ -1,0 +1,26 @@
+type Test struct {}
+
+p Test.ctor() { printf("Ctor!\n"); }
+p Test.ctor(const Test& _) { printf("Copy ctor!\n"); }
+p Test.dtor() { printf("Dtor!\n"); }
+
+// The true branch is a fresh temporary (anonymous), the false branch is a reference. The ternary's own
+// result type must not become a reference here, or the temporary would either leak (its dtor call would be
+// skipped) or the false branch would be aliased without a copy (leading to a double dtor call on 'ref').
+f<Test> choose(bool cond, const Test& ref) {
+    return cond ? Test() : ref;
+}
+
+f<int> main() {
+    Test t; // Ctor call
+
+    {
+        Test viaTemp = choose(true, t); // Ctor call for the temporary, moved into viaTemp
+    } // Dtor call for viaTemp
+
+    {
+        Test viaRef = choose(false, t); // Copy ctor call for the ref side
+    } // Dtor call for viaRef
+
+    // Dtor call for t
+}
