@@ -97,7 +97,7 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
 
 50:                                               ; preds = %44, %34
   store i32 123, ptr %37, align 4, !dbg !23
-  call void @_Z8sDeallocRPh(ptr noundef %13), !dbg !24
+  call void @_Z8sDeallocRPVh(ptr noundef %13), !dbg !24
   %51 = load ptr, ptr %13, align 8, !dbg !26
   %52 = ptrtoint ptr %51 to i64, !dbg !27
   %53 = lshr i64 %52, 3, !dbg !27
@@ -120,7 +120,7 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
 
 64:                                               ; preds = %58, %50
   store i32 321, ptr %51, align 4, !dbg !27
-  call void @_Z8sDeallocRPh(ptr %13), !dbg !28
+  call void @_Z8sDeallocRPVh(ptr %13), !dbg !28
   %65 = add i64 %18, 4, !dbg !28
   %66 = inttoptr i64 %65 to ptr, !dbg !28
   store i8 -8, ptr %66, align 1, !dbg !28
@@ -154,7 +154,7 @@ declare void @llvm.lifetime.start.p0(ptr captures(none)) #1
 
 declare ptr @_Z12sAllocUnsafem(i64)
 
-declare void @_Z8sDeallocRPh(ptr)
+declare void @_Z8sDeallocRPVh(ptr)
 
 ; Function Attrs: nobuiltin nocallback nofree nosync nounwind willreturn memory(readwrite, inaccessiblemem: none, errnomem: none, target_mem: none)
 declare void @llvm.lifetime.end.p0(ptr captures(none)) #1

@@ -1,0 +1,17 @@
+type T dyn;
+
+// Regression test: name mangling used to ignore the 'heap' qualifier, so two manifestations of the
+// same generic function that differ only by 'heap' (e.g. byte* vs heap byte*) mangled to the same
+// LLVM symbol name. Generating IR for the second manifestation then hit the assertion
+// 'proc->empty()' in IRGenerator::visitProcDef, because the first manifestation had already defined
+// a body under that symbol. This mirrors sDestruct<byte*> (used by e.g. Vector<byte*>) colliding
+// with sDestruct<heap byte*> (used by e.g. Result<heap byte*>.dtor()).
+p noop<T>(T& obj) {}
+
+f<int> main() {
+    byte* a = nil<byte*>;
+    heap byte* b = nil<heap byte*>;
+    noop(a);
+    noop(b);
+    printf("done\n");
+}

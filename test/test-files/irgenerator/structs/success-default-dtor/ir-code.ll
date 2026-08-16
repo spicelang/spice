@@ -13,11 +13,11 @@ define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 derefe
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  call void @_Z8sDeallocRPh(ptr %2)
+  call void @_Z8sDeallocRPVh(ptr %2)
   ret void
 }
 
-declare void @_Z8sDeallocRPh(ptr)
+declare void @_Z8sDeallocRPVh(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
@@ -30,15 +30,18 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   store %struct.Result %3, ptr %res, align 8
   %4 = load ptr, ptr %this, align 8
   %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %4, i64 0, i32 0
-  %5 = call noundef ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  %5 = call noundef ptr @_ZN6ResultIPVhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   %6 = load ptr, ptr %5, align 8
   store ptr %6, ptr %data.addr, align 8
+  call void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   ret void
 }
 
 declare %struct.Result @_Z6sAllocm(i64)
 
-declare ptr @_ZN6ResultIPhE6unwrapEv(ptr)
+declare ptr @_ZN6ResultIPVhE6unwrapEv(ptr)
+
+declare void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
