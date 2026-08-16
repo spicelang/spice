@@ -28,7 +28,7 @@ source_filename = "source.spice"
 @testName3 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
+define internal noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
@@ -41,7 +41,7 @@ define private noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3subii(i32 noundef %0, i32 noundef %1) #0 {
+define internal noundef i32 @_Z3subii(i32 noundef %0, i32 noundef %1) #0 {
   %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
