@@ -112,7 +112,9 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   }
 
   // Visit function body
+  functionBodyScopes.push_back(node->body);
   visit(node->body);
+  functionBodyScopes.pop_back();
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
@@ -262,7 +264,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Visit function body
+    functionBodyScopes.push_back(node->body);
     visit(node->body);
+    functionBodyScopes.pop_back();
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
@@ -413,7 +417,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Visit procedure body
+    functionBodyScopes.push_back(node->body);
     visit(node->body);
+    functionBodyScopes.pop_back();
 
     if (node->isCtor)
       isInCtorBody = false;

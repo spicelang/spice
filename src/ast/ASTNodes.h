@@ -1335,7 +1335,6 @@ public:
   // Other methods
   GET_CHILDREN(assignExpr);
   [[nodiscard]] bool returnsOnAllControlPaths(bool *, size_t) const override { return true; }
-  [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
   ExprNode *assignExpr = nullptr;

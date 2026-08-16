@@ -1,0 +1,68 @@
+// TEST: --sanitizer=address
+
+// A 'return' must run cleanup (dtor calls) for every scope it exits, not just the block it is textually
+// inside of. A 'return' nested inside an 'if' (or several) only sits in that if-body's own scope, but it
+// also exits every enclosing scope up to the function/procedure/lambda body - including whichever of those
+// scopes actually owns the live local.
+f<String> pickValue(int x) {
+    String local = String("value");
+
+    // return nested one level inside an if: the if-body owns nothing, 'local' lives in the outer scope
+    if x == 1 {
+        return local;
+    }
+
+    // return nested two levels deep
+    if x == 2 {
+        String nested = String("nested");
+        if nested == "nested" {
+            return local;
+        }
+    }
+
+    // return nested inside an if within a while loop
+    if x == 3 {
+        while true {
+            String loopLocal = String("loop");
+            if loopLocal == "loop" {
+                return local;
+            }
+        }
+    }
+
+    // plain, non-nested return as the last statement of the function: already worked before this fix,
+    // kept here as a baseline so a regression would show up as a behavior change, not just a leak
+    return local;
+}
+
+p logAndDiscard(string message) {
+    // void return, nested inside an if
+    String formatted = String(message);
+    if formatted.getLength() > 0l {
+        printf("logged: %s\n", formatted.getRaw());
+        return;
+    }
+}
+
+f<int> main() {
+    String r1 = pickValue(1);
+    String r2 = pickValue(2);
+    String r3 = pickValue(3);
+    String r4 = pickValue(4);
+    printf("%s %s %s %s\n", r1.getRaw(), r2.getRaw(), r3.getRaw(), r4.getRaw());
+
+    logAndDiscard("hello");
+
+    // lambda with an early return nested inside an if
+    f<String>(int) classify = f<String>(int y) {
+        String positive = String("positive");
+        if y > 0 {
+            return positive;
+        }
+        return String("non-positive");
+    };
+    String c = classify(1);
+    printf("%s\n", c.getRaw());
+
+    return 0;
+}
