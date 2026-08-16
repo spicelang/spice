@@ -634,9 +634,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   }
 
   // Visit body
-  functionBodyScopes.push_back(node->body);
   visit(node->body);
-  functionBodyScopes.pop_back();
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
@@ -784,9 +782,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   }
 
   // Visit body
-  functionBodyScopes.push_back(node->body);
   visit(node->body);
-  functionBodyScopes.pop_back();
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated)

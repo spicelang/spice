@@ -139,21 +139,23 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
 
 /**
  * Generate cleanup code (dtor calls, deallocations) for every scope between the given node (exclusive) and the given
- * target scope (inclusive). This is required for jumps that leave more than one scope at once (e.g. break/continue),
+ * target scope (inclusive). This is required for jumps that leave more than one scope at once (e.g. break/continue/return),
  * since those skip the normal fall-through cleanup that visitStmtLst() generates for each of the enclosing scopes.
  *
  * @param node Node the jump originates from
  * @param targetScope Outermost scope that is left by the jump; cleanup is generated for this scope as well
  */
-void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const StmtLstNode *targetScope) {
+void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope) {
   assert(targetScope != nullptr);
   const StmtLstNode *scope = node->getNextOuterStmtLst();
+  const Scope *scopeLevel = currentScope;
   while (true) {
     generateScopeCleanup(scope);
-    if (scope == targetScope)
+    if (scopeLevel == targetScope)
       break;
-    assert(scope->parent != nullptr);
+    assert(scope->parent != nullptr && scopeLevel->parent != nullptr);
     scope = scope->parent->getNextOuterStmtLst();
+    scopeLevel = scopeLevel->parent;
   }
 }
 
