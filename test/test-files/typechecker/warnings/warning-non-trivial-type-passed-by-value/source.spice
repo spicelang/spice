@@ -1,0 +1,15 @@
+import "std/test/lifetime-object";
+
+p useObject(const LifetimeObject& _obj) {
+    printf("Using an object\n");
+}
+
+p printObject(LifetimeObject obj) {
+    useObject(obj);
+}
+
+f<int> main() {
+    LifetimeObject obj;
+    printObject(obj);
+    return 0;
+}

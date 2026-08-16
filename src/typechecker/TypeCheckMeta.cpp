@@ -36,6 +36,16 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
       continue;
     }
 
+    // Warn about non-trivially copyable types being passed by value, since that requires an implicit copy on every call.
+    // Only check in the check stage (not the prepare stage), because generic param types are not substantiated yet there.
+    if (typeCheckerMode == TC_MODE_POST && !paramType.isTriviallyCopyable(param)) {
+      const std::string message = "Parameter '" + param->varName + "' has the non-trivially copyable type '" +
+                                   paramType.getName() +
+                                   "' and is passed by value, which requires an implicit copy on every call. Consider "
+                                   "passing it by reference instead.";
+      warnings.emplace_back(param->codeLoc, NON_TRIVIAL_TYPE_PASSED_BY_VALUE, message);
+    }
+
     // Add parameter to named param list
     namedParams.push_back({param->varName.c_str(), paramType, metOptional});
   }

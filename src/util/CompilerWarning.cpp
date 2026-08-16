@@ -74,6 +74,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
     return "Ineffective type condition";
   case BOOL_ASSIGN_AS_CONDITION:
     return "Bool assignment as condition";
+  case NON_TRIVIAL_TYPE_PASSED_BY_VALUE:
+    return "Non-trivial type passed by value";
   case ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION:
     return "Lambda violates async lambda capture rules";
   case UNINSTALL_FAILED:
