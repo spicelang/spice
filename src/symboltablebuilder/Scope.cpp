@@ -330,6 +330,18 @@ unsigned int Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
 }
 
 /**
+ * Get the nearest enclosing function/procedure/lambda body scope, including this scope itself
+ *
+ * @return Nearest enclosing function/procedure/lambda body scope
+ */
+Scope *Scope::getFunctionScope() { // NOLINT(misc-no-recursion)
+  if (type == ScopeType::FUNC_PROC_BODY || type == ScopeType::LAMBDA_BODY)
+    return this;
+  assert(!isRootScope());
+  return parent->getFunctionScope();
+}
+
+/**
  * Check if this scope is one of the child scopes of a switch statement
  *
  * @return Child scope of switch statement or not

@@ -29,8 +29,8 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY, node);
 
   // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(node->body, bExit);
-  continueTargets.emplace_back(node->body, bTail);
+  breakTargets.emplace_back(currentScope, bExit);
+  continueTargets.emplace_back(currentScope, bTail);
 
   // Init statement
   visit(node->initDecl);
@@ -82,8 +82,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY, node);
 
   // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(node->body, bExit);
-  continueTargets.emplace_back(node->body, bTail);
+  breakTargets.emplace_back(currentScope, bExit);
+  continueTargets.emplace_back(currentScope, bTail);
 
   // Resolve iterator
   ExprNode *iteratorAssignNode = node->iteratorAssign;
@@ -229,8 +229,8 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY, node);
 
   // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(node->body, bExit);
-  continueTargets.emplace_back(node->body, bHead);
+  breakTargets.emplace_back(currentScope, bExit);
+  continueTargets.emplace_back(currentScope, bHead);
 
   // Jump to head block
   insertJump(bHead);
@@ -272,8 +272,8 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY, node);
 
   // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(node->body, bExit);
-  continueTargets.emplace_back(node->body, bFoot);
+  breakTargets.emplace_back(currentScope, bExit);
+  continueTargets.emplace_back(currentScope, bFoot);
 
   // Jump to body block
   insertJump(bBody);
@@ -449,7 +449,7 @@ std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
-  breakTargets.back().scope = node->body;
+  breakTargets.back().scope = currentScope;
 
   // Visit case body
   visit(node->body);
@@ -462,7 +462,7 @@ std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
-  breakTargets.back().scope = node->body;
+  breakTargets.back().scope = currentScope;
 
   // Visit case body
   visit(node->body);

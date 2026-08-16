@@ -97,6 +97,7 @@ public:
   [[nodiscard]] std::vector<const Function *> getVirtualMethods();
   [[nodiscard]] std::vector<const Struct *> getAllStructManifestationsInDeclarationOrder() const;
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
+  [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] bool isInCaseBranch() const;
   [[nodiscard]] bool isInAsyncScope() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;

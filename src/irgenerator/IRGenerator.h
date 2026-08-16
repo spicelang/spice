@@ -40,7 +40,7 @@ struct CommonLLVMTypes {
 // A break/continue target: the scope to run cleanup (dtor calls) up to (inclusive) before jumping, since the
 // jump skips the normal fall-through cleanup of enclosing scopes, paired with the block to jump to.
 struct BreakContinueTarget {
-  const StmtLstNode *scope;
+  Scope *scope;
   llvm::BasicBlock *block;
 };
 
@@ -211,7 +211,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node);
-  void generateScopeCleanupUpTo(const ASTNode *node, const StmtLstNode *targetScope);
+  void generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
@@ -256,9 +256,6 @@ private:
   CommonLLVMTypes llvmTypes;
   std::vector<BreakContinueTarget> breakTargets;
   std::vector<BreakContinueTarget> continueTargets;
-  // Stack of the enclosing function/procedure/lambda's own body scope, i.e. the scope a 'return' has to clean
-  // up to (inclusive), since it may be nested arbitrarily deep in blocks within that body.
-  std::vector<const StmtLstNode *> functionBodyScopes;
   std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::AllocaInst *allocaInsertInst = nullptr;
