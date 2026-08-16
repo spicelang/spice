@@ -335,10 +335,6 @@ bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
  * @return Trivially constructible or not
  */
 bool QualType::isTriviallyConstructible(const ASTNode *node) const {
-  // Heap-allocated values require manual allocation, which is done in the default/explicit ctor
-  if (qualifiers.isHeap)
-    return false;
-
   // References can't be default initialized
   if (isRef())
     return false;
@@ -348,29 +344,28 @@ bool QualType::isTriviallyConstructible(const ASTNode *node) const {
     return getBase().isTriviallyConstructible(node);
 
   // In case of a struct, the member types determine the construction triviality
-  if (is(TY_STRUCT)) {
-    // If the struct has a ctor, it is a non-trivially constructible one
-    const Struct *spiceStruct = getStruct(node);
-    assert(spiceStruct != nullptr); // Callers must ensure the struct is manifested (see structFullyManifested)
-    if (FunctionManager::hasAnyNonCopyCtor(spiceStruct->scope))
-      return false;
+  if (!is(TY_STRUCT))
+    return true;
 
-    // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
-    const auto *structDefNode = spice_pointer_cast<StructDefNode *>(spiceStruct->declNode);
-    if (structDefNode->emitVTable)
-      return false;
+  // If the struct has a ctor, it is a non-trivially constructible one
+  const Struct *spiceStruct = getStruct(node);
+  assert(spiceStruct != nullptr); // Callers must ensure the struct is manifested (see structFullyManifested)
+  if (FunctionManager::hasAnyNonCopyCtor(spiceStruct->scope))
+    return false;
 
-    // If any field has a default value, the struct is non-trivially constructible
-    const auto pred1 = [&](const FieldNode *fieldNode) { return fieldNode->defaultValue != nullptr; };
-    if (std::ranges::any_of(structDefNode->fields, pred1))
-      return false;
+  // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
+  const auto *structDefNode = spice_pointer_cast<StructDefNode *>(spiceStruct->declNode);
+  if (structDefNode->emitVTable)
+    return false;
 
-    // Check if all member types are trivially constructible
-    const auto pred2 = [&](const QualType &fieldType) { return fieldType.isTriviallyConstructible(node); };
-    return std::ranges::all_of(spiceStruct->fieldTypes, pred2);
-  }
+  // If any field has a default value, the struct is non-trivially constructible
+  const auto pred1 = [&](const FieldNode *fieldNode) { return fieldNode->defaultValue != nullptr; };
+  if (std::ranges::any_of(structDefNode->fields, pred1))
+    return false;
 
-  return true;
+  // Check if all member types are trivially constructible
+  const auto pred2 = [&](const QualType &fieldType) { return fieldType.isTriviallyConstructible(node); };
+  return std::ranges::all_of(spiceStruct->fieldTypes, pred2);
 }
 
 /**
@@ -381,27 +376,23 @@ bool QualType::isTriviallyConstructible(const ASTNode *node) const {
  * @return Trivially copyable or not
  */
 bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-recursion)
-  // Heap-allocated values may not be copied via memcpy
-  if (qualifiers.isHeap)
-    return false;
-
   // In case of an array, the item type is determining the copy triviality
   if (isArray())
     return getBase().isTriviallyCopyable(node);
 
   // In case of a struct, the member types determine the copy triviality
-  if (is(TY_STRUCT)) {
-    // If the struct has a copy ctor, it is a non-trivially copyable one
-    const Struct *spiceStruct = getStruct(node);
-    if (FunctionManager::hasCopyCtor(spiceStruct->scope))
-      return false;
+  // Only structs can own a copy ctor
+  if (!is(TY_STRUCT))
+    return true;
 
-    // Check if all member types are trivially copyable
-    const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyCopyable(node); }; // NOLINT(*-no-recursion)
-    return std::ranges::all_of(spiceStruct->fieldTypes, pred);
-  }
+  // If the struct has a copy ctor, it is a non-trivially copyable one
+  const Struct *spiceStruct = getStruct(node);
+  if (FunctionManager::hasCopyCtor(spiceStruct->scope))
+    return false;
 
-  return true;
+  // Check if all member types are trivially copyable
+  const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyCopyable(node); }; // NOLINT(*-no-recursion)
+  return std::ranges::all_of(spiceStruct->fieldTypes, pred);
 }
 
 /**
@@ -412,29 +403,22 @@ bool QualType::isTriviallyCopyable(const ASTNode *node) const { // NOLINT(*-no-r
  * @return Trivially destructible or not
  */
 bool QualType::isTriviallyDestructible(const ASTNode *node) const {
-  // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
-  if (qualifiers.isHeap)
-    return false;
-
   // In case of an array, the item type is determining the destructing triviality
   if (isArray())
     return getBase().isTriviallyDestructible(node);
 
-  // In case of a struct, the member types determine the destructing triviality
-  if (is(TY_STRUCT)) {
-    // If the struct has a dtor, it is a non-trivially destructible one
-    const Struct *spiceStruct = getStruct(node);
-    if (FunctionManager::hasDtor(spiceStruct->scope))
-      return false;
+  // Only structs can own a dtor
+  if (!is(TY_STRUCT))
+    return true;
 
-    // Check if all member types are trivially destructible
-    const auto pred = [&](const QualType &fieldType) {
-      return fieldType.isTriviallyDestructible(node);
-    }; // NOLINT(*-no-recursion)
-    return std::ranges::all_of(spiceStruct->fieldTypes, pred);
-  }
+  // If the struct has a dtor, it is a non-trivially destructible one
+  const Struct *spiceStruct = getStruct(node);
+  if (FunctionManager::hasDtor(spiceStruct->scope))
+    return false;
 
-  return true;
+  // Check if all member types are trivially destructible
+  const auto pred = [&](const QualType &fieldType) { return fieldType.isTriviallyDestructible(node); }; // NOLINT(*-no-recursion)
+  return std::ranges::all_of(spiceStruct->fieldTypes, pred);
 }
 
 /**
