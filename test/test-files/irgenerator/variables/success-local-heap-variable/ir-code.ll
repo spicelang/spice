@@ -19,7 +19,7 @@ define dso_local noundef i32 @main() #0 {
   %5 = load ptr, ptr %j, align 8
   %6 = load i32, ptr %5, align 4
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4, i32 noundef %6)
-  call void @_Z8sDeallocRPh(ptr %j)
+  call void @_Z8sDeallocRPVh(ptr %j)
   %8 = load i32, ptr %result, align 4
   ret i32 %8
 }
@@ -29,7 +29,7 @@ declare ptr @_Z12sAllocUnsafem(i64)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-declare void @_Z8sDeallocRPh(ptr)
+declare void @_Z8sDeallocRPVh(ptr)
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

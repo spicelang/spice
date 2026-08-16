@@ -18,8 +18,8 @@ define dso_local noundef i32 @main() local_unnamed_addr #0 {
   store i32 5, ptr %4, align 4
   store ptr %3, ptr %storage, align 8
   %5 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 noundef 3, i32 noundef 5)
-  call void @_Z8sDeallocRPh(ptr nonnull %storage) #2
-  call void @_Z8sDeallocRPh(ptr nonnull %i) #2
+  call void @_Z8sDeallocRPVh(ptr nonnull %storage) #2
+  call void @_Z8sDeallocRPVh(ptr nonnull %i) #2
   ret i32 0
 }
 
@@ -28,7 +28,7 @@ declare ptr @_Z12sAllocUnsafem(i64) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-declare void @_Z8sDeallocRPh(ptr) local_unnamed_addr
+declare void @_Z8sDeallocRPVh(ptr) local_unnamed_addr
 
 attributes #0 = { mustprogress noinline norecurse nounwind uwtable }
 attributes #1 = { nofree nounwind }

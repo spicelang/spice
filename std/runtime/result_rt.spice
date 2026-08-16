@@ -31,6 +31,11 @@ public p Result.ctor(const Error& error) {
     this.error = error;
 }
 
+// Work-around: Currently the compiler does not generate this default dtor
+public p Result.dtor() {
+    sDestruct(this.data);
+}
+
 /**
  * Returns the stored data object.
  * If an error is present, this function will panic.

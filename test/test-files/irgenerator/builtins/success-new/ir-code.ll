@@ -53,8 +53,8 @@ define dso_local noundef i32 @main() #1 {
   %y.addr = getelementptr inbounds %struct.Point, ptr %9, i64 0, i32 1
   %10 = load i32, ptr %y.addr, align 4
   %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8, i32 noundef %10)
-  call void @_Z8sDeallocRPh(ptr %storage)
-  call void @_Z8sDeallocRPh(ptr %i)
+  call void @_Z8sDeallocRPVh(ptr %storage)
+  call void @_Z8sDeallocRPVh(ptr %i)
   %12 = load i32, ptr %result, align 4
   ret i32 %12
 }
@@ -64,7 +64,7 @@ declare ptr @_Z12sAllocUnsafem(i64)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
-declare void @_Z8sDeallocRPh(ptr)
+declare void @_Z8sDeallocRPVh(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }

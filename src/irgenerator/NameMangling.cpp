@@ -188,6 +188,12 @@ void NameMangling::mangleType(std::stringstream &out, const QualType &qualType) 
   // Qualifiers
   assert(qualType.getQualifiers().isSigned == !qualType.getQualifiers().isUnsigned);
   const bool signedness = qualType.getQualifiers().isSigned;
+  // The 'heap' qualifier has no equivalent in the C++ Itanium ABI, but it changes the semantics of the type (ownership), so
+  // it must be reflected in the mangled name. Otherwise e.g. 'byte*' and 'heap byte*' manifestations of the same generic
+  // function would collide on the same mangled name. Piggyback on the 'volatile' cv-qualifier slot ('V', ordered before
+  // 'K' per the Itanium <CV-qualifiers> grammar) so demangling still succeeds.
+  if (qualType.getQualifiers().isHeap)
+    out << "V";
   if (qualType.getQualifiers().isConst && type->typeChain.size() > 1)
     out << "K";
 

@@ -105,7 +105,9 @@ llvm::Function *StdFunctionManager::getAllocUnsafeLongFct() const {
 }
 
 llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
-  const ParamList paramLst = {{QualType(TY_BYTE).toPtr(nullptr).toRef(nullptr), false}};
+  QualType heapBytePtrType = QualType(TY_BYTE).toPtr(nullptr);
+  heapBytePtrType.makeHeap();
+  const ParamList paramLst = {{heapBytePtrType.toRef(nullptr), false}};
   const Function function("sDealloc", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getProcedure(mangledName.c_str(), {builder.getPtrTy()});

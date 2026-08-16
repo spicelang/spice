@@ -1,14 +1,7 @@
-const int VERTEX_COUNT = 4;
+import "bootstrap/model/interface";
 
-public f<bool> isSafe(bool[VERTEX_COUNT][VERTEX_COUNT] graph, int[] color) {
-    for int i = 0; i < VERTEX_COUNT; i++ {
-        for int j = i + 1; j < VERTEX_COUNT; j++ {
-            if graph[i][j] && color[j] == color[i] {
-                return false;
-            }
-        }
-    }
-    return true;
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testInterfaceSmoke();
+    printf("All assertions passed!");
 }
-
-f<int> main() {}
