@@ -23,7 +23,7 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) #1 !dbg !46 {
+define internal noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) #1 !dbg !46 {
   %result = alloca %struct.TestStruct, align 8
   %ref = alloca ptr, align 8
   %2 = alloca %struct.String, align 8

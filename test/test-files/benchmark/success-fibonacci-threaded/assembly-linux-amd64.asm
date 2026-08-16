@@ -2,8 +2,8 @@
 	.file	"source.spice"
 	.text
 	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z3fibi
-	.type	.L_Z3fibi,@function
-.L_Z3fibi:                              # @_Z3fibi
+	.type	_Z3fibi,@function
+_Z3fibi:                                # @_Z3fibi
 	.cfi_startproc
 # %bb.0:
 	pushq	%r14
@@ -25,7 +25,7 @@
 .LBB0_2:                                # %if.exit.L4
                                         # =>This Inner Loop Header: Depth=1
 	movl	%r14d, %edi
-	callq	.L_Z3fibi
+	callq	_Z3fibi
 	addl	%eax, %ebx
 	leal	-2(%r14), %eax
 	incl	%r14d
@@ -44,7 +44,7 @@
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
-	.size	.L_Z3fibi, .Lfunc_end0-.L_Z3fibi
+	.size	_Z3fibi, .Lfunc_end0-_Z3fibi
 	.cfi_endproc
                                         # -- End function
 	.globl	main                            # -- Begin function main
@@ -77,7 +77,7 @@ main:                                   # @main
 	leaq	144(%rsp), %rbx
 	leaq	192(%rsp), %r12
 	leaq	240(%rsp), %r13
-	leaq	.L_Z15lambda.L12C29.0v(%rip), %r14
+	leaq	_Z15lambda.L12C29.0v(%rip), %r14
 	movq	%rsp, %r15
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -230,14 +230,14 @@ main:                                   # @main
 	.cfi_endproc
                                         # -- End function
 	.prefalign	4, .Lfunc_end2, nop     # -- Begin function _Z15lambda.L12C29.0v
-	.type	.L_Z15lambda.L12C29.0v,@function
-.L_Z15lambda.L12C29.0v:                 # @_Z15lambda.L12C29.0v
+	.type	_Z15lambda.L12C29.0v,@function
+_Z15lambda.L12C29.0v:                   # @_Z15lambda.L12C29.0v
 	.cfi_startproc
 # %bb.0:
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movl	$30, %edi
-	callq	.L_Z3fibi
+	callq	_Z3fibi
 	leaq	.Lprintf.str.0(%rip), %rdi
 	movl	%eax, %esi
 	xorl	%eax, %eax
@@ -245,7 +245,7 @@ main:                                   # @main
 	.cfi_def_cfa_offset 8
 	jmp	printf@PLT                      # TAILCALL
 .Lfunc_end2:
-	.size	.L_Z15lambda.L12C29.0v, .Lfunc_end2-.L_Z15lambda.L12C29.0v
+	.size	_Z15lambda.L12C29.0v, .Lfunc_end2-_Z15lambda.L12C29.0v
 	.cfi_endproc
                                         # -- End function
 	.type	.Lprintf.str.0,@object          # @printf.str.0

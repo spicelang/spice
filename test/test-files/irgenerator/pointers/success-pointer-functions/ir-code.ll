@@ -10,7 +10,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
+define internal void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8

@@ -25,7 +25,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [30 x i8] c"Another cart item 2 unit: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.ShoppingCart @_Z15newShoppingCartv() #0 {
+define internal noundef %struct.ShoppingCart @_Z15newShoppingCartv() #0 {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
@@ -45,7 +45,7 @@ define private noundef %struct.ShoppingCart @_Z15newShoppingCartv() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.ShoppingCart @_Z19anotherShoppingCartv() #0 {
+define internal noundef %struct.ShoppingCart @_Z19anotherShoppingCartv() #0 {
   %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8

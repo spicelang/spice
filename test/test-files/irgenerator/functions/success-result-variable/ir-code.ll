@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z6getAgev() #0 {
+define internal noundef i32 @_Z6getAgev() #0 {
   %result = alloca i32, align 4
   %i = alloca i1, align 1
   %b = alloca i1, align 1

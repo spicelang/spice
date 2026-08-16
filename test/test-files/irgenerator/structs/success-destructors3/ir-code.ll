@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [5 x i8] c"test\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testv() #0 {
+define internal void @_Z4testv() #0 {
   %1 = alloca %struct.String, align 8
   %t = alloca ptr, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
@@ -29,7 +29,7 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testRK6String(ptr noundef %0) #0 {
+define internal void @_Z4testRK6String(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8

@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [8 x i8] c"%d, %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testv() #0 {
+define internal void @_Z4testv() #0 {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -33,7 +33,7 @@ define private void @_Z4testv() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) %0) #0 {
+define internal void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) %0) #0 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
@@ -48,7 +48,7 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testi(i32 noundef %0) #0 {
+define internal void @_Z4testi(i32 noundef %0) #0 {
   %t = alloca i32, align 4
   %x = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -76,7 +76,7 @@ define private void @_Z4testi(i32 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) %0) #0 {
+define internal void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) %0) #0 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8

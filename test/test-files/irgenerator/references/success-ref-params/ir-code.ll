@@ -10,7 +10,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
+define internal void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
   %intRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
   store ptr %0, ptr %intRef, align 8
@@ -31,7 +31,7 @@ define private void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
+define internal noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
   %result = alloca i32, align 4
   %doubleRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8

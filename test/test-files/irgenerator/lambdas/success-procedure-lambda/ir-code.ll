@@ -67,7 +67,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z14lambda.L2C31.0v(ptr %0) #1 {
+define internal void @_Z14lambda.L2C31.0v(ptr %0) #1 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -78,7 +78,7 @@ define private void @_Z14lambda.L2C31.0v(ptr %0) #1 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, ptr %1, double %2) #1 {
+define internal void @_Z14lambda.L7C44.0R6Stringd(ptr %0, ptr %1, double %2) #1 {
   %captures = alloca ptr, align 8
   %str = alloca ptr, align 8
   %d = alloca double, align 8
@@ -95,7 +95,7 @@ define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, ptr %1, double %2) #1 {
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z15lambda.L12C41.06Stringb(ptr %0, %struct.String %1, i1 %2) #1 {
+define internal void @_Z15lambda.L12C41.06Stringb(ptr %0, %struct.String %1, i1 %2) #1 {
   %captures = alloca ptr, align 8
   %str = alloca %struct.String, align 8
   %b = alloca i1, align 1

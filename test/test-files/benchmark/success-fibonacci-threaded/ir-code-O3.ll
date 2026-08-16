@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @str = private unnamed_addr constant [45 x i8] c"Started all threads. Waiting for results ...\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none) uwtable
-define private fastcc noundef i32 @_Z3fibi(i32 noundef %0) unnamed_addr #0 {
+define internal fastcc noundef i32 @_Z3fibi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 3
   br i1 %2, label %common.ret, label %if.exit.L4
 
@@ -84,7 +84,7 @@ for.body.L11:
 }
 
 ; Function Attrs: nofree nounwind uwtable
-define private void @_Z15lambda.L12C29.0v(ptr nofree readnone captures(none) %0) #2 {
+define internal void @_Z15lambda.L12C29.0v(ptr nofree readnone captures(none) %0) #2 {
   %2 = tail call fastcc noundef i32 @_Z3fibi(i32 noundef 30)
   %3 = tail call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 noundef %2)
   ret void

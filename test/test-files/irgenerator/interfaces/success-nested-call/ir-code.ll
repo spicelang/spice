@@ -15,7 +15,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [18 x i8] c"InnerTest.test()\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -29,7 +29,7 @@ define private void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenc
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN9InnerTest4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN9InnerTest4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)

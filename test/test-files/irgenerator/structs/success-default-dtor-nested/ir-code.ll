@@ -54,7 +54,7 @@ define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
+define internal void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -69,7 +69,7 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceabl
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
+define internal void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8

@@ -14,7 +14,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -23,7 +23,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Test4testEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal void @_ZN4Test4testEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
@@ -34,7 +34,7 @@ define private void @_ZN4Test4testEv(ptr noundef nonnull align 8 dereferenceable
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z7testFctR5ITest(ptr noundef %0) #0 {
+define internal void @_Z7testFctR5ITest(ptr noundef %0) #0 {
   %test = alloca ptr, align 8
   store ptr %0, ptr %test, align 8
   %2 = load ptr, ptr %test, align 8

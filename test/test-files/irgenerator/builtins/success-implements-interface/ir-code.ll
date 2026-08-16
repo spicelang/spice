@@ -14,7 +14,7 @@ source_filename = "source.spice"
 @printf.str.3 = private unnamed_addr constant [40 x i8] c"Implements interface (ITest, bool): %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Test17methodAEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal void @_ZN5Test17methodAEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)

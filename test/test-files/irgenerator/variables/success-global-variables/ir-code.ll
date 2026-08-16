@@ -1,11 +1,11 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@TEST1 = private global i32 10
-@TEST2 = private global ptr @anon.string.0
+@TEST1 = internal global i32 10
+@TEST2 = internal global ptr @anon.string.0
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"test string\00", align 4
-@TEST3 = private global double 5.830000e+00
-@TEST4 = private global i1 false
+@TEST3 = internal global double 5.830000e+00
+@TEST4 = internal global i1 false
 @anon.string.1 = private unnamed_addr constant [5 x i8] c"test\00", align 4
 @printf.str.0 = private unnamed_addr constant [32 x i8] c"Variable values: %d, %s, %f, %u\00", align 4
 

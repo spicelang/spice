@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 ; Function Attrs: nofree nosync nounwind memory(none) uwtable
-define private fastcc noundef i32 @_Z4fiboi(i32 noundef %0) unnamed_addr #0 {
+define internal fastcc noundef i32 @_Z4fiboi(i32 noundef %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 2
   br i1 %2, label %common.ret, label %if.exit.L2
 

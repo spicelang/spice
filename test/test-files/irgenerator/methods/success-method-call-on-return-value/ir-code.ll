@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Stamp glued: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -27,7 +27,7 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceab
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
+define internal noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
   %result = alloca %struct.Stamp, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

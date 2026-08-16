@@ -4,14 +4,14 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [6 x i8] c"done\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4noopIPhEvRPh(ptr noundef %0) #0 {
+define internal void @_Z4noopIPhEvRPh(ptr noundef %0) #0 {
   %obj = alloca ptr, align 8
   store ptr %0, ptr %obj, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4noopIPVhEvRPVh(ptr noundef %0) #0 {
+define internal void @_Z4noopIPVhEvRPVh(ptr noundef %0) #0 {
   %obj = alloca ptr, align 8
   store ptr %0, ptr %obj, align 8
   ret void

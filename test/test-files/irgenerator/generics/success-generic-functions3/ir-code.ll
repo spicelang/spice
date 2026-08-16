@@ -6,7 +6,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z3fooIRiEvRi(ptr noundef %0) #0 {
+define internal void @_Z3fooIRiEvRi(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8
@@ -17,7 +17,7 @@ define private void @_Z3fooIRiEvRi(ptr noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z3barRi(ptr noundef %0) #0 {
+define internal void @_Z3barRi(ptr noundef %0) #0 {
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
   %2 = load ptr, ptr %t, align 8

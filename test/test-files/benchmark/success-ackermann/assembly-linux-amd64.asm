@@ -2,8 +2,8 @@
 	.file	"source.spice"
 	.text
 	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z3ackii
-	.type	.L_Z3ackii,@function
-.L_Z3ackii:                             # @_Z3ackii
+	.type	_Z3ackii,@function
+_Z3ackii:                               # @_Z3ackii
 	.cfi_startproc
 # %bb.0:
 	movl	%esi, %eax
@@ -29,7 +29,7 @@
 	decl	%eax
 	movl	%ebx, %edi
 	movl	%eax, %esi
-	callq	.L_Z3ackii
+	callq	_Z3ackii
 	decl	%ebx
 	jne	.LBB0_2
 .LBB0_5:
@@ -40,7 +40,7 @@
 	incl	%eax
 	retq
 .Lfunc_end0:
-	.size	.L_Z3ackii, .Lfunc_end0-.L_Z3ackii
+	.size	_Z3ackii, .Lfunc_end0-_Z3ackii
 	.cfi_endproc
                                         # -- End function
 	.globl	main                            # -- Begin function main
@@ -53,7 +53,7 @@ main:                                   # @main
 	.cfi_def_cfa_offset 16
 	movl	$3, %edi
 	movl	$10, %esi
-	callq	.L_Z3ackii
+	callq	_Z3ackii
 	leaq	.Lprintf.str.0(%rip), %rdi
 	movl	$3, %esi
 	movl	$10, %edx

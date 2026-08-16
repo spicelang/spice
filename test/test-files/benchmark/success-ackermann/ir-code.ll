@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3ackii(i32 noundef %0, i32 noundef %1) #0 {
+define internal noundef i32 @_Z3ackii(i32 noundef %0, i32 noundef %1) #0 {
   %result = alloca i32, align 4
   %m = alloca i32, align 4
   %n = alloca i32, align 4

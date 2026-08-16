@@ -2,8 +2,8 @@
 	.file	"source.spice"
 	.text
 	.prefalign	4, .Lfunc_end0, nop     # -- Begin function _Z4fiboi
-	.type	.L_Z4fiboi,@function
-.L_Z4fiboi:                             # @_Z4fiboi
+	.type	_Z4fiboi,@function
+_Z4fiboi:                               # @_Z4fiboi
 	.cfi_startproc
 # %bb.0:
 	pushq	%r14
@@ -27,7 +27,7 @@
 .LBB0_4:                                # %if.exit.L2
                                         # =>This Inner Loop Header: Depth=1
 	leal	-1(%r14), %edi
-	callq	.L_Z4fiboi
+	callq	_Z4fiboi
 	leal	-2(%r14), %ecx
 	addl	%eax, %ebx
 	cmpl	$4, %r14d
@@ -44,7 +44,7 @@
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
-	.size	.L_Z4fiboi, .Lfunc_end0-.L_Z4fiboi
+	.size	_Z4fiboi, .Lfunc_end0-_Z4fiboi
 	.cfi_endproc
                                         # -- End function
 	.globl	main                            # -- Begin function main
@@ -56,7 +56,7 @@ main:                                   # @main
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movl	$30, %edi
-	callq	.L_Z4fiboi
+	callq	_Z4fiboi
 	leaq	.Lprintf.str.0(%rip), %rdi
 	movl	%eax, %esi
 	xorl	%eax, %eax

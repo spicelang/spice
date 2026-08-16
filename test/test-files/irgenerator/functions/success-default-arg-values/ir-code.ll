@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef ptr @_Z13getTestStringidb(i32 noundef %0, double noundef %1, i1 noundef zeroext %2) #0 {
+define internal noundef ptr @_Z13getTestStringidb(i32 noundef %0, double noundef %1, i1 noundef zeroext %2) #0 {
   %result = alloca ptr, align 8
   %_arg0 = alloca i32, align 4
   %_arg1 = alloca double, align 8

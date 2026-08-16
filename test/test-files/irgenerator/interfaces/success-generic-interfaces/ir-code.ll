@@ -18,7 +18,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2, i32 noundef %3) #0 {
+define internal void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2, i32 noundef %3) #0 {
   %this = alloca ptr, align 8
   %firstName = alloca ptr, align 8
   %lastName = alloca ptr, align 8
@@ -51,7 +51,7 @@ define private void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefer
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) #0 {
+define internal noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   %a = alloca ptr, align 8

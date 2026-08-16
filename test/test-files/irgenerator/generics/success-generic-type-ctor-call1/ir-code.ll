@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -16,7 +16,7 @@ define private void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceab
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4TestI6NestedE8testFuncEv(ptr noundef nonnull align 1 %0) #0 {
+define internal void @_ZN4TestI6NestedE8testFuncEv(ptr noundef nonnull align 1 %0) #0 {
   %this = alloca ptr, align 8
   %t = alloca %struct.Nested, align 8
   store ptr %0, ptr %this, align 8

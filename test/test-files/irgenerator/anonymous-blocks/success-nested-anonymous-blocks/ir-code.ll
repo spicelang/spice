@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Param: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z4testi(i32 noundef %0) #0 {
+define internal void @_Z4testi(i32 noundef %0) #0 {
   %param = alloca i32, align 4
   store i32 %0, ptr %param, align 4
   %2 = load i32, ptr %param, align 4

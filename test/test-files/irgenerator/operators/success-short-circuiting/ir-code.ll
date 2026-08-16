@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_Z12functionTruev() #0 {
+define internal noundef zeroext i1 @_Z12functionTruev() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 true
@@ -17,7 +17,7 @@ define private noundef zeroext i1 @_Z12functionTruev() #0 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef zeroext i1 @_Z13functionFalsev() #0 {
+define internal noundef zeroext i1 @_Z13functionFalsev() #0 {
   %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 false

@@ -5,7 +5,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
+define internal noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
   %result = alloca i32, align 4
   %_input = alloca ptr, align 8
   store ptr %0, ptr %_input, align 8
@@ -13,7 +13,7 @@ define private noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z6invokePFiPKcE({ ptr, ptr, i64 } noundef %0) #0 {
+define internal noundef i32 @_Z6invokePFiPKcE({ ptr, ptr, i64 } noundef %0) #0 {
   %result = alloca i32, align 4
   %fctPtr = alloca { ptr, ptr, i64 }, align 8
   store { ptr, ptr, i64 } %0, ptr %fctPtr, align 8

@@ -543,7 +543,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setLinkage(llvm::Function::InternalLinkage);
   lambda->setDSOLocal(true);
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
@@ -699,7 +699,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setLinkage(llvm::Function::InternalLinkage);
   lambda->setDSOLocal(true);
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
@@ -849,7 +849,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   llvm::Function *lambda = module->getFunction(mangledName);
 
   // Set attributes to function
-  lambda->setLinkage(llvm::Function::PrivateLinkage);
+  lambda->setLinkage(llvm::Function::InternalLinkage);
   lambda->setDSOLocal(true);
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);

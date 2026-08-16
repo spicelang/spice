@@ -21,7 +21,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [20 x i8] c"derived->iface: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable(4) %0, i32 noundef %1) #0 {
+define internal void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable(4) %0, i32 noundef %1) #0 {
   %this = alloca ptr, align 8
   %v = alloca i32, align 4
   store ptr %0, ptr %this, align 8
@@ -34,7 +34,7 @@ define private void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceable
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
+define internal noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -74,7 +74,7 @@ define void @_ZN7Derived4ctorERK7Derived(ptr noundef nonnull align 8 dereference
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1, i32 noundef %2) #0 {
+define internal void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %0, i32 noundef %1, i32 noundef %2) #0 {
   %this = alloca ptr, align 8
   %b = alloca i32, align 4
   %d = alloca i32, align 4
@@ -93,7 +93,7 @@ define private void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereference
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define internal noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -117,7 +117,7 @@ define void @_ZN4Leaf4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %0)
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceable(32) %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
+define internal void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceable(32) %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
   %this = alloca ptr, align 8
   %b = alloca i32, align 4
   %d = alloca i32, align 4
@@ -139,7 +139,7 @@ define private void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
+define internal noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

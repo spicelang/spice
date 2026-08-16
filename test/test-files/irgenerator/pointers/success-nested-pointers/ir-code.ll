@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8testProcPPPA4_i(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal void @_Z8testProcPPPA4_i(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %nums = alloca ptr, align 8
   %nums1 = alloca ptr, align 8
   %nums2 = alloca [4 x i32], align 4

@@ -4,13 +4,13 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %f\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef double @_Z6getArgv() #0 {
+define internal noundef double @_Z6getArgv() #0 {
   %result = alloca double, align 8
   ret double 4.300000e+00
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef double @_Z4testv() #0 {
+define internal noundef double @_Z4testv() #0 {
   %result = alloca double, align 8
   %arg = alloca double, align 8
   %1 = call noundef double @_Z6getArgv()

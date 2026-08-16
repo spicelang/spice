@@ -17,7 +17,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
+define internal void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -27,7 +27,7 @@ define private void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
+define internal noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

@@ -4,7 +4,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private noundef i32 @_Z3getv() #0 {
+define internal noundef i32 @_Z3getv() #0 {
   %result = alloca i32, align 4
   ret i32 12
 }
