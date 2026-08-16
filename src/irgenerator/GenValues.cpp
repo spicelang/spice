@@ -477,8 +477,23 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     // Store all field values at their corresponding offsets
     for (; i < interfaceCount + fieldCount; i++) {
       LLVMExprResult &exprResult = fieldValueResults.at(i);
+      const QualType &fieldType = fieldTypes.at(i);
       // Get field value
-      llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
+      llvm::Value *itemValue;
+      if (fieldType.isRef()) {
+        itemValue = resolveAddress(exprResult);
+      } else if (const Function *copyCtor = node->fieldLst->argInfos.at(i).copyCtor; copyCtor != nullptr) {
+        // Deep-copy the value into the field via its copy ctor: the source is not consumed/moved here, so the
+        // caller keeps its own copy alive and destructs it independently - a raw value copy would alias its
+        // owned heap resources and lead to a double-free once one of the two is destructed.
+        llvm::Value *originalPtr = resolveAddress(exprResult);
+        llvm::Type *fieldLLVMType = fieldType.toLLVMType(sourceFile);
+        llvm::Value *fieldCopyPtr = insertAlloca(fieldLLVMType, "field.copy");
+        generateCtorOrDtorCall(fieldCopyPtr, copyCtor, {originalPtr});
+        itemValue = insertLoad(fieldLLVMType, fieldCopyPtr);
+      } else {
+        itemValue = resolveValue(exprResult.node, exprResult);
+      }
       // Get field address
       llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, i);
       // Store the item value

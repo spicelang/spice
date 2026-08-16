@@ -607,8 +607,8 @@ public:
   std::pair<QualType, Function *> getAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
                                                       bool isDecl = false, bool isReturn = false,
                                                       const char *errMsgPrefix = "") const;
-  QualType getFieldAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                    bool isDecl = false) const;
+  std::pair<QualType, Function *> getFieldAssignResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+                                                           bool isDecl = false) const;
   ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;

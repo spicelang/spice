@@ -1,0 +1,48 @@
+// TEST: --sanitizer=address
+
+// Struct instantiation with a non-trivially-copyable field value sourced from a plain (non-temporary) local
+// variable must deep-copy that value into the field (call its copy ctor), not shallow-copy its raw bytes.
+// A shallow copy aliases the source's owned heap buffer, so once the source is destructed independently of
+// the struct - e.g. its enclosing block ends before the struct does, or a function returns the struct while
+// the source lives in an outer scope - the struct's field is left dangling.
+type Box struct {
+    String content
+}
+
+type Pair struct {
+    String first
+    String second
+}
+
+f<Box> buildBox(string value) {
+    // Field value sourced from a local, non-temporary variable: must be deep-copied, since 'local' keeps
+    // its own buffer alive independently and the caller destructs it normally when the function returns.
+    String local = String(value);
+    return Box{local};
+}
+
+f<int> main() {
+    Box b;
+    {
+        // The source local goes out of scope (and gets destructed) before 'b' does. If Box{local} had
+        // aliased local's buffer instead of copying it, this would leave b.content dangling.
+        String local = String("hello");
+        b = Box{local};
+    }
+    printf("box: %s\n", b.content.getRaw());
+
+    // Two fields of the same struct sourced from two different locals must each get their own,
+    // independent copy - not both aliasing whichever local happens to be destructed last.
+    Pair pairVal;
+    {
+        String firstLocal = String("first");
+        String secondLocal = String("second");
+        pairVal = Pair{firstLocal, secondLocal};
+    }
+    printf("pair: %s %s\n", pairVal.first.getRaw(), pairVal.second.getRaw());
+
+    Box fromReturn = buildBox("returned");
+    printf("fromReturn: %s\n", fromReturn.content.getRaw());
+
+    return 0;
+}
