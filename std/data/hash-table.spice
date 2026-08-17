@@ -30,6 +30,11 @@ public p HashEntry.ctor(const HashEntry<K, V>& original) {
     this.value = original.value;
 }
 
+public p HashEntry.dtor() {
+    sDestruct(this.key);
+    sDestruct(this.value);
+}
+
 /**
  * A hash table in Spice is a commonly used data structure, which stores key-value pairs and allows
  * fast access to a value by its key. Collisions are resolved via separate chaining, where each
