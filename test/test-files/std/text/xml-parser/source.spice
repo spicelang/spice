@@ -111,5 +111,5 @@ f<int> main() {
     deleteXmlNode(book);
     deleteXmlNode(prologRoot);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

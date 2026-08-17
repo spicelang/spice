@@ -30,5 +30,5 @@ f<int> main() {
     assert file.readLine() == String("Hello, again!");
     _ = file.close();
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

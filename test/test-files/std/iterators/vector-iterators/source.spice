@@ -75,5 +75,5 @@ f<int> main() {
     assert vi.get(1) == 4323;
     assert vi.get(2) == 9879;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

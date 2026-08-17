@@ -19,7 +19,7 @@ source_filename = "source.spice"
 @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = private unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, align 8
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'ct.copied' evaluated to false.\0A\00", align 4
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) #0 {

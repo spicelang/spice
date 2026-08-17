@@ -23,5 +23,5 @@ f<int> main() {
     result = func(d, Struct{ i, false});
     assert d == -107.64;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

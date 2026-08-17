@@ -56,5 +56,5 @@ f<int> main() {
     itLong++;
     assert !itLong.isValid();
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

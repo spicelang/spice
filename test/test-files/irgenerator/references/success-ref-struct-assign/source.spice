@@ -87,5 +87,5 @@ f<int> main() {
     }
     printf("guard restored: %s\n", parent.getRaw());
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

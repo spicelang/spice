@@ -45,5 +45,5 @@ f<int> main() {
     test.insert(4, String("foo"));
     assert test.getRaw() == "Te--foost.";
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

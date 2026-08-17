@@ -53,5 +53,5 @@ f<int> main() {
     const String versionInfo = buildVersionInfo();
     printf("Version info:\n%s\n", versionInfo);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

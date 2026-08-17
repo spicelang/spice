@@ -42,5 +42,5 @@ f<int> main() {
     // Pass by ref; in the callee we may must copy
     Test t4 = testRVO4(t);
     assert t.copies == 4;
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

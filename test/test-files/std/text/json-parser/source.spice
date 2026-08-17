@@ -154,5 +154,5 @@ f<int> main() {
     deleteJsonValue(emptyObj);
     deleteJsonValue(obj);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

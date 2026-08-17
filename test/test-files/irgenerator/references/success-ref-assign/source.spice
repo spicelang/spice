@@ -16,5 +16,5 @@ f<int> main() {
     testRef = testRef - 4;
     assert test == 123;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

@@ -26,5 +26,5 @@ f<int> main() {
     i |= 5;
     assert i == 127;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

@@ -48,5 +48,5 @@ f<int> main() {
     assert s1.trim() == "";
     assert s3.trim() == s3;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

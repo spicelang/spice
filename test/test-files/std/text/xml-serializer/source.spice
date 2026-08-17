@@ -50,5 +50,5 @@ f<int> main() {
     deleteXmlNode(reparsedRoot);
     deleteXmlNode(prettyXml);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

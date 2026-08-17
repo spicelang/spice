@@ -10,5 +10,5 @@ f<int> main() {
     assert *aPtr == 3;
     unsafe { aPtr -= 2; }
     assert *aPtr == 1;
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

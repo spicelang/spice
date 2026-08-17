@@ -38,5 +38,5 @@ f<int> main() {
     Flags chained = a & b | exclusive;
     assert chained.bits == 14;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

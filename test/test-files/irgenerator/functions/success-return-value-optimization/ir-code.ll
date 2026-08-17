@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 2' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 3' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 4' evaluated to false.\0A\00", align 4
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {

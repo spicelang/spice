@@ -22,5 +22,5 @@ f<int> main() {
     ts--;
     assert ts.test == 123l;
     assert output.test == 123l;
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

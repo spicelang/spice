@@ -203,5 +203,5 @@ f<int> main() {
     postfixIncrementTest(); // x++
     postfixDecrementTest(); // x--
     castTest();             // cast<T>(x)
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

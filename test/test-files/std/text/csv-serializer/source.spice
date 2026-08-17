@@ -68,5 +68,5 @@ f<int> main() {
     assert semicolonSerializer.serializeField(String("a;b")) == String("\"a;b\"");
     assert semicolonSerializer.serializeField(String("a,b")) == String("a,b");
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

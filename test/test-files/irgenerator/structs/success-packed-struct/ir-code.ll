@@ -12,7 +12,7 @@ source_filename = "source.spice"
 @anon.string.5 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'sizeof(tp) == 12' evaluated to false.\0A\00", align 4
 @anon.string.6 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'tp.f1 == -2147483647' evaluated to false.\0A\00", align 4
 @anon.string.7 = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition 'tp.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 4
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
