@@ -48,3 +48,18 @@ set(SPICE_EXTRA_COMPILE_OPTIONS "")
 if (APPLE)
     list(APPEND SPICE_EXTRA_COMPILE_OPTIONS -Wno-error=deprecated-declarations)
 endif()
+
+# On macOS, Spice's own LLVM component list (LLVMOptions.cmake) and TPDE's independently-computed
+# LLVM component list (deps/tpde/tpde-llvm/CMakeLists.txt) are both linked statically into the same
+# executables (see TPDE_LINK_LLVM_STATIC in the top-level CMakeLists.txt) and legitimately share some
+# transitive LLVM archives (e.g. Desc/Info/Utils/Target/Passes). Newer Xcode ld64 warns about the same
+# static archive appearing more than once on the link line; the duplication is harmless (the archive is
+# just scanned twice), so silence the cosmetic warning instead of forcing the two component lists apart.
+if (APPLE)
+    set(CMAKE_REQUIRED_FLAGS "-Wl,-no_warn_duplicate_libraries")
+    check_cxx_compiler_flag("" LINKER_SUPPORTS_NO_WARN_DUPLICATE_LIBRARIES)
+    unset(CMAKE_REQUIRED_FLAGS)
+    if (LINKER_SUPPORTS_NO_WARN_DUPLICATE_LIBRARIES)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_warn_duplicate_libraries")
+    endif ()
+endif()

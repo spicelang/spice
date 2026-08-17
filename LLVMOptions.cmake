@@ -54,6 +54,11 @@ foreach (LLVM_TARGET ${LLVM_TARGETS_TO_BUILD})
     endforeach ()
 endforeach ()
 
+# De-duplicate, since llvm_map_components_to_libnames() and the per-target loop above can both
+# add the same library (e.g. a target's AsmParser/CodeGen component transitively depends on its
+# Desc/Info/Utils libs, which the loop above also adds explicitly)
+list(REMOVE_DUPLICATES LLVM_LIBS)
+
 # Print status messages
 string(JOIN "," LLVM_TARGET_ARCHITECTURES_JOINED ${LLVM_TARGET_ARCHITECTURES})
 message(STATUS "Spice: Enabled targets: ${LLVM_TARGET_ARCHITECTURES_JOINED}")
