@@ -143,3 +143,44 @@
    fun:_ZN4llvm20createSanitizerCtorERNS_6ModuleENS_9StringRefE
    ...
 }
+
+# ---------------------------------------------------------------------------
+# gtest RawBytesPrinter reading struct padding — when a parameterized-test
+# assertion prints a spice::testing::TestCase (or similar aggregate with
+# padding bytes), gtest falls back to dumping the object's raw memory via
+# snprintf("%02X", byte). The padding bytes are never initialized by the
+# struct's constructor, so glibc's snprintf/_itoa_word internals trip
+# Memcheck's uninitialised-value checks. The value is only used for a debug
+# string, never for control flow, so this is a harmless false positive.
+# ---------------------------------------------------------------------------
+{
+   gtest_RawBytesPrinter_itoa_word_value8
+   Memcheck:Value8
+   fun:_itoa_word
+   fun:__printf_buffer
+   fun:__vsnprintf_internal
+   fun:snprintf
+   fun:_ZN7testing12_GLOBAL__N_1L26PrintByteSegmentInObjectToEPKhmmPSo
+   ...
+}
+
+{
+   gtest_RawBytesPrinter_itoa_word_cond
+   Memcheck:Cond
+   fun:_itoa_word
+   fun:__printf_buffer
+   fun:__vsnprintf_internal
+   fun:snprintf
+   fun:_ZN7testing12_GLOBAL__N_1L26PrintByteSegmentInObjectToEPKhmmPSo
+   ...
+}
+
+{
+   gtest_RawBytesPrinter_printf_buffer_cond
+   Memcheck:Cond
+   fun:__printf_buffer
+   fun:__vsnprintf_internal
+   fun:snprintf
+   fun:_ZN7testing12_GLOBAL__N_1L26PrintByteSegmentInObjectToEPKhmmPSo
+   ...
+}

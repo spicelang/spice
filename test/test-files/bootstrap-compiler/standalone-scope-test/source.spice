@@ -36,7 +36,6 @@ f<int> main() {
     assert nested.getParent() == fnScope;
     assert fnScope.getChildScope(String("foreach:0")) == nested;
 
-    printf("Created and retrieved %d child scopes; nesting works.\n", 3);
     printf("All assertions passed!\n");
     return 0;
 }
