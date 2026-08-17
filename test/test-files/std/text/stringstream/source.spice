@@ -26,5 +26,5 @@ f<int> main() {
     ss4 << endl();
     assert ss4.str() == "This is a multiline test\n";
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

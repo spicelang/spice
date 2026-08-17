@@ -7,5 +7,5 @@ f<int> main() {
     if isLinux() {
         assert tempDir == "/tmp";
     }
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

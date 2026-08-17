@@ -11,5 +11,5 @@ f<int> main() {
     assertEmpty("");
     assertNotEmpty("This is not an empty string");
     assertContains("This haystack contains some needles.", "needle");
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

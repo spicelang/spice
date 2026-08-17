@@ -3,5 +3,5 @@ import "bootstrap/exception/linker-error";
 // Wrapper for 'spice test' unit test
 f<int> main() {
     testLinkerErrorSmoke();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

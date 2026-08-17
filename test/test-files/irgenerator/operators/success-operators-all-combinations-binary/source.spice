@@ -1048,5 +1048,5 @@ f<int> main() {
     mulTest();          // x * y
     divTest();          // x / y
     remTest();          // x % y
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

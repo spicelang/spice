@@ -3,5 +3,5 @@ import "bootstrap/symboltablebuilder/super-type";
 // Wrapper for 'spice test' unit test
 f<int> main() {
     testSuperTypeSmoke();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

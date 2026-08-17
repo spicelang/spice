@@ -33,5 +33,5 @@ f<int> main() {
         assert *lPtr == 123l;
     }
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

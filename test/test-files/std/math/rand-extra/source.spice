@@ -57,5 +57,5 @@ f<int> main() {
     assert randGaussian(0.0, 1.0) == g1;
     assert randGaussian(0.0, 1.0) == g2;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

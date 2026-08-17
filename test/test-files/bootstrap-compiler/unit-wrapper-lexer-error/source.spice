@@ -3,5 +3,5 @@ import "bootstrap/exception/lexer-error";
 // Wrapper for 'spice test' unit test
 f<int> main() {
     testLexerErrorSmoke();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [19 x i8] c"From function: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 'i == -4309' evaluated to false.\0A\00", align 4
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
-@printf.str.2 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
+@printf.str.2 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_Z4procRiRK6Struct(ptr noundef %0, ptr noundef %1) #0 {

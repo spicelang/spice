@@ -79,5 +79,5 @@ f<int> main() {
     deleteJsonValue(prec);
     deleteJsonValue(precReparsed);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

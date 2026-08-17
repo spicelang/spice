@@ -15,5 +15,5 @@ f<int> main() {
     ExecResult failResult = exec("exit 7");
     assert failResult.exitCode == 7;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

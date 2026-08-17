@@ -31,6 +31,6 @@ f<int> main() {
 
     printf("Model layer imported successfully.\n");
     printf("Interned int type name: %s\n", intQual.getName(false, false));
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
     return 0;
 }

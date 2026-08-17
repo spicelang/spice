@@ -75,5 +75,5 @@ f<int> main() {
     assert lll.get(1) == 4323l;
     assert lll.get(2) == 9879l;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

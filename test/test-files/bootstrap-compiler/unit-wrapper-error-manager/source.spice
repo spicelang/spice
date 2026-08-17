@@ -3,5 +3,5 @@ import "bootstrap/exception/error-manager";
 // Wrapper for 'spice test' unit test
 f<int> main() {
     testErrorManagerSmoke();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

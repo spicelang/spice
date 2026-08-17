@@ -27,5 +27,5 @@ f<int> main() {
     assert tp.f1 == -2147483647;
     assert tp.f2 == 9223372036854775807l;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

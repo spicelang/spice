@@ -7,7 +7,7 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 125l' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 123l' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 123l' evaluated to false.\0A\00", align 4
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0 {

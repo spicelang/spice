@@ -64,5 +64,5 @@ f<int> main() {
     assert fields.get(0) == String("x");
     assert fields.get(2) == String("z");
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

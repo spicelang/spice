@@ -3,5 +3,5 @@ f<int> main() {
     val += ((1++)--) * 2 << 2;
     assert val == 9;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

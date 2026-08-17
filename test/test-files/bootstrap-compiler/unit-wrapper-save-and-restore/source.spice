@@ -5,5 +5,5 @@ f<int> main() {
     assert testSaveAndRestoreRestoreOriginalValue();
     assert testSaveAndRestoreApplyAndRestoreNewValue();
     assert testSaveAndRestoreNestedGuards();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

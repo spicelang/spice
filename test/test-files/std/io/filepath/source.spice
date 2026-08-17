@@ -15,5 +15,5 @@ f<int> main() {
     assert path.getExtension() == "txt";
     assert path.getBaseName() == "test";
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

@@ -55,5 +55,5 @@ f<int> main() {
     assert a[1] == 4323;
     assert a[2] == 9879;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

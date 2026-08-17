@@ -35,5 +35,5 @@ f<int> main() {
     short shortMin = -32768s;
     assert shortMin == -32767s - 1s;
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

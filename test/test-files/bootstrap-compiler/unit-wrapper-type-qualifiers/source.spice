@@ -3,5 +3,5 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 // Wrapper for 'spice test' unit test
 f<int> main() {
     testTypeQualifiersSmoke();
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }

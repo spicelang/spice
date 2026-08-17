@@ -10,5 +10,5 @@ f<int> main() {
     assert deleteFile(filename);
     assert !fileExists(filename);
 
-    printf("All assertions passed!");
+    printf("All assertions passed!\n");
 }
