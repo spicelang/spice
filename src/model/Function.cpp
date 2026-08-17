@@ -226,7 +226,13 @@ bool Function::hasSubstantiatedParams() const {
  * @return Substantiated generics or not
  */
 bool Function::hasSubstantiatedGenerics() const {
-  const auto predicate = [this](const GenericType &genericType) { return typeMapping.contains(genericType.getSubType()); };
+  const auto predicate = [this](const GenericType &genericType) {
+    // A template slot that is not generic (anymore) is already substantiated. This is the case for the default members
+    // of an already-concrete struct manifestation (e.g. HashEntry<int, String>::dtor()), whose template type list holds
+    // the concrete types instead of generic placeholders. Only generic types carry a sub type usable as a mapping key -
+    // getSubType() would assert on e.g. a primitive or a 'heap byte*'.
+    return !genericType.is(TY_GENERIC) || typeMapping.contains(genericType.getSubType());
+  };
   return std::ranges::all_of(templateTypes, predicate);
 }
 
