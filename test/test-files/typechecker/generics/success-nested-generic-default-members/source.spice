@@ -1,0 +1,45 @@
+import "container";
+
+// A type with an observable, non-trivial lifecycle, used as a template argument from this file. The struct that ends up
+// holding it (Entry<K, V> in container.spice) has to receive its compiler-generated default dtor, even though its
+// manifestation only comes into existence here, long after container.spice was prepared (see #1297).
+public type Payload struct {
+    int id
+}
+
+public p Payload.ctor(int id) {
+    this.id = id;
+}
+
+public p Payload.dtor() {
+    printf("destructing payload %d\n", this.id);
+}
+
+f<int> main() {
+    // Two destruct lines are expected per payload below: one for the temporary that is passed to Box.ctor and one for
+    // the copy that the box stores. Both only appear if Entry<K, V> got its default dtor.
+
+    // The value is the non-trivial one
+    {
+        Box<int, Payload> box = Box<int, Payload>(1, Payload(11));
+        printf("key: %d, value id: %d\n", box.getKey(), box.getValue().id);
+    }
+    printf("box with payload value done\n");
+
+    // The key is the non-trivial one. A second manifestation of the same generic struct must get its own default
+    // members - the first one must not suppress them.
+    {
+        Box<Payload, int> box = Box<Payload, int>(Payload(22), 2);
+        printf("key id: %d, value: %d\n", box.getKey().id, box.getValue());
+    }
+    printf("box with payload key done\n");
+
+    // Both template arguments are trivial, so nothing has to be destructed here
+    {
+        Box<int, int> box = Box<int, int>(3, 33);
+        printf("key: %d, value: %d\n", box.getKey(), box.getValue());
+    }
+    printf("box with trivial payload done\n");
+
+    return 0;
+}

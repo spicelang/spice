@@ -52,6 +52,9 @@ public:
   } vTableData;
   bool used = false;
   bool isNewlyInserted = false;
+  // Whether it was already decided which compiler-generated default members (ctor, copy ctor, move ctor, dtor) this
+  // manifestation needs. The decision is taken exactly once per manifestation, as soon as it comes into existence.
+  bool implicitDefaultMembersDecided = false;
 };
 
 } // namespace spice::compiler

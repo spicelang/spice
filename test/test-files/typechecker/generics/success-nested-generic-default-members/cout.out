@@ -1,0 +1,10 @@
+key: 1, value id: 11
+destructing payload 11
+destructing payload 11
+box with payload value done
+key id: 22, value: 2
+destructing payload 22
+destructing payload 22
+box with payload key done
+key: 3, value: 33
+box with trivial payload done

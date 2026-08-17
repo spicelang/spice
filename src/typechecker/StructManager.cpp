@@ -2,11 +2,13 @@
 
 #include "StructManager.h"
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <model/GenericType.h>
 #include <model/Interface.h>
 #include <symboltablebuilder/Scope.h>
+#include <typechecker/TypeChecker.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
 #include <util/Concurrency.h>
@@ -127,6 +129,9 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       substantiatedStruct->genericPreset = &matchScope->structs.at(structId).at(mangledName);
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
       substantiatedStruct->isNewlyInserted = true; // To not iterate over it in the same matching
+      // The generic preset was already decided on, but this manifestation carries concrete field types and therefore
+      // needs its own decision (taken further below, once its fields and interfaces are substantiated)
+      substantiatedStruct->implicitDefaultMembersDecided = false;
 
       // Copy struct entry
       const std::string newSignature = substantiatedStruct->getSignature();
@@ -184,6 +189,18 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
         assert(spiceInterface != nullptr);
         interfaceType = spiceInterface->entry->getQualType();
       }
+
+      // Decide which compiler-generated default members this brand-new manifestation needs. This has to happen right
+      // here, because the decision depends on the concrete field types and every reactive lookup that asks the struct
+      // for its dtor/ctor from now on has to see the answer (see TypeChecker::createImplicitDefaultMembers). The nested
+      // field manifestations created above are decided on first, by their own recursive match() call, so a field's dtor
+      // is already in place when the outer struct is asked whether it needs one.
+      // A manifestation that is created while its own file is still being prepared is left alone: the generic preset
+      // has not been decided on yet at that point, so this manifestation could neither inherit its default members
+      // through the copied scope nor come to the same conclusion on its own. Those manifestations are covered by the
+      // one-shot sweep at the end of the file's prepare run (TypeChecker::visitEntry), which sees all of them.
+      if (structDefaultMembersDecidable && substantiatedStruct->scope->sourceFile->previousStage >= TYPE_CHECKER_PRE)
+        TypeChecker::createImplicitDefaultMembers(*substantiatedStruct, node, /*withMoveCtor=*/false);
 
       // Add to matched structs
       matches.push_back(substantiatedStruct);

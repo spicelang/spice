@@ -25,6 +25,34 @@ enum TypeCheckerMode : bool {
 };
 
 /**
+ * Global switch that tells StructManager whether a freshly substantiated struct manifestation may still be given its
+ * compiler-generated default members (ctor, copy ctor, move ctor, dtor).
+ *
+ * Creating those mutates the symbol table and registers new functions, which is only valid while the middle end runs.
+ * The back end reaches StructManager::match as well - through QualType::getStruct, on multiple threads - but by then
+ * every manifestation exists already, so those calls never take the creation path anyway. The switch makes that an
+ * invariant instead of an assumption.
+ */
+inline bool structDefaultMembersDecidable = false;
+
+/**
+ * RAII marker for the section of the compiler in which struct manifestations are still allowed to receive their
+ * compiler-generated default members, i.e. the middle end.
+ */
+class DefaultMemberCreationSection final {
+public:
+  // Constructors
+  DefaultMemberCreationSection() { structDefaultMembersDecidable = true; }
+
+  // Prevent copy
+  DefaultMemberCreationSection(const DefaultMemberCreationSection &) = delete;
+  DefaultMemberCreationSection &operator=(const DefaultMemberCreationSection &) = delete;
+
+  // Destructor
+  ~DefaultMemberCreationSection() { structDefaultMembersDecidable = false; }
+};
+
+/**
  * Jobs:
  * - Ensure that all actual types match the expected types
  * - Perform type inference
@@ -169,12 +197,13 @@ private:
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation
-  void createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
-                                 const ParamList &params) const;
-  void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
-  void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
-  void createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
-  void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) const;
+  static void createImplicitDefaultMembers(Struct &spiceStruct, const ASTNode *node, bool withMoveCtor = true);
+  static void createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
+                                        const ParamList &params);
+  static void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  static void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  static void createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  static void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
   void createCtorBodyPreamble(const Scope *bodyScope) const;
   void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
   void createMoveCtorBodyPreamble(const Scope *bodyScope) const;

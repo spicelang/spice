@@ -90,19 +90,18 @@ f<int> main() {
         // reference-typed local variable in Spice assigns through the reference, it does not rebind it.
         // A handful of entries spread across the default 100 buckets still exercises the iterator's
         // "skip empty buckets" logic, which is where the corruption used to happen.
-        // Note: keys/values are trivial (int) here on purpose. HashTable's own element type
-        // (HashEntry<K, V>) currently never gets its default dtor generated when V is non-trivial, since
-        // it is only ever reached indirectly as a nested generic field (Vector<LinkedList<HashEntry<K,
-        // V>>>), never instantiated by name directly - a separate, pre-existing gap in the compiler's
-        // generic-manifestation collection, not covered by this test.
-        UnorderedMap<int, int> map = UnorderedMap<int, int>();
-        map.upsert(3, 3 * 3);
-        map.upsert(17, 17 * 17);
-        map.upsert(42, 42 * 42);
-        map.upsert(58, 58 * 58);
-        map.upsert(91, 91 * 91);
+        // The values are non-trivial on purpose: HashTable's own element type (HashEntry<K, V>) is only
+        // ever reached indirectly as a nested generic field (Vector<LinkedList<HashEntry<K, V>>>) and is
+        // never instantiated by name, so its compiler-generated default dtor used to be missing and every
+        // stored value leaked (see #1297).
+        UnorderedMap<int, String> map = UnorderedMap<int, String>();
+        map.upsert(3, String("first heap-allocated map value"));
+        map.upsert(17, String("second heap-allocated map value"));
+        map.upsert(42, String("third heap-allocated map value"));
+        map.upsert(58, String("fourth heap-allocated map value"));
+        map.upsert(91, String("fifth heap-allocated map value"));
         int count = 0;
-        foreach Pair<int&, int&> entry : map {
+        foreach Pair<int&, String&> entry : map {
             count++;
         }
         printf("iterated %d map entries\n", count);
@@ -110,17 +109,16 @@ f<int> main() {
     printf("unordered map ok\n");
 
     {
-        UnorderedSet<int> set = UnorderedSet<int>();
-        set.insert(3);
-        set.insert(17);
-        set.insert(42);
-        set.insert(58);
-        set.insert(91);
+        // Same as above, but for UnorderedSet, which stores its values as the *keys* of a HashTable<V, bool>
+        UnorderedSet<String> set = UnorderedSet<String>();
+        set.insert(String("first heap-allocated set value"));
+        set.insert(String("second heap-allocated set value"));
+        set.insert(String("third heap-allocated set value"));
         int count = 0;
-        foreach int value : set {
-            count += value;
+        foreach String value : set {
+            count += value.getLength() > 0l ? 1 : 0;
         }
-        printf("iterated set entries, sum %d\n", count);
+        printf("iterated %d set entries\n", count);
     }
     printf("unordered set ok\n");
 

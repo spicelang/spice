@@ -300,12 +300,12 @@ std::vector<const Function *> Scope::getVirtualMethods() {
  *
  * @return All struct manifestations in declaration order
  */
-std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder() const {
+std::vector<Struct *> Scope::getAllStructManifestationsInDeclarationOrder() {
   // Retrieve all struct manifestations in this scope
-  std::vector<const Struct *> manifestations;
+  std::vector<Struct *> manifestations;
   manifestations.reserve(structs.size()); // Reserve at least the size of individual generic structs
-  for (const auto &structManifestations : structs | std::views::values)
-    for (const auto &manifestation : structManifestations | std::views::values)
+  for (auto &structManifestations : structs | std::views::values)
+    for (auto &manifestation : structManifestations | std::views::values)
       manifestations.push_back(&manifestation);
 
   // Sort manifestations by declaration code location

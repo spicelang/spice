@@ -658,6 +658,10 @@ void SourceFile::runMiddleEnd() {
   // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
   mergeNameRegistriesRecursive();
   CHECK_ABORT_FLAG_V()
+  // From here on, struct manifestations may be substantiated, and each of them gets its compiler-generated default
+  // members decided right at that point (see TypeChecker::createImplicitDefaultMembers). Once the middle end is done,
+  // every manifestation exists and was decided on, so the back end must not create any more of them.
+  const DefaultMemberCreationSection defaultMemberCreationSection;
   // We need two runs here due to generics.
   // The first run to determine all concrete function/struct/interface substantiations
   runTypeCheckerPre(); // Visit the dependency tree from bottom to top
