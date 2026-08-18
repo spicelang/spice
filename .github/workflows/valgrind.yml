@@ -2,6 +2,10 @@
 name: Valgrind
 
 on:
+  # Every Sunday at 04:00 UTC
+  schedule:
+    - cron: '0 4 * * 0'
+  # Allow manual triggering
   workflow_dispatch:
 
 env:

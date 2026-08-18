@@ -9,6 +9,7 @@
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml"><img alt="CI status" src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img alt="CodeQL status" src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-asan.yml"><img alt="ASAN status" src="https://github.com/spicelang/spice/actions/workflows/ci-asan.yml/badge.svg"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/valgrind.yml"><img alt="Valgrind status" src="https://github.com/spicelang/spice/actions/workflows/valgrind.yml/badge.svg"></a>
     <a target="_blank" href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/spicelang/spice"></a>
     <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img alt="Discord server" src="https://dcbadge.limes.pink/api/server/D6sCsJyWPg?style=flat"></a>
   </p>
