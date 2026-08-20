@@ -95,7 +95,7 @@ public:
   void ensureSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] std::vector<const Function *> getVirtualMethods();
-  [[nodiscard]] std::vector<const Struct *> getAllStructManifestationsInDeclarationOrder() const;
+  [[nodiscard]] std::vector<Struct *> getAllStructManifestationsInDeclarationOrder();
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] bool isInCaseBranch() const;

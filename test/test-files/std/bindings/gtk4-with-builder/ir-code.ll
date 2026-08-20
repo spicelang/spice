@@ -107,7 +107,6 @@ define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication nound
   call void @_ZN9GtkWindow10setVisibleEv(ptr noundef nonnull align 8 dereferenceable(8) %window)
   call void @_ZN10GtkBuilder4dtorEv(ptr noundef nonnull align 8 dereferenceable(8) %builder)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %filePathString)
-  call void @_ZN6ResultIPKcE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %spiceStdDir)
   ret void
 }
 
@@ -156,8 +155,6 @@ declare void @_ZN9GtkWindow10setVisibleEv(ptr)
 declare void @_ZN10GtkBuilder4dtorEv(ptr noundef nonnull align 8 dereferenceable(8))
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
-
-declare void @_ZN6ResultIPKcE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main(i32 %0, ptr %1) #1 {

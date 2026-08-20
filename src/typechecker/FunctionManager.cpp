@@ -111,6 +111,20 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const Qual
   return {MAIN_FUNCTION_NAME, entry, QualType(TY_DYN), QualType(TY_INT), paramList, {}, declNode};
 }
 
+/**
+ * Search all manifestation lists of the given scope for a function with the given signature
+ *
+ * @param scope Scope to search in
+ * @param signature Signature to search for
+ * @return Found function or nullptr
+ */
+Function *FunctionManager::findManifestationBySignature(Scope *scope, const std::string &signature) {
+  for (auto &manifestations : scope->functions | std::views::values)
+    if (const auto it = manifestations.find(signature); it != manifestations.end())
+      return &it->second;
+  return nullptr;
+}
+
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
@@ -242,7 +256,13 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       TypeMapping &typeMapping = candidate.typeMapping;
       typeMapping.clear();
       for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
-        const std::string &typeName = candidate.templateTypes.at(i).getSubType();
+        // Skip template slots that are not generic (anymore). The default members of an already-concrete struct
+        // manifestation carry the concrete types in their template type list, and only generic types have a sub type
+        // usable as a mapping key here - getSubType() would assert on e.g. a primitive or a 'heap byte*'.
+        const GenericType &candidateTemplateType = candidate.templateTypes.at(i);
+        if (!candidateTemplateType.is(TY_GENERIC))
+          continue;
+        const std::string &typeName = candidateTemplateType.getSubType();
         const QualType &templateType = templateTypeHints.at(i);
         typeMapping.emplace(typeName, templateType);
       }
@@ -268,11 +288,15 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
         continue; // Match was successful -> match the next function
       }
 
-      // Check if we already have this manifestation and can simply re-use it
+      // Check if we already have this manifestation and can simply re-use it. matchManifestation may have redirected
+      // matchScope from the generic struct scope to the concrete manifestation scope; the substantiation is inserted
+      // there, so that is also where an already existing one has to be looked for. Searching the manifestation list we
+      // are currently iterating instead would miss it and insert a duplicate (which insertSubstantiation then reports
+      // as 'declared twice').
       const std::string newSignature = candidate.getSignature(true, true, false, true);
-      if (const auto it = manifestations.find(newSignature); it != manifestations.end()) {
-        it->second.used = true;
-        matches.push_back(&it->second);
+      if (Function *existingManifestation = findManifestationBySignature(matchScope, newSignature)) {
+        existingManifestation->used = true;
+        matches.push_back(existingManifestation);
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
@@ -359,8 +383,11 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   if (!matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, forceSubstantiation, callNode))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
-  // Check if there are unresolved generic types
-  if (typeMapping.size() < candidate.templateTypes.size())
+  // Check if there are unresolved generic types. Only template slots that actually are generic have to be resolved into
+  // the type mapping - a slot that already holds a concrete type (as for the default members of an already-concrete
+  // struct manifestation, e.g. HashEntry<int, String>::dtor()) never ends up there and must not count as unresolved.
+  const auto isGeneric = [](const GenericType &templateType) { return templateType.is(TY_GENERIC); };
+  if (typeMapping.size() < static_cast<size_t>(std::ranges::count_if(candidate.templateTypes, isGeneric)))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Substantiate return type
@@ -643,6 +670,14 @@ bool FunctionManager::hasCtor(const Scope *matchScope, CtorKind kind) {
       }
     }
   }
+  return false;
+}
+
+bool FunctionManager::hasAnyCtor(const Scope *matchScope) {
+  for (const auto &manifestations : matchScope->functions | std::views::values)
+    for (const auto &function : manifestations | std::views::values)
+      if (function.name == CTOR_FUNCTION_NAME)
+        return true;
   return false;
 }
 

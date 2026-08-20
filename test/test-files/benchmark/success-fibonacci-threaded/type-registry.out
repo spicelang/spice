@@ -17,7 +17,12 @@ Pthread_attr_t*
 Pthread_t
 Result<T>
 Result<T>
+Result<T>
 Result<T>*
+Result<byte*>
+Result<byte*>
+Result<byte*>&
+Result<byte*>*
 Result<heap byte*>
 Result<heap byte*>
 Result<heap byte*>&
@@ -45,7 +50,7 @@ f<Result<T>>(const Error&)
 f<Result<T>>(const T&)
 f<Result<T>>(int,string)
 f<Result<T>>(string)
-f<Result<heap byte*>>(heap byte*,heap byte*,unsigned long)
+f<Result<byte*>>(heap byte*,heap byte*,unsigned long)
 f<Result<heap byte*>>(heap byte*,unsigned long)
 f<Result<heap byte*>>(unsigned long)
 f<S>()

@@ -1,0 +1,32 @@
+// Generic types for key and value
+type K dyn;
+type V dyn;
+
+/**
+ * A generic struct that declares no special members at all, so it fully relies on the compiler-generated ones.
+ * Whether it needs any of them depends on the concrete K and V, which is unanswerable here.
+ */
+public type Entry<K, V> struct {
+    K key
+    V value
+}
+
+/**
+ * Entry<K, V> is never instantiated by name anywhere - it only ever comes into existence as this field type, which
+ * means its concrete manifestations are substantiated indirectly from whichever file uses Box<K, V> (see #1297).
+ */
+public type Box<K, V> struct {
+    Entry<K, V> entry
+}
+
+public p Box.ctor(const K& key, const V& value) {
+    this.entry = Entry<K, V>{key, value};
+}
+
+public f<const K&> Box.getKey() {
+    return this.entry.key;
+}
+
+public f<const V&> Box.getValue() {
+    return this.entry.value;
+}

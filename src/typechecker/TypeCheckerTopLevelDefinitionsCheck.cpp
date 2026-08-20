@@ -171,12 +171,17 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (const Struct *manifestation : node->structManifestations) {
+  for (Struct *manifestation : node->structManifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated()) {
       manIdx++; // Increase the manifestation index
       continue;
     }
+
+    // Fallback for manifestations that could not be decided on when they were created, because a by-value struct field
+    // was not manifested yet at that point (circular import). By now the whole import graph is prepared, so the
+    // decision can be taken - late, but still before the struct's own default member bodies are prepared below.
+    createImplicitDefaultMembers(*manifestation, node, /*withMoveCtor=*/false);
 
     // Change to struct scope
     changeToScope(manifestation->scope, ScopeType::STRUCT);
@@ -262,7 +267,8 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     // Check default move ctor body if required. findMoveCtor scans the manifestations directly to avoid the
     // constify-based false-positive that FunctionManager::lookup with a non-const ref arg can produce.
-    if (const Function *moveCtorFunc = FunctionManager::findMoveCtor(currentScope); moveCtorFunc && moveCtorFunc->implicitDefault) {
+    if (const Function *moveCtorFunc = FunctionManager::findMoveCtor(currentScope);
+        moveCtorFunc && moveCtorFunc->implicitDefault) {
       createMoveCtorBodyPreamble(moveCtorFunc->bodyScope);
       assert(manifestation->areAllFieldsInitialized() == nullptr);
     }
@@ -270,7 +276,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Check default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      createDtorBodyPreamble(dtorFunc->bodyScope);
+      createDtorBodyPreamble(dtorFunc->bodyScope, node);
 
     // Reset field symbols to declared state for the next manifestation
     manifestation->resetFieldSymbolsToDeclared(node);

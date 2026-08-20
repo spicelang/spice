@@ -62,7 +62,7 @@ public p Stack.ctor(unsigned long initAllocItems = 0l) {
     const unsigned long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-        this.contents = cast<heap T*>(allocResult.unwrap());
+        this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
     }
     this.capacity = initAllocItems;
 }
@@ -100,7 +100,7 @@ public p operator=<T>(Stack<T>& this, const Stack<T>& newValue) {
         } else {
             unsafe {
                 Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrap());
+                this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
             }
         }
         this.capacity = newValue.capacity;
@@ -241,7 +241,7 @@ p Stack.resize(unsigned long itemCount) {
         heap byte*& oldAddress = cast<heap byte*>(this.contents);
         unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
-        this.contents = cast<heap T*>(allocResult.unwrap());
+        this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
     }
     // Set new capacity
     this.capacity = itemCount;

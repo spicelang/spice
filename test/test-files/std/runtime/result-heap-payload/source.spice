@@ -1,0 +1,50 @@
+// Result<T> owns what it wraps, and the compiler-generated dtor is what enforces that: for a heap payload it frees the
+// block, for a struct payload it runs the payload's dtor. That generated dtor is what allowed the hand-written
+// work-around dtor to be dropped from std/runtime/result_rt.spice.
+//
+// Because the result owns the payload, a caller that wants to keep a heap payload alive past the result's scope has to
+// take it out with sMove(). That nils the payload inside the result, so the result's dtor finds nothing left to free
+// and ownership ends up with exactly one holder.
+
+public type Payload struct {
+    int id
+}
+
+public p Payload.ctor(int id) {
+    this.id = id;
+}
+
+public p Payload.dtor() {
+    printf("destructing payload %d\n", this.id);
+}
+
+f<int> main() {
+    // Moving the payload out makes the caller the owner: the result's dtor sees a nil payload and does nothing
+    Result<heap byte*> allocResult = sAlloc(16l);
+    printf("alloc ok: %d\n", allocResult.isOk());
+    heap byte* buffer = sMove(allocResult.unwrap());
+    printf("buffer valid: %d\n", buffer != nil<heap byte*>);
+    printf("payload taken out: %d\n", allocResult.unwrap() == nil<heap byte*>);
+    sDealloc(buffer);
+    printf("buffer released\n");
+
+    // Without the sMove, the result stays the owner and frees the block when it goes out of scope
+    {
+        Result<heap byte*> ownedResult = sAlloc(32l);
+        printf("owned buffer valid: %d\n", ownedResult.unwrap() != nil<heap byte*>);
+    }
+    printf("owned buffer released\n");
+
+    // A struct payload is destructed by the same generated dtor
+    {
+        Result<Payload> payloadResult = ok<Payload>(Payload(1));
+        printf("payload ok: %d, id: %d\n", payloadResult.isOk(), payloadResult.unwrap().id);
+    }
+    printf("payload result done\n");
+
+    // An error result with a trivial payload needs no dtor at all
+    Result<int> failed = err<int>(7, "nothing here");
+    printf("failed ok: %d, code: %d\n", failed.isOk(), failed.getErr().code);
+
+    printf("done\n");
+}

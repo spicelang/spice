@@ -1,0 +1,12 @@
+alloc ok: 1
+buffer valid: 1
+payload taken out: 1
+buffer released
+owned buffer valid: 1
+owned buffer released
+payload ok: 1, id: 1
+destructing payload 1
+destructing payload 1
+payload result done
+failed ok: 0, code: 7
+done

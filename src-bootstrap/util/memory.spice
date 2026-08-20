@@ -6,8 +6,9 @@ public type IMemoryManager interface {
 public type DefaultMemoryManager struct : IMemoryManager {}
 
 public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
-    const Result<heap byte*> allocation = sAlloc(size);
-    return allocation.unwrap();
+    Result<heap byte*> allocation = sAlloc(size);
+    // Take the block out of the result: the caller becomes its owner, so the result must not free it on the way out
+    return sMove(allocation.unwrap());
 }
 
 public p DefaultMemoryManager.deallocate(heap byte*& ptr) {

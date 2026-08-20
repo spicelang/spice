@@ -2,6 +2,8 @@
 
 #include "TypeChecker.h"
 
+#include <unordered_set>
+
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
@@ -18,6 +20,74 @@ namespace spice::compiler {
 static const char *const FCT_NAME_DEALLOC = "sDealloc";
 
 /**
+ * Check whether the given struct and all of its by-value struct fields are manifested, transitively. While a circular
+ * import is still being prepared, a by-value struct field may (transitively) reference a struct that is not manifested
+ * yet; generating implicit special members for such a struct recurses through isTriviallyConstructible and would
+ * dereference a null struct lookup. A genuine infinite-size containment cycle among these structs is reported
+ * separately by the infinite-size check during struct preparation, so a containment cycle here is treated as manifested.
+ */
+static bool structFullyManifested(const Struct *spiceStruct, const ASTNode *node, std::unordered_set<const Scope *> &visited) {
+  for (const QualType &fieldType : spiceStruct->fieldTypes) {
+    if (!fieldType.is(TY_STRUCT))
+      continue;
+    const Struct *fieldStruct = fieldType.getStruct(node);
+    if (fieldStruct == nullptr)
+      return false;
+    // Recurse into each field struct once. A containment cycle (already visited) is fine here - it is reported
+    // separately as an infinite-size error. Leaf structs never touch the set, so the common case stays allocation-free.
+    if (visited.insert(fieldStruct->scope).second && !structFullyManifested(fieldStruct, node, visited))
+      return false;
+  }
+  return true;
+}
+
+/**
+ * Decide which compiler-generated default members (ctor, copy ctor, move ctor, dtor) the given struct manifestation
+ * needs and create them.
+ *
+ * This decision depends on the concrete field types, so it has to be taken once per manifestation and not once per
+ * struct declaration: whether e.g. HashEntry<K, V> needs a dtor is unanswerable while K and V are still generic, but
+ * well-defined for HashEntry<int, String>. It is therefore taken as soon as a manifestation comes into existence -
+ * either by the one-shot sweep over the manifestations that already exist when a source file is prepared
+ * (TypeChecker::visitEntry), or, for manifestations that are substantiated later on, right at the point where
+ * StructManager::match creates them. Deciding any later would be too late for all the reactive lookups that ask a
+ * struct for its default members (FunctionManager::match/::lookup, doScopeCleanup, ...), since a function body is
+ * type-checked exactly once and would not pick up a dtor that appears afterward.
+ *
+ * The default move ctor is decided about only when the caller asks for it. A manifestation that is substantiated after
+ * its file was prepared does not get one, which keeps it at the behavior it had before this decision was taken per
+ * manifestation at all. Synthesizing one would require the move ctor of each struct-typed field to be resolvable for
+ * the concrete manifestation, which the raw manifestation scan behind it (FunctionManager::findMoveCtor) cannot do for
+ * a generic field type - it returns the generic preset that the manifestation scope inherited. Without a move ctor,
+ * moving such a struct falls back to copying it, which is correct, just less efficient.
+ *
+ * @param spiceStruct Struct manifestation to decide the default members for
+ * @param node AST node for error messages
+ * @param withMoveCtor Also decide about the default move ctor
+ */
+void TypeChecker::createImplicitDefaultMembers(Struct &spiceStruct, const ASTNode *node, bool withMoveCtor) {
+  // Take the decision only once per manifestation
+  if (spiceStruct.implicitDefaultMembersDecided)
+    return;
+
+  // Skip while a by-value struct field is (transitively) not manifested yet (circular import still in progress). A
+  // genuine infinite-size cycle among such structs is reported by the infinite-size check during preparation. The
+  // manifestation stays undecided and is picked up again by the fallback sweep in visitStructDefCheck.
+  std::unordered_set<const Scope *> visitedScopes;
+  if (!structFullyManifested(&spiceStruct, node, visitedScopes))
+    return;
+
+  spiceStruct.implicitDefaultMembersDecided = true;
+
+  // Check if we need to create a default ctor, copy ctor, move ctor or dtor
+  createDefaultCtorIfRequired(spiceStruct, spiceStruct.scope);
+  createDefaultCopyCtorIfRequired(spiceStruct, spiceStruct.scope);
+  if (withMoveCtor)
+    createDefaultMoveCtorIfRequired(spiceStruct, spiceStruct.scope);
+  createDefaultDtorIfRequired(spiceStruct, spiceStruct.scope);
+}
+
+/**
  * Create a default struct method
  * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
@@ -27,8 +97,9 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
  * @param params Parameter types of the method
  */
 void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
-                                            const ParamList &params) const {
+                                            const ParamList &params) {
   Scope *structScope = spiceStruct.scope;
+  SourceFile *sourceFile = structScope->sourceFile;
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const QualType &structType = structEntry->getQualType();
@@ -42,8 +113,12 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   SymbolTableEntry *procEntry = structScope->insert(entryName, structEntry->declNode);
   procEntry->updateType(procedureType, true);
 
-  // Add to external name registry
-  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, procEntry, structScope, true);
+  // Add to external name registry. Only the generic preset does this: the registry is keyed by the plain struct name,
+  // so an entry added for one manifestation would be indistinguishable from a user-defined member and would wrongly
+  // suppress the default member of every sibling manifestation (e.g. HashEntry<int, String> vs. HashEntry<int, int>).
+  // Manifestation-level default members are only ever looked up through their struct scope anyway.
+  if (!spiceStruct.isGenericSubstantiation())
+    sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, procEntry, structScope, true);
 
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
@@ -69,6 +144,13 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Hand it off to the function manager to register the function
   FunctionManager::insert(structScope, defaultMethod, structEntry->declNode->getFctManifestations(name));
+
+  // The body of a default member is not prepared here, but in visitStructDefCheck, which runs over all manifestations
+  // of the struct. For a manifestation that was substantiated after its file was already checked, that run is long
+  // over, so ask for another one - otherwise the member would end up without a body preamble, and the IR generator
+  // would e.g. not find the copy ctor of a field it is supposed to copy. During the prepare stage the flag is set
+  // anyway, so this is a no-op there.
+  sourceFile->reVisitRequested = true;
 }
 
 /**
@@ -80,15 +162,20 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
+void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   const auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
+  const SourceFile *sourceFile = structScope->sourceFile;
 
-  // Abort if the struct already has a user-defined constructor
+  // Abort if the struct already has a constructor. The name registry is the authoritative source here: it is filled by
+  // the symbol table builder, so it already knows about every user-defined ctor, even one that is declared further down
+  // in the file and therefore has not been registered in the struct scope yet. It also covers a ctor that the generic
+  // preset received, which every manifestation inherits through its copied scope. The scope scan on top of it only
+  // guards against creating a second ctor into a scope that visibly has one already.
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const QualType &structType = structEntry->getQualType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
-  if (sourceFile->getNameRegistryEntry(fqFctName))
+  if (sourceFile->getNameRegistryEntry(fqFctName) || FunctionManager::hasAnyCtor(structScope))
     return;
 
   // Check if we have fields, that require us to do anything in the ctor
@@ -158,7 +245,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
+void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -231,7 +318,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
+void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   const auto node = spice_pointer_cast<const StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -312,15 +399,17 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
  * @param spiceStruct Struct instance
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) const {
+void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   const ASTNode *node = spiceStruct.declNode;
+  const SourceFile *sourceFile = structScope->sourceFile;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
-  // Abort if the struct already has a user-defined destructor
+  // Abort if the struct already has a destructor. See createDefaultCtorIfRequired for why the name registry is asked
+  // first and the struct scope only on top of it.
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const QualType &structType = structEntry->getQualType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
-  if (sourceFile->getNameRegistryEntry(fqFctName))
+  if (sourceFile->getNameRegistryEntry(fqFctName) || FunctionManager::hasDtor(structScope))
     return;
 
   // Check we have field types, that require use to do anything in the destructor
@@ -360,25 +449,10 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   if (!hasFieldsToDeAllocate && !hasFieldsToDestruct)
     return;
 
-  // Create the default dtor function
+  // Create the default dtor function. The memory runtime that the generated body needs for its de-allocations is not
+  // requested here, but only when that body is prepared (see createDtorBodyPreamble) - see the comment there.
   const std::string entryName = Function::getSymbolTableEntryNameDefaultDtor(node->codeLoc);
   createDefaultStructMethod(spiceStruct, entryName, DTOR_FUNCTION_NAME, {});
-
-  // Request memory runtime if we have fields, that are allocated on the heap
-  // The string runtime does not use it, but allocates manually to avoid circular dependencies
-  if (hasFieldsToDeAllocate && !sourceFile->isStringRT()) {
-    const SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
-    assert(memoryRT != nullptr);
-    Scope *matchScope = memoryRT->globalScope.get();
-    // Set dealloc function to used
-    const QualType thisType(TY_DYN);
-    QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
-    bytePtrRefType.makeHeap();
-    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
-    Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
-    assert(deallocFct != nullptr);
-    deallocFct->used = true;
-  }
 }
 
 /**
@@ -491,13 +565,17 @@ void TypeChecker::createMoveCtorBodyPreamble(const Scope *bodyScope) const {
 
 /**
  * Prepare the generation of the dtor body preamble. This preamble is used to destruct all fields and to free all heap fields.
+ *
+ * @param bodyScope Body scope of the dtor
+ * @param node Struct definition node for error messages
  */
-void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
+void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope, const ASTNode *node) const {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
 
   const size_t fieldCount = structScope->getFieldCount();
+  bool hasFieldsToDeAllocate = false;
   for (size_t i = 0; i < fieldCount; i++) {
     const size_t fieldIdx = fieldCount - 1 - i; // Destruct fields in reverse order
     const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
@@ -509,12 +587,36 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
 
+    hasFieldsToDeAllocate |= fieldType.needsDeAllocation();
+
     if (fieldType.is(TY_STRUCT)) {
       const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       FunctionManager::match(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
     }
+  }
+
+  // Request the memory runtime for the de-allocations that the generated body will contain, and mark its sDealloc as
+  // used so that a definition is emitted for it. This deliberately happens here and not where the dtor is created
+  // (createDefaultDtorIfRequired): a manifestation can come into existence while memory_rt.spice is itself still being
+  // pre-checked - sAlloc() returns Result<heap byte*>, so the very first Result manifestation is substantiated from
+  // memory_rt's own signature list. Asking that half-prepared file for sDealloc, which is declared further down in it,
+  // would come up empty. By the time a default member's body is prepared, every runtime module is fully pre-checked.
+  // The string runtime does not use sDealloc, but frees manually to avoid a circular dependency.
+  SourceFile *structSourceFile = structScope->sourceFile;
+  if (hasFieldsToDeAllocate && !structSourceFile->isStringRT()) {
+    const SourceFile *memoryRT = structSourceFile->requestRuntimeModule(MEMORY_RT);
+    assert(memoryRT != nullptr);
+    Scope *matchScope = memoryRT->globalScope.get();
+    // Set dealloc function to used
+    const QualType thisType(TY_DYN);
+    QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
+    bytePtrRefType.makeHeap();
+    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
+    Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+    assert(deallocFct != nullptr);
+    deallocFct->used = true;
   }
 }
 
