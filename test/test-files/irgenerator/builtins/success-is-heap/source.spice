@@ -1,0 +1,6 @@
+f<int> main() {
+    printf("Is heap: %d\n", __is_heap<heap int*>());
+    printf("Is heap: %d\n", __is_heap<heap string*>());
+    printf("Is heap: %d\n", __is_heap<string*>());
+    printf("Is heap: %d\n", __is_heap<String>());
+}

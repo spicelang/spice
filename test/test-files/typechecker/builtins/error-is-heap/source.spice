@@ -1,0 +1,5 @@
+f<int> main() {
+    __is_heap<heap int*>(76); // With args
+    __is_heap(); // Too less template types
+    __is_heap<heap double*, int>(); // Too many template types
+}
