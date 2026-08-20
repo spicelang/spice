@@ -322,7 +322,7 @@ f<heap Node<T>*> LinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = cast<heap Node<T>*>(allocResult.unwrap());
+        newNode = cast<heap Node<T>*>(sMove(allocResult.unwrap()));
     }
     newNode.value = value;
     newNode.next = nil<heap Node<T>*>;

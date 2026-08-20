@@ -121,6 +121,22 @@ The `Result<T>` builtin type offers the following static functions:
 - `Result<T> err(int, string)`: Returns a Result object with an error, constructed with an error code and an error message
 - `Result<T> err(string)`: Returns a Result object with an error, constructed with an error message
 
+### Ownership
+
+A `Result<T>` owns the value it wraps. The compiler-generated destructor destructs a struct payload and frees a heap
+payload, so a `Result<heap byte*>` releases its block when it goes out of scope.
+
+To keep a heap payload alive beyond the result, take it out of the result with `sMove`. This nils the payload inside the
+result, which leaves its destructor with nothing to free and makes the caller the single owner of the block:
+
+```spice
+Result<heap byte*> allocResult = sAlloc(16l);
+heap byte* buffer = sMove(allocResult.unwrap()); // the caller owns the block from here on
+```
+
+Unwrapping a heap payload without `sMove` yields a borrowed pointer that stays owned by the result. Storing such a
+pointer somewhere that outlives the result, or freeing it manually, results in a double free.
+
 ## The `Error` data type
 The `Error` builtin type is used to represent an error. It can be used e.g. in combination with the `Result<T>` type.
 

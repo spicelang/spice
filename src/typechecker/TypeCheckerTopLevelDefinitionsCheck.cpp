@@ -276,7 +276,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Check default dtor body if required
     const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      createDtorBodyPreamble(dtorFunc->bodyScope);
+      createDtorBodyPreamble(dtorFunc->bodyScope, node);
 
     // Reset field symbols to declared state for the next manifestation
     manifestation->resetFieldSymbolsToDeclared(node);

@@ -207,7 +207,7 @@ private:
   void createCtorBodyPreamble(const Scope *bodyScope) const;
   void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
   void createMoveCtorBodyPreamble(const Scope *bodyScope) const;
-  void createDtorBodyPreamble(const Scope *bodyScope) const;
+  void createDtorBodyPreamble(const Scope *bodyScope, const ASTNode *node) const;
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node) const;
   Function *implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,

@@ -401,7 +401,7 @@ void TypeChecker::createDefaultMoveCtorIfRequired(const Struct &spiceStruct, Sco
  */
 void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   const ASTNode *node = spiceStruct.declNode;
-  SourceFile *sourceFile = structScope->sourceFile;
+  const SourceFile *sourceFile = structScope->sourceFile;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
   // Abort if the struct already has a destructor. See createDefaultCtorIfRequired for why the name registry is asked
@@ -449,25 +449,10 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   if (!hasFieldsToDeAllocate && !hasFieldsToDestruct)
     return;
 
-  // Create the default dtor function
+  // Create the default dtor function. The memory runtime that the generated body needs for its de-allocations is not
+  // requested here, but only when that body is prepared (see createDtorBodyPreamble) - see the comment there.
   const std::string entryName = Function::getSymbolTableEntryNameDefaultDtor(node->codeLoc);
   createDefaultStructMethod(spiceStruct, entryName, DTOR_FUNCTION_NAME, {});
-
-  // Request memory runtime if we have fields, that are allocated on the heap
-  // The string runtime does not use it, but allocates manually to avoid circular dependencies
-  if (hasFieldsToDeAllocate && !sourceFile->isStringRT()) {
-    const SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
-    assert(memoryRT != nullptr);
-    Scope *matchScope = memoryRT->globalScope.get();
-    // Set dealloc function to used
-    const QualType thisType(TY_DYN);
-    QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
-    bytePtrRefType.makeHeap();
-    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
-    Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
-    assert(deallocFct != nullptr);
-    deallocFct->used = true;
-  }
 }
 
 /**
@@ -580,13 +565,17 @@ void TypeChecker::createMoveCtorBodyPreamble(const Scope *bodyScope) const {
 
 /**
  * Prepare the generation of the dtor body preamble. This preamble is used to destruct all fields and to free all heap fields.
+ *
+ * @param bodyScope Body scope of the dtor
+ * @param node Struct definition node for error messages
  */
-void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
+void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope, const ASTNode *node) const {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
 
   const size_t fieldCount = structScope->getFieldCount();
+  bool hasFieldsToDeAllocate = false;
   for (size_t i = 0; i < fieldCount; i++) {
     const size_t fieldIdx = fieldCount - 1 - i; // Destruct fields in reverse order
     const SymbolTableEntry *fieldSymbol = structScope->lookupField(fieldIdx);
@@ -598,12 +587,36 @@ void TypeChecker::createDtorBodyPreamble(const Scope *bodyScope) const {
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
 
+    hasFieldsToDeAllocate |= fieldType.needsDeAllocation();
+
     if (fieldType.is(TY_STRUCT)) {
       const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       FunctionManager::match(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
     }
+  }
+
+  // Request the memory runtime for the de-allocations that the generated body will contain, and mark its sDealloc as
+  // used so that a definition is emitted for it. This deliberately happens here and not where the dtor is created
+  // (createDefaultDtorIfRequired): a manifestation can come into existence while memory_rt.spice is itself still being
+  // pre-checked - sAlloc() returns Result<heap byte*>, so the very first Result manifestation is substantiated from
+  // memory_rt's own signature list. Asking that half-prepared file for sDealloc, which is declared further down in it,
+  // would come up empty. By the time a default member's body is prepared, every runtime module is fully pre-checked.
+  // The string runtime does not use sDealloc, but frees manually to avoid a circular dependency.
+  SourceFile *structSourceFile = structScope->sourceFile;
+  if (hasFieldsToDeAllocate && !structSourceFile->isStringRT()) {
+    const SourceFile *memoryRT = structSourceFile->requestRuntimeModule(MEMORY_RT);
+    assert(memoryRT != nullptr);
+    Scope *matchScope = memoryRT->globalScope.get();
+    // Set dealloc function to used
+    const QualType thisType(TY_DYN);
+    QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
+    bytePtrRefType.makeHeap();
+    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
+    Function *deallocFct = FunctionManager::match(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+    assert(deallocFct != nullptr);
+    deallocFct->used = true;
   }
 }
 

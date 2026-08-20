@@ -65,7 +65,7 @@ public p Queue.ctor(unsigned long initAllocItems = 0l) {
     const long itemSize = sizeof<T>();
     unsafe {
         Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-        this.contents = cast<heap T*>(allocResult.unwrap());
+        this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
     }
     this.capacity = initAllocItems;
 }
@@ -110,7 +110,7 @@ public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
         } else {
             unsafe {
                 Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrap());
+                this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
             }
         }
         this.capacity = newValue.capacity;
@@ -300,7 +300,7 @@ p Queue.resize(unsigned long itemCount) {
         Result<heap byte*> allocResult = sAlloc(newSize);
         // Take ownership of the old pointer to free it at the end of the scope
         heap T* oldAddress = this.contents;
-        this.contents = cast<heap T*>(allocResult.unwrap());
+        this.contents = cast<heap T*>(sMove(allocResult.unwrap()));
         // Copy data over to new memory chunk in logical order
         for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
             unsigned long oldIndex = this.idxFront + newIndex;

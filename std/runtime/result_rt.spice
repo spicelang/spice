@@ -31,14 +31,12 @@ public p Result.ctor(const Error& error) {
     this.error = error;
 }
 
-// Work-around: Currently the compiler does not generate this default dtor
-public p Result.dtor() {
-    sDestruct(this.data);
-}
-
 /**
  * Returns the stored data object.
  * If an error is present, this function will panic.
+ *
+ * The returned reference is borrowed - the result stays the owner of the data and destructs it when it goes out of
+ * scope. To take ownership of a heap payload, move it out of the result: `heap byte* p = sMove(result.unwrap());`
  */
 public inline f<T&> Result.unwrap() {
     if this.error.code != 0 { panic(this.error); }

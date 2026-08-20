@@ -70,14 +70,18 @@ public f<heap byte*> sReallocUnsafe(heap byte* ptr, unsigned long size) {
   * @param oldPtr The pointer to the block to copy.
   * @param newPtr The pointer to the new block to copy to.
   * @param size The size of the block to copy.
-  * @return A pointer to the copied block, or an error if the copy failed.
+  * @return A non-owning pointer to the copied block, or an error if the copy failed. The destination block keeps
+  *         belonging to the caller, so the returned pointer is deliberately not heap-qualified - a Result<heap byte*>
+  *         would free the caller's block as soon as it goes out of scope.
   */
-public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
+public f<Result<byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
     if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
-        return err<heap byte*>("Cannot copy from or to nil pointer!");
+        return err<byte*>("Cannot copy from or to nil pointer!");
     }
     memcpy(newPtr, oldPtr, size);
-    return ok(newPtr);
+    unsafe {
+        return ok<byte*>(cast<byte*>(newPtr));
+    }
 }
 
 /**

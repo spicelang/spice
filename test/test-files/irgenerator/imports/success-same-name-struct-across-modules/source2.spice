@@ -15,7 +15,7 @@ public p StackA.push<T>(const T& v) {
     heap Node<T>* newNode;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = cast<heap Node<T>*>(allocResult.unwrap());
+        newNode = cast<heap Node<T>*>(sMove(allocResult.unwrap()));
     }
     newNode.value = v;
     newNode.next = this.top;
