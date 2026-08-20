@@ -490,6 +490,16 @@ std::any TypeChecker::visitBuiltinIsTriviallyDestructible(FctCallNode *node) con
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
 }
 
+std::any TypeChecker::visitBuiltinIsHeap(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_IS_HEAP);
+
+  const QualType type = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
+  const bool value = type.isHeap();
+  node->setCompileTimeValue({.boolValue = value}, manIdx);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
+}
+
 std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_NEW);
 

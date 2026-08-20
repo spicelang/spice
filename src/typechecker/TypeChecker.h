@@ -141,6 +141,7 @@ public:
   std::any visitBuiltinIsTriviallyConstructible(FctCallNode *node) const;
   std::any visitBuiltinIsTriviallyCopyable(FctCallNode *node) const;
   std::any visitBuiltinIsTriviallyDestructible(FctCallNode *node) const;
+  std::any visitBuiltinIsHeap(FctCallNode *node) const;
   std::any visitBuiltinNewCall(FctCallNode *node) const;
   std::any visitBuiltinPlacementNewCall(FctCallNode *node) const;
 
@@ -177,7 +178,7 @@ private:
   void createCtorBodyPreamble(const Scope *bodyScope) const;
   void createCopyCtorBodyPreamble(const Scope *bodyScope) const;
   void createMoveCtorBodyPreamble(const Scope *bodyScope) const;
-  void createDtorBodyPreamble(const Scope *bodyScope) const;
+  void createDtorBodyPreamble(const Scope *bodyScope, const ASTNode *node) const;
   Function *implicitlyCallStructMethod(const SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node) const;
   Function *implicitlyCallStructMethod(QualType thisType, const std::string &methodName, const ArgList &args,
