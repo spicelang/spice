@@ -1,6 +1,6 @@
 // External functions
 ext f<int> snprintf(char*, unsigned long, string, ...);
-ext f<long> strtol(string, char**, int);
+ext f<long> strtoll(string, char**, int);
 ext f<int> atoi(string, char**, int);
 ext f<double> strtod(string, char**);
 
@@ -279,7 +279,7 @@ public f<long> toLong(char input) {
  * @return Long value
  */
 public f<long> toLong(string input, int base = 10) {
-    return strtol(input, nil<char**>, base);
+    return strtoll(input, nil<char**>, base);
 }
 
 /**

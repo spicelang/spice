@@ -12,6 +12,10 @@ f<int> main() {
     // toLong()
     long asLong = toLong("56");
     assert asLong == 56l;
+    long asNegativeLong = toLong("-17");
+    assert asNegativeLong == -17l;
+    long asWideLong = toLong("deadBEEF", 16);
+    assert asWideLong == 3735928559l;
 
     // toShort()
     short asShort = toShort("-12");

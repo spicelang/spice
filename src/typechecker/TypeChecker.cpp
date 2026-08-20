@@ -2,8 +2,6 @@
 
 #include "TypeChecker.h"
 
-#include <unordered_set>
-
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
