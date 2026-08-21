@@ -17,7 +17,6 @@ class Scope;
 class SymbolTableEntry;
 class ASTNode;
 class GenericType;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 // Typedefs
 using FunctionManifestationList = std::map</*mangledName=*/std::string, Function>;

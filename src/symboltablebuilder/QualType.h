@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <symboltablebuilder/TypeQualifiers.h>
@@ -41,6 +42,7 @@ static constexpr uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 
 // Typedefs
 using QualTypeList = std::vector<QualType>;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 /**
  * QualType pairs an interned, immutable type (held behind the dependency-free IType interface) with a set of

@@ -18,7 +18,6 @@ class Scope;
 class ASTNode;
 struct CodeLoc;
 class GenericType;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 class StructBase {
 public:

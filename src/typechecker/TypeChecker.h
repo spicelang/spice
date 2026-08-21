@@ -17,7 +17,6 @@ using ParamList = std::vector<Param>;
 using NamedParamList = std::vector<NamedParam>;
 using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 enum TypeCheckerMode : bool {
   TC_MODE_PRE,

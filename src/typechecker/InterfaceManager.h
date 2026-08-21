@@ -17,7 +17,6 @@ class Interface;
 class Scope;
 class ASTNode;
 class GenericType;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 // Typedefs
 using InterfaceManifestationList = std::map</*mangledName=*/std::string, Interface>;

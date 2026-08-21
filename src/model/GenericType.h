@@ -11,9 +11,6 @@
 
 namespace spice::compiler {
 
-// Typedefs
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
-
 class GenericType : public QualType {
 public:
   // Constructors

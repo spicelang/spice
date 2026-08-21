@@ -15,7 +15,6 @@ namespace spice::compiler {
 class ASTNode;
 struct CodeLoc;
 class SymbolTableEntry;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 struct Param {
   QualType qualType;
