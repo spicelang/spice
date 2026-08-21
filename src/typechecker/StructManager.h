@@ -16,7 +16,6 @@ class Struct;
 class Scope;
 class ASTNode;
 class GenericType;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 // Typedefs
 using StructManifestationList = std::map</*mangledName=*/std::string, Struct>;

@@ -10,7 +10,6 @@ namespace spice::compiler {
 
 // Forward declarations
 class GenericType;
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
 /**
  * Helper class for FunctionManager and StructManager to match generic types.
