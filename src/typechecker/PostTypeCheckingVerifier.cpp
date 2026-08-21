@@ -7,7 +7,7 @@
 #include <ranges>
 
 #include <ast/ASTNodes.h>
-#include <typechecker/Builtins.h>
+#include <typechecker/BuiltinFunctions.h>
 
 namespace spice::compiler {
 

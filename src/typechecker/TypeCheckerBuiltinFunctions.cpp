@@ -22,6 +22,7 @@ namespace spice::compiler {
 std::any TypeChecker::visitBuiltinCall(FctCallNode *node) const {
   assert(BUILTIN_FUNCTIONS_MAP.contains(node->fqFunctionName) && "Builtin function not implemented!");
   const auto &info = BUILTIN_FUNCTIONS_MAP.find(node->fqFunctionName)->second;
+  const auto &dispatch = BUILTIN_DISPATCH_MAP.find(node->fqFunctionName)->second;
 
   const auto buildErrorMessage = [](unsigned int min, unsigned int max, unsigned int actual, const char *suffix) {
     std::string expectedStr;
@@ -53,7 +54,7 @@ std::any TypeChecker::visitBuiltinCall(FctCallNode *node) const {
   }
 
   // If specified, call to TypeChecker delegate to execute further checks
-  return info.typeCheckerVisitMethod != nullptr ? (this->*info.typeCheckerVisitMethod)(node) : nullptr;
+  return dispatch.typeCheckerVisitMethod != nullptr ? (this->*dispatch.typeCheckerVisitMethod)(node) : nullptr;
 }
 
 std::any TypeChecker::visitBuiltinPrintfCall(FctCallNode *node) const {

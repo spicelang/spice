@@ -10,7 +10,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/Builtins.h>
+#include <typechecker/BuiltinFunctions.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeMatcher.h>
