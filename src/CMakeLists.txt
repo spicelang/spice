@@ -62,7 +62,7 @@ set(SOURCES
         typechecker/TypeCheckerBuiltinFunctions.cpp
         typechecker/TypeCheckerExpressions.cpp
         typechecker/TypeCheckerValues.cpp
-        typechecker/TypeCheckMeta.cpp
+        typechecker/TypeCheckerMeta.cpp
         typechecker/TypeCheckerImplicit.cpp
         typechecker/OpRuleManager.cpp
         typechecker/FunctionManager.cpp
