@@ -6,7 +6,7 @@
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/Builtins.h>
+#include <typechecker/BuiltinFunctions.h>
 
 namespace spice::compiler {
 

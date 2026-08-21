@@ -5,7 +5,7 @@
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/Builtins.h>
+#include <typechecker/BuiltinFunctions.h>
 
 #include <llvm/IR/Module.h>
 

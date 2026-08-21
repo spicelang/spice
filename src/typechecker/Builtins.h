@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <array>
+#include <typechecker/BuiltinFunctions.h>
 
 #include <irgenerator/IRGenerator.h>
 #include <typechecker/TypeChecker.h>
@@ -12,223 +12,31 @@ namespace spice::compiler {
 using TypeCheckerVisitMethod = std::any (TypeChecker::*)(FctCallNode *node) const;
 using IRGeneratorVisitMethod = std::any (IRGenerator::*)(const FctCallNode *node);
 
-// Represents a compiler builtin function
-struct BuiltinFunctionInfo {
+// Method-pointer dispatch entry for one builtin function
+struct BuiltinFunctionDispatch {
   TypeCheckerVisitMethod typeCheckerVisitMethod = nullptr;
   IRGeneratorVisitMethod irGeneratorVisitMethod = nullptr;
-  unsigned int minTemplateTypes = 0;
-  unsigned int maxTemplateTypes = 0;
-  unsigned int minArgTypes = 0;
-  unsigned int maxArgTypes = 0;
-  bool allTemplateTypesOrAllArgTypes = false;
-  bool isFunctionTerminator = false;
 };
 
-struct BuiltinFunctionEntry {
-  std::string_view name;
-  BuiltinFunctionInfo info;
+static const std::unordered_map<std::string_view, BuiltinFunctionDispatch> BUILTIN_DISPATCH_MAP = {
+    {BUILTIN_FCT_NAME_PRINTF, {&TypeChecker::visitBuiltinPrintfCall, &IRGenerator::visitBuiltinPrintfCall}},
+    {BUILTIN_FCT_NAME_SIZEOF, {&TypeChecker::visitBuiltinSizeOfCall, nullptr}},
+    {BUILTIN_FCT_NAME_ALIGNOF, {&TypeChecker::visitBuiltinAlignOfCall, nullptr}},
+    {BUILTIN_FCT_NAME_OFFSETOF, {&TypeChecker::visitBuiltinOffsetOfCall, nullptr}},
+    {BUILTIN_FCT_NAME_TYPEID, {&TypeChecker::visitBuiltinTypeIdCall, nullptr}},
+    {BUILTIN_FCT_NAME_TYPENAME, {&TypeChecker::visitBuiltinTypeNameCall, nullptr}},
+    {BUILTIN_FCT_NAME_LEN, {&TypeChecker::visitBuiltinLenCall, &IRGenerator::visitBuiltinLenCall}},
+    {BUILTIN_FCT_NAME_PANIC, {&TypeChecker::visitBuiltinPanicCall, &IRGenerator::visitBuiltinPanicCall}},
+    {BUILTIN_FCT_NAME_SYSCALL, {&TypeChecker::visitBuiltinSyscallCall, &IRGenerator::visitBuiltinSyscallCall}},
+    {BUILTIN_FCT_NAME_IS_SAME, {&TypeChecker::visitBuiltinIsSameCall, nullptr}},
+    {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, {&TypeChecker::visitBuiltinImplementsInterfaceCall, nullptr}},
+    {BUILTIN_FCT_NAME_GET_BUILD_VAR, {&TypeChecker::visitBuiltinGetBuildVarCall, nullptr}},
+    {BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE, {&TypeChecker::visitBuiltinIsTriviallyConstructible, nullptr}},
+    {BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE, {&TypeChecker::visitBuiltinIsTriviallyCopyable, nullptr}},
+    {BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE, {&TypeChecker::visitBuiltinIsTriviallyDestructible, nullptr}},
+    {BUILTIN_FCT_NAME_IS_HEAP, {&TypeChecker::visitBuiltinIsHeap, nullptr}},
+    {BUILTIN_FCT_NAME_NEW, {&TypeChecker::visitBuiltinNewCall, &IRGenerator::visitBuiltinNewCall}},
+    {BUILTIN_FCT_NAME_PLACEMENT_NEW, {&TypeChecker::visitBuiltinPlacementNewCall, &IRGenerator::visitBuiltinPlacementNewCall}},
 };
-
-// Constants
-// Documented builtins
-static constexpr std::string_view BUILTIN_FCT_NAME_PRINTF = "printf";
-static constexpr std::string_view BUILTIN_FCT_NAME_SIZEOF = "sizeof";
-static constexpr std::string_view BUILTIN_FCT_NAME_ALIGNOF = "alignof";
-static constexpr std::string_view BUILTIN_FCT_NAME_TYPEID = "typeid";
-static constexpr std::string_view BUILTIN_FCT_NAME_TYPENAME = "typename";
-static constexpr std::string_view BUILTIN_FCT_NAME_LEN = "len";
-static constexpr std::string_view BUILTIN_FCT_NAME_PANIC = "panic";
-static constexpr std::string_view BUILTIN_FCT_NAME_SYSCALL = "syscall";
-// Undocumented builtins (intended to be primarily used via std wrapper functions)
-static constexpr std::string_view BUILTIN_FCT_NAME_OFFSETOF = "__offsetof";
-static constexpr std::string_view BUILTIN_FCT_NAME_IS_SAME = "__is_same";
-static constexpr std::string_view BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
-static constexpr std::string_view BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_var";
-static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE = "__is_trivially_constructible";
-static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE = "__is_trivially_copyable";
-static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "__is_trivially_destructible";
-static constexpr std::string_view BUILTIN_FCT_NAME_IS_HEAP = "__is_heap";
-static constexpr std::string_view BUILTIN_FCT_NAME_NEW = "__new";
-static constexpr std::string_view BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_new";
-
-static constexpr std::array BUILTIN_FUNCTIONS = {
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PRINTF,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPrintfCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPrintfCall,
-            .minArgTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_SIZEOF,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSizeOfCall,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_ALIGNOF,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinAlignOfCall,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_OFFSETOF,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinOffsetOfCall,
-            .minArgTypes = 2,
-            .maxArgTypes = 2,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_TYPEID,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeIdCall,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_TYPENAME,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeNameCall,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_LEN,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinLenCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinLenCall,
-            .minArgTypes = 1,
-            .maxArgTypes = 1,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PANIC,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPanicCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPanicCall,
-            .minArgTypes = 1,
-            .maxArgTypes = 1,
-            .isFunctionTerminator = true,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_SYSCALL,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSyscallCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinSyscallCall,
-            .minArgTypes = 1,
-            // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-            .maxArgTypes = 6,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_SAME,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsSameCall,
-            .minTemplateTypes = 2,
-            .maxTemplateTypes = std::numeric_limits<unsigned int>::max(),
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinImplementsInterfaceCall,
-            .minTemplateTypes = 2,
-            .maxTemplateTypes = 2,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_GET_BUILD_VAR,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinGetBuildVarCall,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .minArgTypes = 1,
-            .maxArgTypes = 2,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyConstructible,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyCopyable,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyDestructible,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_HEAP,
-        BuiltinFunctionInfo{
-          .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsHeap,
-          .minTemplateTypes = 1,
-          .maxTemplateTypes = 1,
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_NEW,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinNewCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinNewCall,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
-    },
-    BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PLACEMENT_NEW,
-        BuiltinFunctionInfo{
-            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPlacementNewCall,
-            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPlacementNewCall,
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .minArgTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
-    },
-};
-
-static const std::unordered_map<std::string_view, BuiltinFunctionInfo> BUILTIN_FUNCTIONS_MAP = [] {
-  std::unordered_map<std::string_view, BuiltinFunctionInfo> map;
-  for (const auto &[name, info] : BUILTIN_FUNCTIONS)
-    map.emplace(name, info);
-  return map;
-}(); // LCOV_EXCL_LINE - Coverage tool false positive
-
-// Validate builtins at compile time
-static consteval bool validateBuiltins() {
-  return std::ranges::all_of(BUILTIN_FUNCTIONS, [](const BuiltinFunctionEntry &entry) {
-    const auto &[name, info] = entry;
-    return !name.empty() && info.minTemplateTypes <= info.maxTemplateTypes && info.minArgTypes <= info.maxArgTypes;
-  });
-}
-static_assert(validateBuiltins(), "Invalid builtin function definitions");
 
 } // namespace spice::compiler
