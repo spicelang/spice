@@ -1,0 +1,467 @@
+import "std/data/vector";
+import "std/type/type-conversion";
+
+/**
+ * Tag for the variant stored inside a TomlValue.
+ */
+public type TomlValueKind enum {
+    TOML_STRING,
+    TOML_INTEGER,
+    TOML_FLOAT,
+    TOML_BOOL,
+    TOML_DATETIME,
+    TOML_ARRAY,
+    TOML_TABLE
+}
+
+/**
+ * Represents a single TOML value.
+ *
+ * Composite values (arrays and tables) own their children as heap pointers,
+ * so a TomlValue is always reached via `TomlValue*` once it has been parsed.
+ * Destroying a value recursively destroys everything below it, so a whole tree
+ * is released with a single `deleteTomlValue` call on its root. Accessors like
+ * `getField` hand out borrowed pointers that stay owned by their parent, while
+ * `addArrayItem` and `addTableField` take ownership of what they are given.
+ *
+ * Note that the root cannot simply be held in a `heap TomlValue*` and left to
+ * the compiler: the `heap` qualifier only emits a raw deallocation when the
+ * variable goes out of scope and never runs the destructor of the pointee, so
+ * the children below the root would be lost.
+ * Unlike JSON, TOML distinguishes integers from floats, so both are stored
+ * separately. Date-times are kept in their lexical form (e.g.
+ * `1979-05-27T07:32:00Z`), which the parser validates and the serializer
+ * emits verbatim. Table entries preserve insertion order and TOML has no
+ * null value.
+ *
+ * Parsing lives in "std/text/toml-parser" and serialization in
+ * "std/text/toml-serializer", so programs only pull in what they use.
+ */
+public type TomlValue struct {
+    TomlValueKind kind
+    bool boolValue
+    long intValue
+    double floatValue
+    String stringValue    // payload of strings as well as date-times
+    Vector<TomlValue*> arrayItems
+    Vector<String> tableKeys
+    Vector<TomlValue*> tableValues
+}
+
+/**
+ * Construct an empty TOML table, which is what a TOML document is rooted at
+ */
+public p TomlValue.ctor() {
+    this.kind = TomlValueKind::TOML_TABLE;
+}
+
+/**
+ * Construct an empty TOML value of the given kind. Useful for building
+ * arrays and tables from scratch.
+ *
+ * @param kind Kind of the value
+ */
+public p TomlValue.ctor(TomlValueKind kind) {
+    this.kind = kind;
+}
+
+/**
+ * Construct a TOML value that carries text, which is either a string or a
+ * date-time in its lexical form.
+ *
+ * @param kind Kind of the value - TOML_STRING or TOML_DATETIME
+ * @param value Text payload
+ */
+public p TomlValue.ctor(TomlValueKind kind, const String& value) {
+    assert kind == TomlValueKind::TOML_STRING || kind == TomlValueKind::TOML_DATETIME;
+    this.kind = kind;
+    this.stringValue = value;
+}
+
+/**
+ * Construct a TOML boolean value
+ *
+ * @param value Boolean value
+ */
+public p TomlValue.ctor(bool value) {
+    this.kind = TomlValueKind::TOML_BOOL;
+    this.boolValue = value;
+}
+
+/**
+ * Construct a TOML integer value
+ *
+ * @param value Integer value
+ */
+public p TomlValue.ctor(long value) {
+    this.kind = TomlValueKind::TOML_INTEGER;
+    this.intValue = value;
+}
+
+/**
+ * Construct a TOML float value
+ *
+ * @param value Float value
+ */
+public p TomlValue.ctor(double value) {
+    this.kind = TomlValueKind::TOML_FLOAT;
+    this.floatValue = value;
+}
+
+/**
+ * Construct a TOML string value
+ *
+ * @param value String value
+ */
+public p TomlValue.ctor(const String& value) {
+    this.kind = TomlValueKind::TOML_STRING;
+    this.stringValue = value;
+}
+
+/**
+ * Destruct the TOML value, releasing every array item and table entry it owns.
+ * Since the children are destroyed the same way, this tears down the whole
+ * subtree below the value.
+ */
+public p TomlValue.dtor() {
+    for unsigned long i = 0l; i < this.arrayItems.getSize(); i++ {
+        deleteTomlValue(this.arrayItems.get(i));
+    }
+    for unsigned long i = 0l; i < this.tableValues.getSize(); i++ {
+        deleteTomlValue(this.tableValues.get(i));
+    }
+    // Vector does not destruct its items, so the keys have to be released by hand
+    for unsigned long i = 0l; i < this.tableKeys.getSize(); i++ {
+        String& key = this.tableKeys.get(i);
+        key.dtor();
+    }
+}
+
+/**
+ * Destroys a heap-allocated TOML value together with everything it owns and sets
+ * the given handle to nil, so releasing a whole tree only takes one call on its root.
+ *
+ * Note that this is what `sDelete` would normally be used for. It cannot be used
+ * here, because a value tree is destroyed recursively and the compiler does not
+ * emit an explicit dtor that is only reached through `sDestruct`.
+ *
+ * @param value Handle of the value to destroy
+ */
+public p deleteTomlValue(TomlValue*& value) {
+    if value == nil<TomlValue*> { return; }
+    value.dtor();
+    unsafe {
+        heap byte* raw = cast<heap byte*>(value);
+        sDealloc(raw);
+    }
+    value = nil<TomlValue*>;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+/**
+ * Retrieve the kind of the TOML value
+ *
+ * @return Kind of the value
+ */
+public f<TomlValueKind> TomlValue.getKind() { return this.kind; }
+/**
+ * Check whether the TOML value is a string
+ *
+ * @return true if the value is a string, false otherwise
+ */
+public f<bool> TomlValue.isString()   { return this.kind == TomlValueKind::TOML_STRING; }
+/**
+ * Check whether the TOML value is an integer
+ *
+ * @return true if the value is an integer, false otherwise
+ */
+public f<bool> TomlValue.isInteger()  { return this.kind == TomlValueKind::TOML_INTEGER; }
+/**
+ * Check whether the TOML value is a float
+ *
+ * @return true if the value is a float, false otherwise
+ */
+public f<bool> TomlValue.isFloat()    { return this.kind == TomlValueKind::TOML_FLOAT; }
+/**
+ * Check whether the TOML value is a boolean
+ *
+ * @return true if the value is a boolean, false otherwise
+ */
+public f<bool> TomlValue.isBool()     { return this.kind == TomlValueKind::TOML_BOOL; }
+/**
+ * Check whether the TOML value is a date-time
+ *
+ * @return true if the value is a date-time, false otherwise
+ */
+public f<bool> TomlValue.isDateTime() { return this.kind == TomlValueKind::TOML_DATETIME; }
+/**
+ * Check whether the TOML value is an array
+ *
+ * @return true if the value is an array, false otherwise
+ */
+public f<bool> TomlValue.isArray()    { return this.kind == TomlValueKind::TOML_ARRAY; }
+/**
+ * Check whether the TOML value is a table
+ *
+ * @return true if the value is a table, false otherwise
+ */
+public f<bool> TomlValue.isTable()    { return this.kind == TomlValueKind::TOML_TABLE; }
+
+// --- Scalar accessors (panic on wrong kind) --------------------------------
+
+/**
+ * Retrieve the string payload. Panics if the value is not a string.
+ *
+ * @return String value
+ */
+public f<const String&> TomlValue.getString() {
+    assert this.kind == TomlValueKind::TOML_STRING;
+    return this.stringValue;
+}
+
+/**
+ * Retrieve the integer payload. Panics if the value is not an integer.
+ *
+ * @return Integer value
+ */
+public f<long> TomlValue.getInteger() {
+    assert this.kind == TomlValueKind::TOML_INTEGER;
+    return this.intValue;
+}
+
+/**
+ * Retrieve the float payload. Panics if the value is not a float.
+ *
+ * @return Float value
+ */
+public f<double> TomlValue.getFloat() {
+    assert this.kind == TomlValueKind::TOML_FLOAT;
+    return this.floatValue;
+}
+
+/**
+ * Retrieve the boolean payload. Panics if the value is not a boolean.
+ *
+ * @return Boolean value
+ */
+public f<bool> TomlValue.getBool() {
+    assert this.kind == TomlValueKind::TOML_BOOL;
+    return this.boolValue;
+}
+
+/**
+ * Retrieve the date-time payload in its lexical form. Panics if the value is
+ * not a date-time.
+ *
+ * @return Date-time value
+ */
+public f<const String&> TomlValue.getDateTime() {
+    assert this.kind == TomlValueKind::TOML_DATETIME;
+    return this.stringValue;
+}
+
+// --- Array operations ------------------------------------------------------
+
+/**
+ * Retrieve the number of items in the array. Panics if the value is not an array.
+ *
+ * @return Number of array items
+ */
+public f<unsigned long> TomlValue.getArraySize() {
+    assert this.kind == TomlValueKind::TOML_ARRAY;
+    return this.arrayItems.getSize();
+}
+
+/**
+ * Retrieve the array item at the given index. Panics if the value is not an array.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the array item
+ */
+public f<TomlValue*> TomlValue.getArrayItem(unsigned long idx) {
+    assert this.kind == TomlValueKind::TOML_ARRAY;
+    return this.arrayItems.get(idx);
+}
+
+/**
+ * Retrieve the array item at the given index. Panics if the value is not an array.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the array item
+ */
+public f<TomlValue*> TomlValue.getArrayItem(unsigned int idx) {
+    return this.getArrayItem(cast<unsigned long>(idx));
+}
+
+/**
+ * Append an item to the array. Panics if the value is not an array.
+ * The array takes ownership of the heap-allocated item.
+ *
+ * @param item Item to append
+ */
+public p TomlValue.addArrayItem(TomlValue* item) {
+    assert this.kind == TomlValueKind::TOML_ARRAY;
+    this.arrayItems.pushBack(item);
+}
+
+// --- Table operations ------------------------------------------------------
+
+/**
+ * Retrieve the number of entries in the table. Panics if the value is not a table.
+ *
+ * @return Number of table entries
+ */
+public f<unsigned long> TomlValue.getTableSize() {
+    assert this.kind == TomlValueKind::TOML_TABLE;
+    return this.tableKeys.getSize();
+}
+
+/**
+ * Retrieve the key of the table entry at the given index, in insertion order.
+ * Panics if the value is not a table.
+ *
+ * @param idx Index of the entry
+ * @return Entry key
+ */
+public f<const String&> TomlValue.getTableKey(unsigned long idx) {
+    assert this.kind == TomlValueKind::TOML_TABLE;
+    return this.tableKeys.get(idx);
+}
+
+/**
+ * Retrieve the value of the table entry at the given index, in insertion order.
+ * Panics if the value is not a table.
+ *
+ * @param idx Index of the entry
+ * @return Pointer to the entry value
+ */
+public f<TomlValue*> TomlValue.getTableValue(unsigned long idx) {
+    assert this.kind == TomlValueKind::TOML_TABLE;
+    return this.tableValues.get(idx);
+}
+
+/**
+ * Check whether the table contains an entry with the given key
+ *
+ * @param key Entry key to look for
+ * @return true if the entry exists, false otherwise
+ */
+public f<bool> TomlValue.hasField(const String& key) {
+    if this.kind != TomlValueKind::TOML_TABLE { return false; }
+    for unsigned long i = 0l; i < this.tableKeys.getSize(); i++ {
+        if this.tableKeys.get(i) == key { return true; }
+    }
+    return false;
+}
+
+/**
+ * Check whether the table contains an entry with the given key
+ *
+ * @param key Entry key to look for
+ * @return true if the entry exists, false otherwise
+ */
+public f<bool> TomlValue.hasField(string key) {
+    return this.hasField(String(key));
+}
+
+/**
+ * Retrieve the value of the table entry with the given key, or nil if the value
+ * is not a table or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or nil
+ */
+public f<TomlValue*> TomlValue.getFieldOrNil(const String& key) {
+    if this.kind != TomlValueKind::TOML_TABLE { return nil<TomlValue*>; }
+    for unsigned long i = 0l; i < this.tableKeys.getSize(); i++ {
+        if this.tableKeys.get(i) == key {
+            return this.tableValues.get(i);
+        }
+    }
+    return nil<TomlValue*>;
+}
+
+/**
+ * Retrieve the value of the table entry with the given key, or nil if the value
+ * is not a table or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or nil
+ */
+public f<TomlValue*> TomlValue.getFieldOrNil(string key) {
+    return this.getFieldOrNil(String(key));
+}
+
+/**
+ * Retrieve the value of the table entry with the given key. Panics if the value
+ * is not a table or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value
+ */
+public f<TomlValue*> TomlValue.getField(const String& key) {
+    assert this.kind == TomlValueKind::TOML_TABLE;
+    TomlValue* value = this.getFieldOrNil(key);
+    if value == nil<TomlValue*> {
+        panic(Error("TOML table has no such entry"));
+    }
+    return value;
+}
+
+/**
+ * Retrieve the value of the table entry with the given key. Panics if the value
+ * is not a table or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value
+ */
+public f<TomlValue*> TomlValue.getField(string key) {
+    return this.getField(String(key));
+}
+
+/**
+ * Append an entry to the table. Panics if the value is not a table.
+ * The table takes ownership of the heap-allocated entry value.
+ *
+ * @param key Entry key
+ * @param value Entry value
+ */
+public p TomlValue.addTableField(const String& key, TomlValue* value) {
+    assert this.kind == TomlValueKind::TOML_TABLE;
+    this.tableKeys.pushBack(key);
+    this.tableValues.pushBack(value);
+}
+
+// --- Special float values --------------------------------------------------
+
+/**
+ * Retrieve positive infinity, which TOML spells `inf`. Spice has no literal
+ * for it, so it is provided here for building and inspecting float values.
+ *
+ * @return Positive infinity
+ */
+public f<double> tomlInfinity() {
+    return toDouble("inf");
+}
+
+/**
+ * Retrieve a quiet NaN, which TOML spells `nan`. Spice has no literal for it,
+ * so it is provided here for building float values.
+ *
+ * @return Not a number
+ */
+public f<double> tomlNaN() {
+    return toDouble("nan");
+}
+
+/**
+ * Checks whether the given float is a NaN. The usual `value != value` trick does
+ * not work in Spice, since its float comparisons are ordered ones.
+ *
+ * @param value Float value to check
+ * @return true if the value is a NaN, false otherwise
+ */
+public f<bool> tomlIsNaN(double value) {
+    return !(value == value);
+}

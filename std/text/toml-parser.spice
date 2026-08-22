@@ -1,0 +1,1011 @@
+import "std/text/toml-value";
+import "std/text/analysis";
+import "std/type/type-conversion";
+import "std/data/vector";
+
+// Separator used to build the flat path keys with which already defined tables are tracked.
+// It is a control character, so it can never be part of a TOML key itself.
+const long PATH_SEPARATOR_CODE = 1l;
+
+/**
+ * Recursive-descent parser for TOML v1.0.0.
+ *
+ * Use `parseToml` for one-shot parsing; the struct is exposed mainly so the
+ * parser state (position, error message) can be inspected when needed.
+ *
+ * Supported are comments, bare/quoted/dotted keys, basic and literal strings
+ * (single- and multi-line), decimal/hexadecimal/octal/binary integers, floats
+ * including `inf` and `nan`, booleans, date-times, arrays, inline tables,
+ * `[table]` headers and `[[array of table]]` headers.
+ *
+ * The TomlValue data model lives in "std/text/toml-value" and serialization
+ * in "std/text/toml-serializer".
+ */
+public type TomlParser struct {
+    String input
+    unsigned long pos
+    string errorMessage  // always points to a string literal, so it outlives the parser
+    bool hasError
+    TomlValue* root
+    TomlValue* currentTable
+    Vector<String> definedTablePaths  // paths that were opened by a [table] header
+    Vector<String> arrayTablePaths    // paths that were opened by a [[array of table]] header
+}
+
+/**
+ * Construct a TOML parser over the given input string
+ *
+ * @param input TOML text to parse
+ */
+public p TomlParser.ctor(const String& input) {
+    this.input = input;
+    this.pos = 0l;
+    this.errorMessage = "";
+    this.hasError = false;
+    this.root = nil<TomlValue*>;
+    this.currentTable = nil<TomlValue*>;
+}
+
+/**
+ * Destruct the TOML parser, releasing the bookkeeping it built up while parsing
+ */
+public p TomlParser.dtor() {
+    releaseStrings(this.definedTablePaths);
+    releaseStrings(this.arrayTablePaths);
+}
+
+/**
+ * Parse the input string into a TOML value tree
+ *
+ * @return Result holding the root table, or an error if the input is malformed
+ */
+public f<Result<TomlValue*>> TomlParser.parse() {
+    this.root = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+    this.currentTable = this.root;
+    this.skipByteOrderMark();
+    this.parseDocument();
+    if this.hasError {
+        // Nothing is handed out, so the partially built tree is ours to release
+        deleteTomlValue(this.root);
+        this.currentTable = nil<TomlValue*>;
+        return err<TomlValue*>(Error(this.errorMessage));
+    }
+    return ok(this.root);
+}
+
+/**
+ * Parse a TOML document.
+ *
+ * On success returns the root table, which the caller owns and releases again
+ * with `deleteTomlValue` from "std/text/toml-value". On failure the partially
+ * built tree is released by the parser and an error describing the first
+ * problem encountered is returned.
+ */
+public f<Result<TomlValue*>> parseToml(const String& input) {
+    TomlParser parser = TomlParser(input);
+    return parser.parse();
+}
+
+// --- Character level helpers ----------------------------------------------
+
+f<bool> TomlParser.atEnd() {
+    return this.pos >= this.input.getLength();
+}
+
+// Return the character `offset` positions ahead, or '\0' when out of bounds.
+f<char> TomlParser.peekAt(unsigned long offset) {
+    const unsigned long idx = this.pos + offset;
+    if idx >= this.input.getLength() { return '\0'; }
+    return this.input[idx];
+}
+
+f<char> TomlParser.peek() {
+    return this.peekAt(0l);
+}
+
+p TomlParser.fail(string msg) {
+    if !this.hasError {
+        this.errorMessage = msg;
+        this.hasError = true;
+    }
+}
+
+f<bool> TomlParser.matchLiteral(string literal) {
+    const unsigned long ll = getRawLength(literal);
+    if this.pos + ll > this.input.getLength() { return false; }
+    for unsigned long i = 0l; i < ll; i++ {
+        if this.input[this.pos + i] != literal[i] { return false; }
+    }
+    this.pos += ll;
+    return true;
+}
+
+// A leading UTF-8 byte order mark is not part of the document
+p TomlParser.skipByteOrderMark() {
+    const char b0 = this.peekAt(0l);
+    const char b1 = this.peekAt(1l);
+    const char b2 = this.peekAt(2l);
+    if b0 == toChar(0xEF) && b1 == toChar(0xBB) && b2 == toChar(0xBF) {
+        this.pos += 3l;
+    }
+}
+
+// Skip spaces and tabs, but no line breaks
+p TomlParser.skipSpaces() {
+    while true {
+        const char c = this.peek();
+        if c != ' ' && c != '\t' { break; }
+        this.pos++;
+    }
+}
+
+// Skip a comment up to (but excluding) the terminating line break
+p TomlParser.skipComment() {
+    if this.peek() != '#' { return; }
+    this.pos++;
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '\n' || c == '\r' { return; }
+        if isTomlDisallowedChar(c) {
+            this.fail("Control character in comment");
+            return;
+        }
+        this.pos++;
+    }
+}
+
+// Skip any combination of whitespace, line breaks and comments
+p TomlParser.skipBlanks() {
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+            this.pos++;
+        } else if c == '#' {
+            this.skipComment();
+            if this.hasError { return; }
+        } else {
+            break;
+        }
+    }
+}
+
+// Consume the line break that has to follow a table header or a key/value pair
+p TomlParser.expectLineEnd() {
+    this.skipSpaces();
+    if this.peek() == '#' {
+        this.skipComment();
+        if this.hasError { return; }
+    }
+    if this.atEnd() { return; }
+    const char c = this.peek();
+    if c == '\n' {
+        this.pos++;
+        return;
+    }
+    if c == '\r' && this.peekAt(1l) == '\n' {
+        this.pos += 2l;
+        return;
+    }
+    this.fail("Expected line break after entry");
+}
+
+// --- Document structure ----------------------------------------------------
+
+p TomlParser.parseDocument() {
+    while true {
+        this.skipBlanks();
+        if this.hasError || this.atEnd() { return; }
+        if this.peek() == '[' {
+            this.parseTableHeader();
+        } else {
+            this.parseKeyValuePair(this.currentTable);
+        }
+        if this.hasError { return; }
+        this.expectLineEnd();
+        if this.hasError { return; }
+    }
+}
+
+p TomlParser.parseTableHeader() {
+    Vector<String> path;
+    this.parseTableHeaderInto(path);
+    releaseStrings(path);
+}
+
+p TomlParser.parseTableHeaderInto(Vector<String>& path) {
+    this.pos++; // consume '['
+    bool isArrayTable = false;
+    if this.peek() == '[' {
+        isArrayTable = true;
+        this.pos++;
+    }
+    this.parseKeyPathInto(path);
+    if this.hasError { return; }
+    this.skipSpaces();
+    if this.peek() != ']' {
+        this.fail("Expected ']' to close the table header");
+        return;
+    }
+    this.pos++;
+    if isArrayTable {
+        if this.peek() != ']' {
+            this.fail("Expected ']]' to close the array of tables header");
+            return;
+        }
+        this.pos++;
+    }
+
+    // Walk all but the last path segment, creating implicit tables on the way
+    TomlValue* target = this.root;
+    for unsigned long i = 0l; i + 1l < path.getSize(); i++ {
+        const String& segment = path.get(i);
+        target = this.descendInto(target, segment);
+        if this.hasError { return; }
+    }
+
+    const String& lastSegment = path.back();
+    const String pathKey = joinKeyPath(path);
+    TomlValue* existing = target.getFieldOrNil(lastSegment);
+    // All branches fall through to the end of the scope, so that `pathKey` is cleaned up
+    if isArrayTable {
+        if existing == nil<TomlValue*> {
+            existing = __new<TomlValue>(TomlValueKind::TOML_ARRAY);
+            target.addTableField(lastSegment, existing);
+            this.arrayTablePaths.pushBack(pathKey);
+        } else if !existing.isArray() || !containsPath(this.arrayTablePaths, pathKey) {
+            this.fail("Cannot redefine an existing value as an array of tables");
+        }
+        if !this.hasError {
+            TomlValue* newTable = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+            existing.addArrayItem(newTable);
+            this.currentTable = newTable;
+        }
+    } else if existing == nil<TomlValue*> {
+        existing = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+        target.addTableField(lastSegment, existing);
+        this.definedTablePaths.pushBack(pathKey);
+        this.currentTable = existing;
+    } else if !existing.isTable() || containsPath(this.definedTablePaths, pathKey) {
+        this.fail("Cannot define the same table twice");
+    } else {
+        this.definedTablePaths.pushBack(pathKey);
+        this.currentTable = existing;
+    }
+}
+
+// Resolve one intermediate path segment, creating an implicit table if needed.
+// For arrays of tables the most recently opened table is used.
+f<TomlValue*> TomlParser.descendInto(TomlValue* table, const String& segment) {
+    TomlValue* child = table.getFieldOrNil(segment);
+    if child == nil<TomlValue*> {
+        TomlValue* implicitTable = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+        table.addTableField(segment, implicitTable);
+        return implicitTable;
+    }
+    if child.isTable() { return child; }
+    if child.isArray() {
+        const unsigned long itemCount = child.getArraySize();
+        if itemCount > 0l {
+            TomlValue* lastItem = child.getArrayItem(itemCount - 1l);
+            if lastItem.isTable() { return lastItem; }
+        }
+    }
+    this.fail("Cannot use a non-table value as an intermediate table");
+    return nil<TomlValue*>;
+}
+
+p TomlParser.parseKeyValuePair(TomlValue* table) {
+    Vector<String> path;
+    this.parseKeyValuePairInto(table, path);
+    releaseStrings(path);
+}
+
+p TomlParser.parseKeyValuePairInto(TomlValue* table, Vector<String>& path) {
+    this.parseKeyPathInto(path);
+    if this.hasError { return; }
+    this.skipSpaces();
+    if this.peek() != '=' {
+        this.fail("Expected '=' after key");
+        return;
+    }
+    this.pos++;
+    this.skipSpaces();
+    TomlValue* value = this.parseValue();
+    if this.hasError { return; }
+
+    // Walk all but the last path segment, creating implicit tables on the way
+    TomlValue* target = table;
+    for unsigned long i = 0l; i + 1l < path.getSize(); i++ {
+        const String& segment = path.get(i);
+        TomlValue* child = target.getFieldOrNil(segment);
+        if child == nil<TomlValue*> {
+            TomlValue* implicitTable = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+            target.addTableField(segment, implicitTable);
+            target = implicitTable;
+            continue;
+        }
+        if !child.isTable() {
+            this.fail("Cannot use a non-table value as an intermediate table");
+            deleteTomlValue(value);
+            return;
+        }
+        target = child;
+    }
+
+    const String& lastSegment = path.back();
+    if target.hasField(lastSegment) {
+        this.fail("Cannot define the same key twice");
+        deleteTomlValue(value);
+        return;
+    }
+    target.addTableField(lastSegment, value);
+}
+
+// --- Keys ------------------------------------------------------------------
+
+p TomlParser.parseKeyPathInto(Vector<String>& path) {
+    // Leaving a scope early skips the cleanup of the locals it holds, so the loop is
+    // written to always run into its own end condition while `segment` is alive
+    bool expectMoreSegments = true;
+    while expectMoreSegments && !this.hasError {
+        this.skipSpaces();
+        const String segment = this.parseKeySegment();
+        if !this.hasError {
+            path.pushBack(segment);
+            this.skipSpaces();
+            expectMoreSegments = this.peek() == '.';
+            if expectMoreSegments { this.pos++; }
+        }
+    }
+}
+
+f<String> TomlParser.parseKeySegment() {
+    String segment;
+    const char c = this.peek();
+    if c == '"' || c == '\'' {
+        if this.peekAt(1l) == c && this.peekAt(2l) == c {
+            this.fail("Multi-line strings cannot be used as keys");
+            return segment;
+        }
+        return this.parseStringValue();
+    }
+    if !isBareKeyChar(c) {
+        this.fail("Expected key");
+        return segment;
+    }
+    while isBareKeyChar(this.peek()) {
+        segment += this.peek();
+        this.pos++;
+    }
+    return segment;
+}
+
+// --- Values ----------------------------------------------------------------
+
+f<TomlValue*> TomlParser.parseValue() {
+    const char c = this.peek();
+    if c == '"' || c == '\'' {
+        // `text` has to stay alive until the end of the scope, so that it gets cleaned up
+        TomlValue* stringValue = nil<TomlValue*>;
+        const String text = this.parseStringValue();
+        if !this.hasError {
+            stringValue = __new<TomlValue>(TomlValueKind::TOML_STRING, text);
+        }
+        return stringValue;
+    }
+    if c == '[' { return this.parseArray(); }
+    if c == '{' { return this.parseInlineTable(); }
+    if c == 't' || c == 'f' { return this.parseBool(); }
+    if c == '+' || c == '-' || c == 'i' || c == 'n' || isDigit(c) { return this.parseNumberOrDateTime(); }
+    this.fail("Expected value");
+    return nil<TomlValue*>;
+}
+
+f<TomlValue*> TomlParser.parseBool() {
+    if this.matchLiteral("true") { return __new<TomlValue>(true); }
+    if this.matchLiteral("false") { return __new<TomlValue>(false); }
+    this.fail("Expected 'true' or 'false'");
+    return nil<TomlValue*>;
+}
+
+f<TomlValue*> TomlParser.parseArray() {
+    this.pos++; // consume '['
+    TomlValue* arr = __new<TomlValue>(TomlValueKind::TOML_ARRAY);
+    while true {
+        // Line breaks and comments are allowed anywhere inside an array
+        this.skipBlanks();
+        if this.hasError {
+            deleteTomlValue(arr);
+            return nil<TomlValue*>;
+        }
+        if this.atEnd() {
+            this.fail("Unterminated array");
+            deleteTomlValue(arr);
+            return nil<TomlValue*>;
+        }
+        if this.peek() == ']' {
+            this.pos++;
+            return arr;
+        }
+        TomlValue* item = this.parseValue();
+        if this.hasError {
+            deleteTomlValue(arr);
+            return nil<TomlValue*>;
+        }
+        arr.addArrayItem(item);
+        this.skipBlanks();
+        if this.hasError {
+            deleteTomlValue(arr);
+            return nil<TomlValue*>;
+        }
+        if this.atEnd() {
+            this.fail("Unterminated array");
+            deleteTomlValue(arr);
+            return nil<TomlValue*>;
+        }
+        const char c = this.peek();
+        if c == ',' {
+            this.pos++;
+            continue;
+        }
+        if c == ']' {
+            this.pos++;
+            return arr;
+        }
+        this.fail("Expected ',' or ']' in array");
+        deleteTomlValue(arr);
+        return nil<TomlValue*>;
+    }
+    return nil<TomlValue*>;
+}
+
+f<TomlValue*> TomlParser.parseInlineTable() {
+    this.pos++; // consume '{'
+    TomlValue* table = __new<TomlValue>(TomlValueKind::TOML_TABLE);
+    this.skipSpaces();
+    if this.peek() == '}' {
+        this.pos++;
+        return table;
+    }
+    while true {
+        this.skipSpaces();
+        // Inline tables have to stay on a single line and must not have a trailing comma,
+        // so parsing the entry rejects both a line break and a closing brace here
+        this.parseKeyValuePair(table);
+        if this.hasError {
+            deleteTomlValue(table);
+            return nil<TomlValue*>;
+        }
+        this.skipSpaces();
+        if this.atEnd() {
+            this.fail("Unterminated inline table");
+            deleteTomlValue(table);
+            return nil<TomlValue*>;
+        }
+        const char c = this.peek();
+        if c == ',' {
+            this.pos++;
+            continue;
+        }
+        if c == '}' {
+            this.pos++;
+            return table;
+        }
+        this.fail("Expected ',' or '}' in inline table");
+        deleteTomlValue(table);
+        return nil<TomlValue*>;
+    }
+    return nil<TomlValue*>;
+}
+
+// --- Strings ---------------------------------------------------------------
+
+f<String> TomlParser.parseStringValue() {
+    const char quote = this.peek();
+    const bool isMultiLine = this.peekAt(1l) == quote && this.peekAt(2l) == quote;
+    if quote == '"' {
+        if isMultiLine { return this.parseMultiLineBasicString(); }
+        return this.parseBasicString();
+    }
+    if isMultiLine { return this.parseMultiLineLiteralString(); }
+    return this.parseLiteralString();
+}
+
+f<String> TomlParser.parseBasicString() {
+    String literal;
+    this.pos++; // consume opening '"'
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '"' {
+            this.pos++; // consume closing '"'
+            return literal;
+        }
+        if c == '\n' || c == '\r' {
+            this.fail("Unterminated basic string");
+            return literal;
+        }
+        if c == '\\' {
+            this.pos++;
+            this.appendEscapeSequence(literal);
+            if this.hasError { return literal; }
+            continue;
+        }
+        if isTomlDisallowedChar(c) {
+            this.fail("Unescaped control character in string");
+            return literal;
+        }
+        literal += c;
+        this.pos++;
+    }
+    this.fail("Unterminated basic string");
+    return literal;
+}
+
+f<String> TomlParser.parseMultiLineBasicString() {
+    String literal;
+    this.pos += 3l; // consume opening '"""'
+    this.skipLeadingLineBreak();
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '"' {
+            // The delimiter is formed by the last three quotes of a run, so up to two
+            // additional quotes still belong to the content
+            unsigned long runLength = 0l;
+            while this.peekAt(runLength) == '"' { runLength++; }
+            if runLength >= 3l {
+                if runLength > 5l {
+                    this.fail("Too many quotes at the end of a multi-line basic string");
+                    return literal;
+                }
+                for unsigned long i = 3l; i < runLength; i++ { literal += '"'; }
+                this.pos += runLength;
+                return literal;
+            }
+            for unsigned long i = 0l; i < runLength; i++ { literal += '"'; }
+            this.pos += runLength;
+            continue;
+        }
+        if c == '\\' {
+            // A backslash at the end of a line trims the line break and all following whitespace
+            unsigned long lookahead = 1l;
+            while this.peekAt(lookahead) == ' ' || this.peekAt(lookahead) == '\t' { lookahead++; }
+            const char lineEnd = this.peekAt(lookahead);
+            if lineEnd == '\n' || (lineEnd == '\r' && this.peekAt(lookahead + 1l) == '\n') {
+                this.pos += lookahead;
+                while isWhitespace(this.peek()) { this.pos++; }
+                continue;
+            }
+            this.pos++;
+            this.appendEscapeSequence(literal);
+            if this.hasError { return literal; }
+            continue;
+        }
+        if c != '\n' && c != '\r' && isTomlDisallowedChar(c) {
+            this.fail("Unescaped control character in string");
+            return literal;
+        }
+        literal += c;
+        this.pos++;
+    }
+    this.fail("Unterminated multi-line basic string");
+    return literal;
+}
+
+f<String> TomlParser.parseLiteralString() {
+    String literal;
+    this.pos++; // consume opening '\''
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '\'' {
+            this.pos++; // consume closing '\''
+            return literal;
+        }
+        if c == '\n' || c == '\r' {
+            this.fail("Unterminated literal string");
+            return literal;
+        }
+        if isTomlDisallowedChar(c) {
+            this.fail("Unescaped control character in string");
+            return literal;
+        }
+        literal += c;
+        this.pos++;
+    }
+    this.fail("Unterminated literal string");
+    return literal;
+}
+
+f<String> TomlParser.parseMultiLineLiteralString() {
+    String literal;
+    this.pos += 3l; // consume opening '\'\'\''
+    this.skipLeadingLineBreak();
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '\'' {
+            unsigned long runLength = 0l;
+            while this.peekAt(runLength) == '\'' { runLength++; }
+            if runLength >= 3l {
+                if runLength > 5l {
+                    this.fail("Too many quotes at the end of a multi-line literal string");
+                    return literal;
+                }
+                for unsigned long i = 3l; i < runLength; i++ { literal += '\''; }
+                this.pos += runLength;
+                return literal;
+            }
+            for unsigned long i = 0l; i < runLength; i++ { literal += '\''; }
+            this.pos += runLength;
+            continue;
+        }
+        if c != '\n' && c != '\r' && isTomlDisallowedChar(c) {
+            this.fail("Unescaped control character in string");
+            return literal;
+        }
+        literal += c;
+        this.pos++;
+    }
+    this.fail("Unterminated multi-line literal string");
+    return literal;
+}
+
+// A line break directly after the opening delimiter of a multi-line string is not content
+p TomlParser.skipLeadingLineBreak() {
+    const char c = this.peek();
+    if c == '\n' {
+        this.pos++;
+    } else if c == '\r' && this.peekAt(1l) == '\n' {
+        this.pos += 2l;
+    }
+}
+
+p TomlParser.appendEscapeSequence(String& out) {
+    if this.atEnd() {
+        this.fail("Unterminated escape sequence");
+        return;
+    }
+    const char esc = this.peek();
+    this.pos++;
+    if esc == '"' {
+        out += '"';
+    } else if esc == '\\' {
+        out += '\\';
+    } else if esc == 'b' {
+        out += '\b';
+    } else if esc == 't' {
+        out += '\t';
+    } else if esc == 'n' {
+        out += '\n';
+    } else if esc == 'f' {
+        out += '\f';
+    } else if esc == 'r' {
+        out += '\r';
+    } else if esc == 'u' {
+        this.appendUnicodeEscape(out, 4l);
+    } else if esc == 'U' {
+        this.appendUnicodeEscape(out, 8l);
+    } else {
+        this.fail("Unsupported escape sequence");
+    }
+}
+
+p TomlParser.appendUnicodeEscape(String& out, unsigned long digitCount) {
+    long codePoint = 0l;
+    for unsigned long i = 0l; i < digitCount; i++ {
+        const char c = this.peek();
+        if !isHexDigit(c) {
+            this.fail("Invalid unicode escape sequence");
+            return;
+        }
+        codePoint = codePoint * 16l + hexDigitValue(c);
+        this.pos++;
+    }
+    if !appendCodePointUtf8(out, codePoint) {
+        this.fail("Invalid unicode scalar value in escape sequence");
+    }
+}
+
+// --- Numbers and date-times ------------------------------------------------
+
+f<TomlValue*> TomlParser.parseNumberOrDateTime() {
+    if this.looksLikeDate() || this.looksLikeTime() { return this.parseDateTime(); }
+    return this.parseNumber();
+}
+
+f<bool> TomlParser.looksLikeDate() {
+    return isDigit(this.peekAt(0l)) && isDigit(this.peekAt(1l)) && isDigit(this.peekAt(2l))
+        && isDigit(this.peekAt(3l)) && this.peekAt(4l) == '-';
+}
+
+f<bool> TomlParser.looksLikeTime() {
+    return isDigit(this.peekAt(0l)) && isDigit(this.peekAt(1l)) && this.peekAt(2l) == ':';
+}
+
+f<TomlValue*> TomlParser.parseDateTime() {
+    const unsigned long start = this.pos;
+    if this.looksLikeTime() {
+        // Local time
+        if !this.consumeTime() { return nil<TomlValue*>; }
+    } else {
+        if !this.consumeDate() { return nil<TomlValue*>; }
+        // The time part may be separated by 'T', 't' or a single space
+        const char separator = this.peek();
+        const bool spaceSeparated = separator == ' ' && isDigit(this.peekAt(1l)) && isDigit(this.peekAt(2l))
+                                    && this.peekAt(3l) == ':';
+        if separator == 'T' || separator == 't' || spaceSeparated {
+            this.pos++;
+            if !this.consumeTime() { return nil<TomlValue*>; }
+            if !this.consumeTimeOffset() { return nil<TomlValue*>; }
+        }
+    }
+    const String raw = this.input.getSubstring(start, this.pos - start);
+    return __new<TomlValue>(TomlValueKind::TOML_DATETIME, raw);
+}
+
+f<bool> TomlParser.consumeDate() {
+    if !this.consumeDigits(4l) { return false; }
+    if !this.consumeChar('-') { return false; }
+    if !this.consumeDigits(2l) { return false; }
+    if !this.consumeChar('-') { return false; }
+    return this.consumeDigits(2l);
+}
+
+f<bool> TomlParser.consumeTime() {
+    if !this.consumeDigits(2l) { return false; }
+    if !this.consumeChar(':') { return false; }
+    if !this.consumeDigits(2l) { return false; }
+    if !this.consumeChar(':') { return false; }
+    if !this.consumeDigits(2l) { return false; }
+    // Optional fractional seconds
+    if this.peek() == '.' {
+        this.pos++;
+        if !isDigit(this.peek()) {
+            this.fail("Invalid date-time literal");
+            return false;
+        }
+        while isDigit(this.peek()) { this.pos++; }
+    }
+    return true;
+}
+
+f<bool> TomlParser.consumeTimeOffset() {
+    const char c = this.peek();
+    if c == 'Z' || c == 'z' {
+        this.pos++;
+        return true;
+    }
+    if c != '+' && c != '-' { return true; } // a local date-time carries no offset
+    this.pos++;
+    if !this.consumeDigits(2l) { return false; }
+    if !this.consumeChar(':') { return false; }
+    return this.consumeDigits(2l);
+}
+
+f<bool> TomlParser.consumeDigits(unsigned long count) {
+    for unsigned long i = 0l; i < count; i++ {
+        if !isDigit(this.peek()) {
+            this.fail("Invalid date-time literal");
+            return false;
+        }
+        this.pos++;
+    }
+    return true;
+}
+
+f<bool> TomlParser.consumeChar(char expected) {
+    if this.peek() != expected {
+        this.fail("Invalid date-time literal");
+        return false;
+    }
+    this.pos++;
+    return true;
+}
+
+f<TomlValue*> TomlParser.parseNumber() {
+    bool hasSign = false;
+    bool isNegative = false;
+    const char sign = this.peek();
+    if sign == '+' || sign == '-' {
+        hasSign = true;
+        isNegative = sign == '-';
+        this.pos++;
+    }
+
+    // Special float values
+    if this.matchLiteral("inf") {
+        const double infinity = tomlInfinity();
+        return __new<TomlValue>(isNegative ? -infinity : infinity);
+    }
+    if this.matchLiteral("nan") {
+        return __new<TomlValue>(tomlNaN());
+    }
+
+    // Integers with a radix prefix never carry a sign
+    if !hasSign && this.peek() == '0' {
+        const char prefix = this.peekAt(1l);
+        if prefix == 'x' {
+            this.pos += 2l;
+            return this.parseRadixInteger(16);
+        }
+        if prefix == 'o' {
+            this.pos += 2l;
+            return this.parseRadixInteger(8);
+        }
+        if prefix == 'b' {
+            this.pos += 2l;
+            return this.parseRadixInteger(2);
+        }
+    }
+
+    // `digits` has to stay alive until the end of the scope, so that it gets cleaned up
+    String digits;
+    if isNegative { digits += '-'; }
+    bool isFloat = false;
+    bool isValid = this.consumeDecDigits(digits, true);
+    if isValid && this.peek() == '.' {
+        isFloat = true;
+        digits += '.';
+        this.pos++;
+        isValid = this.consumeDecDigits(digits, false);
+    }
+    if isValid {
+        const char exponent = this.peek();
+        if exponent == 'e' || exponent == 'E' {
+            isFloat = true;
+            digits += 'e';
+            this.pos++;
+            const char expSign = this.peek();
+            if expSign == '+' || expSign == '-' {
+                digits += expSign;
+                this.pos++;
+            }
+            isValid = this.consumeDecDigits(digits, false);
+        }
+    }
+    TomlValue* number = nil<TomlValue*>;
+    if isValid {
+        const string raw = digits.getRaw();
+        number = isFloat ? __new<TomlValue>(toDouble(raw)) : __new<TomlValue>(toLong(raw, 10));
+    }
+    return number;
+}
+
+f<TomlValue*> TomlParser.parseRadixInteger(int base) {
+    // `digits` has to stay alive until the end of the scope, so that it gets cleaned up
+    String digits;
+    bool afterUnderscore = true; // an underscore has to be surrounded by digits
+    bool scanning = true;
+    while scanning && !this.atEnd() {
+        const char c = this.peek();
+        if c == '_' {
+            if afterUnderscore {
+                this.fail("Misplaced underscore in number literal");
+                scanning = false;
+            } else {
+                afterUnderscore = true;
+                this.pos++;
+            }
+        } else if !isDigitForBase(c, base) {
+            scanning = false;
+        } else {
+            digits += c;
+            afterUnderscore = false;
+            this.pos++;
+        }
+    }
+    TomlValue* number = nil<TomlValue*>;
+    if digits.isEmpty() || afterUnderscore {
+        this.fail("Invalid integer literal"); // no-op if a more precise error was already reported
+    } else {
+        number = __new<TomlValue>(toLong(digits.getRaw(), base));
+    }
+    return number;
+}
+
+// Consume a run of decimal digits with optional underscore separators, appending them to `out`
+f<bool> TomlParser.consumeDecDigits(String& out, bool rejectLeadingZeros) {
+    const unsigned long startLength = out.getLength();
+    bool afterUnderscore = true; // an underscore has to be surrounded by digits
+    while !this.atEnd() {
+        const char c = this.peek();
+        if c == '_' {
+            if afterUnderscore {
+                this.fail("Misplaced underscore in number literal");
+                return false;
+            }
+            afterUnderscore = true;
+            this.pos++;
+            continue;
+        }
+        if !isDigit(c) { break; }
+        out += c;
+        afterUnderscore = false;
+        this.pos++;
+    }
+    if out.getLength() == startLength || afterUnderscore {
+        this.fail("Invalid number literal");
+        return false;
+    }
+    if rejectLeadingZeros && out.getLength() > startLength + 1l && out[startLength] == '0' {
+        this.fail("Leading zeros are not allowed in number literals");
+        return false;
+    }
+    return true;
+}
+
+// --- Free helpers ----------------------------------------------------------
+
+// Checks if the given character may appear in a bare TOML key
+inline f<bool> isBareKeyChar(char c) {
+    return isAlphaNum(c) || c == '_' || c == '-';
+}
+
+// Checks if the given character is a control character that TOML never allows unescaped.
+// Tab is excluded, since it is legal in strings and comments alike. Bytes of multi-byte
+// UTF-8 sequences are excluded as well, no matter whether char is signed or not.
+inline f<bool> isTomlDisallowedChar(char c) {
+    return (c >= '\0' && c < ' ' && c != '\t') || cast<int>(c) == 0x7F;
+}
+
+inline f<bool> isDigitForBase(char c, int base) {
+    if base == 16 { return isHexDigit(c); }
+    if base == 8 { return isOctDigit(c); }
+    return isBinDigit(c);
+}
+
+inline f<long> hexDigitValue(char c) {
+    if isDigit(c) { return toLong(c) - toLong('0'); }
+    if isLower(c) { return toLong(c) - toLong('a') + 10l; }
+    return toLong(c) - toLong('A') + 10l;
+}
+
+// Encode a unicode scalar value as UTF-8. Returns false for values outside the
+// unicode range as well as for surrogates, which are not scalar values.
+f<bool> appendCodePointUtf8(String& out, long codePoint) {
+    if codePoint < 0l || codePoint > 0x10FFFFl { return false; }
+    if codePoint >= 0xD800l && codePoint <= 0xDFFFl { return false; }
+    if codePoint < 0x80l {
+        out += toChar(codePoint);
+    } else if codePoint < 0x800l {
+        out += toChar(0xC0l | (codePoint >> 6));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    } else if codePoint < 0x10000l {
+        out += toChar(0xE0l | (codePoint >> 12));
+        out += toChar(0x80l | ((codePoint >> 6) & 0x3Fl));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    } else {
+        out += toChar(0xF0l | (codePoint >> 18));
+        out += toChar(0x80l | ((codePoint >> 12) & 0x3Fl));
+        out += toChar(0x80l | ((codePoint >> 6) & 0x3Fl));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    }
+    return true;
+}
+
+// Flatten a dotted key path so already defined tables can be tracked by identity
+f<String> joinKeyPath(const Vector<String>& path) {
+    String flatPath;
+    const char separator = toChar(PATH_SEPARATOR_CODE);
+    for unsigned long i = 0l; i < path.getSize(); i++ {
+        if i > 0l { flatPath += separator; }
+        const String& segment = path.get(i);
+        flatPath += segment;
+    }
+    return flatPath;
+}
+
+// Vector does not destruct the items it holds, so strings stored in one have to be released by hand
+p releaseStrings(Vector<String>& strings) {
+    for unsigned long i = 0l; i < strings.getSize(); i++ {
+        String& item = strings.get(i);
+        item.dtor();
+    }
+    strings.clear();
+}
+
+f<bool> containsPath(const Vector<String>& paths, const String& path) {
+    for unsigned long i = 0l; i < paths.getSize(); i++ {
+        const String& candidate = paths.get(i);
+        if candidate == path { return true; }
+    }
+    return false;
+}
