@@ -8,7 +8,11 @@ import "std/text/analysis";
 ext f<heap char*> malloc(unsigned long);
 ext f<heap char*> realloc(heap char*, unsigned long);
 ext p free(heap char*);
-ext p memcpy(heap char*, heap char*, unsigned long);
+ext f<heap char*> memcpy(heap char*, heap char*, unsigned long);
+ext f<heap char*> memmove(heap char*, heap char*, unsigned long);
+ext f<int> memcmp(const heap char*, const heap char*, unsigned long);
+ext f<unsigned long> strlen(string);
+ext f<int> strcmp(string, string);
 
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
@@ -170,19 +174,15 @@ public p String.dtor() {
  */
 public p String.append(const string appendix) {
     const unsigned long appendixLength = getRawLength(appendix);
+    if appendixLength == 0l { return; }
     // Check if we need to re-allocate memory
-    while this.capacity < this.length + appendixLength {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
-    }
+    this.ensureCapacity(this.length + appendixLength);
 
     // Save data
     unsafe {
-        for unsigned long i = 0l; i < appendixLength + 1l; i++ { // +1 because of null terminator
-            this.contents[this.length++] = appendix[i];
-        }
+        memcpy(this.contents + this.length, cast<char*>(appendix), appendixLength + 1l); // +1 because of null terminator
     }
-    this.length--; // Remove null terminator
+    this.length += appendixLength;
 }
 
 /**
@@ -201,10 +201,7 @@ public p String.append(const String& appendix) {
  */
 public p String.append(const char c) {
     // Check if we need to re-allocate memory
-    if this.capacity < this.length + 1l {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
-    }
+    this.ensureCapacity(this.length + 1l);
 
     // Insert the char at the right position
     unsafe {
@@ -219,17 +216,13 @@ p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLeng
         panic(Error("Insert index out of bounds"));
     }
     // Check if we need to re-allocate memory
-    while this.capacity < this.length + strLength {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
+    this.ensureCapacity(this.length + strLength);
+    unsafe {
+        // Shift the whole tail, including the null terminator, to the right in one move
+        const heap char* insertAddr = this.contents + position;
+        memmove(insertAddr + strLength, insertAddr, this.length - position + 1l); // +1 because of null terminator
     }
     this.length += strLength;
-    unsafe {
-        // Shift all chars, starting from the back
-        for unsigned long i = this.length; i > position; i-- {
-            this.contents[i] = this.contents[i - strLength];
-        }
-    }
 }
 
 /**
@@ -240,11 +233,10 @@ p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLeng
  */
 public p String.insert<IntLong>(unsigned IntLong position, string str) {
     const unsigned long strLength = len(str);
+    if strLength == 0l { return; }
     this.prepareInsert(position, strLength);
     unsafe {
-        for unsigned long i = 0l; i < strLength; i++ {
-            this.contents[position + i] = str[i];
-        }
+        memcpy(this.contents + position, cast<char*>(str), strLength);
     }
 }
 
@@ -302,18 +294,18 @@ public p operator+=<StrTyChar>(String& a, const StrTyChar& b) {
  */
 public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n) {
     // Shortcuts
-    if n < 1 { return String(); }
+    if n < 1 || str.length == 0l { return String(); }
     if n == 1 { return str; }
 
-    // Copy the input string
-    result = String(str);
-    const unsigned long newLength = n * str.length;
+    const unsigned long srcLength = str.length;
+    const unsigned long newLength = cast<unsigned long>(n) * srcLength;
+    result = String();
     result.reserve(newLength);
 
-    // Save the value
+    // Copy the input over as whole blocks instead of looking up every single char
     unsafe {
-        for unsigned long i = 0l; i < newLength; i++ {
-            result.contents[i] = str.contents[i % str.length];
+        for unsigned long offset = 0l; offset < newLength; offset += srcLength {
+            memcpy(result.contents + offset, str.contents, srcLength);
         }
         result.contents[newLength] = '\0';
     }
@@ -338,17 +330,18 @@ public f<String> operator*<IntLongShort>(const IntLongShort n, const String& str
  * @param n Multiplication operand
  */
 public p operator*=<IntLongShort>(String& str, const IntLongShort n) {
-    // Cancel if operand is less than 2
-    if n < 2 { return; }
+    // Cancel if operand is less than 2 or there is nothing to repeat
+    if n < 2 || str.length == 0l { return; }
 
     // Reserve new length
-    unsigned long newLength = n * str.length;
+    const unsigned long srcLength = str.length;
+    const unsigned long newLength = cast<unsigned long>(n) * srcLength;
     str.reserve(newLength);
 
-    // Save the value
+    // Append whole copies of the original block, which never overlap the block they are copied from
     unsafe {
-        for unsigned long i = 0l; i < newLength; i++ {
-            str.contents[i] = str.contents[i % str.length];
+        for unsigned long offset = srcLength; offset < newLength; offset += srcLength {
+            memcpy(str.contents + offset, str.contents, srcLength);
         }
         str.contents[newLength] = '\0';
     }
@@ -365,17 +358,13 @@ public p operator*=<IntLongShort>(String& str, const IntLongShort n) {
 public f<bool> operator==(const String& a, const String& b) {
     // Compare sizes
     if a.length != b.length { return false; }
+    // Two empty strings are equal, and at least one of them may still be unallocated
+    if a.length == 0l { return true; }
 
     // Compare contents
     unsafe {
-        for unsigned long i = 0l; i < a.length; i++ {
-            if a.contents[i] != b.contents[i] {
-                return false;
-            }
-        }
+        return memcmp(a.contents, b.contents, a.length) == 0;
     }
-
-    return true;
 }
 
 /**
@@ -564,8 +553,13 @@ public f<long> String.find(string needle, unsigned int startIndex) {
  * @return Index, where the char was found / -1
  */
 public f<long> String.find(char needle, unsigned long startIndex = 0l) {
-    const String needleStr = String(needle);
-    return this.find(needleStr.getRaw(), startIndex);
+    if startIndex >= this.length { return -1l; }
+    unsafe {
+        for unsigned long idx = startIndex; idx < this.length; idx++ {
+            if this.contents[idx] == needle { return idx; }
+        }
+    }
+    return -1l;
 }
 
 /**
@@ -621,8 +615,16 @@ public f<long> String.rfind(string needle, unsigned int startIndex) {
  * @return Index, where the char was found / -1
  */
 public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
-    const String needleStr = String(needle);
-    return this.rfind(needleStr.getRaw(), startIndex);
+    if startIndex >= this.length { return -1l; }
+    if startIndex == 0l { startIndex = this.length - 1l; }
+    // Count upwards and derive the index from it, since idx is unsigned and would underflow at 0
+    unsafe {
+        for unsigned long i = 0l; i <= startIndex; i++ {
+            const unsigned long idx = startIndex - i;
+            if this.contents[idx] == needle { return idx; }
+        }
+    }
+    return -1l;
 }
 
 /**
@@ -642,7 +644,12 @@ public inline f<bool> String.contains(string needle) {
  * @return Starts with prefix or not
  */
 public f<bool> String.startsWith(string prefix) {
-    return this.find(prefix) == 0l;
+    const unsigned long prefixLength = getRawLength(prefix);
+    if prefixLength > this.length { return false; }
+    if prefixLength == 0l { return this.length > 0l; }
+    unsafe {
+        return memcmp(this.contents, cast<char*>(prefix), prefixLength) == 0;
+    }
 }
 
 /**
@@ -652,20 +659,28 @@ public f<bool> String.startsWith(string prefix) {
  * @return Ends with suffix or not
  */
 public f<bool> String.endsWith(string suffix) {
-    const unsigned long index = this.length - getRawLength(suffix);
-    return this.rfind(suffix) == index;
+    const unsigned long suffixLength = getRawLength(suffix);
+    if suffixLength > this.length { return false; }
+    if suffixLength == 0l { return this.length > 0l; }
+    unsafe {
+        return memcmp(this.contents + this.length - suffixLength, cast<char*>(suffix), suffixLength) == 0;
+    }
 }
 
 /**
  * Reverse the string
  */
 public p String.reverse() {
+    if this.length < 2l { return; }
     unsafe {
-        for unsigned long i = 0l; i < this.length / 2l; i++ {
-            unsigned long currentUpperIdx = this.length - i - 1l;
-            this.contents[i] ^= this.contents[currentUpperIdx];
-            this.contents[currentUpperIdx] ^= this.contents[i];
-            this.contents[i] ^= this.contents[currentUpperIdx];
+        unsigned long lowerIdx = 0l;
+        unsigned long upperIdx = this.length - 1l;
+        while lowerIdx < upperIdx {
+            const char tmp = this.contents[lowerIdx];
+            this.contents[lowerIdx] = this.contents[upperIdx];
+            this.contents[upperIdx] = tmp;
+            lowerIdx++;
+            upperIdx--;
         }
     }
 }
@@ -699,19 +714,16 @@ public f<bool> String.replace(
     const unsigned long finalLength = this.length - needleLength + replacementLength;
 
     // Resize the string if required
-    while this.capacity < finalLength {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
-    }
+    this.ensureCapacity(finalLength);
 
     unsafe {
-        // Move the suffix to the left or right
+        // Move the suffix to the left or right. Source and destination overlap, so this needs memmove.
         const heap char* stringAddr = this.contents;
         const heap char* startAddr = stringAddr + startIdx;
         if needleLength != replacementLength {
             const heap char* oldSuffixAddr = startAddr + needleLength;
             const heap char* newSuffixAddr = startAddr + replacementLength;
-            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1l); // +1 because of null terminator
+            memmove(newSuffixAddr, oldSuffixAddr, suffixLength + 1l); // +1 because of null terminator
         }
 
         // Replace needle with replacement
@@ -757,9 +769,16 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
  */
 #[ignoreUnusedReturnValue]
 public f<unsigned long> String.replaceAll(char needle, char replacement) {
-    const String needleStr = String(needle);
-    const String replacementStr = String(replacement);
-    return this.replaceAll(needleStr.getRaw(), replacementStr.getRaw());
+    result = 0l;
+    // Single chars never change the length, so they can be swapped in place in one pass
+    unsafe {
+        for unsigned long idx = 0l; idx < this.length; idx++ {
+            if this.contents[idx] == needle {
+                this.contents[idx] = replacement;
+                result++;
+            }
+        }
+    }
 }
 
 /**
@@ -790,15 +809,9 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
     String substring;
     substring.reserve(length);
     substring.length = length;
-    const unsigned long endIdx = startIdx + length;
-    for unsigned long charIndex = cast<unsigned long>(startIdx); charIndex < endIdx; charIndex++ {
-        unsafe {
-            substring.contents[charIndex - startIdx] = this.contents[charIndex];
-        }
-    }
-
-    // Terminate string
     unsafe {
+        memcpy(substring.contents, this.contents + startIdx, cast<unsigned long>(length));
+        // Terminate string
         substring.contents[length] = '\0';
     }
 
@@ -820,7 +833,13 @@ public f<String> String.trim() {
 
     unsafe {
         // Find first char that is not a whitespace
-        while isWhitespace(this.contents[startIdx]) { startIdx++; }
+        while startIdx < this.length {
+            if !isWhitespace(this.contents[startIdx]) { break; }
+            startIdx++;
+        }
+        // Bail out if the string consists of whitespaces only. Without this, the backwards scan below
+        // would run past the front of the buffer, since endIdx is unsigned and underflows at 0.
+        if startIdx == this.length { return String(); }
         // Find last char that is not a whitespace
         while isWhitespace(this.contents[endIdx]) { endIdx--; }
     }
@@ -838,6 +857,22 @@ public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
     if charCount > this.capacity {
         this.resize(cast<unsigned long>(charCount));
     }
+}
+
+/**
+ * Makes sure the string can hold at least `requiredCapacity` chars.
+ *
+ * The buffer grows geometrically to keep repeated appends amortized O(1), but jumps straight to the
+ * required capacity when that is larger, so a single large append costs one re-allocation instead of
+ * one per doubling step.
+ *
+ * @param requiredCapacity Number of chars the buffer has to be able to hold
+ */
+p String.ensureCapacity(unsigned long requiredCapacity) {
+    if this.capacity >= requiredCapacity { return; }
+    unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
+    if newCapacity < requiredCapacity { newCapacity = requiredCapacity; }
+    this.resize(newCapacity);
 }
 
 /**
@@ -874,10 +909,9 @@ p String.checkForOOM() {
 public f<unsigned long> getRawLength(string input) {
     // Handle nullptr gracefully
     if cast<char*>(input) == nil<char*> { return 0l; }
-    // Otherwise count the chars until the null terminator
-    result = 0l;
-    while input[result] != '\0' {
-        result++;
+    // Otherwise let libc count the chars until the null terminator
+    unsafe {
+        return strlen(input);
     }
 }
 
@@ -896,15 +930,8 @@ public f<bool> isRawEqual(string lhs, string rhs) {
     const bool rhsIsNil = cast<const char*>(rhs) == nil<const char*>;
     if lhsIsNil || rhsIsNil { return lhsIsNil && rhsIsNil; }
 
-    unsigned long lhsLength = getRawLength(lhs);
-    unsigned long rhsLength = getRawLength(rhs);
-    // Return false immediately if length does not match
-    if lhsLength != rhsLength { return false; }
-    // Compare chars
-    for unsigned long i = 0l; i < lhsLength; i++ {
-        if lhs[i] != rhs[i] {
-            return false;
-        }
+    // Compare chars, which also covers differing lengths
+    unsafe {
+        return strcmp(lhs, rhs) == 0;
     }
-    return true;
 }

@@ -45,6 +45,7 @@ public p HashEntry.ctor(const HashEntry<K, V>& original) {
  */
 public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
     Vector<LinkedList<HashEntry<K, V>>> buckets
+    unsigned long size = 0l // Number of entries across all buckets; kept up to date to keep getSize() O(1)
 }
 
 /**
@@ -83,6 +84,7 @@ public p HashTable.upsert(const K& key, const V& value) {
         }
     }
     bucket.pushBack(HashEntry<K, V>{key, value});
+    this.size++;
 }
 
 /**
@@ -128,11 +130,14 @@ public f<Result<V>> HashTable.getSafe(const K& key) {
 public p HashTable.remove(const K& key) {
     if this.buckets.getSize() == 0l { return; }
     LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
-    for unsigned long i = 0l; i < bucket.getSize(); i++ {
-        if bucket.get(i).key == key {
-            bucket.removeAt(i);
+    unsigned long idx = 0l;
+    foreach const HashEntry<K, V>& entry : bucket {
+        if entry.key == key {
+            bucket.removeAt(idx);
+            this.size--;
             return;
         }
+        idx++;
     }
 }
 
@@ -158,10 +163,7 @@ public f<bool> HashTable.contains(const K& key) {
  * @return The number of key-value pairs in the hash table
  */
 public inline f<unsigned long> HashTable.getSize() {
-    result = 0l;
-    foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
-        result += bucket.getSize();
-    }
+    return this.size;
 }
 
 /**
@@ -170,7 +172,7 @@ public inline f<unsigned long> HashTable.getSize() {
  * @return True if empty, false otherwise.
  */
 public inline f<bool> HashTable.isEmpty() {
-    return this.getSize() == 0l;
+    return this.size == 0l;
 }
 
 /**
@@ -180,6 +182,7 @@ public inline p HashTable.clear() {
     foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
         bucket.clear();
     }
+    this.size = 0l;
 }
 
 inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
@@ -215,18 +218,8 @@ public type HashTableIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
  */
 public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
     this.hashTable = hashTable;
-    if !this.hashTable.buckets.isEmpty() {
-        // Find first bucket that contains any items
-        bool found = false;
-        do {
-            const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-            if !currentBucket.isEmpty() || this.currentBucketIdx + 1 >= this.hashTable.buckets.getSize() {
-                found = true;
-            } else {
-                this.currentBucketIdx++;
-            }
-        } while !found;
-    }
+    // Establish the invariant: the bucket index points at a non-empty bucket or past the last one
+    this.skipEmptyBuckets();
 }
 
 /**
@@ -256,54 +249,37 @@ public inline f<Pair<unsigned long, Pair<const K&, V&>&>> HashTableIterator.getI
 /**
  * Check if the iterator is valid
  *
+ * The iterator maintains the invariant that the bucket index either addresses a non-empty bucket or
+ * has run past the last one, so validity is a single comparison instead of a scan over the buckets.
+ *
  * @return true or false
  */
 public inline f<bool> HashTableIterator.isValid() {
-    // Check if the hash table has no buckets
-    if this.hashTable.isEmpty() { return false; }
-    // Check if we reached the end of the bucket list
-    if this.currentBucketIdx >= this.hashTable.buckets.getSize() { return false; }
-    // Check if any more items are to come
-    return this.moreItemsAvailable();
+    return this.currentBucketIdx < this.hashTable.buckets.getSize();
 }
 
-f<bool> HashTableIterator.moreItemsAvailable() {
-    // Are we at the end of the current bucket?
-    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-    if this.currentBucketItemIdx + 1 < currentBucket.getSize() {
-        return true;
+/**
+ * Advance the bucket index until it addresses a non-empty bucket or has run past the last one
+ */
+p HashTableIterator.skipEmptyBuckets() {
+    const unsigned long bucketCount = this.hashTable.buckets.getSize();
+    while this.currentBucketIdx < bucketCount {
+        const LinkedList<HashEntry<K, V>>& bucket = this.hashTable.buckets.get(this.currentBucketIdx);
+        if !bucket.isEmpty() { break; }
+        this.currentBucketIdx++;
     }
-    // Are there more non-empty buckets?
-    for unsigned long i = this.currentBucketIdx; i < this.hashTable.buckets.getSize(); i++ {
-        const LinkedList<HashEntry<K, V>>& bucket = this.hashTable.buckets.get(i);
-        if !bucket.isEmpty() {
-            return true;
-        }
-    }
-    return false;
 }
 
 p HashTableIterator.moveToNextItem() {
-    // Retrieve current bucket
-    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    // Stay in the current bucket as long as it has items left
     this.currentBucketItemIdx++;
+    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    if this.currentBucketItemIdx < currentBucket.getSize() { return; }
 
-    // If the current bucket does not contain more items, move to the next bucket that contains items.
-    if this.currentBucketItemIdx >= currentBucket.getSize() {
-        this.currentBucketIdx++;
-        if this.currentBucketIdx < this.hashTable.buckets.getSize() {
-            bool found = false;
-            do {
-                const LinkedList<HashEntry<K, V>>& nextBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-                if !nextBucket.isEmpty() || this.currentBucketIdx + 1 >= this.hashTable.buckets.getSize() {
-                    found = true;
-                } else {
-                    this.currentBucketIdx++;
-                }
-            } while !found;
-        }
-        this.currentBucketItemIdx = 0l;
-    }
+    // The current bucket is exhausted, so move on to the next non-empty one
+    this.currentBucketIdx++;
+    this.currentBucketItemIdx = 0l;
+    this.skipEmptyBuckets();
 }
 
 /**

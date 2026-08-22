@@ -260,6 +260,16 @@ public inline f<bool> LinkedList.isEmpty() {
  * @return Reference to the item
  */
 public f<T&> LinkedList.get(unsigned long idx) {
+    return this.getNode(idx).value;
+}
+
+/**
+ * Returns the node at the given index
+ *
+ * @param idx Index to access
+ * @return Pointer to the node
+ */
+f<Node<T>*> LinkedList.getNode(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx >= this.size {
         panic(Error("Access index out of bound"));
@@ -269,7 +279,7 @@ public f<T&> LinkedList.get(unsigned long idx) {
     for unsigned long i = 0l; i < idx; i++ {
         curr = curr.next;
     }
-    return curr.value;
+    return curr;
 }
 
 /**
@@ -331,9 +341,15 @@ f<heap Node<T>*> LinkedList.createNode(const T& value) {
 
 /**
  * Iterator to iterate over a linked list data structure
+ *
+ * Next to the cursor index, the iterator keeps the node it currently points at. Advancing by one is
+ * therefore a single pointer hop instead of a walk from the tail, which keeps a full traversal linear
+ * instead of quadratic. Moving backwards still has to re-walk the list, since the nodes are only
+ * linked in forward direction.
  */
 public type LinkedListIterator<T> struct : IIterator<T> {
     LinkedList<T>& list
+    Node<T>* currentNode = nil<Node<T>*>
     unsigned long cursor = 0l
 }
 
@@ -344,6 +360,7 @@ public type LinkedListIterator<T> struct : IIterator<T> {
  */
 public p LinkedListIterator.ctor<T>(LinkedList<T>& list) {
     this.list = list;
+    this.currentNode = list.tail;
 }
 
 /**
@@ -352,7 +369,8 @@ public p LinkedListIterator.ctor<T>(LinkedList<T>& list) {
  * @return Reference to the current item
  */
 public inline f<T&> LinkedListIterator.get() {
-    return this.list.get(this.cursor);
+    this.syncNode();
+    return this.currentNode.value;
 }
 
 /**
@@ -361,7 +379,7 @@ public inline f<T&> LinkedListIterator.get() {
  * @return Pair of current index and reference to current item
  */
 public inline f<Pair<unsigned long, T&>> LinkedListIterator.getIdx() {
-    return Pair<unsigned long, T&>(this.cursor, this.list.get(this.cursor));
+    return Pair<unsigned long, T&>(this.cursor, this.get());
 }
 
 /**
@@ -378,7 +396,28 @@ public inline f<bool> LinkedListIterator.isValid() {
  */
 public inline p LinkedListIterator.next() {
     if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    this.syncNode();
+    this.currentNode = this.currentNode.next;
     this.cursor++;
+}
+
+/**
+ * Moves the cursor to the given index, re-walking the list from the tail
+ *
+ * @param idx Index to move the cursor to
+ */
+p LinkedListIterator.seek(unsigned long idx) {
+    this.currentNode = this.list.getNode(idx);
+    this.cursor = idx;
+}
+
+/**
+ * Re-attaches the node cursor to the current index if it went stale. This happens when items are
+ * appended to the list after the iterator has already run past its end, which turns the iterator
+ * valid again.
+ */
+p LinkedListIterator.syncNode() {
+    if this.currentNode == nil<Node<T>*> { this.seek(this.cursor); }
 }
 
 /**
@@ -388,6 +427,8 @@ public inline p LinkedListIterator.next() {
  */
 public inline p operator++<T>(LinkedListIterator<T>& it) {
     if it.cursor >= it.list.getSize() { panic(Error("Iterator out of bounds")); }
+    it.syncNode();
+    it.currentNode = it.currentNode.next;
     it.cursor++;
 }
 
@@ -398,7 +439,7 @@ public inline p operator++<T>(LinkedListIterator<T>& it) {
  */
 public inline p operator--<T>(LinkedListIterator<T>& it) {
     if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
-    it.cursor--;
+    it.seek(it.cursor - 1l);
 }
 
 /**
@@ -409,7 +450,7 @@ public inline p operator--<T>(LinkedListIterator<T>& it) {
  */
 public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
     if it.cursor + offset >= it.list.getSize() || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.cursor += offset;
+    it.seek(it.cursor + offset);
 }
 
 /**
@@ -420,7 +461,7 @@ public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset
  */
 public inline p operator-=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
     if it.cursor - offset >= it.list.getSize() || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.cursor -= offset;
+    it.seek(it.cursor - offset);
 }
 
 /**

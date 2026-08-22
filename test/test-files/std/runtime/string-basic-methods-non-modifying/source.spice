@@ -5,6 +5,7 @@ f<int> main() {
     dyn s3 = String("Hello!");
     dyn s4 = String("Hello World!");
     dyn s5 = String(" \n\tString to be trimmed \r ");
+    dyn s6 = String(" \t\r\n ");
 
     assert s1.isEmpty();
     assert !s2.isEmpty();
@@ -47,6 +48,20 @@ f<int> main() {
     assert s5.trim() == "String to be trimmed";
     assert s1.trim() == "";
     assert s3.trim() == s3;
+    // Whitespace only: must not run past the front of the buffer
+    dyn s6Trimmed = s6.trim();
+    assert s6Trimmed == "";
+    assert s6Trimmed.getLength() == 0;
+    assert s4.startsWith("");
+    assert s4.endsWith("");
+    assert !s4.startsWith("Hello World!!");
+    assert !s4.endsWith("!Hello World!");
+    assert s4.find('W') == 6;
+    assert s4.find('z') == -1;
+    assert s4.find('l', 4l) == 9;
+    assert s4.rfind('l') == 9;
+    assert s4.rfind('l', 3l) == 3;
+    assert s4.rfind('z') == -1;
 
     printf("All assertions passed!\n");
 }

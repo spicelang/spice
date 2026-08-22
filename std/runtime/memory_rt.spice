@@ -4,7 +4,7 @@
 ext f<heap byte*> malloc(unsigned long);
 ext f<heap byte*> realloc(heap byte*, unsigned long);
 ext p free(heap byte*);
-ext p memcpy(heap byte*, heap byte*, unsigned long);
+ext f<heap byte*> memcpy(heap byte*, heap byte*, unsigned long);
 ext f<int> memcmp(const heap byte*, const heap byte*, unsigned long);
 
 // Generic type defs
