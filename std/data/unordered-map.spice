@@ -20,14 +20,13 @@ public type UnorderedMap<K, V> struct : IIterable<Pair<K, V>> {
 }
 
 /**
- * Construct an empty unordered map with the given number of buckets. Passing 0 keeps the
- * underlying hash table in an unallocated state; buckets are allocated lazily on the first
- * insertion.
+ * Construct an empty unordered map with room for the given number of entries. Passing 0 keeps the
+ * underlying hash table in an unallocated state; storage is allocated lazily on the first insertion.
  *
- * @param bucketCount Number of buckets in the underlying hash table
+ * @param initialCapacity Number of entries to pre-allocate space for
  */
-public p UnorderedMap.ctor(unsigned long bucketCount = 0l) {
-    this.hashTable.ctor(bucketCount);
+public p UnorderedMap.ctor(unsigned long initialCapacity = 0l) {
+    this.hashTable.ctor(initialCapacity);
 }
 
 /**

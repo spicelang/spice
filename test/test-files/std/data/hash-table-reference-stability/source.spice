@@ -1,0 +1,67 @@
+import "std/data/hash-table";
+
+f<int> main() {
+    // 1. A reference obtained from get() survives the rehashes caused by later insertions,
+    //    because only the slot array is rebuilt while the entries keep their addresses.
+    HashTable<int, int> ht;
+    const int stableKey = 1;
+    ht.upsert(stableKey, 111);
+    int& ref = ht.get(stableKey);
+
+    for int i = 2; i < 2000; i++ {
+        const int key = i;
+        ht.upsert(key, key * 2);
+    }
+    assert ht.getSize() == 1999ul;
+    assert ref == 111;
+
+    // Writing through the old reference is visible through the table
+    ref = 999;
+    assert ht.get(stableKey) == 999;
+
+    // 2. Updating a key in place keeps its entry, so references to it stay valid as well
+    ht.upsert(stableKey, 222);
+    assert ref == 222;
+
+    // 3. Removing other keys does not disturb the reference
+    for int i = 2; i < 1000; i++ {
+        const int key = i;
+        ht.remove(key);
+    }
+    assert ht.getSize() == 1001ul;
+    assert ref == 222;
+
+    // 4. Vacated slots are reused and the remaining keys stay reachable through the tombstones
+    for int i = 2; i < 1000; i++ {
+        const int key = i;
+        ht.upsert(key, key * 3);
+    }
+    assert ht.getSize() == 1999ul;
+    assert ht.get(500) == 1500;
+    assert ht.get(1500) == 3000;
+    assert ref == 222;
+
+    // 5. A deep copy owns its own entries, so mutating it leaves the original untouched
+    HashTable<int, int> copy = ht;
+    assert copy.getSize() == 1999ul;
+    copy.upsert(stableKey, -1);
+    assert copy.get(stableKey) == -1;
+    assert ht.get(stableKey) == 222;
+
+    // 6. Assigning over a populated table replaces its contents entirely
+    HashTable<int, int> assigned;
+    assigned.upsert(4242, 4242);
+    assigned = ht;
+    assert assigned.getSize() == 1999ul;
+    assert !assigned.contains(4242);
+    assert assigned.get(stableKey) == 222;
+
+    // 7. clear() drops every entry but leaves the table usable
+    copy.clear();
+    assert copy.isEmpty();
+    assert copy.getSize() == 0ul;
+    copy.upsert(7, 77);
+    assert copy.get(7) == 77;
+
+    printf("HashTable reference stability tests passed!\n");
+}
