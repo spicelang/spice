@@ -1,67 +1,110 @@
-import "std/data/vector";
-import "std/data/linked-list";
 import "std/math/hash";
 import "std/iterator/iterable";
 import "std/iterator/iterator";
 import "std/data/pair";
 
-// Default bucket count used when the hash table is grown lazily on first insert
-const unsigned long DEFAULT_BUCKET_COUNT = 100l;
+// Smallest slot array the table ever allocates. Always a power of two, like every capacity.
+const unsigned long MIN_CAPACITY = 16l;
+// The table grows once MAX_LOAD_NUMERATOR / MAX_LOAD_DENOMINATOR of its slots are in use
+const unsigned long MAX_LOAD_NUMERATOR = 3l;
+const unsigned long MAX_LOAD_DENOMINATOR = 4l;
+
+// Reserved hash values that mark a slot as free. A key hash is moved out of this range by hashKey(),
+// so the cached hash of a slot doubles as its state and can be read without touching the entry.
+const Hash HASH_EMPTY = 0ul;     // Slot was never used; it terminates a probe chain
+const Hash HASH_TOMBSTONE = 1ul; // Slot was vacated by remove(); a probe chain continues past it
+const Hash HASH_FIRST_VALID = 2ul;
 
 // Generic types for key and value
 type K dyn;
 type V dyn;
 
 /**
- * A single key-value entry stored within a hash table bucket
+ * A single key-value pair, allocated on its own so that it never moves.
  */
-type HashEntry<K, V> struct {
+type Entry<K, V> struct {
     K key
     V value
 }
 
 /**
- * Construct a hash entry as a copy of another hash entry
- *
- * @param original Hash entry to copy
+ * One position in the slot array. It caches the key hash next to a pointer to the entry, so a probe
+ * can reject a mismatch by comparing two integers and only follows the pointer once the hashes match.
  */
-public p HashEntry.ctor(const HashEntry<K, V>& original) {
-    this.key = original.key;
-    this.value = original.value;
+type Slot<K, V> struct {
+    Entry<K, V>* entry
+    Hash hash
 }
 
 /**
  * A hash table in Spice is a commonly used data structure, which stores key-value pairs and allows
- * fast access to a value by its key. Collisions are resolved via separate chaining, where each
- * bucket holds a linked list of entries that hash to the same index.
+ * fast access to a value by its key. Collisions are resolved by open addressing with linear probing
+ * over a contiguous slot array, and the table grows once it reaches its maximum load factor.
  *
  * Time complexity:
- * Insert: O(1) (average case), O(n) (worst case)
+ * Insert: O(1) (amortized average case), O(n) (worst case)
  * Delete: O(1) (average case), O(n) (worst case)
  * Lookup: O(1) (average case), O(n) (worst case)
  *
- * The average case assumes a good hash distribution. In the worst case, all keys hash to the same
- * bucket, degrading every operation to a linear scan of that bucket.
+ * The average case assumes a good hash distribution. In the worst case, all keys probe the same
+ * chain of slots, degrading every operation to a linear scan.
+ *
+ * The entries themselves live in their own allocations and are never relocated, only the slot array
+ * is rebuilt when the table grows. A reference obtained from get() therefore stays valid until that
+ * particular key is removed, the table is cleared or the table is destructed - inserting other keys
+ * never invalidates it.
  */
 public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
-    Vector<LinkedList<HashEntry<K, V>>> buckets
-    unsigned long size = 0l // Number of entries across all buckets; kept up to date to keep getSize() O(1)
+    Slot<K, V>* slots = nil<Slot<K, V>*> // Slot array; nil while unallocated
+    unsigned long capacity = 0l          // Number of slots, always a power of two; 0 while unallocated
+    unsigned long size = 0l              // Number of occupied slots
+    unsigned long tombstones = 0l        // Number of slots vacated by remove()
 }
 
 /**
- * Construct an empty hash table with the given number of buckets. Passing 0 keeps the
- * hash table in an unallocated state; the bucket vector is materialized lazily on the
- * first insertion using DEFAULT_BUCKET_COUNT.
+ * Construct an empty hash table with room for the given number of entries. Passing 0 keeps the
+ * hash table in an unallocated state; the slot array is materialized lazily on the first insertion.
  *
- * @param bucketCount Number of buckets to allocate
+ * @param initialCapacity Number of entries to pre-allocate slots for
  */
-public p HashTable.ctor(unsigned long bucketCount = 0l) {
-    this.buckets.ctor();
-    if bucketCount == 0l { return; }
-    this.buckets.reserve(bucketCount);
-    for unsigned long i = 0l; i < bucketCount; i++ {
-        this.buckets.pushBack(LinkedList<HashEntry<K, V>>());
+public p HashTable.ctor(unsigned long initialCapacity = 0l) {
+    if initialCapacity == 0l { return; }
+    // Reserve enough slots that the requested number of entries fits below the load factor
+    this.rehash(toPowerOfTwo(initialCapacity * MAX_LOAD_DENOMINATOR / MAX_LOAD_NUMERATOR));
+}
+
+/**
+ * Construct a hash table as a deep copy of another hash table
+ *
+ * @param original Hash table to copy
+ */
+public p HashTable.ctor(const HashTable<K, V>& original) {
+    this.ctor(original.size);
+    this.copyEntriesFrom(original);
+}
+
+/**
+ * Copy-assign the contents of another hash table into this one
+ *
+ * @param newValue Hash table to copy from
+ */
+public p operator=<K, V>(HashTable<K, V>& this, const HashTable<K, V>& newValue) {
+    this.clear();
+    this.copyEntriesFrom(newValue);
+}
+
+/**
+ * Destructs the hash table, destructing all entries and freeing the slot array
+ */
+public p HashTable.dtor() {
+    this.clear();
+    if this.capacity == 0l { return; }
+    unsafe {
+        heap byte* rawSlots = cast<heap byte*>(this.slots);
+        sDealloc(rawSlots);
     }
+    this.slots = nil<Slot<K, V>*>;
+    this.capacity = 0l;
 }
 
 /**
@@ -72,18 +115,28 @@ public p HashTable.ctor(unsigned long bucketCount = 0l) {
  * @param value The value to insert
  */
 public p HashTable.upsert(const K& key, const V& value) {
-    // Grow the bucket vector on the first insert
-    if this.buckets.getSize() == 0l {
-        this.growBuckets(DEFAULT_BUCKET_COUNT);
-    }
-    const LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
-    foreach const HashEntry<K, V>& entry : bucket {
-        if entry.key == key {
-            entry.value = value;
-            return;
+    // Grow up front, so the slot picked below already belongs to the final slot array
+    this.growIfRequired();
+
+    const Hash keyHash = this.hashKey(key);
+    const unsigned long existingIdx = this.findSlot(key, keyHash);
+    if existingIdx != this.capacity {
+        // The key is already present. Overwriting the value in place keeps the entry where it is,
+        // which is what keeps references handed out for this key valid.
+        unsafe {
+            this.slots[existingIdx].entry.value = value;
         }
+        return;
     }
-    bucket.pushBack(HashEntry<K, V>{key, value});
+
+    // Otherwise occupy the first free slot on the probe chain
+    const unsigned long freeIdx = this.findFreeSlot(keyHash);
+    unsafe {
+        Slot<K, V>& slot = this.slots[freeIdx];
+        if slot.hash == HASH_TOMBSTONE { this.tombstones--; }
+        slot.entry = this.createEntry(key, value);
+        slot.hash = keyHash;
+    }
     this.size++;
 }
 
@@ -95,30 +148,26 @@ public p HashTable.upsert(const K& key, const V& value) {
  * @return The value associated with the key
  */
 public f<V&> HashTable.get(const K& key) {
-    if this.buckets.getSize() == 0l { panic(Error("The provided key was not found")); }
-    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if entry.key == key {
-            return entry.value;
-        }
+    const unsigned long idx = this.findSlot(key, this.hashKey(key));
+    if idx == this.capacity { panic(Error("The provided key was not found")); }
+    unsafe {
+        return this.slots[idx].entry.value;
     }
-    panic(Error("The provided key was not found"));
 }
 
 /**
- * Retrieve the value associated with the given key as Optional<T>.
- * If the key is not found, return an empty optional.
+ * Retrieve the value associated with the given key as Result<V>.
+ * If the key is not found, return an error.
  *
  * @param key The key to look up
- * @return Optional<T>, containing the value associated with the key or empty if the key is not found
+ * @return Result<V>, containing the value associated with the key or an error if the key is not found
  */
 public f<Result<V>> HashTable.getSafe(const K& key) {
-    if this.buckets.getSize() == 0l { return err<V>(Error("The provided key was not found")); }
-    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if entry.key == key {
-            return ok(entry.value);
-        }
+    const unsigned long idx = this.findSlot(key, this.hashKey(key));
+    if idx == this.capacity { return err<V>(Error("The provided key was not found")); }
+    unsafe {
+        return ok(this.slots[idx].entry.value);
     }
-    return err<V>(Error("The provided key was not found"));
 }
 
 /**
@@ -128,17 +177,17 @@ public f<Result<V>> HashTable.getSafe(const K& key) {
  * @param key The key to remove
  */
 public p HashTable.remove(const K& key) {
-    if this.buckets.getSize() == 0l { return; }
-    LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
-    unsigned long idx = 0l;
-    foreach const HashEntry<K, V>& entry : bucket {
-        if entry.key == key {
-            bucket.removeAt(idx);
-            this.size--;
-            return;
-        }
-        idx++;
+    const unsigned long idx = this.findSlot(key, this.hashKey(key));
+    if idx == this.capacity { return; }
+    unsafe {
+        Slot<K, V>& slot = this.slots[idx];
+        this.deleteEntry(slot.entry);
+        // Leave a tombstone behind. Marking the slot empty would cut every probe chain running
+        // through it, hiding keys that were inserted after a collision on this slot.
+        slot.hash = HASH_TOMBSTONE;
     }
+    this.size--;
+    this.tombstones++;
 }
 
 /**
@@ -148,13 +197,7 @@ public p HashTable.remove(const K& key) {
  * @return True if the key is found, false otherwise
  */
 public f<bool> HashTable.contains(const K& key) {
-    if this.buckets.getSize() == 0l { return false; }
-    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
-        if entry.key == key {
-            return true;
-        }
-    }
-    return false;
+    return this.findSlot(key, this.hashKey(key)) != this.capacity;
 }
 
 /**
@@ -176,27 +219,221 @@ public inline f<bool> HashTable.isEmpty() {
 }
 
 /**
- * Clear the hash table, removing all key-value pairs.
+ * Clear the hash table, removing all key-value pairs. The slot array is kept for reuse.
  */
-public inline p HashTable.clear() {
-    foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
-        bucket.clear();
+public p HashTable.clear() {
+    for unsigned long i = 0l; i < this.capacity; i++ {
+        unsafe {
+            Slot<K, V>& slot = this.slots[i];
+            if slot.hash >= HASH_FIRST_VALID {
+                this.deleteEntry(slot.entry);
+            }
+            slot.hash = HASH_EMPTY;
+        }
     }
     this.size = 0l;
+    this.tombstones = 0l;
 }
 
-inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
-    return this.buckets.get(this.hash(key));
+/**
+ * Hash the given key and move the result out of the reserved sentinel range, so that the hash cached
+ * in a slot can double as the marker for an empty or vacated slot.
+ *
+ * The result is mixed before it is returned, because the slot index is masked out of its low bits
+ * and some of the hash() overloads (e.g. the multiplicative one for int) have weak low bits.
+ *
+ * @param key The key to hash
+ * @return Mixed, non-reserved hash of the key
+ */
+inline f<Hash> HashTable.hashKey(const K& key) {
+    result = hash(key);
+    result ^= result >> 33ul;
+    result *= 0xff51afd7ed558ccdul;
+    result ^= result >> 29ul;
+    if result < HASH_FIRST_VALID { result += HASH_FIRST_VALID; }
 }
 
-inline f<unsigned long> HashTable.hash(const K& key) {
-    return hash(key) % this.buckets.getSize();
+/**
+ * Find the slot holding the given key.
+ *
+ * @param key The key to search for
+ * @param keyHash Mixed hash of the key, as returned by hashKey()
+ * @return Index of the slot holding the key, or this.capacity if the key is not present
+ */
+f<unsigned long> HashTable.findSlot(const K& key, Hash keyHash) {
+    if this.capacity == 0l { return 0l; }
+    const unsigned long mask = this.capacity - 1l;
+    unsigned long idx = keyHash & mask;
+    for unsigned long probe = 0l; probe < this.capacity; probe++ {
+        unsafe {
+            const Slot<K, V>& slot = this.slots[idx];
+            // An empty slot ends the probe chain, so the key cannot be stored behind it
+            if slot.hash == HASH_EMPTY { return this.capacity; }
+            // Compare the cached hash first and only touch the entry once it matches
+            if slot.hash == keyHash && slot.entry.key == key { return idx; }
+        }
+        idx = (idx + 1l) & mask;
+    }
+    return this.capacity;
 }
 
-p HashTable.growBuckets(unsigned long bucketCount) {
-    this.buckets.reserve(bucketCount);
-    for unsigned long i = 0l; i < bucketCount; i++ {
-        this.buckets.pushBack(LinkedList<HashEntry<K, V>>());
+/**
+ * Find the slot a new entry with the given hash has to be placed in. The first vacated slot on the
+ * probe chain is reused, which keeps the chains from growing with every remove/insert cycle.
+ *
+ * @param keyHash Mixed hash of the key, as returned by hashKey()
+ * @return Index of the free slot to occupy
+ */
+f<unsigned long> HashTable.findFreeSlot(Hash keyHash) {
+    const unsigned long mask = this.capacity - 1l;
+    unsigned long idx = keyHash & mask;
+    for unsigned long probe = 0l; probe < this.capacity; probe++ {
+        unsafe {
+            if this.slots[idx].hash < HASH_FIRST_VALID { return idx; }
+        }
+        idx = (idx + 1l) & mask;
+    }
+    // Unreachable: the load factor keeps at least one slot of every table free
+    panic(Error("Hash table has no free slot left"));
+}
+
+/**
+ * Grow the table if inserting one more entry would push it beyond its maximum load factor.
+ */
+p HashTable.growIfRequired() {
+    if this.capacity == 0l {
+        this.rehash(MIN_CAPACITY);
+        return;
+    }
+    // Tombstones keep occupying their slot for probing purposes, so they count towards the load
+    const unsigned long load = this.size + this.tombstones + 1l;
+    if load * MAX_LOAD_DENOMINATOR <= this.capacity * MAX_LOAD_NUMERATOR { return; }
+    // Only double when the live entries justify it. A table that is merely littered with tombstones
+    // is rebuilt at the same capacity, which drops them.
+    const bool entriesJustifyGrowth = (this.size + 1l) * MAX_LOAD_DENOMINATOR > this.capacity * MAX_LOAD_NUMERATOR;
+    this.rehash(entriesJustifyGrowth ? this.capacity * 2l : this.capacity);
+}
+
+/**
+ * Rebuild the slot array at the given capacity, re-distributing the existing entries over it.
+ * Only the slot array is replaced - the entries keep their addresses, which is what makes references
+ * to them survive a rehash.
+ *
+ * @param newCapacity Number of slots of the new slot array, must be a power of two
+ */
+p HashTable.rehash(unsigned long newCapacity) {
+    Slot<K, V>* oldSlots = this.slots;
+    const unsigned long oldCapacity = this.capacity;
+
+    this.slots = allocSlots<K, V>(newCapacity);
+    this.capacity = newCapacity;
+    this.tombstones = 0l;
+
+    // Move the cached hashes and entry pointers over. The keys are known to be distinct here, so no
+    // key comparison is needed and the first free slot on each probe chain is the right one.
+    for unsigned long i = 0l; i < oldCapacity; i++ {
+        unsafe {
+            const Slot<K, V>& oldSlot = oldSlots[i];
+            if oldSlot.hash >= HASH_FIRST_VALID {
+                Slot<K, V>& newSlot = this.slots[this.findFreeSlot(oldSlot.hash)];
+                newSlot.entry = oldSlot.entry;
+                newSlot.hash = oldSlot.hash;
+            }
+        }
+    }
+
+    if oldCapacity > 0l {
+        unsafe {
+            heap byte* rawSlots = cast<heap byte*>(oldSlots);
+            sDealloc(rawSlots);
+        }
+    }
+}
+
+/**
+ * Copy every entry of the given hash table into this one, allocating own entries for them.
+ *
+ * @param original Hash table to copy the entries from
+ */
+p HashTable.copyEntriesFrom(const HashTable<K, V>& original) {
+    for unsigned long i = 0l; i < original.capacity; i++ {
+        unsafe {
+            const Slot<K, V>& slot = original.slots[i];
+            if slot.hash >= HASH_FIRST_VALID {
+                this.upsert(slot.entry.key, slot.entry.value);
+            }
+        }
+    }
+}
+
+/**
+ * Allocate an entry for the given key-value pair.
+ *
+ * @param key The key to store
+ * @param value The value to store
+ * @return Pointer to the newly allocated entry
+ */
+f<Entry<K, V>*> HashTable.createEntry(const K& key, const V& value) {
+    Entry<K, V>* entry;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Entry<K, V>>());
+        entry = cast<Entry<K, V>*>(sMove(allocResult.unwrap()));
+        // Copy-construct into the raw allocation, so non-trivial keys and values get their own owned
+        // resources instead of aliasing the caller's
+        __placement_new<K>(&entry.key, key);
+        __placement_new<V>(&entry.value, value);
+    }
+    return entry;
+}
+
+/**
+ * Destruct the given entry and free its allocation.
+ *
+ * @param entry Entry to delete; set to nil afterwards
+ */
+p HashTable.deleteEntry(Entry<K, V>*& entry) {
+    if entry == nil<Entry<K, V>*> { return; }
+    unsafe {
+        sDestruct(entry.key);
+        sDestruct(entry.value);
+        heap byte* rawEntry = cast<heap byte*>(entry);
+        sDealloc(rawEntry);
+    }
+    entry = nil<Entry<K, V>*>;
+}
+
+/**
+ * Allocate a slot array of the given size, with every slot marked empty.
+ *
+ * @param slotCount Number of slots to allocate
+ * @return Pointer to the first slot
+ */
+f<Slot<K, V>*> allocSlots<K, V>(unsigned long slotCount) {
+    Slot<K, V>* slots;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Slot<K, V>>() * slotCount);
+        slots = cast<Slot<K, V>*>(sMove(allocResult.unwrap()));
+        // sAlloc hands out uninitialized memory, so the empty markers have to be written explicitly
+        for unsigned long i = 0l; i < slotCount; i++ {
+            slots[i].entry = nil<Entry<K, V>*>;
+            slots[i].hash = HASH_EMPTY;
+        }
+    }
+    return slots;
+}
+
+/**
+ * Round the given value up to the next power of two, but never below MIN_CAPACITY. A power of two
+ * capacity lets the slot index be masked out of the hash instead of taken modulo, which avoids an
+ * integer division on every single access.
+ *
+ * @param value Value to round up
+ * @return Smallest power of two that is >= value and >= MIN_CAPACITY
+ */
+f<unsigned long> toPowerOfTwo(unsigned long value) {
+    result = MIN_CAPACITY;
+    while result < value {
+        result *= 2l;
     }
 }
 
@@ -206,8 +443,7 @@ p HashTable.growBuckets(unsigned long bucketCount) {
 public type HashTableIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     HashTable<K, V>& hashTable
     Pair<const K&, V&> currentPair
-    unsigned long currentBucketIdx = 0l
-    unsigned long currentBucketItemIdx = 0l
+    unsigned long slotIdx = 0l
     unsigned long cursor = 0l
 }
 
@@ -218,8 +454,8 @@ public type HashTableIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
  */
 public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
     this.hashTable = hashTable;
-    // Establish the invariant: the bucket index points at a non-empty bucket or past the last one
-    this.skipEmptyBuckets();
+    // Establish the invariant: the slot index addresses an occupied slot or has run past the last one
+    this.skipFreeSlots();
 }
 
 /**
@@ -228,12 +464,10 @@ public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
  * @return Current key/value pair
  */
 public inline f<Pair<const K&, V&>&> HashTableIterator.get() {
-    // Retrieve current bucket
-    LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-    // Retrieve correct entry in the current bucket
-    HashEntry<K, V>& hashEntry = currentBucket.get(this.currentBucketItemIdx);
-    // Construct pair from key and value
-    this.currentPair = Pair<const K&, V&>(hashEntry.key, hashEntry.value);
+    unsafe {
+        Entry<K, V>* entry = this.hashTable.slots[this.slotIdx].entry;
+        this.currentPair = Pair<const K&, V&>(entry.key, entry.value);
+    }
     return this.currentPair;
 }
 
@@ -249,37 +483,25 @@ public inline f<Pair<unsigned long, Pair<const K&, V&>&>> HashTableIterator.getI
 /**
  * Check if the iterator is valid
  *
- * The iterator maintains the invariant that the bucket index either addresses a non-empty bucket or
- * has run past the last one, so validity is a single comparison instead of a scan over the buckets.
+ * The iterator maintains the invariant that its slot index either addresses an occupied slot or has
+ * run past the last one, so validity is a single comparison.
  *
  * @return true or false
  */
 public inline f<bool> HashTableIterator.isValid() {
-    return this.currentBucketIdx < this.hashTable.buckets.getSize();
+    return this.slotIdx < this.hashTable.capacity;
 }
 
 /**
- * Advance the bucket index until it addresses a non-empty bucket or has run past the last one
+ * Advance the slot index until it addresses an occupied slot or has run past the last one
  */
-p HashTableIterator.skipEmptyBuckets() {
-    const unsigned long bucketCount = this.hashTable.buckets.getSize();
-    while this.currentBucketIdx < bucketCount {
-        const LinkedList<HashEntry<K, V>>& bucket = this.hashTable.buckets.get(this.currentBucketIdx);
-        if !bucket.isEmpty() { break; }
-        this.currentBucketIdx++;
+p HashTableIterator.skipFreeSlots() {
+    while this.slotIdx < this.hashTable.capacity {
+        unsafe {
+            if this.hashTable.slots[this.slotIdx].hash >= HASH_FIRST_VALID { break; }
+        }
+        this.slotIdx++;
     }
-}
-
-p HashTableIterator.moveToNextItem() {
-    // Stay in the current bucket as long as it has items left
-    this.currentBucketItemIdx++;
-    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
-    if this.currentBucketItemIdx < currentBucket.getSize() { return; }
-
-    // The current bucket is exhausted, so move on to the next non-empty one
-    this.currentBucketIdx++;
-    this.currentBucketItemIdx = 0l;
-    this.skipEmptyBuckets();
 }
 
 /**
@@ -288,8 +510,9 @@ p HashTableIterator.moveToNextItem() {
 public inline p HashTableIterator.next() {
     if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
 
-    // Move to next item
-    this.moveToNextItem();
+    // Move to the next occupied slot
+    this.slotIdx++;
+    this.skipFreeSlots();
 
     // Increment cursor to reflect the current item position
     this.cursor++;
