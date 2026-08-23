@@ -3,6 +3,7 @@ import "std/text/print";
 import "std/type/lambda";
 import "std/type/type-conversion";
 import "std/data/vector";
+import "std/data/algorithm";
 import "std/os/os";
 import "std/io/filepath";
 import "std/text/stringstream";
@@ -68,12 +69,7 @@ f<bool> CliSubcommand.nameOrAliasMatches(const String& name, const Vector<String
     if name == input {
         return true;
     }
-    foreach const String& a : aliases {
-        if a == input {
-            return true;
-        }
-    }
-    return false;
+    return contains<String>(aliases, String(input));
 }
 
 /**
