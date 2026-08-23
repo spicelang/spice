@@ -1,0 +1,63 @@
+import "std/text/regex/regex";
+
+f<int> main() {
+    // Unterminated group
+    Result<Regex> e1 = compileRegex(String("(abc"));
+    assert e1.isErr();
+
+    // Unterminated character class
+    Result<Regex> e2 = compileRegex(String("[a-z"));
+    assert e2.isErr();
+
+    // Dangling quantifier (no preceding atom)
+    Result<Regex> e3 = compileRegex(String("*abc"));
+    assert e3.isErr();
+
+    Result<Regex> e4 = compileRegex(String("+abc"));
+    assert e4.isErr();
+
+    Result<Regex> e5 = compileRegex(String("?abc"));
+    assert e5.isErr();
+
+    // Unknown escape sequence
+    Result<Regex> e6 = compileRegex(String("\\q"));
+    assert e6.isErr();
+
+    // Trailing backslash
+    Result<Regex> e7 = compileRegex(String("abc\\"));
+    assert e7.isErr();
+
+    // {n,m} bounds: min greater than max
+    Result<Regex> e8 = compileRegex(String("a{5,2}"));
+    assert e8.isErr();
+
+    // {n,m} bounds: exceeding the safety cap
+    Result<Regex> e9 = compileRegex(String("a{1,100000}"));
+    assert e9.isErr();
+
+    // Invalid repeat count (non-numeric)
+    Result<Regex> e10 = compileRegex(String("a{x}"));
+    assert e10.isErr();
+
+    // Unterminated repeat count
+    Result<Regex> e11 = compileRegex(String("a{2"));
+    assert e11.isErr();
+
+    // Character range out of order
+    Result<Regex> e12 = compileRegex(String("[z-a]"));
+    assert e12.isErr();
+
+    // Negated shorthand class inside a character class is not supported
+    Result<Regex> e13 = compileRegex(String("[\\D]"));
+    assert e13.isErr();
+
+    // Unexpected trailing characters after a complete expression
+    Result<Regex> e14 = compileRegex(String("abc)"));
+    assert e14.isErr();
+
+    // A valid pattern still compiles fine alongside all of the above
+    Result<Regex> ok1 = compileRegex(String("a+b*c?"));
+    assert ok1.isOk();
+
+    return 0;
+}

@@ -1,0 +1,181 @@
+import "std/text/regex/regex-program";
+import "std/data/optional";
+import "std/data/vector";
+
+/**
+ * Pike's-VM matcher: runs a compiled `RegexProgram` (see "std/text/regex/regex-program") over an
+ * input string without backtracking, which bounds matching to `O(input length * program size)` -
+ * no pattern can trigger catastrophic backtracking.
+ *
+ * `runProgram` only tries to match starting exactly at `startIndex` (i.e. as if the pattern were
+ * anchored there); "std/text/regex/regex" implements unanchored search by trying successive start
+ * positions.
+ */
+
+// One VM thread: an instruction pointer together with the capture-slot array it has accumulated by
+// following epsilon transitions (JMP/SPLIT/SAVE) to get there. Slot 2*g/2*g+1 holds the start/end
+// input position of capture group g (group 0 = the whole match); an unset slot stays -1.
+public type Thread struct {
+    public long pc
+    public Vector<long> saved
+}
+
+public p Thread.ctor(long pc, const Vector<long>& saved) {
+    this.pc = pc;
+    this.saved = saved;
+}
+
+// Explicit public copy-ctor + dtor, following the std convention that a non-trivial type used
+// generically (here, as a `Vector<Thread>` element) needs both defined explicitly rather than
+// relying on auto-generation - see e.g. "std/runtime/string_rt"'s String.
+public p Thread.ctor(const Thread& original) {
+    this.pc = original.pc;
+    this.saved = original.saved;
+}
+
+public p Thread.dtor() {}
+
+// The set of threads being built for one input position, plus the per-instruction "already added
+// during this build" marker that keeps `addThread` from visiting the same instruction twice in one
+// step - this is what bounds the whole match to O(input length * program size) rather than
+// exploding exponentially. `gen` is bumped on every `reset`, so the marker never needs to be
+// cleared between positions - a stale entry is simply for a `gen` value that can never recur.
+public type ThreadList struct {
+    public Vector<Thread> threads
+    public Vector<long> lastGen
+    public long gen
+}
+
+public p ThreadList.ctor(long numInstrs) {
+    this.lastGen = Vector<long>(cast<unsigned long>(numInstrs), -1l);
+    this.gen = 0l;
+}
+
+public p ThreadList.reset() {
+    this.threads.clear();
+    this.gen++;
+}
+
+// Follows epsilon transitions (JMP, SPLIT, SAVE, the anchors) from `pc` and appends a thread to
+// `list` for every real (consuming or MATCH) instruction reached, skipping any instruction already
+// reached during this build of `list`.
+p addThread(ThreadList& list, long pc, const RegexProgram& prog, const Vector<long>& saved, unsigned long sp, unsigned long inputLen) {
+    long& lastGenAtPc = list.lastGen.get(cast<unsigned long>(pc));
+    if lastGenAtPc == list.gen {
+        return;
+    }
+    lastGenAtPc = list.gen;
+    const Instr& instr = prog.instrs.get(cast<unsigned long>(pc));
+    switch instr.kind {
+        case InstrKind::JMP: {
+            addThread(list, instr.x, prog, saved, sp, inputLen);
+        }
+        case InstrKind::SPLIT: {
+            addThread(list, instr.x, prog, saved, sp, inputLen);
+            addThread(list, instr.y, prog, saved, sp, inputLen);
+        }
+        case InstrKind::SAVE: {
+            Vector<long> newSaved = saved;
+            long& slot = newSaved.get(cast<unsigned long>(instr.saveSlot));
+            slot = cast<long>(sp);
+            addThread(list, pc + 1l, prog, newSaved, sp, inputLen);
+        }
+        case InstrKind::ANCHOR_START: {
+            if sp == 0ul {
+                addThread(list, pc + 1l, prog, saved, sp, inputLen);
+            }
+        }
+        case InstrKind::ANCHOR_END: {
+            if sp == inputLen {
+                addThread(list, pc + 1l, prog, saved, sp, inputLen);
+            }
+        }
+        default: {
+            // CHAR, ANY, CLASS, MATCH: nothing more to resolve, this is a real thread
+            list.threads.pushBack(Thread(pc, saved));
+        }
+    }
+}
+
+/**
+ * Try to match `prog` against `input`, starting exactly at `startIndex` (as if the pattern were
+ * anchored there - "std/text/regex/regex" tries successive positions to implement unanchored
+ * search). On success, returns the capture-slot array (slot 0/1 = whole-match start/end, slot
+ * 2*g/2*g+1 = group g start/end, -1 where a group did not participate).
+ *
+ * @param prog Compiled program to run
+ * @param input String to match against
+ * @param startIndex Position in `input` to start matching at
+ * @return The capture-slot array of the match with the greatest extent under Perl/PCRE-style
+ *         leftmost-first priority, or an empty Optional if no match starts at `startIndex`
+ */
+public f<Optional<Vector<long>>> runProgram(const RegexProgram& prog, const String& input, unsigned long startIndex) {
+    // The implicit `result` is zero-initialized, not default-constructed, and the "no match" path
+    // below returns it without ever assigning it - so it must be constructed explicitly here first.
+    result = Optional<Vector<long>>();
+    const unsigned long inputLen = input.getLength();
+    const long numInstrs = prog.instrs.getSize();
+    const long numSlots = 2l * (prog.groupCount + 1l);
+
+    ThreadList building = ThreadList(numInstrs);
+    const Vector<long> initialSaved = Vector<long>(cast<unsigned long>(numSlots), -1l);
+    building.gen++;
+    addThread(building, 0l, prog, initialSaved, startIndex, inputLen);
+
+    Vector<Thread> currentThreads = building.threads;
+
+    bool haveMatch = false;
+    Vector<long> matchedSaved;
+
+    unsigned long sp = startIndex;
+    bool continueScanning = true;
+    while continueScanning {
+        if currentThreads.getSize() == 0l {
+            continueScanning = false;
+        } else {
+            const bool haveChar = sp < inputLen;
+            char c = '\0';
+            if haveChar {
+                c = input[sp];
+            }
+
+            building.reset();
+            bool matchedThisStep = false;
+            unsigned long i = 0ul;
+            while i < cast<unsigned long>(currentThreads.getSize()) && !matchedThisStep {
+                const Thread& t = currentThreads.get(i);
+                const Instr& instr = prog.instrs.get(cast<unsigned long>(t.pc));
+                if instr.kind == InstrKind::CHAR && haveChar && c == instr.ch {
+                    addThread(building, t.pc + 1l, prog, t.saved, sp + 1ul, inputLen);
+                } else if instr.kind == InstrKind::ANY && haveChar {
+                    addThread(building, t.pc + 1l, prog, t.saved, sp + 1ul, inputLen);
+                } else if instr.kind == InstrKind::CLASS && haveChar {
+                    const CharClass& cls = prog.classes.get(cast<unsigned long>(instr.classIndex));
+                    if cls.matches(c) {
+                        addThread(building, t.pc + 1l, prog, t.saved, sp + 1ul, inputLen);
+                    }
+                } else if instr.kind == InstrKind::MATCH {
+                    // Highest-priority match found in this step - record it and stop looking at the
+                    // lower-priority threads that follow; higher-priority threads already carried
+                    // forward into `building` may still overwrite this with a longer match later.
+                    matchedSaved = t.saved;
+                    haveMatch = true;
+                    matchedThisStep = true;
+                }
+                i++;
+            }
+
+            if !haveChar {
+                continueScanning = false;
+            } else {
+                currentThreads = building.threads;
+                sp++;
+            }
+        }
+    }
+
+    if haveMatch {
+        result = Optional<Vector<long>>(matchedSaved);
+    }
+    return result;
+}

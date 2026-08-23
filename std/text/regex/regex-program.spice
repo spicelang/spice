@@ -1,0 +1,75 @@
+import "std/data/vector";
+import "std/data/pair";
+
+/**
+ * Tag for what a single compiled instruction does.
+ */
+public type InstrKind enum {
+    CHAR,          // Consume one input char, matching it against `ch`
+    ANY,           // Consume one input char, matching anything
+    CLASS,         // Consume one input char, matching it against classes[classIndex]
+    JMP,           // Jump to `x`
+    SPLIT,         // Fork execution: continue at `x` with higher priority, at `y` with lower priority
+    SAVE,          // Record the current input position into capture slot `saveSlot`
+    ANCHOR_START,  // Zero-width: only passable at input position 0
+    ANCHOR_END,    // Zero-width: only passable at the end of the input
+    MATCH          // Accept
+}
+
+/**
+ * A single instruction of a compiled regex program. Which fields are meaningful depends on `kind`:
+ * `ch` for CHAR, `classIndex` for CLASS, `x` for JMP, `x`/`y` for SPLIT, `saveSlot` for SAVE. The
+ * remaining kinds (ANY, ANCHOR_START, ANCHOR_END, MATCH) carry no extra payload.
+ *
+ * Fields are `public`, like "std/runtime/error_rt"'s `Error` - plain internal data shared by the
+ * compiler/matcher files of this module, not an encapsulated type.
+ */
+public type Instr struct {
+    public InstrKind kind
+    public char ch
+    public long classIndex
+    public long x
+    public long y
+    public long saveSlot
+}
+
+public p Instr.ctor(InstrKind kind) {
+    this.kind = kind;
+}
+
+/**
+ * A character class: a set of inclusive ranges, optionally negated. Used to implement `[...]`,
+ * `[^...]` and the expansions of `\d \D \w \W \s \S`.
+ */
+public type CharClass struct {
+    public Vector<Pair<char, char>> ranges
+    public bool negated
+}
+
+/**
+ * Check whether the given character is a member of this class, accounting for negation.
+ *
+ * @param c Character to test
+ * @return Whether `c` is matched by this class
+ */
+public f<bool> CharClass.matches(char c) {
+    bool inRanges = false;
+    for unsigned long i = 0l; i < this.ranges.getSize(); i++ {
+        const Pair<char, char>& range = this.ranges.get(i);
+        if c >= range.getFirst() && c <= range.getSecond() {
+            inRanges = true;
+        }
+    }
+    return this.negated ? !inRanges : inRanges;
+}
+
+/**
+ * A compiled regex program: a flat list of instructions (Thompson-construction bytecode, executed
+ * by the Pike's-VM matcher in "std/text/regex/regex-matcher") plus the character classes it
+ * references and the number of capturing groups it declares (excluding group 0, the whole match).
+ */
+public type RegexProgram struct {
+    public Vector<Instr> instrs
+    public Vector<CharClass> classes
+    public long groupCount
+}

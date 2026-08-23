@@ -1,0 +1,118 @@
+import "std/data/vector";
+import "std/data/pair";
+
+/**
+ * Tag for the variant stored inside a RegexNode.
+ */
+public type RegexNodeKind enum {
+    LITERAL,
+    ANY,
+    CHAR_CLASS,
+    CONCAT,
+    ALTERNATION,
+    STAR,
+    PLUS,
+    QUESTION,
+    REPEAT,
+    GROUP,
+    ANCHOR_START,
+    ANCHOR_END
+}
+
+/**
+ * Represents a single node of a parsed regex pattern.
+ *
+ * A RegexNode is always reached via `heap RegexNode*`, since composite nodes (CONCAT, ALTERNATION,
+ * STAR, PLUS, QUESTION, REPEAT, GROUP) own their sub-expressions as heap pointers in `children`.
+ * Destroying a node recursively destroys everything below it, so a whole tree is released with a
+ * single `deleteRegexNode` call on its root - see the note on `deleteRegexNode` for why that has to
+ * be a free function instead of relying on `heap`/`sDelete`.
+ *
+ * Field usage per kind:
+ * - LITERAL: `literal` holds the character to match.
+ * - CHAR_CLASS: `classRanges` holds the (inclusive) character ranges, `negated` flips membership.
+ * - CONCAT / ALTERNATION: `children` holds two or more sub-expressions.
+ * - STAR / PLUS / QUESTION: `children` holds exactly one sub-expression.
+ * - REPEAT: `children` holds exactly one sub-expression; `repeatMin`/`repeatMax` are the bounds
+ *   (`repeatMax == -1` means unbounded, i.e. `{n,}`).
+ * - GROUP: `children` holds exactly one sub-expression; `capturing` tells apart `(...)` from
+ *   `(?:...)`, and `groupIndex` is the 1-based capture-group number (only meaningful when capturing).
+ * - ANY / ANCHOR_START / ANCHOR_END: no extra payload.
+ *
+ * Fields are `public`, like "std/runtime/error_rt"'s `Error` - this is a plain internal data
+ * carrier shared by the parser/compiler/matcher files of this module (never exposed through the
+ * public facade in "std/text/regex/regex"), not an encapsulated type with invariants to protect.
+ */
+public type RegexNode struct {
+    public RegexNodeKind kind
+    public Vector<RegexNode*> children
+    public char literal
+    public Vector<Pair<char, char>> classRanges
+    public bool negated
+    public long repeatMin
+    public long repeatMax = -1l
+    public long groupIndex
+    public bool capturing
+}
+
+/**
+ * Construct a regex AST node of the given kind. Kind-specific fields (`literal`, `classRanges`,
+ * `negated`, `repeatMin`/`repeatMax`, `groupIndex`/`capturing`) are filled in by the caller
+ * afterward; `children` is populated via `addChild`.
+ *
+ * @param kind Kind of the node
+ */
+public p RegexNode.ctor(RegexNodeKind kind) {
+    this.kind = kind;
+}
+
+/**
+ * Append a child expression. The node takes ownership of the heap-allocated child.
+ *
+ * @param child Child node to append
+ */
+public p RegexNode.addChild(RegexNode* child) {
+    this.children.pushBack(child);
+}
+
+/**
+ * Append an (inclusive) character range to a CHAR_CLASS node.
+ *
+ * @param lo Lower bound of the range (inclusive)
+ * @param hi Upper bound of the range (inclusive)
+ */
+public p RegexNode.addClassRange(char lo, char hi) {
+    this.classRanges.pushBack(Pair<char, char>(lo, hi));
+}
+
+/**
+ * Destruct the node, releasing every child it owns. Since the children are destroyed the same way,
+ * this tears down the whole subtree below the node.
+ */
+public p RegexNode.dtor() {
+    for unsigned long i = 0l; i < this.children.getSize(); i++ {
+        deleteRegexNode(this.children.get(i));
+    }
+}
+
+/**
+ * Destroys a heap-allocated regex AST node together with everything it owns and sets the given
+ * handle to nil, so releasing a whole tree only takes one call on its root.
+ *
+ * Note that this is what `sDelete` would normally be used for. It cannot be used here, because a
+ * node tree is destroyed recursively and the compiler does not emit an explicit dtor that is only
+ * reached through `sDestruct`. Holding the root in a plain `heap RegexNode*` would not work either:
+ * the `heap` qualifier only emits a raw deallocation when the variable goes out of scope and never
+ * runs the destructor of the pointee, so the children below the root would be lost.
+ *
+ * @param node Handle of the node to destroy
+ */
+public p deleteRegexNode(RegexNode*& node) {
+    if node == nil<RegexNode*> { return; }
+    node.dtor();
+    unsafe {
+        heap byte* raw = cast<heap byte*>(node);
+        sDealloc(raw);
+    }
+    node = nil<RegexNode*>;
+}

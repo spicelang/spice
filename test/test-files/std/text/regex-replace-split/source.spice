@@ -1,0 +1,79 @@
+import "std/text/regex/regex";
+
+f<Regex> mustCompile(string pattern) {
+    Result<Regex> r = compileRegex(String(pattern));
+    assert r.isOk();
+    return r.unwrap();
+}
+
+f<int> main() {
+    // replace: first match only
+    Regex reDigits = mustCompile("\\d+");
+    String r1 = reDigits.replace(String("a1 b22 c333"), String("#"));
+    assert r1 == "a# b22 c333";
+
+    // replace: no match leaves the string untouched
+    String r2 = reDigits.replace(String("abcdef"), String("#"));
+    assert r2 == "abcdef";
+
+    // replace with numbered backreferences, incl. $0 (whole match)
+    Regex reSwap = mustCompile("(\\w+)@(\\w+)");
+    String r3 = reSwap.replace(String("user@host"), String("$2@$1"));
+    assert r3 == "host@user";
+
+    Regex reWrap = mustCompile("\\d+");
+    String r4 = reWrap.replace(String("id 42 here"), String("[$0]"));
+    assert r4 == "id [42] here";
+
+    // literal '$' via '$$'
+    Regex reAmount = mustCompile("\\d+");
+    String r5 = reAmount.replace(String("cost 10"), String("$$$0"));
+    assert r5 == "cost $10";
+
+    // replaceAll: every non-overlapping match
+    Regex reWs = mustCompile("\\s+");
+    String r6 = reWs.replaceAll(String("a   b\tc  d"), String(" "));
+    assert r6 == "a b c d";
+
+    Regex reNum = mustCompile("\\d+");
+    String r7 = reNum.replaceAll(String("a1 b22 c333"), String("N"));
+    assert r7 == "aN bN cN";
+
+    // replaceAll with no matches
+    String r8 = reNum.replaceAll(String("abcdef"), String("N"));
+    assert r8 == "abcdef";
+
+    // split on a separator pattern
+    Regex reComma = mustCompile(",\\s*");
+    Vector<String> parts = reComma.split(String("a, b,c ,  d"));
+    assert parts.getSize() == 4l;
+    const String& p0 = parts.get(0l);
+    const String& p1 = parts.get(1l);
+    const String& p2 = parts.get(2l);
+    const String& p3 = parts.get(3l);
+    assert p0 == "a";
+    assert p1 == "b";
+    assert p2 == "c ";
+    assert p3 == "d";
+
+    // split with no matches returns the whole string as a single piece
+    Vector<String> single = reComma.split(String("nosep"));
+    assert single.getSize() == 1l;
+    const String& s0 = single.get(0l);
+    assert s0 == "nosep";
+
+    // split on whitespace, leading/trailing separators produce empty pieces
+    Regex reSpace = mustCompile("\\s+");
+    Vector<String> words = reSpace.split(String(" a b "));
+    assert words.getSize() == 4l;
+    const String& w0 = words.get(0l);
+    const String& w1 = words.get(1l);
+    const String& w2 = words.get(2l);
+    const String& w3 = words.get(3l);
+    assert w0 == "";
+    assert w1 == "a";
+    assert w2 == "b";
+    assert w3 == "";
+
+    return 0;
+}

@@ -1,0 +1,163 @@
+import "std/text/regex/regex";
+
+f<Regex> mustCompile(string pattern) {
+    Result<Regex> r = compileRegex(String(pattern));
+    assert r.isOk();
+    return r.unwrap();
+}
+
+f<int> main() {
+    // Literals and concatenation
+    Regex reAbc = mustCompile("abc");
+    assert reAbc.isMatch(String("xxabcxx"));
+    assert !reAbc.isMatch(String("xxabxx"));
+
+    // '.' (any character)
+    Regex reAny = mustCompile("a.c");
+    assert reAny.isMatch(String("aXc"));
+    assert !reAny.isMatch(String("ac"));
+
+    // Quantifiers: * + ?
+    Regex reStar = mustCompile("ab*c");
+    assert reStar.isMatch(String("ac"));
+    assert reStar.isMatch(String("abbbbc"));
+
+    Regex rePlus = mustCompile("ab+c");
+    assert !rePlus.isMatch(String("ac"));
+    assert rePlus.isMatch(String("abc"));
+
+    Regex reOpt = mustCompile("xy?z");
+    assert reOpt.isMatch(String("xz"));
+    assert reOpt.isMatch(String("xyz"));
+    assert !reOpt.isMatch(String("xyyz"));
+
+    // Character classes: literal set, range, negated
+    Regex reCls = mustCompile("[a-c]+");
+    assert reCls.isMatch(String("cab"));
+    assert !reCls.isMatch(String("xyz"));
+
+    Regex reNeg = mustCompile("[^0-9]+");
+    assert reNeg.isMatch(String("abc"));
+    assert !reNeg.isMatch(String("123"));
+
+    Regex reSet = mustCompile("[aeiou]");
+    assert reSet.isMatch(String("banana"));
+    assert !reSet.isMatch(String("xyz"));
+
+    // Shorthand classes and their negations, standalone
+    Regex reDigits = mustCompile("\\d+");
+    assert reDigits.isMatch(String("12345"));
+    assert !reDigits.isMatch(String("abcde"));
+
+    Regex reNonDigits = mustCompile("\\D+");
+    assert reNonDigits.isMatch(String("abcde"));
+    assert !reNonDigits.isMatch(String("12345"));
+
+    Regex reWord = mustCompile("\\w+");
+    assert reWord.isMatch(String("hello_123"));
+
+    Regex reNonWord = mustCompile("\\W+");
+    assert reNonWord.isMatch(String("   "));
+    assert !reNonWord.isMatch(String("abc"));
+
+    Regex reSpace = mustCompile("a\\sb");
+    assert reSpace.isMatch(String("a b"));
+    assert !reSpace.isMatch(String("ab"));
+
+    // Shorthand classes embedded inside a character class
+    Regex reHex = mustCompile("[\\da-f]+");
+    assert reHex.isMatch(String("1a2b3c"));
+    assert !reHex.isMatch(String("xyz"));
+
+    // Anchors
+    Regex reAnchored = mustCompile("^abc$");
+    assert reAnchored.isMatch(String("abc"));
+    assert !reAnchored.isMatch(String("xabc"));
+    assert !reAnchored.isMatch(String("abcx"));
+
+    // Alternation
+    Regex reAlt = mustCompile("cat|dog|fish");
+    assert reAlt.isMatch(String("I have a cat"));
+    assert reAlt.isMatch(String("I have a dog"));
+    assert reAlt.isMatch(String("I have a fish"));
+    assert !reAlt.isMatch(String("I have a bird"));
+
+    // {n} {n,} {n,m}
+    Regex reExact = mustCompile("a{3}");
+    assert !reExact.isMatch(String("aa"));
+    assert reExact.isMatch(String("aaa"));
+
+    Regex reMin = mustCompile("a{2,}");
+    assert !reMin.isMatch(String("a"));
+    assert reMin.isMatch(String("aa"));
+    assert reMin.isMatch(String("aaaaaa"));
+
+    Regex reRange = mustCompile("a{2,3}");
+    assert !reRange.isMatch(String("a"));
+    assert reRange.isMatch(String("aa"));
+    assert reRange.isMatch(String("aaa"));
+
+    // Capturing vs non-capturing groups, nested groups
+    Regex reDate = mustCompile("(\\d{4})-(\\d{2})-(\\d{2})");
+    Optional<Match> found = reDate.find(String("Date: 2026-08-23!"));
+    assert found.isPresent();
+    const Match& m = found.get();
+    assert m.value == "2026-08-23";
+    assert m.startIndex == 6ul;
+    assert m.endIndex == 16ul;
+    assert m.groups.getSize() == 3l;
+    const Optional<String>& g1 = m.groups.get(0l);
+    const Optional<String>& g2 = m.groups.get(1l);
+    const Optional<String>& g3 = m.groups.get(2l);
+    assert g1.get() == "2026";
+    assert g2.get() == "08";
+    assert g3.get() == "23";
+
+    Regex reNc = mustCompile("(?:ab)+c");
+    assert reNc.isMatch(String("ababc"));
+    Optional<Match> ncMatch = reNc.find(String("ababc"));
+    assert ncMatch.isPresent();
+    const Match& ncM = ncMatch.get();
+    assert ncM.groups.getSize() == 0l; // non-capturing group contributes no capture
+
+    Regex reNested = mustCompile("((a)(b))c");
+    Optional<Match> nestedMatch = reNested.find(String("abc"));
+    assert nestedMatch.isPresent();
+    const Match& nm = nestedMatch.get();
+    assert nm.groups.getSize() == 3l;
+    const Optional<String>& n1 = nm.groups.get(0l);
+    const Optional<String>& n2 = nm.groups.get(1l);
+    const Optional<String>& n3 = nm.groups.get(2l);
+    assert n1.get() == "ab";
+    assert n2.get() == "a";
+    assert n3.get() == "b";
+
+    // A group on the untaken side of an alternation does not participate
+    Regex reAltGroup = mustCompile("(a)|(b)");
+    Optional<Match> altMatch = reAltGroup.find(String("b"));
+    assert altMatch.isPresent();
+    const Match& am = altMatch.get();
+    const Optional<String>& agroup1 = am.groups.get(0l);
+    const Optional<String>& agroup2 = am.groups.get(1l);
+    assert !agroup1.isPresent();
+    assert agroup2.isPresent();
+    assert agroup2.get() == "b";
+
+    // findAll
+    Regex reNum = mustCompile("\\d+");
+    Vector<Match> all = reNum.findAll(String("a1 b22 c333"));
+    assert all.getSize() == 3l;
+    const Match& a0 = all.get(0l);
+    const Match& a1 = all.get(1l);
+    const Match& a2 = all.get(2l);
+    assert a0.value == "1";
+    assert a1.value == "22";
+    assert a2.value == "333";
+
+    // findAll with no matches
+    Regex reZ = mustCompile("z+");
+    Vector<Match> none = reZ.findAll(String("abcdef"));
+    assert none.getSize() == 0l;
+
+    return 0;
+}

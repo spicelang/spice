@@ -1,0 +1,233 @@
+import "std/text/regex/regex-ast";
+import "std/text/regex/regex-program";
+
+/**
+ * Thompson-construction compiler: turns a regex AST (see "std/text/regex/regex-ast") into a
+ * `RegexProgram` (see "std/text/regex/regex-program") that "std/text/regex/regex-matcher" can run.
+ *
+ * Instructions are appended directly to the program's instruction list (rather than compiling each
+ * sub-expression into its own fragment and splicing it in), with forward jump/split targets
+ * back-patched once they become known - this keeps every local in this file a plain `long` index,
+ * so there is nothing here that a mid-function `return` could leak.
+ */
+public f<RegexProgram> compileToProgram(RegexNode* root, long groupCount) {
+    RegexProgram prog;
+    prog.groupCount = groupCount;
+    emitSave(prog, 0l); // group 0 = whole match: start
+    compileNode(root, prog);
+    emitSave(prog, 1l); // group 0 = whole match: end
+    emitMatch(prog);
+    return prog;
+}
+
+// --- AST -> instructions -----------------------------------------------------
+
+p compileNode(RegexNode* node, RegexProgram& prog) {
+    switch node.kind {
+        case RegexNodeKind::LITERAL: {
+            emitChar(prog, node.literal);
+        }
+        case RegexNodeKind::ANY: {
+            emitAny(prog);
+        }
+        case RegexNodeKind::CHAR_CLASS: {
+            emitClass(prog, registerClass(prog, node));
+        }
+        case RegexNodeKind::ANCHOR_START: {
+            emitAnchorStart(prog);
+        }
+        case RegexNodeKind::ANCHOR_END: {
+            emitAnchorEnd(prog);
+        }
+        case RegexNodeKind::CONCAT: {
+            for unsigned long i = 0l; i < node.children.getSize(); i++ {
+                compileNode(node.children.get(i), prog);
+            }
+        }
+        case RegexNodeKind::ALTERNATION: {
+            compileAlternationRange(node, 0l, prog);
+        }
+        case RegexNodeKind::STAR: {
+            compileStar(node.children.get(0l), prog);
+        }
+        case RegexNodeKind::PLUS: {
+            compilePlus(node.children.get(0l), prog);
+        }
+        case RegexNodeKind::QUESTION: {
+            compileQuestion(node.children.get(0l), prog);
+        }
+        case RegexNodeKind::REPEAT: {
+            compileRepeat(node, prog);
+        }
+        case RegexNodeKind::GROUP: {
+            compileGroup(node, prog);
+        }
+        default: {
+            panic(Error("Unhandled regex AST node kind"));
+        }
+    }
+}
+
+// a|b|c..., right-associated: compiles children[startIdx..) of an ALTERNATION node.
+//   SPLIT L1, L2
+//   L1: <branch[startIdx]>
+//       JMP L3
+//   L2: <rest, recursively>
+//   L3:
+p compileAlternationRange(RegexNode* node, long startIdx, RegexProgram& prog) {
+    if startIdx == node.children.getSize() - 1l {
+        compileNode(node.children.get(cast<unsigned long>(startIdx)), prog);
+        return;
+    }
+    const long splitIdx = emitSplit(prog, 0l, 0l);
+    const long l1 = prog.instrs.getSize();
+    compileNode(node.children.get(cast<unsigned long>(startIdx)), prog);
+    const long jmpIdx = emitJmp(prog, 0l);
+    const long l2 = prog.instrs.getSize();
+    prog.instrs.get(splitIdx).x = l1;
+    prog.instrs.get(splitIdx).y = l2;
+    compileAlternationRange(node, startIdx + 1l, prog);
+    const long l3 = prog.instrs.getSize();
+    prog.instrs.get(jmpIdx).x = l3;
+}
+
+// a*, greedy:
+//   L1: SPLIT L2, L3
+//   L2: <a>
+//       JMP L1
+//   L3:
+p compileStar(RegexNode* child, RegexProgram& prog) {
+    const long l1 = emitSplit(prog, 0l, 0l);
+    compileNode(child, prog);
+    emitJmp(prog, l1);
+    const long l3 = prog.instrs.getSize();
+    prog.instrs.get(l1).x = l1 + 1l;
+    prog.instrs.get(l1).y = l3;
+}
+
+// a+, greedy:
+//   L1: <a>
+//       SPLIT L1, L2
+//   L2:
+p compilePlus(RegexNode* child, RegexProgram& prog) {
+    const long l1 = prog.instrs.getSize();
+    compileNode(child, prog);
+    const long splitIdx = emitSplit(prog, l1, 0l);
+    prog.instrs.get(splitIdx).y = prog.instrs.getSize();
+}
+
+// a?, greedy:
+//   SPLIT L1, L2
+//   L1: <a>
+//   L2:
+p compileQuestion(RegexNode* child, RegexProgram& prog) {
+    const long splitIdx = emitSplit(prog, 0l, 0l);
+    const long l1 = prog.instrs.getSize();
+    compileNode(child, prog);
+    prog.instrs.get(splitIdx).x = l1;
+    prog.instrs.get(splitIdx).y = prog.instrs.getSize();
+}
+
+// {min,max}: `min` mandatory copies, followed by either an unbounded star (max == -1, i.e. '{n,}')
+// or `max - min` right-nested optional copies (bounded, so this always terminates).
+p compileRepeat(RegexNode* node, RegexProgram& prog) {
+    RegexNode* child = node.children.get(0l);
+    for long i = 0l; i < node.repeatMin; i++ {
+        compileNode(child, prog);
+    }
+    if node.repeatMax == -1l {
+        compileStar(child, prog);
+    } else {
+        compileOptionalChain(child, node.repeatMax - node.repeatMin, prog);
+    }
+}
+
+// Right-nested optional copies of `child`, i.e. (child(child(...)?)?)?, so that skipping copy i
+// also skips every copy nested inside it.
+p compileOptionalChain(RegexNode* child, long remaining, RegexProgram& prog) {
+    if remaining == 0l {
+        return;
+    }
+    const long splitIdx = emitSplit(prog, 0l, 0l);
+    const long l1 = prog.instrs.getSize();
+    compileNode(child, prog);
+    compileOptionalChain(child, remaining - 1l, prog);
+    prog.instrs.get(splitIdx).x = l1;
+    prog.instrs.get(splitIdx).y = prog.instrs.getSize();
+}
+
+// (...) / (?:...): a capturing group wraps its content in SAVE slots 2*groupIndex / 2*groupIndex+1.
+p compileGroup(RegexNode* node, RegexProgram& prog) {
+    if node.capturing {
+        emitSave(prog, node.groupIndex * 2l);
+        compileNode(node.children.get(0l), prog);
+        emitSave(prog, node.groupIndex * 2l + 1l);
+    } else {
+        compileNode(node.children.get(0l), prog);
+    }
+}
+
+// Registers a CHAR_CLASS node's ranges as a CharClass in the program and returns its index.
+f<long> registerClass(RegexProgram& prog, RegexNode* node) {
+    CharClass cls;
+    cls.negated = node.negated;
+    for unsigned long i = 0l; i < node.classRanges.getSize(); i++ {
+        cls.ranges.pushBack(node.classRanges.get(i));
+    }
+    prog.classes.pushBack(cls);
+    return prog.classes.getSize() - 1l;
+}
+
+// --- Instruction emission -----------------------------------------------------
+
+f<long> emitInstr(RegexProgram& prog, Instr instr) {
+    prog.instrs.pushBack(instr);
+    return prog.instrs.getSize() - 1l;
+}
+
+f<long> emitChar(RegexProgram& prog, char c) {
+    Instr instr = Instr(InstrKind::CHAR);
+    instr.ch = c;
+    return emitInstr(prog, instr);
+}
+
+f<long> emitAny(RegexProgram& prog) {
+    return emitInstr(prog, Instr(InstrKind::ANY));
+}
+
+f<long> emitClass(RegexProgram& prog, long classIndex) {
+    Instr instr = Instr(InstrKind::CLASS);
+    instr.classIndex = classIndex;
+    return emitInstr(prog, instr);
+}
+
+f<long> emitJmp(RegexProgram& prog, long target) {
+    Instr instr = Instr(InstrKind::JMP);
+    instr.x = target;
+    return emitInstr(prog, instr);
+}
+
+f<long> emitSplit(RegexProgram& prog, long x, long y) {
+    Instr instr = Instr(InstrKind::SPLIT);
+    instr.x = x;
+    instr.y = y;
+    return emitInstr(prog, instr);
+}
+
+f<long> emitSave(RegexProgram& prog, long slot) {
+    Instr instr = Instr(InstrKind::SAVE);
+    instr.saveSlot = slot;
+    return emitInstr(prog, instr);
+}
+
+f<long> emitAnchorStart(RegexProgram& prog) {
+    return emitInstr(prog, Instr(InstrKind::ANCHOR_START));
+}
+
+f<long> emitAnchorEnd(RegexProgram& prog) {
+    return emitInstr(prog, Instr(InstrKind::ANCHOR_END));
+}
+
+f<long> emitMatch(RegexProgram& prog) {
+    return emitInstr(prog, Instr(InstrKind::MATCH));
+}
