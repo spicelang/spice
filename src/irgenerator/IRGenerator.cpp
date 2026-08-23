@@ -476,12 +476,33 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
 
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
     assert(lhsEntry != nullptr);
-    // Directly set the address to the lhs entry (temp stealing)
     llvm::Value *rhsAddress = resolveAddress(rhs);
-    updateAddress(lhsEntry, rhsAddress);
+    // Only adopt the temporary's storage directly (temp stealing) unless it is a phi merging two independently
+    // materialized pointers (e.g. a ternary whose branches each own their own storage). Lifetime markers require
+    // their operand to be a real alloca, so stealing such a phi here would emit an invalid llvm.lifetime.end
+    // under --sanitizer=address. Any other pointer (a plain alloca, or one derived from it via GEP/load, as in
+    // the foreach-loop item extraction below) denotes a single, stable piece of storage and is safe to adopt.
+    // The temporary's ownership fully transfers to lhsEntry either way (its underlying storage is never
+    // separately destructed), so falling back to a shallow copy into a dedicated alloca is exactly as correct,
+    // just gives up the pointer-adoption optimization for the phi case.
+    if (!llvm::isa<llvm::PHINode>(rhsAddress)) {
+      // Directly set the address to the lhs entry (temp stealing)
+      updateAddress(lhsEntry, rhsAddress);
+      rhs.entry = lhsEntry;
+      // Generate debug info for variable declaration
+      diGenerator.generateLocalVarDebugInfo(lhsEntry->name, rhsAddress);
+      return rhs;
+    }
+    // Size the copy off lhsEntry's own type, not rhsSType: some callers (e.g. the foreach-loop item
+    // extraction below) pass a struct rhsSType only to steer this branch, while rhs itself resolves (through
+    // refPtr indirection) to a differently-typed value; lhsEntry's type is always the authoritative one here.
+    const QualType &lhsQualType = lhsEntry->getQualType();
+    llvm::Value *lhsAddr = insertAlloca(lhsQualType);
+    updateAddress(lhsEntry, lhsAddr);
+    diGenerator.generateLocalVarDebugInfo(lhsEntry->name, lhsAddr);
+    generateShallowCopy(rhsAddress, lhsQualType.toLLVMType(sourceFile), lhsAddr, lhsEntry->isVolatile);
+    rhs.ptr = lhsAddr;
     rhs.entry = lhsEntry;
-    // Generate debug info for variable declaration
-    diGenerator.generateLocalVarDebugInfo(lhsEntry->name, rhsAddress);
     return rhs;
   }
 

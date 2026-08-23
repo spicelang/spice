@@ -42,7 +42,7 @@ define internal noundef %struct.Test @_Z6choosebRK4Test(i1 noundef zeroext %0, p
   %cond = alloca i1, align 1
   %ref = alloca ptr, align 8
   %3 = alloca %struct.Test, align 8
-  %4 = alloca ptr, align 8
+  %4 = alloca %struct.Test, align 8
   store i1 %0, ptr %cond, align 1
   store ptr %1, ptr %ref, align 8
   %5 = load i1, ptr %cond, align 1
