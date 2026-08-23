@@ -101,10 +101,17 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_RUN_COVERAGE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'ON' || 'OFF' }} \
+            -DSPICE_TEST_ARGS=--is-github-actions \
             ..
           cmake --build . --target spicetest
 
       - name: Run Test target
+        if: "!(github.event_name == 'push' && github.ref == 'refs/heads/main')"
+        working-directory: build
+        run: cmake --build . --target spicetest_parallel
+
+      - name: Run Test target (with coverage)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: build/test
         env:
           LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
