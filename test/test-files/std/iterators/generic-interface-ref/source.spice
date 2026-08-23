@@ -1,0 +1,32 @@
+import "std/data/vector";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+
+// Generic type definitions
+type T dyn;
+
+// A generic free function taking a container through its IIterable<T> interface reference, rather than through a
+// concrete container type. Exercises IIterable<T>.getIterator<T>() being substantiated for a concrete T on the
+// interface's own (bodyless) scope, and calling it through an interface reference cross-file.
+p exerciseGetIterator<T>(IIterable<T>& iterable) {
+    const IIterator<T>& _it = iterable.getIterator();
+}
+
+f<int> main() {
+    Vector<int> numbers;
+    numbers.pushBack(1);
+    numbers.pushBack(2);
+    numbers.pushBack(3);
+
+    // Call through the interface reference, not through the concrete Vector<int> type
+    IIterable<int>& iterableRef = numbers;
+    exerciseGetIterator<int>(iterableRef);
+
+    // A second, distinct manifestation (T=long) coexisting with the T=int one above
+    Vector<long> longs;
+    longs.pushBack(1l);
+    IIterable<long>& longIterableRef = longs;
+    exerciseGetIterator<long>(longIterableRef);
+
+    printf("Generic IIterable interface-reference test passed!\n");
+}
