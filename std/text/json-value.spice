@@ -294,11 +294,7 @@ public f<JsonValue*> JsonValue.getObjectValue(unsigned long idx) {
  */
 public f<bool> JsonValue.hasField(string key) {
     if this.kind != JsonValueKind::JSON_OBJECT { return false; }
-    // Comparing against the raw key avoids building a String that would have to be cleaned up
-    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == key { return true; }
-    }
-    return false;
+    return this.findFieldIndex(key) >= 0l;
 }
 
 /**
@@ -310,13 +306,20 @@ public f<bool> JsonValue.hasField(string key) {
  */
 public f<JsonValue*> JsonValue.getField(string key) {
     assert this.kind == JsonValueKind::JSON_OBJECT;
-    // Comparing against the raw key avoids building a String that would have to be cleaned up
-    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
-        if this.objectKeys.get(i) == key {
-            return this.objectValues.get(i);
-        }
+    const long idx = this.findFieldIndex(key);
+    if idx < 0l {
+        panic(Error("JSON object has no such field"));
     }
-    panic(Error("JSON object has no such field"));
+    return this.objectValues.get(cast<unsigned long>(idx));
+}
+
+// Index of the object field with the given key, or -1 if the object has no such field.
+// Comparing against the raw key avoids building a String that would have to be cleaned up
+f<long> JsonValue.findFieldIndex(string key) {
+    for unsigned long i = 0l; i < this.objectKeys.getSize(); i++ {
+        if this.objectKeys.get(i) == key { return i; }
+    }
+    return -1l;
 }
 
 /**

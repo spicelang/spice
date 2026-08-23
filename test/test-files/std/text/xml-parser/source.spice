@@ -104,12 +104,30 @@ f<int> main() {
     XmlNode* prologRoot = prologRes.unwrap();
     assert prologRoot.getName() == String("root");
 
+    // Unterminated markup constructs are reported instead of being run past
+    Result<XmlNode*> unterminatedDeclRes = parseXml(String("<?xml version=\"1.0\""));
+    assert !unterminatedDeclRes.isOk();
+    Result<XmlNode*> unterminatedCommentRes = parseXml(String("<root><!-- open</root>"));
+    assert !unterminatedCommentRes.isOk();
+    Result<XmlNode*> unterminatedPiRes = parseXml(String("<root><?pi open</root>"));
+    assert !unterminatedPiRes.isOk();
+    Result<XmlNode*> unterminatedCdataRes = parseXml(String("<root><![CDATA[open</root>"));
+    assert !unterminatedCdataRes.isOk();
+
+    // An empty CDATA section yields an empty text node
+    Result<XmlNode*> emptyCdataRes = parseXml(String("<root><![CDATA[]]></root>"));
+    assert emptyCdataRes.isOk();
+    XmlNode* emptyCdataRoot = emptyCdataRes.unwrap();
+    assert emptyCdataRoot.getChildCount() == 1;
+    assert emptyCdataRoot.getInnerText() == String("");
+
     // Every parsed tree is owned by the caller, so release them all again
     deleteXmlNode(empty);
     deleteXmlNode(a);
     deleteXmlNode(msg);
     deleteXmlNode(book);
     deleteXmlNode(prologRoot);
+    deleteXmlNode(emptyCdataRoot);
 
     printf("All assertions passed!\n");
 }

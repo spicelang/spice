@@ -344,6 +344,22 @@ f<int> main() {
     TomlValue* tabTree = tabRes.unwrap();
     deleteTomlValue(tabTree);
 
+    Result<TomlValue*> unterminatedLitRes = parseToml(String("a = 'oops\n"));
+    assert !unterminatedLitRes.isOk();
+    Result<TomlValue*> unterminatedMlRes = parseToml(String("a = \"\"\"oops\n"));
+    assert !unterminatedMlRes.isOk();
+    Result<TomlValue*> unterminatedMlLitRes = parseToml(String("a = '''oops\n"));
+    assert !unterminatedMlLitRes.isOk();
+    // A run of more than five quotes cannot be split into content and delimiter
+    Result<TomlValue*> tooManyQuotesRes = parseToml(String("a = \"\"\"x\"\"\"\"\"\"\n"));
+    assert !tooManyQuotesRes.isOk();
+
+    // Up to two quotes before the closing delimiter are content in literal strings as well
+    Result<TomlValue*> litQuoteRes = parseToml(String("s = '''a''''\n"));
+    TomlValue* litQuoteRoot = litQuoteRes.unwrap();
+    TomlValue* litQuoted = litQuoteRoot.getField("s");
+    assert litQuoted.getString() == String("a'");
+
     // Arrays and inline tables
     Result<TomlValue*> unterminatedArrRes = parseToml(String("a = [1, 2\n"));
     assert !unterminatedArrRes.isOk();
@@ -369,6 +385,7 @@ f<int> main() {
     deleteTomlValue(contRoot);
     deleteTomlValue(mlLitRoot);
     deleteTomlValue(quoteRoot);
+    deleteTomlValue(litQuoteRoot);
     deleteTomlValue(uniRoot);
     deleteTomlValue(rawRoot);
     deleteTomlValue(intRoot);

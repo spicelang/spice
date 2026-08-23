@@ -31,9 +31,7 @@ public p JsonSerializer.ctor(bool pretty = false) {
  * @return JSON representation
  */
 public f<String> JsonSerializer.serialize(JsonValue& value) {
-    String out;
-    this.serializeInto(&value, out, 0l);
-    return out;
+    return this.serialize(&value);
 }
 
 /**

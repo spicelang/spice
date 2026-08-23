@@ -31,9 +31,7 @@ public p XmlSerializer.ctor(bool pretty = false) {
  * @return XML representation
  */
 public f<String> XmlSerializer.serialize(XmlNode& node) {
-    String out;
-    this.serializeInto(&node, out, 0l);
-    return out;
+    return this.serialize(&node);
 }
 
 /**
@@ -52,7 +50,7 @@ public f<String> XmlSerializer.serialize(XmlNode* node) {
 
 p XmlSerializer.serializeInto(XmlNode* node, String& out, unsigned long depth) {
     if node.getKind() == XmlNodeKind::XML_TEXT {
-        appendXmlEscapedText(out, node.getText());
+        appendXmlEscaped(out, node.getText(), false);
         return;
     }
 
@@ -62,7 +60,7 @@ p XmlSerializer.serializeInto(XmlNode* node, String& out, unsigned long depth) {
         out += ' ';
         out += node.getAttributeKey(i);
         out += "=\"";
-        appendXmlEscapedAttribute(out, node.getAttributeValue(i));
+        appendXmlEscaped(out, node.getAttributeValue(i), true);
         out += '"';
     }
 
@@ -104,25 +102,9 @@ p appendXmlNewlineIndent(String& out, unsigned long depth) {
 }
 
 // Escape character data: '&', '<' and '>' become their predefined entities.
-p appendXmlEscapedText(String& out, const String& text) {
-    const unsigned long length = text.getLength();
-    for unsigned long i = 0l; i < length; i++ {
-        const char c = text[i];
-        if c == '&' {
-            out += "&amp;";
-        } else if c == '<' {
-            out += "&lt;";
-        } else if c == '>' {
-            out += "&gt;";
-        } else {
-            out += c;
-        }
-    }
-}
-
-// Escape an attribute value (delimited by double quotes), additionally
-// escaping the '"' character.
-p appendXmlEscapedAttribute(String& out, const String& value) {
+// Attribute values are delimited by double quotes, so the '"' character is
+// escaped in them as well.
+p appendXmlEscaped(String& out, const String& value, bool escapeQuotes) {
     const unsigned long length = value.getLength();
     for unsigned long i = 0l; i < length; i++ {
         const char c = value[i];
@@ -132,7 +114,7 @@ p appendXmlEscapedAttribute(String& out, const String& value) {
             out += "&lt;";
         } else if c == '>' {
             out += "&gt;";
-        } else if c == '"' {
+        } else if escapeQuotes && c == '"' {
             out += "&quot;";
         } else {
             out += c;
