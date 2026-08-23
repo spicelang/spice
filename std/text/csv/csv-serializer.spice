@@ -9,7 +9,7 @@ const char DEFAULT_QUOTE     = '"';
  *
  * Fields are quoted when necessary and embedded quotes are escaped by
  * doubling, so the output round-trips through the CsvParser from
- * "std/text/csv-parser" when both use the same control characters.
+ * "std/text/csv/csv-parser" when both use the same control characters.
  */
 public type CsvSerializer struct {
     char delimiter

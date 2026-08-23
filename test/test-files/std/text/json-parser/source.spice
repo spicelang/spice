@@ -1,5 +1,5 @@
-import "std/text/json-value";
-import "std/text/json-parser";
+import "std/text/json/json-value";
+import "std/text/json/json-parser";
 
 f<int> main() {
     // null / true / false

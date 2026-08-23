@@ -1,11 +1,11 @@
-import "std/text/xml-node";
+import "std/text/xml/xml-node";
 
 /**
  * Serializer for XML output.
  *
  * Elements without children are written as self-closing tags. Text content
  * and attribute values are escaped with the predefined entities, so the
- * result round-trips through `parseXml` from "std/text/xml-parser".
+ * result round-trips through `parseXml` from "std/text/xml/xml-parser".
  *
  * In pretty mode, elements that contain child elements are laid out with
  * two-space indentation, one node per line; elements containing only text

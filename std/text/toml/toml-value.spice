@@ -34,8 +34,8 @@ public type TomlValueKind enum {
  * emits verbatim. Table entries preserve insertion order and TOML has no
  * null value.
  *
- * Parsing lives in "std/text/toml-parser" and serialization in
- * "std/text/toml-serializer", so programs only pull in what they use.
+ * Parsing lives in "std/text/toml/toml-parser" and serialization in
+ * "std/text/toml/toml-serializer", so programs only pull in what they use.
  */
 public type TomlValue struct {
     TomlValueKind kind

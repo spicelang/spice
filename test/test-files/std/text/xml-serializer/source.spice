@@ -1,6 +1,6 @@
-import "std/text/xml-node";
-import "std/text/xml-serializer";
-import "std/text/xml-parser";
+import "std/text/xml/xml-node";
+import "std/text/xml/xml-serializer";
+import "std/text/xml/xml-parser";
 
 f<int> main() {
     XmlSerializer serializer;

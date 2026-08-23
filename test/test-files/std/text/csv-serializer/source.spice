@@ -1,5 +1,5 @@
-import "std/text/csv-serializer";
-import "std/text/csv-parser";
+import "std/text/csv/csv-serializer";
+import "std/text/csv/csv-parser";
 import "std/data/vector";
 
 f<int> main() {

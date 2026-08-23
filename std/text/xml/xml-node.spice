@@ -26,8 +26,8 @@ public type XmlNodeKind enum {
  * goes out of scope and never runs the destructor of the pointee, so the
  * children below the root would be lost.
  *
- * Parsing lives in "std/text/xml-parser" and serialization in
- * "std/text/xml-serializer", so programs only pull in what they use.
+ * Parsing lives in "std/text/xml/xml-parser" and serialization in
+ * "std/text/xml/xml-serializer", so programs only pull in what they use.
  */
 public type XmlNode struct {
     XmlNodeKind kind

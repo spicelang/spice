@@ -11,7 +11,7 @@ const char DEFAULT_QUOTE     = '"';
  * (by doubling, e.g. `""` inside a quoted field yields a single `"`).
  * Both `\n` and `\r\n` are accepted as line terminators.
  *
- * The matching serializer lives in "std/text/csv-serializer".
+ * The matching serializer lives in "std/text/csv/csv-serializer".
  */
 public type CsvParser struct {
     char delimiter

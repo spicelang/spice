@@ -1,4 +1,4 @@
-import "std/text/toml-value";
+import "std/text/toml/toml-value";
 import "std/text/analysis";
 import "std/type/type-conversion";
 import "std/data/vector";
@@ -18,8 +18,8 @@ const long PATH_SEPARATOR_CODE = 1l;
  * including `inf` and `nan`, booleans, date-times, arrays, inline tables,
  * `[table]` headers and `[[array of table]]` headers.
  *
- * The TomlValue data model lives in "std/text/toml-value" and serialization
- * in "std/text/toml-serializer".
+ * The TomlValue data model lives in "std/text/toml/toml-value" and serialization
+ * in "std/text/toml/toml-serializer".
  */
 public type TomlParser struct {
     String input
@@ -77,7 +77,7 @@ public f<Result<TomlValue*>> TomlParser.parse() {
  * Parse a TOML document.
  *
  * On success returns the root table, which the caller owns and releases again
- * with `deleteTomlValue` from "std/text/toml-value". On failure the partially
+ * with `deleteTomlValue` from "std/text/toml/toml-value". On failure the partially
  * built tree is released by the parser and an error describing the first
  * problem encountered is returned.
  */

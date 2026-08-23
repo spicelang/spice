@@ -1,4 +1,4 @@
-import "std/text/json-value";
+import "std/text/json/json-value";
 import "std/text/analysis";
 import "std/type/type-conversion";
 
@@ -8,8 +8,8 @@ import "std/type/type-conversion";
  * Use `parseJson` for one-shot parsing; the struct is exposed mainly so the
  * parser state (position, error message) can be inspected when needed.
  *
- * The JsonValue data model lives in "std/text/json-value" and serialization
- * in "std/text/json-serializer".
+ * The JsonValue data model lives in "std/text/json/json-value" and serialization
+ * in "std/text/json/json-serializer".
  */
 public type JsonParser struct {
     String input
@@ -55,7 +55,7 @@ public f<Result<JsonValue*>> JsonParser.parse() {
  * Parse a JSON document.
  *
  * On success returns the root JsonValue, which the caller owns and releases
- * again with `deleteJsonValue` from "std/text/json-value". On failure the
+ * again with `deleteJsonValue` from "std/text/json/json-value". On failure the
  * partially built tree is released by the parser and an error describing the
  * first problem encountered is returned.
  */

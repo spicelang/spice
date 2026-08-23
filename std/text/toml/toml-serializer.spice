@@ -1,4 +1,4 @@
-import "std/text/toml-value";
+import "std/text/toml/toml-value";
 import "std/text/analysis";
 import "std/type/type-conversion";
 
@@ -13,7 +13,7 @@ ext f<int> snprintf(char*, unsigned long, string, ...);
  * `key = value` lines instead, using inline tables for nested structures.
  *
  * Either way the result round-trips through `parseToml` from
- * "std/text/toml-parser".
+ * "std/text/toml/toml-parser".
  */
 public type TomlSerializer struct {
     bool inlineTables
