@@ -1,0 +1,249 @@
+import "std/text/regex/regex-ast";
+import "std/text/regex/regex-parser";
+import "std/text/regex/regex-compiler";
+import "std/text/regex/regex-program";
+import "std/text/regex/regex-matcher";
+import "std/data/optional";
+import "std/data/vector";
+import "std/text/analysis";
+
+/**
+ * A single match of a `Regex` against an input string: the whole-match text and bounds, plus one
+ * entry per capturing group in `groups` (in group-number order, i.e. `groups[0]` is group 1) - an
+ * empty Optional means that group did not participate in the match (e.g. it was on the untaken side
+ * of an alternation).
+ */
+public type Match struct {
+    public String value
+    public unsigned long startIndex
+    public unsigned long endIndex
+    public Vector<Optional<String>> groups
+}
+
+/**
+ * A compiled regex pattern. Construct one with `compileRegex`.
+ *
+ * Supported syntax: literals, `.`, character classes (`[abc]`, `[^abc]`, `[a-z]`), the shorthand
+ * classes `\d \D \w \W \s \S`, anchors `^ $`, the quantifiers `* + ? {n} {n,} {n,m}` (greedy only),
+ * alternation `|`, and groups `(...)` / `(?:...)`. Lazy quantifiers, backreferences, lookaround and
+ * multiline mode are not supported.
+ *
+ * Matching runs on a Thompson-construction virtual machine (see "std/text/regex/regex-matcher"),
+ * not backtracking, so no pattern can trigger catastrophic-backtracking blowup: matching a pattern
+ * of `m` compiled instructions against an input of length `n` is always `O(n * m)`.
+ */
+public type Regex struct {
+    RegexProgram program
+}
+
+p Regex.ctor(const RegexProgram& prog) {
+    this.program = prog;
+}
+
+/**
+ * Compile a regex pattern.
+ *
+ * @param pattern Pattern to compile
+ * @return The compiled regex, or an error describing the first problem encountered in the pattern
+ */
+public f<Result<Regex>> compileRegex(const String& pattern) {
+    RegexParser parser = RegexParser(pattern);
+    Result<RegexNode*> parseResult = parser.parse();
+    if parseResult.isErr() {
+        return err<Regex>(parseResult.getErr());
+    }
+    RegexNode* root = parseResult.unwrap();
+    const RegexProgram prog = compileToProgram(root, parser.groupCount);
+    deleteRegexNode(root);
+    return ok(Regex(prog));
+}
+
+/**
+ * Check whether the pattern matches anywhere in the input string
+ *
+ * @param input String to search
+ * @return Whether the pattern matches anywhere in `input`
+ */
+public f<bool> Regex.isMatch(const String& input) {
+    const Optional<Match> m = this.find(input);
+    return m.isPresent();
+}
+
+/**
+ * Find the first match at or after `startIndex`
+ *
+ * @param input String to search
+ * @param startIndex Position in `input` to start searching from
+ * @return The first match at or after `startIndex`, or an empty Optional if there is none
+ */
+public f<Optional<Match>> Regex.find(const String& input, unsigned long startIndex = 0l) {
+    const unsigned long length = input.getLength();
+    unsigned long pos = startIndex;
+    while pos <= length {
+        const Optional<Vector<long>> saved = runProgram(this.program, input, pos);
+        if saved.isPresent() {
+            return Optional<Match>(buildMatch(input, saved.get()));
+        }
+        pos++;
+    }
+    return Optional<Match>();
+}
+
+/**
+ * Find every non-overlapping match in the input string, left to right
+ *
+ * @param input String to search
+ * @return Every non-overlapping match, in order
+ */
+public f<Vector<Match>> Regex.findAll(const String& input) {
+    Vector<Match> matches;
+    const unsigned long length = input.getLength();
+    unsigned long pos = 0ul;
+    bool continueSearch = true;
+    while continueSearch && pos <= length {
+        const Optional<Match> m = this.find(input, pos);
+        if m.isPresent() {
+            const Match& match = m.get();
+            matches.pushBack(match);
+            pos = match.endIndex > match.startIndex ? match.endIndex : match.endIndex + 1ul;
+        } else {
+            continueSearch = false;
+        }
+    }
+    return matches;
+}
+
+/**
+ * Replace the first match with `replacement`. `replacement` may reference capture groups with
+ * `$0` (the whole match) through `$9`; `$$` inserts a literal `$`.
+ *
+ * @param input String to search
+ * @param replacement Replacement text, possibly containing `$0`-`$9` backreferences
+ * @return `input` with its first match, if any, replaced
+ */
+public f<String> Regex.replace(const String& input, const String& replacement) {
+    const Optional<Match> m = this.find(input);
+    if m.isPresent() {
+        const Match& match = m.get();
+        String output;
+        output.append(input.getSubstring(0ul, cast<long>(match.startIndex)));
+        output.append(expandReplacement(replacement, match));
+        output.append(input.getSubstring(match.endIndex));
+        return output;
+    } else {
+        return input;
+    }
+}
+
+/**
+ * Replace every non-overlapping match with `replacement`. `replacement` may reference capture
+ * groups with `$0` (the whole match) through `$9`; `$$` inserts a literal `$`.
+ *
+ * @param input String to search
+ * @param replacement Replacement text, possibly containing `$0`-`$9` backreferences
+ * @return `input` with every non-overlapping match replaced
+ */
+public f<String> Regex.replaceAll(const String& input, const String& replacement) {
+    String output;
+    const unsigned long length = input.getLength();
+    unsigned long pos = 0ul;
+    unsigned long segmentEnd = 0ul;
+    bool continueSearch = true;
+    while continueSearch && pos <= length {
+        const Optional<Match> m = this.find(input, pos);
+        if m.isPresent() {
+            const Match& match = m.get();
+            output.append(input.getSubstring(segmentEnd, cast<long>(match.startIndex - segmentEnd)));
+            output.append(expandReplacement(replacement, match));
+            segmentEnd = match.endIndex;
+            pos = match.endIndex > match.startIndex ? match.endIndex : match.endIndex + 1ul;
+        } else {
+            continueSearch = false;
+        }
+    }
+    output.append(input.getSubstring(segmentEnd));
+    return output;
+}
+
+/**
+ * Split the input string at every non-overlapping, non-empty match
+ *
+ * @param input String to split
+ * @return The pieces of `input` between matches, including a leading/trailing empty piece where
+ *         `input` starts/ends with a match
+ */
+public f<Vector<String>> Regex.split(const String& input) {
+    Vector<String> parts;
+    const unsigned long length = input.getLength();
+    unsigned long pos = 0ul;
+    unsigned long segmentStart = 0ul;
+    bool continueSearch = true;
+    while continueSearch && pos <= length {
+        const Optional<Match> m = this.find(input, pos);
+        if m.isPresent() && m.get().endIndex > m.get().startIndex {
+            const Match& match = m.get();
+            parts.pushBack(input.getSubstring(segmentStart, cast<long>(match.startIndex - segmentStart)));
+            segmentStart = match.endIndex;
+            pos = match.endIndex;
+        } else {
+            continueSearch = false;
+        }
+    }
+    parts.pushBack(input.getSubstring(segmentStart));
+    return parts;
+}
+
+// --- Internal helpers --------------------------------------------------------
+
+f<Match> buildMatch(const String& input, const Vector<long>& saved) {
+    Match m;
+    const long start = saved.get(0l);
+    const long end = saved.get(1l);
+    m.startIndex = cast<unsigned long>(start);
+    m.endIndex = cast<unsigned long>(end);
+    m.value = input.getSubstring(cast<unsigned long>(start), end - start);
+    const long numGroups = saved.getSize() / 2l - 1l;
+    for long g = 1l; g <= numGroups; g++ {
+        const long gs = saved.get(cast<unsigned long>(g * 2l));
+        const long ge = saved.get(cast<unsigned long>(g * 2l + 1l));
+        if gs >= 0l && ge >= 0l {
+            m.groups.pushBack(Optional<String>(input.getSubstring(cast<unsigned long>(gs), ge - gs)));
+        } else {
+            m.groups.pushBack(Optional<String>());
+        }
+    }
+    return m;
+}
+
+f<String> expandReplacement(const String& replacement, const Match& match) {
+    String output;
+    const unsigned long length = replacement.getLength();
+    unsigned long i = 0ul;
+    while i < length {
+        const char c = replacement[i];
+        if c == '$' && i + 1ul < length && (replacement[i + 1ul] == '$' || isDigit(replacement[i + 1ul])) {
+            const char next = replacement[i + 1ul];
+            if next == '$' {
+                output.append('$');
+            } else {
+                const long groupNum = charToDigit(next);
+                if groupNum == 0l {
+                    output.append(match.value);
+                } else {
+                    const long groupIdx = groupNum - 1l;
+                    if groupIdx < cast<long>(match.groups.getSize()) {
+                        const Optional<String>& g = match.groups.get(cast<unsigned long>(groupIdx));
+                        if g.isPresent() {
+                            output.append(g.get());
+                        }
+                    }
+                }
+            }
+            i += 2ul;
+        } else {
+            output.append(c);
+            i++;
+        }
+    }
+    return output;
+}

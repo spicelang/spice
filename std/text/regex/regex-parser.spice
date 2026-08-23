@@ -1,0 +1,430 @@
+import "std/text/regex/regex-ast";
+import "std/data/optional";
+import "std/text/analysis";
+
+// The largest value accepted for either bound of a `{n,m}` repeat count. This keeps a pathological
+// pattern like `{1000000}` from exploding the size of the compiled program.
+const long MAX_REPEAT_BOUND = 1000l;
+
+/**
+ * Recursive-descent parser for regex patterns.
+ *
+ * Use `parseRegexPattern` for one-shot parsing; the struct is exposed so "std/text/regex/regex" can
+ * also read `groupCount` after a successful parse, to size the capture-slot array of the compiled
+ * program.
+ *
+ * Supported syntax: literals, `.`, character classes (`[abc]`, `[^abc]`, `[a-z]`), the shorthand
+ * classes `\d \D \w \W \s \S` (only `\d \w \s` inside a `[...]` class), anchors `^ $`, the
+ * quantifiers `* + ? {n} {n,} {n,m}` (greedy only), alternation `|`, and groups `(...)` /
+ * `(?:...)`. Lazy quantifiers, backreferences, lookaround and multiline mode are not supported.
+ *
+ * The AST data model lives in "std/text/regex/regex-ast" and compilation to a runnable program in
+ * "std/text/regex/regex-compiler".
+ */
+public type RegexParser struct {
+    String input
+    unsigned long pos = 0l
+    public long groupCount = 0l
+    string errorMessage = ""
+    bool hasError = false
+}
+
+/**
+ * Construct a regex parser over the given pattern
+ *
+ * @param pattern Regex pattern to parse
+ */
+public p RegexParser.ctor(const String& pattern) {
+    this.input = pattern;
+}
+
+/**
+ * Parse the pattern into a regex AST
+ *
+ * @return Result holding the root AST node, or an error describing the first problem encountered
+ */
+public f<Result<RegexNode*>> RegexParser.parse() {
+    RegexNode* root = this.parseAlternation();
+    if this.hasError {
+        deleteRegexNode(root);
+        return err<RegexNode*>(Error(this.errorMessage));
+    }
+    if this.pos < this.input.getLength() {
+        deleteRegexNode(root);
+        return err<RegexNode*>(Error("Unexpected character in pattern"));
+    }
+    return ok(root);
+}
+
+/**
+ * Parse a regex pattern.
+ *
+ * On success returns the root AST node, which the caller owns and releases with `deleteRegexNode`
+ * from "std/text/regex/regex-ast" (compiling it via "std/text/regex/regex-compiler" also consumes
+ * and releases it). On failure an error describing the first problem encountered is returned.
+ */
+public f<Result<RegexNode*>> parseRegexPattern(const String& pattern) {
+    RegexParser parser = RegexParser(pattern);
+    return parser.parse();
+}
+
+// --- Internal parser helpers ------------------------------------------------
+
+p RegexParser.fail(string msg) {
+    if !this.hasError {
+        this.errorMessage = msg;
+        this.hasError = true;
+    }
+}
+
+f<char> RegexParser.peek() {
+    return this.input[this.pos];
+}
+
+f<bool> RegexParser.atEnd() {
+    return this.pos >= this.input.getLength();
+}
+
+// alternation := concat ('|' concat)*
+f<RegexNode*> RegexParser.parseAlternation() {
+    RegexNode* left = this.parseConcat();
+    if this.hasError || this.atEnd() || this.peek() != '|' {
+        return left;
+    }
+    RegexNode* alt = __new<RegexNode>(RegexNodeKind::ALTERNATION);
+    alt.addChild(left);
+    while !this.hasError && !this.atEnd() && this.peek() == '|' {
+        this.pos++; // consume '|'
+        RegexNode* right = this.parseConcat();
+        alt.addChild(right);
+    }
+    return alt;
+}
+
+// concat := repeat*
+f<RegexNode*> RegexParser.parseConcat() {
+    RegexNode* concat = __new<RegexNode>(RegexNodeKind::CONCAT);
+    while !this.hasError && !this.atEnd() && this.peek() != '|' && this.peek() != ')' {
+        RegexNode* child = this.parseRepeat();
+        concat.addChild(child);
+    }
+    return concat;
+}
+
+// repeat := atom ('*' | '+' | '?' | '{' number (',' number?)? '}')?
+f<RegexNode*> RegexParser.parseRepeat() {
+    RegexNode* atom = this.parseAtom();
+    if this.hasError || this.atEnd() {
+        return atom;
+    }
+    const char c = this.peek();
+    if c == '*' {
+        this.pos++;
+        return this.wrapRepeat(RegexNodeKind::STAR, atom);
+    }
+    if c == '+' {
+        this.pos++;
+        return this.wrapRepeat(RegexNodeKind::PLUS, atom);
+    }
+    if c == '?' {
+        this.pos++;
+        return this.wrapRepeat(RegexNodeKind::QUESTION, atom);
+    }
+    if c == '{' {
+        return this.parseRepeatBraces(atom);
+    }
+    return atom;
+}
+
+f<RegexNode*> RegexParser.wrapRepeat(RegexNodeKind kind, RegexNode* atom) {
+    RegexNode* node = __new<RegexNode>(kind);
+    node.addChild(atom);
+    return node;
+}
+
+// Parses the '{n}' / '{n,}' / '{n,m}' quantifier body; `this.pos` is at the '{'. `atom` is
+// consumed either way: it ends up as the child of the returned REPEAT node, or is released on error.
+f<RegexNode*> RegexParser.parseRepeatBraces(RegexNode* atom) {
+    this.pos++; // consume '{'
+    const Optional<long> minOpt = this.parseNumber();
+    if !minOpt.isPresent() {
+        this.fail("Invalid repeat count");
+        deleteRegexNode(atom);
+        return nil<RegexNode*>;
+    }
+    const long minCount = minOpt.get();
+    long maxCount = minCount;
+    if !this.atEnd() && this.peek() == ',' {
+        this.pos++; // consume ','
+        if !this.atEnd() && this.peek() == '}' {
+            maxCount = -1l; // unbounded, i.e. '{n,}'
+        } else {
+            const Optional<long> maxOpt = this.parseNumber();
+            if !maxOpt.isPresent() {
+                this.fail("Invalid repeat count");
+                deleteRegexNode(atom);
+                return nil<RegexNode*>;
+            }
+            maxCount = maxOpt.get();
+        }
+    }
+    if this.atEnd() || this.peek() != '}' {
+        this.fail("Unterminated repeat count");
+        deleteRegexNode(atom);
+        return nil<RegexNode*>;
+    }
+    this.pos++; // consume '}'
+    if minCount > MAX_REPEAT_BOUND || maxCount > MAX_REPEAT_BOUND {
+        this.fail("Repeat count too large");
+        deleteRegexNode(atom);
+        return nil<RegexNode*>;
+    }
+    if maxCount != -1l && minCount > maxCount {
+        this.fail("Repeat count minimum greater than maximum");
+        deleteRegexNode(atom);
+        return nil<RegexNode*>;
+    }
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::REPEAT);
+    node.repeatMin = minCount;
+    node.repeatMax = maxCount;
+    node.addChild(atom);
+    return node;
+}
+
+// Parses a run of decimal digits at the current position into a number. Returns an empty Optional
+// (without consuming input) if there is no digit at the current position.
+f<Optional<long>> RegexParser.parseNumber() {
+    if this.atEnd() || !isDigit(this.peek()) {
+        return Optional<long>();
+    }
+    long value = 0l;
+    while !this.atEnd() && isDigit(this.peek()) {
+        value = value * 10l + charToDigit(this.peek());
+        this.pos++;
+    }
+    return Optional<long>(value);
+}
+
+// atom := '(' ('?:')? alternation ')' | '[' class ']' | '.' | '^' | '$' | '\' escape | literal
+f<RegexNode*> RegexParser.parseAtom() {
+    if this.atEnd() {
+        this.fail("Pattern ends with an incomplete expression");
+        return nil<RegexNode*>;
+    }
+    const char c = this.peek();
+    if c == '(' { return this.parseGroup(); }
+    if c == '[' { return this.parseCharClass(); }
+    if c == '.' {
+        this.pos++;
+        return __new<RegexNode>(RegexNodeKind::ANY);
+    }
+    if c == '^' {
+        this.pos++;
+        return __new<RegexNode>(RegexNodeKind::ANCHOR_START);
+    }
+    if c == '$' {
+        this.pos++;
+        return __new<RegexNode>(RegexNodeKind::ANCHOR_END);
+    }
+    if c == '\\' {
+        this.pos++;
+        return this.parseEscape();
+    }
+    if c == '|' || c == ')' || c == '*' || c == '+' || c == '?' || c == '{' || c == '}' {
+        this.fail("Unexpected metacharacter; escape it to match literally");
+        return nil<RegexNode*>;
+    }
+    this.pos++;
+    return this.makeLiteral(c);
+}
+
+f<RegexNode*> RegexParser.parseGroup() {
+    this.pos++; // consume '('
+    bool capturing = true;
+    if this.pos + 1l < this.input.getLength() && this.input[this.pos] == '?' && this.input[this.pos + 1l] == ':' {
+        capturing = false;
+        this.pos += 2l;
+    }
+    long groupIndex = 0l;
+    if capturing {
+        this.groupCount++;
+        groupIndex = this.groupCount;
+    }
+    RegexNode* inner = this.parseAlternation();
+    if this.hasError {
+        deleteRegexNode(inner);
+        return nil<RegexNode*>;
+    }
+    if this.atEnd() || this.peek() != ')' {
+        this.fail("Unterminated group");
+        deleteRegexNode(inner);
+        return nil<RegexNode*>;
+    }
+    this.pos++; // consume ')'
+    RegexNode* group = __new<RegexNode>(RegexNodeKind::GROUP);
+    group.capturing = capturing;
+    group.groupIndex = groupIndex;
+    group.addChild(inner);
+    return group;
+}
+
+f<RegexNode*> RegexParser.parseCharClass() {
+    this.pos++; // consume '['
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::CHAR_CLASS);
+    if !this.atEnd() && this.peek() == '^' {
+        node.negated = true;
+        this.pos++;
+    }
+    while !this.hasError && !this.atEnd() && this.peek() != ']' {
+        const Optional<char> first = this.parseClassAtom(node);
+        if this.hasError { continue; }
+        if !first.isPresent() { continue; } // a shorthand class already added its ranges
+        char lo = first.get();
+        char hi = lo;
+        if this.pos + 1l < this.input.getLength() && this.peek() == '-' && this.input[this.pos + 1l] != ']' {
+            this.pos++; // consume '-'
+            const Optional<char> second = this.parseClassAtom(node);
+            if this.hasError { continue; }
+            if !second.isPresent() {
+                this.fail("A shorthand class cannot be the endpoint of a range");
+                continue;
+            }
+            hi = second.get();
+            if hi < lo {
+                this.fail("Character range is out of order");
+                continue;
+            }
+        }
+        node.addClassRange(lo, hi);
+    }
+    if this.hasError {
+        deleteRegexNode(node);
+        return nil<RegexNode*>;
+    }
+    if this.atEnd() || this.peek() != ']' {
+        this.fail("Unterminated character class");
+        deleteRegexNode(node);
+        return nil<RegexNode*>;
+    }
+    this.pos++; // consume ']'
+    return node;
+}
+
+// Parses one atom inside a `[...]` class at the current position. If it denotes a single character
+// (a literal or a simple escape like `\n`), returns it so the caller can check for a following '-'
+// to form a range. If it denotes a positive shorthand class like `\d`, its ranges are added to
+// `node` directly and an empty Optional is returned, since shorthand classes cannot be a range
+// endpoint. Negated shorthands (`\D \W \S`) are not supported inside a class.
+f<Optional<char>> RegexParser.parseClassAtom(RegexNode* node) {
+    const char c = this.peek();
+    if c != '\\' {
+        this.pos++;
+        return Optional<char>(c);
+    }
+    this.pos++; // consume '\'
+    if this.atEnd() {
+        this.fail("Unterminated escape in character class");
+        return Optional<char>();
+    }
+    const char esc = this.peek();
+    this.pos++;
+    if esc == 'd' {
+        node.addClassRange('0', '9');
+        return Optional<char>();
+    }
+    if esc == 'w' {
+        this.addWordRanges(node);
+        return Optional<char>();
+    }
+    if esc == 's' {
+        this.addSpaceRanges(node);
+        return Optional<char>();
+    }
+    if esc == 'D' || esc == 'W' || esc == 'S' {
+        this.fail("Negated shorthand classes are not supported inside a character class");
+        return Optional<char>();
+    }
+    return Optional<char>(unescapeChar(esc));
+}
+
+f<RegexNode*> RegexParser.parseEscape() {
+    if this.atEnd() {
+        this.fail("Trailing backslash at end of pattern");
+        return nil<RegexNode*>;
+    }
+    const char esc = this.peek();
+    this.pos++;
+    if esc == 'd' { return this.makeShorthandClass(false); }
+    if esc == 'D' { return this.makeShorthandClass(true); }
+    if esc == 'w' { return this.makeWordClass(false); }
+    if esc == 'W' { return this.makeWordClass(true); }
+    if esc == 's' { return this.makeSpaceClass(false); }
+    if esc == 'S' { return this.makeSpaceClass(true); }
+    if esc == 'n' || esc == 't' || esc == 'r' || esc == 'f' || esc == 'v' || esc == '0' {
+        return this.makeLiteral(unescapeChar(esc));
+    }
+    if isAlpha(esc) {
+        this.fail("Unknown escape sequence");
+        return nil<RegexNode*>;
+    }
+    return this.makeLiteral(esc);
+}
+
+f<RegexNode*> RegexParser.makeLiteral(char c) {
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::LITERAL);
+    node.literal = c;
+    return node;
+}
+
+f<RegexNode*> RegexParser.makeShorthandClass(bool negated) {
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::CHAR_CLASS);
+    node.negated = negated;
+    node.addClassRange('0', '9');
+    return node;
+}
+
+f<RegexNode*> RegexParser.makeWordClass(bool negated) {
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::CHAR_CLASS);
+    node.negated = negated;
+    this.addWordRanges(node);
+    return node;
+}
+
+f<RegexNode*> RegexParser.makeSpaceClass(bool negated) {
+    RegexNode* node = __new<RegexNode>(RegexNodeKind::CHAR_CLASS);
+    node.negated = negated;
+    this.addSpaceRanges(node);
+    return node;
+}
+
+p RegexParser.addWordRanges(RegexNode* node) {
+    node.addClassRange('a', 'z');
+    node.addClassRange('A', 'Z');
+    node.addClassRange('0', '9');
+    node.addClassRange('_', '_');
+}
+
+p RegexParser.addSpaceRanges(RegexNode* node) {
+    node.addClassRange(' ', ' ');
+    node.addClassRange('\t', '\t');
+    node.addClassRange('\n', '\n');
+    node.addClassRange('\r', '\r');
+    node.addClassRange('\f', '\f');
+    node.addClassRange('\v', '\v');
+}
+
+// Resolves a one-letter escape (the character right after a consumed '\') to the character it
+// denotes. Escapes with no special meaning (e.g. '.', '\', '(') denote themselves.
+f<char> unescapeChar(char esc) {
+    if esc == 'n' { return '\n'; }
+    if esc == 't' { return '\t'; }
+    if esc == 'r' { return '\r'; }
+    if esc == 'f' { return '\f'; }
+    if esc == 'v' { return '\v'; }
+    if esc == '0' { return '\0'; }
+    return esc;
+}
+
+public f<long> charToDigit(char c) {
+    return cast<long>(cast<int>(c)) - cast<long>(cast<int>('0'));
+}
