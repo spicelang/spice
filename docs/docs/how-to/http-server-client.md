@@ -70,13 +70,13 @@ import "std/net/http-client";
 f<int> main() {
     HttpClient client = HttpClient();
 
-    Result<HttpResponse> result = client.get("http://127.0.0.1:8080/");
-    if result.isErr() {
-        printf("Request failed: %s\n", result.getErr().message);
+    Result<HttpResponse> getResult = client.get("http://127.0.0.1:8080/");
+    if getResult.isErr() {
+        printf("Request failed: %s\n", getResult.getErr().message);
         return 1;
     }
 
-    HttpResponse& response = result.unwrap();
+    HttpResponse& response = getResult.unwrap();
     printf("%d %s\n%s\n", response.statusCode, response.reason, response.body);
     return 0;
 }
