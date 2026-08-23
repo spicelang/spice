@@ -1,0 +1,122 @@
+import "std/data/vector";
+import "std/data/optional";
+import "std/data/pair";
+import "std/data/algorithm";
+
+f<int> main() {
+    Vector<int> numbers;
+    numbers.pushBack(1);
+    numbers.pushBack(2);
+    numbers.pushBack(3);
+    numbers.pushBack(4);
+    numbers.pushBack(5);
+    numbers.pushBack(6);
+
+    // filter: some matches
+    Vector<int> evens = filter<int>(numbers, f<bool>(const int& n) { return n % 2 == 0; });
+    assert evens.getSize() == 3;
+    assert evens[0] == 2;
+    assert evens[1] == 4;
+    assert evens[2] == 6;
+
+    // filter: no matches
+    Vector<int> noMatches = filter<int>(numbers, f<bool>(const int& n) { return n > 100; });
+    assert noMatches.isEmpty();
+
+    // filter: all match
+    Vector<int> allMatch = filter<int>(numbers, f<bool>(const int& n) { return n > 0; });
+    assert allMatch.getSize() == numbers.getSize();
+
+    // filter: empty input
+    Vector<int> empty;
+    Vector<int> filteredEmpty = filter<int>(empty, f<bool>(const int& _n) { return true; });
+    assert filteredEmpty.isEmpty();
+
+    // map: transform to a different type
+    Vector<long> doubled = map<int, long>(numbers, f<long>(const int& n) { return cast<long>(n) * 2l; });
+    assert doubled.getSize() == 6;
+    assert doubled[0] == 2l;
+    assert doubled[5] == 12l;
+
+    // map: empty input
+    Vector<long> mappedEmpty = map<int, long>(empty, f<long>(const int& n) { return cast<long>(n); });
+    assert mappedEmpty.isEmpty();
+
+    // reduce: sum into the same type
+    int sum = reduce<int, int>(numbers, 0, f<int>(const int& acc, const int& n) { return acc + n; });
+    assert sum == 21;
+
+    // reduce: accumulate into a different type
+    long product = reduce<int, long>(numbers, 1l, f<long>(const long& acc, const int& n) { return acc * cast<long>(n); });
+    assert product == 720l;
+
+    // reduce: empty input returns the initial value unchanged
+    int emptySum = reduce<int, int>(empty, 42, f<int>(const int& acc, const int& n) { return acc + n; });
+    assert emptySum == 42;
+
+    // forEach: side effect runs once per element, in order
+    int visitedSum = 0;
+    int visitedCount = 0;
+    forEach<int>(numbers, p(const int& n) { visitedSum += n * 10; visitedCount += 1; });
+    assert visitedCount == 6;
+    assert visitedSum == 210;
+
+    // find: match, no match, empty input
+    Optional<int> foundGreater = find<int>(numbers, f<bool>(const int& n) { return n > 4; });
+    assert foundGreater.isPresent();
+    assert foundGreater.get() == 5;
+    Optional<int> foundNone = find<int>(numbers, f<bool>(const int& n) { return n > 100; });
+    assert !foundNone.isPresent();
+    Optional<int> foundEmpty = find<int>(empty, f<bool>(const int& _n) { return true; });
+    assert !foundEmpty.isPresent();
+
+    // any / all
+    assert any<int>(numbers, f<bool>(const int& n) { return n == 3; });
+    assert !any<int>(numbers, f<bool>(const int& n) { return n == 100; });
+    assert !any<int>(empty, f<bool>(const int& _n) { return true; });
+    assert all<int>(numbers, f<bool>(const int& n) { return n > 0; });
+    assert !all<int>(numbers, f<bool>(const int& n) { return n > 1; });
+    assert all<int>(empty, f<bool>(const int& _n) { return false; });
+
+    // none
+    assert none<int>(numbers, f<bool>(const int& n) { return n == 100; });
+    assert !none<int>(numbers, f<bool>(const int& n) { return n == 3; });
+    assert none<int>(empty, f<bool>(const int& _n) { return true; });
+
+    // count
+    assert count<int>(numbers, f<bool>(const int& n) { return n % 2 == 0; }) == 3l;
+    assert count<int>(empty, f<bool>(const int& _n) { return true; }) == 0l;
+
+    // contains
+    assert contains<int>(numbers, 3);
+    assert !contains<int>(numbers, 42);
+    assert !contains<int>(empty, 1);
+
+    // min / max
+    Optional<int> smallest = min<int>(numbers, f<bool>(const int& a, const int& b) { return a < b; });
+    assert smallest.isPresent();
+    assert smallest.get() == 1;
+    Optional<int> largest = max<int>(numbers, f<bool>(const int& a, const int& b) { return a < b; });
+    assert largest.isPresent();
+    assert largest.get() == 6;
+    Optional<int> minEmpty = min<int>(empty, f<bool>(const int& a, const int& b) { return a < b; });
+    assert !minEmpty.isPresent();
+    Optional<int> maxEmpty = max<int>(empty, f<bool>(const int& a, const int& b) { return a < b; });
+    assert !maxEmpty.isPresent();
+
+    // partition
+    Pair<Vector<int>, Vector<int>> parts = partition<int>(numbers, f<bool>(const int& n) { return n % 2 == 0; });
+    Vector<int> evenPart = parts.getFirst();
+    Vector<int> oddPart = parts.getSecond();
+    assert evenPart.getSize() == 3l;
+    assert oddPart.getSize() == 3l;
+    assert evenPart[0] == 2;
+    assert oddPart[0] == 1;
+    Pair<Vector<int>, Vector<int>> emptyParts = partition<int>(empty, f<bool>(const int& _n) { return true; });
+    Vector<int> emptyPartsFirst = emptyParts.getFirst();
+    Vector<int> emptyPartsSecond = emptyParts.getSecond();
+    assert emptyPartsFirst.isEmpty();
+    assert emptyPartsSecond.isEmpty();
+
+    printf("Algorithm smoke tests passed!\n");
+}

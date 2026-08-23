@@ -1,0 +1,212 @@
+import "std/data/vector";
+import "std/data/optional";
+import "std/data/pair";
+
+// Generic type definitions
+type T dyn;
+type R dyn;
+
+/**
+ * Build a new vector containing only the elements of `items` for which `predicate` returns true.
+ *
+ * @param items Vector to filter
+ * @param predicate Function evaluated for each element; an element is kept when it returns true
+ * @return A new vector holding the kept elements, in iteration order
+ */
+public f<Vector<T>> filter<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    result = Vector<T>();
+    foreach const T& item : items {
+        if predicate(item) {
+            result.pushBack(item);
+        }
+    }
+}
+
+/**
+ * Build a new vector by applying `transform` to every element of `items`.
+ *
+ * @param items Vector to map over
+ * @param transform Function applied to each element to produce the mapped value
+ * @return A new vector holding the transformed elements, in iteration order
+ */
+public f<Vector<R>> map<T, R>(const Vector<T>& items, f<R>(const T&) transform) {
+    result = Vector<R>();
+    foreach const T& item : items {
+        result.pushBack(transform(item));
+    }
+}
+
+/**
+ * Combine all elements of `items` into a single value, left to right, starting from `initialValue`.
+ *
+ * @param items Vector to reduce
+ * @param initialValue Seed value combined with the first element
+ * @param combine Function combining the running accumulator with the next element
+ * @return The final accumulated value
+ */
+public f<R> reduce<T, R>(const Vector<T>& items, const R& initialValue, f<R>(const R&, const T&) combine) {
+    result = initialValue;
+    foreach const T& item : items {
+        result = combine(result, item);
+    }
+}
+
+/**
+ * Invoke `action` once for every element of `items`, in iteration order.
+ *
+ * @param items Vector to iterate over
+ * @param action Procedure invoked for each element
+ */
+public p forEach<T>(const Vector<T>& items, p(const T&) action) {
+    foreach const T& item : items {
+        action(item);
+    }
+}
+
+/**
+ * Find the first element of `items` for which `predicate` returns true.
+ *
+ * @param items Vector to search
+ * @param predicate Function evaluated for each element
+ * @return The first matching element, or an empty Optional if none match
+ */
+public f<Optional<T>> find<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    foreach const T& item : items {
+        if predicate(item) {
+            return Optional<T>(item);
+        }
+    }
+    return Optional<T>();
+}
+
+/**
+ * Check whether at least one element of `items` satisfies `predicate`.
+ *
+ * @param items Vector to check
+ * @param predicate Function evaluated for each element
+ * @return True if any element matches, false if `items` is empty or none match
+ */
+public f<bool> any<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    foreach const T& item : items {
+        if predicate(item) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check whether every element of `items` satisfies `predicate`.
+ *
+ * @param items Vector to check
+ * @param predicate Function evaluated for each element
+ * @return True if all elements match (vacuously true if `items` is empty), false otherwise
+ */
+public f<bool> all<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    foreach const T& item : items {
+        if !predicate(item) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Check whether no element of `items` satisfies `predicate`.
+ *
+ * @param items Vector to check
+ * @param predicate Function evaluated for each element
+ * @return True if no element matches (vacuously true if `items` is empty), false otherwise
+ */
+public f<bool> none<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    foreach const T& item : items {
+        if predicate(item) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Count how many elements of `items` satisfy `predicate`.
+ *
+ * @param items Vector to inspect
+ * @param predicate Function evaluated for each element
+ * @return The number of matching elements
+ */
+public f<long> count<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    result = 0l;
+    foreach const T& item : items {
+        if predicate(item) {
+            result++;
+        }
+    }
+}
+
+/**
+ * Check whether `items` contains an element equal to `value`.
+ *
+ * @param items Vector to search
+ * @param value Value to look for
+ * @return True if an equal element is present, false otherwise
+ */
+public f<bool> contains<T>(const Vector<T>& items, const T& value) {
+    foreach const T& item : items {
+        if item == value {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Find the smallest element of `items`, according to `isLess`.
+ *
+ * @param items Vector to search
+ * @param isLess Strict less-than comparator; isLess(a, b) returns true when a comes before b
+ * @return The smallest element, or an empty Optional if `items` is empty
+ */
+public f<Optional<T>> min<T>(const Vector<T>& items, f<bool>(const T&, const T&) isLess) {
+    result = Optional<T>();
+    foreach const T& item : items {
+        if !result.isPresent() || isLess(item, result.get()) {
+            result.set(item);
+        }
+    }
+}
+
+/**
+ * Find the largest element of `items`, according to `isLess`.
+ *
+ * @param items Vector to search
+ * @param isLess Strict less-than comparator; isLess(a, b) returns true when a comes before b
+ * @return The largest element, or an empty Optional if `items` is empty
+ */
+public f<Optional<T>> max<T>(const Vector<T>& items, f<bool>(const T&, const T&) isLess) {
+    result = Optional<T>();
+    foreach const T& item : items {
+        if !result.isPresent() || isLess(result.get(), item) {
+            result.set(item);
+        }
+    }
+}
+
+/**
+ * Split `items` into two vectors according to `predicate`.
+ *
+ * @param items Vector to partition
+ * @param predicate Function evaluated for each element
+ * @return A pair of (matching elements, non-matching elements), each in iteration order
+ */
+public f<Pair<Vector<T>, Vector<T>>> partition<T>(const Vector<T>& items, f<bool>(const T&) predicate) {
+    Vector<T> matched;
+    Vector<T> unmatched;
+    foreach const T& item : items {
+        if predicate(item) {
+            matched.pushBack(item);
+        } else {
+            unmatched.pushBack(item);
+        }
+    }
+    return Pair<Vector<T>, Vector<T>>(matched, unmatched);
+}
