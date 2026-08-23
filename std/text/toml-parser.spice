@@ -411,51 +411,40 @@ f<TomlValue*> TomlParser.parseBool() {
 f<TomlValue*> TomlParser.parseArray() {
     this.pos++; // consume '['
     TomlValue* arr = __new<TomlValue>(TomlValueKind::TOML_ARRAY);
-    while true {
+    // Every failure leaves the loop, so the partially built array is released in one place
+    while !this.hasError {
         // Line breaks and comments are allowed anywhere inside an array
         this.skipBlanks();
-        if this.hasError {
-            deleteTomlValue(arr);
-            return nil<TomlValue*>;
-        }
+        if this.hasError { break; }
         if this.atEnd() {
             this.fail("Unterminated array");
-            deleteTomlValue(arr);
-            return nil<TomlValue*>;
+            break;
         }
         if this.peek() == ']' {
             this.pos++;
             return arr;
         }
         TomlValue* item = this.parseValue();
-        if this.hasError {
-            deleteTomlValue(arr);
-            return nil<TomlValue*>;
-        }
+        if this.hasError { break; }
         arr.addArrayItem(item);
         this.skipBlanks();
-        if this.hasError {
-            deleteTomlValue(arr);
-            return nil<TomlValue*>;
-        }
+        if this.hasError { break; }
         if this.atEnd() {
             this.fail("Unterminated array");
-            deleteTomlValue(arr);
-            return nil<TomlValue*>;
+            break;
         }
         const char c = this.peek();
-        if c == ',' {
-            this.pos++;
-            continue;
-        }
         if c == ']' {
             this.pos++;
             return arr;
         }
-        this.fail("Expected ',' or ']' in array");
-        deleteTomlValue(arr);
-        return nil<TomlValue*>;
+        if c != ',' {
+            this.fail("Expected ',' or ']' in array");
+            break;
+        }
+        this.pos++; // consume ','
     }
+    deleteTomlValue(arr);
     return nil<TomlValue*>;
 }
 
@@ -467,34 +456,30 @@ f<TomlValue*> TomlParser.parseInlineTable() {
         this.pos++;
         return table;
     }
-    while true {
+    // Every failure leaves the loop, so the partially built table is released in one place
+    while !this.hasError {
         this.skipSpaces();
         // Inline tables have to stay on a single line and must not have a trailing comma,
         // so parsing the entry rejects both a line break and a closing brace here
         this.parseKeyValuePair(table);
-        if this.hasError {
-            deleteTomlValue(table);
-            return nil<TomlValue*>;
-        }
+        if this.hasError { break; }
         this.skipSpaces();
         if this.atEnd() {
             this.fail("Unterminated inline table");
-            deleteTomlValue(table);
-            return nil<TomlValue*>;
+            break;
         }
         const char c = this.peek();
-        if c == ',' {
-            this.pos++;
-            continue;
-        }
         if c == '}' {
             this.pos++;
             return table;
         }
-        this.fail("Expected ',' or '}' in inline table");
-        deleteTomlValue(table);
-        return nil<TomlValue*>;
+        if c != ',' {
+            this.fail("Expected ',' or '}' in inline table");
+            break;
+        }
+        this.pos++; // consume ','
     }
+    deleteTomlValue(table);
     return nil<TomlValue*>;
 }
 
@@ -503,28 +488,25 @@ f<TomlValue*> TomlParser.parseInlineTable() {
 f<String> TomlParser.parseStringValue() {
     const char quote = this.peek();
     const bool isMultiLine = this.peekAt(1l) == quote && this.peekAt(2l) == quote;
-    if quote == '"' {
-        if isMultiLine { return this.parseMultiLineBasicString(); }
-        return this.parseBasicString();
-    }
-    if isMultiLine { return this.parseMultiLineLiteralString(); }
-    return this.parseLiteralString();
+    if isMultiLine { return this.parseMultiLineString(quote); }
+    return this.parseSingleLineString(quote);
 }
 
-f<String> TomlParser.parseBasicString() {
+// Parse a basic ('"') or literal ('\'') string. Only basic strings interpret escape
+// sequences, literal strings take their content verbatim.
+f<String> TomlParser.parseSingleLineString(char quote) {
+    const bool isBasic = quote == '"';
     String literal;
-    this.pos++; // consume opening '"'
+    this.pos++; // consume the opening quote
     while !this.atEnd() {
         const char c = this.peek();
-        if c == '"' {
-            this.pos++; // consume closing '"'
+        if c == quote {
+            this.pos++; // consume the closing quote
             return literal;
         }
-        if c == '\n' || c == '\r' {
-            this.fail("Unterminated basic string");
-            return literal;
-        }
-        if c == '\\' {
+        // A single-line string has to be terminated on the line it started on
+        if c == '\n' || c == '\r' { break; }
+        if isBasic && c == '\\' {
             this.pos++;
             this.appendEscapeSequence(literal);
             if this.hasError { return literal; }
@@ -537,35 +519,42 @@ f<String> TomlParser.parseBasicString() {
         literal += c;
         this.pos++;
     }
-    this.fail("Unterminated basic string");
+    const string unterminatedMessage = isBasic ? "Unterminated basic string" : "Unterminated literal string";
+    this.fail(unterminatedMessage);
     return literal;
 }
 
-f<String> TomlParser.parseMultiLineBasicString() {
+// Parse a multi-line basic ('"""') or literal ('\'\'\'') string. Only basic strings
+// interpret escape sequences and line-ending backslashes.
+f<String> TomlParser.parseMultiLineString(char quote) {
+    const bool isBasic = quote == '"';
     String literal;
-    this.pos += 3l; // consume opening '"""'
+    this.pos += 3l; // consume the opening delimiter
     this.skipLeadingLineBreak();
     while !this.atEnd() {
         const char c = this.peek();
-        if c == '"' {
+        if c == quote {
             // The delimiter is formed by the last three quotes of a run, so up to two
             // additional quotes still belong to the content
             unsigned long runLength = 0l;
-            while this.peekAt(runLength) == '"' { runLength++; }
+            while this.peekAt(runLength) == quote { runLength++; }
             if runLength >= 3l {
                 if runLength > 5l {
-                    this.fail("Too many quotes at the end of a multi-line basic string");
+                    const string tooManyQuotesMessage = isBasic
+                        ? "Too many quotes at the end of a multi-line basic string"
+                        : "Too many quotes at the end of a multi-line literal string";
+                    this.fail(tooManyQuotesMessage);
                     return literal;
                 }
-                for unsigned long i = 3l; i < runLength; i++ { literal += '"'; }
+                for unsigned long i = 3l; i < runLength; i++ { literal += quote; }
                 this.pos += runLength;
                 return literal;
             }
-            for unsigned long i = 0l; i < runLength; i++ { literal += '"'; }
+            for unsigned long i = 0l; i < runLength; i++ { literal += quote; }
             this.pos += runLength;
             continue;
         }
-        if c == '\\' {
+        if isBasic && c == '\\' {
             // A backslash at the end of a line trims the line break and all following whitespace
             unsigned long lookahead = 1l;
             while this.peekAt(lookahead) == ' ' || this.peekAt(lookahead) == '\t' { lookahead++; }
@@ -587,64 +576,10 @@ f<String> TomlParser.parseMultiLineBasicString() {
         literal += c;
         this.pos++;
     }
-    this.fail("Unterminated multi-line basic string");
-    return literal;
-}
-
-f<String> TomlParser.parseLiteralString() {
-    String literal;
-    this.pos++; // consume opening '\''
-    while !this.atEnd() {
-        const char c = this.peek();
-        if c == '\'' {
-            this.pos++; // consume closing '\''
-            return literal;
-        }
-        if c == '\n' || c == '\r' {
-            this.fail("Unterminated literal string");
-            return literal;
-        }
-        if isTomlDisallowedChar(c) {
-            this.fail("Unescaped control character in string");
-            return literal;
-        }
-        literal += c;
-        this.pos++;
-    }
-    this.fail("Unterminated literal string");
-    return literal;
-}
-
-f<String> TomlParser.parseMultiLineLiteralString() {
-    String literal;
-    this.pos += 3l; // consume opening '\'\'\''
-    this.skipLeadingLineBreak();
-    while !this.atEnd() {
-        const char c = this.peek();
-        if c == '\'' {
-            unsigned long runLength = 0l;
-            while this.peekAt(runLength) == '\'' { runLength++; }
-            if runLength >= 3l {
-                if runLength > 5l {
-                    this.fail("Too many quotes at the end of a multi-line literal string");
-                    return literal;
-                }
-                for unsigned long i = 3l; i < runLength; i++ { literal += '\''; }
-                this.pos += runLength;
-                return literal;
-            }
-            for unsigned long i = 0l; i < runLength; i++ { literal += '\''; }
-            this.pos += runLength;
-            continue;
-        }
-        if c != '\n' && c != '\r' && isTomlDisallowedChar(c) {
-            this.fail("Unescaped control character in string");
-            return literal;
-        }
-        literal += c;
-        this.pos++;
-    }
-    this.fail("Unterminated multi-line literal string");
+    const string unterminatedMessage = isBasic
+        ? "Unterminated multi-line basic string"
+        : "Unterminated multi-line literal string";
+    this.fail(unterminatedMessage);
     return literal;
 }
 

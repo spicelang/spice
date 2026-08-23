@@ -199,11 +199,7 @@ public f<const String&> XmlNode.getAttributeValue(unsigned long idx) {
  */
 public f<bool> XmlNode.hasAttribute(string name) {
     if this.kind != XmlNodeKind::XML_ELEMENT { return false; }
-    // Comparing against the raw name avoids building a String that would have to be cleaned up
-    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == name { return true; }
-    }
-    return false;
+    return this.findAttributeIndex(name) >= 0l;
 }
 
 /**
@@ -215,13 +211,20 @@ public f<bool> XmlNode.hasAttribute(string name) {
  */
 public f<const String&> XmlNode.getAttribute(string name) {
     assert this.kind == XmlNodeKind::XML_ELEMENT;
-    // Comparing against the raw name avoids building a String that would have to be cleaned up
-    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
-        if this.attributeKeys.get(i) == name {
-            return this.attributeValues.get(i);
-        }
+    const long idx = this.findAttributeIndex(name);
+    if idx < 0l {
+        panic(Error("XML element has no such attribute"));
     }
-    panic(Error("XML element has no such attribute"));
+    return this.attributeValues.get(cast<unsigned long>(idx));
+}
+
+// Index of the attribute with the given name, or -1 if the element has no such attribute.
+// Comparing against the raw name avoids building a String that would have to be cleaned up
+f<long> XmlNode.findAttributeIndex(string name) {
+    for unsigned long i = 0l; i < this.attributeKeys.getSize(); i++ {
+        if this.attributeKeys.get(i) == name { return i; }
+    }
+    return -1l;
 }
 
 /**

@@ -102,6 +102,17 @@ f<bool> XmlParser.startsWith(string literal) {
     return true;
 }
 
+// Advance past the next occurrence of the given terminator. Fails with the given
+// message if the input ends before the terminator appears.
+p XmlParser.skipUntilAfter(string terminator, string errorMessage) {
+    const long idx = this.input.find(terminator, this.pos);
+    if idx < 0l {
+        this.fail(errorMessage);
+        return;
+    }
+    this.pos = cast<unsigned long>(idx) + getRawLength(terminator);
+}
+
 // Skip everything between the document start and the root element (XML
 // declaration, processing instructions, comments and whitespace). The XML
 // declaration (if present) must appear at the very beginning of the document
@@ -111,14 +122,8 @@ p XmlParser.skipProlog() {
         // XML declaration: only valid as the first thing in the document.
         // Consume up to and including the terminating '?>'.
         this.pos += 5l;
-        while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
-            this.pos++;
-        }
-        if this.pos + 1l >= this.input.getLength() {
-            this.fail("Unterminated XML declaration");
-            return;
-        }
-        this.pos += 2l; // consume '?>'
+        this.skipUntilAfter("?>", "Unterminated XML declaration");
+        if this.hasError { return; }
     }
     this.skipMisc();
 }
@@ -379,41 +384,24 @@ p XmlParser.parseClosingTag(XmlNode* element) {
 // Skip a '<!-- ... -->' comment, including its delimiters
 p XmlParser.skipComment() {
     this.pos += 4l; // consume '<!--'
-    while this.pos + 2l < this.input.getLength() &&
-          !(this.input[this.pos] == '-' && this.input[this.pos + 1l] == '-' && this.input[this.pos + 2l] == '>') {
-        this.pos++;
-    }
-    if this.pos + 2l >= this.input.getLength() {
-        this.fail("Unterminated comment");
-        return;
-    }
-    this.pos += 3l; // consume '-->'
+    this.skipUntilAfter("-->", "Unterminated comment");
 }
 
 // Skip a '<? ... ?>' processing instruction, including its delimiters
 p XmlParser.skipProcessingInstruction() {
     this.pos += 2l; // consume '<?'
-    while this.pos + 1l < this.input.getLength() && !(this.input[this.pos] == '?' && this.input[this.pos + 1l] == '>') {
-        this.pos++;
-    }
-    if this.pos + 1l >= this.input.getLength() {
-        this.fail("Unterminated processing instruction");
-        return;
-    }
-    this.pos += 2l; // consume '?>'
+    this.skipUntilAfter("?>", "Unterminated processing instruction");
 }
 
 p XmlParser.parseCdataSection(XmlNode* element) {
     this.pos += 9l; // consume '<![CDATA['
     const unsigned long start = this.pos;
-    while this.pos + 2l < this.input.getLength() &&
-          !(this.input[this.pos] == ']' && this.input[this.pos + 1l] == ']' && this.input[this.pos + 2l] == '>') {
-        this.pos++;
-    }
-    if this.pos + 2l >= this.input.getLength() {
+    const long end = this.input.find("]]>", this.pos);
+    if end < 0l {
         this.fail("Unterminated CDATA section");
         return;
     }
+    this.pos = cast<unsigned long>(end);
     // `content` has to stay alive until the end of the scope, so that it gets cleaned up
     const String content = this.input.getSubstring(start, this.pos - start);
     this.pos += 3l; // consume ']]>'
