@@ -26,10 +26,10 @@ f<int> main() {
     assert !rePlus.isMatch(String("ac"));
     assert rePlus.isMatch(String("abc"));
 
-    Regex reOpt = mustCompile("colou?r");
-    assert reOpt.isMatch(String("color"));
-    assert reOpt.isMatch(String("colour"));
-    assert !reOpt.isMatch(String("colouur"));
+    Regex reOpt = mustCompile("xy?z");
+    assert reOpt.isMatch(String("xz"));
+    assert reOpt.isMatch(String("xyz"));
+    assert !reOpt.isMatch(String("xyyz"));
 
     // Character classes: literal set, range, negated
     Regex reCls = mustCompile("[a-c]+");
