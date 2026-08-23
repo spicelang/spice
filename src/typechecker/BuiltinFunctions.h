@@ -49,141 +49,159 @@ static constexpr std::string_view BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PRINTF,
-        BuiltinFunctionInfo{
-            .minArgTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
+        .name = BUILTIN_FCT_NAME_PRINTF,
+        .info =
+            BuiltinFunctionInfo{
+                .minArgTypes = 1,
+                .maxArgTypes = std::numeric_limits<unsigned int>::max(),
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_SIZEOF,
-        BuiltinFunctionInfo{
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
+        .name = BUILTIN_FCT_NAME_SIZEOF,
+        .info =
+            BuiltinFunctionInfo{
+                .maxTemplateTypes = 1,
+                .maxArgTypes = 1,
+                .allTemplateTypesOrAllArgTypes = true,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_ALIGNOF,
-        BuiltinFunctionInfo{
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
+        .name = BUILTIN_FCT_NAME_ALIGNOF,
+        .info =
+            BuiltinFunctionInfo{
+                .maxTemplateTypes = 1,
+                .maxArgTypes = 1,
+                .allTemplateTypesOrAllArgTypes = true,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_OFFSETOF,
-        BuiltinFunctionInfo{
-            .minArgTypes = 2,
-            .maxArgTypes = 2,
-        },
+        .name = BUILTIN_FCT_NAME_OFFSETOF,
+        .info =
+            BuiltinFunctionInfo{
+                .minArgTypes = 2,
+                .maxArgTypes = 2,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_TYPEID,
-        BuiltinFunctionInfo{
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
+        .name = BUILTIN_FCT_NAME_TYPEID,
+        .info =
+            BuiltinFunctionInfo{
+                .maxTemplateTypes = 1,
+                .maxArgTypes = 1,
+                .allTemplateTypesOrAllArgTypes = true,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_TYPENAME,
-        BuiltinFunctionInfo{
-            .maxTemplateTypes = 1,
-            .maxArgTypes = 1,
-            .allTemplateTypesOrAllArgTypes = true,
-        },
+        .name = BUILTIN_FCT_NAME_TYPENAME,
+        .info =
+            BuiltinFunctionInfo{
+                .maxTemplateTypes = 1,
+                .maxArgTypes = 1,
+                .allTemplateTypesOrAllArgTypes = true,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_LEN,
-        BuiltinFunctionInfo{
-            .minArgTypes = 1,
-            .maxArgTypes = 1,
-        },
+        .name = BUILTIN_FCT_NAME_LEN,
+        .info =
+            BuiltinFunctionInfo{
+                .minArgTypes = 1,
+                .maxArgTypes = 1,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PANIC,
-        BuiltinFunctionInfo{
-            .minArgTypes = 1,
-            .maxArgTypes = 1,
-            .isFunctionTerminator = true,
-        },
+        .name = BUILTIN_FCT_NAME_PANIC,
+        .info =
+            BuiltinFunctionInfo{
+                .minArgTypes = 1,
+                .maxArgTypes = 1,
+                .isFunctionTerminator = true,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_SYSCALL,
-        BuiltinFunctionInfo{
-            .minArgTypes = 1,
-            // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-            .maxArgTypes = 6,
-        },
+        .name = BUILTIN_FCT_NAME_SYSCALL,
+        .info =
+            BuiltinFunctionInfo{
+                .minArgTypes = 1,
+                // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+                .maxArgTypes = 6,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_SAME,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 2,
-            .maxTemplateTypes = std::numeric_limits<unsigned int>::max(),
-        },
+        .name = BUILTIN_FCT_NAME_IS_SAME,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 2,
+                .maxTemplateTypes = std::numeric_limits<unsigned int>::max(),
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 2,
-            .maxTemplateTypes = 2,
-        },
+        .name = BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 2,
+                .maxTemplateTypes = 2,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_GET_BUILD_VAR,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .minArgTypes = 1,
-            .maxArgTypes = 2,
-        },
+        .name = BUILTIN_FCT_NAME_GET_BUILD_VAR,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+                .minArgTypes = 1,
+                .maxArgTypes = 2,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
+        .name = BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
+        .name = BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
+        .name = BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_IS_HEAP,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-        },
+        .name = BUILTIN_FCT_NAME_IS_HEAP,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_NEW,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
+        .name = BUILTIN_FCT_NAME_NEW,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+                .maxArgTypes = std::numeric_limits<unsigned int>::max(),
+            },
     },
     BuiltinFunctionEntry{
-        BUILTIN_FCT_NAME_PLACEMENT_NEW,
-        BuiltinFunctionInfo{
-            .minTemplateTypes = 1,
-            .maxTemplateTypes = 1,
-            .minArgTypes = 1,
-            .maxArgTypes = std::numeric_limits<unsigned int>::max(),
-        },
+        .name = BUILTIN_FCT_NAME_PLACEMENT_NEW,
+        .info =
+            BuiltinFunctionInfo{
+                .minTemplateTypes = 1,
+                .maxTemplateTypes = 1,
+                .minArgTypes = 1,
+                .maxArgTypes = std::numeric_limits<unsigned int>::max(),
+            },
     },
 };
 

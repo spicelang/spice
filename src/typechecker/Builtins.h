@@ -19,24 +19,132 @@ struct BuiltinFunctionDispatch {
 };
 
 static const std::unordered_map<std::string_view, BuiltinFunctionDispatch> BUILTIN_DISPATCH_MAP = {
-    {BUILTIN_FCT_NAME_PRINTF, {&TypeChecker::visitBuiltinPrintfCall, &IRGenerator::visitBuiltinPrintfCall}},
-    {BUILTIN_FCT_NAME_SIZEOF, {&TypeChecker::visitBuiltinSizeOfCall, nullptr}},
-    {BUILTIN_FCT_NAME_ALIGNOF, {&TypeChecker::visitBuiltinAlignOfCall, nullptr}},
-    {BUILTIN_FCT_NAME_OFFSETOF, {&TypeChecker::visitBuiltinOffsetOfCall, nullptr}},
-    {BUILTIN_FCT_NAME_TYPEID, {&TypeChecker::visitBuiltinTypeIdCall, nullptr}},
-    {BUILTIN_FCT_NAME_TYPENAME, {&TypeChecker::visitBuiltinTypeNameCall, nullptr}},
-    {BUILTIN_FCT_NAME_LEN, {&TypeChecker::visitBuiltinLenCall, &IRGenerator::visitBuiltinLenCall}},
-    {BUILTIN_FCT_NAME_PANIC, {&TypeChecker::visitBuiltinPanicCall, &IRGenerator::visitBuiltinPanicCall}},
-    {BUILTIN_FCT_NAME_SYSCALL, {&TypeChecker::visitBuiltinSyscallCall, &IRGenerator::visitBuiltinSyscallCall}},
-    {BUILTIN_FCT_NAME_IS_SAME, {&TypeChecker::visitBuiltinIsSameCall, nullptr}},
-    {BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE, {&TypeChecker::visitBuiltinImplementsInterfaceCall, nullptr}},
-    {BUILTIN_FCT_NAME_GET_BUILD_VAR, {&TypeChecker::visitBuiltinGetBuildVarCall, nullptr}},
-    {BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE, {&TypeChecker::visitBuiltinIsTriviallyConstructible, nullptr}},
-    {BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE, {&TypeChecker::visitBuiltinIsTriviallyCopyable, nullptr}},
-    {BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE, {&TypeChecker::visitBuiltinIsTriviallyDestructible, nullptr}},
-    {BUILTIN_FCT_NAME_IS_HEAP, {&TypeChecker::visitBuiltinIsHeap, nullptr}},
-    {BUILTIN_FCT_NAME_NEW, {&TypeChecker::visitBuiltinNewCall, &IRGenerator::visitBuiltinNewCall}},
-    {BUILTIN_FCT_NAME_PLACEMENT_NEW, {&TypeChecker::visitBuiltinPlacementNewCall, &IRGenerator::visitBuiltinPlacementNewCall}},
+    {
+        BUILTIN_FCT_NAME_PRINTF,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPrintfCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPrintfCall,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_SIZEOF,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSizeOfCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_ALIGNOF,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinAlignOfCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_OFFSETOF,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinOffsetOfCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_TYPEID,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeIdCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_TYPENAME,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinTypeNameCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_LEN,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinLenCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinLenCall,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_PANIC,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPanicCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPanicCall,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_SYSCALL,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSyscallCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinSyscallCall,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IS_SAME,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsSameCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinImplementsInterfaceCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_GET_BUILD_VAR,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinGetBuildVarCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyConstructible,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyCopyable,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsTriviallyDestructible,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_IS_HEAP,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinIsHeap,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_NEW,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinNewCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinNewCall,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_PLACEMENT_NEW,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinPlacementNewCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPlacementNewCall,
+        },
+    },
 };
 
 } // namespace spice::compiler
