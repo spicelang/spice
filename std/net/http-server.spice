@@ -1,0 +1,438 @@
+// Imports
+import "std/data/vector";
+import "std/net/http";
+import "std/net/socket";
+import "std/type/lambda";
+import "std/type/type-conversion";
+
+/**
+ * A registered route: the method and path it answers, plus what answers it - either a handler, or a
+ * fixed piece of content that the route carries itself
+ */
+type HttpRoute struct {
+    HttpMethod method
+    String path
+    bool isStatic
+    String staticContent
+    String staticContentType
+    Lambda<p(const HttpRequest&, HttpResponse&)> handler
+}
+
+/**
+ * A blocking HTTP/1.1 server, built on the plain TCP sockets of "std/net/socket".
+ *
+ * Requests are served one at a time on the thread that drives the server: `run` keeps serving until
+ * `stop` is called, while `handleNextRequest` serves a single connection and hands control back, so
+ * the caller can weave the server into a loop of its own. Every connection is answered with
+ * `Connection: close` and closed afterwards.
+ *
+ * Routing is exact-match on the path of the request target, so "/a" and "/a/" are different routes
+ * and the query string never takes part in the match. A path that is registered for some other
+ * method answers 405 instead of 404, and a HEAD request falls back to the GET route of the same
+ * path, with the body dropped again afterwards.
+ *
+ * There is no TLS underneath, so the server speaks plain http only.
+ *
+ * Note on handlers: a handler is stored in a `Lambda` (see "std/type/lambda"), which relocates the
+ * captures of the lambda onto the heap with a shallow copy. A handler may therefore capture plain
+ * values, but it must not capture a `String`, a container or anything else that owns memory, since
+ * only the owner itself would free it. Fixed content belongs into `serve`, and anything else into a
+ * global or into the request itself.
+ */
+public type HttpServer struct {
+    public unsigned short port          // Port the server listens on
+    public String serverIdent           // Value of the Server field of every response
+    public unsigned long maxMessageSize // Upper bound on the size of a request
+    public unsigned long timeoutMillis  // Per read/write timeout of a connection, 0 to block indefinitely
+    Socket socket
+    Vector<HttpRoute> routes
+    Lambda<p(const HttpRequest&, HttpResponse&)> notFoundHandler
+    bool hasNotFoundHandler
+    bool listening
+    bool running
+}
+
+// Default identification of the server, sent unless the caller sets its own
+public const string DEFAULT_SERVER_IDENT = "SpiceHttpServer/1.0";
+
+// Maximum number of connections that may wait in the accept queue
+public const int DEFAULT_CONNECTION_BACKLOG = 50;
+
+const unsigned long DEFAULT_TIMEOUT_MILLIS = 30000l;
+
+/**
+ * Constructs a server for the given port. Nothing is bound yet - that happens in `start`.
+ *
+ * @param port Port to listen on
+ */
+public p HttpServer.ctor(unsigned short port = HTTP_PORT_FALLBACK) {
+    this.port = port;
+    this.serverIdent = String(DEFAULT_SERVER_IDENT);
+    this.maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
+    this.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    this.hasNotFoundHandler = false;
+    this.listening = false;
+    this.running = false;
+}
+
+/**
+ * Closes the listening socket if the server is still up
+ */
+public p HttpServer.dtor() {
+    this.close();
+}
+
+// ================================================ Route registration =================================================
+
+/**
+ * Registers a handler for a method and path
+ *
+ * @param method Method the route answers
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.route(HttpMethod method, string path, p(const HttpRequest&, HttpResponse&) handler) {
+    const HttpRoute newRoute = HttpRoute {
+        method,
+        String(path),
+        /*isStatic=*/false,
+        String(),
+        String(),
+        Lambda<p(const HttpRequest&, HttpResponse&)>(handler)
+    };
+    this.routes.pushBack(newRoute);
+}
+
+/**
+ * Registers a GET handler for a path. HEAD requests for the same path are answered from it as well.
+ *
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.get(string path, p(const HttpRequest&, HttpResponse&) handler) {
+    this.route(HttpMethod::GET, path, handler);
+}
+
+/**
+ * Registers a POST handler for a path
+ *
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.post(string path, p(const HttpRequest&, HttpResponse&) handler) {
+    this.route(HttpMethod::POST, path, handler);
+}
+
+/**
+ * Registers a PUT handler for a path
+ *
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.put(string path, p(const HttpRequest&, HttpResponse&) handler) {
+    this.route(HttpMethod::PUT, path, handler);
+}
+
+/**
+ * Registers a PATCH handler for a path
+ *
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.patch(string path, p(const HttpRequest&, HttpResponse&) handler) {
+    this.route(HttpMethod::PATCH, path, handler);
+}
+
+/**
+ * Registers a DELETE handler for a path
+ *
+ * @param path Path the route answers, matched exactly
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.delete(string path, p(const HttpRequest&, HttpResponse&) handler) {
+    this.route(HttpMethod::DELETE, path, handler);
+}
+
+/**
+ * Registers a route that answers a path with a fixed piece of content
+ *
+ * @param path Path the route answers, matched exactly
+ * @param content Content to respond with
+ * @param contentType Media type of the content
+ */
+public p HttpServer.serve(string path, string content, string contentType = CONTENT_TYPE_HTML) {
+    // The content is owned by the route rather than captured by a lambda, since lambda captures are
+    // shallow copies and would not keep a String alive past this call
+    const HttpRoute newRoute = HttpRoute {
+        HttpMethod::GET,
+        String(path),
+        /*isStatic=*/true,
+        String(content),
+        String(contentType),
+        Lambda<p(const HttpRequest&, HttpResponse&)>()
+    };
+    this.routes.pushBack(newRoute);
+}
+
+/**
+ * Registers a route that answers a path with a fixed piece of content
+ *
+ * @param path Path the route answers, matched exactly
+ * @param content Content to respond with
+ * @param contentType Media type of the content
+ */
+public p HttpServer.serve(string path, const String& content, string contentType = CONTENT_TYPE_HTML) {
+    this.serve(path, content.getRaw(), contentType);
+}
+
+/**
+ * Registers the handler that answers requests no route matches. Without one, unmatched requests are
+ * answered with a plain 404.
+ *
+ * @param handler Handler that fills in the response
+ */
+public p HttpServer.setNotFoundHandler(p(const HttpRequest&, HttpResponse&) handler) {
+    this.notFoundHandler = Lambda<p(const HttpRequest&, HttpResponse&)>(handler);
+    this.hasNotFoundHandler = true;
+}
+
+// ================================================== Server lifecycle =================================================
+
+/**
+ * Binds the configured port and starts listening on it
+ *
+ * @param connectionBacklog Maximum number of connections that may wait in the accept queue
+ * @return true once the server listens, or an error describing why it could not
+ */
+public f<Result<bool>> HttpServer.start(int connectionBacklog = DEFAULT_CONNECTION_BACKLOG) {
+    string errorMessage = "";
+    if this.listening {
+        errorMessage = "Server is already listening";
+    } else {
+        const Result<Socket> socketResult = openServerSocket(this.port, connectionBacklog);
+        if socketResult.isErr() {
+            errorMessage = socketResult.getErr().message;
+        } else {
+            this.socket = socketResult.unwrap();
+            this.listening = true;
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(true) : err<bool>(error);
+}
+
+/**
+ * Accepts a single connection, answers the request on it and closes it again.
+ *
+ * A request that cannot be parsed is answered with 400 rather than being dropped silently, so a
+ * confused client learns what happened.
+ *
+ * @return true if a request was served, or an error if the connection could not be accepted
+ */
+public f<Result<bool>> HttpServer.handleNextRequest() {
+    string errorMessage = "";
+    bool served = false;
+
+    if !this.listening {
+        errorMessage = "Server is not listening, call start() first";
+    } else {
+        const Result<int> connectionResult = this.socket.acceptConnection();
+        if connectionResult.isErr() {
+            errorMessage = connectionResult.getErr().message;
+        } else {
+            if this.timeoutMillis != 0l { this.socket.setTimeout(this.timeoutMillis); }
+
+            HttpResponse response = HttpResponse();
+            const Result<HttpRequest> requestResult = receiveRequest(this.socket, this.maxMessageSize);
+            if requestResult.isErr() {
+                // The request never arrived in one piece, so all we can say is that it was bad
+                response.setStatus(STATUS_BAD_REQUEST);
+                const String reasonBody = String(requestResult.getErr().message);
+                response.setBody(reasonBody, CONTENT_TYPE_TEXT);
+            } else {
+                const HttpRequest& request = requestResult.unwrap();
+                this.dispatch(request, response);
+            }
+
+            this.completeResponse(response);
+            served = sendResponse(this.socket, response);
+            this.socket.closeConnection();
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(served) : err<bool>(error);
+}
+
+/**
+ * Serves connections until `stop` is called or a connection cannot be accepted.
+ *
+ * The stop flag is checked between connections, so a `stop` from another thread takes effect once
+ * the connection that is currently being served is done.
+ *
+ * @return true if the loop ended through `stop`, or an error if a connection could not be accepted
+ */
+public f<Result<bool>> HttpServer.run() {
+    string errorMessage = "";
+    if !this.listening {
+        errorMessage = "Server is not listening, call start() first";
+    } else {
+        this.running = true;
+        while this.running && errorMessage == "" {
+            const Result<bool> requestResult = this.handleNextRequest();
+            if requestResult.isErr() {
+                errorMessage = requestResult.getErr().message;
+            }
+        }
+        this.running = false;
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(true) : err<bool>(error);
+}
+
+/**
+ * Asks a running `run` loop to end once the connection it is serving is done
+ */
+public p HttpServer.stop() {
+    this.running = false;
+}
+
+/**
+ * Checks whether a `run` loop is currently serving
+ */
+public f<bool> HttpServer.isRunning() {
+    return this.running;
+}
+
+/**
+ * Checks whether the server holds a listening socket
+ */
+public f<bool> HttpServer.isListening() {
+    return this.listening;
+}
+
+/**
+ * Closes the listening socket. The server can be started again afterwards.
+ *
+ * @return Closing the socket was successful or not
+ */
+public p HttpServer.close() {
+    this.running = false;
+    if this.listening {
+        this.socket.close();
+        this.listening = false;
+    }
+}
+
+// ==================================================== Dispatching ====================================================
+
+/**
+ * Picks the route that answers a request and lets it fill in the response
+ *
+ * @param request Request to answer
+ * @param response Response to fill in
+ */
+p HttpServer.dispatch(const HttpRequest& request, HttpResponse& response) {
+    const String path = request.getPath();
+    // A HEAD request is served from the GET route of the same path if it has no route of its own
+    const bool isHead = request.method == HttpMethod::HEAD;
+    long routeIndex = this.findRoute(request.method, path);
+    if routeIndex == -1l && isHead {
+        routeIndex = this.findRoute(HttpMethod::GET, path);
+    }
+
+    if routeIndex != -1l {
+        HttpRoute& route = this.routes.get(cast<unsigned long>(routeIndex));
+        if route.isStatic {
+            response.setBody(route.staticContent, route.staticContentType.getRaw());
+        } else {
+            // A stored lambda cannot be called through the field directly, so it goes through a local
+            p(const HttpRequest&, HttpResponse&) handler = route.handler.get();
+            handler(request, response);
+        }
+        // A response to HEAD carries the header fields of the GET response, but never its body
+        if isHead { response.body = String(); }
+    } else if this.hasPathWithOtherMethod(path) {
+        response.setStatus(STATUS_METHOD_NOT_ALLOWED);
+        const String allowed = this.getAllowedMethods(path);
+        response.headers.set("Allow", allowed);
+        const String message = String("Method not allowed for this path");
+        response.setBody(message, CONTENT_TYPE_TEXT);
+    } else if this.hasNotFoundHandler {
+        response.setStatus(STATUS_NOT_FOUND);
+        p(const HttpRequest&, HttpResponse&) handler = this.notFoundHandler.get();
+        handler(request, response);
+    } else {
+        response.setStatus(STATUS_NOT_FOUND);
+        const String message = String("Not found");
+        response.setBody(message, CONTENT_TYPE_TEXT);
+    }
+}
+
+/**
+ * Returns the index of the route that answers the given method and path
+ *
+ * @param method Method to match
+ * @param path Path to match
+ * @return Index of the route, or -1 if there is none
+ */
+f<long> HttpServer.findRoute(HttpMethod method, const String& path) {
+    const unsigned long routeCount = cast<unsigned long>(this.routes.getSize());
+    for unsigned long i = 0l; i < routeCount; i++ {
+        HttpRoute& route = this.routes.get(i);
+        if route.method == method && route.path == path { return cast<long>(i); }
+    }
+    return -1l;
+}
+
+/**
+ * Checks whether the path is registered at all, no matter for which method
+ *
+ * @param path Path to look for
+ */
+f<bool> HttpServer.hasPathWithOtherMethod(const String& path) {
+    const unsigned long routeCount = cast<unsigned long>(this.routes.getSize());
+    for unsigned long i = 0l; i < routeCount; i++ {
+        HttpRoute& route = this.routes.get(i);
+        if route.path == path { return true; }
+    }
+    return false;
+}
+
+/**
+ * Builds the value of the Allow field for a path, i.e. the methods it is registered for
+ *
+ * @param path Path to collect the methods of
+ * @return Comma separated method list, e.g. "GET, POST"
+ */
+f<String> HttpServer.getAllowedMethods(const String& path) {
+    result = String();
+    const unsigned long routeCount = cast<unsigned long>(this.routes.getSize());
+    for unsigned long i = 0l; i < routeCount; i++ {
+        HttpRoute& route = this.routes.get(i);
+        if route.path == path {
+            if !result.isEmpty() { result.append(", "); }
+            result.append(getMethodName(route.method));
+        }
+    }
+}
+
+/**
+ * Adds the header fields that every response of this server carries
+ *
+ * @param response Response to complete
+ */
+p HttpServer.completeResponse(HttpResponse& response) {
+    if !response.headers.contains(HEADER_SERVER) {
+        response.headers.set(HEADER_SERVER, this.serverIdent);
+    }
+    // Without keep-alive support, every response ends its connection
+    response.headers.set(HEADER_CONNECTION, "close");
+    // A client needs to know where the body ends, even when a handler left it empty
+    if !response.headers.contains(HEADER_CONTENT_LENGTH) && !response.headers.isChunked() {
+        const String bodyLength = toString(cast<long>(response.body.getLength()));
+        response.headers.set(HEADER_CONTENT_LENGTH, bodyLength);
+    }
+}

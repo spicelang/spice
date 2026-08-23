@@ -11,4 +11,5 @@ public const int SOCK_STREAM = 1; // Stream socket
 public const int SOCK_DGRAM = 2;  // Datagram socket
 public const int IPPROTO_IP = 0;
 public const int IPPROTO_UDP = 17;
-public const int INADDR_ANY = 0;
+public const InAddrT INADDR_ANY = 0u;
+public const InAddrT INADDR_NONE = 0xFFFFFFFFu; // returned by inet_addr for malformed addresses

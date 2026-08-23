@@ -1,0 +1,94 @@
+import "std/net/http";
+import "std/net/http-client";
+import "std/net/http-server";
+import "std/os/thread-pool";
+import "std/time/delay";
+
+/**
+ * Drives a Spice HTTP server and a Spice HTTP client against each other over the loopback
+ * interface. The server stays silent so that the output only depends on the client, which runs its
+ * requests in a fixed order.
+ */
+f<int> main() {
+    ThreadPool pool = ThreadPool(2s);
+
+    pool.enqueue(p() [[async]] {
+        HttpServer server = HttpServer(18085s);
+        server.serve("/", "<h1>Index</h1>");
+        server.get("/greet", p(const HttpRequest& request, HttpResponse& response) {
+            String greeting = String("hi ");
+            String who = request.getQueryParam("who");
+            greeting.append(who);
+            response.setBody(greeting, CONTENT_TYPE_TEXT);
+        });
+        server.post("/echo", p(const HttpRequest& request, HttpResponse& response) {
+            response.setStatus(STATUS_CREATED);
+            String echoed = String("echo:");
+            echoed.append(request.body);
+            response.setBody(echoed, CONTENT_TYPE_JSON);
+        });
+        server.get("/moved", p(const HttpRequest& request, HttpResponse& response) {
+            assert request.method == HttpMethod::GET;
+            response.redirectTo("/greet?who=redirected", STATUS_FOUND);
+        });
+
+        Result<bool> started = server.start();
+        assert started.isOk();
+
+        // index, greet, echo, the redirect plus the request it points at, unknown path,
+        // method mismatch and finally the HEAD request
+        for int i = 0; i < 8; i++ {
+            Result<bool> handled = server.handleNextRequest();
+            assert handled.isOk();
+        }
+        server.close();
+    });
+
+    pool.enqueue(p() [[async]] {
+        delay(500); // give the server time to bind its port
+        HttpClient client = HttpClient();
+
+        Result<HttpResponse> index = client.get("http://127.0.0.1:18085/");
+        HttpResponse& indexResponse = index.unwrap();
+        String indexType = indexResponse.headers.get(HEADER_CONTENT_TYPE);
+        printf("index: %d %s [%s] %s\n", indexResponse.statusCode, indexResponse.reason,
+               indexResponse.body, indexType);
+
+        Result<HttpResponse> greet = client.get("http://127.0.0.1:18085/greet?who=Spice");
+        HttpResponse& greetResponse = greet.unwrap();
+        printf("greet: %d [%s]\n", greetResponse.statusCode, greetResponse.body);
+
+        String payload = String("payload");
+        Result<HttpResponse> echo = client.post("http://127.0.0.1:18085/echo", payload, CONTENT_TYPE_TEXT);
+        HttpResponse& echoResponse = echo.unwrap();
+        String echoType = echoResponse.headers.get(HEADER_CONTENT_TYPE);
+        printf("echo: %d %s [%s] %s\n", echoResponse.statusCode, echoResponse.reason,
+               echoResponse.body, echoType);
+
+        Result<HttpResponse> moved = client.get("http://127.0.0.1:18085/moved");
+        HttpResponse& movedResponse = moved.unwrap();
+        printf("moved: %d [%s]\n", movedResponse.statusCode, movedResponse.body);
+
+        Result<HttpResponse> missing = client.get("http://127.0.0.1:18085/missing");
+        HttpResponse& missingResponse = missing.unwrap();
+        printf("missing: %d %s\n", missingResponse.statusCode, missingResponse.reason);
+
+        String empty = String();
+        Result<HttpResponse> wrongMethod = client.request(HttpMethod::DELETE, "http://127.0.0.1:18085/greet",
+                                                          empty, CONTENT_TYPE_TEXT);
+        HttpResponse& wrongMethodResponse = wrongMethod.unwrap();
+        String allowed = wrongMethodResponse.headers.get("Allow");
+        printf("wrong method: %d %s allow=%s\n", wrongMethodResponse.statusCode,
+               wrongMethodResponse.reason, allowed);
+
+        Result<HttpResponse> head = client.head("http://127.0.0.1:18085/");
+        HttpResponse& headResponse = head.unwrap();
+        String headLength = headResponse.headers.get(HEADER_CONTENT_LENGTH);
+        printf("head: %d body-length=%d announced=%s\n", headResponse.statusCode,
+               headResponse.body.getLength(), headLength);
+    });
+
+    pool.start();
+    pool.join();
+    return 0;
+}

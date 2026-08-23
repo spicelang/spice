@@ -1,14 +1,19 @@
 // Link WinSock library
-#![core.linux.linker.flag = "-lws2_32"]
+#![core.windows.linker.flag = "-lws2_32"]
 
 // Import common logic
 import "std/net/socket";
 
 // Type defs
 type SAFamilyT alias unsigned short;
+type SockLenT alias int; // Winsock takes plain ints where POSIX takes socklen_t
 
 // Constants
 const unsigned short REQUESTED_WSA_VERSION = 514s;
+public const int SOL_SOCKET = 65535; // Option level for socket-level options (0xFFFF)
+public const int SO_REUSEADDR = 4;   // Allow binding to a local address that is still in TIME_WAIT
+public const int SO_RCVTIMEO = 4102; // Timeout for receive operations
+public const int SO_SNDTIMEO = 4101; // Timeout for send operations
 
 type WSAData struct {
     unsigned short wVersion
@@ -19,17 +24,6 @@ type WSAData struct {
     char[257] szDescription
     char[129] szSystemStatus
 }
-
-// External functions
-ext f<int> WSAStartup(short, WSAData*);
-ext f<int> WSACleanup();
-ext f<int> socket(int /*sockfd*/, int /*type*/, int /*protocol*/);
-ext f<int> bind(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
-ext f<int> listen(int /*sockfd*/, int /*backlog*/);
-ext f<int> accept(int /*sockfd*/, SockAddrIn*, SockLenT /*address_len*/);
-ext f<int> close(int /*sockfd*/);
-ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to re-implement in Spice
-ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
 
 type SockAddr struct {
     SAFamilyT saFamily // Address family
@@ -55,22 +49,26 @@ public type In6Addr struct {
 }
 
 /**
- * Socket address for an IPv4 (AF_INET) endpoint
+ * Socket address for an IPv4 (AF_INET) endpoint.
+ *
+ * The field order and the field widths mirror `SOCKADDR_IN` from the Winsock headers one to one, so
+ * that the struct can be handed to the socket calls without any conversion in between.
  */
 public type SockAddrIn struct {
-    unsigned short sinFamily // AF_INET
-    InPortT sinPort          // Port number
-    InAddr sinAddr           // IPv4 address
+    SAFamilyT     sinFamily // AF_INET
+    InPortT       sinPort   // Port number (network byte order)
+    InAddr        sinAddr   // IPv4 address (network byte order)
+    unsigned long sinZero   // Padding (this is a char[8] in the original implementation)
 }
 
 /**
  * Socket address for an IPv6 (AF_INET6) endpoint
  */
 public type SockAddrIn6 struct {
-    unsigned short sin6Family // AF_INET6
-    InPortT sin6Port          // Port number
+    SAFamilyT    sin6Family   // AF_INET6
+    InPortT      sin6Port     // Port number
     unsigned int sin6FlowInfo // IPv6 flow info
-    In6Addr sin6Addr          // IPv6 address
+    In6Addr      sin6Addr     // IPv6 address
     unsigned int sin6ScopeId  // Set of interfaces for a scope
 }
 
@@ -78,8 +76,37 @@ public type SockAddrIn6 struct {
  * Socket address for a Unix domain (AF_UNIX) endpoint
  */
 public type SockAddrUn struct {
-
+    SAFamilyT sunFamily // Address family
+    char[]    sunPath   // Socket pathname
 }
+
+/**
+ * Host entry as returned by `gethostbyname`. Mirrors `struct hostent` from the Winsock headers.
+ */
+type HostEnt struct {
+    string  hName     // Official name of the host
+    string* hAliases  // Alias list, terminated by a nil entry
+    short   hAddrType // Address type (AF_INET for IPv4)
+    short   hLength   // Length of an address, in bytes
+    byte**  hAddrList // Address list, terminated by a nil entry
+}
+
+// External functions
+ext f<int> WSAStartup(short /*versionRequested*/, WSAData* /*wsaData*/);
+ext f<int> WSACleanup();
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> bind(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT* /*address_len*/);
+ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, SockLenT /*optlen*/);
+ext f<int> recv(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> send(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> closesocket(int /*sockfd*/);
+ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to re-implement in Spice
+ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
+ext f<InAddrT> inet_addr(string /*cp*/);
+ext f<HostEnt*> gethostbyname(string /*name*/);
+ext f<int> connect(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
 
 /**
  * A network socket, wrapping the listening socket file descriptor and the current connection
@@ -97,18 +124,164 @@ public type Socket struct {
  */
 public f<Result<int>> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
-    this.connFd = accept(this.sockFd, &cliAddr, 16u /* hardcoded sizeof(cliAddr) */);
+    SockLenT addrLen = cast<SockLenT>(sizeof<SockAddrIn>());
+    this.connFd = accept(this.sockFd, &cliAddr, &addrLen);
     if this.connFd == -1 { return err<int>(Error("Error while accepting connection")); }
     return ok(this.connFd);
 }
 
 /**
+ * Write a raw string to the socket.
+ *
+ * @param message Content of the message
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(string message) {
+    const unsigned long messageLength = len(message);
+    if messageLength == 0l { return 0l; }
+    byte* messageBytes = nil<byte*>;
+    unsafe {
+        messageBytes = cast<byte*>(message);
+    }
+    return cast<long>(send(this.connFd, messageBytes, cast<int>(messageLength), 0));
+}
+
+/**
+ * Write an array of bytes to the socket.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(byte* content, unsigned long size) {
+    if size == 0l { return 0l; }
+    return cast<long>(send(this.connFd, content, cast<int>(size), 0));
+}
+
+/**
+ * Write an array of bytes to the socket, retrying until either all of them were handed over to the
+ * network stack or the connection breaks. A single `send` call is free to accept only a part of the
+ * buffer, so anything that must arrive in full has to go through this method.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return true if all bytes were written, false if the connection broke in between
+ */
+public f<bool> Socket.writeAll(byte* content, unsigned long size) {
+    unsigned long bytesWritten = 0l;
+    while bytesWritten < size {
+        int written = 0;
+        unsafe {
+            written = send(this.connFd, content + bytesWritten, cast<int>(size - bytesWritten), 0);
+        }
+        if written <= 0 { return false; }
+        bytesWritten += cast<unsigned long>(written);
+    }
+    return true;
+}
+
+/**
+ * Read n bytes from the socket to the given buffer.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param buffer Buffer to write the result into
+ * @param size Number of bytes to read
+ * @return Number of bytes written
+ */
+public f<long> Socket.read(byte* buffer, long size) {
+    return cast<long>(recv(this.connFd, buffer, cast<int>(size), 0));
+}
+
+/**
+ * Limits how long a single read or write on this socket may block. Without a timeout a peer that
+ * connects but never sends anything keeps the caller waiting forever.
+ * The timeout applies to the current connection, which for a client socket is the socket itself.
+ * Note: Winsock takes the timeout as a plain millisecond count instead of a timeval.
+ *
+ * @param milliseconds Timeout in milliseconds, 0 to block indefinitely again
+ * @return Setting the timeout was successful or not
+ */
+public f<bool> Socket.setTimeout(unsigned long milliseconds) {
+    int timeout = cast<int>(milliseconds);
+    const int targetFd = this.connFd != 0 ? this.connFd : this.sockFd;
+    int receiveResult = 0;
+    int sendResult = 0;
+    unsafe {
+        const SockLenT optLen = cast<SockLenT>(sizeof<int>());
+        receiveResult = setsockopt(targetFd, SOL_SOCKET, SO_RCVTIMEO, cast<byte*>(&timeout), optLen);
+        sendResult = setsockopt(targetFd, SOL_SOCKET, SO_SNDTIMEO, cast<byte*>(&timeout), optLen);
+    }
+    return receiveResult == 0 && sendResult == 0;
+}
+
+/**
+ * Closes the current connection of the socket, while keeping the socket itself open. This is what a
+ * server does after it has finished serving a single client.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> Socket.closeConnection() {
+    // A client socket uses the same descriptor for the socket and the connection, so closing the
+    // connection there would take the socket down with it.
+    if this.connFd == 0 || this.connFd == this.sockFd { return true; }
+    const bool success = closesocket(this.connFd) == 0;
+    this.connFd = 0;
+    return success;
+}
+
+/**
  * Closes the socket. This method should always be called by the user before exiting the program.
+ * Note: Winsock itself is not shut down here, since other sockets of the process may still be in
+ * use. Windows reclaims it when the process exits.
  *
  * @return Closing the connection was successful or not
  */
 public f<bool> Socket.close() {
-    return close(this.sockFd) == 0 && WSACleanup() == 0;
+    const bool connectionClosed = this.closeConnection();
+    return closesocket(this.sockFd) == 0 && connectionClosed;
+}
+
+/**
+ * Resolves a host given as either a dotted IPv4 address or a hostname to a raw IPv4 address in
+ * network byte order.
+ * Note: The DNS lookup is performed via `gethostbyname`, which is not thread-safe.
+ *
+ * @param host Dotted IPv4 address (e.g. "127.0.0.1") or hostname (e.g. "example.com")
+ * @return IPv4 address in network byte order
+ */
+public f<Result<InAddrT>> resolveHost(string host) {
+    // A dotted IPv4 address needs no name server round trip
+    const InAddrT numericAddr = inet_addr(host);
+    if numericAddr != INADDR_NONE { return ok<InAddrT>(numericAddr); }
+
+    // Fall back to a name lookup
+    HostEnt* entry = gethostbyname(host);
+    if entry == nil<HostEnt*> { return err<InAddrT>(Error("Could not resolve host name")); }
+    if cast<int>(entry.hAddrType) != AF_INET { return err<InAddrT>(Error("Host name does not resolve to an IPv4 address")); }
+
+    InAddrT resolvedAddr = 0u;
+    unsafe {
+        byte** addrList = entry.hAddrList;
+        if addrList == nil<byte**> || addrList[0] == nil<byte*> {
+            return err<InAddrT>(Error("Host name resolved to an empty address list"));
+        }
+        InAddrT* firstAddr = cast<InAddrT*>(addrList[0]);
+        resolvedAddr = *firstAddr;
+    }
+    return ok<InAddrT>(resolvedAddr);
+}
+
+/**
+ * Initializes Winsock for this process. Repeated calls are cheap, since Winsock only keeps a
+ * reference count.
+ *
+ * @return Initialization was successful or not
+ */
+f<bool> startupWinsock() {
+    WSAData wsaData = WSAData{};
+    return WSAStartup(cast<short>(REQUESTED_WSA_VERSION), &wsaData) == 0;
 }
 
 /**
@@ -124,24 +297,68 @@ public f<bool> Socket.close() {
  */
 public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     // Initialize WSA
-    WSAData wsaData = WSAData{};
-    if WSAStartup(REQUESTED_WSA_VERSION, &wsaData) != 0 { return err<Socket>(Error("Error initializing WSA")); }
+    if !startupWinsock() { return err<Socket>(Error("Error initializing WSA")); }
 
     // Create socket file descriptor
     const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if sockFd == -1 { return err<Socket>(Error("Error creating socket")); }
 
+    // Allow rebinding the port right away instead of waiting out the TIME_WAIT of the previous socket
+    int reuseAddr = 1;
+    unsafe {
+        setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, cast<byte*>(&reuseAddr), cast<SockLenT>(sizeof<int>()));
+    }
+
     // Construct socket object
     const Socket s = Socket { sockFd, /*connFd*/ 0 };
-    SockAddrIn servAddr = SockAddrIn { cast<short>(AF_INET), htons(port), InAddr { INADDR_ANY }};
+    const SockAddrIn servAddr = SockAddrIn { cast<SAFamilyT>(AF_INET), htons(port), InAddr { INADDR_ANY }, 0ul };
 
     // Bind to target address
-    int bindResult = bind(sockFd, &servAddr, 16u /* hardcoded sizeof(servaddr) */);
-    if bindResult != 0 { return err<Socket>(Error("Error binding to address")); }
+    const int bindResult = bind(sockFd, &servAddr, cast<SockLenT>(sizeof<SockAddrIn>()));
+    if bindResult != 0 {
+        closesocket(sockFd);
+        return err<Socket>(Error("Error binding to address"));
+    }
 
     // Start listening for incoming connections
-    int listenResult = listen(s.sockFd, maxWaitingConnections);
-    if listenResult != 0 { return err<Socket>(Error("Error listening on address")); }
+    const int listenResult = listen(sockFd, maxWaitingConnections);
+    if listenResult != 0 {
+        closesocket(sockFd);
+        return err<Socket>(Error("Error listening on address"));
+    }
+
+    return ok(s);
+}
+
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket.
+ *
+ * @param host Host to connect to, either as dotted IPv4 address or as hostname
+ * @param port Post to connect to
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
+    // Initialize WSA
+    if !startupWinsock() { return err<Socket>(Error("Error initializing WSA")); }
+
+    // Resolve the host before spending a socket handle on it
+    const Result<InAddrT> addrResult = resolveHost(host);
+    if addrResult.isErr() { return err<Socket>(addrResult.getErr()); }
+    const InAddrT hostAddr = addrResult.unwrap();
+
+    const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if sockFd == -1 { return err<Socket>(Error("Error opening socket client connection")); }
+
+    // Construct socket object. A client talks over the socket itself, so socket and connection descriptor are the same.
+    const Socket s = Socket { sockFd, /*connFd*/ sockFd };
+    const SockAddrIn servAddr = SockAddrIn { cast<SAFamilyT>(AF_INET), htons(port), InAddr { hostAddr }, 0ul };
+
+    // Connect to server
+    const int connectResult = connect(sockFd, &servAddr, cast<SockLenT>(sizeof<SockAddrIn>()));
+    if connectResult != 0 {
+        closesocket(sockFd);
+        return err<Socket>(Error("Error connecting to socket"));
+    }
 
     return ok(s);
 }

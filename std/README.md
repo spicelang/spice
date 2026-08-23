@@ -31,7 +31,7 @@ Spice bindings for common external libraries, allowing them to be called from Sp
 | Module            | Description                                                            |
 |-------------------|------------------------------------------------------------------------|
 | `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                    |
-| `libcurl/libcurl` | Bindings for libcurl, used for network transfers (see `std/net/http`). |
+| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.     |
 | `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.   |
 
 ### `std/data`
@@ -88,10 +88,15 @@ Mathematical operations, constants, hashing, and randomness.
 ### `std/net`
 Network communication via sockets and HTTP.
 
-| Module   | Description                                                                        |
-|----------|------------------------------------------------------------------------------------|
-| `socket` | Cross-platform socket abstraction (with `_linux`, `_darwin`, `_windows` variants). |
-| `http`   | HTTP client built on top of `std/bindings/libcurl`.                                |
+| Module        | Description                                                                                  |
+|---------------|----------------------------------------------------------------------------------------------|
+| `socket`      | Cross-platform socket abstraction (with `_linux`, `_darwin`, `_windows` variants).           |
+| `http`        | HTTP/1.1 message model (methods, status codes, header fields, URLs) plus its wire transport. |
+| `http-client` | Blocking HTTP/1.1 client, built on `std/net/socket`.                                         |
+| `http-server` | Blocking HTTP/1.1 server with route registration, built on `std/net/socket`.                  |
+
+The HTTP modules speak plain http only, since the socket layer carries no TLS. Use the libcurl
+bindings in `std/bindings/libcurl` when a request has to go over https.
 
 ### `std/os`
 Interacting with the underlying operating system: processes, threads, memory, environment, and raw syscalls.

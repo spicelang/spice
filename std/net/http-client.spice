@@ -1,0 +1,306 @@
+// Imports
+import "std/net/http";
+import "std/net/socket";
+
+/**
+ * A blocking HTTP/1.1 client, built on the plain TCP sockets of "std/net/socket".
+ *
+ * Every request opens its own connection, announces `Connection: close` and closes the connection
+ * again once the response has been read, so no connection state survives a call. Responses framed by
+ * Content-Length, by the chunked transfer coding, or by the connection close of an HTTP/1.0 server
+ * are all understood.
+ *
+ * There is no TLS underneath, so https URLs are rejected instead of being silently downgraded. Use
+ * the libcurl bindings in "std/bindings/libcurl" when a request has to go over https.
+ */
+public type HttpClient struct {
+    public HttpHeaders defaultHeaders     // Fields that are added to every request that lacks them
+    public unsigned long timeoutMillis    // Per read/write timeout, 0 to block indefinitely
+    public unsigned long maxMessageSize   // Upper bound on the size of a response
+    public unsigned int maxRedirects      // Number of redirects to follow, 0 to hand 3xx back as-is
+}
+
+// Default identification of the client, sent unless the caller sets its own User-Agent
+public const string DEFAULT_USER_AGENT = "SpiceHttpClient/1.0";
+
+const unsigned long DEFAULT_TIMEOUT_MILLIS = 30000l;
+const unsigned int DEFAULT_MAX_REDIRECTS = 5u;
+
+/**
+ * Constructs a client with the default timeout, message size limit and redirect budget
+ */
+public p HttpClient.ctor() {
+    this.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    this.maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
+    this.maxRedirects = DEFAULT_MAX_REDIRECTS;
+    this.defaultHeaders.set(HEADER_USER_AGENT, DEFAULT_USER_AGENT);
+    this.defaultHeaders.set(HEADER_ACCEPT, "*/*");
+}
+
+/**
+ * Adds or replaces a header field that is sent with every request
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpClient.setDefaultHeader(string name, string value) {
+    this.defaultHeaders.set(name, value);
+}
+
+/**
+ * Performs a GET request
+ *
+ * @param url Absolute URL to request
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.get(string url) {
+    const String emptyBody = String();
+    return this.request(HttpMethod::GET, url, emptyBody, CONTENT_TYPE_TEXT);
+}
+
+/**
+ * Performs a HEAD request, which yields the head of the response without its body
+ *
+ * @param url Absolute URL to request
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.head(string url) {
+    const String emptyBody = String();
+    return this.request(HttpMethod::HEAD, url, emptyBody, CONTENT_TYPE_TEXT);
+}
+
+/**
+ * Performs a POST request
+ *
+ * @param url Absolute URL to request
+ * @param body Payload to send
+ * @param contentType Media type of the payload
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.post(string url, const String& body, string contentType = CONTENT_TYPE_TEXT) {
+    return this.request(HttpMethod::POST, url, body, contentType);
+}
+
+/**
+ * Performs a PUT request
+ *
+ * @param url Absolute URL to request
+ * @param body Payload to send
+ * @param contentType Media type of the payload
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.put(string url, const String& body, string contentType = CONTENT_TYPE_TEXT) {
+    return this.request(HttpMethod::PUT, url, body, contentType);
+}
+
+/**
+ * Performs a PATCH request
+ *
+ * @param url Absolute URL to request
+ * @param body Payload to send
+ * @param contentType Media type of the payload
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.patch(string url, const String& body, string contentType = CONTENT_TYPE_TEXT) {
+    return this.request(HttpMethod::PATCH, url, body, contentType);
+}
+
+/**
+ * Performs a DELETE request
+ *
+ * @param url Absolute URL to request
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.delete(string url) {
+    const String emptyBody = String();
+    return this.request(HttpMethod::DELETE, url, emptyBody, CONTENT_TYPE_TEXT);
+}
+
+/**
+ * Performs a request with the given method, following redirects along the way
+ *
+ * @param method Request method
+ * @param url Absolute URL to request
+ * @param body Payload to send, may be empty
+ * @param contentType Media type of the payload
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.request(HttpMethod method, string url, const String& body,
+                                                  string contentType = CONTENT_TYPE_TEXT) {
+    HttpRequest request = HttpRequest(method, "/");
+    if !body.isEmpty() { request.setBody(body, contentType); }
+    const String rawUrl = String(url);
+    return this.send(request, rawUrl);
+}
+
+/**
+ * Sends a prepared request to the given URL, following redirects along the way.
+ *
+ * The request target, the Host field and the fields of `defaultHeaders` are filled in from the URL
+ * and the client configuration, so the caller only has to provide method, body and any extra header
+ * fields it cares about.
+ *
+ * @param request Request to send
+ * @param url Absolute URL to send it to
+ * @return The response, or an error describing why the exchange failed
+ */
+public f<Result<HttpResponse>> HttpClient.send(const HttpRequest& request, const String& url) {
+    HttpResponse response = HttpResponse();
+    HttpRequest currentRequest = HttpRequest();
+    currentRequest = request;
+    String currentUrl = String();
+    currentUrl = url;
+    string errorMessage = "";
+
+    unsigned int remainingRedirects = this.maxRedirects;
+    bool done = false;
+    while !done {
+        const Result<Url> urlResult = parseUrl(currentUrl);
+        if urlResult.isErr() {
+            errorMessage = urlResult.getErr().message;
+            done = true;
+        } else {
+            const Url& target = urlResult.unwrap();
+            const Result<HttpResponse> exchangeResult = this.exchange(currentRequest, target);
+            if exchangeResult.isErr() {
+                errorMessage = exchangeResult.getErr().message;
+                done = true;
+            } else {
+                const HttpResponse& received = exchangeResult.unwrap();
+                response = received;
+                // Follow the redirect if there is budget left and the response points somewhere
+                const String location = response.headers.get(HEADER_LOCATION);
+                if !response.isRedirect() || remainingRedirects == 0u || location.isEmpty() {
+                    done = true;
+                } else {
+                    currentUrl = resolveLocation(target, location);
+                    applyRedirectMethod(currentRequest, response.statusCode);
+                    remainingRedirects--;
+                }
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+}
+
+/**
+ * Runs a single request/response exchange over a freshly opened connection
+ *
+ * @param request Request to send, completed with the fields the exchange needs
+ * @param url Target of the request
+ * @return The response, or an error describing why the exchange failed
+ */
+f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url) {
+    HttpResponse response = HttpResponse();
+    string errorMessage = "";
+
+    if url.scheme == "https" {
+        errorMessage = "HTTPS is not supported by std/net/http-client, since the socket layer carries no TLS";
+    } else {
+        const Result<Socket> socketResult = openClientSocket(url.host.getRaw(), url.port);
+        if socketResult.isErr() {
+            errorMessage = socketResult.getErr().message;
+        } else {
+            Socket socket = socketResult.unwrap();
+            if this.timeoutMillis != 0l { socket.setTimeout(this.timeoutMillis); }
+            this.completeRequest(request, url);
+
+            if !sendRequest(socket, request) {
+                errorMessage = "Could not send the request";
+            } else {
+                const bool expectBody = request.method != HttpMethod::HEAD;
+                const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
+                if responseResult.isErr() {
+                    errorMessage = responseResult.getErr().message;
+                } else {
+                    const HttpResponse& received = responseResult.unwrap();
+                    response = received;
+                }
+            }
+            socket.close();
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+}
+
+/**
+ * Fills in the fields of a request that follow from the target URL and the client configuration
+ *
+ * @param request Request to complete
+ * @param url Target of the request
+ */
+p HttpClient.completeRequest(HttpRequest& request, const Url& url) {
+    request.target = url.getRequestTarget();
+
+    // Add the configured default fields, without overwriting what the caller set explicitly
+    const unsigned long defaultCount = this.defaultHeaders.getSize();
+    for unsigned long i = 0l; i < defaultCount; i++ {
+        HttpHeader& entry = this.defaultHeaders.getAt(i);
+        if !request.headers.contains(entry.name.getRaw()) {
+            request.headers.set(entry.name.getRaw(), entry.value.getRaw());
+        }
+    }
+
+    // Host is mandatory in HTTP/1.1 and has to match the connection that carries the request
+    const String authority = url.getAuthority();
+    request.headers.set(HEADER_HOST, authority);
+    // Without keep-alive support, every exchange ends with its connection
+    request.headers.set(HEADER_CONNECTION, "close");
+}
+
+/**
+ * Turns the value of a Location field into an absolute URL, resolving it against the URL the
+ * redirect came from if it is relative
+ *
+ * @param base URL the redirect was received from
+ * @param location Value of the Location field
+ * @return Absolute URL to follow
+ */
+f<String> resolveLocation(const Url& base, const String& location) {
+    result = String();
+    if location.contains("://") {
+        // Already absolute
+        result = location;
+    } else {
+        result.append(base.scheme);
+        result.append("://");
+        const String authority = base.getAuthority();
+        result.append(authority);
+        if location.startsWith("/") {
+            // Absolute path, replacing the path of the base URL
+            result.append(location);
+        } else {
+            // Relative path, resolved against the directory of the base path
+            const long lastSlash = base.path.rfind('/');
+            String directory = String("/");
+            if lastSlash != -1l { directory = base.path.getSubstring(0l, lastSlash + 1l); }
+            result.append(directory);
+            result.append(location);
+        }
+    }
+}
+
+/**
+ * Adjusts the method of a request that is about to be replayed against a redirect target.
+ *
+ * 303 always turns into a GET, and 301 and 302 do so for anything but GET and HEAD, which is what
+ * RFC 9110 section 15.4 permits and what every browser does. 307 and 308 keep method and body.
+ *
+ * @param request Request to adjust
+ * @param statusCode Status code of the redirect
+ */
+p applyRedirectMethod(HttpRequest& request, unsigned short statusCode) {
+    const bool isSafeMethod = request.method == HttpMethod::GET || request.method == HttpMethod::HEAD;
+    const bool rewritesToGet = statusCode == STATUS_SEE_OTHER
+                            || ((statusCode == STATUS_MOVED_PERMANENTLY || statusCode == STATUS_FOUND) && !isSafeMethod);
+    if rewritesToGet {
+        request.method = HttpMethod::GET;
+        request.body = String();
+        request.headers.remove(HEADER_CONTENT_LENGTH);
+        request.headers.remove(HEADER_CONTENT_TYPE);
+    }
+}
