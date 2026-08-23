@@ -516,6 +516,18 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
       m->isVirtual = true; // Interface methods are always virtual
       m->vtableIndex = vtableIndex;
       m->thisType = interfaceType;
+
+      // Merge the enclosing interface's own template types into the method's template types, mirroring how struct
+      // methods inherit the struct's generic params in visitFctDefPrepare. Without this, a method that does not
+      // redeclare its own template list (e.g. isValid() inside IIterator<T>) ends up with an empty templateTypes
+      // list, even though its thisType references the interface's generic type - so generic type resolution fails
+      // while matching the 'this' type of a call through an interface reference.
+      for (const QualType &templateType : interfaceType.getTemplateTypes()) {
+        const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
+        if (std::ranges::none_of(m->templateTypes, lambda))
+          m->templateTypes.emplace_back(templateType);
+        m->templateTypes.back().used = true;
+      }
     }
 
     methods.insert(methods.end(), method->begin(), method->end());

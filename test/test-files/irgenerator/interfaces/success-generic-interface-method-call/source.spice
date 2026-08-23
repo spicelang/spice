@@ -2,6 +2,10 @@ type T dyn;
 
 type Iface<T> interface {
     f<bool> check<T>();
+    // Deliberately does NOT redeclare its own <T> and does not reference T in its own signature either - it is
+    // only generic by virtue of the enclosing interface's own T flowing through the implicit 'this' parameter,
+    // exercising the same shape as IIterator<T>.isValid()/next() in std/iterator/iterator.spice.
+    f<bool> hasPositiveVal();
 }
 
 type Impl<T> struct : Iface<T> {
@@ -18,8 +22,16 @@ f<bool> Impl.check() {
     return this.val > this.threshold;
 }
 
+f<bool> Impl.hasPositiveVal() {
+    return this.val > this.threshold;
+}
+
 f<bool> test<T>(Iface<T>& x) {
     return x.check();
+}
+
+f<bool> testNonTemplated<T>(Iface<T>& x) {
+    return x.hasPositiveVal();
 }
 
 f<int> main() {
@@ -38,6 +50,11 @@ f<int> main() {
     Iface<long>& aboveLongRef = aboveLong;
     bool r3 = test<long>(aboveLongRef);
 
-    printf("%d %d %d\n", r1, r2, r3);
+    // Non-explicitly-templated interface method (only generic via the enclosing interface's own T)
+    bool v1 = testNonTemplated<int>(aboveIntRef);
+    bool v2 = testNonTemplated<int>(belowIntRef);
+    bool v3 = testNonTemplated<long>(aboveLongRef);
+
+    printf("%d %d %d %d %d %d\n", r1, r2, r3, v1, v2, v3);
     return 0;
 }
