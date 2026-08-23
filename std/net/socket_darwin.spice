@@ -117,6 +117,16 @@ public type Socket struct {
 }
 
 /**
+ * Returns the value the `sinLen` field of a socket address has to carry. The size is taken from the
+ * struct itself, but has to pass through an int on the way, since there is no long to byte cast.
+ *
+ * @return Size of SockAddrIn, as a byte
+ */
+f<unsigned byte> getSockAddrInLen() {
+    return cast<unsigned byte>(cast<int>(sizeof<SockAddrIn>()));
+}
+
+/**
  * Accept an incoming connection to the socket and save the connection file desceiptor
  * to the socket object.
  *
@@ -294,7 +304,7 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
 
     // Construct socket object
     const Socket s = Socket { sockFd, /*connFd*/ 0 };
-    const SockAddrIn servAddr = SockAddrIn { cast<unsigned byte>(sizeof<SockAddrIn>()), cast<SAFamilyT>(AF_INET), htons(port), InAddr { INADDR_ANY }, 0ul };
+    const SockAddrIn servAddr = SockAddrIn { getSockAddrInLen(), cast<SAFamilyT>(AF_INET), htons(port), InAddr { INADDR_ANY }, 0ul };
 
     // Bind to target address
     const int bindResult = bind(sockFd, &servAddr, cast<SockLenT>(sizeof<SockAddrIn>()));
@@ -331,7 +341,7 @@ public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
 
     // Construct socket object. A client talks over the socket itself, so socket and connection descriptor are the same.
     const Socket s = Socket { sockFd, /*connFd*/ sockFd };
-    const SockAddrIn servAddr = SockAddrIn { cast<unsigned byte>(sizeof<SockAddrIn>()), cast<SAFamilyT>(AF_INET), htons(port), InAddr { hostAddr }, 0ul };
+    const SockAddrIn servAddr = SockAddrIn { getSockAddrInLen(), cast<SAFamilyT>(AF_INET), htons(port), InAddr { hostAddr }, 0ul };
 
     // Connect to server
     const int connectResult = connect(sockFd, &servAddr, cast<SockLenT>(sizeof<SockAddrIn>()));
