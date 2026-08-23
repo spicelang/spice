@@ -1,0 +1,166 @@
+import "std/net/http";
+
+/**
+ * Returns the given wire format message with its CRLF line endings turned into plain line feeds
+ */
+f<String> normalizeLineEndings(const String& wire) {
+    result = String();
+    result = wire;
+    result.replaceAll("\r\n", "\n");
+}
+
+f<int> main() {
+    // ----- Methods -----
+    assert getMethodName(HttpMethod::GET) == "GET";
+    assert getMethodName(HttpMethod::DELETE) == "DELETE";
+    assert getMethodName(HttpMethod::PATCH) == "PATCH";
+    Result<HttpMethod> methodRes = parseMethodName(String("POST"));
+    assert methodRes.isOk();
+    assert methodRes.unwrap() == HttpMethod::POST;
+    Result<HttpMethod> unknownMethodRes = parseMethodName(String("BREW"));
+    assert unknownMethodRes.isErr();
+
+    // ----- Status codes -----
+    assert isRawEqual(getReasonPhrase(200s), "OK");
+    assert isRawEqual(getReasonPhrase(404s), "Not Found");
+    assert isRawEqual(getReasonPhrase(418s), "I'm a teapot");
+    assert isRawEqual(getReasonPhrase(599s), "Server Error");
+
+    // ----- URL encoding -----
+    String encoded = urlEncode(String("a b&c=d/e~f"));
+    printf("encoded: %s\n", encoded);
+    String decoded = urlDecode(encoded);
+    assert decoded == "a b&c=d/e~f";
+    String plusDecoded = urlDecode(String("Hello+World%21"));
+    assert plusDecoded == "Hello World!";
+
+    // ----- URL parsing -----
+    Result<Url> urlRes = parseUrl(String("http://example.com/a/b?x=1&y=2#frag"));
+    assert urlRes.isOk();
+    Url url = urlRes.unwrap();
+    assert url.scheme == "http";
+    assert url.host == "example.com";
+    assert url.port == 80s;
+    assert url.path == "/a/b";
+    assert url.query == "x=1&y=2";
+    assert url.fragment == "frag";
+    String target = url.getRequestTarget();
+    assert target == "/a/b?x=1&y=2";
+    String rebuilt = url.toString();
+    printf("url: %s\n", rebuilt);
+
+    Result<Url> urlRes2 = parseUrl(String("https://user:pw@localhost:8443"));
+    assert urlRes2.isOk();
+    Url url2 = urlRes2.unwrap();
+    assert url2.host == "localhost";
+    assert url2.port == 8443s;
+    assert url2.path == "/";
+    String authority = url2.getAuthority();
+    assert authority == "localhost:8443";
+
+    Result<Url> badScheme = parseUrl(String("ftp://example.com"));
+    assert badScheme.isErr();
+    Result<Url> noScheme = parseUrl(String("example.com/a"));
+    assert noScheme.isErr();
+    Result<Url> noHost = parseUrl(String("http://"));
+    assert noHost.isErr();
+
+    // ----- Header fields -----
+    HttpHeaders headers;
+    headers.set("Content-Type", "text/plain");
+    headers.set("content-type", "text/html"); // replaces, matched case-insensitively
+    headers.add("Set-Cookie", "a=1");
+    headers.add("Set-Cookie", "b=2");
+    headers.set("Content-Length", "42");
+    assert headers.getSize() == 4l;
+    String contentType = headers.get("CONTENT-TYPE");
+    assert contentType == "text/html";
+    assert headers.getContentLength() == 42l;
+    assert headers.contains("set-cookie");
+    assert !headers.contains("X-Missing");
+    String fallback = headers.getOrDefault("X-Missing", "fallback");
+    assert fallback == "fallback";
+    headers.remove("Set-Cookie");
+    assert headers.getSize() == 2l;
+    String headerBlock = headers.serialize();
+    assert headerBlock.startsWith("Content-Type: text/html\r\n");
+    assert headerBlock.endsWith("Content-Length: 42\r\n");
+    // Printed with the line endings normalized, so that the reference output does not hinge on
+    // carriage returns surviving a checkout
+    printf("headers:\n%s", normalizeLineEndings(headerBlock));
+
+    // ----- Request parsing -----
+    String rawRequest = String("POST /submit?a=1&b=two HTTP/1.1\r\nHost: localhost\r\nContent-Length: 11\r\n\r\nhello world");
+    Result<HttpRequest> requestRes = parseRequest(rawRequest);
+    assert requestRes.isOk();
+    HttpRequest request = requestRes.unwrap();
+    assert request.method == HttpMethod::POST;
+    assert request.target == "/submit?a=1&b=two";
+    assert request.version == "HTTP/1.1";
+    assert request.body == "hello world";
+    String path = request.getPath();
+    assert path == "/submit";
+    String paramB = request.getQueryParam("b");
+    assert paramB == "two";
+    assert request.hasQueryParam("a");
+    assert !request.hasQueryParam("c");
+    String host = request.headers.get("host");
+    assert host == "localhost";
+
+    Result<HttpRequest> badMethod = parseRequest(String("NOPE / HTTP/1.1\r\n\r\n"));
+    assert badMethod.isErr();
+    Result<HttpRequest> badLine = parseRequest(String("GET\r\n\r\n"));
+    assert badLine.isErr();
+
+    // ----- Response parsing -----
+    String rawResponse = String("HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nTransfer-Encoding: chunked\r\n\r\n<h1>nope</h1>");
+    Result<HttpResponse> responseRes = parseResponse(rawResponse);
+    assert responseRes.isOk();
+    HttpResponse response = responseRes.unwrap();
+    assert response.statusCode == 404s;
+    assert response.reason == "Not Found";
+    assert response.headers.isChunked();
+    assert response.isClientError();
+    assert !response.isSuccess();
+    assert response.body == "<h1>nope</h1>";
+
+    Result<HttpResponse> badStatus = parseResponse(String("HTTP/1.1 abc Bad\r\n\r\n"));
+    assert badStatus.isErr();
+
+    // ----- Building messages -----
+    HttpRequest outRequest = HttpRequest(HttpMethod::PUT, "/things/1");
+    outRequest.headers.set(HEADER_HOST, "example.com");
+    String payload = String("{\"a\":1}");
+    outRequest.setBody(payload, CONTENT_TYPE_JSON);
+    String requestWire = outRequest.serialize();
+    assert requestWire.startsWith("PUT /things/1 HTTP/1.1\r\n");
+    assert requestWire.endsWith("\r\n\r\n{\"a\":1}");
+    printf("request:\n%s\n", normalizeLineEndings(requestWire));
+
+    HttpResponse outResponse = HttpResponse(STATUS_OK);
+    String html = String("<html>hi</html>");
+    outResponse.setHtmlBody(html);
+    outResponse.headers.set(HEADER_SERVER, "Spice");
+    String responseWire = outResponse.serialize();
+    assert responseWire.startsWith("HTTP/1.1 200 OK\r\n");
+    assert responseWire.endsWith("\r\n\r\n<html>hi</html>");
+    printf("response:\n%s\n", normalizeLineEndings(responseWire));
+
+    HttpResponse redirect = HttpResponse();
+    redirect.redirectTo("http://example.com/new", STATUS_MOVED_PERMANENTLY);
+    assert redirect.statusCode == 301s;
+    assert redirect.isRedirect();
+    String location = redirect.headers.get(HEADER_LOCATION);
+    assert location == "http://example.com/new";
+
+    // ----- Form encoded data -----
+    String form = String("name=John+Doe&age=30&flag");
+    String name = getFormValue(form, "name");
+    assert name == "John Doe";
+    String age = getFormValue(form, "age");
+    assert age == "30";
+    assert containsFormKey(form, "flag");
+    assert !containsFormKey(form, "missing");
+    printf("form: %s is %s\n", name, age);
+    return 0;
+}

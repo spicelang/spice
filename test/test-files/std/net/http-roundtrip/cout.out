@@ -1,0 +1,7 @@
+index: 200 OK [<h1>Index</h1>] text/html; charset=utf-8
+greet: 200 [hi Spice]
+echo: 201 Created [echo:payload] application/json
+moved: 200 [hi redirected]
+missing: 404 Not Found
+wrong method: 405 Method Not Allowed allow=GET
+head: 200 body-length=0 announced=14
