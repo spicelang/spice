@@ -195,6 +195,31 @@ public p String.append(const String& appendix) {
 }
 
 /**
+ * Appends the first `appendixLength` bytes of the given string to the current one.
+ *
+ * In contrast to the single-argument overload, the appendix is not required to be null-terminated
+ * and may contain embedded null bytes. This makes the overload the right choice for raw payloads
+ * that were read from a file, a socket or any other byte source.
+ *
+ * @param appendix Buffer to be appended
+ * @param appendixLength Number of bytes to append from the buffer
+ */
+public p String.append(const string appendix, unsigned long appendixLength) {
+    if appendixLength == 0l { return; }
+    // Check if we need to re-allocate memory
+    this.ensureCapacity(this.length + appendixLength);
+
+    // Save data. The terminator is written separately, since the appendix does not need to carry one.
+    unsafe {
+        memcpy(this.contents + this.length, cast<char*>(appendix), appendixLength);
+    }
+    this.length += appendixLength;
+    unsafe {
+        this.contents[this.length] = '\0';
+    }
+}
+
+/**
  * Appends the given char to the string and resize it if needed
  *
  * @param c Char to append
