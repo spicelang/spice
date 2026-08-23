@@ -1,52 +1,1602 @@
-import "socket_linux";
+// Imports
+import "std/data/pair";
+import "std/data/vector";
+import "std/net/socket";
+import "std/text/analysis";
+import "std/text/format";
+import "std/type/type-conversion";
 
-const string SERVER_IDENT = "Spice HTTP Server/0.0.0";
-const unsigned int CONNECTIONS_LIMIT = 50;
+/**
+ * Message model of HTTP/1.1 (RFC 9110/9112): methods, status codes, header fields, URLs, requests
+ * and responses, together with the routines that turn them into wire format and back.
+ *
+ * On top of the message model it provides the wire transport: reading a complete message off a
+ * socket and writing one back, including the Content-Length and chunked framing rules of RFC 9112
+ * section 6. "std/net/http-client" and "std/net/http-server" build the actual client and server on
+ * top of that.
+ */
 
-public const string ADDR_LOCAL = "localhost";
-public const string ADDR_INET = "0.0.0.0";
+// ===================================================== Constants =====================================================
+
+public const string HTTP_VERSION_1_0 = "HTTP/1.0";
+public const string HTTP_VERSION_1_1 = "HTTP/1.1";
+
+public const string ADDR_LOCAL = "127.0.0.1"; // Loopback interface, only reachable from the same machine
+public const string ADDR_INET = "0.0.0.0";    // All interfaces
 
 public const unsigned short HTTP_PORT_DEFAULT = 80s;
 public const unsigned short HTTP_PORT_FALLBACK = 8080s;
 public const unsigned short HTTPS_PORT_DEFAULT = 443s;
 
+// Status codes. Only the commonly used ones are named here, every other code can be used as a plain number.
+public const unsigned short STATUS_CONTINUE = 100s;
+public const unsigned short STATUS_OK = 200s;
+public const unsigned short STATUS_CREATED = 201s;
+public const unsigned short STATUS_ACCEPTED = 202s;
+public const unsigned short STATUS_NO_CONTENT = 204s;
+public const unsigned short STATUS_MOVED_PERMANENTLY = 301s;
+public const unsigned short STATUS_FOUND = 302s;
+public const unsigned short STATUS_SEE_OTHER = 303s;
+public const unsigned short STATUS_NOT_MODIFIED = 304s;
+public const unsigned short STATUS_TEMPORARY_REDIRECT = 307s;
+public const unsigned short STATUS_PERMANENT_REDIRECT = 308s;
+public const unsigned short STATUS_BAD_REQUEST = 400s;
+public const unsigned short STATUS_UNAUTHORIZED = 401s;
+public const unsigned short STATUS_FORBIDDEN = 403s;
+public const unsigned short STATUS_NOT_FOUND = 404s;
+public const unsigned short STATUS_METHOD_NOT_ALLOWED = 405s;
+public const unsigned short STATUS_REQUEST_TIMEOUT = 408s;
+public const unsigned short STATUS_CONFLICT = 409s;
+public const unsigned short STATUS_CONTENT_TOO_LARGE = 413s;
+public const unsigned short STATUS_URI_TOO_LONG = 414s;
+public const unsigned short STATUS_UNSUPPORTED_MEDIA_TYPE = 415s;
+public const unsigned short STATUS_TOO_MANY_REQUESTS = 429s;
+public const unsigned short STATUS_INTERNAL_SERVER_ERROR = 500s;
+public const unsigned short STATUS_NOT_IMPLEMENTED = 501s;
+public const unsigned short STATUS_BAD_GATEWAY = 502s;
+public const unsigned short STATUS_SERVICE_UNAVAILABLE = 503s;
+public const unsigned short STATUS_GATEWAY_TIMEOUT = 504s;
+public const unsigned short STATUS_VERSION_NOT_SUPPORTED = 505s;
+
+// Frequently used media types, ready to be handed to setBody
+public const string CONTENT_TYPE_TEXT = "text/plain; charset=utf-8";
+public const string CONTENT_TYPE_HTML = "text/html; charset=utf-8";
+public const string CONTENT_TYPE_CSS = "text/css; charset=utf-8";
+public const string CONTENT_TYPE_JS = "text/javascript; charset=utf-8";
+public const string CONTENT_TYPE_JSON = "application/json";
+public const string CONTENT_TYPE_XML = "application/xml";
+public const string CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
+public const string CONTENT_TYPE_BINARY = "application/octet-stream";
+
+// Header field names that the client and the server have to reason about
+public const string HEADER_HOST = "Host";
+public const string HEADER_CONNECTION = "Connection";
+public const string HEADER_CONTENT_LENGTH = "Content-Length";
+public const string HEADER_CONTENT_TYPE = "Content-Type";
+public const string HEADER_TRANSFER_ENCODING = "Transfer-Encoding";
+public const string HEADER_LOCATION = "Location";
+public const string HEADER_USER_AGENT = "User-Agent";
+public const string HEADER_SERVER = "Server";
+public const string HEADER_ACCEPT = "Accept";
+public const string HEADER_DATE = "Date";
+
+const string CRLF = "\r\n";
+
+// ===================================================== HttpMethod ====================================================
+
 /**
- * Struct, representing a simple HTTP server
+ * Request method, as defined in RFC 9110 section 9
  */
-public type HttpServer struct {
-    Socket socket       // Underlying TCP socket
-    unsigned short port // Exposed port
-    bool initialized    // true if the server was initialized
+public type HttpMethod enum {
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    DELETE,
+    CONNECT,
+    OPTIONS,
+    TRACE,
+    PATCH
 }
 
 /**
- * Used to initialize a HTTP server instance, listening on a specific port for incoming requests
- */
-public p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
-    this.port = port;
-    this.initialized = true;
-}
-
-/**
+ * Returns the wire representation of the given request method
  *
+ * @param method Request method
+ * @return Method name, e.g. "GET"
  */
-public f<bool> HttpServer.start() {
-    // Check if the server is initialized
-    if !this.initialized { return false; }
-
-    // Setup TCP socket
-    this.socket = openServerSocket(this.port, CONNECTIONS_LIMIT);
-
+public f<string> getMethodName(HttpMethod method) {
+    switch method {
+        case HttpMethod::GET: { return "GET"; }
+        case HttpMethod::HEAD: { return "HEAD"; }
+        case HttpMethod::POST: { return "POST"; }
+        case HttpMethod::PUT: { return "PUT"; }
+        case HttpMethod::DELETE: { return "DELETE"; }
+        case HttpMethod::CONNECT: { return "CONNECT"; }
+        case HttpMethod::OPTIONS: { return "OPTIONS"; }
+        case HttpMethod::TRACE: { return "TRACE"; }
+        case HttpMethod::PATCH: { return "PATCH"; }
+        default: { return "GET"; }
+    }
 }
 
 /**
- * Register a route on the server that responds with the given HTML content
+ * Parses a request method from its wire representation
  *
- * @param path Request path to serve
- * @param htmlContent HTML content to respond with
- * @return true if the route was registered successfully, false otherwise
+ * @param name Method name, e.g. "GET"
+ * @return The parsed method, or an error if the name denotes no known method
  */
-public f<bool> HttpServer.serve(string path, string htmlContent) {
+public f<Result<HttpMethod>> parseMethodName(const String& name) {
+    HttpMethod method = HttpMethod::GET;
+    bool known = true;
+    if name == "GET" {
+        method = HttpMethod::GET;
+    } else if name == "HEAD" {
+        method = HttpMethod::HEAD;
+    } else if name == "POST" {
+        method = HttpMethod::POST;
+    } else if name == "PUT" {
+        method = HttpMethod::PUT;
+    } else if name == "DELETE" {
+        method = HttpMethod::DELETE;
+    } else if name == "CONNECT" {
+        method = HttpMethod::CONNECT;
+    } else if name == "OPTIONS" {
+        method = HttpMethod::OPTIONS;
+    } else if name == "TRACE" {
+        method = HttpMethod::TRACE;
+    } else if name == "PATCH" {
+        method = HttpMethod::PATCH;
+    } else {
+        known = false;
+    }
+    const Error error = Error("Unknown request method");
+    result = known ? ok(method) : err<HttpMethod>(error);
+}
 
-    return false;
+// ==================================================== Status codes ===================================================
+
+/**
+ * Returns the reason phrase that belongs to the given status code. Unknown codes fall back to the
+ * generic phrase of their status class, so every code yields a usable status line.
+ *
+ * @param statusCode Status code, e.g. 404
+ * @return Reason phrase, e.g. "Not Found"
+ */
+public f<string> getReasonPhrase(unsigned short statusCode) {
+    switch statusCode {
+        case 100s: { return "Continue"; }
+        case 101s: { return "Switching Protocols"; }
+        case 200s: { return "OK"; }
+        case 201s: { return "Created"; }
+        case 202s: { return "Accepted"; }
+        case 203s: { return "Non-Authoritative Information"; }
+        case 204s: { return "No Content"; }
+        case 205s: { return "Reset Content"; }
+        case 206s: { return "Partial Content"; }
+        case 300s: { return "Multiple Choices"; }
+        case 301s: { return "Moved Permanently"; }
+        case 302s: { return "Found"; }
+        case 303s: { return "See Other"; }
+        case 304s: { return "Not Modified"; }
+        case 307s: { return "Temporary Redirect"; }
+        case 308s: { return "Permanent Redirect"; }
+        case 400s: { return "Bad Request"; }
+        case 401s: { return "Unauthorized"; }
+        case 402s: { return "Payment Required"; }
+        case 403s: { return "Forbidden"; }
+        case 404s: { return "Not Found"; }
+        case 405s: { return "Method Not Allowed"; }
+        case 406s: { return "Not Acceptable"; }
+        case 407s: { return "Proxy Authentication Required"; }
+        case 408s: { return "Request Timeout"; }
+        case 409s: { return "Conflict"; }
+        case 410s: { return "Gone"; }
+        case 411s: { return "Length Required"; }
+        case 412s: { return "Precondition Failed"; }
+        case 413s: { return "Content Too Large"; }
+        case 414s: { return "URI Too Long"; }
+        case 415s: { return "Unsupported Media Type"; }
+        case 416s: { return "Range Not Satisfiable"; }
+        case 417s: { return "Expectation Failed"; }
+        case 418s: { return "I'm a teapot"; }
+        case 422s: { return "Unprocessable Content"; }
+        case 426s: { return "Upgrade Required"; }
+        case 429s: { return "Too Many Requests"; }
+        case 431s: { return "Request Header Fields Too Large"; }
+        case 500s: { return "Internal Server Error"; }
+        case 501s: { return "Not Implemented"; }
+        case 502s: { return "Bad Gateway"; }
+        case 503s: { return "Service Unavailable"; }
+        case 504s: { return "Gateway Timeout"; }
+        case 505s: { return "HTTP Version Not Supported"; }
+        default: { return getStatusClassPhrase(statusCode); }
+    }
+}
+
+f<string> getStatusClassPhrase(unsigned short statusCode) {
+    if statusCode >= 100s && statusCode < 200s { return "Informational"; }
+    if statusCode >= 200s && statusCode < 300s { return "Success"; }
+    if statusCode >= 300s && statusCode < 400s { return "Redirection"; }
+    if statusCode >= 400s && statusCode < 500s { return "Client Error"; }
+    if statusCode >= 500s && statusCode < 600s { return "Server Error"; }
+    return "Unknown";
+}
+
+// ==================================================== URL encoding ===================================================
+
+/**
+ * Percent-encodes everything in the given text that is not an unreserved URI character (RFC 3986
+ * section 2.3), so that the result can be used as a path segment, query key or query value.
+ *
+ * @param input Text to encode
+ * @return Percent-encoded text
+ */
+public f<String> urlEncode(const String& input) {
+    result = String();
+    const unsigned long length = input.getLength();
+    result.reserve(length);
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = input[i];
+        if isAlphaNum(c) || isUnreservedExtra(c) {
+            result.append(c);
+        } else {
+            result.append('%');
+            result.append(getHexDigit((cast<int>(c) >> 4) & 0xF));
+            result.append(getHexDigit(cast<int>(c) & 0xF));
+        }
+    }
+}
+
+/**
+ * Reverses `urlEncode`: turns percent escapes back into their bytes and, since query strings are
+ * form-encoded, also turns '+' back into a space.
+ * Malformed escapes at the end of the input are passed through verbatim.
+ *
+ * @param input Percent-encoded text
+ * @return Decoded text
+ */
+public f<String> urlDecode(const String& input) {
+    result = String();
+    const unsigned long length = input.getLength();
+    result.reserve(length);
+    unsigned long i = 0l;
+    while i < length {
+        const char c = input[i];
+        if c == '+' {
+            result.append(' ');
+            i++;
+        } else if c == '%' && i + 2l < length && isHexDigit(input[i + 1l]) && isHexDigit(input[i + 2l]) {
+            const int high = getHexDigitValue(input[i + 1l]);
+            const int low = getHexDigitValue(input[i + 2l]);
+            result.append(cast<char>((high << 4) | low));
+            i += 3l;
+        } else {
+            result.append(c);
+            i++;
+        }
+    }
+}
+
+f<bool> isAuthorityDelimiter(char c) {
+    return c == '/' || c == '?' || c == '#';
+}
+
+f<bool> isUnreservedExtra(char c) {
+    return c == '-' || c == '_' || c == '.' || c == '~';
+}
+
+f<char> getHexDigit(int value) {
+    return value < 10 ? cast<char>(cast<int>('0') + value) : cast<char>(cast<int>('A') + value - 10);
+}
+
+f<int> getHexDigitValue(char c) {
+    if isDigit(c) { return cast<int>(c) - cast<int>('0'); }
+    if c >= 'a' && c <= 'f' { return cast<int>(c) - cast<int>('a') + 10; }
+    if c >= 'A' && c <= 'F' { return cast<int>(c) - cast<int>('A') + 10; }
+    return 0;
+}
+
+/**
+ * Compares two raw strings while ignoring the case of ASCII letters. Header field names are
+ * case-insensitive, so every lookup goes through this.
+ *
+ * @param lhs First string
+ * @param rhs Second string
+ * @return true if both strings are equal, ignoring case
+ */
+public f<bool> equalsIgnoreCase(string lhs, string rhs) {
+    unsafe {
+        char* rawLhs = cast<char*>(lhs);
+        char* rawRhs = cast<char*>(rhs);
+        // An empty String hands out a nil buffer, so both sides have to be checked for it
+        if rawLhs == nil<char*> || rawRhs == nil<char*> { return rawLhs == rawRhs; }
+        unsigned long i = 0l;
+        while rawLhs[i] != '\0' && rawRhs[i] != '\0' {
+            if toLower(rawLhs[i]) != toLower(rawRhs[i]) { return false; }
+            i++;
+        }
+        return rawLhs[i] == rawRhs[i];
+    }
+}
+
+// ==================================================== HttpHeaders ====================================================
+
+/**
+ * A single header field
+ */
+public type HttpHeader struct {
+    public String name  // Field name, in the casing it was given in
+    public String value // Field value
+}
+
+/**
+ * Constructs a header field
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpHeader.ctor(string name, string value) {
+    this.name = String(name);
+    this.value = String(value);
+}
+
+/**
+ * Copy-constructs a header field, deep-copying both of its strings
+ */
+public p HttpHeader.ctor(const HttpHeader& original) {
+    this.name = original.name;
+    this.value = original.value;
+}
+
+/**
+ * Deep-copy assignment, so that header fields survive being shifted around inside a vector
+ */
+public p operator=(HttpHeader& this, const HttpHeader& original) {
+    // Guard against self-assignment, which would free the strings we copy from
+    if &this == &original { return; }
+    this.name = original.name;
+    this.value = original.value;
+}
+
+/**
+ * Header field list of a request or a response.
+ *
+ * Fields keep the order in which they were added and their names keep the case they were given in,
+ * while all lookups are case-insensitive, as required by RFC 9110 section 5.1. A name may appear
+ * more than once - use `add` for that and `set` when a field is meant to be unique.
+ */
+public type HttpHeaders struct {
+    public Vector<HttpHeader> entries
+}
+
+/**
+ * Returns the index of the first field with the given name
+ *
+ * @param name Field name, compared case-insensitively
+ * @return Index of the field, or -1 if there is no such field
+ */
+public f<long> HttpHeaders.indexOf(string name) {
+    const unsigned long entryCount = cast<unsigned long>(this.entries.getSize());
+    for unsigned long i = 0l; i < entryCount; i++ {
+        HttpHeader& entry = this.entries.get(i);
+        if equalsIgnoreCase(entry.name.getRaw(), name) { return cast<long>(i); }
+    }
+    return -1l;
+}
+
+/**
+ * Checks whether a field with the given name is present
+ *
+ * @param name Field name, compared case-insensitively
+ * @return true if the field is present
+ */
+public f<bool> HttpHeaders.contains(string name) {
+    return this.indexOf(name) != -1l;
+}
+
+/**
+ * Returns the value of the first field with the given name
+ *
+ * @param name Field name, compared case-insensitively
+ * @return Field value, or an empty string if the field is not present
+ */
+public f<String> HttpHeaders.get(string name) {
+    result = String();
+    const long index = this.indexOf(name);
+    if index != -1l {
+        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
+        result = entry.value;
+    }
+}
+
+/**
+ * Returns the value of the first field with the given name, or the given fallback if the field is
+ * not present
+ *
+ * @param name Field name, compared case-insensitively
+ * @param fallback Value to return if the field is not present
+ * @return Field value or fallback
+ */
+public f<String> HttpHeaders.getOrDefault(string name, string fallback) {
+    result = String(fallback);
+    const long index = this.indexOf(name);
+    if index != -1l {
+        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
+        result = entry.value;
+    }
+}
+
+/**
+ * Sets a field, replacing the value of the first field with that name if it already exists
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpHeaders.set(string name, string value) {
+    const long index = this.indexOf(name);
+    if index != -1l {
+        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
+        entry.value = String(value);
+    } else {
+        this.entries.pushBack(HttpHeader(name, value));
+    }
+}
+
+/**
+ * Sets a field, replacing the value of the first field with that name if it already exists
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpHeaders.set(string name, const String& value) {
+    this.set(name, value.getRaw());
+}
+
+/**
+ * Appends a field, keeping any field with the same name that is already present. This is what
+ * repeatable fields such as Set-Cookie need.
+ *
+ * @param name Field name
+ * @param value Field value
+ */
+public p HttpHeaders.add(string name, string value) {
+    this.entries.pushBack(HttpHeader(name, value));
+}
+
+/**
+ * Removes all fields with the given name
+ *
+ * @param name Field name, compared case-insensitively
+ */
+public p HttpHeaders.remove(string name) {
+    long index = this.indexOf(name);
+    while index != -1l {
+        this.entries.removeAt(cast<unsigned long>(index));
+        index = this.indexOf(name);
+    }
+}
+
+/**
+ * Returns the field at the given index, in insertion order
+ *
+ * @param index Index of the field
+ * @return Name/value pair of the field
+ */
+public f<HttpHeader&> HttpHeaders.getAt(unsigned long index) {
+    return this.entries.get(index);
+}
+
+/**
+ * Returns the number of fields
+ */
+public f<unsigned long> HttpHeaders.getSize() {
+    return cast<unsigned long>(this.entries.getSize());
+}
+
+/**
+ * Checks if there is no field at all
+ */
+public f<bool> HttpHeaders.isEmpty() {
+    return this.entries.isEmpty();
+}
+
+/**
+ * Drops all fields
+ */
+public p HttpHeaders.clear() {
+    this.entries.clear();
+}
+
+/**
+ * Serializes all fields into the wire format, including the terminating CRLF of the last field but
+ * without the empty line that ends the header block
+ *
+ * @return Serialized header block
+ */
+public f<String> HttpHeaders.serialize() {
+    result = String();
+    const unsigned long entryCount = cast<unsigned long>(this.entries.getSize());
+    for unsigned long i = 0l; i < entryCount; i++ {
+        HttpHeader& entry = this.entries.get(i);
+        result.append(entry.name);
+        result.append(": ");
+        result.append(entry.value);
+        result.append(CRLF);
+    }
+}
+
+/**
+ * Returns the body length announced by the Content-Length field
+ *
+ * @return Announced body length, or -1 if the field is absent or malformed
+ */
+public f<long> HttpHeaders.getContentLength() {
+    result = -1l;
+    const long index = this.indexOf(HEADER_CONTENT_LENGTH);
+    if index != -1l {
+        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
+        if isDecimalNumber(entry.value) {
+            result = toLong(entry.value.getRaw());
+        }
+    }
+}
+
+/**
+ * Checks whether the message body is chunked, i.e. whether the Transfer-Encoding field ends in
+ * "chunked" (RFC 9112 section 6.1)
+ */
+public f<bool> HttpHeaders.isChunked() {
+    result = false;
+    const long index = this.indexOf(HEADER_TRANSFER_ENCODING);
+    if index != -1l {
+        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
+        const String lowered = toLower(entry.value);
+        result = lowered.endsWith("chunked");
+    }
+}
+
+f<bool> isDecimalNumber(const String& text) {
+    const unsigned long length = text.getLength();
+    if length == 0l { return false; }
+    for unsigned long i = 0l; i < length; i++ {
+        if !isDigit(text[i]) { return false; }
+    }
+    return true;
+}
+
+// ======================================================== Url ========================================================
+
+/**
+ * An absolute HTTP(S) URL, split into the parts a client needs to open a connection and to build a
+ * request line from
+ */
+public type Url struct {
+    public String scheme        // "http" or "https", always lower case
+    public String host          // Host name or IPv4 address, without the port
+    public unsigned short port  // Port, defaulted from the scheme if the URL carries none
+    public String path          // Path, always starting with a '/'
+    public String query         // Query string, without the leading '?'
+    public String fragment      // Fragment, without the leading '#'
+}
+
+/**
+ * Constructs an empty http URL that points at the root path of no host yet
+ */
+public p Url.ctor() {
+    this.scheme = String("http");
+    this.port = HTTP_PORT_DEFAULT;
+    this.path = String("/");
+}
+
+/**
+ * Parses an absolute URL such as "http://example.com:8080/a/b?x=1#top".
+ * Relative URLs are rejected, since a client cannot connect anywhere without an authority.
+ *
+ * @param raw URL to parse
+ * @return The parsed URL, or an error describing why it could not be parsed
+ */
+public f<Result<Url>> parseUrl(const String& raw) {
+    Url url = Url();
+    const string errorMessage = parseUrlInto(raw, url);
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(url) : err<Url>(error);
+}
+
+/**
+ * Parses an absolute URL into the given URL object
+ *
+ * @param raw URL to parse
+ * @param url URL object to fill in
+ * @return An empty string on success, otherwise the reason why the URL could not be parsed
+ */
+f<string> parseUrlInto(const String& raw, Url& url) {
+    result = "";
+    const long schemeEnd = raw.find("://");
+    if schemeEnd == -1l {
+        result = "URL is missing a scheme";
+    } else {
+        const String scheme = raw.getSubstring(0l, schemeEnd);
+        url.scheme = toLower(scheme);
+        if url.scheme != "http" && url.scheme != "https" {
+            result = "URL scheme is neither http nor https";
+        } else {
+            url.port = url.scheme == "https" ? HTTPS_PORT_DEFAULT : HTTP_PORT_DEFAULT;
+
+            // The authority reaches up to the first delimiter that starts one of the following parts
+            const unsigned long authorityStart = cast<unsigned long>(schemeEnd) + 3l;
+            const unsigned long authorityEnd = findAuthorityEnd(raw, authorityStart);
+            const String authority = raw.getSubstring(authorityStart, cast<long>(authorityEnd - authorityStart));
+            result = parseAuthorityInto(authority, url);
+
+            if result == "" {
+                const String remainder = raw.getSubstring(authorityEnd);
+                parseTargetInto(remainder, url);
+            }
+        }
+    }
+}
+
+/**
+ * Returns the index at which the authority of a URL ends, i.e. the index of the first delimiter that
+ * starts the path, the query or the fragment
+ *
+ * @param raw URL to scan
+ * @param authorityStart Index the authority starts at
+ * @return Index one behind the last character of the authority
+ */
+f<unsigned long> findAuthorityEnd(const String& raw, unsigned long authorityStart) {
+    const unsigned long rawLength = raw.getLength();
+    unsigned long authorityEnd = authorityStart;
+    while authorityEnd < rawLength && !isAuthorityDelimiter(raw[authorityEnd]) {
+        authorityEnd++;
+    }
+    return authorityEnd;
+}
+
+/**
+ * Parses the authority of a URL, i.e. its optional userinfo, its host and its optional port.
+ * The userinfo is dropped, since the client does not act on it.
+ *
+ * @param authority Authority to parse
+ * @param url URL object to fill in
+ * @return An empty string on success, otherwise the reason why the authority could not be parsed
+ */
+f<string> parseAuthorityInto(const String& authority, Url& url) {
+    result = "";
+    if authority.isEmpty() {
+        result = "URL is missing a host";
+    } else {
+        // Userinfo is not supported, so everything up to an '@' is dropped
+        const long userInfoEnd = authority.rfind('@');
+        const unsigned long hostStart = userInfoEnd == -1l ? 0l : cast<unsigned long>(userInfoEnd) + 1l;
+        const String hostAndPort = authority.getSubstring(hostStart);
+        const long portStart = hostAndPort.rfind(':');
+        if portStart == -1l {
+            url.host = hostAndPort;
+        } else {
+            url.host = hostAndPort.getSubstring(0l, portStart);
+            const String portText = hostAndPort.getSubstring(cast<unsigned long>(portStart) + 1l);
+            if !isDecimalNumber(portText) {
+                result = "URL carries a malformed port";
+            } else {
+                url.port = cast<unsigned short>(toLong(portText.getRaw()));
+            }
+        }
+        if result == "" && url.host.isEmpty() {
+            result = "URL is missing a host";
+        }
+    }
+}
+
+/**
+ * Splits everything behind the authority of a URL into path, query and fragment
+ *
+ * @param target Part of the URL behind its authority, may be empty
+ * @param url URL object to fill in
+ */
+p parseTargetInto(const String& target, Url& url) {
+    String remainder = String();
+    remainder = target;
+    const long fragmentStart = remainder.find('#');
+    if fragmentStart != -1l {
+        url.fragment = remainder.getSubstring(cast<unsigned long>(fragmentStart) + 1l);
+        remainder = remainder.getSubstring(0l, fragmentStart);
+    }
+    const long queryStart = remainder.find('?');
+    if queryStart != -1l {
+        url.query = remainder.getSubstring(cast<unsigned long>(queryStart) + 1l);
+        remainder = remainder.getSubstring(0l, queryStart);
+    }
+    if remainder.isEmpty() {
+        url.path = String("/");
+    } else {
+        url.path = remainder;
+    }
+}
+
+/**
+ * Returns the request target of this URL, i.e. the path together with the query string. This is the
+ * middle part of the request line of an origin-form request.
+ *
+ * @return Request target, e.g. "/a/b?x=1"
+ */
+public f<String> Url.getRequestTarget() {
+    result = String("/");
+    if !this.path.isEmpty() { result = this.path; }
+    if !this.query.isEmpty() {
+        result.append('?');
+        result.append(this.query);
+    }
+}
+
+/**
+ * Returns the authority of this URL, i.e. the host plus the port if it deviates from the default
+ * port of the scheme. This is what the Host header field carries.
+ *
+ * @return Authority, e.g. "example.com:8080"
+ */
+public f<String> Url.getAuthority() {
+    result = this.host;
+    const unsigned short defaultPort = this.scheme == "https" ? HTTPS_PORT_DEFAULT : HTTP_PORT_DEFAULT;
+    if this.port != defaultPort {
+        result.append(':');
+        const String portText = toString(cast<long>(this.port));
+        result.append(portText);
+    }
+}
+
+/**
+ * Reassembles the URL into its textual form
+ */
+public f<String> Url.toString() {
+    result = this.scheme;
+    result.append("://");
+    const String authority = this.getAuthority();
+    result.append(authority);
+    const String requestTarget = this.getRequestTarget();
+    result.append(requestTarget);
+    if !this.fragment.isEmpty() {
+        result.append('#');
+        result.append(this.fragment);
+    }
+}
+
+// ==================================================== HttpRequest ====================================================
+
+/**
+ * A request message: request line, header fields and body
+ */
+public type HttpRequest struct {
+    public HttpMethod method
+    public String target       // Request target in origin form, e.g. "/a/b?x=1"
+    public String version
+    public HttpHeaders headers
+    public String body
+}
+
+/**
+ * Constructs a request with an empty header block and an empty body
+ *
+ * @param method Request method
+ * @param target Request target in origin form, e.g. "/a/b?x=1"
+ */
+public p HttpRequest.ctor(HttpMethod method = HttpMethod::GET, string target = "/") {
+    this.method = method;
+    this.target = String(target);
+    this.version = String(HTTP_VERSION_1_1);
+}
+
+/**
+ * Returns the path of the request target, i.e. the target without the query string
+ *
+ * @return Path, e.g. "/a/b"
+ */
+public f<String> HttpRequest.getPath() {
+    result = this.target;
+    const long queryStart = this.target.find('?');
+    if queryStart != -1l {
+        result = this.target.getSubstring(0l, queryStart);
+    }
+}
+
+/**
+ * Returns the query string of the request target, without the leading '?'
+ *
+ * @return Query string, e.g. "x=1&y=2"
+ */
+public f<String> HttpRequest.getQuery() {
+    result = String();
+    const long queryStart = this.target.find('?');
+    if queryStart != -1l {
+        result = this.target.getSubstring(cast<unsigned long>(queryStart) + 1l);
+    }
+}
+
+/**
+ * Returns the value of a query parameter, percent-decoded
+ *
+ * @param name Parameter name
+ * @return Parameter value, or an empty string if the parameter is not present
+ */
+public f<String> HttpRequest.getQueryParam(string name) {
+    const String query = this.getQuery();
+    result = getFormValue(query, name);
+}
+
+/**
+ * Checks whether the request target carries the given query parameter
+ *
+ * @param name Parameter name
+ */
+public f<bool> HttpRequest.hasQueryParam(string name) {
+    const String query = this.getQuery();
+    result = containsFormKey(query, name);
+}
+
+/**
+ * Sets the body of the request and the header fields that describe it
+ *
+ * @param body Body payload
+ * @param contentType Media type of the payload
+ */
+public p HttpRequest.setBody(const String& body, string contentType = CONTENT_TYPE_TEXT) {
+    this.body = body;
+    this.headers.set(HEADER_CONTENT_TYPE, contentType);
+    const String bodyLength = toString(cast<long>(this.body.getLength()));
+    this.headers.set(HEADER_CONTENT_LENGTH, bodyLength);
+}
+
+/**
+ * Serializes the request into the wire format
+ *
+ * @return Serialized request, ready to be written to a socket
+ */
+public f<String> HttpRequest.serialize() {
+    result = String();
+    result.append(getMethodName(this.method));
+    result.append(' ');
+    result.append(this.target.isEmpty() ? "/" : this.target.getRaw());
+    result.append(' ');
+    result.append(this.version);
+    result.append(CRLF);
+    const String headerBlock = this.headers.serialize();
+    result.append(headerBlock);
+    result.append(CRLF);
+    // The body may carry arbitrary bytes, so it is appended with an explicit length
+    result.append(this.body.getRaw(), this.body.getLength());
+}
+
+// =================================================== HttpResponse ====================================================
+
+/**
+ * A response message: status line, header fields and body
+ */
+public type HttpResponse struct {
+    public String version
+    public unsigned short statusCode
+    public String reason
+    public HttpHeaders headers
+    public String body
+}
+
+/**
+ * Constructs a response with the reason phrase that belongs to the given status code, an empty
+ * header block and an empty body
+ *
+ * @param statusCode Status code of the response
+ */
+public p HttpResponse.ctor(unsigned short statusCode = STATUS_OK) {
+    this.version = String(HTTP_VERSION_1_1);
+    this.statusCode = statusCode;
+    this.reason = String(getReasonPhrase(statusCode));
+}
+
+/**
+ * Sets the status code together with its default reason phrase
+ *
+ * @param statusCode Status code of the response
+ */
+public p HttpResponse.setStatus(unsigned short statusCode) {
+    this.statusCode = statusCode;
+    this.reason = String(getReasonPhrase(statusCode));
+}
+
+/**
+ * Sets the body of the response and the header fields that describe it
+ *
+ * @param body Body payload
+ * @param contentType Media type of the payload
+ */
+public p HttpResponse.setBody(const String& body, string contentType = CONTENT_TYPE_TEXT) {
+    this.body = body;
+    this.headers.set(HEADER_CONTENT_TYPE, contentType);
+    const String bodyLength = toString(cast<long>(this.body.getLength()));
+    this.headers.set(HEADER_CONTENT_LENGTH, bodyLength);
+}
+
+/**
+ * Sets an HTML body, a shorthand for `setBody(html, CONTENT_TYPE_HTML)`
+ *
+ * @param html HTML payload
+ */
+public p HttpResponse.setHtmlBody(const String& html) {
+    this.setBody(html, CONTENT_TYPE_HTML);
+}
+
+/**
+ * Sets a JSON body, a shorthand for `setBody(json, CONTENT_TYPE_JSON)`
+ *
+ * @param json JSON payload
+ */
+public p HttpResponse.setJsonBody(const String& json) {
+    this.setBody(json, CONTENT_TYPE_JSON);
+}
+
+/**
+ * Turns the response into a redirect to the given location
+ *
+ * @param location Target of the redirect
+ * @param statusCode Redirect status code to use
+ */
+public p HttpResponse.redirectTo(string location, unsigned short statusCode = STATUS_FOUND) {
+    this.setStatus(statusCode);
+    this.headers.set(HEADER_LOCATION, location);
+}
+
+/**
+ * Checks whether the status code denotes success (2xx)
+ */
+public f<bool> HttpResponse.isSuccess() {
+    return this.statusCode >= 200s && this.statusCode < 300s;
+}
+
+/**
+ * Checks whether the status code denotes a redirect (3xx)
+ */
+public f<bool> HttpResponse.isRedirect() {
+    return this.statusCode >= 300s && this.statusCode < 400s;
+}
+
+/**
+ * Checks whether the status code denotes a client error (4xx)
+ */
+public f<bool> HttpResponse.isClientError() {
+    return this.statusCode >= 400s && this.statusCode < 500s;
+}
+
+/**
+ * Checks whether the status code denotes a server error (5xx)
+ */
+public f<bool> HttpResponse.isServerError() {
+    return this.statusCode >= 500s && this.statusCode < 600s;
+}
+
+/**
+ * Serializes the response into the wire format
+ *
+ * @return Serialized response, ready to be written to a socket
+ */
+public f<String> HttpResponse.serialize() {
+    result = String();
+    result.append(this.version);
+    result.append(' ');
+    const String statusText = toString(cast<long>(this.statusCode));
+    result.append(statusText);
+    result.append(' ');
+    result.append(this.reason);
+    result.append(CRLF);
+    const String headerBlock = this.headers.serialize();
+    result.append(headerBlock);
+    result.append(CRLF);
+    // The body may carry arbitrary bytes, so it is appended with an explicit length
+    result.append(this.body.getRaw(), this.body.getLength());
+}
+
+// ====================================================== Parsing ======================================================
+
+/**
+ * Splits a head block into its lines, accepting both CRLF and bare LF line endings
+ *
+ * @param head Head block to split
+ * @return The lines, without their line endings
+ */
+f<Vector<String>> splitHeadLines(const String& head) {
+    result = Vector<String>();
+    const unsigned long length = head.getLength();
+    unsigned long lineStart = 0l;
+    for unsigned long i = 0l; i < length; i++ {
+        if head[i] == '\n' {
+            unsigned long lineEnd = i;
+            if lineEnd > lineStart && head[lineEnd - 1l] == '\r' { lineEnd--; }
+            result.pushBack(head.getSubstring(lineStart, cast<long>(lineEnd - lineStart)));
+            lineStart = i + 1l;
+        }
+    }
+    if lineStart < length {
+        result.pushBack(head.getSubstring(lineStart, cast<long>(length - lineStart)));
+    }
+}
+
+/**
+ * Parses a header block into a header list. Field lines that carry no colon are skipped, and
+ * leading as well as trailing whitespace is stripped off the field values.
+ *
+ * @param lines Lines of the head block
+ * @param firstLineIndex Index of the first field line, i.e. the line after the start line
+ * @param headers Header list to fill
+ */
+p parseHeaderLines(Vector<String>& lines, unsigned long firstLineIndex, HttpHeaders& headers) {
+    const unsigned long lineCount = cast<unsigned long>(lines.getSize());
+    for unsigned long i = firstLineIndex; i < lineCount; i++ {
+        String& line = lines.get(i);
+        if !line.isEmpty() {
+            const long colonIndex = line.find(':');
+            if colonIndex > 0l {
+                const String fieldName = line.getSubstring(0l, colonIndex);
+                const String rawValue = line.getSubstring(cast<unsigned long>(colonIndex) + 1l);
+                const String fieldValue = rawValue.trim();
+                headers.add(fieldName.getRaw(), fieldValue.getRaw());
+            }
+        }
+    }
+}
+
+/**
+ * Parses the head of a request, i.e. its request line plus its header block. The body is not part of
+ * the head and stays empty.
+ *
+ * @param head Head block, with or without the terminating empty line
+ * @return The parsed request, or an error describing why it could not be parsed
+ */
+public f<Result<HttpRequest>> parseRequestHead(const String& head) {
+    HttpRequest request = HttpRequest();
+    string errorMessage = "";
+
+    Vector<String> lines = splitHeadLines(head);
+    if lines.isEmpty() {
+        errorMessage = "Request head is empty";
+    } else {
+        String& requestLine = lines.get(0l);
+        const long methodEnd = requestLine.find(' ');
+        const long targetEnd = methodEnd == -1l ? -1l : requestLine.find(' ', cast<unsigned long>(methodEnd) + 1l);
+        if methodEnd == -1l || targetEnd == -1l {
+            errorMessage = "Malformed request line";
+        } else {
+            const String methodName = requestLine.getSubstring(0l, methodEnd);
+            const Result<HttpMethod> methodResult = parseMethodName(methodName);
+            if methodResult.isErr() {
+                errorMessage = "Unknown request method";
+            } else {
+                request.method = methodResult.unwrap();
+                const unsigned long targetStart = cast<unsigned long>(methodEnd) + 1l;
+                request.target = requestLine.getSubstring(targetStart, targetEnd - methodEnd - 1l);
+                request.version = requestLine.getSubstring(cast<unsigned long>(targetEnd) + 1l);
+                if request.target.isEmpty() {
+                    errorMessage = "Request line carries an empty request target";
+                } else {
+                    parseHeaderLines(lines, 1l, request.headers);
+                }
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(request) : err<HttpRequest>(error);
+}
+
+/**
+ * Parses the head of a response, i.e. its status line plus its header block. The body is not part of
+ * the head and stays empty.
+ *
+ * @param head Head block, with or without the terminating empty line
+ * @return The parsed response, or an error describing why it could not be parsed
+ */
+public f<Result<HttpResponse>> parseResponseHead(const String& head) {
+    HttpResponse response = HttpResponse();
+    string errorMessage = "";
+
+    Vector<String> lines = splitHeadLines(head);
+    if lines.isEmpty() {
+        errorMessage = "Response head is empty";
+    } else {
+        String& statusLine = lines.get(0l);
+        const long versionEnd = statusLine.find(' ');
+        if versionEnd == -1l {
+            errorMessage = "Malformed status line";
+        } else {
+            response.version = statusLine.getSubstring(0l, versionEnd);
+            const unsigned long codeStart = cast<unsigned long>(versionEnd) + 1l;
+            const long codeEnd = statusLine.find(' ', codeStart);
+            const long codeLength = codeEnd == -1l ? -1l : codeEnd - versionEnd - 1l;
+            const String codeText = statusLine.getSubstring(codeStart, codeLength);
+            if !isDecimalNumber(codeText) {
+                errorMessage = "Status line carries a malformed status code";
+            } else {
+                response.statusCode = cast<unsigned short>(toLong(codeText.getRaw()));
+                if codeEnd == -1l {
+                    // A status line is allowed to omit the reason phrase
+                    response.reason = String(getReasonPhrase(response.statusCode));
+                } else {
+                    response.reason = statusLine.getSubstring(cast<unsigned long>(codeEnd) + 1l);
+                }
+                parseHeaderLines(lines, 1l, response.headers);
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+}
+
+/**
+ * Parses a complete request message, head and body.
+ *
+ * The body is taken as everything behind the empty line that ends the head, which makes this the
+ * right entry point for messages that are already fully in memory. Reading a message off a socket
+ * goes through the client and the server instead, since those have to know when to stop reading.
+ *
+ * @param raw Complete request message
+ * @return The parsed request, or an error describing why it could not be parsed
+ */
+public f<Result<HttpRequest>> parseRequest(const String& raw) {
+    const long headEnd = findHeadEnd(raw);
+    String head = String(raw);
+    if headEnd != -1l { head = raw.getSubstring(0l, headEnd); }
+    Result<HttpRequest> parseResult = parseRequestHead(head);
+    if parseResult.isOk() && headEnd != -1l {
+        HttpRequest& request = parseResult.unwrap();
+        request.body = raw.getSubstring(cast<unsigned long>(headEnd) + 4l);
+    }
+    return parseResult;
+}
+
+/**
+ * Parses a complete response message, head and body.
+ *
+ * The body is taken as everything behind the empty line that ends the head, which makes this the
+ * right entry point for messages that are already fully in memory. Reading a message off a socket
+ * goes through the client and the server instead, since those have to know when to stop reading.
+ *
+ * @param raw Complete response message
+ * @return The parsed response, or an error describing why it could not be parsed
+ */
+public f<Result<HttpResponse>> parseResponse(const String& raw) {
+    const long headEnd = findHeadEnd(raw);
+    String head = String(raw);
+    if headEnd != -1l { head = raw.getSubstring(0l, headEnd); }
+    Result<HttpResponse> parseResult = parseResponseHead(head);
+    if parseResult.isOk() && headEnd != -1l {
+        HttpResponse& response = parseResult.unwrap();
+        response.body = raw.getSubstring(cast<unsigned long>(headEnd) + 4l);
+    }
+    return parseResult;
+}
+
+/**
+ * Returns the index of the empty line that separates head and body
+ *
+ * @param raw Message to scan
+ * @return Index of the CRLFCRLF sequence, or -1 if the head is not terminated yet
+ */
+public f<long> findHeadEnd(const String& raw) {
+    return raw.find("\r\n\r\n");
+}
+
+// ================================================= Form encoded data =================================================
+
+/**
+ * Returns the value that belongs to the given key in a form-encoded body or query string, i.e. in a
+ * "key=value&key2=value2" sequence. Both the key and the returned value are percent-decoded.
+ *
+ * @param formData Form-encoded data
+ * @param name Key to look up
+ * @return Decoded value, or an empty string if the key is not present
+ */
+public f<String> getFormValue(const String& formData, string name) {
+    result = String();
+    Vector<Pair<String, String>> pairs = parseFormData(formData);
+    const unsigned long pairCount = cast<unsigned long>(pairs.getSize());
+    bool found = false;
+    for unsigned long i = 0l; i < pairCount && !found; i++ {
+        Pair<String, String>& entry = pairs.get(i);
+        String& key = entry.getFirst();
+        if key == name {
+            result = entry.getSecond();
+            found = true;
+        }
+    }
+}
+
+/**
+ * Checks whether a form-encoded body or query string carries the given key
+ *
+ * @param formData Form-encoded data
+ * @param name Key to look up
+ */
+public f<bool> containsFormKey(const String& formData, string name) {
+    result = false;
+    Vector<Pair<String, String>> pairs = parseFormData(formData);
+    const unsigned long pairCount = cast<unsigned long>(pairs.getSize());
+    for unsigned long i = 0l; i < pairCount && !result; i++ {
+        Pair<String, String>& entry = pairs.get(i);
+        String& key = entry.getFirst();
+        result = key == name;
+    }
+}
+
+/**
+ * Splits a form-encoded body or query string into its decoded key/value pairs. Keys without a '='
+ * yield an empty value, and empty segments are skipped.
+ *
+ * @param formData Form-encoded data
+ * @return Decoded key/value pairs, in the order they appear
+ */
+public f<Vector<Pair<String, String>>> parseFormData(const String& formData) {
+    result = Vector<Pair<String, String>>();
+    const unsigned long length = formData.getLength();
+    unsigned long segmentStart = 0l;
+    while segmentStart <= length {
+        long segmentEnd = formData.find('&', segmentStart);
+        if segmentEnd == -1l { segmentEnd = cast<long>(length); }
+        if cast<unsigned long>(segmentEnd) > segmentStart {
+            const String segment = formData.getSubstring(segmentStart, segmentEnd - cast<long>(segmentStart));
+            const long assignIndex = segment.find('=');
+            String rawKey = segment;
+            String rawValue = String();
+            if assignIndex != -1l {
+                rawKey = segment.getSubstring(0l, assignIndex);
+                rawValue = segment.getSubstring(cast<unsigned long>(assignIndex) + 1l);
+            }
+            const String key = urlDecode(rawKey);
+            const String value = urlDecode(rawValue);
+            result.pushBack(Pair<String, String>(key, value));
+        }
+        segmentStart = cast<unsigned long>(segmentEnd) + 1l;
+    }
+}
+
+// ================================================== Message transport ================================================
+
+// Size of a single socket read. Messages are assembled from as many of these as it takes.
+const long READ_CHUNK_SIZE = 4096l;
+
+// Upper bound on how much of a message is kept in memory before it is rejected, 8 MiB by default
+public const unsigned long DEFAULT_MAX_MESSAGE_SIZE = 8388608l;
+
+/**
+ * Writes a request to the socket
+ *
+ * @param socket Socket to write to
+ * @param request Request to write
+ * @return true if the whole request reached the peer
+ */
+public f<bool> sendRequest(Socket& socket, const HttpRequest& request) {
+    const String wire = request.serialize();
+    result = writeString(socket, wire);
+}
+
+/**
+ * Writes a response to the socket
+ *
+ * @param socket Socket to write to
+ * @param response Response to write
+ * @return true if the whole response reached the peer
+ */
+public f<bool> sendResponse(Socket& socket, const HttpResponse& response) {
+    const String wire = response.serialize();
+    result = writeString(socket, wire);
+}
+
+/**
+ * Reads a complete request off the socket.
+ *
+ * The body is framed by the Content-Length field, or by the chunked transfer coding. A request that
+ * announces neither carries no body, since a server may not wait for the connection to close to
+ * find the end of a request.
+ *
+ * @param socket Socket to read from
+ * @param maxSize Maximum number of bytes to accept for head and body each
+ * @return The received request, or an error describing why it could not be received
+ */
+public f<Result<HttpRequest>> receiveRequest(Socket& socket, unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
+    HttpRequest request = HttpRequest();
+    String buffer = String();
+    string errorMessage = "";
+
+    const Result<String> headResult = readHead(socket, buffer, maxSize);
+    if headResult.isErr() {
+        errorMessage = headResult.getErr().message;
+    } else {
+        const String& head = headResult.unwrap();
+        Result<HttpRequest> headParseResult = parseRequestHead(head);
+        if headParseResult.isErr() {
+            errorMessage = headParseResult.getErr().message;
+        } else {
+            HttpRequest& parsedRequest = headParseResult.unwrap();
+            request = parsedRequest;
+            const Result<String> bodyResult = readBody(socket, request.headers, buffer, maxSize, false);
+            if bodyResult.isErr() {
+                errorMessage = bodyResult.getErr().message;
+            } else {
+                const String& body = bodyResult.unwrap();
+                request.body = body;
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(request) : err<HttpRequest>(error);
+}
+
+/**
+ * Reads a complete response off the socket.
+ *
+ * The body is framed by the Content-Length field or by the chunked transfer coding. A response that
+ * announces neither runs until the peer closes the connection, as HTTP/1.0 servers do.
+ *
+ * @param socket Socket to read from
+ * @param expectBody Whether the response carries a body at all - a response to HEAD never does
+ * @param maxSize Maximum number of bytes to accept for head and body each
+ * @return The received response, or an error describing why it could not be received
+ */
+public f<Result<HttpResponse>> receiveResponse(Socket& socket, bool expectBody = true,
+                                               unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
+    HttpResponse response = HttpResponse();
+    String buffer = String();
+    string errorMessage = "";
+
+    const Result<String> headResult = readHead(socket, buffer, maxSize);
+    if headResult.isErr() {
+        errorMessage = headResult.getErr().message;
+    } else {
+        const String& head = headResult.unwrap();
+        Result<HttpResponse> headParseResult = parseResponseHead(head);
+        if headParseResult.isErr() {
+            errorMessage = headParseResult.getErr().message;
+        } else {
+            HttpResponse& parsedResponse = headParseResult.unwrap();
+            response = parsedResponse;
+            // Responses to HEAD and bodyless status codes are complete with their head
+            const bool hasBody = expectBody && !isBodylessStatus(response.statusCode);
+            if hasBody {
+                const Result<String> bodyResult = readBody(socket, response.headers, buffer, maxSize, true);
+                if bodyResult.isErr() {
+                    errorMessage = bodyResult.getErr().message;
+                } else {
+                    const String& body = bodyResult.unwrap();
+                    response.body = body;
+                }
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+}
+
+/**
+ * Checks whether a status code rules out a message body (RFC 9112 section 6.3)
+ */
+f<bool> isBodylessStatus(unsigned short statusCode) {
+    return (statusCode >= 100s && statusCode < 200s) || statusCode == STATUS_NO_CONTENT || statusCode == STATUS_NOT_MODIFIED;
+}
+
+/**
+ * Writes a string to the socket in full
+ */
+f<bool> writeString(Socket& socket, const String& text) {
+    result = true;
+    const unsigned long length = text.getLength();
+    if length != 0l {
+        unsafe {
+            result = socket.writeAll(cast<byte*>(text.getRaw()), length);
+        }
+    }
+}
+
+/**
+ * Appends one socket read to the buffer
+ *
+ * @param socket Socket to read from
+ * @param buffer Buffer to append to
+ * @return true if bytes arrived, false if the peer closed the connection or the read timed out
+ */
+f<bool> readChunkInto(Socket& socket, String& buffer) {
+    byte[4096] chunk;
+    long bytesRead = 0l;
+    unsafe {
+        bytesRead = socket.read(cast<byte*>(&chunk), READ_CHUNK_SIZE);
+        if bytesRead > 0l {
+            buffer.append(cast<string>(&chunk), cast<unsigned long>(bytesRead));
+        }
+    }
+    return bytesRead > 0l;
+}
+
+/**
+ * Reads until the empty line that ends the head has arrived.
+ *
+ * @param socket Socket to read from
+ * @param buffer Receives the body bytes that arrived together with the head
+ * @param maxSize Maximum number of head bytes to accept
+ * @return The head block, without its terminating empty line
+ */
+f<Result<String>> readHead(Socket& socket, String& buffer, unsigned long maxSize) {
+    String head = String();
+    String pending = String();
+    string errorMessage = "";
+    long headEnd = -1l;
+    bool done = false;
+
+    while !done {
+        if !readChunkInto(socket, pending) {
+            errorMessage = "Connection closed before the message head was complete";
+            done = true;
+        } else {
+            headEnd = findHeadEnd(pending);
+            if headEnd != -1l {
+                done = true;
+            } else if pending.getLength() > maxSize {
+                errorMessage = "Message head exceeds the maximum message size";
+                done = true;
+            }
+        }
+    }
+
+    if errorMessage == "" {
+        head = pending.getSubstring(0l, headEnd);
+        buffer = pending.getSubstring(cast<unsigned long>(headEnd) + 4l);
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(head) : err<String>(error);
+}
+
+/**
+ * Reads the body of a message that the head announced.
+ *
+ * @param socket Socket to read from
+ * @param headers Header fields of the message, which decide how the body is framed
+ * @param buffer Body bytes that already arrived together with the head
+ * @param maxSize Maximum number of body bytes to accept
+ * @param readUntilClose Whether a message without any framing runs until the connection closes
+ * @return The body
+ */
+f<Result<String>> readBody(Socket& socket, HttpHeaders& headers, String& buffer, unsigned long maxSize,
+                           bool readUntilClose) {
+    String body = String();
+    string errorMessage = "";
+
+    if headers.isChunked() {
+        const Result<String> chunkedResult = readChunkedBody(socket, buffer, maxSize);
+        if chunkedResult.isErr() {
+            errorMessage = chunkedResult.getErr().message;
+        } else {
+            const String& decoded = chunkedResult.unwrap();
+            body = decoded;
+        }
+    } else {
+        const long contentLength = headers.getContentLength();
+        if contentLength > 0l {
+            if cast<unsigned long>(contentLength) > maxSize {
+                errorMessage = "Message body exceeds the maximum message size";
+            } else {
+                // Keep reading until the announced number of bytes has arrived
+                bool connectionAlive = true;
+                while buffer.getLength() < cast<unsigned long>(contentLength) && connectionAlive {
+                    connectionAlive = readChunkInto(socket, buffer);
+                }
+                if buffer.getLength() < cast<unsigned long>(contentLength) {
+                    errorMessage = "Connection closed before the announced body was complete";
+                } else {
+                    body = buffer.getSubstring(0l, contentLength);
+                }
+            }
+        } else if contentLength == -1l && readUntilClose {
+            // No framing at all, so the body ends with the connection
+            bool connectionAlive = true;
+            while connectionAlive && buffer.getLength() <= maxSize {
+                connectionAlive = readChunkInto(socket, buffer);
+            }
+            if buffer.getLength() > maxSize {
+                errorMessage = "Message body exceeds the maximum message size";
+            } else {
+                body = buffer;
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(body) : err<String>(error);
+}
+
+/**
+ * Reads and decodes a chunked body (RFC 9112 section 7.1). Chunk extensions and the trailer section
+ * are parsed but discarded.
+ *
+ * @param socket Socket to read from
+ * @param buffer Body bytes that already arrived together with the head
+ * @param maxSize Maximum number of decoded body bytes to accept
+ * @return The decoded body
+ */
+f<Result<String>> readChunkedBody(Socket& socket, String& buffer, unsigned long maxSize) {
+    String body = String();
+    string errorMessage = "";
+    unsigned long pos = 0l;
+    bool done = false;
+
+    while !done {
+        // The chunk size line ends at the next CRLF, so wait until we have seen one
+        long lineEnd = buffer.find(CRLF, pos);
+        while lineEnd == -1l && errorMessage == "" {
+            if !readChunkInto(socket, buffer) {
+                errorMessage = "Connection closed inside a chunked body";
+            } else {
+                lineEnd = buffer.find(CRLF, pos);
+            }
+        }
+
+        if errorMessage != "" {
+            done = true;
+        } else {
+            // Everything behind a ';' is a chunk extension, which carries no data
+            const String sizeLine = buffer.getSubstring(pos, lineEnd - cast<long>(pos));
+            const long extensionStart = sizeLine.find(';');
+            String sizeText = String();
+            if extensionStart == -1l {
+                sizeText = sizeLine;
+            } else {
+                sizeText = sizeLine.getSubstring(0l, extensionStart);
+            }
+            const long chunkSize = parseHexNumber(sizeText);
+            if chunkSize < 0l {
+                errorMessage = "Malformed chunk size";
+                done = true;
+            } else if chunkSize == 0l {
+                // The last chunk is followed by an optional trailer and a final empty line
+                done = true;
+            } else if body.getLength() + cast<unsigned long>(chunkSize) > maxSize {
+                errorMessage = "Message body exceeds the maximum message size";
+                done = true;
+            } else {
+                // Wait until the chunk data plus its trailing CRLF has arrived
+                const unsigned long dataStart = cast<unsigned long>(lineEnd) + 2l;
+                const unsigned long chunkEnd = dataStart + cast<unsigned long>(chunkSize) + 2l;
+                bool connectionAlive = true;
+                while buffer.getLength() < chunkEnd && connectionAlive {
+                    connectionAlive = readChunkInto(socket, buffer);
+                }
+                if buffer.getLength() < chunkEnd {
+                    errorMessage = "Connection closed inside a chunked body";
+                    done = true;
+                } else {
+                    const String chunkData = buffer.getSubstring(dataStart, chunkSize);
+                    body.append(chunkData.getRaw(), chunkData.getLength());
+                    pos = chunkEnd;
+                }
+            }
+        }
+    }
+
+    const Error error = Error(errorMessage);
+    result = errorMessage == "" ? ok(body) : err<String>(error);
+}
+
+/**
+ * Parses a hexadecimal number such as a chunk size
+ *
+ * @param text Hexadecimal digits, without any prefix
+ * @return The parsed value, or -1 if the text is empty or carries a non-hex digit
+ */
+f<long> parseHexNumber(const String& text) {
+    const unsigned long length = text.getLength();
+    if length == 0l { return -1l; }
+    long value = 0l;
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        if !isHexDigit(c) { return -1l; }
+        value = value * 16l + cast<long>(getHexDigitValue(c));
+    }
+    return value;
 }
