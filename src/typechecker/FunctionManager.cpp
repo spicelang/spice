@@ -313,22 +313,25 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       substantiatedFunction->entry = matchScope->symbolTable.copySymbol(presetFunction.entry->name, newScopeName);
       assert(substantiatedFunction->entry != nullptr);
 
-      // Copy function scope
+      // Copy function scope. Interface method declarations have no body and therefore no child scope to copy - only
+      // their signature needs to be substantiated for call-site type checking, so skip this step for them.
       const std::string oldScopeName = presetFunction.getScopeName();
-      Scope *childScope = matchScope->copyChildScope(oldScopeName, newScopeName);
-      assert(childScope != nullptr);
-      childScope->isGenericScope = false;
-      substantiatedFunction->bodyScope = childScope;
+      if (matchScope->children.contains(oldScopeName)) {
+        Scope *childScope = matchScope->copyChildScope(oldScopeName, newScopeName);
+        assert(childScope != nullptr);
+        childScope->isGenericScope = false;
+        substantiatedFunction->bodyScope = childScope;
 
-      // Insert symbols for generic type names with concrete types into the child block
-      for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
-        childScope->insertGenericType(typeName, GenericType(concreteType));
+        // Insert symbols for generic type names with concrete types into the child block
+        for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
+          childScope->insertGenericType(typeName, GenericType(concreteType));
 
-      // Substantiate the 'this' entry in the new function scope
-      if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
-        SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
-        assert(thisEntry != nullptr);
-        thisEntry->updateType(candidate.thisType.toPtr(callNode), /*overwriteExistingType=*/true);
+        // Substantiate the 'this' entry in the new function scope
+        if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
+          SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
+          assert(thisEntry != nullptr);
+          thisEntry->updateType(candidate.thisType.toPtr(callNode), /*overwriteExistingType=*/true);
+        }
       }
 
       // Add to matched functions

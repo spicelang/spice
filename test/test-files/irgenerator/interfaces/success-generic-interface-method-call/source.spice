@@ -1,0 +1,43 @@
+type T dyn;
+
+type Iface<T> interface {
+    f<bool> check<T>();
+}
+
+type Impl<T> struct : Iface<T> {
+    T val
+    T threshold
+}
+
+p Impl.ctor(T val, T threshold) {
+    this.val = val;
+    this.threshold = threshold;
+}
+
+f<bool> Impl.check() {
+    return this.val > this.threshold;
+}
+
+f<bool> test<T>(Iface<T>& x) {
+    return x.check();
+}
+
+f<int> main() {
+    // First manifestation of test<int>/check<int>/Iface<int>/Impl<int>
+    Impl<int> aboveInt = Impl<int>(5, 0);
+    Iface<int>& aboveIntRef = aboveInt;
+    bool r1 = test<int>(aboveIntRef);
+
+    // Second call with the same T=int manifestation, but a different instance
+    Impl<int> belowInt = Impl<int>(-5, 0);
+    Iface<int>& belowIntRef = belowInt;
+    bool r2 = test<int>(belowIntRef);
+
+    // Distinct manifestation with T=long, coexisting with the T=int ones
+    Impl<long> aboveLong = Impl<long>(3l, 1l);
+    Iface<long>& aboveLongRef = aboveLong;
+    bool r3 = test<long>(aboveLongRef);
+
+    printf("%d %d %d\n", r1, r2, r3);
+    return 0;
+}

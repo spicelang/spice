@@ -9,5 +9,5 @@ type T dyn;
  */
 #[core.compiler.fixedTypeId = 256]
 public type IIterable<T> interface {
-    f<IIterator<T>> getIterator<T>();
+    public f<IIterator<T>> getIterator<T>();
 }
