@@ -1,5 +1,5 @@
-import "std/text/toml-value";
-import "std/text/toml-parser";
+import "std/text/toml/toml-value";
+import "std/text/toml/toml-parser";
 
 f<int> main() {
     // Strings

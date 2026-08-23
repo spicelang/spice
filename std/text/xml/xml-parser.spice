@@ -1,4 +1,4 @@
-import "std/text/xml-node";
+import "std/text/xml/xml-node";
 import "std/text/analysis";
 
 /**
@@ -11,8 +11,8 @@ import "std/text/analysis";
  * declaration / processing instructions (which are skipped). DTDs,
  * namespaces and external entities are not interpreted.
  *
- * The XmlNode data model lives in "std/text/xml-node" and serialization in
- * "std/text/xml-serializer".
+ * The XmlNode data model lives in "std/text/xml/xml-node" and serialization in
+ * "std/text/xml/xml-serializer".
  */
 public type XmlParser struct {
     String input
@@ -69,7 +69,7 @@ public f<Result<XmlNode*>> XmlParser.parse() {
  * Parse an XML document and return the root element.
  *
  * On success returns the root XmlNode, which the caller owns and releases again
- * with `deleteXmlNode` from "std/text/xml-node". On failure the partially built
+ * with `deleteXmlNode` from "std/text/xml/xml-node". On failure the partially built
  * tree is released by the parser and an error describing the first problem
  * encountered is returned.
  */

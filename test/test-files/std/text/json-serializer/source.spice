@@ -1,6 +1,6 @@
-import "std/text/json-value";
-import "std/text/json-serializer";
-import "std/text/json-parser";
+import "std/text/json/json-value";
+import "std/text/json/json-serializer";
+import "std/text/json/json-parser";
 
 f<int> main() {
     JsonSerializer serializer;

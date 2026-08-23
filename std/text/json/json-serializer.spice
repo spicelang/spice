@@ -1,4 +1,4 @@
-import "std/text/json-value";
+import "std/text/json/json-value";
 import "std/type/type-conversion";
 
 ext f<int> snprintf(char*, unsigned long, string, ...);
@@ -9,7 +9,7 @@ ext f<int> snprintf(char*, unsigned long, string, ...);
  * In compact mode (the default) the output contains no insignificant
  * whitespace. In pretty mode nested arrays and objects are laid out with
  * two-space indentation. Either way the result round-trips through
- * `parseJson` from "std/text/json-parser".
+ * `parseJson` from "std/text/json/json-parser".
  */
 public type JsonSerializer struct {
     bool pretty

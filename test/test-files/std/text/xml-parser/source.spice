@@ -1,5 +1,5 @@
-import "std/text/xml-node";
-import "std/text/xml-parser";
+import "std/text/xml/xml-node";
+import "std/text/xml/xml-parser";
 
 f<int> main() {
     // Minimal self-closing root element
