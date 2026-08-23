@@ -73,14 +73,16 @@ Function *TypeChecker::matchCopyCtor(const QualType &thisType, const ASTNode *no
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toConstRef(node), false}};
-  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+  // The new instance being constructed is never const, regardless of whether the copy source (thisType) is const
+  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType.toNonConst(), args, {}, true, node);
 }
 
 Function *TypeChecker::matchMoveCtor(const QualType &thisType, const ASTNode *node) const {
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope != nullptr);
   const ArgList args = {{thisType.toNonConst().toRef(node), false}};
-  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+  // The new instance being constructed is never const, regardless of whether the move source (thisType) is const
+  return FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType.toNonConst(), args, {}, true, node);
 }
 
 QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const {

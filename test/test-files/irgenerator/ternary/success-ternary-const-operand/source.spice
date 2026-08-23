@@ -1,0 +1,43 @@
+type Thing struct {}
+
+p Thing.ctor() { printf("Ctor!\n"); }
+p Thing.ctor(const Thing& _) { printf("Copy ctor!\n"); }
+p Thing.dtor() { printf("Dtor!\n"); }
+
+// Regression test: the copy-ctor lookup for a ternary always matches against the *true* branch's type. When
+// that operand is const (a const-ref parameter here), the lookup used to be handed a const 'this' type and
+// silently fail (no diagnostic), leaving a null copy-ctor call that segfaulted the IR generator. The false
+// branch is a fresh temporary, so this also exercises the phi-merge / temp-stealing storage path for the
+// const-copy side (which used to also fail, but only under --sanitizer=address).
+f<Thing> takeRef(const Thing& ref, bool cond) {
+    const Thing res = cond ? ref : Thing();
+    return res;
+}
+
+// Same bug, but with a const *by-value* parameter instead of a const reference.
+f<Thing> takeVal(const Thing val, bool cond) {
+    const Thing res = cond ? val : Thing();
+    return res;
+}
+
+f<int> main() {
+    Thing t; // Ctor call
+
+    {
+        Thing viaRef = takeRef(t, true); // Copy ctor call for the ref side, moved into viaRef
+    } // Dtor call for viaRef
+
+    {
+        Thing viaRefTemp = takeRef(t, false); // Ctor call for the temporary, moved into viaRefTemp
+    } // Dtor call for viaRefTemp
+
+    {
+        Thing viaVal = takeVal(t, true); // Copy ctor call for the by-value param, copy ctor call for the ternary, moved into viaVal
+    } // Dtor call for viaVal
+
+    {
+        Thing viaValTemp = takeVal(t, false); // Copy ctor call for the by-value param, ctor call for the temporary, moved into viaValTemp
+    } // Dtor call for viaValTemp
+
+    // Dtor call for t
+}
