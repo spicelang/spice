@@ -15,7 +15,9 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
+#include <linter/LintPass.h>
 #include <llvm/IR/Module.h>
+#include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTable.h>
@@ -140,9 +142,9 @@ static void execTestCase(const TestCase &testCase) {
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 3, "CliOptions::InstrumentationSettings struct size changed");
 #if defined(__clang__) && defined(__apple_build_version__)
   // some std types for Apple Clang are smaller than for GCC and Clang
-  static_assert(sizeof(CliOptions) == 312, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 320, "CliOptions struct size changed");
 #else
-  static_assert(sizeof(CliOptions) == 440, "CliOptions struct size changed");
+  static_assert(sizeof(CliOptions) == 448, "CliOptions struct size changed");
 #endif
 
   // Parse test args
@@ -407,6 +409,65 @@ static void execTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
+/**
+ * Runs a lint test case: front end + type checker + LintPass, checked against lint.out. Deliberately does not reuse
+ * execTestCase's shared pipeline (codegen, optimization, linking, execution) - lint rules only need a type-checked AST,
+ * and adding another opt-in check to the function that drives every other suite is more blast radius than warranted.
+ */
+static void execLinterTestCase(const TestCase &testCase) {
+  // Check if test is disabled
+  if (TestUtil::isDisabled(testCase))
+    GTEST_SKIP();
+
+  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
+
+  CliOptions cliOptions;
+  cliOptions.mainSourceFile = mainSourceFilePath;
+  // GlobalResourceManager construction looks up an LLVM target for the source file, so a valid native target triple is
+  // required even though lint tests never reach code generation.
+  cliOptions.targetTriple = llvm::Triple(llvm::Triple::normalize(llvm::sys::getProcessTriple()));
+  cliOptions.isNativeTarget = true;
+  cliOptions.ignoreCache = true;
+  cliOptions.compileJobCount = 1;
+
+  const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
+  cliOptions.outputDir = artifactDir;
+  cliOptions.cacheDir = artifactDir / "cache";
+  std::filesystem::create_directories(cliOptions.cacheDir);
+
+  GlobalResourceManager resourceManager(cliOptions);
+
+  try {
+    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
+    mainSourceFile->runFrontEnd();
+    mainSourceFile->runMiddleEnd();
+
+    // Fail if an error was expected
+    if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT))
+      FAIL() << "Expected error, but got no error";
+
+    LintPass lintPass(resourceManager, mainSourceFile);
+    const std::vector<LintFinding> findings = lintPass.lint(mainSourceFile->ast);
+
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_LINT_OUTPUT, [&] {
+      std::stringstream actualLintString;
+      for (const LintFinding &finding : findings)
+        actualLintString << finding.findingMessage << "\n";
+      return actualLintString.str();
+    });
+  } catch (LexerError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (ParserError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (SemanticError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (CompilerError &error) {
+    TestUtil::handleError(testCase, error);
+  }
+
+  SUCCEED();
+}
+
 class CommonTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(CommonTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, CommonTests, ::testing::ValuesIn(TestUtil::collectTestCases("common", false)),
@@ -453,6 +514,11 @@ INSTANTIATE_TEST_SUITE_P(, ExampleTests, ::testing::ValuesIn(TestUtil::collectTe
 class BootstrapCompilerTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(BootstrapCompilerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil::collectTestCases("bootstrap-compiler", false)),
+                         TestUtil::NameResolver());
+
+class LinterTests : public ::testing::TestWithParam<TestCase> {};
+TEST_P(LinterTests, ) { execLinterTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
                          TestUtil::NameResolver());
 
 } // namespace spice::testing

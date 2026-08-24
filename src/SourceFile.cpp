@@ -16,6 +16,7 @@
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <linker/BitcodeLinker.h>
+#include <linter/LintPass.h>
 #include <objectemitter/LLVMObjectEmitter.h>
 #ifdef SPICE_ENABLE_TPDE
 #include <objectemitter/TPDEObjectEmitter.h>
@@ -870,6 +871,26 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for this file
   for (const CompilerWarning &warning : compilerOutput.warnings)
     warning.print();
+}
+
+void SourceFile::collectAndPrintLintFindings() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache (no AST available), or if already visited. The latter guard keeps circular
+  // imports from recursing infinitely, since the dependency graph may contain cycles.
+  if (restoredFromCache || lintFindingsCollected)
+    return;
+  lintFindingsCollected = true;
+  // Collect lint findings for all dependencies
+  for (SourceFile *sourceFile : dependencies | std::views::values)
+    if (!sourceFile->isStdFile)
+      sourceFile->collectAndPrintLintFindings();
+  // Collect lint findings for this file
+  if (!ignoreWarnings) {
+    LintPass lintPass(resourceManager, this);
+    compilerOutput.lintFindings = lintPass.lint(ast);
+  }
+  // Print lint findings for this file
+  for (const LintFinding &finding : compilerOutput.lintFindings)
+    finding.print();
 }
 
 const SourceFile *SourceFile::getRootSourceFile() const { // NOLINT(misc-no-recursion)

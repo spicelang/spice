@@ -35,6 +35,7 @@ const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
 const char *const REF_NAME_GDB_OUTPUT = "debug.out";
 const char *const REF_NAME_ERROR_OUTPUT = "exception.out";
 const char *const REF_NAME_WARNING_OUTPUT = "warning.out";
+const char *const REF_NAME_LINT_OUTPUT = "lint.out";
 const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 
 const char *const CTL_SKIP_DISABLED = "disabled";

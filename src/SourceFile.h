@@ -7,6 +7,7 @@
 
 #include <exception/AntlrThrowingErrorListener.h>
 #include <global/RuntimeModuleManager.h>
+#include <linter/LintFinding.h>
 #include <util/CompilerWarning.h>
 #include <util/GlobalDefinitions.h>
 
@@ -97,6 +98,7 @@ struct CompilerOutput {
   std::string typesString;
   std::string cacheStats;
   std::vector<CompilerWarning> warnings;
+  std::vector<LintFinding> lintFindings;
   TimerOutput times;
 };
 
@@ -167,6 +169,7 @@ public:
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors() const;
   void collectAndPrintWarnings();
+  void collectAndPrintLintFindings();
   const SourceFile *getRootSourceFile() const;
   bool isRT(RuntimeModule runtimeModule) const;
   ALWAYS_INLINE bool isStringRT() const { return isRT(STRING_RT); }
@@ -218,6 +221,7 @@ private:
   bool typeCheckerPostRunning = false;
   bool backEndStarted = false;
   bool warningsCollected = false;
+  bool lintFindingsCollected = false;
 
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;

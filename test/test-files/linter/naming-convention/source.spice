@@ -1,0 +1,43 @@
+// Struct violation: PascalCase required, but has an underscore
+type My_Point struct {
+    double x
+    double y
+}
+
+// Struct compliant with PascalCase, also used to exercise ctor/operator exemptions below
+type Point struct {
+    int x
+    int y
+}
+
+public p Point.ctor(int x, int y) {
+    this.x = x;
+    this.y = y;
+}
+
+public f<bool> operator==(const Point& lhs, const Point& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+// Function violation: camelCase required, but has an underscore
+f<int> bad_function_name(int a, int b) {
+    return a + b;
+}
+
+// Function compliant with camelCase
+f<int> addTwo(int a, int b) {
+    return a + b;
+}
+
+// Global variable violation: SNAKE_CASE required, but not all-uppercase
+int MaxRetries = 3;
+
+// Global variable compliant with SNAKE_CASE
+int MAX_RETRIES = 3;
+
+f<int> main() {
+    Point a = Point(1, 2);
+    Point b = Point(1, 2);
+    printf("%d, %d, %d, %d\n", bad_function_name(1, 2), addTwo(1, 2), MaxRetries, MAX_RETRIES);
+    return a == b ? 0 : 1;
+}
