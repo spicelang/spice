@@ -16,7 +16,6 @@ set(SOURCES
         unittest/UnitFileUtil.cpp
         unittest/UnitSystemUtil.cpp
         unittest/UnitDriver.cpp
-        unittest/UnitLinter.cpp
         unittest/UnitThreadPool.cpp
 )
 

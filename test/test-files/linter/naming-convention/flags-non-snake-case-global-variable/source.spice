@@ -1,0 +1,5 @@
+int MaxRetries = 3;
+
+f<int> main() {
+    return MaxRetries;
+}
