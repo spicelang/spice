@@ -158,6 +158,52 @@ TEST(DriverTest, TestSubcommandComplex) {
   ASSERT_EQ(Sanitizer::THREAD, cliOptions.instrumentation.sanitizer); // --sanitizer=thread
 }
 
+TEST(DriverTest, LintSubcommandMinimal) {
+  const char *argv[] = {"spice", "lint", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_TRUE(driver.shouldCompile);
+  ASSERT_FALSE(driver.shouldInstall);
+  ASSERT_FALSE(driver.shouldUninstall);
+  ASSERT_FALSE(driver.shouldExecute);
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_TRUE(cliOptions.lintOnly);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
+  ASSERT_EQ(BuildMode::DEBUG, cliOptions.buildMode);
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
+}
+
+TEST(DriverTest, LintSubcommandComplex) {
+  const char *argv[] = {"spice", "l", "-d", "-ast", "-Os", "-m", "release", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_TRUE(driver.shouldCompile);
+  ASSERT_FALSE(driver.shouldInstall);
+  ASSERT_FALSE(driver.shouldUninstall);
+  ASSERT_FALSE(driver.shouldExecute);
+  ASSERT_FALSE(cliOptions.execute);
+  ASSERT_TRUE(cliOptions.lintOnly);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+  ASSERT_EQ(OptLevel::Os, cliOptions.optLevel);        // -Os
+  ASSERT_EQ(BuildMode::RELEASE, cliOptions.buildMode); // -m release
+  ASSERT_FALSE(cliOptions.generateTestMain);
+  ASSERT_FALSE(cliOptions.testMode);
+  ASSERT_FALSE(cliOptions.noEntryFct);
+  ASSERT_TRUE(cliOptions.printDebugOutput);  // -d
+  ASSERT_TRUE(cliOptions.dump.dumpAST);      // -ast
+}
+
 TEST(DriverTest, InstallSubcommandMinimal) {
   const char *argv[] = {"spice", "install", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
