@@ -480,26 +480,23 @@ public const f<StorageReportFull> OffsetAllocator.getStorageReportFull() {
  * Count the number of leading zero bits in a nonzero 32 bit value
  */
 f<unsigned int> lzcntNonzero(unsigned int v) {
-    unsigned int n = 0u;
+    result = 0u;
     unsigned int bit = 0x80000000u;
     while (v & bit) == 0u {
-        n++;
+        result++;
         bit >>= 1u;
     }
-    return n;
 }
 
 /**
  * Count the number of trailing zero bits in a nonzero 32 bit value
  */
 f<unsigned int> tzcntNonzero(unsigned int v) {
-    unsigned int n = 0u;
-    unsigned int x = v;
-    while (x & 1u) == 0u {
-        x >>= 1u;
-        n++;
+    result = 0u;
+    while (v & 1u) == 0u {
+        v >>= 1u;
+        result++;
     }
-    return n;
 }
 
 /**
