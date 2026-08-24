@@ -143,9 +143,9 @@ Text processing, parsing, and formatted output.
 | `stringstream`                                                              | Stream-style string building.                      |
 | `string-ext`                                                                | Extra string utility functions.                    |
 | `analysis`                                                                  | Text analysis helpers.                             |
-| `csv-parser` / `json-parser` / `toml-parser` / `xml-parser`                 | Parsers for CSV, JSON, TOML, and XML.              |
-| `csv-serializer` / `json-serializer` / `toml-serializer` / `xml-serializer` | Serializers for CSV, JSON, TOML, and XML.          |
-| `json-value` / `toml-value` / `xml-node`                                    | Data models shared by the parsers and serializers. |
+| `csv-parser` / `json-parser` / `toml-parser` / `xml-parser` / `yaml-parser` | Parsers for CSV, JSON, TOML, XML, and YAML.        |
+| `csv-serializer` / `json-serializer` / `toml-serializer` / `xml-serializer` / `yaml-serializer` | Serializers for CSV, JSON, TOML, XML, and YAML. |
+| `json-value` / `toml-value` / `xml-node` / `yaml-value`                     | Data models shared by the parsers and serializers. |
 
 ### `std/time`
 Accessing system time in different formats and measuring durations.
