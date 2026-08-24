@@ -74,6 +74,8 @@ set(SOURCES
         linter/LintFinding.cpp
         linter/LintPass.cpp
         linter/rules/NamingConventionRule.cpp
+        linter/rules/TooManyParametersRule.cpp
+        linter/rules/CyclomaticComplexityRule.cpp
         # Dependency graph visualizer
         visualizer/DependencyGraphVisualizer.cpp
         # IR generator

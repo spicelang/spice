@@ -1,0 +1,1 @@
+[Lint] ./source.spice:2:1: cyclomatic-complexity: Function 'classify' has a cyclomatic complexity of 11 (max 10); consider splitting it up

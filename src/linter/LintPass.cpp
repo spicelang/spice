@@ -3,13 +3,17 @@
 #include "LintPass.h"
 
 #include <ast/ASTNodes.h>
+#include <linter/rules/CyclomaticComplexityRule.h>
 #include <linter/rules/NamingConventionRule.h>
+#include <linter/rules/TooManyParametersRule.h>
 
 namespace spice::compiler {
 
 LintPass::LintPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {
   // Register all built-in lint rules here. Adding a rule never requires touching the traversal below.
   rules.push_back(std::make_unique<NamingConventionRule>());
+  rules.push_back(std::make_unique<TooManyParametersRule>());
+  rules.push_back(std::make_unique<CyclomaticComplexityRule>());
 }
 
 std::vector<LintFinding> LintPass::lint(ASTNode *ast) {
