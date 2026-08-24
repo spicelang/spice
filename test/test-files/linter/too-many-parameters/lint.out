@@ -1,0 +1,1 @@
+[Lint] ./source.spice:2:1: too-many-parameters: Function 'tooManyParams' has 7 parameters (max 6); consider grouping related parameters into a struct

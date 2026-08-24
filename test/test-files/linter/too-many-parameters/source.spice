@@ -1,0 +1,13 @@
+// Violation: 7 parameters, exceeds the max of 6
+f<int> tooManyParams(int a, int b, int c, int d, int e, int g, int h) {
+    return a + b + c + d + e + g + h;
+}
+
+// Compliant: within the limit
+f<int> okParams(int a, int b, int c) {
+    return a + b + c;
+}
+
+f<int> main() {
+    return tooManyParams(1, 2, 3, 4, 5, 6, 7) + okParams(1, 2, 3);
+}
