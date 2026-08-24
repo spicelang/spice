@@ -1,0 +1,616 @@
+import "std/data/vector";
+import "std/text/analysis";
+import "std/type/type-conversion";
+
+/**
+ * Tag for the variant stored inside a YamlValue.
+ */
+public type YamlValueKind enum {
+    YAML_NULL,
+    YAML_STRING,
+    YAML_INTEGER,
+    YAML_FLOAT,
+    YAML_BOOL,
+    YAML_SEQUENCE,
+    YAML_MAPPING
+}
+
+/**
+ * Represents a single YAML node.
+ *
+ * Composite nodes (sequences and mappings) own their children as heap pointers,
+ * so a YamlValue is always reached via `YamlValue*` once it has been parsed.
+ * Destroying a node recursively destroys everything below it, so a whole tree
+ * is released with a single `deleteYamlValue` call on its root. Accessors like
+ * `getField` hand out borrowed pointers that stay owned by their parent, while
+ * `addSequenceItem` and `addMappingField` take ownership of what they are given.
+ *
+ * Note that the root cannot simply be held in a `heap YamlValue*` and left to
+ * the compiler: the `heap` qualifier only emits a raw deallocation when the
+ * variable goes out of scope and never runs the destructor of the pointee, so
+ * the children below the root would be lost.
+ *
+ * Following the YAML 1.2 core schema, plain scalars resolve to null, booleans,
+ * integers or floats and everything else stays a string, while quoted scalars
+ * are always strings. Mapping entries preserve document order, and unlike TOML
+ * tables a mapping may hold an explicit null value.
+ *
+ * Parsing lives in "std/text/yaml/yaml-parser" and serialization in
+ * "std/text/yaml/yaml-serializer", so programs only pull in what they use.
+ */
+public type YamlValue struct {
+    YamlValueKind kind
+    bool boolValue
+    long intValue
+    double floatValue
+    String stringValue
+    Vector<YamlValue*> sequenceItems
+    Vector<String> mappingKeys
+    Vector<YamlValue*> mappingValues
+}
+
+/**
+ * Construct an empty YAML mapping, which is what a YAML document is usually rooted at
+ */
+public p YamlValue.ctor() {
+    this.kind = YamlValueKind::YAML_MAPPING;
+}
+
+/**
+ * Construct an empty YAML node of the given kind. Useful for building sequences
+ * and mappings from scratch.
+ *
+ * @param kind Kind of the node
+ */
+public p YamlValue.ctor(YamlValueKind kind) {
+    this.kind = kind;
+}
+
+/**
+ * Construct a YAML string node
+ *
+ * @param value String value
+ */
+public p YamlValue.ctor(const String& value) {
+    this.kind = YamlValueKind::YAML_STRING;
+    this.stringValue = value;
+}
+
+/**
+ * Construct a YAML boolean node
+ *
+ * @param value Boolean value
+ */
+public p YamlValue.ctor(bool value) {
+    this.kind = YamlValueKind::YAML_BOOL;
+    this.boolValue = value;
+}
+
+/**
+ * Construct a YAML integer node
+ *
+ * @param value Integer value
+ */
+public p YamlValue.ctor(long value) {
+    this.kind = YamlValueKind::YAML_INTEGER;
+    this.intValue = value;
+}
+
+/**
+ * Construct a YAML float node
+ *
+ * @param value Float value
+ */
+public p YamlValue.ctor(double value) {
+    this.kind = YamlValueKind::YAML_FLOAT;
+    this.floatValue = value;
+}
+
+/**
+ * Destruct the YAML node, releasing every sequence item and mapping entry it owns.
+ * Since the children are destroyed the same way, this tears down the whole subtree
+ * below the node.
+ */
+public p YamlValue.dtor() {
+    for unsigned long i = 0l; i < this.sequenceItems.getSize(); i++ {
+        deleteYamlValue(this.sequenceItems.get(i));
+    }
+    for unsigned long i = 0l; i < this.mappingValues.getSize(); i++ {
+        deleteYamlValue(this.mappingValues.get(i));
+    }
+    // Vector does not destruct its items, so the keys have to be released by hand
+    for unsigned long i = 0l; i < this.mappingKeys.getSize(); i++ {
+        String& key = this.mappingKeys.get(i);
+        key.dtor();
+    }
+}
+
+/**
+ * Destroys a heap-allocated YAML node together with everything it owns and sets
+ * the given handle to nil, so releasing a whole tree only takes one call on its root.
+ *
+ * Note that this is what `sDelete` would normally be used for. It cannot be used
+ * here, because a node tree is destroyed recursively and the compiler does not
+ * emit an explicit dtor that is only reached through `sDestruct`.
+ *
+ * @param value Handle of the node to destroy
+ */
+public p deleteYamlValue(YamlValue*& value) {
+    if value == nil<YamlValue*> { return; }
+    value.dtor();
+    unsafe {
+        heap byte* raw = cast<heap byte*>(value);
+        sDealloc(raw);
+    }
+    value = nil<YamlValue*>;
+}
+
+/**
+ * Creates a deep copy of the given node, which the caller owns and releases again
+ * with `deleteYamlValue`. This is what the parser uses to resolve an alias against
+ * its anchor, so that the resulting tree stays free of shared nodes.
+ *
+ * @param value Node to copy
+ * @return Pointer to the freshly allocated copy
+ */
+public f<YamlValue*> copyYamlValue(YamlValue* value) {
+    if value == nil<YamlValue*> { return nil<YamlValue*>; }
+    YamlValue* copy = __new<YamlValue>(value.kind);
+    copy.boolValue = value.boolValue;
+    copy.intValue = value.intValue;
+    copy.floatValue = value.floatValue;
+    copy.stringValue = value.stringValue;
+    for unsigned long i = 0l; i < value.sequenceItems.getSize(); i++ {
+        copy.sequenceItems.pushBack(copyYamlValue(value.sequenceItems.get(i)));
+    }
+    for unsigned long i = 0l; i < value.mappingKeys.getSize(); i++ {
+        copy.mappingKeys.pushBack(value.mappingKeys.get(i));
+        copy.mappingValues.pushBack(copyYamlValue(value.mappingValues.get(i)));
+    }
+    return copy;
+}
+
+// --- Kind inspection -------------------------------------------------------
+
+/**
+ * Retrieve the kind of the YAML node
+ *
+ * @return Kind of the node
+ */
+public f<YamlValueKind> YamlValue.getKind() { return this.kind; }
+/**
+ * Check whether the YAML node is null
+ *
+ * @return true if the node is null, false otherwise
+ */
+public f<bool> YamlValue.isNull()     { return this.kind == YamlValueKind::YAML_NULL; }
+/**
+ * Check whether the YAML node is a string
+ *
+ * @return true if the node is a string, false otherwise
+ */
+public f<bool> YamlValue.isString()   { return this.kind == YamlValueKind::YAML_STRING; }
+/**
+ * Check whether the YAML node is an integer
+ *
+ * @return true if the node is an integer, false otherwise
+ */
+public f<bool> YamlValue.isInteger()  { return this.kind == YamlValueKind::YAML_INTEGER; }
+/**
+ * Check whether the YAML node is a float
+ *
+ * @return true if the node is a float, false otherwise
+ */
+public f<bool> YamlValue.isFloat()    { return this.kind == YamlValueKind::YAML_FLOAT; }
+/**
+ * Check whether the YAML node is a boolean
+ *
+ * @return true if the node is a boolean, false otherwise
+ */
+public f<bool> YamlValue.isBool()     { return this.kind == YamlValueKind::YAML_BOOL; }
+/**
+ * Check whether the YAML node is a sequence
+ *
+ * @return true if the node is a sequence, false otherwise
+ */
+public f<bool> YamlValue.isSequence() { return this.kind == YamlValueKind::YAML_SEQUENCE; }
+/**
+ * Check whether the YAML node is a mapping
+ *
+ * @return true if the node is a mapping, false otherwise
+ */
+public f<bool> YamlValue.isMapping()  { return this.kind == YamlValueKind::YAML_MAPPING; }
+
+// --- Scalar accessors (panic on wrong kind) --------------------------------
+
+/**
+ * Retrieve the string payload. Panics if the node is not a string.
+ *
+ * @return String value
+ */
+public f<const String&> YamlValue.getString() {
+    assert this.kind == YamlValueKind::YAML_STRING;
+    return this.stringValue;
+}
+
+/**
+ * Retrieve the integer payload. Panics if the node is not an integer.
+ *
+ * @return Integer value
+ */
+public f<long> YamlValue.getInteger() {
+    assert this.kind == YamlValueKind::YAML_INTEGER;
+    return this.intValue;
+}
+
+/**
+ * Retrieve the float payload. Panics if the node is not a float.
+ *
+ * @return Float value
+ */
+public f<double> YamlValue.getFloat() {
+    assert this.kind == YamlValueKind::YAML_FLOAT;
+    return this.floatValue;
+}
+
+/**
+ * Retrieve the boolean payload. Panics if the node is not a boolean.
+ *
+ * @return Boolean value
+ */
+public f<bool> YamlValue.getBool() {
+    assert this.kind == YamlValueKind::YAML_BOOL;
+    return this.boolValue;
+}
+
+// --- Sequence operations ---------------------------------------------------
+
+/**
+ * Retrieve the number of items in the sequence. Panics if the node is not a sequence.
+ *
+ * @return Number of sequence items
+ */
+public f<unsigned long> YamlValue.getSequenceSize() {
+    assert this.kind == YamlValueKind::YAML_SEQUENCE;
+    return this.sequenceItems.getSize();
+}
+
+/**
+ * Retrieve the sequence item at the given index. Panics if the node is not a sequence.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the sequence item
+ */
+public f<YamlValue*> YamlValue.getSequenceItem(unsigned long idx) {
+    assert this.kind == YamlValueKind::YAML_SEQUENCE;
+    return this.sequenceItems.get(idx);
+}
+
+/**
+ * Retrieve the sequence item at the given index. Panics if the node is not a sequence.
+ *
+ * @param idx Index of the item
+ * @return Pointer to the sequence item
+ */
+public f<YamlValue*> YamlValue.getSequenceItem(unsigned int idx) {
+    return this.getSequenceItem(cast<unsigned long>(idx));
+}
+
+/**
+ * Append an item to the sequence. Panics if the node is not a sequence.
+ * The sequence takes ownership of the heap-allocated item.
+ *
+ * @param item Item to append
+ */
+public p YamlValue.addSequenceItem(YamlValue* item) {
+    assert this.kind == YamlValueKind::YAML_SEQUENCE;
+    this.sequenceItems.pushBack(item);
+}
+
+// --- Mapping operations ----------------------------------------------------
+
+/**
+ * Retrieve the number of entries in the mapping. Panics if the node is not a mapping.
+ *
+ * @return Number of mapping entries
+ */
+public f<unsigned long> YamlValue.getMappingSize() {
+    assert this.kind == YamlValueKind::YAML_MAPPING;
+    return this.mappingKeys.getSize();
+}
+
+/**
+ * Retrieve the key of the mapping entry at the given index, in document order.
+ * Panics if the node is not a mapping.
+ *
+ * @param idx Index of the entry
+ * @return Entry key
+ */
+public f<const String&> YamlValue.getMappingKey(unsigned long idx) {
+    assert this.kind == YamlValueKind::YAML_MAPPING;
+    return this.mappingKeys.get(idx);
+}
+
+/**
+ * Retrieve the value of the mapping entry at the given index, in document order.
+ * Panics if the node is not a mapping.
+ *
+ * @param idx Index of the entry
+ * @return Pointer to the entry value
+ */
+public f<YamlValue*> YamlValue.getMappingValue(unsigned long idx) {
+    assert this.kind == YamlValueKind::YAML_MAPPING;
+    return this.mappingValues.get(idx);
+}
+
+/**
+ * Check whether the mapping contains an entry with the given key
+ *
+ * @param key Entry key to look for
+ * @return true if the entry exists, false otherwise
+ */
+public f<bool> YamlValue.hasField(const String& key) {
+    if this.kind != YamlValueKind::YAML_MAPPING { return false; }
+    for unsigned long i = 0l; i < this.mappingKeys.getSize(); i++ {
+        if this.mappingKeys.get(i) == key { return true; }
+    }
+    return false;
+}
+
+/**
+ * Check whether the mapping contains an entry with the given key
+ *
+ * @param key Entry key to look for
+ * @return true if the entry exists, false otherwise
+ */
+public f<bool> YamlValue.hasField(string key) {
+    return this.hasField(String(key));
+}
+
+/**
+ * Retrieve the value of the mapping entry with the given key, or nil if the node
+ * is not a mapping or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or nil
+ */
+public f<YamlValue*> YamlValue.getFieldOrNil(const String& key) {
+    if this.kind != YamlValueKind::YAML_MAPPING { return nil<YamlValue*>; }
+    for unsigned long i = 0l; i < this.mappingKeys.getSize(); i++ {
+        if this.mappingKeys.get(i) == key {
+            return this.mappingValues.get(i);
+        }
+    }
+    return nil<YamlValue*>;
+}
+
+/**
+ * Retrieve the value of the mapping entry with the given key, or nil if the node
+ * is not a mapping or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or nil
+ */
+public f<YamlValue*> YamlValue.getFieldOrNil(string key) {
+    return this.getFieldOrNil(String(key));
+}
+
+/**
+ * Retrieve the value of the mapping entry with the given key. Panics if the node
+ * is not a mapping or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value
+ */
+public f<YamlValue*> YamlValue.getField(const String& key) {
+    assert this.kind == YamlValueKind::YAML_MAPPING;
+    YamlValue* value = this.getFieldOrNil(key);
+    if value == nil<YamlValue*> {
+        panic(Error("YAML mapping has no such entry"));
+    }
+    return value;
+}
+
+/**
+ * Retrieve the value of the mapping entry with the given key. Panics if the node
+ * is not a mapping or the entry does not exist.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value
+ */
+public f<YamlValue*> YamlValue.getField(string key) {
+    return this.getField(String(key));
+}
+
+/**
+ * Append an entry to the mapping. Panics if the node is not a mapping.
+ * The mapping takes ownership of the heap-allocated entry value.
+ *
+ * @param key Entry key
+ * @param value Entry value
+ */
+public p YamlValue.addMappingField(const String& key, YamlValue* value) {
+    assert this.kind == YamlValueKind::YAML_MAPPING;
+    this.mappingKeys.pushBack(key);
+    this.mappingValues.pushBack(value);
+}
+
+// --- Core schema resolution ------------------------------------------------
+
+/**
+ * Determine which kind a plain scalar resolves to under the YAML 1.2 core schema.
+ * Both the parser and the serializer go through this, so that a string which would
+ * be read back as another kind can be quoted when it is written out again.
+ *
+ * @param text Literal text of the plain scalar
+ * @return Kind the scalar resolves to, never YAML_SEQUENCE or YAML_MAPPING
+ */
+public f<YamlValueKind> yamlPlainScalarKind(const String& text) {
+    if isNullText(text) { return YamlValueKind::YAML_NULL; }
+    if text == "true" || text == "True" || text == "TRUE" { return YamlValueKind::YAML_BOOL; }
+    if text == "false" || text == "False" || text == "FALSE" { return YamlValueKind::YAML_BOOL; }
+    if isInfinityText(text) || isNaNText(text) { return YamlValueKind::YAML_FLOAT; }
+    if looksLikeInteger(text) { return YamlValueKind::YAML_INTEGER; }
+    if looksLikeFloat(text) { return YamlValueKind::YAML_FLOAT; }
+    return YamlValueKind::YAML_STRING;
+}
+
+/**
+ * Build the node a plain scalar denotes under the YAML 1.2 core schema. The caller owns
+ * the returned node and releases it again with `deleteYamlValue`.
+ *
+ * @param text Literal text of the plain scalar
+ * @return Pointer to the freshly allocated node
+ */
+public f<YamlValue*> resolveYamlScalar(const String& text) {
+    const YamlValueKind kind = yamlPlainScalarKind(text);
+    if kind == YamlValueKind::YAML_NULL { return __new<YamlValue>(YamlValueKind::YAML_NULL); }
+    if kind == YamlValueKind::YAML_BOOL {
+        const bool value = text == "true" || text == "True" || text == "TRUE";
+        return __new<YamlValue>(value);
+    }
+    if kind == YamlValueKind::YAML_INTEGER { return __new<YamlValue>(parseYamlInteger(text)); }
+    if kind == YamlValueKind::YAML_FLOAT { return __new<YamlValue>(parseYamlFloat(text)); }
+    return __new<YamlValue>(text);
+}
+
+inline f<bool> isNullText(const String& text) {
+    return text.isEmpty() || text == "~" || text == "null" || text == "Null" || text == "NULL";
+}
+
+inline f<bool> isInfinityText(const String& text) {
+    return text == ".inf" || text == ".Inf" || text == ".INF"
+        || text == "+.inf" || text == "+.Inf" || text == "+.INF"
+        || text == "-.inf" || text == "-.Inf" || text == "-.INF";
+}
+
+inline f<bool> isNaNText(const String& text) {
+    return text == ".nan" || text == ".NaN" || text == ".NAN";
+}
+
+f<bool> looksLikeInteger(const String& text) {
+    const unsigned long length = text.getLength();
+    if length == 0l { return false; }
+    // Literals with a radix prefix never carry a sign
+    if length > 2l && text[0l] == '0' && (text[1l] == 'x' || text[1l] == 'X') {
+        return allDigitsForBase(text, 2l, 16);
+    }
+    if length > 2l && text[0l] == '0' && (text[1l] == 'o' || text[1l] == 'O') {
+        return allDigitsForBase(text, 2l, 8);
+    }
+    const unsigned long start = text[0l] == '+' || text[0l] == '-' ? 1l : 0l;
+    return allDigitsForBase(text, start, 10);
+}
+
+f<bool> allDigitsForBase(const String& text, unsigned long start, int base) {
+    const unsigned long length = text.getLength();
+    if start >= length { return false; }
+    for unsigned long i = start; i < length; i++ {
+        const char c = text[i];
+        if base == 16 {
+            if !isHexDigit(c) { return false; }
+        } else if base == 8 {
+            if !isOctDigit(c) { return false; }
+        } else {
+            if !isDigit(c) { return false; }
+        }
+    }
+    return true;
+}
+
+// A plain scalar is a float if it carries a fractional or an exponent part and nothing
+// but digits and signs besides
+f<bool> looksLikeFloat(const String& text) {
+    const unsigned long length = text.getLength();
+    unsigned long i = 0l;
+    if i < length && (text[i] == '+' || text[i] == '-') { i++; }
+    unsigned long mantissaDigits = 0l;
+    while i < length && isDigit(text[i]) {
+        i++;
+        mantissaDigits++;
+    }
+    bool hasFraction = false;
+    if i < length && text[i] == '.' {
+        hasFraction = true;
+        i++;
+        while i < length && isDigit(text[i]) {
+            i++;
+            mantissaDigits++;
+        }
+    }
+    if mantissaDigits == 0l { return false; }
+    bool hasExponent = false;
+    if i < length && (text[i] == 'e' || text[i] == 'E') {
+        hasExponent = true;
+        i++;
+        if i < length && (text[i] == '+' || text[i] == '-') { i++; }
+        unsigned long exponentDigits = 0l;
+        while i < length && isDigit(text[i]) {
+            i++;
+            exponentDigits++;
+        }
+        if exponentDigits == 0l { return false; }
+    }
+    if i != length { return false; }
+    return hasFraction || hasExponent;
+}
+
+f<long> parseYamlInteger(const String& text) {
+    long parsed = 0l;
+    if text.startsWith("0x") || text.startsWith("0X") {
+        const String digits = text.getSubstring(2ul);
+        parsed = toLong(digits.getRaw(), 16);
+    } else if text.startsWith("0o") || text.startsWith("0O") {
+        const String digits = text.getSubstring(2ul);
+        parsed = toLong(digits.getRaw(), 8);
+    } else {
+        parsed = toLong(text.getRaw(), 10);
+    }
+    return parsed;
+}
+
+f<double> parseYamlFloat(const String& text) {
+    double parsed = 0.0;
+    if isInfinityText(text) {
+        parsed = yamlInfinity();
+        if text[0l] == '-' { parsed = -parsed; }
+    } else if isNaNText(text) {
+        parsed = yamlNaN();
+    } else {
+        parsed = toDouble(text.getRaw());
+    }
+    return parsed;
+}
+
+// --- Special float values --------------------------------------------------
+
+/**
+ * Retrieve positive infinity, which YAML spells `.inf`. Spice has no literal
+ * for it, so it is provided here for building and inspecting float values.
+ *
+ * @return Positive infinity
+ */
+public f<double> yamlInfinity() {
+    return toDouble("inf");
+}
+
+/**
+ * Retrieve a quiet NaN, which YAML spells `.nan`. Spice has no literal for it,
+ * so it is provided here for building float values.
+ *
+ * @return Not a number
+ */
+public f<double> yamlNaN() {
+    return toDouble("nan");
+}
+
+/**
+ * Checks whether the given float is a NaN. The usual `value != value` trick does
+ * not work in Spice, since its float comparisons are ordered ones.
+ *
+ * @param value Float value to check
+ * @return true if the value is a NaN, false otherwise
+ */
+public f<bool> yamlIsNaN(double value) {
+    return !(value == value);
+}

@@ -1,0 +1,1126 @@
+import "std/text/yaml/yaml-value";
+import "std/text/analysis";
+import "std/type/type-conversion";
+import "std/data/vector";
+
+/**
+ * Recursive-descent parser for YAML 1.2.
+ *
+ * Use `parseYaml` for one-shot parsing of a single document and
+ * `parseYamlDocuments` for a multi-document stream; the struct is exposed mainly
+ * so the parser state (position, error message) can be inspected when needed.
+ *
+ * Supported are comments, block mappings and block sequences with the usual
+ * indentation rules, flow sequences (`[a, b]`) and flow mappings (`{a: 1}`),
+ * plain, single-quoted and double-quoted scalars, literal (`|`) and folded (`>`)
+ * block scalars including their chomping and indentation indicators, anchors
+ * (`&name`) and aliases (`*name`), document markers (`---` and `...`) and
+ * directives (`%YAML`), which are skipped.
+ *
+ * Plain scalars are resolved according to the YAML 1.2 core schema, so `null`,
+ * `~` and the empty scalar become a null node, `true`/`false` become booleans,
+ * decimal, `0x` and `0o` literals become integers, and numbers with a fractional
+ * or exponent part as well as `.inf` and `.nan` become floats. Everything else
+ * stays a string, and quoted scalars are always strings. Mapping keys are always
+ * exposed as their literal text.
+ *
+ * Deliberately not supported, since they hardly ever appear in configuration
+ * files and each of them would need a data model of its own: explicit tags
+ * (`!!str`), explicit key indicators (`? key`), merge keys (`<<`), sets (`?`),
+ * anchors inside flow collections, quoted scalars spanning multiple lines and
+ * `--- key: value` with block content on the marker line. An alias resolves to a
+ * deep copy of its anchor, so the resulting tree never shares nodes and can be
+ * released with a single `deleteYamlValue` call.
+ *
+ * The YamlValue data model lives in "std/text/yaml/yaml-value" and serialization
+ * in "std/text/yaml/yaml-serializer".
+ */
+public type YamlParser struct {
+    String input
+    unsigned long pos
+    string errorMessage  // always points to a string literal, so it outlives the parser
+    bool hasError
+    Vector<String> anchorNames     // names of all anchors defined in the current document
+    Vector<YamlValue*> anchorValues // borrowed, the nodes stay owned by the tree being built
+}
+
+/**
+ * Construct a YAML parser over the given input string
+ *
+ * @param input YAML text to parse
+ */
+public p YamlParser.ctor(const String& input) {
+    this.input = input;
+    this.pos = 0l;
+    this.errorMessage = "";
+    this.hasError = false;
+}
+
+/**
+ * Destruct the YAML parser, releasing the bookkeeping it built up while parsing
+ */
+public p YamlParser.dtor() {
+    this.clearAnchors();
+}
+
+/**
+ * Parse the input string into a YAML node tree, expecting exactly one document
+ *
+ * @return Result holding the root node, or an error if the input is malformed
+ */
+public f<Result<YamlValue*>> YamlParser.parse() {
+    this.skipByteOrderMark();
+    YamlValue* root = this.parseSingleDocument();
+    if !this.hasError {
+        this.skipToContentLine();
+        if this.atDocumentBoundary() {
+            this.fail("Input holds more than one document, use parseYamlDocuments instead");
+        } else if !this.atEnd() {
+            this.fail("Unexpected content after the document, check the indentation");
+        }
+    }
+    if this.hasError {
+        // Nothing is handed out, so the partially built tree is ours to release
+        this.clearAnchors();
+        deleteYamlValue(root);
+        return err<YamlValue*>(Error(this.errorMessage));
+    }
+    return ok(root);
+}
+
+/**
+ * Parse the input string into a sequence of YAML node trees, one per document
+ *
+ * @return Result holding a sequence node with one item per document, or an error
+ */
+public f<Result<YamlValue*>> YamlParser.parseAll() {
+    this.skipByteOrderMark();
+    YamlValue* documents = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    bool scanning = true;
+    while scanning && !this.hasError {
+        this.skipToContentLine();
+        if this.atEnd() {
+            scanning = false;
+        } else if documents.getSequenceSize() > 0l && !this.atDocumentBoundary() {
+            // Every document after the first one has to be introduced by its own marker
+            this.fail("Unexpected content after a document, check the indentation");
+        } else {
+            YamlValue* document = this.parseSingleDocument();
+            if this.hasError {
+                deleteYamlValue(document);
+            } else {
+                documents.addSequenceItem(document);
+            }
+            // Anchors are scoped to the document that defines them
+            this.clearAnchors();
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(documents);
+        return err<YamlValue*>(Error(this.errorMessage));
+    }
+    return ok(documents);
+}
+
+/**
+ * Parse a YAML document.
+ *
+ * On success returns the root node, which the caller owns and releases again with
+ * `deleteYamlValue` from "std/text/yaml/yaml-value". On failure the partially
+ * built tree is released by the parser and an error describing the first problem
+ * encountered is returned. An input that holds more than one document is
+ * rejected; use `parseYamlDocuments` for those.
+ */
+public f<Result<YamlValue*>> parseYaml(const String& input) {
+    YamlParser parser = YamlParser(input);
+    return parser.parse();
+}
+
+/**
+ * Parse a multi-document YAML stream.
+ *
+ * On success returns a sequence node holding one item per document, which the
+ * caller owns and releases again with `deleteYamlValue`. An empty stream yields
+ * an empty sequence.
+ */
+public f<Result<YamlValue*>> parseYamlDocuments(const String& input) {
+    YamlParser parser = YamlParser(input);
+    return parser.parseAll();
+}
+
+// --- Character level helpers ----------------------------------------------
+
+f<bool> YamlParser.atEnd() {
+    return this.pos >= this.input.getLength();
+}
+
+// Return the character `offset` positions ahead, or '\0' when out of bounds
+f<char> YamlParser.peekAt(unsigned long offset) {
+    const unsigned long idx = this.pos + offset;
+    if idx >= this.input.getLength() { return '\0'; }
+    return this.input[idx];
+}
+
+f<char> YamlParser.peek() {
+    return this.peekAt(0l);
+}
+
+p YamlParser.fail(string msg) {
+    if !this.hasError {
+        this.errorMessage = msg;
+        this.hasError = true;
+    }
+}
+
+// A leading UTF-8 byte order mark is not part of the stream
+p YamlParser.skipByteOrderMark() {
+    if this.peekAt(0l) == toChar(0xEF) && this.peekAt(1l) == toChar(0xBB) && this.peekAt(2l) == toChar(0xBF) {
+        this.pos += 3l;
+    }
+}
+
+// Skip separation whitespace, but no line breaks
+p YamlParser.skipSpaces() {
+    while true {
+        const char c = this.peek();
+        if c != ' ' && c != '\t' { break; }
+        this.pos++;
+    }
+}
+
+// Advance past the next line break, or to the end of the input
+p YamlParser.skipToNextLine() {
+    while !this.atEnd() {
+        const char c = this.peek();
+        this.pos++;
+        if c == '\n' { return; }
+        if c == '\r' {
+            if this.peek() == '\n' { this.pos++; }
+            return;
+        }
+    }
+}
+
+// Count the spaces that indent the current line. Only valid at the start of a line.
+f<unsigned long> YamlParser.countIndent() {
+    unsigned long count = 0l;
+    while this.peekAt(count) == ' ' { count++; }
+    return count;
+}
+
+// Checks whether nothing but a comment is left on the current line
+f<bool> YamlParser.atLineEndOrComment() {
+    const char c = this.peek();
+    return c == '\0' || c == '\n' || c == '\r' || c == '#';
+}
+
+// Consume the rest of the current line, which may only hold a comment
+p YamlParser.finishLine() {
+    this.skipSpaces();
+    if this.peek() == '#' {
+        while !this.atEnd() && this.peek() != '\n' && this.peek() != '\r' { this.pos++; }
+    }
+    if this.atEnd() { return; }
+    const char c = this.peek();
+    if c == '\n' {
+        this.pos++;
+        return;
+    }
+    if c == '\r' {
+        this.pos++;
+        if this.peek() == '\n' { this.pos++; }
+        return;
+    }
+    this.fail("Unexpected trailing content at the end of a line");
+}
+
+// Skip all blank and comment-only lines. Only valid at the start of a line, and
+// leaves the position at the start of the next line that holds content.
+p YamlParser.skipToContentLine() {
+    bool scanning = true;
+    while scanning && !this.atEnd() {
+        const unsigned long indent = this.countIndent();
+        const char c = this.peekAt(indent);
+        if c == '\0' {
+            this.pos = this.input.getLength(); // nothing but trailing spaces left
+        } else if c == '\n' || c == '\r' || c == '#' {
+            this.skipToNextLine();
+        } else if c == '\t' {
+            // YAML allows tabs to separate tokens, but never to indent a line
+            this.fail("Tabs cannot be used to indent a line");
+            scanning = false;
+        } else {
+            scanning = false;
+        }
+    }
+}
+
+// --- Document structure ----------------------------------------------------
+
+// Checks whether the current line consists of the given three-character marker.
+// Only valid at the start of a line.
+f<bool> YamlParser.lookingAtMarker(string marker) {
+    for unsigned long i = 0l; i < 3l; i++ {
+        if this.peekAt(i) != marker[i] { return false; }
+    }
+    const char after = this.peekAt(3l);
+    return after == '\0' || after == '\n' || after == '\r' || after == ' ' || after == '\t';
+}
+
+// Checks whether the current line ends the enclosing document. Only valid at the
+// start of a line.
+f<bool> YamlParser.atDocumentBoundary() {
+    return this.lookingAtMarker("---") || this.lookingAtMarker("...");
+}
+
+// Directives carry no data for the node tree, so they are skipped over
+p YamlParser.skipDirectives() {
+    bool scanning = true;
+    while scanning {
+        this.skipToContentLine();
+        scanning = !this.atEnd() && this.peek() == '%';
+        if scanning { this.skipToNextLine(); }
+    }
+}
+
+f<YamlValue*> YamlParser.parseSingleDocument() {
+    this.skipDirectives();
+    YamlValue* document = nil<YamlValue*>;
+    if this.lookingAtMarker("---") {
+        this.pos += 3l;
+        this.skipSpaces();
+        if this.atLineEndOrComment() {
+            this.finishLine();
+            if !this.hasError { document = this.parseBlockNode(0l); }
+        } else {
+            document = this.parseLineNode(0l);
+        }
+    } else {
+        document = this.parseBlockNode(0l);
+    }
+    // An explicit end marker belongs to the document it terminates
+    if !this.hasError {
+        this.skipToContentLine();
+        if this.lookingAtMarker("...") { this.skipToNextLine(); }
+    }
+    if this.hasError {
+        deleteYamlValue(document);
+        document = nil<YamlValue*>;
+    }
+    return document;
+}
+
+// --- Nodes -----------------------------------------------------------------
+
+// Parse the next node that is indented by at least `minIndent`. Only valid at the
+// start of a line; an input that holds nothing at that indentation yields a null node.
+f<YamlValue*> YamlParser.parseBlockNode(unsigned long minIndent) {
+    this.skipToContentLine();
+    if this.atEnd() || this.atDocumentBoundary() { return __new<YamlValue>(YamlValueKind::YAML_NULL); }
+    const unsigned long indent = this.countIndent();
+    if indent < minIndent { return __new<YamlValue>(YamlValueKind::YAML_NULL); }
+    this.pos += indent;
+    return this.parseNodeAt(indent, indent);
+}
+
+// Parse the node that starts at the current position, which sits at the first content
+// character of a line. `indent` is the column of that character and therefore the
+// column at which the entries of a block collection line up, while `ownerIndent` is
+// the indentation of the enclosing block, which scalars have to exceed to continue
+// onto the following lines.
+f<YamlValue*> YamlParser.parseNodeAt(unsigned long indent, unsigned long ownerIndent) {
+    if this.startsSequenceEntry() { return this.parseBlockSequence(indent); }
+    if this.findMappingColon() >= 0l { return this.parseBlockMapping(indent); }
+    return this.parseLineNode(ownerIndent);
+}
+
+// Checks whether a block sequence entry starts at the current position
+f<bool> YamlParser.startsSequenceEntry() {
+    if this.peek() != '-' { return false; }
+    const char after = this.peekAt(1l);
+    return after == ' ' || after == '\t' || after == '\n' || after == '\r' || after == '\0';
+}
+
+// Checks whether the line that starts at the current position holds a block sequence
+// entry at the given indentation. Only valid at the start of a line.
+f<bool> YamlParser.lineStartsSequenceEntry(unsigned long indent) {
+    if this.peekAt(indent) != '-' { return false; }
+    const char after = this.peekAt(indent + 1l);
+    return after == ' ' || after == '\t' || after == '\n' || after == '\r' || after == '\0';
+}
+
+// --- Block sequences -------------------------------------------------------
+
+// Parse a block sequence whose entries line up at `indent`. On entry the position
+// sits at the '-' of the first entry, on exit at the start of the first line that
+// no longer belongs to the sequence.
+f<YamlValue*> YamlParser.parseBlockSequence(unsigned long indent) {
+    YamlValue* sequence = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    bool scanning = true;
+    while scanning && !this.hasError {
+        this.parseSequenceEntry(sequence, indent);
+        if !this.hasError {
+            this.skipToContentLine();
+            scanning = !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == indent
+                       && this.lineStartsSequenceEntry(indent);
+            if scanning { this.pos += indent; }
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(sequence);
+        sequence = nil<YamlValue*>;
+    }
+    return sequence;
+}
+
+p YamlParser.parseSequenceEntry(YamlValue* sequence, unsigned long indent) {
+    const unsigned long dashPos = this.pos;
+    this.pos++; // consume '-'
+    this.skipSpaces();
+    // Everything the dash and the separating spaces occupy shifts the entry to the right
+    const unsigned long itemIndent = indent + (this.pos - dashPos);
+    const String anchor = this.consumeAnchorName();
+    YamlValue* item = nil<YamlValue*>;
+    if !this.hasError {
+        if this.atLineEndOrComment() {
+            this.finishLine();
+            // The entry content sits on the following lines and has to be indented deeper
+            // than the dash itself
+            if !this.hasError { item = this.parseBlockNode(indent + 1l); }
+        } else {
+            item = this.parseNodeAt(itemIndent, indent);
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(item);
+    } else {
+        this.registerAnchor(anchor, item);
+        sequence.addSequenceItem(item);
+    }
+}
+
+// --- Block mappings --------------------------------------------------------
+
+// Parse a block mapping whose entries line up at `indent`. On entry the position
+// sits at the first character of the first key, on exit at the start of the first
+// line that no longer belongs to the mapping.
+f<YamlValue*> YamlParser.parseBlockMapping(unsigned long indent) {
+    YamlValue* mapping = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    bool scanning = true;
+    while scanning && !this.hasError {
+        this.parseMappingEntry(mapping, indent);
+        if !this.hasError {
+            this.skipToContentLine();
+            scanning = false;
+            if !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == indent {
+                if this.lineStartsSequenceEntry(indent) {
+                    this.fail("A block sequence cannot start at the indentation of its parent mapping");
+                } else {
+                    this.pos += indent;
+                    if this.findMappingColon() < 0l {
+                        this.fail("Expected ':' after a mapping key");
+                    } else {
+                        scanning = true;
+                    }
+                }
+            }
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(mapping);
+        mapping = nil<YamlValue*>;
+    }
+    return mapping;
+}
+
+p YamlParser.parseMappingEntry(YamlValue* mapping, unsigned long indent) {
+    const String key = this.parseMappingKey();
+    if !this.hasError {
+        if this.peek() != ':' {
+            this.fail("Expected ':' after a mapping key");
+        } else if mapping.hasField(key) {
+            this.fail("Cannot define the same mapping key twice");
+        } else {
+            this.pos++; // consume ':'
+            YamlValue* value = this.parseMappingValue(indent);
+            if this.hasError {
+                deleteYamlValue(value);
+            } else {
+                mapping.addMappingField(key, value);
+            }
+        }
+    }
+}
+
+// Read the key of a mapping entry, leaving the position at its ':'
+f<String> YamlParser.parseMappingKey() {
+    String key;
+    const char quote = this.peek();
+    if quote == '"' || quote == '\'' {
+        key = this.parseQuotedScalar(quote);
+        this.skipSpaces();
+    } else {
+        const long colonOffset = this.findMappingColon();
+        if colonOffset < 0l {
+            this.fail("Expected ':' after a mapping key");
+        } else {
+            // Whitespace between the key and its ':' is separation, not part of the key
+            const unsigned long colonPos = this.pos + cast<unsigned long>(colonOffset);
+            unsigned long end = colonPos;
+            while end > this.pos {
+                const char previous = this.input[end - 1l];
+                if previous != ' ' && previous != '\t' { break; }
+                end--;
+            }
+            for unsigned long i = this.pos; i < end; i++ { key += this.input[i]; }
+            this.pos = colonPos;
+        }
+    }
+    return key;
+}
+
+// Parse the value of a mapping entry whose key is indented by `keyIndent`. On entry
+// the position sits directly behind the ':' of the entry.
+f<YamlValue*> YamlParser.parseMappingValue(unsigned long keyIndent) {
+    this.skipSpaces();
+    const String anchor = this.consumeAnchorName();
+    YamlValue* value = nil<YamlValue*>;
+    if !this.hasError {
+        if this.atLineEndOrComment() {
+            this.finishLine();
+            if !this.hasError {
+                this.skipToContentLine();
+                bool handled = false;
+                // A block sequence may line up with the key it belongs to
+                if !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == keyIndent
+                   && this.lineStartsSequenceEntry(keyIndent) {
+                    this.pos += keyIndent;
+                    value = this.parseBlockSequence(keyIndent);
+                    handled = true;
+                }
+                if !handled { value = this.parseBlockNode(keyIndent + 1l); }
+            }
+        } else {
+            value = this.parseLineNode(keyIndent);
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(value);
+        value = nil<YamlValue*>;
+    } else {
+        this.registerAnchor(anchor, value);
+    }
+    return value;
+}
+
+// Look for the ':' that turns the current line into a mapping entry and return its
+// offset from the current position, or -1 if the line does not start one
+f<long> YamlParser.findMappingColon() {
+    unsigned long i = 0l;
+    const char first = this.peek();
+    if first == '"' || first == '\'' {
+        // Step over the quoted key without interpreting it
+        i = 1l;
+        bool scanning = true;
+        while scanning {
+            const char c = this.peekAt(i);
+            if c == '\0' || c == '\n' || c == '\r' { return -1l; }
+            if first == '"' && c == '\\' {
+                i += 2l;
+            } else if c == first {
+                i++;
+                if first == '\'' && this.peekAt(i) == '\'' { i++; } else { scanning = false; }
+            } else {
+                i++;
+            }
+        }
+        while this.peekAt(i) == ' ' || this.peekAt(i) == '\t' { i++; }
+        if this.peekAt(i) != ':' { return -1l; }
+        return cast<long>(i);
+    }
+    // A plain key ends at the first ':' that is followed by whitespace, but a ':' that
+    // is nested in a flow collection belongs to that collection
+    unsigned long flowDepth = 0l;
+    while true {
+        const char c = this.peekAt(i);
+        if c == '\0' || c == '\n' || c == '\r' { return -1l; }
+        if c == '#' && i > 0l {
+            const char previous = this.peekAt(i - 1l);
+            if previous == ' ' || previous == '\t' { return -1l; }
+        }
+        if c == '[' || c == '{' {
+            flowDepth++;
+        } else if c == ']' || c == '}' {
+            if flowDepth > 0l { flowDepth--; }
+        } else if c == ':' && flowDepth == 0l {
+            const char after = this.peekAt(i + 1l);
+            if after == '\0' || after == '\n' || after == '\r' || after == ' ' || after == '\t' {
+                return cast<long>(i);
+            }
+        }
+        i++;
+    }
+    return -1l; // not reachable, the loop only leaves through a return
+}
+
+// --- Single-line nodes -----------------------------------------------------
+
+// Parse a node that starts on the current line. `ownerIndent` is the indentation of
+// the enclosing block, which the following lines have to exceed to still belong to
+// this node. On exit the position sits at the start of the first line that does not.
+f<YamlValue*> YamlParser.parseLineNode(unsigned long ownerIndent) {
+    const char c = this.peek();
+    YamlValue* value = nil<YamlValue*>;
+    if c == '|' {
+        value = this.parseBlockScalar(ownerIndent, false);
+    } else if c == '>' {
+        value = this.parseBlockScalar(ownerIndent, true);
+    } else if c == '*' {
+        value = this.parseAlias();
+        if !this.hasError { this.finishLine(); }
+    } else if c == '[' || c == '{' {
+        value = this.parseFlowNode();
+        if !this.hasError { this.finishLine(); }
+    } else if c == '"' || c == '\'' {
+        const String text = this.parseQuotedScalar(c);
+        if !this.hasError { this.finishLine(); }
+        if !this.hasError { value = __new<YamlValue>(text); }
+    } else {
+        const String text = this.parsePlainScalar(ownerIndent);
+        if !this.hasError { value = resolveYamlScalar(text); }
+    }
+    if this.hasError {
+        deleteYamlValue(value);
+        value = nil<YamlValue*>;
+    }
+    return value;
+}
+
+// --- Scalars ---------------------------------------------------------------
+
+// Parse a plain scalar, which may fold over the following lines as long as those are
+// indented deeper than `ownerIndent` and do not start an entry of their own
+f<String> YamlParser.parsePlainScalar(unsigned long ownerIndent) {
+    String text;
+    this.appendPlainLine(text);
+    this.finishLine();
+    bool scanning = !this.hasError;
+    while scanning {
+        scanning = false;
+        // A blank or comment line ends the scalar, so the lines are inspected one by one
+        const unsigned long nextIndent = this.countIndent();
+        const char first = this.peekAt(nextIndent);
+        if first != '\0' && first != '\n' && first != '\r' && first != '#' && nextIndent > ownerIndent {
+            this.pos += nextIndent;
+            if this.startsSequenceEntry() || this.findMappingColon() >= 0l {
+                this.pos -= nextIndent; // the line opens an entry, so it is not a continuation
+            } else {
+                text += ' '; // a folded line break becomes a single space
+                this.appendPlainLine(text);
+                this.finishLine();
+                scanning = !this.hasError;
+            }
+        }
+    }
+    return text;
+}
+
+// Append the plain scalar content of the current line, stripped of the comment that
+// may follow it and of the whitespace in between
+p YamlParser.appendPlainLine(String& out) {
+    String raw;
+    bool scanning = true;
+    while scanning {
+        const char c = this.peek();
+        if c == '\0' || c == '\n' || c == '\r' {
+            scanning = false;
+        } else if c == '#' && !raw.isEmpty() && isSeparationSpace(raw[raw.getLength() - 1l]) {
+            scanning = false;
+        } else {
+            raw += c;
+            this.pos++;
+        }
+    }
+    unsigned long end = raw.getLength();
+    while end > 0l && isSeparationSpace(raw[end - 1l]) { end--; }
+    for unsigned long i = 0l; i < end; i++ { out += raw[i]; }
+}
+
+// Parse a single-quoted or double-quoted scalar. Only single-quoted scalars take their
+// content verbatim, apart from the doubled quote that stands for a quote itself.
+f<String> YamlParser.parseQuotedScalar(char quote) {
+    const bool isDouble = quote == '"';
+    String text;
+    this.pos++; // consume the opening quote
+    bool scanning = true;
+    while scanning {
+        const char c = this.peek();
+        if c == '\0' || c == '\n' || c == '\r' {
+            const string unterminatedMessage = isDouble
+                ? "Unterminated double-quoted scalar"
+                : "Unterminated single-quoted scalar";
+            this.fail(unterminatedMessage);
+            scanning = false;
+        } else if c == quote {
+            this.pos++; // consume the closing quote
+            if !isDouble && this.peek() == '\'' {
+                text += '\''; // a doubled quote stands for a quote
+                this.pos++;
+            } else {
+                scanning = false;
+            }
+        } else if isDouble && c == '\\' {
+            this.pos++;
+            this.appendEscapeSequence(text);
+            if this.hasError { scanning = false; }
+        } else {
+            text += c;
+            this.pos++;
+        }
+    }
+    return text;
+}
+
+p YamlParser.appendEscapeSequence(String& out) {
+    if this.atEnd() {
+        this.fail("Unterminated escape sequence");
+        return;
+    }
+    const char esc = this.peek();
+    this.pos++;
+    if esc == '0' {
+        out += '\0';
+    } else if esc == 'a' {
+        out += toChar(0x07); // Spice has no '\a' char literal
+    } else if esc == 'b' {
+        out += '\b';
+    } else if esc == 't' {
+        out += '\t';
+    } else if esc == 'n' {
+        out += '\n';
+    } else if esc == 'v' {
+        out += '\v';
+    } else if esc == 'f' {
+        out += '\f';
+    } else if esc == 'r' {
+        out += '\r';
+    } else if esc == 'e' {
+        out += toChar(0x1B);
+    } else if esc == ' ' {
+        out += ' ';
+    } else if esc == '"' {
+        out += '"';
+    } else if esc == '/' {
+        out += '/';
+    } else if esc == '\\' {
+        out += '\\';
+    } else if esc == 'x' {
+        this.appendUnicodeEscape(out, 2l);
+    } else if esc == 'u' {
+        this.appendUnicodeEscape(out, 4l);
+    } else if esc == 'U' {
+        this.appendUnicodeEscape(out, 8l);
+    } else {
+        this.fail("Unsupported escape sequence");
+    }
+}
+
+p YamlParser.appendUnicodeEscape(String& out, unsigned long digitCount) {
+    long codePoint = 0l;
+    for unsigned long i = 0l; i < digitCount; i++ {
+        const char c = this.peek();
+        if !isHexDigit(c) {
+            this.fail("Invalid unicode escape sequence");
+            return;
+        }
+        codePoint = codePoint * 16l + hexDigitValue(c);
+        this.pos++;
+    }
+    if !appendCodePointUtf8(out, codePoint) {
+        this.fail("Invalid unicode scalar value in escape sequence");
+    }
+}
+
+// --- Block scalars ---------------------------------------------------------
+
+// Parse a literal ('|') or folded ('>') block scalar. Its content is made up of all
+// following lines that are indented deeper than `ownerIndent`.
+f<YamlValue*> YamlParser.parseBlockScalar(unsigned long ownerIndent, bool folded) {
+    this.pos++; // consume '|' or '>'
+
+    // Header: a chomping indicator and an explicit indentation indicator, in any order
+    int chomping = 0; // 0 clips the trailing line break, -1 strips it, 1 keeps all of them
+    unsigned long explicitIndent = 0l;
+    for unsigned int i = 0u; i < 2u; i++ {
+        const char c = this.peek();
+        if c == '-' {
+            chomping = -1;
+            this.pos++;
+        } else if c == '+' {
+            chomping = 1;
+            this.pos++;
+        } else if c >= '1' && c <= '9' {
+            explicitIndent = cast<unsigned long>(toLong(c) - toLong('0'));
+            this.pos++;
+        } else {
+            break;
+        }
+    }
+    this.finishLine();
+
+    String text;
+    unsigned long contentIndent = explicitIndent == 0l ? 0l : ownerIndent + explicitIndent;
+    bool sawContent = false;
+    unsigned long pendingBreaks = 0l;
+    bool previousWasMoreIndented = false;
+    bool scanning = !this.hasError;
+    while scanning {
+        const unsigned long lineIndent = this.countIndent();
+        const char first = this.peekAt(lineIndent);
+        bool takeLine = false;
+        if first == '\0' {
+            scanning = false; // the input ends here
+        } else if first == '\n' || first == '\r' {
+            pendingBreaks++; // an empty line, which only counts once the next content line is known
+            this.skipToNextLine();
+        } else if contentIndent == 0l {
+            // The first content line fixes the indentation of the whole block
+            if lineIndent > ownerIndent { contentIndent = lineIndent; } else { scanning = false; }
+            takeLine = scanning;
+        } else if lineIndent < contentIndent {
+            scanning = false;
+        } else {
+            takeLine = true;
+        }
+        if takeLine {
+            this.pos += contentIndent;
+            String lineText;
+            while !this.atEnd() && this.peek() != '\n' && this.peek() != '\r' {
+                lineText += this.peek();
+                this.pos++;
+            }
+            const bool moreIndented = !lineText.isEmpty() && isSeparationSpace(lineText[0l]);
+            if !sawContent {
+                text += lineText;
+                sawContent = true;
+            } else if folded && pendingBreaks == 0l && !moreIndented && !previousWasMoreIndented {
+                text += ' '; // a line break between two plain lines folds to a space
+                text += lineText;
+            } else {
+                // A literal block keeps the break of the preceding content line on top of
+                // the one each empty line contributes, while a folded block swallows it
+                unsigned long breakCount = pendingBreaks + 1l;
+                if folded && pendingBreaks > 0l { breakCount = pendingBreaks; }
+                for unsigned long i = 0l; i < breakCount; i++ { text += '\n'; }
+                text += lineText;
+            }
+            pendingBreaks = 0l;
+            previousWasMoreIndented = moreIndented;
+            this.skipToNextLine();
+        }
+    }
+
+    YamlValue* value = nil<YamlValue*>;
+    if !this.hasError {
+        if chomping > 0 {
+            // Keep every trailing line break, including the one of the last content line
+            if sawContent { text += '\n'; }
+            for unsigned long i = 0l; i < pendingBreaks; i++ { text += '\n'; }
+        } else if chomping == 0 && sawContent {
+            text += '\n'; // clip down to a single trailing line break
+        }
+        value = __new<YamlValue>(text);
+    }
+    return value;
+}
+
+// --- Flow collections ------------------------------------------------------
+
+// Skip whitespace, line breaks and comments, all of which may appear anywhere inside
+// a flow collection
+p YamlParser.skipFlowBlanks() {
+    bool scanning = true;
+    while scanning && !this.atEnd() {
+        const char c = this.peek();
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+            this.pos++;
+        } else if c == '#' {
+            this.skipToNextLine();
+        } else {
+            scanning = false;
+        }
+    }
+}
+
+f<YamlValue*> YamlParser.parseFlowNode() {
+    const char c = this.peek();
+    if c == '[' { return this.parseFlowSequence(); }
+    if c == '{' { return this.parseFlowMapping(); }
+    if c == '*' { return this.parseAlias(); }
+    return this.parseFlowScalar();
+}
+
+f<YamlValue*> YamlParser.parseFlowSequence() {
+    this.pos++; // consume '['
+    YamlValue* sequence = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    bool scanning = true;
+    while scanning && !this.hasError {
+        this.skipFlowBlanks();
+        if this.atEnd() {
+            this.fail("Unterminated flow sequence");
+        } else if this.peek() == ']' {
+            this.pos++;
+            scanning = false;
+        } else {
+            YamlValue* item = this.parseFlowNode();
+            if this.hasError {
+                deleteYamlValue(item);
+            } else {
+                sequence.addSequenceItem(item);
+                this.skipFlowBlanks();
+                const char separator = this.peek();
+                if separator == ',' {
+                    this.pos++;
+                } else if separator == ']' {
+                    this.pos++;
+                    scanning = false;
+                } else {
+                    this.fail("Expected ',' or ']' in a flow sequence");
+                }
+            }
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(sequence);
+        sequence = nil<YamlValue*>;
+    }
+    return sequence;
+}
+
+f<YamlValue*> YamlParser.parseFlowMapping() {
+    this.pos++; // consume '{'
+    YamlValue* mapping = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    bool scanning = true;
+    while scanning && !this.hasError {
+        this.skipFlowBlanks();
+        if this.atEnd() {
+            this.fail("Unterminated flow mapping");
+        } else if this.peek() == '}' {
+            this.pos++;
+            scanning = false;
+        } else {
+            this.parseFlowMappingEntry(mapping);
+            if !this.hasError {
+                this.skipFlowBlanks();
+                const char separator = this.peek();
+                if separator == ',' {
+                    this.pos++;
+                } else if separator == '}' {
+                    this.pos++;
+                    scanning = false;
+                } else {
+                    this.fail("Expected ',' or '}' in a flow mapping");
+                }
+            }
+        }
+    }
+    if this.hasError {
+        deleteYamlValue(mapping);
+        mapping = nil<YamlValue*>;
+    }
+    return mapping;
+}
+
+p YamlParser.parseFlowMappingEntry(YamlValue* mapping) {
+    const char quote = this.peek();
+    String key;
+    if quote == '"' || quote == '\'' {
+        key = this.parseQuotedScalar(quote);
+    } else {
+        key = this.parseFlowPlainScalar();
+    }
+    if !this.hasError {
+        this.skipFlowBlanks();
+        YamlValue* value = nil<YamlValue*>;
+        const char c = this.peek();
+        if c == ',' || c == '}' {
+            value = __new<YamlValue>(YamlValueKind::YAML_NULL); // an entry without a value
+        } else if c != ':' {
+            this.fail("Expected ':' in a flow mapping");
+        } else {
+            this.pos++; // consume ':'
+            this.skipFlowBlanks();
+            const char next = this.peek();
+            if next == ',' || next == '}' {
+                value = __new<YamlValue>(YamlValueKind::YAML_NULL);
+            } else {
+                value = this.parseFlowNode();
+            }
+        }
+        if this.hasError {
+            deleteYamlValue(value);
+        } else if mapping.hasField(key) {
+            this.fail("Cannot define the same mapping key twice");
+            deleteYamlValue(value);
+        } else {
+            mapping.addMappingField(key, value);
+        }
+    }
+}
+
+f<YamlValue*> YamlParser.parseFlowScalar() {
+    const char quote = this.peek();
+    YamlValue* value = nil<YamlValue*>;
+    if quote == '"' || quote == '\'' {
+        const String text = this.parseQuotedScalar(quote);
+        if !this.hasError { value = __new<YamlValue>(text); } // a quoted scalar is always a string
+    } else {
+        const String text = this.parseFlowPlainScalar();
+        if !this.hasError { value = resolveYamlScalar(text); }
+    }
+    return value;
+}
+
+// Read a plain scalar inside a flow collection, which ends at the first character that
+// structures the collection
+f<String> YamlParser.parseFlowPlainScalar() {
+    String raw;
+    bool scanning = true;
+    while scanning {
+        const char c = this.peek();
+        if c == '\0' || c == '\n' || c == '\r' || c == ',' || c == '[' || c == ']' || c == '{' || c == '}' {
+            scanning = false;
+        } else if c == '#' && !raw.isEmpty() && isSeparationSpace(raw[raw.getLength() - 1l]) {
+            scanning = false;
+        } else if c == ':' && isFlowScalarEnd(this.peekAt(1l)) {
+            scanning = false;
+        } else {
+            raw += c;
+            this.pos++;
+        }
+    }
+    String text;
+    unsigned long end = raw.getLength();
+    while end > 0l && isSeparationSpace(raw[end - 1l]) { end--; }
+    for unsigned long i = 0l; i < end; i++ { text += raw[i]; }
+    if text.isEmpty() { this.fail("Expected a value in a flow collection"); }
+    return text;
+}
+
+// --- Anchors and aliases ---------------------------------------------------
+
+// Consume an optional '&name' anchor in front of a node and return its name
+f<String> YamlParser.consumeAnchorName() {
+    String name;
+    if this.peek() == '&' {
+        this.pos++;
+        while isAnchorChar(this.peek()) {
+            name += this.peek();
+            this.pos++;
+        }
+        if name.isEmpty() {
+            this.fail("Expected an anchor name after '&'");
+        } else {
+            this.skipSpaces();
+        }
+    }
+    return name;
+}
+
+p YamlParser.registerAnchor(const String& name, YamlValue* value) {
+    if name.isEmpty() { return; }
+    this.anchorNames.pushBack(name);
+    this.anchorValues.pushBack(value);
+}
+
+// Look up the node an anchor refers to. A name that was used more than once refers to
+// the most recent definition, so the search runs backwards.
+f<YamlValue*> YamlParser.lookupAnchor(const String& name) {
+    unsigned long i = this.anchorNames.getSize();
+    while i > 0l {
+        i--;
+        if this.anchorNames.get(i) == name { return this.anchorValues.get(i); }
+    }
+    return nil<YamlValue*>;
+}
+
+p YamlParser.clearAnchors() {
+    // Vector does not destruct the items it holds, so the names have to be released by hand
+    for unsigned long i = 0l; i < this.anchorNames.getSize(); i++ {
+        String& name = this.anchorNames.get(i);
+        name.dtor();
+    }
+    this.anchorNames.clear();
+    // The nodes themselves are owned by the tree that is being built, so they are only dropped
+    this.anchorValues.clear();
+}
+
+// Resolve a '*name' alias against its anchor, which yields a deep copy of the anchored node
+f<YamlValue*> YamlParser.parseAlias() {
+    this.pos++; // consume '*'
+    String name;
+    while isAnchorChar(this.peek()) {
+        name += this.peek();
+        this.pos++;
+    }
+    YamlValue* value = nil<YamlValue*>;
+    if name.isEmpty() {
+        this.fail("Expected an anchor name after '*'");
+    } else {
+        YamlValue* anchored = this.lookupAnchor(name);
+        if anchored == nil<YamlValue*> {
+            this.fail("Reference to an anchor that was never defined");
+        } else {
+            value = copyYamlValue(anchored);
+        }
+    }
+    return value;
+}
+
+// --- Free helpers ----------------------------------------------------------
+
+// Checks whether the given character separates tokens without ending the line
+inline f<bool> isSeparationSpace(char c) {
+    return c == ' ' || c == '\t';
+}
+
+// Checks whether a ':' followed by the given character ends a plain scalar inside a
+// flow collection
+inline f<bool> isFlowScalarEnd(char c) {
+    return c == '\0' || c == '\n' || c == '\r' || c == ' ' || c == '\t' || c == ','
+           || c == ']' || c == '}';
+}
+
+// Checks whether the given character may appear in an anchor name
+inline f<bool> isAnchorChar(char c) {
+    return isAlphaNum(c) || c == '_' || c == '-';
+}
+
+inline f<long> hexDigitValue(char c) {
+    if isDigit(c) { return toLong(c) - toLong('0'); }
+    if isLower(c) { return toLong(c) - toLong('a') + 10l; }
+    return toLong(c) - toLong('A') + 10l;
+}
+
+// Encode a unicode scalar value as UTF-8. Returns false for values outside the
+// unicode range as well as for surrogates, which are not scalar values.
+f<bool> appendCodePointUtf8(String& out, long codePoint) {
+    if codePoint < 0l || codePoint > 0x10FFFFl { return false; }
+    if codePoint >= 0xD800l && codePoint <= 0xDFFFl { return false; }
+    if codePoint < 0x80l {
+        out += toChar(codePoint);
+    } else if codePoint < 0x800l {
+        out += toChar(0xC0l | (codePoint >> 6));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    } else if codePoint < 0x10000l {
+        out += toChar(0xE0l | (codePoint >> 12));
+        out += toChar(0x80l | ((codePoint >> 6) & 0x3Fl));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    } else {
+        out += toChar(0xF0l | (codePoint >> 18));
+        out += toChar(0x80l | ((codePoint >> 12) & 0x3Fl));
+        out += toChar(0x80l | ((codePoint >> 6) & 0x3Fl));
+        out += toChar(0x80l | (codePoint & 0x3Fl));
+    }
+    return true;
+}

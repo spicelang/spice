@@ -1,0 +1,325 @@
+import "std/text/yaml/yaml-value";
+import "std/type/type-conversion";
+
+ext f<int> snprintf(char*, unsigned long, string, ...);
+
+/**
+ * Serializer for YAML output.
+ *
+ * By default nested mappings and sequences are emitted in block style, which is how
+ * YAML documents are usually written, with `indentWidth` spaces per level. With
+ * `flowStyle` enabled everything is emitted on a single line using flow collections
+ * (`{a: 1, b: [2, 3]}`) instead.
+ *
+ * Scalars are written plain wherever that is unambiguous and double-quoted otherwise,
+ * so a string that would be read back as a number, a boolean or null keeps its type.
+ * Either way the result round-trips through `parseYaml` from
+ * "std/text/yaml/yaml-parser".
+ */
+public type YamlSerializer struct {
+    unsigned long indentWidth
+    bool flowStyle
+}
+
+/**
+ * Construct a YAML serializer
+ *
+ * @param indentWidth Number of spaces per indentation level, at least one
+ * @param flowStyle Emit everything inline using flow collections instead of block style
+ */
+public p YamlSerializer.ctor(unsigned long indentWidth = 2l, bool flowStyle = false) {
+    this.indentWidth = indentWidth < 1l ? 1l : indentWidth;
+    this.flowStyle = flowStyle;
+}
+
+/**
+ * Construct a YAML serializer
+ *
+ * @param indentWidth Number of spaces per indentation level, at least one
+ * @param flowStyle Emit everything inline using flow collections instead of block style
+ */
+public p YamlSerializer.ctor(unsigned int indentWidth, bool flowStyle = false) {
+    this.indentWidth = indentWidth < 1 ? 1l : cast<unsigned long>(indentWidth);
+    this.flowStyle = flowStyle;
+}
+
+/**
+ * Serializes a YAML node into a YAML document
+ *
+ * @param root Root node to serialize
+ * @return YAML representation
+ */
+public f<String> YamlSerializer.serialize(YamlValue& root) {
+    return this.serialize(&root);
+}
+
+/**
+ * Serializes a YAML node into a YAML document
+ *
+ * @param root Root node to serialize
+ * @return YAML representation
+ */
+public f<String> YamlSerializer.serialize(YamlValue* root) {
+    String out;
+    this.serializeDocumentBody(root, out);
+    return out;
+}
+
+/**
+ * Serializes a sequence of YAML nodes into a multi-document YAML stream, with one
+ * `---` marker per document. This is the counterpart of `parseYamlDocuments` from
+ * "std/text/yaml/yaml-parser".
+ *
+ * @param documents Sequence node holding one item per document
+ * @return YAML representation
+ */
+public f<String> YamlSerializer.serializeDocuments(YamlValue* documents) {
+    assert documents.isSequence();
+    String out;
+    const unsigned long size = documents.getSequenceSize();
+    for unsigned long i = 0l; i < size; i++ {
+        out += "---\n";
+        YamlValue* document = documents.getSequenceItem(i);
+        this.serializeDocumentBody(document, out);
+    }
+    return out;
+}
+
+/**
+ * Serializes a single YAML node in its inline form, as it would appear on the right
+ * hand side of a `key: value` pair
+ *
+ * @param value Node to serialize
+ * @return YAML representation
+ */
+public f<String> YamlSerializer.serializeValue(YamlValue* value) {
+    String out;
+    this.serializeInlineValue(value, out);
+    return out;
+}
+
+// --- Internal serializer helpers --------------------------------------------
+
+p YamlSerializer.serializeDocumentBody(YamlValue* root, String& out) {
+    if this.flowStyle || !hasBlockBody(root) {
+        this.serializeInlineValue(root, out);
+        out += '\n';
+    } else if root.isMapping() {
+        this.serializeBlockMapping(root, 0l, false, out);
+    } else {
+        this.serializeBlockSequence(root, 0l, false, out);
+    }
+}
+
+// Emit a mapping in block style. `indent` is the column its keys line up at; when
+// `firstKeyPrefixed` is set, the caller has already written the start of the first line.
+p YamlSerializer.serializeBlockMapping(YamlValue* mapping, unsigned long indent, bool firstKeyPrefixed,
+                                       String& out) {
+    const unsigned long size = mapping.getMappingSize();
+    for unsigned long i = 0l; i < size; i++ {
+        if i > 0l || !firstKeyPrefixed { appendIndent(out, indent); }
+        const String& key = mapping.getMappingKey(i);
+        serializeYamlScalar(out, key);
+        out += ':';
+        YamlValue* value = mapping.getMappingValue(i);
+        if hasBlockBody(value) {
+            // A nested collection gets a block of its own, one level further in
+            out += '\n';
+            if value.isMapping() {
+                this.serializeBlockMapping(value, indent + this.indentWidth, false, out);
+            } else {
+                this.serializeBlockSequence(value, indent + this.indentWidth, false, out);
+            }
+        } else {
+            out += ' ';
+            this.serializeInlineValue(value, out);
+            out += '\n';
+        }
+    }
+}
+
+// Emit a sequence in block style. `indent` is the column its dashes line up at; when
+// `firstItemPrefixed` is set, the caller has already written the start of the first line.
+p YamlSerializer.serializeBlockSequence(YamlValue* sequence, unsigned long indent, bool firstItemPrefixed,
+                                        String& out) {
+    const unsigned long size = sequence.getSequenceSize();
+    for unsigned long i = 0l; i < size; i++ {
+        if i > 0l || !firstItemPrefixed { appendIndent(out, indent); }
+        out += "- ";
+        YamlValue* item = sequence.getSequenceItem(i);
+        if hasBlockBody(item) {
+            // The dash and its separating space shift the nested block two columns right
+            if item.isMapping() {
+                this.serializeBlockMapping(item, indent + 2l, true, out);
+            } else {
+                this.serializeBlockSequence(item, indent + 2l, true, out);
+            }
+        } else {
+            this.serializeInlineValue(item, out);
+            out += '\n';
+        }
+    }
+}
+
+p YamlSerializer.serializeInlineValue(YamlValue* value, String& out) {
+    const YamlValueKind kind = value.getKind();
+    if kind == YamlValueKind::YAML_NULL {
+        out += "null";
+    } else if kind == YamlValueKind::YAML_BOOL {
+        out += value.getBool() ? "true" : "false";
+    } else if kind == YamlValueKind::YAML_INTEGER {
+        out += toString(value.getInteger());
+    } else if kind == YamlValueKind::YAML_FLOAT {
+        out += serializeYamlFloat(value.getFloat());
+    } else if kind == YamlValueKind::YAML_STRING {
+        serializeYamlScalar(out, value.getString());
+    } else if kind == YamlValueKind::YAML_SEQUENCE {
+        const unsigned long size = value.getSequenceSize();
+        out += '[';
+        for unsigned long i = 0l; i < size; i++ {
+            if i > 0l { out += ", "; }
+            YamlValue* item = value.getSequenceItem(i);
+            this.serializeInlineValue(item, out);
+        }
+        out += ']';
+    } else {
+        const unsigned long size = value.getMappingSize();
+        out += '{';
+        for unsigned long i = 0l; i < size; i++ {
+            if i > 0l { out += ", "; }
+            const String& key = value.getMappingKey(i);
+            serializeYamlScalar(out, key);
+            out += ": ";
+            YamlValue* entry = value.getMappingValue(i);
+            this.serializeInlineValue(entry, out);
+        }
+        out += '}';
+    }
+}
+
+// A collection only earns a block of its own once it actually holds something; an empty
+// one is written as `[]` or `{}`, since a block form of it does not exist.
+f<bool> hasBlockBody(YamlValue* value) {
+    if value.isMapping() { return value.getMappingSize() > 0l; }
+    if value.isSequence() { return value.getSequenceSize() > 0l; }
+    return false;
+}
+
+p appendIndent(String& out, unsigned long width) {
+    for unsigned long i = 0l; i < width; i++ { out += ' '; }
+}
+
+// Emit a scalar plain if that reads back as the very same string, and double-quoted otherwise
+p serializeYamlScalar(String& out, const String& text) {
+    if isPlainSafe(text) {
+        out += text;
+        return;
+    }
+    serializeYamlQuotedScalar(out, text);
+}
+
+f<bool> isPlainSafe(const String& text) {
+    const unsigned long length = text.getLength();
+    if length == 0l { return false; }
+    // A plain scalar that resolves to another kind has to be quoted to stay a string
+    if yamlPlainScalarKind(text) != YamlValueKind::YAML_STRING { return false; }
+    // Leading and trailing whitespace would be stripped away again
+    if isBlankChar(text[0l]) || isBlankChar(text[length - 1l]) { return false; }
+    if startsWithIndicator(text) { return false; }
+    if text == "<<" { return false; } // the merge key
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        // Control characters, line breaks included, have no plain representation. Bytes of
+        // multi-byte UTF-8 sequences are excluded, no matter whether char is signed or not.
+        if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F { return false; }
+        // A ':' that is followed by whitespace would open a mapping entry
+        if c == ':' && (i + 1l == length || isBlankChar(text[i + 1l])) { return false; }
+        // A '#' that follows whitespace would open a comment
+        if c == '#' && i > 0l && isBlankChar(text[i - 1l]) { return false; }
+    }
+    return true;
+}
+
+// Checks whether the scalar starts with a character that YAML reads as an indicator
+f<bool> startsWithIndicator(const String& text) {
+    const char c = text[0l];
+    if c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*'
+       || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`' {
+        return true;
+    }
+    // These only open a block entry when whitespace follows them
+    if c == '-' || c == '?' || c == ':' {
+        return text.getLength() == 1l || isBlankChar(text[1l]);
+    }
+    return false;
+}
+
+inline f<bool> isBlankChar(char c) {
+    return c == ' ' || c == '\t';
+}
+
+// Serialize a scalar as a double-quoted one, i.e. with surrounding quotes and escaping
+p serializeYamlQuotedScalar(String& out, const String& text) {
+    out += '"';
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        if c == '"' {
+            out += "\\\"";
+        } else if c == '\\' {
+            out += "\\\\";
+        } else if c == '\n' {
+            out += "\\n";
+        } else if c == '\r' {
+            out += "\\r";
+        } else if c == '\t' {
+            out += "\\t";
+        } else if c == '\b' {
+            out += "\\b";
+        } else if c == '\f' {
+            out += "\\f";
+        } else if c == '\0' {
+            out += "\\0";
+        } else if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F {
+            // All other control characters are emitted as \u00XX escapes.
+            // Bytes of multi-byte UTF-8 sequences are passed through unchanged.
+            string hexDigits = "0123456789ABCDEF";
+            const int code = cast<int>(c);
+            out += "\\u00";
+            out += hexDigits[(code >> 4) & 0xF];
+            out += hexDigits[code & 0xF];
+        } else {
+            out += c;
+        }
+    }
+    out += '"';
+}
+
+// Serialize a float, making sure the output is always recognizable as a YAML float.
+// Integral values therefore get a ".0" suffix, and non-integral values use 17 significant
+// digits ("%.17g"), which is enough to round-trip any double exactly.
+f<String> serializeYamlFloat(double value) {
+    if yamlIsNaN(value) { return String(".nan"); }
+    const double infinity = yamlInfinity();
+    if value == infinity { return String(".inf"); }
+    if value == -infinity { return String("-.inf"); }
+
+    // Only take the integral shortcut while the value is safely inside the long range
+    if value >= -9.0e18 && value <= 9.0e18 {
+        const long asLong = cast<long>(value);
+        if cast<double>(asLong) == value {
+            String integral = toString(asLong);
+            integral += ".0";
+            return integral;
+        }
+    }
+
+    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
+    String out = String(length);
+    snprintf(cast<char*>(out.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
+    // Very large magnitudes may print without a fractional or exponent part
+    if out.find('.') < 0l && out.find('e') < 0l && out.find('E') < 0l {
+        out += ".0";
+    }
+    return out;
+}

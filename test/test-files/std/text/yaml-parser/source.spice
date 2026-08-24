@@ -1,0 +1,440 @@
+import "std/text/yaml/yaml-value";
+import "std/text/yaml/yaml-parser";
+
+f<int> main() {
+    // Block mapping with nested mappings and sequences
+    String doc = String("name: spice\n");
+    doc += "version: 1.2\n";
+    doc += "tags:\n";
+    doc += "  - fast\n";
+    doc += "  - safe\n";
+    doc += "meta:\n";
+    doc += "  author: chillibits\n";
+    doc += "  stars: 42\n";
+    Result<YamlValue*> docRes = parseYaml(doc);
+    assert docRes.isOk();
+    YamlValue* docRoot = docRes.unwrap();
+    assert docRoot.isMapping();
+    assert docRoot.getMappingSize() == 4l;
+    YamlValue* name = docRoot.getField("name");
+    assert name.isString();
+    assert name.getString() == String("spice");
+    YamlValue* version = docRoot.getField("version");
+    assert version.isFloat();
+    YamlValue* tags = docRoot.getField("tags");
+    assert tags.isSequence();
+    assert tags.getSequenceSize() == 2l;
+    YamlValue* firstTag = tags.getSequenceItem(0l);
+    assert firstTag.getString() == String("fast");
+    YamlValue* meta = docRoot.getField("meta");
+    assert meta.isMapping();
+    YamlValue* stars = meta.getField("stars");
+    assert stars.getInteger() == 42l;
+    assert !docRoot.hasField("missing");
+    YamlValue* missing = docRoot.getFieldOrNil("missing");
+    assert missing == nil<YamlValue*>;
+
+    // A block sequence may line up with the key it belongs to, and its entries may
+    // start a mapping right behind the dash
+    String compactDoc = String("items:\n");
+    compactDoc += "- id: 1\n";
+    compactDoc += "  label: one\n";
+    compactDoc += "- id: 2\n";
+    compactDoc += "  label: two\n";
+    Result<YamlValue*> compactRes = parseYaml(compactDoc);
+    assert compactRes.isOk();
+    YamlValue* compactRoot = compactRes.unwrap();
+    YamlValue* items = compactRoot.getField("items");
+    assert items.isSequence();
+    assert items.getSequenceSize() == 2l;
+    YamlValue* secondItem = items.getSequenceItem(1l);
+    assert secondItem.isMapping();
+    YamlValue* secondLabel = secondItem.getField("label");
+    assert secondLabel.getString() == String("two");
+
+    // Nested sequences
+    Result<YamlValue*> nestedSeqRes = parseYaml(String("a:\n  - - 1\n    - 2\n  - x\n"));
+    assert nestedSeqRes.isOk();
+    YamlValue* nestedSeqRoot = nestedSeqRes.unwrap();
+    YamlValue* nestedSeq = nestedSeqRoot.getField("a");
+    assert nestedSeq.getSequenceSize() == 2l;
+    YamlValue* innerSeq = nestedSeq.getSequenceItem(0l);
+    assert innerSeq.isSequence();
+    assert innerSeq.getSequenceSize() == 2l;
+
+    // Deeply nested mappings
+    Result<YamlValue*> deepRes = parseYaml(String("a:\n  b:\n    c:\n      d: deep\n"));
+    assert deepRes.isOk();
+    YamlValue* deepRoot = deepRes.unwrap();
+    YamlValue* deepA = deepRoot.getField("a");
+    YamlValue* deepB = deepA.getField("b");
+    YamlValue* deepC = deepB.getField("c");
+    YamlValue* deepD = deepC.getField("d");
+    assert deepD.getString() == String("deep");
+
+    // Flow collections, including the JSON-like spelling and empty ones
+    Result<YamlValue*> flowRes = parseYaml(String("a: [1, 2, 3]\nb: {x: 1, y: two}\nc: []\nd: {}\n"));
+    assert flowRes.isOk();
+    YamlValue* flowRoot = flowRes.unwrap();
+    YamlValue* flowSeq = flowRoot.getField("a");
+    assert flowSeq.getSequenceSize() == 3l;
+    YamlValue* flowSeqItem = flowSeq.getSequenceItem(2l);
+    assert flowSeqItem.getInteger() == 3l;
+    YamlValue* flowMap = flowRoot.getField("b");
+    assert flowMap.isMapping();
+    YamlValue* flowMapY = flowMap.getField("y");
+    assert flowMapY.getString() == String("two");
+    YamlValue* emptySeq = flowRoot.getField("c");
+    assert emptySeq.isSequence();
+    assert emptySeq.getSequenceSize() == 0l;
+    YamlValue* emptyMap = flowRoot.getField("d");
+    assert emptyMap.isMapping();
+    assert emptyMap.getMappingSize() == 0l;
+
+    Result<YamlValue*> jsonRes = parseYaml(String("{\"a\": 1, \"b\": [2, 3]}\n"));
+    assert jsonRes.isOk();
+    YamlValue* jsonRoot = jsonRes.unwrap();
+    assert jsonRoot.getMappingSize() == 2l;
+    YamlValue* jsonB = jsonRoot.getField("b");
+    assert jsonB.getSequenceSize() == 2l;
+
+    // A flow collection may span several lines
+    Result<YamlValue*> multiLineFlowRes = parseYaml(String("a: [\n  1,\n  2,\n]\n"));
+    assert multiLineFlowRes.isOk();
+    YamlValue* multiLineFlowRoot = multiLineFlowRes.unwrap();
+    YamlValue* multiLineFlow = multiLineFlowRoot.getField("a");
+    assert multiLineFlow.getSequenceSize() == 2l;
+
+    // An entry of a flow mapping may come without a value
+    Result<YamlValue*> flowNullRes = parseYaml(String("a: {x}\n"));
+    assert flowNullRes.isOk();
+    YamlValue* flowNullRoot = flowNullRes.unwrap();
+    YamlValue* flowNullMap = flowNullRoot.getField("a");
+    YamlValue* flowNullEntry = flowNullMap.getField("x");
+    assert flowNullEntry.isNull();
+
+    // Scalars resolve according to the core schema
+    String scalarDoc = String("n1: null\nn2: ~\nn3:\nb1: true\nb2: False\n");
+    scalarDoc += "i1: 42\ni2: -7\ni3: 0x1F\ni4: 0o17\n";
+    scalarDoc += "f1: 3.5\nf2: -1.0e3\nf3: .inf\nf4: -.inf\nf5: .nan\n";
+    scalarDoc += "s1: 'it''s'\ns2: \"a\\tb\"\ns3: plain text\ns4: 1.2.3\n";
+    Result<YamlValue*> scalarRes = parseYaml(scalarDoc);
+    assert scalarRes.isOk();
+    YamlValue* scalarRoot = scalarRes.unwrap();
+    YamlValue* nullWord = scalarRoot.getField("n1");
+    assert nullWord.isNull();
+    YamlValue* nullTilde = scalarRoot.getField("n2");
+    assert nullTilde.isNull();
+    YamlValue* nullEmpty = scalarRoot.getField("n3");
+    assert nullEmpty.isNull();
+    YamlValue* boolTrue = scalarRoot.getField("b1");
+    assert boolTrue.isBool();
+    assert boolTrue.getBool();
+    YamlValue* boolFalse = scalarRoot.getField("b2");
+    assert !boolFalse.getBool();
+    YamlValue* intDec = scalarRoot.getField("i1");
+    assert intDec.isInteger();
+    assert intDec.getInteger() == 42l;
+    YamlValue* intNeg = scalarRoot.getField("i2");
+    assert intNeg.getInteger() == -7l;
+    YamlValue* intHex = scalarRoot.getField("i3");
+    assert intHex.getInteger() == 31l;
+    YamlValue* intOct = scalarRoot.getField("i4");
+    assert intOct.getInteger() == 15l;
+    YamlValue* floatPlain = scalarRoot.getField("f1");
+    assert floatPlain.isFloat();
+    assert floatPlain.getFloat() == 3.5;
+    YamlValue* floatExp = scalarRoot.getField("f2");
+    assert floatExp.getFloat() == -1000.0;
+    YamlValue* floatInf = scalarRoot.getField("f3");
+    assert floatInf.getFloat() == yamlInfinity();
+    YamlValue* floatNegInf = scalarRoot.getField("f4");
+    assert floatNegInf.getFloat() == -yamlInfinity();
+    YamlValue* floatNaN = scalarRoot.getField("f5");
+    assert yamlIsNaN(floatNaN.getFloat());
+    YamlValue* singleQuoted = scalarRoot.getField("s1");
+    assert singleQuoted.getString() == String("it's");
+    YamlValue* doubleQuoted = scalarRoot.getField("s2");
+    assert doubleQuoted.getString() == String("a\tb");
+    YamlValue* plainText = scalarRoot.getField("s3");
+    assert plainText.getString() == String("plain text");
+    // Something that only looks like a number stays a string
+    YamlValue* notANumber = scalarRoot.getField("s4");
+    assert notANumber.isString();
+
+    // Unicode escapes are encoded as UTF-8, raw multi-byte UTF-8 passes through unchanged
+    Result<YamlValue*> unicodeRes = parseYaml(String("a: \"\\u00E9\\U0001F600\"\nb: \303\251\n"));
+    assert unicodeRes.isOk();
+    YamlValue* unicodeRoot = unicodeRes.unwrap();
+    YamlValue* escaped = unicodeRoot.getField("a");
+    assert escaped.getString() == String("\303\251\360\237\230\200");
+    YamlValue* raw = unicodeRoot.getField("b");
+    assert raw.getString() == String("\303\251");
+
+    // Literal block scalars, with all three chomping modes
+    Result<YamlValue*> literalRes = parseYaml(String("text: |\n  line one\n  line two\nnext: 1\n"));
+    assert literalRes.isOk();
+    YamlValue* literalRoot = literalRes.unwrap();
+    YamlValue* literal = literalRoot.getField("text");
+    assert literal.getString() == String("line one\nline two\n");
+    // The entry behind the block scalar is picked up again
+    YamlValue* afterLiteral = literalRoot.getField("next");
+    assert afterLiteral.getInteger() == 1l;
+
+    Result<YamlValue*> stripRes = parseYaml(String("a: |-\n  x\n  y\n"));
+    assert stripRes.isOk();
+    YamlValue* stripRoot = stripRes.unwrap();
+    YamlValue* stripped = stripRoot.getField("a");
+    assert stripped.getString() == String("x\ny");
+
+    Result<YamlValue*> keepRes = parseYaml(String("a: |+\n  x\n\n"));
+    assert keepRes.isOk();
+    YamlValue* keepRoot = keepRes.unwrap();
+    YamlValue* kept = keepRoot.getField("a");
+    assert kept.getString() == String("x\n\n");
+
+    // An empty line inside a literal block turns into a line break of its own
+    Result<YamlValue*> literalBlankRes = parseYaml(String("a: |\n  x\n\n  y\n"));
+    assert literalBlankRes.isOk();
+    YamlValue* literalBlankRoot = literalBlankRes.unwrap();
+    YamlValue* literalBlank = literalBlankRoot.getField("a");
+    assert literalBlank.getString() == String("x\n\ny\n");
+
+    // Folded block scalars fold single line breaks into spaces
+    Result<YamlValue*> foldedRes = parseYaml(String("a: >\n  fold me\n  please\n\n  new para\n"));
+    assert foldedRes.isOk();
+    YamlValue* foldedRoot = foldedRes.unwrap();
+    YamlValue* folded = foldedRoot.getField("a");
+    assert folded.getString() == String("fold me please\nnew para\n");
+
+    // A more indented line inside a folded block keeps its line breaks
+    Result<YamlValue*> foldedIndentRes = parseYaml(String("a: >\n  normal\n    indented\n  normal2\n"));
+    assert foldedIndentRes.isOk();
+    YamlValue* foldedIndentRoot = foldedIndentRes.unwrap();
+    YamlValue* foldedIndent = foldedIndentRoot.getField("a");
+    assert foldedIndent.getString() == String("normal\n  indented\nnormal2\n");
+
+    // An explicit indentation indicator keeps the leading spaces of the content
+    Result<YamlValue*> explicitIndentRes = parseYaml(String("a: |2\n    two spaces kept\n"));
+    assert explicitIndentRes.isOk();
+    YamlValue* explicitIndentRoot = explicitIndentRes.unwrap();
+    YamlValue* explicitIndent = explicitIndentRoot.getField("a");
+    assert explicitIndent.getString() == String("  two spaces kept\n");
+
+    // A tab inside block scalar content is preserved
+    Result<YamlValue*> blockTabRes = parseYaml(String("a: |\n  x\ty\n"));
+    assert blockTabRes.isOk();
+    YamlValue* blockTabRoot = blockTabRes.unwrap();
+    YamlValue* blockTab = blockTabRoot.getField("a");
+    assert blockTab.getString() == String("x\ty\n");
+
+    // A plain scalar folds over the following, deeper indented lines
+    Result<YamlValue*> plainFoldRes = parseYaml(String("a: one\n  two\n  three\nb: 2\n"));
+    assert plainFoldRes.isOk();
+    YamlValue* plainFoldRoot = plainFoldRes.unwrap();
+    YamlValue* plainFold = plainFoldRoot.getField("a");
+    assert plainFold.getString() == String("one two three");
+    YamlValue* afterPlainFold = plainFoldRoot.getField("b");
+    assert afterPlainFold.getInteger() == 2l;
+
+    // An alias yields a deep copy of the node its anchor marks
+    String anchorDoc = String("base: &base\n  a: 1\n  b: 2\ncopy: *base\n");
+    Result<YamlValue*> anchorRes = parseYaml(anchorDoc);
+    assert anchorRes.isOk();
+    YamlValue* anchorRoot = anchorRes.unwrap();
+    YamlValue* anchorCopy = anchorRoot.getField("copy");
+    assert anchorCopy.isMapping();
+    YamlValue* anchorCopyB = anchorCopy.getField("b");
+    assert anchorCopyB.getInteger() == 2l;
+
+    Result<YamlValue*> scalarAnchorRes = parseYaml(String("x: &v hello\ny: *v\n"));
+    assert scalarAnchorRes.isOk();
+    YamlValue* scalarAnchorRoot = scalarAnchorRes.unwrap();
+    YamlValue* scalarAlias = scalarAnchorRoot.getField("y");
+    assert scalarAlias.getString() == String("hello");
+
+    Result<YamlValue*> seqAnchorRes = parseYaml(String("s:\n  - &i 5\n  - *i\n"));
+    assert seqAnchorRes.isOk();
+    YamlValue* seqAnchorRoot = seqAnchorRes.unwrap();
+    YamlValue* anchoredSeq = seqAnchorRoot.getField("s");
+    YamlValue* seqAlias = anchoredSeq.getSequenceItem(1l);
+    assert seqAlias.getInteger() == 5l;
+
+    // Comments and blank lines are not part of the data
+    String commentDoc = String("# leading comment\n\na: 1  # trailing\n\n# another\nb: 2\n");
+    Result<YamlValue*> commentRes = parseYaml(commentDoc);
+    assert commentRes.isOk();
+    YamlValue* commentRoot = commentRes.unwrap();
+    assert commentRoot.getMappingSize() == 2l;
+    YamlValue* commented = commentRoot.getField("a");
+    assert commented.getInteger() == 1l;
+    // A '#' that is not preceded by whitespace belongs to the scalar
+    Result<YamlValue*> hashRes = parseYaml(String("a: b#c\n"));
+    assert hashRes.isOk();
+    YamlValue* hashRoot = hashRes.unwrap();
+    YamlValue* hashValue = hashRoot.getField("a");
+    assert hashValue.getString() == String("b#c");
+    // The same goes for a ':' that is not followed by whitespace
+    Result<YamlValue*> urlRes = parseYaml(String("url: http://spicelang.com/docs\n"));
+    assert urlRes.isOk();
+    YamlValue* urlRoot = urlRes.unwrap();
+    YamlValue* url = urlRoot.getField("url");
+    assert url.getString() == String("http://spicelang.com/docs");
+
+    // Quoted keys, a byte order mark, directives, CRLF line endings and a missing
+    // trailing line break are all handled
+    Result<YamlValue*> quotedKeyRes = parseYaml(String("\"a b\": 1\n'c d': 2\n"));
+    assert quotedKeyRes.isOk();
+    YamlValue* quotedKeyRoot = quotedKeyRes.unwrap();
+    assert quotedKeyRoot.hasField("a b");
+    assert quotedKeyRoot.hasField("c d");
+
+    Result<YamlValue*> bomRes = parseYaml(String("\357\273\277a: 1\n"));
+    assert bomRes.isOk();
+    YamlValue* bomRoot = bomRes.unwrap();
+    assert bomRoot.hasField("a");
+
+    Result<YamlValue*> directiveRes = parseYaml(String("%YAML 1.2\n---\na: 1\n"));
+    assert directiveRes.isOk();
+    YamlValue* directiveRoot = directiveRes.unwrap();
+    assert directiveRoot.hasField("a");
+
+    Result<YamlValue*> crlfRes = parseYaml(String("a: 1\r\nb: 2\r\n"));
+    assert crlfRes.isOk();
+    YamlValue* crlfRoot = crlfRes.unwrap();
+    assert crlfRoot.getMappingSize() == 2l;
+
+    Result<YamlValue*> noBreakRes = parseYaml(String("a: 1"));
+    assert noBreakRes.isOk();
+    YamlValue* noBreakRoot = noBreakRes.unwrap();
+    YamlValue* noBreakValue = noBreakRoot.getField("a");
+    assert noBreakValue.getInteger() == 1l;
+
+    // A tab may separate tokens, it just cannot indent a line
+    Result<YamlValue*> tabSeparatorRes = parseYaml(String("a:\tvalue\n"));
+    assert tabSeparatorRes.isOk();
+    YamlValue* tabSeparatorRoot = tabSeparatorRes.unwrap();
+    YamlValue* tabSeparated = tabSeparatorRoot.getField("a");
+    assert tabSeparated.getString() == String("value");
+
+    // Document markers, a root level sequence, a root level scalar and an empty input
+    Result<YamlValue*> markerRes = parseYaml(String("---\na: 1\n...\n"));
+    assert markerRes.isOk();
+    YamlValue* markerRoot = markerRes.unwrap();
+    YamlValue* markerValue = markerRoot.getField("a");
+    assert markerValue.getInteger() == 1l;
+
+    Result<YamlValue*> rootSeqRes = parseYaml(String("- a\n- b\n"));
+    assert rootSeqRes.isOk();
+    YamlValue* rootSeq = rootSeqRes.unwrap();
+    assert rootSeq.isSequence();
+    assert rootSeq.getSequenceSize() == 2l;
+
+    Result<YamlValue*> rootScalarRes = parseYaml(String("just a scalar\n"));
+    assert rootScalarRes.isOk();
+    YamlValue* rootScalar = rootScalarRes.unwrap();
+    assert rootScalar.getString() == String("just a scalar");
+
+    Result<YamlValue*> emptyRes = parseYaml(String(""));
+    assert emptyRes.isOk();
+    YamlValue* emptyRoot = emptyRes.unwrap();
+    assert emptyRoot.isNull();
+
+    Result<YamlValue*> commentOnlyRes = parseYaml(String("# nothing but a comment\n"));
+    assert commentOnlyRes.isOk();
+    YamlValue* commentOnlyRoot = commentOnlyRes.unwrap();
+    assert commentOnlyRoot.isNull();
+
+    // Multi-document streams
+    Result<YamlValue*> streamRes = parseYamlDocuments(String("---\na: 1\n---\nb: 2\n---\n- 1\n- 2\n"));
+    assert streamRes.isOk();
+    YamlValue* stream = streamRes.unwrap();
+    assert stream.isSequence();
+    assert stream.getSequenceSize() == 3l;
+    YamlValue* secondDoc = stream.getSequenceItem(1l);
+    YamlValue* secondDocValue = secondDoc.getField("b");
+    assert secondDocValue.getInteger() == 2l;
+    YamlValue* thirdDoc = stream.getSequenceItem(2l);
+    assert thirdDoc.isSequence();
+    assert thirdDoc.getSequenceSize() == 2l;
+
+    // The first document of a stream does not need a marker
+    Result<YamlValue*> impliedStreamRes = parseYamlDocuments(String("a: 1\n---\nb: 2\n"));
+    assert impliedStreamRes.isOk();
+    YamlValue* impliedStream = impliedStreamRes.unwrap();
+    assert impliedStream.getSequenceSize() == 2l;
+
+    // An empty stream yields an empty sequence
+    Result<YamlValue*> emptyStreamRes = parseYamlDocuments(String(""));
+    assert emptyStreamRes.isOk();
+    YamlValue* emptyStream = emptyStreamRes.unwrap();
+    assert emptyStream.isSequence();
+    assert emptyStream.getSequenceSize() == 0l;
+
+    // Malformed inputs are rejected
+    Result<YamlValue*> duplicateKeyRes = parseYaml(String("a: 1\na: 2\n"));
+    assert !duplicateKeyRes.isOk();
+    Result<YamlValue*> unterminatedFlowRes = parseYaml(String("a: [1, 2\n"));
+    assert !unterminatedFlowRes.isOk();
+    Result<YamlValue*> unterminatedQuoteRes = parseYaml(String("a: 'unterminated\n"));
+    assert !unterminatedQuoteRes.isOk();
+    Result<YamlValue*> unknownAliasRes = parseYaml(String("a: *nope\n"));
+    assert !unknownAliasRes.isOk();
+    Result<YamlValue*> badEscapeRes = parseYaml(String("a: \"bad \\q\"\n"));
+    assert !badEscapeRes.isOk();
+    Result<YamlValue*> tabIndentRes = parseYaml(String("a:\n\tb: 1\n"));
+    assert !tabIndentRes.isOk();
+    Result<YamlValue*> badDedentRes = parseYaml(String("a:\n    b: 1\n  c: 2\n"));
+    assert !badDedentRes.isOk();
+    Result<YamlValue*> seqInMappingRes = parseYaml(String("a: 1\n- 2\n"));
+    assert !seqInMappingRes.isOk();
+    // A single document parser rejects a whole stream
+    Result<YamlValue*> streamRejectedRes = parseYaml(String("a: 1\n---\nb: 2\n"));
+    assert !streamRejectedRes.isOk();
+    // A document of a stream that is missing its marker is rejected as well
+    Result<YamlValue*> badStreamRes = parseYamlDocuments(String("a:\n    b: 1\n  c: 2\n"));
+    assert !badStreamRes.isOk();
+
+    // Every parsed tree is owned by the caller, so release them all again
+    deleteYamlValue(docRoot);
+    deleteYamlValue(compactRoot);
+    deleteYamlValue(nestedSeqRoot);
+    deleteYamlValue(deepRoot);
+    deleteYamlValue(flowRoot);
+    deleteYamlValue(jsonRoot);
+    deleteYamlValue(multiLineFlowRoot);
+    deleteYamlValue(flowNullRoot);
+    deleteYamlValue(scalarRoot);
+    deleteYamlValue(unicodeRoot);
+    deleteYamlValue(literalRoot);
+    deleteYamlValue(stripRoot);
+    deleteYamlValue(keepRoot);
+    deleteYamlValue(literalBlankRoot);
+    deleteYamlValue(foldedRoot);
+    deleteYamlValue(foldedIndentRoot);
+    deleteYamlValue(explicitIndentRoot);
+    deleteYamlValue(blockTabRoot);
+    deleteYamlValue(plainFoldRoot);
+    deleteYamlValue(anchorRoot);
+    deleteYamlValue(scalarAnchorRoot);
+    deleteYamlValue(seqAnchorRoot);
+    deleteYamlValue(commentRoot);
+    deleteYamlValue(hashRoot);
+    deleteYamlValue(urlRoot);
+    deleteYamlValue(quotedKeyRoot);
+    deleteYamlValue(bomRoot);
+    deleteYamlValue(directiveRoot);
+    deleteYamlValue(crlfRoot);
+    deleteYamlValue(noBreakRoot);
+    deleteYamlValue(tabSeparatorRoot);
+    deleteYamlValue(markerRoot);
+    deleteYamlValue(rootSeq);
+    deleteYamlValue(rootScalar);
+    deleteYamlValue(emptyRoot);
+    deleteYamlValue(commentOnlyRoot);
+    deleteYamlValue(stream);
+    deleteYamlValue(impliedStream);
+    deleteYamlValue(emptyStream);
+
+    printf("All assertions passed!");
+}

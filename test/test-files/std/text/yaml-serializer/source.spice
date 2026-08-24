@@ -1,0 +1,240 @@
+import "std/text/yaml/yaml-value";
+import "std/text/yaml/yaml-parser";
+import "std/text/yaml/yaml-serializer";
+
+// Compare two node trees structurally, so that a document can be checked against the
+// one it turns into after a serialize and parse round trip
+f<bool> sameTree(YamlValue* lhs, YamlValue* rhs) {
+    if lhs.getKind() != rhs.getKind() { return false; }
+    if lhs.isString() { return lhs.getString() == rhs.getString(); }
+    if lhs.isInteger() { return lhs.getInteger() == rhs.getInteger(); }
+    if lhs.isBool() { return lhs.getBool() == rhs.getBool(); }
+    if lhs.isFloat() {
+        if yamlIsNaN(lhs.getFloat()) { return yamlIsNaN(rhs.getFloat()); }
+        return lhs.getFloat() == rhs.getFloat();
+    }
+    if lhs.isSequence() {
+        if lhs.getSequenceSize() != rhs.getSequenceSize() { return false; }
+        for unsigned long i = 0l; i < lhs.getSequenceSize(); i++ {
+            YamlValue* lhsItem = lhs.getSequenceItem(i);
+            YamlValue* rhsItem = rhs.getSequenceItem(i);
+            if !sameTree(lhsItem, rhsItem) { return false; }
+        }
+        return true;
+    }
+    if lhs.isMapping() {
+        if lhs.getMappingSize() != rhs.getMappingSize() { return false; }
+        for unsigned long i = 0l; i < lhs.getMappingSize(); i++ {
+            if !(lhs.getMappingKey(i) == rhs.getMappingKey(i)) { return false; }
+            YamlValue* lhsValue = lhs.getMappingValue(i);
+            YamlValue* rhsValue = rhs.getMappingValue(i);
+            if !sameTree(lhsValue, rhsValue) { return false; }
+        }
+        return true;
+    }
+    return true; // two null nodes
+}
+
+// Parse a document, write it out again and check that reading the output back yields
+// the very same tree
+f<bool> roundTrips(const String& source, bool flowStyle) {
+    Result<YamlValue*> parsed = parseYaml(source);
+    if !parsed.isOk() { return false; }
+    YamlValue* tree = parsed.unwrap();
+    YamlSerializer serializer = YamlSerializer(2l, flowStyle);
+    const String text = serializer.serialize(tree);
+    Result<YamlValue*> reparsed = parseYaml(text);
+    bool equal = false;
+    if reparsed.isOk() {
+        YamlValue* reparsedTree = reparsed.unwrap();
+        equal = sameTree(tree, reparsedTree);
+        deleteYamlValue(reparsedTree);
+    }
+    deleteYamlValue(tree);
+    return equal;
+}
+
+f<int> main() {
+    YamlSerializer serializer = YamlSerializer();
+
+    // A flat mapping, one entry per line
+    YamlValue* flat = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    flat.addMappingField(String("name"), __new<YamlValue>(String("spice")));
+    flat.addMappingField(String("count"), __new<YamlValue>(3l));
+    flat.addMappingField(String("ratio"), __new<YamlValue>(1.5));
+    flat.addMappingField(String("ok"), __new<YamlValue>(true));
+    flat.addMappingField(String("nothing"), __new<YamlValue>(YamlValueKind::YAML_NULL));
+    const String flatText = serializer.serialize(flat);
+    assert flatText == String("name: spice\ncount: 3\nratio: 1.5\nok: true\nnothing: null\n");
+
+    // Nested collections get a block of their own
+    YamlValue* nested = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    YamlValue* nestedTags = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    nestedTags.addSequenceItem(__new<YamlValue>(String("a")));
+    nestedTags.addSequenceItem(__new<YamlValue>(String("b")));
+    nested.addMappingField(String("tags"), nestedTags);
+    YamlValue* nestedMeta = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    nestedMeta.addMappingField(String("x"), __new<YamlValue>(1l));
+    nested.addMappingField(String("meta"), nestedMeta);
+    const String nestedText = serializer.serialize(nested);
+    assert nestedText == String("tags:\n  - a\n  - b\nmeta:\n  x: 1\n");
+
+    // A mapping inside a sequence starts right behind the dash
+    YamlValue* compact = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    YamlValue* compactFirst = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    compactFirst.addMappingField(String("id"), __new<YamlValue>(1l));
+    compactFirst.addMappingField(String("label"), __new<YamlValue>(String("one")));
+    compact.addSequenceItem(compactFirst);
+    YamlValue* compactSecond = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    compactSecond.addMappingField(String("id"), __new<YamlValue>(2l));
+    compact.addSequenceItem(compactSecond);
+    const String compactText = serializer.serialize(compact);
+    assert compactText == String("- id: 1\n  label: one\n- id: 2\n");
+
+    // A sequence inside a sequence does the same
+    YamlValue* nestedSeq = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    YamlValue* innerSeq = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    innerSeq.addSequenceItem(__new<YamlValue>(1l));
+    innerSeq.addSequenceItem(__new<YamlValue>(2l));
+    nestedSeq.addSequenceItem(innerSeq);
+    nestedSeq.addSequenceItem(__new<YamlValue>(String("x")));
+    const String nestedSeqText = serializer.serialize(nestedSeq);
+    assert nestedSeqText == String("- - 1\n  - 2\n- x\n");
+
+    // Empty collections have no block form, so they stay inline. Strings that would be
+    // read back as another kind, or that carry an indicator, are quoted.
+    YamlValue* quoting = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    quoting.addMappingField(String("emptySeq"), __new<YamlValue>(YamlValueKind::YAML_SEQUENCE));
+    quoting.addMappingField(String("emptyMap"), __new<YamlValue>(YamlValueKind::YAML_MAPPING));
+    quoting.addMappingField(String("numberish"), __new<YamlValue>(String("42")));
+    quoting.addMappingField(String("boolish"), __new<YamlValue>(String("true")));
+    quoting.addMappingField(String("nullish"), __new<YamlValue>(String("null")));
+    quoting.addMappingField(String("empty"), __new<YamlValue>(String("")));
+    quoting.addMappingField(String("colon"), __new<YamlValue>(String("a: b")));
+    quoting.addMappingField(String("hash"), __new<YamlValue>(String("a # b")));
+    quoting.addMappingField(String("dash"), __new<YamlValue>(String("- x")));
+    quoting.addMappingField(String("newline"), __new<YamlValue>(String("a\nb")));
+    quoting.addMappingField(String("padded"), __new<YamlValue>(String(" pad ")));
+    quoting.addMappingField(String("safe"), __new<YamlValue>(String("a-b_c.d")));
+    const String quotingText = serializer.serialize(quoting);
+    String expectedQuoting = String("emptySeq: []\nemptyMap: {}\nnumberish: \"42\"\nboolish: \"true\"\n");
+    expectedQuoting += "nullish: \"null\"\nempty: \"\"\ncolon: \"a: b\"\nhash: \"a # b\"\ndash: \"- x\"\n";
+    expectedQuoting += "newline: \"a\\nb\"\npadded: \" pad \"\nsafe: a-b_c.d\n";
+    assert quotingText == expectedQuoting;
+
+    // A key is quoted by the very same rules
+    YamlValue* keys = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    keys.addMappingField(String("plain"), __new<YamlValue>(1l));
+    keys.addMappingField(String("with space"), __new<YamlValue>(2l));
+    keys.addMappingField(String("42"), __new<YamlValue>(3l));
+    keys.addMappingField(String("a: b"), __new<YamlValue>(4l));
+    const String keysText = serializer.serialize(keys);
+    assert keysText == String("plain: 1\nwith space: 2\n\"42\": 3\n\"a: b\": 4\n");
+
+    // Floats always stay recognizable as floats
+    YamlValue* floats = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    floats.addMappingField(String("inf"), __new<YamlValue>(yamlInfinity()));
+    const double negativeInfinity = -yamlInfinity();
+    floats.addMappingField(String("ninf"), __new<YamlValue>(negativeInfinity));
+    floats.addMappingField(String("nan"), __new<YamlValue>(yamlNaN()));
+    floats.addMappingField(String("whole"), __new<YamlValue>(2.0));
+    const String floatsText = serializer.serialize(floats);
+    assert floatsText == String("inf: .inf\nninf: -.inf\nnan: .nan\nwhole: 2.0\n");
+
+    // Flow style puts the whole document on a single line
+    YamlSerializer flowSerializer = YamlSerializer(2l, true);
+    YamlValue* flow = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    YamlValue* flowSeq = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    flowSeq.addSequenceItem(__new<YamlValue>(1l));
+    flowSeq.addSequenceItem(__new<YamlValue>(2l));
+    flow.addMappingField(String("a"), flowSeq);
+    flow.addMappingField(String("b"), __new<YamlValue>(String("x")));
+    const String flowText = flowSerializer.serialize(flow);
+    assert flowText == String("{a: [1, 2], b: x}\n");
+
+    // The indentation width is configurable
+    YamlSerializer wideSerializer = YamlSerializer(4l);
+    YamlValue* wide = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    YamlValue* wideInner = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    wideInner.addMappingField(String("deep"), __new<YamlValue>(1l));
+    wide.addMappingField(String("outer"), wideInner);
+    const String wideText = wideSerializer.serialize(wide);
+    assert wideText == String("outer:\n    deep: 1\n");
+
+    // serializeValue only emits the inline form of a single node
+    const String inlineText = serializer.serializeValue(flowSeq);
+    assert inlineText == String("[1, 2]");
+
+    // A stream is written with one marker per document
+    YamlValue* documents = __new<YamlValue>(YamlValueKind::YAML_SEQUENCE);
+    YamlValue* firstDocument = __new<YamlValue>(YamlValueKind::YAML_MAPPING);
+    firstDocument.addMappingField(String("a"), __new<YamlValue>(1l));
+    documents.addSequenceItem(firstDocument);
+    documents.addSequenceItem(__new<YamlValue>(String("scalar doc")));
+    const String documentsText = serializer.serializeDocuments(documents);
+    assert documentsText == String("---\na: 1\n---\nscalar doc\n");
+
+    // Whatever the parser reads has to survive a round trip, in both styles
+    String config = String("name: spice\nversion: 1.2\ntags:\n  - fast\n  - safe\n");
+    config += "meta:\n  author: chillibits\n  stars: 42\n  nested:\n    deep: [1, 2, {k: v}]\n";
+    assert roundTrips(config, false);
+    assert roundTrips(config, true);
+
+    String listOfMaps = String("- id: 1\n  label: one\n  sub:\n    - a\n    - b\n- id: 2\n  label: two\n");
+    assert roundTrips(listOfMaps, false);
+    assert roundTrips(listOfMaps, true);
+
+    String scalars = String("n: null\nt: true\nf: false\ni: -12\nx: 0x10\nfl: 2.5\ne: 1e3\n");
+    scalars += "inf: .inf\nninf: -.inf\nnan: .nan\ns: 'quoted'\nempty: ''\n";
+    assert roundTrips(scalars, false);
+    assert roundTrips(scalars, true);
+
+    String awkwardStrings = String("weird:\n  - \"a: b\"\n  - \"# not a comment\"\n  - \"42\"\n");
+    awkwardStrings += "  - \"true\"\n  - \"- dash\"\n  - \"tab\\there\"\n  - \"line\\nbreak\"\n";
+    awkwardStrings += "  - \" padded \"\n";
+    assert roundTrips(awkwardStrings, false);
+    assert roundTrips(awkwardStrings, true);
+
+    String emptyCollections = String("emptySeq: []\nemptyMap: {}\nnestedEmpty:\n  a: []\n  b: {}\n");
+    assert roundTrips(emptyCollections, false);
+    assert roundTrips(emptyCollections, true);
+
+    String blockScalars = String("text: |\n  line one\n  line two\nfolded: >\n  a b\n  c\n");
+    assert roundTrips(blockScalars, false);
+    assert roundTrips(blockScalars, true);
+
+    String nestedSequences = String("deep:\n  - - 1\n    - 2\n  - - 3\n");
+    assert roundTrips(nestedSequences, false);
+    assert roundTrips(nestedSequences, true);
+
+    assert roundTrips(String("just a scalar\n"), false);
+    assert roundTrips(String("just a scalar\n"), true);
+    assert roundTrips(String("- 1\n- 2\n- 3\n"), false);
+    assert roundTrips(String("- 1\n- 2\n- 3\n"), true);
+
+    // A whole stream round-trips as well
+    Result<YamlValue*> streamRes = parseYamlDocuments(String("---\na: 1\n---\n- x\n- y\n---\nplain\n"));
+    assert streamRes.isOk();
+    YamlValue* stream = streamRes.unwrap();
+    const String streamText = serializer.serializeDocuments(stream);
+    Result<YamlValue*> streamReparsedRes = parseYamlDocuments(streamText);
+    assert streamReparsedRes.isOk();
+    YamlValue* streamReparsed = streamReparsedRes.unwrap();
+    assert sameTree(stream, streamReparsed);
+
+    // Every node tree is owned by the caller, so release them all again
+    deleteYamlValue(flat);
+    deleteYamlValue(nested);
+    deleteYamlValue(compact);
+    deleteYamlValue(nestedSeq);
+    deleteYamlValue(quoting);
+    deleteYamlValue(keys);
+    deleteYamlValue(floats);
+    deleteYamlValue(flow);
+    deleteYamlValue(wide);
+    deleteYamlValue(documents);
+    deleteYamlValue(stream);
+    deleteYamlValue(streamReparsed);
+
+    printf("All assertions passed!");
+}
