@@ -18,20 +18,7 @@ StructBase::StructBase(std::string name, SymbolTableEntry *entry, Scope *scope, 
  *
  * @return String representation as struct signature
  */
-std::string StructBase::getSignature() const {
-  QualTypeList templateSymbolTypes;
-  templateSymbolTypes.reserve(templateTypes.size());
-  for (const GenericType &genericType : templateTypes) {
-    if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
-      assert(typeMapping.contains(genericType.getSubType()));
-      templateSymbolTypes.push_back(typeMapping.at(genericType.getSubType()));
-    } else {
-      templateSymbolTypes.push_back(genericType);
-    }
-  }
-
-  return getSignature(name, templateSymbolTypes);
-}
+std::string StructBase::getSignature() const { return getSignature(name, getConcreteTemplateTypes()); }
 
 /**
  * Get the signature from the struct name and the concrete template types
@@ -77,6 +64,26 @@ bool StructBase::hasSubstantiatedGenerics() const {
  * @return Fully substantiated or not
  */
 bool StructBase::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
+
+/**
+ * Retrieve the concrete template types of this struct. For generic substantiations, the generic types are replaced
+ * by the concrete types from the type mapping.
+ *
+ * @return Concrete template types as vector of symbol types
+ */
+QualTypeList StructBase::getConcreteTemplateTypes() const {
+  QualTypeList concreteTemplateTypes;
+  concreteTemplateTypes.reserve(templateTypes.size());
+  for (const GenericType &genericType : templateTypes) {
+    if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
+      assert(typeMapping.contains(genericType.getSubType()));
+      concreteTemplateTypes.push_back(typeMapping.at(genericType.getSubType()));
+    } else {
+      concreteTemplateTypes.push_back(genericType);
+    }
+  }
+  return concreteTemplateTypes;
+}
 
 /**
  * Retrieve the template types as vector of symbol types

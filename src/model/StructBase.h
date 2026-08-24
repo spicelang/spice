@@ -29,6 +29,7 @@ public:
   static std::string getSignature(const std::string &name, const QualTypeList &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
+  [[nodiscard]] QualTypeList getConcreteTemplateTypes() const;
   [[nodiscard]] QualTypeList getTemplateTypes() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] bool isGenericSubstantiation() const;
