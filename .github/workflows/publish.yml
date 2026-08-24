@@ -32,39 +32,21 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          mkdir -p ~/.cache/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64-all-targets-nozlib
-
       - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
           mkdir ./build
           cd ./build
           cmake -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
@@ -109,13 +91,6 @@ jobs:
       - name: Run Checksec
         working-directory: build
         run: checksec --file=./spice --output=json | jq
-
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -144,39 +119,21 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          mkdir -p ~/.cache/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64-all-targets-nozlib
-
       - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
           mkdir ./build
           cd ./build
           cmake -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
@@ -222,13 +179,6 @@ jobs:
         working-directory: build
         run: checksec --file=./spice --output=json | jq
 
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -252,36 +202,18 @@ jobs:
 
       - name: Setup Dependencies
         run: |
-          choco install ccache ninja -y
-          New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/AppData/Local/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+          choco install ninja -y
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-win-x64-all-targets
-
       - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
           mkdir ./build
           cd ./build
           cmake -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
             -DCMAKE_C_COMPILER=gcc `
             -DCMAKE_CXX_COMPILER=g++ `
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
@@ -320,13 +252,6 @@ jobs:
         working-directory: build
         run: mv ./src/spice.exe spice.exe
 
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/AppData/Local/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -353,38 +278,16 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      - name: Setup Dependencies
-        run: |
-          brew install ccache
-          mkdir -p ~/.cache/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-x64-all-targets
-
       - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
           mkdir ./build
           cd ./build
           cmake -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
@@ -422,13 +325,6 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
-
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -456,38 +352,16 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      - name: Setup Dependencies
-        run: |
-          brew install ccache
-          mkdir -p ~/.cache/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64-all-targets
-
       - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
         working-directory: llvm
         run: |
           mkdir ./build
           cd ./build
           cmake -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
@@ -525,13 +399,6 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
-
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -567,13 +434,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: '1.26'
-
-      - name: Restore Go modules cache
-        uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          cache: false
 
       - name: Docker login GHCR
         uses: docker/login-action@v4.6.0
