@@ -1,0 +1,88 @@
+import "std/os/offset-allocator";
+import "std/data/vector";
+
+const unsigned int STORAGE_SIZE = 5000u;
+const unsigned long OP_COUNT = 6000ul;
+
+f<int> main() {
+    OffsetAllocator alloc = OffsetAllocator(STORAGE_SIZE);
+
+    // Occupancy map to detect overlaps: one bool per byte of the storage area
+    Vector<bool> occupied = Vector<bool>(cast<unsigned long>(STORAGE_SIZE), false);
+
+    Vector<Allocation> live;
+    Vector<unsigned int> liveSizes;
+
+    unsigned long successAllocs = 0ul;
+    unsigned long failedAllocs = 0ul;
+    unsigned long state = 12345ul; // simple deterministic LCG state, no external RNG dependency
+
+    for unsigned long op = 0ul; op < OP_COUNT; op++ {
+        // Deterministic pseudo-random sequence (LCG constants from Numerical Recipes). Exactly one
+        // state advance per iteration, drawing from the high bits: an LCG's low bits are notoriously
+        // short-periodic, so a naive `state % smallNumber` on the raw state biases badly.
+        state = state * 1664525ul + 1013904223ul;
+        const unsigned long r = state >> 16ul;
+
+        const bool doFree = live.getSize() > 0l && (r % 4ul) == 0ul;
+
+        if doFree {
+            const unsigned long liveCount = live.getSize();
+            const unsigned long idx = r % liveCount;
+            const Allocation a = live.get(idx);
+            const unsigned int sz = liveSizes.get(idx);
+
+            for unsigned int b = 0u; b < sz; b++ {
+                occupied[cast<unsigned long>(a.offset + b)] = false;
+            }
+
+            alloc.free(a);
+            live.removeAt(idx);
+            liveSizes.removeAt(idx);
+        } else {
+            const unsigned int size = 1u + cast<unsigned int>(r % 500ul);
+            const Allocation a = alloc.allocate(size);
+
+            if a.offset == 0xffffffffu {
+                failedAllocs++;
+                continue;
+            }
+            successAllocs++;
+
+            const unsigned long start = cast<unsigned long>(a.offset);
+            const unsigned long end = start + cast<unsigned long>(size);
+            assert end <= cast<unsigned long>(STORAGE_SIZE);
+
+            for unsigned long b = start; b < end; b++ {
+                const bool wasOccupied = occupied[b];
+                assert !wasOccupied; // no live allocation may ever overlap another
+                occupied[b] = true;
+            }
+
+            live.pushBack(a);
+            liveSizes.pushBack(size);
+        }
+    }
+
+    assert successAllocs > 0ul;
+    assert failedAllocs > 0ul; // the pool is small enough that some requests must be refused
+    const unsigned long finalLiveCount = live.getSize();
+    assert finalLiveCount > 0ul;
+
+    // Free everything that remains live and confirm the pool fully coalesces back
+    for unsigned long i = 0ul; i < finalLiveCount; i++ {
+        const Allocation a = live.get(i);
+        alloc.free(a);
+    }
+    StorageReport finalReport = alloc.getStorageReport();
+    assert finalReport.totalFreeSpace == STORAGE_SIZE;
+    assert finalReport.largestFreeRegion <= STORAGE_SIZE;
+
+    // The pool must be usable again afterwards, from the start of the storage area
+    Allocation fresh = alloc.allocate(1u);
+    assert fresh.offset == 0u;
+    alloc.free(fresh);
+
+    printf("OffsetAllocator stress tests passed! successAllocs=%lu failedAllocs=%lu\n", successAllocs, failedAllocs);
+    return 0;
+}
