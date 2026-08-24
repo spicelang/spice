@@ -1,0 +1,341 @@
+// Std imports
+import "std/crypto/digest";
+
+// Constants
+const unsigned long SHA512_BLOCK_SIZE = 128l;    // Input block size in bytes; keep in sync with the buffer field
+const unsigned long SHA512_DIGEST_SIZE = 64l;    // Digest size in bytes; keep in sync with the arrays passed to finalizeInto
+const unsigned long SHA512_LENGTH_OFFSET = 112l; // Offset of the 16 byte length field within the last block
+
+/**
+ * SHA-512 message digest, as specified in FIPS 180-4.
+ *
+ * SHA-512 shares its construction with SHA-256, but works on 64 bit words and therefore tends to be
+ * noticeably faster than SHA-256 on 64 bit machines, while producing a 512 bit digest. Note that a
+ * plain hash is still the wrong tool for password storage, which needs a deliberately slow, salted
+ * key derivation function.
+ *
+ * The digest is computed incrementally, so arbitrarily large messages can be fed in chunk by chunk:
+ *
+ * ```spice
+ * Sha512 hasher;
+ * hasher.update("Hello, ");
+ * hasher.update("World!");
+ * printf("%s\n", hasher.finalize().getRaw());
+ * ```
+ *
+ * For one-shot use, the free `sha512` functions wrap the same steps in a single call.
+ *
+ * The length field of the padding is 128 bits wide, but this implementation only fills its lower
+ * 64 bits. Messages therefore have to be shorter than 2^61 bytes, which no addressable input hits.
+ */
+public type Sha512 struct {
+    unsigned long[8] state          // Chaining state (h0 .. h7)
+    byte[128] buffer                // Bytes of the block that is currently being filled
+    unsigned long bufferLength = 0l // Number of bytes currently held in the buffer
+    unsigned long totalLength = 0l  // Number of message bytes consumed so far
+}
+
+/**
+ * Construct a hasher that is ready to consume the first message byte
+ */
+public p Sha512.ctor() {
+    this.reset();
+}
+
+/**
+ * Discard any consumed input and return to the initial state, ready for a new message
+ */
+public p Sha512.reset() {
+    // Initial state: the fractional parts of the square roots of the first 8 primes
+    this.state[0] = 0x6a09e667f3bcc908ul;
+    this.state[1] = 0xbb67ae8584caa73bul;
+    this.state[2] = 0x3c6ef372fe94f82bul;
+    this.state[3] = 0xa54ff53a5f1d36f1ul;
+    this.state[4] = 0x510e527fade682d1ul;
+    this.state[5] = 0x9b05688c2b3e6c1ful;
+    this.state[6] = 0x1f83d9abfb41bd6bul;
+    this.state[7] = 0x5be0cd19137e2179ul;
+    this.bufferLength = 0l;
+    this.totalLength = 0l;
+}
+
+/**
+ * Feed the given raw bytes into the digest
+ *
+ * @param data Bytes to consume
+ * @param length Number of bytes to consume
+ */
+public p Sha512.update(const byte[] data, unsigned long length) {
+    for unsigned long i = 0l; i < length; i++ {
+        this.appendRawByte(data[i]);
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Feed the chars of the given raw string into the digest, excluding the null terminator
+ *
+ * @param data String to consume
+ */
+public p Sha512.update(string data) {
+    unsafe {
+        const char* current = cast<const char*>(data);
+        while *current != '\0' {
+            this.appendRawByte(cast<byte>(*current));
+            this.totalLength++;
+            current++;
+        }
+    }
+}
+
+/**
+ * Feed the chars of the given string into the digest
+ *
+ * @param data String to consume
+ */
+public p Sha512.update(const String& data) {
+    const unsigned long length = data.getLength();
+    unsafe {
+        const char* current = cast<const char*>(data.getRaw());
+        for unsigned long i = 0l; i < length; i++ {
+            this.appendRawByte(cast<byte>(current[i]));
+        }
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Complete the digest and write its 64 raw bytes to the given output array.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @param digest Output array, that has to offer room for at least 64 bytes
+ */
+public p Sha512.finalizeInto(byte[] digest) {
+    // Capture the message length in bits, before the padding is appended
+    const unsigned long messageBits = this.totalLength * 8l;
+
+    // Append the mandatory 0x80 byte, followed by zeroes until only the length field is missing
+    this.appendRawByte(cast<byte>(0x80));
+    while this.bufferLength != SHA512_LENGTH_OFFSET {
+        this.appendRawByte(cast<byte>(0));
+    }
+
+    // Append the message length as a big-endian 128 bit value, which completes the last block.
+    // Only its lower 64 bits can ever be populated, so the upper half is always zero.
+    for int i = 0; i < 8; i++ {
+        this.appendRawByte(cast<byte>(0));
+    }
+    for int i = 7; i >= 0; i-- {
+        this.appendRawByte(cast<byte>(cast<int>((messageBits >> (i * 8)) & 0xFFl)));
+    }
+
+    // Serialize the state as big-endian words
+    for unsigned long i = 0l; i < 8l; i++ {
+        const unsigned long word = this.state[i];
+        const unsigned long offset = i * 8l;
+        for unsigned long b = 0l; b < 8l; b++ {
+            const int shift = cast<int>((7l - b) * 8l);
+            digest[offset + b] = cast<byte>(cast<int>((word >> shift) & 0xFFl));
+        }
+    }
+
+    // Leave the hasher ready for the next message
+    this.reset();
+}
+
+/**
+ * Complete the digest and return it as a lowercase hex string.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @return Digest as 128 lowercase hex chars
+ */
+public f<String> Sha512.finalize() {
+    byte[64] digest;
+    this.finalizeInto(digest);
+    return toHexString(digest, SHA512_DIGEST_SIZE);
+}
+
+/**
+ * Retrieve the number of bytes a SHA-512 digest occupies
+ *
+ * @return Digest size in bytes
+ */
+public inline f<unsigned long> Sha512.getDigestSize() {
+    return SHA512_DIGEST_SIZE;
+}
+
+/**
+ * Retrieve the number of bytes SHA-512 consumes per compression step
+ *
+ * @return Block size in bytes
+ */
+public inline f<unsigned long> Sha512.getBlockSize() {
+    return SHA512_BLOCK_SIZE;
+}
+
+/**
+ * Buffer a single message byte and compress the block as soon as it is complete
+ */
+inline p Sha512.appendRawByte(byte value) {
+    this.buffer[this.bufferLength] = value;
+    this.bufferLength++;
+    if this.bufferLength == SHA512_BLOCK_SIZE {
+        this.compressBlock();
+        this.bufferLength = 0l;
+    }
+}
+
+/**
+ * Mix the 128 buffered bytes into the chaining state
+ */
+p Sha512.compressBlock() {
+    // Per-round constants: the fractional parts of the cube roots of the first 80 primes
+    const unsigned long[80] k = [
+        0x428a2f98d728ae22ul, 0x7137449123ef65cdul,
+        0xb5c0fbcfec4d3b2ful, 0xe9b5dba58189dbbcul,
+        0x3956c25bf348b538ul, 0x59f111f1b605d019ul,
+        0x923f82a4af194f9bul, 0xab1c5ed5da6d8118ul,
+        0xd807aa98a3030242ul, 0x12835b0145706fbeul,
+        0x243185be4ee4b28cul, 0x550c7dc3d5ffb4e2ul,
+        0x72be5d74f27b896ful, 0x80deb1fe3b1696b1ul,
+        0x9bdc06a725c71235ul, 0xc19bf174cf692694ul,
+        0xe49b69c19ef14ad2ul, 0xefbe4786384f25e3ul,
+        0x0fc19dc68b8cd5b5ul, 0x240ca1cc77ac9c65ul,
+        0x2de92c6f592b0275ul, 0x4a7484aa6ea6e483ul,
+        0x5cb0a9dcbd41fbd4ul, 0x76f988da831153b5ul,
+        0x983e5152ee66dfabul, 0xa831c66d2db43210ul,
+        0xb00327c898fb213ful, 0xbf597fc7beef0ee4ul,
+        0xc6e00bf33da88fc2ul, 0xd5a79147930aa725ul,
+        0x06ca6351e003826ful, 0x142929670a0e6e70ul,
+        0x27b70a8546d22ffcul, 0x2e1b21385c26c926ul,
+        0x4d2c6dfc5ac42aedul, 0x53380d139d95b3dful,
+        0x650a73548baf63deul, 0x766a0abb3c77b2a8ul,
+        0x81c2c92e47edaee6ul, 0x92722c851482353bul,
+        0xa2bfe8a14cf10364ul, 0xa81a664bbc423001ul,
+        0xc24b8b70d0f89791ul, 0xc76c51a30654be30ul,
+        0xd192e819d6ef5218ul, 0xd69906245565a910ul,
+        0xf40e35855771202aul, 0x106aa07032bbd1b8ul,
+        0x19a4c116b8d2d0c8ul, 0x1e376c085141ab53ul,
+        0x2748774cdf8eeb99ul, 0x34b0bcb5e19b48a8ul,
+        0x391c0cb3c5c95a63ul, 0x4ed8aa4ae3418acbul,
+        0x5b9cca4f7763e373ul, 0x682e6ff3d6b2b8a3ul,
+        0x748f82ee5defb2fcul, 0x78a5636f43172f60ul,
+        0x84c87814a1f0ab72ul, 0x8cc702081a6439ecul,
+        0x90befffa23631e28ul, 0xa4506cebde82bde9ul,
+        0xbef9a3f7b2c67915ul, 0xc67178f2e372532bul,
+        0xca273eceea26619cul, 0xd186b8c721c0c207ul,
+        0xeada7dd6cde0eb1eul, 0xf57d4f7fee6ed178ul,
+        0x06f067aa72176fbaul, 0x0a637dc5a2c898a6ul,
+        0x113f9804bef90daeul, 0x1b710b35131c471bul,
+        0x28db77f523047d84ul, 0x32caab7b40c72493ul,
+        0x3c9ebe0a15c9bebcul, 0x431d67c49c100d4cul,
+        0x4cc5d4becb3e42b6ul, 0x597f299cfc657e2aul,
+        0x5fcb6fab3ad6faecul, 0x6c44198c4a475817ul
+    ];
+
+    // Decode the block into 16 big-endian words and expand them to the full 80 word schedule
+    unsigned long[80] w;
+    for unsigned long i = 0l; i < 16l; i++ {
+        const unsigned long offset = i * 8l;
+        unsigned long word = 0l;
+        for unsigned long b = 0l; b < 8l; b++ {
+            word = word << 8;
+            word |= cast<unsigned long>(cast<unsigned int>(this.buffer[offset + b]));
+        }
+        w[i] = word;
+    }
+    for unsigned long i = 16l; i < 80l; i++ {
+        const unsigned long prev15 = w[i - 15l];
+        const unsigned long prev2 = w[i - 2l];
+        const unsigned long smallSigma0 = (rotateRight64(prev15, 1) ^ rotateRight64(prev15, 8)) ^ (prev15 >> 7);
+        const unsigned long smallSigma1 = (rotateRight64(prev2, 19) ^ rotateRight64(prev2, 61)) ^ (prev2 >> 6);
+        unsigned long next = w[i - 16l];
+        next += smallSigma0;
+        next += w[i - 7l];
+        next += smallSigma1;
+        w[i] = next;
+    }
+
+    // The working variables are named 'va' .. 'vh' instead of 'a' .. 'h',
+    // because 'f' is a reserved keyword in Spice
+    unsigned long va = this.state[0];
+    unsigned long vb = this.state[1];
+    unsigned long vc = this.state[2];
+    unsigned long vd = this.state[3];
+    unsigned long ve = this.state[4];
+    unsigned long vf = this.state[5];
+    unsigned long vg = this.state[6];
+    unsigned long vh = this.state[7];
+
+    for unsigned long i = 0l; i < 80l; i++ {
+        const unsigned long bigSigma1 = (rotateRight64(ve, 14) ^ rotateRight64(ve, 18)) ^ rotateRight64(ve, 41);
+        const unsigned long choose = (ve & vf) ^ (~ve & vg);
+        unsigned long temp1 = vh;
+        temp1 += bigSigma1;
+        temp1 += choose;
+        temp1 += k[i];
+        temp1 += w[i];
+
+        const unsigned long bigSigma0 = (rotateRight64(va, 28) ^ rotateRight64(va, 34)) ^ rotateRight64(va, 39);
+        const unsigned long majority = ((va & vb) ^ (va & vc)) ^ (vb & vc);
+        unsigned long temp2 = bigSigma0;
+        temp2 += majority;
+
+        vh = vg;
+        vg = vf;
+        vf = ve;
+        ve = vd;
+        ve += temp1;
+        vd = vc;
+        vc = vb;
+        vb = va;
+        va = temp1;
+        va += temp2;
+    }
+
+    this.state[0] += va;
+    this.state[1] += vb;
+    this.state[2] += vc;
+    this.state[3] += vd;
+    this.state[4] += ve;
+    this.state[5] += vf;
+    this.state[6] += vg;
+    this.state[7] += vh;
+}
+
+/**
+ * Compute the SHA-512 digest of the given raw string
+ *
+ * @param input String to hash
+ * @return Digest as 128 lowercase hex chars
+ */
+public f<String> sha512(string input) {
+    Sha512 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-512 digest of the given string
+ *
+ * @param input String to hash
+ * @return Digest as 128 lowercase hex chars
+ */
+public f<String> sha512(const String& input) {
+    Sha512 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-512 digest of the given raw bytes
+ *
+ * @param input Bytes to hash
+ * @param length Number of bytes to hash
+ * @return Digest as 128 lowercase hex chars
+ */
+public f<String> sha512(const byte[] input, unsigned long length) {
+    Sha512 hasher;
+    hasher.update(input, length);
+    return hasher.finalize();
+}

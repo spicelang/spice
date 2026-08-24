@@ -34,6 +34,22 @@ Spice bindings for common external libraries, allowing them to be called from Sp
 | `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.     |
 | `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.   |
 
+### `std/crypto`
+Cryptographic hash functions that turn a message of any length into a fixed-size digest.
+
+| Module   | Description                                                              |
+|----------|--------------------------------------------------------------------------|
+| `sha256` | SHA-256 (FIPS 180-4). The recommended general purpose hash.              |
+| `sha512` | SHA-512 (FIPS 180-4). Same construction on 64 bit words.                 |
+| `sha1`   | SHA-1 (RFC 3174). Broken; for interoperability with legacy formats only. |
+| `md5`    | MD5 (RFC 1321). Broken; for interoperability with legacy formats only.   |
+| `digest` | Hex rendering of raw digests plus the shared word rotation helpers.      |
+
+Every module offers both a one-shot function (e.g. `sha256("abc")`) and an incremental hasher
+struct (e.g. `Sha256`) that consumes a message chunk by chunk. SHA-1 and MD5 are known to be
+collision-prone - never base a security decision on them. Note that none of these hashes is
+suitable for password storage, which needs a deliberately slow, salted key derivation function.
+
 ### `std/data`
 Common data structures for organizing and storing data.
 

@@ -1,0 +1,66 @@
+// Std imports
+import "std/crypto/sha512";
+import "std/crypto/digest";
+
+/**
+ * Print a labeled digest
+ */
+p printDigest(string label, const String& digest) {
+    printf("%s: %s\n", label, digest.getRaw());
+}
+
+f<int> main() {
+    // Well-known test vectors
+    printDigest("empty", sha512(""));
+    printDigest("abc", sha512("abc"));
+    printDigest("message digest", sha512("message digest"));
+    printDigest("alphabet", sha512("abcdefghijklmnopqrstuvwxyz"));
+    printDigest("alphanumeric", sha512("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"));
+    printDigest("fox", sha512("The quick brown fox jumps over the lazy dog"));
+
+    // Inputs that straddle the block and padding boundaries
+    String filler;
+    for int i = 0; i < 129; i++ {
+        filler.append('a');
+    }
+    printDigest("55 bytes", sha512(filler.getSubstring(0, 55l)));
+    printDigest("56 bytes", sha512(filler.getSubstring(0, 56l)));
+    printDigest("63 bytes", sha512(filler.getSubstring(0, 63l)));
+    printDigest("64 bytes", sha512(filler.getSubstring(0, 64l)));
+    printDigest("65 bytes", sha512(filler.getSubstring(0, 65l)));
+    printDigest("111 bytes", sha512(filler.getSubstring(0, 111l)));
+    printDigest("112 bytes", sha512(filler.getSubstring(0, 112l)));
+    printDigest("127 bytes", sha512(filler.getSubstring(0, 127l)));
+    printDigest("128 bytes", sha512(filler.getSubstring(0, 128l)));
+    printDigest("129 bytes", sha512(filler.getSubstring(0, 129l)));
+
+    // Feeding the message in chunks has to produce the same digest as hashing it in one go
+    Sha512 streaming;
+    streaming.update("The quick brown ");
+    streaming.update("fox jumps over ");
+    streaming.update("the lazy dog");
+    printDigest("streamed", streaming.finalize());
+
+    // Raw bytes, including a null byte that a raw string could not carry
+    byte[4] rawBytes;
+    rawBytes[0] = cast<byte>(0x00);
+    rawBytes[1] = cast<byte>(0x01);
+    rawBytes[2] = cast<byte>(0xfe);
+    rawBytes[3] = cast<byte>(0xff);
+    printDigest("raw bytes", sha512(rawBytes, 4l));
+
+    // Finalizing resets the hasher, so the same instance can digest the next message right away
+    Sha512 reused;
+    reused.update("abc");
+    printDigest("reused 1", reused.finalize());
+    reused.update("abc");
+    printDigest("reused 2", reused.finalize());
+
+    // The raw digest bytes can be retrieved instead of the hex representation
+    Sha512 rawDigestHasher;
+    rawDigestHasher.update("abc");
+    byte[64] digest;
+    rawDigestHasher.finalizeInto(digest);
+    printDigest("finalizeInto", toHexString(digest, rawDigestHasher.getDigestSize()));
+    printf("Block size: %lu\n", rawDigestHasher.getBlockSize());
+}
