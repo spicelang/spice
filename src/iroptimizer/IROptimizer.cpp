@@ -8,6 +8,7 @@
 
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
 #include <llvm/Transforms/Instrumentation/AddressSanitizer.h>
+#include <llvm/Transforms/Instrumentation/GCOVProfiler.h>
 #include <llvm/Transforms/Instrumentation/MemorySanitizer.h>
 #include <llvm/Transforms/Instrumentation/ThreadSanitizer.h>
 #include <llvm/Transforms/Instrumentation/TypeSanitizer.h>
@@ -46,6 +47,7 @@ void IROptimizer::optimizeDefault() {
 
   // Add optional passes
   addInstrumentationPassToPipeline(modulePassMgr);
+  addCoveragePassToPipeline(modulePassMgr);
 
   // Run pipeline
   modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
@@ -117,6 +119,12 @@ void IROptimizer::addInstrumentationPassToPipeline(llvm::ModulePassManager &modu
     break;
   }
   }
+}
+
+void IROptimizer::addCoveragePassToPipeline(llvm::ModulePassManager &modulePassMgr) const {
+  if (!cliOptions.instrumentation.codeCoverage)
+    return;
+  modulePassMgr.addPass(llvm::GCOVProfilerPass(llvm::GCOVOptions::getDefault()));
 }
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {

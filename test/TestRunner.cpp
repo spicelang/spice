@@ -128,6 +128,7 @@ static void execTestCase(const TestCase &testCase) {
       /* staticLinking= */ false,
       CliOptions::InstrumentationSettings{
           /* generateDebugInfo= */ false,
+          /* codeCoverage= */ false,
           /* sanitizer= */ Sanitizer::NONE,
       },
       /* disableVerifier= */ false,
@@ -136,7 +137,7 @@ static void execTestCase(const TestCase &testCase) {
       /* buildVars= */ {},
   };
   static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
-  static_assert(sizeof(CliOptions::InstrumentationSettings) == 2, "CliOptions::InstrumentationSettings struct size changed");
+  static_assert(sizeof(CliOptions::InstrumentationSettings) == 3, "CliOptions::InstrumentationSettings struct size changed");
 #if defined(__clang__) && defined(__apple_build_version__)
   // some std types for Apple Clang are smaller than for GCC and Clang
   static_assert(sizeof(CliOptions) == 312, "CliOptions struct size changed");

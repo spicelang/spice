@@ -169,6 +169,13 @@ void Driver::enrich() const {
   if (sanitizer == Sanitizer::TYPE)
     cliOptions.useTBAAMetadata = true;
 
+  // Code coverage instrumentation needs debug info to map counters back to source locations
+  if (cliOptions.instrumentation.codeCoverage) {
+    cliOptions.instrumentation.generateDebugInfo = true;
+    if (cliOptions.useLTO)
+      throw CliError(INCOMPATIBLE_OPTIONS, "Code coverage instrumentation is not supported in combination with LTO");
+  }
+
   // Infer build vars from other options
   const auto boolToString = [](bool input) { return input ? "true" : "false"; };
   cliOptions.buildVars["spice.is_debug"] = boolToString(cliOptions.buildMode == BuildMode::DEBUG);
@@ -187,6 +194,8 @@ void Driver::enrich() const {
   if (cliOptions.backend == Backend::TPDE) {
     if (cliOptions.useLTO)
       throw CliError(INCOMPATIBLE_OPTIONS, "The TPDE backend does not support LTO");
+    if (cliOptions.instrumentation.codeCoverage)
+      throw CliError(INCOMPATIBLE_OPTIONS, "The TPDE backend does not support code coverage instrumentation");
     if (!cliOptions.targetTriple.isOSLinux())
       throw CliError(FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports ELF targets (Linux)");
     const llvm::Triple::ArchType arch = cliOptions.targetTriple.getArch();
@@ -493,6 +502,9 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
   // --sanitizer
   subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
+  // --coverage
+  subCmd->add_flag<bool>("--coverage", cliOptions.instrumentation.codeCoverage,
+                         "Instrument code for coverage analysis (gcov-compatible .gcno/.gcda output)");
 }
 
 /**

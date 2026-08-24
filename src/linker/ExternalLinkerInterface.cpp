@@ -52,6 +52,10 @@ void ExternalLinkerInterface::prepare() {
     break;
   }
 
+  // Code coverage
+  if (cliOptions.instrumentation.codeCoverage)
+    addLinkerFlag("--coverage");
+
   // Web Assembly
   if (cliOptions.targetTriple.isWasm()) {
     addLinkerFlag("-nostdlib");

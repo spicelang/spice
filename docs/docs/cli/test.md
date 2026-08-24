@@ -39,6 +39,7 @@ You can apply following options to the `test` subcommand:
 | `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc.                                                             |
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                                           |
 | -            | `--sanitize`              | Enable instrumentation for sanitizer. <br> Valid values: `none` (default), `address`, `thread`, `memory` and `type`. |
+| -            | `--coverage`              | Instrument code for coverage analysis (gcov-compatible `.gcno`/`.gcda` output). Implies `--debug-info` and is incompatible with `-lto`. |
 | -            | `--disable-verifier`      | Disable LLVM module and function verification (only recommended for debugging the compiler)                          |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                                          |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |
