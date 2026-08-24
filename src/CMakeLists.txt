@@ -70,6 +70,10 @@ set(SOURCES
         typechecker/InterfaceManager.cpp
         typechecker/TypeMatcher.cpp
         typechecker/PostTypeCheckingVerifier.cpp
+        # Linter
+        linter/LintFinding.cpp
+        linter/LintPass.cpp
+        linter/rules/NamingConventionRule.cpp
         # Dependency graph visualizer
         visualizer/DependencyGraphVisualizer.cpp
         # IR generator
