@@ -16,12 +16,13 @@ namespace spice::compiler {
  */
 class NamingConventionRule final : public LintRule {
 public:
-  [[nodiscard]] std::string_view id() const override { return "naming-convention"; }
+  [[nodiscard]] constexpr std::string_view id() const override { return "naming-convention"; }
 
   void checkFctDef(FctDefNode *node, std::vector<LintFinding> &findings) override;
   void checkProcDef(ProcDefNode *node, std::vector<LintFinding> &findings) override;
   void checkStructDef(StructDefNode *node, std::vector<LintFinding> &findings) override;
   void checkInterfaceDef(InterfaceDefNode *node, std::vector<LintFinding> &findings) override;
+  void checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) override;
 };
 
 } // namespace spice::compiler

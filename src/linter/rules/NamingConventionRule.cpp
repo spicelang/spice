@@ -11,23 +11,31 @@ namespace spice::compiler {
 /**
  * Check whether an identifier is written in camelCase (starts lowercase, no underscores)
  *
- * @param identifier Identifier to check
+ * @param input Identifier to check
  * @return True if the identifier is camelCase
  */
-static bool isCamelCase(const std::string &identifier) {
-  return !identifier.empty() && (std::islower(static_cast<unsigned char>(identifier.front())) != 0) &&
-         identifier.find('_') == std::string::npos;
+static bool isCamelCase(const std::string &input) {
+  return !input.empty() && std::islower(static_cast<unsigned char>(input.front())) != 0 && !input.contains('_');
 }
 
 /**
  * Check whether an identifier is written in PascalCase (starts uppercase, no underscores)
  *
- * @param identifier Identifier to check
+ * @param input Identifier to check
  * @return True if the identifier is PascalCase
  */
-static bool isPascalCase(const std::string &identifier) {
-  return !identifier.empty() && (std::isupper(static_cast<unsigned char>(identifier.front())) != 0) &&
-         identifier.find('_') == std::string::npos;
+static bool isPascalCase(const std::string &input) {
+  return !input.empty() && std::isupper(static_cast<unsigned char>(input.front())) != 0 && !input.contains('_');
+}
+
+/**
+ * Check whether an identifier is written in SNAKE_CASE (all uppercase, underscores)
+ *
+ * @param input Identifier to check
+ * @return True if the identifier is SNAKE_CASE
+ */
+static bool isSnakeCase(const std::string &input) {
+  return !input.empty() && std::ranges::all_of(input, [](unsigned char c) { return std::isupper(c) || c == '_'; });
 }
 
 void NamingConventionRule::checkFctDef(FctDefNode *node, std::vector<LintFinding> &findings) {
@@ -58,6 +66,12 @@ void NamingConventionRule::checkInterfaceDef(InterfaceDefNode *node, std::vector
   if (!isPascalCase(node->interfaceName))
     findings.emplace_back(node->codeLoc, id(), LintSeverity::WARNING,
                           "Interface name '" + node->interfaceName + "' should be PascalCase");
+}
+
+void NamingConventionRule::checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) {
+  if (!isSnakeCase(node->varName))
+    findings.emplace_back(node->codeLoc, id(), LintSeverity::WARNING,
+                          "Global variable name '" + node->varName + "' should be SNAKE_CASE");
 }
 
 } // namespace spice::compiler

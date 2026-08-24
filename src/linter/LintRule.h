@@ -14,6 +14,7 @@ class FctDefNode;
 class ProcDefNode;
 class StructDefNode;
 class InterfaceDefNode;
+class GlobalVarDefNode;
 
 /**
  * Base class for a single lint rule.
@@ -28,13 +29,14 @@ public:
   virtual ~LintRule() = default;
 
   // Rule identity
-  [[nodiscard]] virtual std::string_view id() const = 0;
+  [[nodiscard]] constexpr virtual std::string_view id() const = 0;
 
   // Check hooks. Default to no-op; override only the ones relevant for this rule.
   virtual void checkFctDef(FctDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkProcDef(ProcDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkStructDef(StructDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkInterfaceDef(InterfaceDefNode *node, std::vector<LintFinding> &findings) {}
+  virtual void checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) {}
 };
 
 } // namespace spice::compiler

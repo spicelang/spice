@@ -17,8 +17,7 @@ namespace spice::compiler {
  * @param severity Severity of the finding
  * @param message Finding message suffix
  */
-LintFinding::LintFinding(const CodeLoc &codeLoc, const std::string_view ruleId, const LintSeverity severity,
-                         const std::string &message)
+LintFinding::LintFinding(const CodeLoc &codeLoc, const std::string_view ruleId, const LintSeverity severity, const std::string &message)
     : ruleId(ruleId), severity(severity) {
   findingMessage = "[" + std::string(getSeverityLabel(severity)) + "] " + codeLoc.toPrettyString() + ": " + this->ruleId + ": " + message;
 }
@@ -27,7 +26,7 @@ LintFinding::LintFinding(const CodeLoc &codeLoc, const std::string_view ruleId, 
  * Print the lint finding to standard output
  */
 void LintFinding::print() const {
-  const char *color = "\033[36m"; // INFO: cyan
+  auto color = "\033[36m"; // INFO: cyan
   if (severity == LintSeverity::WARNING)
     color = "\033[33m"; // yellow
   else if (severity == LintSeverity::ERROR)

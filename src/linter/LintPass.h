@@ -27,12 +27,12 @@ public:
   // Public methods
   std::vector<LintFinding> lint(ASTNode *ast);
 
-private:
   // Visitor methods
   std::any visitFctDef(FctDefNode *node) override;
   std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
+  std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
 
   // Members
   std::vector<std::unique_ptr<LintRule>> rules;
