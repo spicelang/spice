@@ -1,0 +1,69 @@
+import "std/os/allocator";
+
+f<int> main() {
+    // 1. Basic allocate/free on a fresh pool
+    Allocator alloc = Allocator(1024u);
+    Allocation a1 = alloc.allocate(100u);
+    assert a1.offset == 0u;
+    Allocation a2 = alloc.allocate(200u);
+    assert a2.offset == 100u; // packed right after a1, no fragmentation yet
+
+    StorageReport afterTwo = alloc.getStorageReport();
+    assert afterTwo.totalFreeSpace == 1024u - 100u - 200u;
+
+    // 2. Freeing the earlier allocation must not disturb the later one, and must not
+    //    coalesce with it either, since a2 still sits physically in between.
+    alloc.free(a1);
+    StorageReport afterFreeA1 = alloc.getStorageReport();
+    assert afterFreeA1.totalFreeSpace == 1024u - 200u;
+
+    // 3. Freeing everything must fully coalesce back to the original size
+    alloc.free(a2);
+    StorageReport afterFreeAll = alloc.getStorageReport();
+    assert afterFreeAll.totalFreeSpace == 1024u;
+    assert afterFreeAll.largestFreeRegion <= 1024u;
+
+    // 4. A fresh allocation reuses the fully-coalesced pool from offset 0 again
+    Allocation a3 = alloc.allocate(50u);
+    assert a3.offset == 0u;
+    alloc.free(a3);
+
+    // 5. getStorageReportFull() reports the whole pool as one free region somewhere
+    StorageReportFull full = alloc.getStorageReportFull();
+    unsigned long totalCount = 0ul;
+    for unsigned int i = 0u; i < 256u; i++ {
+        totalCount += cast<unsigned long>(full.freeRegions[i].count);
+    }
+    assert totalCount == 1ul;
+
+    // 6. Exhaustion: requesting more than the pool has left must fail with the NO_SPACE sentinel.
+    //    The bin-based search is approximate (it rounds the request size up to a bin boundary before
+    //    searching, while free regions are filed rounded down), so a request landing almost exactly on
+    //    the remaining free space can spuriously fail to find a technically-fitting region. Requesting
+    //    clearly more than what is left (60 out of the 40 remaining) avoids that ambiguity.
+    Allocator tiny = Allocator(100u);
+    Allocation t1 = tiny.allocate(60u);
+    assert t1.offset == 0u;
+    Allocation t2 = tiny.allocate(60u); // only 40 bytes remain; 60 clearly does not fit
+    assert t2.offset == 0xffffffffu;
+    tiny.free(t1);
+
+    // 7. Copy ctor and operator= produce independent bookkeeping storage
+    Allocator original = Allocator(256u);
+    Allocation o1 = original.allocate(64u);
+    Allocator cloneByCtor = Allocator(original);
+    Allocation cloneAlloc = cloneByCtor.allocate(64u);
+    assert cloneAlloc.offset == 64u; // independent of original's own remaining space
+    StorageReport originalReportAfterClone = original.getStorageReport();
+    assert originalReportAfterClone.totalFreeSpace == 256u - 64u; // untouched by the clone's allocation
+
+    Allocator assigned = Allocator(16u);
+    assigned = original;
+    Allocation assignedAlloc = assigned.allocate(64u);
+    assert assignedAlloc.offset == 64u;
+
+    original.free(o1);
+
+    printf("Allocator smoke tests passed!\n");
+    return 0;
+}
