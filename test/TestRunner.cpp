@@ -518,6 +518,7 @@ INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil:
 
 class LinterTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(LinterTests, ) { execLinterTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", true)), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
+                         TestUtil::NameResolver());
 
 } // namespace spice::testing
