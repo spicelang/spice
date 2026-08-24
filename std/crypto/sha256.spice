@@ -1,0 +1,309 @@
+// Std imports
+import "std/crypto/digest";
+
+// Constants
+const unsigned long SHA256_BLOCK_SIZE = 64l;    // Input block size in bytes; keep in sync with the buffer field
+const unsigned long SHA256_DIGEST_SIZE = 32l;   // Digest size in bytes; keep in sync with the arrays passed to finalizeInto
+const unsigned long SHA256_LENGTH_OFFSET = 56l; // Offset of the 8 byte length field within the last block
+
+/**
+ * SHA-256 message digest, as specified in FIPS 180-4.
+ *
+ * SHA-256 is the go-to general purpose cryptographic hash of this package: no collision or preimage
+ * attacks against it are known. Note that a plain hash is still the wrong tool for password storage,
+ * which needs a deliberately slow, salted key derivation function.
+ *
+ * The digest is computed incrementally, so arbitrarily large messages can be fed in chunk by chunk:
+ *
+ * ```spice
+ * Sha256 hasher;
+ * hasher.update("Hello, ");
+ * hasher.update("World!");
+ * // dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f
+ * printf("%s\n", hasher.finalize().getRaw());
+ * ```
+ *
+ * For one-shot use, the free `sha256` functions wrap the same steps in a single call.
+ */
+public type Sha256 struct {
+    unsigned int[8] state           // Chaining state (h0 .. h7)
+    byte[64] buffer                 // Bytes of the block that is currently being filled
+    unsigned long bufferLength = 0l // Number of bytes currently held in the buffer
+    unsigned long totalLength = 0l  // Number of message bytes consumed so far
+}
+
+/**
+ * Construct a hasher that is ready to consume the first message byte
+ */
+public p Sha256.ctor() {
+    this.reset();
+}
+
+/**
+ * Discard any consumed input and return to the initial state, ready for a new message
+ */
+public p Sha256.reset() {
+    // Initial state: the fractional parts of the square roots of the first 8 primes
+    this.state[0] = 0x6a09e667u;
+    this.state[1] = 0xbb67ae85u;
+    this.state[2] = 0x3c6ef372u;
+    this.state[3] = 0xa54ff53au;
+    this.state[4] = 0x510e527fu;
+    this.state[5] = 0x9b05688cu;
+    this.state[6] = 0x1f83d9abu;
+    this.state[7] = 0x5be0cd19u;
+    this.bufferLength = 0l;
+    this.totalLength = 0l;
+}
+
+/**
+ * Feed the given raw bytes into the digest
+ *
+ * @param data Bytes to consume
+ * @param length Number of bytes to consume
+ */
+public p Sha256.update(const byte[] data, unsigned long length) {
+    for unsigned long i = 0l; i < length; i++ {
+        this.appendRawByte(data[i]);
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Feed the chars of the given raw string into the digest, excluding the null terminator
+ *
+ * @param data String to consume
+ */
+public p Sha256.update(string data) {
+    unsafe {
+        const char* current = cast<const char*>(data);
+        while *current != '\0' {
+            this.appendRawByte(cast<byte>(*current));
+            this.totalLength++;
+            current++;
+        }
+    }
+}
+
+/**
+ * Feed the chars of the given string into the digest
+ *
+ * @param data String to consume
+ */
+public p Sha256.update(const String& data) {
+    const unsigned long length = data.getLength();
+    unsafe {
+        const char* current = cast<const char*>(data.getRaw());
+        for unsigned long i = 0l; i < length; i++ {
+            this.appendRawByte(cast<byte>(current[i]));
+        }
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Complete the digest and write its 32 raw bytes to the given output array.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @param digest Output array, that has to offer room for at least 32 bytes
+ */
+public p Sha256.finalizeInto(byte[] digest) {
+    // Capture the message length in bits, before the padding is appended
+    const unsigned long messageBits = this.totalLength * 8l;
+
+    // Append the mandatory 0x80 byte, followed by zeroes until only the length field is missing
+    this.appendRawByte(cast<byte>(0x80));
+    while this.bufferLength != SHA256_LENGTH_OFFSET {
+        this.appendRawByte(cast<byte>(0));
+    }
+
+    // Append the message length as a big-endian 64 bit value, which completes the last block
+    for int i = 7; i >= 0; i-- {
+        this.appendRawByte(cast<byte>(cast<int>((messageBits >> (i * 8)) & 0xFFl)));
+    }
+
+    // Serialize the state as big-endian words
+    for unsigned long i = 0l; i < 8l; i++ {
+        const unsigned int word = this.state[i];
+        const unsigned long offset = i * 4l;
+        digest[offset] = cast<byte>((word >> 24) & 0xFFu);
+        digest[offset + 1l] = cast<byte>((word >> 16) & 0xFFu);
+        digest[offset + 2l] = cast<byte>((word >> 8) & 0xFFu);
+        digest[offset + 3l] = cast<byte>(word & 0xFFu);
+    }
+
+    // Leave the hasher ready for the next message
+    this.reset();
+}
+
+/**
+ * Complete the digest and return it as a lowercase hex string.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @return Digest as 64 lowercase hex chars
+ */
+public f<String> Sha256.finalize() {
+    byte[32] digest;
+    this.finalizeInto(digest);
+    return toHexString(digest, SHA256_DIGEST_SIZE);
+}
+
+/**
+ * Retrieve the number of bytes a SHA-256 digest occupies
+ *
+ * @return Digest size in bytes
+ */
+public inline f<unsigned long> Sha256.getDigestSize() {
+    return SHA256_DIGEST_SIZE;
+}
+
+/**
+ * Retrieve the number of bytes SHA-256 consumes per compression step
+ *
+ * @return Block size in bytes
+ */
+public inline f<unsigned long> Sha256.getBlockSize() {
+    return SHA256_BLOCK_SIZE;
+}
+
+/**
+ * Buffer a single message byte and compress the block as soon as it is complete
+ */
+inline p Sha256.appendRawByte(byte value) {
+    this.buffer[this.bufferLength] = value;
+    this.bufferLength++;
+    if this.bufferLength == SHA256_BLOCK_SIZE {
+        this.compressBlock();
+        this.bufferLength = 0l;
+    }
+}
+
+/**
+ * Mix the 64 buffered bytes into the chaining state
+ */
+p Sha256.compressBlock() {
+    // Per-round constants: the fractional parts of the cube roots of the first 64 primes
+    const unsigned int[64] k = [
+        0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u,
+        0x3956c25bu, 0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u,
+        0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u,
+        0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u,
+        0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
+        0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
+        0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
+        0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u,
+        0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu, 0x53380d13u,
+        0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
+        0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u,
+        0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u,
+        0x19a4c116u, 0x1e376c08u, 0x2748774cu, 0x34b0bcb5u,
+        0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
+        0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
+        0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u
+    ];
+
+    // Decode the block into 16 big-endian words and expand them to the full 64 word schedule
+    unsigned int[64] w;
+    for unsigned long i = 0l; i < 16l; i++ {
+        const unsigned long offset = i * 4l;
+        unsigned int word = cast<unsigned int>(this.buffer[offset]) << 24;
+        word |= cast<unsigned int>(this.buffer[offset + 1l]) << 16;
+        word |= cast<unsigned int>(this.buffer[offset + 2l]) << 8;
+        word |= cast<unsigned int>(this.buffer[offset + 3l]);
+        w[i] = word;
+    }
+    for unsigned long i = 16l; i < 64l; i++ {
+        const unsigned int prev15 = w[i - 15l];
+        const unsigned int prev2 = w[i - 2l];
+        const unsigned int smallSigma0 = (rotateRight32(prev15, 7) ^ rotateRight32(prev15, 18)) ^ (prev15 >> 3);
+        const unsigned int smallSigma1 = (rotateRight32(prev2, 17) ^ rotateRight32(prev2, 19)) ^ (prev2 >> 10);
+        unsigned int next = w[i - 16l];
+        next += smallSigma0;
+        next += w[i - 7l];
+        next += smallSigma1;
+        w[i] = next;
+    }
+
+    // The working variables are named 'va' .. 'vh' instead of 'a' .. 'h',
+    // because 'f' is a reserved keyword in Spice
+    unsigned int va = this.state[0];
+    unsigned int vb = this.state[1];
+    unsigned int vc = this.state[2];
+    unsigned int vd = this.state[3];
+    unsigned int ve = this.state[4];
+    unsigned int vf = this.state[5];
+    unsigned int vg = this.state[6];
+    unsigned int vh = this.state[7];
+
+    for unsigned long i = 0l; i < 64l; i++ {
+        const unsigned int bigSigma1 = (rotateRight32(ve, 6) ^ rotateRight32(ve, 11)) ^ rotateRight32(ve, 25);
+        const unsigned int choose = (ve & vf) ^ (~ve & vg);
+        unsigned int temp1 = vh;
+        temp1 += bigSigma1;
+        temp1 += choose;
+        temp1 += k[i];
+        temp1 += w[i];
+
+        const unsigned int bigSigma0 = (rotateRight32(va, 2) ^ rotateRight32(va, 13)) ^ rotateRight32(va, 22);
+        const unsigned int majority = ((va & vb) ^ (va & vc)) ^ (vb & vc);
+        unsigned int temp2 = bigSigma0;
+        temp2 += majority;
+
+        vh = vg;
+        vg = vf;
+        vf = ve;
+        ve = vd;
+        ve += temp1;
+        vd = vc;
+        vc = vb;
+        vb = va;
+        va = temp1;
+        va += temp2;
+    }
+
+    this.state[0] += va;
+    this.state[1] += vb;
+    this.state[2] += vc;
+    this.state[3] += vd;
+    this.state[4] += ve;
+    this.state[5] += vf;
+    this.state[6] += vg;
+    this.state[7] += vh;
+}
+
+/**
+ * Compute the SHA-256 digest of the given raw string
+ *
+ * @param input String to hash
+ * @return Digest as 64 lowercase hex chars
+ */
+public f<String> sha256(string input) {
+    Sha256 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-256 digest of the given string
+ *
+ * @param input String to hash
+ * @return Digest as 64 lowercase hex chars
+ */
+public f<String> sha256(const String& input) {
+    Sha256 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-256 digest of the given raw bytes
+ *
+ * @param input Bytes to hash
+ * @param length Number of bytes to hash
+ * @return Digest as 64 lowercase hex chars
+ */
+public f<String> sha256(const byte[] input, unsigned long length) {
+    Sha256 hasher;
+    hasher.update(input, length);
+    return hasher.finalize();
+}

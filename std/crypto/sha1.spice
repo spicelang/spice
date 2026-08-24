@@ -1,0 +1,275 @@
+// Std imports
+import "std/crypto/digest";
+
+// Constants
+const unsigned long SHA1_BLOCK_SIZE = 64l;    // Input block size in bytes; keep in sync with the buffer field
+const unsigned long SHA1_DIGEST_SIZE = 20l;   // Digest size in bytes; keep in sync with the arrays passed to finalizeInto
+const unsigned long SHA1_LENGTH_OFFSET = 56l; // Offset of the 8 byte length field within the last block
+
+/**
+ * SHA-1 message digest, as specified in RFC 3174.
+ *
+ * SHA-1 is considered cryptographically broken: chosen-prefix collisions are computationally
+ * feasible. It is provided for interoperability with existing formats and protocols (git object
+ * ids, legacy certificates, older signature schemes) only. Never use it for new security-relevant
+ * work - reach for `std/crypto/sha256` instead.
+ *
+ * The digest is computed incrementally, so arbitrarily large messages can be fed in chunk by chunk:
+ *
+ * ```spice
+ * Sha1 hasher;
+ * hasher.update("Hello, ");
+ * hasher.update("World!");
+ * printf("%s\n", hasher.finalize().getRaw()); // 0a0a9f2a6772942557ab5355d76af442f8f65e01
+ * ```
+ *
+ * For one-shot use, the free `sha1` functions wrap the same steps in a single call.
+ */
+public type Sha1 struct {
+    unsigned int[5] state           // Chaining state (h0 .. h4)
+    byte[64] buffer                 // Bytes of the block that is currently being filled
+    unsigned long bufferLength = 0l // Number of bytes currently held in the buffer
+    unsigned long totalLength = 0l  // Number of message bytes consumed so far
+}
+
+/**
+ * Construct a hasher that is ready to consume the first message byte
+ */
+public p Sha1.ctor() {
+    this.reset();
+}
+
+/**
+ * Discard any consumed input and return to the initial state, ready for a new message
+ */
+public p Sha1.reset() {
+    this.state[0] = 0x67452301u;
+    this.state[1] = 0xefcdab89u;
+    this.state[2] = 0x98badcfeu;
+    this.state[3] = 0x10325476u;
+    this.state[4] = 0xc3d2e1f0u;
+    this.bufferLength = 0l;
+    this.totalLength = 0l;
+}
+
+/**
+ * Feed the given raw bytes into the digest
+ *
+ * @param data Bytes to consume
+ * @param length Number of bytes to consume
+ */
+public p Sha1.update(const byte[] data, unsigned long length) {
+    for unsigned long i = 0l; i < length; i++ {
+        this.appendRawByte(data[i]);
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Feed the chars of the given raw string into the digest, excluding the null terminator
+ *
+ * @param data String to consume
+ */
+public p Sha1.update(string data) {
+    unsafe {
+        const char* current = cast<const char*>(data);
+        while *current != '\0' {
+            this.appendRawByte(cast<byte>(*current));
+            this.totalLength++;
+            current++;
+        }
+    }
+}
+
+/**
+ * Feed the chars of the given string into the digest
+ *
+ * @param data String to consume
+ */
+public p Sha1.update(const String& data) {
+    const unsigned long length = data.getLength();
+    unsafe {
+        const char* current = cast<const char*>(data.getRaw());
+        for unsigned long i = 0l; i < length; i++ {
+            this.appendRawByte(cast<byte>(current[i]));
+        }
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Complete the digest and write its 20 raw bytes to the given output array.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @param digest Output array, that has to offer room for at least 20 bytes
+ */
+public p Sha1.finalizeInto(byte[] digest) {
+    // Capture the message length in bits, before the padding is appended
+    const unsigned long messageBits = this.totalLength * 8l;
+
+    // Append the mandatory 0x80 byte, followed by zeroes until only the length field is missing
+    this.appendRawByte(cast<byte>(0x80));
+    while this.bufferLength != SHA1_LENGTH_OFFSET {
+        this.appendRawByte(cast<byte>(0));
+    }
+
+    // Append the message length as a big-endian 64 bit value, which completes the last block
+    for int i = 7; i >= 0; i-- {
+        this.appendRawByte(cast<byte>(cast<int>((messageBits >> (i * 8)) & 0xFFl)));
+    }
+
+    // Serialize the state as big-endian words
+    for unsigned long i = 0l; i < 5l; i++ {
+        const unsigned int word = this.state[i];
+        const unsigned long offset = i * 4l;
+        digest[offset] = cast<byte>((word >> 24) & 0xFFu);
+        digest[offset + 1l] = cast<byte>((word >> 16) & 0xFFu);
+        digest[offset + 2l] = cast<byte>((word >> 8) & 0xFFu);
+        digest[offset + 3l] = cast<byte>(word & 0xFFu);
+    }
+
+    // Leave the hasher ready for the next message
+    this.reset();
+}
+
+/**
+ * Complete the digest and return it as a lowercase hex string.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @return Digest as 40 lowercase hex chars
+ */
+public f<String> Sha1.finalize() {
+    byte[20] digest;
+    this.finalizeInto(digest);
+    return toHexString(digest, SHA1_DIGEST_SIZE);
+}
+
+/**
+ * Retrieve the number of bytes a SHA-1 digest occupies
+ *
+ * @return Digest size in bytes
+ */
+public inline f<unsigned long> Sha1.getDigestSize() {
+    return SHA1_DIGEST_SIZE;
+}
+
+/**
+ * Retrieve the number of bytes SHA-1 consumes per compression step
+ *
+ * @return Block size in bytes
+ */
+public inline f<unsigned long> Sha1.getBlockSize() {
+    return SHA1_BLOCK_SIZE;
+}
+
+/**
+ * Buffer a single message byte and compress the block as soon as it is complete
+ */
+inline p Sha1.appendRawByte(byte value) {
+    this.buffer[this.bufferLength] = value;
+    this.bufferLength++;
+    if this.bufferLength == SHA1_BLOCK_SIZE {
+        this.compressBlock();
+        this.bufferLength = 0l;
+    }
+}
+
+/**
+ * Mix the 64 buffered bytes into the chaining state
+ */
+p Sha1.compressBlock() {
+    // Decode the block into 16 big-endian words and expand them to the full 80 word schedule
+    unsigned int[80] w;
+    for unsigned long i = 0l; i < 16l; i++ {
+        const unsigned long offset = i * 4l;
+        unsigned int word = cast<unsigned int>(this.buffer[offset]) << 24;
+        word |= cast<unsigned int>(this.buffer[offset + 1l]) << 16;
+        word |= cast<unsigned int>(this.buffer[offset + 2l]) << 8;
+        word |= cast<unsigned int>(this.buffer[offset + 3l]);
+        w[i] = word;
+    }
+    for unsigned long i = 16l; i < 80l; i++ {
+        const unsigned int mixed = ((w[i - 3l] ^ w[i - 8l]) ^ w[i - 14l]) ^ w[i - 16l];
+        w[i] = rotateLeft32(mixed, 1);
+    }
+
+    unsigned int a = this.state[0];
+    unsigned int b = this.state[1];
+    unsigned int c = this.state[2];
+    unsigned int d = this.state[3];
+    unsigned int e = this.state[4];
+
+    for unsigned long i = 0l; i < 80l; i++ {
+        // The round function is called 'mix' here, because 'f' is a reserved keyword in Spice
+        unsigned int mix = 0u;
+        unsigned int roundConstant = 0u;
+        if i < 20l {
+            mix = (b & c) | (~b & d);
+            roundConstant = 0x5a827999u;
+        } else if i < 40l {
+            mix = (b ^ c) ^ d;
+            roundConstant = 0x6ed9eba1u;
+        } else if i < 60l {
+            mix = ((b & c) | (b & d)) | (c & d);
+            roundConstant = 0x8f1bbcdcu;
+        } else {
+            mix = (b ^ c) ^ d;
+            roundConstant = 0xca62c1d6u;
+        }
+
+        unsigned int temp = rotateLeft32(a, 5);
+        temp += mix;
+        temp += e;
+        temp += roundConstant;
+        temp += w[i];
+
+        e = d;
+        d = c;
+        c = rotateLeft32(b, 30);
+        b = a;
+        a = temp;
+    }
+
+    this.state[0] += a;
+    this.state[1] += b;
+    this.state[2] += c;
+    this.state[3] += d;
+    this.state[4] += e;
+}
+
+/**
+ * Compute the SHA-1 digest of the given raw string
+ *
+ * @param input String to hash
+ * @return Digest as 40 lowercase hex chars
+ */
+public f<String> sha1(string input) {
+    Sha1 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-1 digest of the given string
+ *
+ * @param input String to hash
+ * @return Digest as 40 lowercase hex chars
+ */
+public f<String> sha1(const String& input) {
+    Sha1 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the SHA-1 digest of the given raw bytes
+ *
+ * @param input Bytes to hash
+ * @param length Number of bytes to hash
+ * @return Digest as 40 lowercase hex chars
+ */
+public f<String> sha1(const byte[] input, unsigned long length) {
+    Sha1 hasher;
+    hasher.update(input, length);
+    return hasher.finalize();
+}

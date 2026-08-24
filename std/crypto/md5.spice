@@ -1,0 +1,292 @@
+// Std imports
+import "std/crypto/digest";
+
+// Constants
+const unsigned long MD5_BLOCK_SIZE = 64l;    // Input block size in bytes; keep in sync with the buffer field
+const unsigned long MD5_DIGEST_SIZE = 16l;   // Digest size in bytes; keep in sync with the arrays passed to finalizeInto
+const unsigned long MD5_LENGTH_OFFSET = 56l; // Offset of the 8 byte length field within the last block
+
+/**
+ * MD5 message digest, as specified in RFC 1321.
+ *
+ * MD5 is considered cryptographically broken: practical collisions can be produced within seconds.
+ * It is provided for interoperability with existing formats and protocols (checksums, legacy file
+ * digests, ETags) only. Never use it for signatures, password storage or any other security
+ * decision - reach for `std/crypto/sha256` instead.
+ *
+ * The digest is computed incrementally, so arbitrarily large messages can be fed in chunk by chunk:
+ *
+ * ```spice
+ * Md5 hasher;
+ * hasher.update("Hello, ");
+ * hasher.update("World!");
+ * printf("%s\n", hasher.finalize().getRaw()); // 65a8e27d8879283831b664bd8b7f0ad4
+ * ```
+ *
+ * For one-shot use, the free `md5` functions wrap the same steps in a single call.
+ */
+public type Md5 struct {
+    unsigned int[4] state           // Chaining state (a, b, c, d)
+    byte[64] buffer                 // Bytes of the block that is currently being filled
+    unsigned long bufferLength = 0l // Number of bytes currently held in the buffer
+    unsigned long totalLength = 0l  // Number of message bytes consumed so far
+}
+
+/**
+ * Construct a hasher that is ready to consume the first message byte
+ */
+public p Md5.ctor() {
+    this.reset();
+}
+
+/**
+ * Discard any consumed input and return to the initial state, ready for a new message
+ */
+public p Md5.reset() {
+    this.state[0] = 0x67452301u;
+    this.state[1] = 0xefcdab89u;
+    this.state[2] = 0x98badcfeu;
+    this.state[3] = 0x10325476u;
+    this.bufferLength = 0l;
+    this.totalLength = 0l;
+}
+
+/**
+ * Feed the given raw bytes into the digest
+ *
+ * @param data Bytes to consume
+ * @param length Number of bytes to consume
+ */
+public p Md5.update(const byte[] data, unsigned long length) {
+    for unsigned long i = 0l; i < length; i++ {
+        this.appendRawByte(data[i]);
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Feed the chars of the given raw string into the digest, excluding the null terminator
+ *
+ * @param data String to consume
+ */
+public p Md5.update(string data) {
+    unsafe {
+        const char* current = cast<const char*>(data);
+        while *current != '\0' {
+            this.appendRawByte(cast<byte>(*current));
+            this.totalLength++;
+            current++;
+        }
+    }
+}
+
+/**
+ * Feed the chars of the given string into the digest
+ *
+ * @param data String to consume
+ */
+public p Md5.update(const String& data) {
+    const unsigned long length = data.getLength();
+    unsafe {
+        const char* current = cast<const char*>(data.getRaw());
+        for unsigned long i = 0l; i < length; i++ {
+            this.appendRawByte(cast<byte>(current[i]));
+        }
+    }
+    this.totalLength += length;
+}
+
+/**
+ * Complete the digest and write its 16 raw bytes to the given output array.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @param digest Output array, that has to offer room for at least 16 bytes
+ */
+public p Md5.finalizeInto(byte[] digest) {
+    // Capture the message length in bits, before the padding is appended
+    const unsigned long messageBits = this.totalLength * 8l;
+
+    // Append the mandatory 0x80 byte, followed by zeroes until only the length field is missing
+    this.appendRawByte(cast<byte>(0x80));
+    while this.bufferLength != MD5_LENGTH_OFFSET {
+        this.appendRawByte(cast<byte>(0));
+    }
+
+    // Append the message length as a little-endian 64 bit value, which completes the last block
+    for int i = 0; i < 8; i++ {
+        this.appendRawByte(cast<byte>(cast<int>((messageBits >> (i * 8)) & 0xFFl)));
+    }
+
+    // Serialize the state as little-endian words
+    for unsigned long i = 0l; i < 4l; i++ {
+        const unsigned int word = this.state[i];
+        const unsigned long offset = i * 4l;
+        digest[offset] = cast<byte>(word & 0xFFu);
+        digest[offset + 1l] = cast<byte>((word >> 8) & 0xFFu);
+        digest[offset + 2l] = cast<byte>((word >> 16) & 0xFFu);
+        digest[offset + 3l] = cast<byte>((word >> 24) & 0xFFu);
+    }
+
+    // Leave the hasher ready for the next message
+    this.reset();
+}
+
+/**
+ * Complete the digest and return it as a lowercase hex string.
+ * The hasher is reset afterwards, so it can be reused for the next message.
+ *
+ * @return Digest as 32 lowercase hex chars
+ */
+public f<String> Md5.finalize() {
+    byte[16] digest;
+    this.finalizeInto(digest);
+    return toHexString(digest, MD5_DIGEST_SIZE);
+}
+
+/**
+ * Retrieve the number of bytes an MD5 digest occupies
+ *
+ * @return Digest size in bytes
+ */
+public inline f<unsigned long> Md5.getDigestSize() {
+    return MD5_DIGEST_SIZE;
+}
+
+/**
+ * Retrieve the number of bytes MD5 consumes per compression step
+ *
+ * @return Block size in bytes
+ */
+public inline f<unsigned long> Md5.getBlockSize() {
+    return MD5_BLOCK_SIZE;
+}
+
+/**
+ * Buffer a single message byte and compress the block as soon as it is complete
+ */
+inline p Md5.appendRawByte(byte value) {
+    this.buffer[this.bufferLength] = value;
+    this.bufferLength++;
+    if this.bufferLength == MD5_BLOCK_SIZE {
+        this.compressBlock();
+        this.bufferLength = 0l;
+    }
+}
+
+/**
+ * Mix the 64 buffered bytes into the chaining state
+ */
+p Md5.compressBlock() {
+    // Per-round constants: floor(abs(sin(i + 1)) * 2^32)
+    const unsigned int[64] k = [
+        0xd76aa478u, 0xe8c7b756u, 0x242070dbu, 0xc1bdceeeu,
+        0xf57c0fafu, 0x4787c62au, 0xa8304613u, 0xfd469501u,
+        0x698098d8u, 0x8b44f7afu, 0xffff5bb1u, 0x895cd7beu,
+        0x6b901122u, 0xfd987193u, 0xa679438eu, 0x49b40821u,
+        0xf61e2562u, 0xc040b340u, 0x265e5a51u, 0xe9b6c7aau,
+        0xd62f105du, 0x02441453u, 0xd8a1e681u, 0xe7d3fbc8u,
+        0x21e1cde6u, 0xc33707d6u, 0xf4d50d87u, 0x455a14edu,
+        0xa9e3e905u, 0xfcefa3f8u, 0x676f02d9u, 0x8d2a4c8au,
+        0xfffa3942u, 0x8771f681u, 0x6d9d6122u, 0xfde5380cu,
+        0xa4beea44u, 0x4bdecfa9u, 0xf6bb4b60u, 0xbebfbc70u,
+        0x289b7ec6u, 0xeaa127fau, 0xd4ef3085u, 0x04881d05u,
+        0xd9d4d039u, 0xe6db99e5u, 0x1fa27cf8u, 0xc4ac5665u,
+        0xf4292244u, 0x432aff97u, 0xab9423a7u, 0xfc93a039u,
+        0x655b59c3u, 0x8f0ccc92u, 0xffeff47du, 0x85845dd1u,
+        0x6fa87e4fu, 0xfe2ce6e0u, 0xa3014314u, 0x4e0811a1u,
+        0xf7537e82u, 0xbd3af235u, 0x2ad7d2bbu, 0xeb86d391u
+    ];
+    // Per-round left rotation amounts
+    const int[64] s = [
+        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+        5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
+        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+    ];
+
+    // Decode the block into 16 little-endian words
+    unsigned int[16] m;
+    for unsigned long i = 0l; i < 16l; i++ {
+        const unsigned long offset = i * 4l;
+        unsigned int word = cast<unsigned int>(this.buffer[offset]);
+        word |= cast<unsigned int>(this.buffer[offset + 1l]) << 8;
+        word |= cast<unsigned int>(this.buffer[offset + 2l]) << 16;
+        word |= cast<unsigned int>(this.buffer[offset + 3l]) << 24;
+        m[i] = word;
+    }
+
+    unsigned int a = this.state[0];
+    unsigned int b = this.state[1];
+    unsigned int c = this.state[2];
+    unsigned int d = this.state[3];
+
+    for unsigned long i = 0l; i < 64l; i++ {
+        // The round function is called 'mix' here, because 'f' is a reserved keyword in Spice
+        unsigned int mix = 0u;
+        unsigned long wordIndex = 0l;
+        if i < 16l {
+            mix = (b & c) | (~b & d);
+            wordIndex = i;
+        } else if i < 32l {
+            mix = (d & b) | (~d & c);
+            wordIndex = (5l * i + 1l) % 16l;
+        } else if i < 48l {
+            mix = (b ^ c) ^ d;
+            wordIndex = (3l * i + 5l) % 16l;
+        } else {
+            mix = c ^ (b | ~d);
+            wordIndex = (7l * i) % 16l;
+        }
+
+        mix += a;
+        mix += k[i];
+        mix += m[wordIndex];
+
+        a = d;
+        d = c;
+        c = b;
+        b += rotateLeft32(mix, s[i]);
+    }
+
+    this.state[0] += a;
+    this.state[1] += b;
+    this.state[2] += c;
+    this.state[3] += d;
+}
+
+/**
+ * Compute the MD5 digest of the given raw string
+ *
+ * @param input String to hash
+ * @return Digest as 32 lowercase hex chars
+ */
+public f<String> md5(string input) {
+    Md5 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the MD5 digest of the given string
+ *
+ * @param input String to hash
+ * @return Digest as 32 lowercase hex chars
+ */
+public f<String> md5(const String& input) {
+    Md5 hasher;
+    hasher.update(input);
+    return hasher.finalize();
+}
+
+/**
+ * Compute the MD5 digest of the given raw bytes
+ *
+ * @param input Bytes to hash
+ * @param length Number of bytes to hash
+ * @return Digest as 32 lowercase hex chars
+ */
+public f<String> md5(const byte[] input, unsigned long length) {
+    Md5 hasher;
+    hasher.update(input, length);
+    return hasher.finalize();
+}

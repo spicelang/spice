@@ -1,0 +1,77 @@
+// Constants
+const unsigned int BITS_PER_INT = 32;  // Number of bits in a 32 bit word
+const unsigned int BITS_PER_LONG = 64; // Number of bits in a 64 bit word
+
+/**
+ * Rotate a 32 bit word to the left.
+ *
+ * The rotation count has to be in the range 1..31. Rotating by 0 or 32 would shift a word by its
+ * full width, which is undefined behavior.
+ *
+ * @param value Word to rotate
+ * @param count Number of bits to rotate by (1..31)
+ * @return Rotated word
+ */
+public inline f<unsigned int> rotateLeft32(unsigned int value, int count) {
+    return (value << count) | (value >> (BITS_PER_INT - count));
+}
+
+/**
+ * Rotate a 32 bit word to the right.
+ *
+ * The rotation count has to be in the range 1..31. Rotating by 0 or 32 would shift a word by its
+ * full width, which is undefined behavior.
+ *
+ * @param value Word to rotate
+ * @param count Number of bits to rotate by (1..31)
+ * @return Rotated word
+ */
+public inline f<unsigned int> rotateRight32(unsigned int value, int count) {
+    return (value >> count) | (value << (BITS_PER_INT - count));
+}
+
+/**
+ * Rotate a 64 bit word to the left.
+ *
+ * The rotation count has to be in the range 1..63. Rotating by 0 or 64 would shift a word by its
+ * full width, which is undefined behavior.
+ *
+ * @param value Word to rotate
+ * @param count Number of bits to rotate by (1..63)
+ * @return Rotated word
+ */
+public inline f<unsigned long> rotateLeft64(unsigned long value, int count) {
+    return (value << count) | (value >> (BITS_PER_LONG - count));
+}
+
+/**
+ * Rotate a 64 bit word to the right.
+ *
+ * The rotation count has to be in the range 1..63. Rotating by 0 or 64 would shift a word by its
+ * full width, which is undefined behavior.
+ *
+ * @param value Word to rotate
+ * @param count Number of bits to rotate by (1..63)
+ * @return Rotated word
+ */
+public inline f<unsigned long> rotateRight64(unsigned long value, int count) {
+    return (value >> count) | (value << (BITS_PER_LONG - count));
+}
+
+/**
+ * Render a raw digest as its lowercase hexadecimal representation, two chars per byte.
+ *
+ * @param digest Digest bytes to render
+ * @param length Number of digest bytes
+ * @return Hex representation of the digest
+ */
+public f<String> toHexString(const byte[] digest, unsigned long length) {
+    const char[16] hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    String hex;
+    for unsigned long i = 0l; i < length; i++ {
+        const unsigned int value = cast<unsigned int>(digest[i]);
+        hex.append(hexChars[value >> 4]);
+        hex.append(hexChars[value & 0xFu]);
+    }
+    return hex;
+}
