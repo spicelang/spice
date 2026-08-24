@@ -35,6 +35,7 @@ private:
 
   // Private methods
   void addInstrumentationPassToPipeline(llvm::ModulePassManager& modulePassMgr) const;
+  void addCoveragePassToPipeline(llvm::ModulePassManager &modulePassMgr) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
 

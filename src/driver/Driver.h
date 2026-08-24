@@ -114,6 +114,7 @@ struct CliOptions {
   bool staticLinking = false;
   struct InstrumentationSettings {
     bool generateDebugInfo = false;
+    bool codeCoverage = false;
     Sanitizer sanitizer = Sanitizer::NONE;
   } instrumentation;
   bool disableVerifier = !SPICE_DEBUG;

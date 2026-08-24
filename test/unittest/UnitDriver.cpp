@@ -220,6 +220,34 @@ TEST(DriverTest, MemorySanitizerOnlyLinux) {
 #endif
 }
 
+TEST(DriverTest, CoverageImpliesDebugInfo) {
+  const char *argv[] = {"spice", "build", "--coverage", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
+  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo); // implicitly due to enabled code coverage
+}
+
+TEST(DriverTest, CoverageRejectsLtoCombination) {
+  const char *argv[] = {"spice", "build", "--coverage", "-lto", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Incompatible options: Code coverage instrumentation is not supported in combination with LTO";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+}
+
 TEST(DriverTest, IncompatibleOptions) {
   // --static in combination with --output-container=dylib is not allowed
   const char *argv[] = {"spice", "build", "--static", "--output-container=dylib", "../../media/test-project/test.spice"};
@@ -285,6 +313,26 @@ TEST(DriverTest, BackendTpdeRejectsLtoCombination) {
     FAIL();
   } catch (CliError &error) {
     const auto errorMsg = "[Error|CLI] Incompatible options: The TPDE backend does not support LTO";
+    ASSERT_STREQ(errorMsg, error.what());
+  }
+#endif
+}
+
+TEST(DriverTest, BackendTpdeRejectsCoverageCombination) {
+#ifndef SPICE_ENABLE_TPDE
+  GTEST_SKIP() << "TPDE backend is disabled in this build; combination guard is not exercised.";
+#else
+  const char *argv[] = {"spice", "build", "--backend=tpde", "--coverage", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    const auto errorMsg = "[Error|CLI] Incompatible options: The TPDE backend does not support code coverage instrumentation";
     ASSERT_STREQ(errorMsg, error.what());
   }
 #endif
