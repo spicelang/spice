@@ -1,11 +1,11 @@
-import "std/os/allocator";
+import "std/os/offset-allocator";
 import "std/data/vector";
 
 const unsigned int STORAGE_SIZE = 5000u;
 const unsigned long OP_COUNT = 6000ul;
 
 f<int> main() {
-    Allocator alloc = Allocator(STORAGE_SIZE);
+    OffsetAllocator alloc = OffsetAllocator(STORAGE_SIZE);
 
     // Occupancy map to detect overlaps: one bool per byte of the storage area
     Vector<bool> occupied = Vector<bool>(cast<unsigned long>(STORAGE_SIZE), false);
@@ -83,6 +83,6 @@ f<int> main() {
     assert fresh.offset == 0u;
     alloc.free(fresh);
 
-    printf("Allocator stress tests passed! successAllocs=%lu failedAllocs=%lu\n", successAllocs, failedAllocs);
+    printf("OffsetAllocator stress tests passed! successAllocs=%lu failedAllocs=%lu\n", successAllocs, failedAllocs);
     return 0;
 }

@@ -1,47 +1,43 @@
 // Inspired by offset allocator (https://github.com/sebbbi/OffsetAllocator)
 
-// Type defs
-type UInt32 alias unsigned int;
-type UInt8 alias byte;
-
 // Constants
-const UInt32 NO_SPACE = 0xffffffffu;
-const UInt32 UNUSED_NODE = 0xffffffffu;
-const UInt32 NUM_TOP_BINS = 32;
-const UInt32 BINS_PER_LEAF = 8;
-const UInt32 TOP_BINS_INDEX_SHIFT = 3;
-const UInt32 LEAF_BINS_INDEX_MASK = 0x7;
-const UInt32 NUM_LEAF_BINS = 256; // NUM_TOP_BINS * BINS_PER_LEAF
+const unsigned int NO_SPACE = 0xffffffffu;
+const unsigned int UNUSED_NODE = 0xffffffffu;
+const unsigned int NUM_TOP_BINS = 32;
+const unsigned int BINS_PER_LEAF = 8;
+const unsigned int TOP_BINS_INDEX_SHIFT = 3;
+const unsigned int LEAF_BINS_INDEX_MASK = 0x7;
+const unsigned int NUM_LEAF_BINS = 256; // NUM_TOP_BINS * BINS_PER_LEAF
 
 // Bin sizes follow a floating point (exponent + mantissa) distribution (piecewise linear log approximation).
 // This ensures that for each size class, the average overhead percentage stays the same.
-const UInt32 MANTISSA_BITS = 3;
-const UInt32 MANTISSA_VALUE = 8; // 1 << MANTISSA_BITS
-const UInt32 MANTISSA_MASK = 7;  // MANTISSA_VALUE - 1
+const unsigned int MANTISSA_BITS = 3;
+const unsigned int MANTISSA_VALUE = 8; // 1 << MANTISSA_BITS
+const unsigned int MANTISSA_MASK = 7;  // MANTISSA_VALUE - 1
 
 // External functions
 ext f<heap byte*> malloc(unsigned long);
 ext p free(heap byte*);
 
 public type Allocation struct {
-    public UInt32 offset = NO_SPACE
-    UInt32 metadata = NO_SPACE // internal: node index, opaque to callers; pass the whole Allocation back to free()
+    public unsigned int offset = NO_SPACE
+    unsigned int metadata = NO_SPACE // internal: node index, opaque to callers; pass the whole Allocation back to free()
 }
 
 /**
  * One size class of the allocator's free storage, used by getStorageReportFull()
  */
 public type Region struct {
-    public UInt32 size
-    public UInt32 count
+    public unsigned int size
+    public unsigned int count
 }
 
 /**
  * Summary of the allocator's free storage at a glance
  */
 public type StorageReport struct {
-    public UInt32 totalFreeSpace = 0u
-    public UInt32 largestFreeRegion = 0u
+    public unsigned int totalFreeSpace = 0u
+    public unsigned int largestFreeRegion = 0u
 }
 
 /**
@@ -60,12 +56,12 @@ public p StorageReportFull.ctor() {}
 // in-use allocation (unlinked from any bin). Nodes are stored in a preallocated pool and recycled
 // via the allocator's freeNodes stack, so their storage never moves for the lifetime of the pool.
 type Node struct {
-    UInt32 dataOffset = 0u
-    UInt32 dataSize = 0u
-    UInt32 binListPrev = UNUSED_NODE
-    UInt32 binListNext = UNUSED_NODE
-    UInt32 neighborPrev = UNUSED_NODE
-    UInt32 neighborNext = UNUSED_NODE
+    unsigned int dataOffset = 0u
+    unsigned int dataSize = 0u
+    unsigned int binListPrev = UNUSED_NODE
+    unsigned int binListNext = UNUSED_NODE
+    unsigned int neighborPrev = UNUSED_NODE
+    unsigned int neighborNext = UNUSED_NODE
     bool used = false
 }
 
@@ -77,16 +73,16 @@ type Node struct {
  * The allocator owns its bookkeeping storage (the node pool and free list), so it must not be shallow-copied;
  * copying (via the copy ctor or operator=) allocates and deep-copies fresh bookkeeping storage.
  */
-public type Allocator struct {
-    UInt32 size
-    UInt32 maxAllocas
-    UInt32 freeStorage
-    UInt32 usedBinsTop
-    UInt8[NUM_TOP_BINS] usedBins
-    UInt32[NUM_LEAF_BINS] binIndices
+public type OffsetAllocator struct {
+    unsigned int size
+    unsigned int maxAllocas
+    unsigned int freeStorage
+    unsigned int usedBinsTop
+    byte[NUM_TOP_BINS] usedBins
+    unsigned int[NUM_LEAF_BINS] binIndices
     Node* nodes
-    UInt32* freeNodes
-    UInt32 freeOffset
+    unsigned int* freeNodes
+    unsigned int freeOffset
 }
 
 /**
@@ -95,7 +91,7 @@ public type Allocator struct {
  * @param size Total size of the managed storage area
  * @param maxAllocas Maximum number of concurrent allocations to support
  */
-public p Allocator.ctor(UInt32 size, UInt32 maxAllocas = 128 * 1024) {
+public p OffsetAllocator.ctor(unsigned int size, unsigned int maxAllocas = 128 * 1024) {
     assert maxAllocas > 0u;
 
     this.size = size;
@@ -104,20 +100,20 @@ public p Allocator.ctor(UInt32 size, UInt32 maxAllocas = 128 * 1024) {
     this.usedBinsTop = 0u;
     this.freeOffset = maxAllocas - 1u;
 
-    for UInt32 i = 0u; i < NUM_TOP_BINS; i++ {
-        this.usedBins[i] = cast<UInt8>(0u);
+    for unsigned int i = 0u; i < NUM_TOP_BINS; i++ {
+        this.usedBins[i] = cast<byte>(0u);
     }
-    for UInt32 i = 0u; i < NUM_LEAF_BINS; i++ {
+    for unsigned int i = 0u; i < NUM_LEAF_BINS; i++ {
         this.binIndices[i] = UNUSED_NODE;
     }
 
     unsafe {
         this.nodes = cast<Node*>(malloc(sizeof<Node>() * cast<unsigned long>(maxAllocas)));
-        this.freeNodes = cast<UInt32*>(malloc(sizeof<UInt32>() * cast<unsigned long>(maxAllocas)));
+        this.freeNodes = cast<unsigned int*>(malloc(sizeof<unsigned int>() * cast<unsigned long>(maxAllocas)));
     }
 
     // Freelist is a stack. Nodes are in inverse order, so that [0] pops first.
-    for UInt32 i = 0u; i < maxAllocas; i++ {
+    for unsigned int i = 0u; i < maxAllocas; i++ {
         this.resetNode(i);
         unsafe {
             this.freeNodes[i] = maxAllocas - i - 1u;
@@ -132,26 +128,26 @@ public p Allocator.ctor(UInt32 size, UInt32 maxAllocas = 128 * 1024) {
 /**
  * Construct an allocator as a deep copy of another allocator, so the two do not share bookkeeping storage
  *
- * @param original Allocator to copy
+ * @param original OffsetAllocator to copy
  */
-public p Allocator.ctor(const Allocator& original) {
+public p OffsetAllocator.ctor(const OffsetAllocator& original) {
     this.size = original.size;
     this.maxAllocas = original.maxAllocas;
     this.freeStorage = original.freeStorage;
     this.usedBinsTop = original.usedBinsTop;
     this.freeOffset = original.freeOffset;
 
-    for UInt32 i = 0u; i < NUM_TOP_BINS; i++ {
+    for unsigned int i = 0u; i < NUM_TOP_BINS; i++ {
         this.usedBins[i] = original.usedBins[i];
     }
-    for UInt32 i = 0u; i < NUM_LEAF_BINS; i++ {
+    for unsigned int i = 0u; i < NUM_LEAF_BINS; i++ {
         this.binIndices[i] = original.binIndices[i];
     }
 
     unsafe {
         this.nodes = cast<Node*>(malloc(sizeof<Node>() * cast<unsigned long>(this.maxAllocas)));
-        this.freeNodes = cast<UInt32*>(malloc(sizeof<UInt32>() * cast<unsigned long>(this.maxAllocas)));
-        for UInt32 i = 0u; i < this.maxAllocas; i++ {
+        this.freeNodes = cast<unsigned int*>(malloc(sizeof<unsigned int>() * cast<unsigned long>(this.maxAllocas)));
+        for unsigned int i = 0u; i < this.maxAllocas; i++ {
             this.nodes[i] = original.nodes[i];
             this.freeNodes[i] = original.freeNodes[i];
         }
@@ -161,7 +157,7 @@ public p Allocator.ctor(const Allocator& original) {
 /**
  * Destruct the allocator, releasing its internal bookkeeping storage
  */
-public p Allocator.dtor() {
+public p OffsetAllocator.dtor() {
     unsafe {
         free(cast<heap byte*>(this.nodes));
         free(cast<heap byte*>(this.freeNodes));
@@ -171,9 +167,9 @@ public p Allocator.dtor() {
 /**
  * Copy-assign the bookkeeping storage of another allocator into this one
  *
- * @param newValue Allocator to copy from
+ * @param newValue OffsetAllocator to copy from
  */
-public p operator=(Allocator& this, const Allocator& newValue) {
+public p operator=(OffsetAllocator& this, const OffsetAllocator& newValue) {
     unsafe {
         free(cast<heap byte*>(this.nodes));
         free(cast<heap byte*>(this.freeNodes));
@@ -184,7 +180,7 @@ public p operator=(Allocator& this, const Allocator& newValue) {
 /**
  * Reset a node in the pool to its unused default state
  */
-p Allocator.resetNode(UInt32 nodeIndex) {
+p OffsetAllocator.resetNode(unsigned int nodeIndex) {
     unsafe {
         Node& node = this.nodes[nodeIndex];
         node.dataOffset = 0u;
@@ -203,21 +199,21 @@ p Allocator.resetNode(UInt32 nodeIndex) {
  *
  * @return Index of the node that was inserted
  */
-f<UInt32> Allocator.insertNodeIntoBin(UInt32 size, UInt32 dataOffset) {
+f<unsigned int> OffsetAllocator.insertNodeIntoBin(unsigned int size, unsigned int dataOffset) {
     // Round down to bin index, to ensure that bin size <= alloc size
-    const UInt32 binIndex = uintToFloatRoundDown(size);
-    const UInt32 topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
-    const UInt32 leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
+    const unsigned int binIndex = uintToFloatRoundDown(size);
+    const unsigned int topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
+    const unsigned int leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
 
     // Bin was empty before? Set the bin mask bits.
     if this.binIndices[binIndex] == UNUSED_NODE {
-        this.usedBins[topBinIndex] |= cast<UInt8>(1u << leafBinIndex);
+        this.usedBins[topBinIndex] |= cast<byte>(1u << leafBinIndex);
         this.usedBinsTop |= (1u << topBinIndex);
     }
 
     // Take a freelist node and insert it on top of the bin's linked list (next = old top)
-    const UInt32 topNodeIndex = this.binIndices[binIndex];
-    UInt32 nodeIndex;
+    const unsigned int topNodeIndex = this.binIndices[binIndex];
+    unsigned int nodeIndex;
     unsafe {
         nodeIndex = this.freeNodes[this.freeOffset];
     }
@@ -243,10 +239,10 @@ f<UInt32> Allocator.insertNodeIntoBin(UInt32 size, UInt32 dataOffset) {
 /**
  * Unlink a node from its bin's linked list and put it back onto the freelist
  */
-p Allocator.removeNodeFromBin(UInt32 nodeIndex) {
+p OffsetAllocator.removeNodeFromBin(unsigned int nodeIndex) {
     unsafe {
-        const UInt32 binListPrev = this.nodes[nodeIndex].binListPrev;
-        const UInt32 binListNext = this.nodes[nodeIndex].binListNext;
+        const unsigned int binListPrev = this.nodes[nodeIndex].binListPrev;
+        const unsigned int binListNext = this.nodes[nodeIndex].binListNext;
 
         if binListPrev != UNUSED_NODE {
             // Easy case: we have a previous node. Just remove this node from the middle of the list.
@@ -256,9 +252,9 @@ p Allocator.removeNodeFromBin(UInt32 nodeIndex) {
             }
         } else {
             // Hard case: we are the first node in a bin. Find the bin.
-            const UInt32 binIndex = uintToFloatRoundDown(this.nodes[nodeIndex].dataSize);
-            const UInt32 topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
-            const UInt32 leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
+            const unsigned int binIndex = uintToFloatRoundDown(this.nodes[nodeIndex].dataSize);
+            const unsigned int topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
+            const unsigned int leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
 
             this.binIndices[binIndex] = binListNext;
             if binListNext != UNUSED_NODE {
@@ -267,8 +263,8 @@ p Allocator.removeNodeFromBin(UInt32 nodeIndex) {
 
             // Bin empty? Remove the mask bits.
             if this.binIndices[binIndex] == UNUSED_NODE {
-                this.usedBins[topBinIndex] &= cast<UInt8>(~(1u << leafBinIndex));
-                if this.usedBins[topBinIndex] == cast<UInt8>(0u) {
+                this.usedBins[topBinIndex] &= cast<byte>(~(1u << leafBinIndex));
+                if this.usedBins[topBinIndex] == cast<byte>(0u) {
                     this.usedBinsTop &= ~(1u << topBinIndex);
                 }
             }
@@ -287,23 +283,23 @@ p Allocator.removeNodeFromBin(UInt32 nodeIndex) {
  * @param size Size of the region to allocate
  * @return Allocation describing the reserved region
  */
-public f<Allocation> Allocator.allocate(UInt32 size) {
+public f<Allocation> OffsetAllocator.allocate(unsigned int size) {
     // Out of allocations?
     if this.freeOffset == 0u {
         return Allocation();
     }
 
     // Round up to bin index, to ensure that alloc size <= bin size. Gives us the min bin index that fits the size.
-    const UInt32 minBinIndex = uintToFloatRoundUp(size);
-    const UInt32 minTopBinIndex = minBinIndex >> TOP_BINS_INDEX_SHIFT;
-    const UInt32 minLeafBinIndex = minBinIndex & LEAF_BINS_INDEX_MASK;
+    const unsigned int minBinIndex = uintToFloatRoundUp(size);
+    const unsigned int minTopBinIndex = minBinIndex >> TOP_BINS_INDEX_SHIFT;
+    const unsigned int minLeafBinIndex = minBinIndex & LEAF_BINS_INDEX_MASK;
 
-    UInt32 topBinIndex = minTopBinIndex;
-    UInt32 leafBinIndex = NO_SPACE;
+    unsigned int topBinIndex = minTopBinIndex;
+    unsigned int leafBinIndex = NO_SPACE;
 
     // If the top bin exists, scan its leaf bin. This can fail (NO_SPACE).
     if (this.usedBinsTop & (1u << topBinIndex)) != 0u {
-        leafBinIndex = findLowestSetBitAfter(cast<UInt32>(this.usedBins[topBinIndex]), minLeafBinIndex);
+        leafBinIndex = findLowestSetBitAfter(cast<unsigned int>(this.usedBins[topBinIndex]), minLeafBinIndex);
     }
 
     // If we didn't find space in the top bin, we search top bins from +1
@@ -317,16 +313,16 @@ public f<Allocation> Allocator.allocate(UInt32 size) {
 
         // All leaf bins here fit the alloc, since the top bin was rounded up. Start leaf search from bit 0.
         // NOTE: This search can't fail, since at least one leaf bit was set because the top bit was set.
-        leafBinIndex = tzcntNonzero(cast<UInt32>(this.usedBins[topBinIndex]));
+        leafBinIndex = tzcntNonzero(cast<unsigned int>(this.usedBins[topBinIndex]));
     }
 
-    const UInt32 binIndex = (topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex;
+    const unsigned int binIndex = (topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex;
 
     // Pop the top node of the bin. Bin top = node.binListNext.
-    const UInt32 nodeIndex = this.binIndices[binIndex];
-    UInt32 nodeTotalSize;
-    UInt32 nodeDataOffset;
-    UInt32 nodeNeighborNext;
+    const unsigned int nodeIndex = this.binIndices[binIndex];
+    unsigned int nodeTotalSize;
+    unsigned int nodeDataOffset;
+    unsigned int nodeNeighborNext;
     unsafe {
         Node& node = this.nodes[nodeIndex];
         nodeTotalSize = node.dataSize;
@@ -343,16 +339,16 @@ public f<Allocation> Allocator.allocate(UInt32 size) {
 
     // Bin empty? Remove the mask bits.
     if this.binIndices[binIndex] == UNUSED_NODE {
-        this.usedBins[topBinIndex] &= cast<UInt8>(~(1u << leafBinIndex));
-        if this.usedBins[topBinIndex] == cast<UInt8>(0u) {
+        this.usedBins[topBinIndex] &= cast<byte>(~(1u << leafBinIndex));
+        if this.usedBins[topBinIndex] == cast<byte>(0u) {
             this.usedBinsTop &= ~(1u << topBinIndex);
         }
     }
 
     // Push back the remainder to a lower bin
-    const UInt32 remainderSize = nodeTotalSize - size;
+    const unsigned int remainderSize = nodeTotalSize - size;
     if remainderSize > 0u {
-        const UInt32 newNodeIndex = this.insertNodeIntoBin(remainderSize, nodeDataOffset + size);
+        const unsigned int newNodeIndex = this.insertNodeIntoBin(remainderSize, nodeDataOffset + size);
 
         // Link nodes next to each other, so that we can merge them later if both are free.
         // Update the old next neighbor to point to the new node (in the middle).
@@ -374,14 +370,14 @@ public f<Allocation> Allocator.allocate(UInt32 size) {
  *
  * @param allocation Allocation to free
  */
-public p Allocator.free(Allocation allocation) {
+public p OffsetAllocator.free(Allocation allocation) {
     assert allocation.metadata != NO_SPACE;
 
-    const UInt32 nodeIndex = allocation.metadata;
-    UInt32 offset;
-    UInt32 size;
-    UInt32 neighborPrev;
-    UInt32 neighborNext;
+    const unsigned int nodeIndex = allocation.metadata;
+    unsigned int offset;
+    unsigned int size;
+    unsigned int neighborPrev;
+    unsigned int neighborNext;
     unsafe {
         // Double delete check
         assert this.nodes[nodeIndex].used;
@@ -424,7 +420,7 @@ public p Allocator.free(Allocation allocation) {
     }
 
     // Insert the (combined) free node into a bin
-    const UInt32 combinedNodeIndex = this.insertNodeIntoBin(size, offset);
+    const unsigned int combinedNodeIndex = this.insertNodeIntoBin(size, offset);
 
     // Connect neighbors with the new combined node
     unsafe {
@@ -444,14 +440,14 @@ public p Allocator.free(Allocation allocation) {
  *
  * @return Storage report with total free space and largest free region
  */
-public const f<StorageReport> Allocator.getStorageReport() {
+public const f<StorageReport> OffsetAllocator.getStorageReport() {
     result = StorageReport();
     // Out of allocations? -> Zero free space
     if this.freeOffset > 0u {
         result.totalFreeSpace = this.freeStorage;
         if this.usedBinsTop != 0u {
-            const UInt32 topBinIndex = 31u - lzcntNonzero(this.usedBinsTop);
-            const UInt32 leafBinIndex = 31u - lzcntNonzero(cast<UInt32>(this.usedBins[topBinIndex]));
+            const unsigned int topBinIndex = 31u - lzcntNonzero(this.usedBinsTop);
+            const unsigned int leafBinIndex = 31u - lzcntNonzero(cast<unsigned int>(this.usedBins[topBinIndex]));
             result.largestFreeRegion = floatToUint((topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex);
         }
     }
@@ -462,11 +458,11 @@ public const f<StorageReport> Allocator.getStorageReport() {
  *
  * @return Full storage report
  */
-public const f<StorageReportFull> Allocator.getStorageReportFull() {
+public const f<StorageReportFull> OffsetAllocator.getStorageReportFull() {
     result = StorageReportFull();
-    for UInt32 i = 0u; i < NUM_LEAF_BINS; i++ {
-        UInt32 count = 0u;
-        UInt32 nodeIndex = this.binIndices[i];
+    for unsigned int i = 0u; i < NUM_LEAF_BINS; i++ {
+        unsigned int count = 0u;
+        unsigned int nodeIndex = this.binIndices[i];
         unsafe {
             while nodeIndex != UNUSED_NODE {
                 nodeIndex = this.nodes[nodeIndex].binListNext;
@@ -483,9 +479,9 @@ public const f<StorageReportFull> Allocator.getStorageReportFull() {
 /**
  * Count the number of leading zero bits in a nonzero 32 bit value
  */
-f<UInt32> lzcntNonzero(UInt32 v) {
-    UInt32 n = 0u;
-    UInt32 bit = 0x80000000u;
+f<unsigned int> lzcntNonzero(unsigned int v) {
+    unsigned int n = 0u;
+    unsigned int bit = 0x80000000u;
     while (v & bit) == 0u {
         n++;
         bit >>= 1u;
@@ -496,9 +492,9 @@ f<UInt32> lzcntNonzero(UInt32 v) {
 /**
  * Count the number of trailing zero bits in a nonzero 32 bit value
  */
-f<UInt32> tzcntNonzero(UInt32 v) {
-    UInt32 n = 0u;
-    UInt32 x = v;
+f<unsigned int> tzcntNonzero(unsigned int v) {
+    unsigned int n = 0u;
+    unsigned int x = v;
     while (x & 1u) == 0u {
         x >>= 1u;
         n++;
@@ -509,14 +505,14 @@ f<UInt32> tzcntNonzero(UInt32 v) {
 /**
  * Find the lowest set bit in bitMask at or after startBitIndex, or NO_SPACE if there is none
  */
-f<UInt32> findLowestSetBitAfter(UInt32 bitMask, UInt32 startBitIndex) {
+f<unsigned int> findLowestSetBitAfter(unsigned int bitMask, unsigned int startBitIndex) {
     // A shift by 32 or more is undefined for a 32 bit value, and there can't be a match beyond bit 31 anyway
     if startBitIndex >= 32u {
         return NO_SPACE;
     }
-    const UInt32 maskBeforeStartIndex = (1u << startBitIndex) - 1u;
-    const UInt32 maskAfterStartIndex = ~maskBeforeStartIndex;
-    const UInt32 bitsAfter = bitMask & maskAfterStartIndex;
+    const unsigned int maskBeforeStartIndex = (1u << startBitIndex) - 1u;
+    const unsigned int maskAfterStartIndex = ~maskBeforeStartIndex;
+    const unsigned int bitsAfter = bitMask & maskAfterStartIndex;
     if bitsAfter == 0u {
         return NO_SPACE;
     }
@@ -526,23 +522,23 @@ f<UInt32> findLowestSetBitAfter(UInt32 bitMask, UInt32 startBitIndex) {
 /**
  * Encode a size as a small-float bin index, rounding up (bin size >= given size)
  */
-f<UInt32> uintToFloatRoundUp(UInt32 size) {
-    UInt32 exp = 0u;
-    UInt32 mantissa;
+f<unsigned int> uintToFloatRoundUp(unsigned int size) {
+    unsigned int exp = 0u;
+    unsigned int mantissa;
 
     if size < MANTISSA_VALUE {
         // Denorm: 0..(MANTISSA_VALUE-1)
         mantissa = size;
     } else {
         // Normalized: hidden high bit is always 1 and not stored, just like an IEEE float.
-        const UInt32 leadingZeros = lzcntNonzero(size);
-        const UInt32 highestSetBit = 31u - leadingZeros;
+        const unsigned int leadingZeros = lzcntNonzero(size);
+        const unsigned int highestSetBit = 31u - leadingZeros;
 
-        const UInt32 mantissaStartBit = highestSetBit - MANTISSA_BITS;
+        const unsigned int mantissaStartBit = highestSetBit - MANTISSA_BITS;
         exp = mantissaStartBit + 1u;
         mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
 
-        const UInt32 lowBitsMask = (1u << mantissaStartBit) - 1u;
+        const unsigned int lowBitsMask = (1u << mantissaStartBit) - 1u;
 
         // Round up!
         if (size & lowBitsMask) != 0u {
@@ -556,19 +552,19 @@ f<UInt32> uintToFloatRoundUp(UInt32 size) {
 /**
  * Encode a size as a small-float bin index, rounding down (bin size <= given size)
  */
-f<UInt32> uintToFloatRoundDown(UInt32 size) {
-    UInt32 exp = 0u;
-    UInt32 mantissa;
+f<unsigned int> uintToFloatRoundDown(unsigned int size) {
+    unsigned int exp = 0u;
+    unsigned int mantissa;
 
     if size < MANTISSA_VALUE {
         // Denorm: 0..(MANTISSA_VALUE-1)
         mantissa = size;
     } else {
         // Normalized: hidden high bit is always 1 and not stored, just like an IEEE float.
-        const UInt32 leadingZeros = lzcntNonzero(size);
-        const UInt32 highestSetBit = 31u - leadingZeros;
+        const unsigned int leadingZeros = lzcntNonzero(size);
+        const unsigned int highestSetBit = 31u - leadingZeros;
 
-        const UInt32 mantissaStartBit = highestSetBit - MANTISSA_BITS;
+        const unsigned int mantissaStartBit = highestSetBit - MANTISSA_BITS;
         exp = mantissaStartBit + 1u;
         mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
     }
@@ -579,9 +575,9 @@ f<UInt32> uintToFloatRoundDown(UInt32 size) {
 /**
  * Decode a small-float bin index back into a (rounded) size
  */
-f<UInt32> floatToUint(UInt32 floatValue) {
-    const UInt32 exponent = floatValue >> MANTISSA_BITS;
-    const UInt32 mantissa = floatValue & MANTISSA_MASK;
+f<unsigned int> floatToUint(unsigned int floatValue) {
+    const unsigned int exponent = floatValue >> MANTISSA_BITS;
+    const unsigned int mantissa = floatValue & MANTISSA_MASK;
     if exponent == 0u {
         // Denorms
         return mantissa;

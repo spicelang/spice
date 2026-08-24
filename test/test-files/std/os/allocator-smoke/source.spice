@@ -1,8 +1,8 @@
-import "std/os/allocator";
+import "std/os/offset-allocator";
 
 f<int> main() {
     // 1. Basic allocate/free on a fresh pool
-    Allocator alloc = Allocator(1024u);
+    OffsetAllocator alloc = OffsetAllocator(1024u);
     Allocation a1 = alloc.allocate(100u);
     assert a1.offset == 0u;
     Allocation a2 = alloc.allocate(200u);
@@ -41,7 +41,7 @@ f<int> main() {
     //    searching, while free regions are filed rounded down), so a request landing almost exactly on
     //    the remaining free space can spuriously fail to find a technically-fitting region. Requesting
     //    clearly more than what is left (60 out of the 40 remaining) avoids that ambiguity.
-    Allocator tiny = Allocator(100u);
+    OffsetAllocator tiny = OffsetAllocator(100u);
     Allocation t1 = tiny.allocate(60u);
     assert t1.offset == 0u;
     Allocation t2 = tiny.allocate(60u); // only 40 bytes remain; 60 clearly does not fit
@@ -49,21 +49,21 @@ f<int> main() {
     tiny.free(t1);
 
     // 7. Copy ctor and operator= produce independent bookkeeping storage
-    Allocator original = Allocator(256u);
+    OffsetAllocator original = OffsetAllocator(256u);
     Allocation o1 = original.allocate(64u);
-    Allocator cloneByCtor = Allocator(original);
+    OffsetAllocator cloneByCtor = OffsetAllocator(original);
     Allocation cloneAlloc = cloneByCtor.allocate(64u);
     assert cloneAlloc.offset == 64u; // independent of original's own remaining space
     StorageReport originalReportAfterClone = original.getStorageReport();
     assert originalReportAfterClone.totalFreeSpace == 256u - 64u; // untouched by the clone's allocation
 
-    Allocator assigned = Allocator(16u);
+    OffsetAllocator assigned = OffsetAllocator(16u);
     assigned = original;
     Allocation assignedAlloc = assigned.allocate(64u);
     assert assignedAlloc.offset == 64u;
 
     original.free(o1);
 
-    printf("Allocator smoke tests passed!\n");
+    printf("OffsetAllocator smoke tests passed!\n");
     return 0;
 }

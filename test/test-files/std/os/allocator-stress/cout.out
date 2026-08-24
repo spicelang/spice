@@ -1,1 +1,1 @@
-Allocator stress tests passed! successAllocs=1489 failedAllocs=3062
+OffsetAllocator stress tests passed! successAllocs=1489 failedAllocs=3062
