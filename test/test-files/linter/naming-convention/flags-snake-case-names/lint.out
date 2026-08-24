@@ -1,2 +1,0 @@
-[Lint] ./source.spice:1:1: naming-convention: Struct name 'My_Point' should be PascalCase
-[Lint] ./source.spice:6:8: naming-convention: Function name 'bad_function_name' should be camelCase

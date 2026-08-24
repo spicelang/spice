@@ -1,1 +1,0 @@
-[Lint] ./source.spice:1:1: naming-convention: Global variable name 'MaxRetries' should be SNAKE_CASE
