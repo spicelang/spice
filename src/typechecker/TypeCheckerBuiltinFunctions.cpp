@@ -578,4 +578,30 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(templateType.toPtr(node), manIdx)};
 }
 
+std::any TypeChecker::visitBuiltinSourceFileCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SOURCE_FILE);
+
+  const size_t stringValueOffset = resourceManager.compileTimeStringValues.size();
+  resourceManager.compileTimeStringValues.push_back(node->codeLoc.toPrettyFilePath());
+  node->data.at(manIdx).setCompileTimeValue({.stringValueOffset = stringValueOffset});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_STRING), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinSourceLineCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SOURCE_LINE);
+
+  node->data.at(manIdx).setCompileTimeValue({.longValue = static_cast<int64_t>(node->codeLoc.line)});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitBuiltinSourceColumnCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_SOURCE_COLUMN);
+
+  node->data.at(manIdx).setCompileTimeValue({.longValue = static_cast<int64_t>(node->codeLoc.col)});
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
+}
+
 } // namespace spice::compiler

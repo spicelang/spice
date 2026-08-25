@@ -22,12 +22,22 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  * @return Pretty code location
  */
 std::string CodeLoc::toPrettyString() const {
+  const std::string filePath = toPrettyFilePath();
+  const std::string prefix = filePath.empty() ? "" : filePath + ":";
+  return prefix + std::to_string(line) + ":" + std::to_string(col);
+}
+
+/**
+ * Returns the path of the source file this code location points into, relative to the root source file
+ *
+ * @return Pretty file path
+ */
+std::string CodeLoc::toPrettyFilePath() const {
   const std::filesystem::path &rootSourceFilePath = sourceFile->getRootSourceFile()->filePath;
   std::filesystem::path sourceFilePath = relative(sourceFile->filePath, rootSourceFilePath);
   if (sourceFilePath == ".")
     sourceFilePath /= sourceFile->fileName;
-  const std::string prefix = sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":";
-  return prefix + std::to_string(line) + ":" + std::to_string(col);
+  return sourceFilePath.generic_string();
 }
 
 /**

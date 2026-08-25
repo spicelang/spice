@@ -145,6 +145,27 @@ static const std::unordered_map<std::string_view, BuiltinFunctionDispatch> BUILT
             .irGeneratorVisitMethod = &IRGenerator::visitBuiltinPlacementNewCall,
         },
     },
+    {
+        BUILTIN_FCT_NAME_SOURCE_FILE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSourceFileCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_SOURCE_LINE,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSourceLineCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
+    {
+        BUILTIN_FCT_NAME_SOURCE_COLUMN,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinSourceColumnCall,
+            .irGeneratorVisitMethod = nullptr,
+        },
+    },
 };
 
 } // namespace spice::compiler

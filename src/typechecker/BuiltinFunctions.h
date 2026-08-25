@@ -46,6 +46,9 @@ static constexpr std::string_view BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "
 static constexpr std::string_view BUILTIN_FCT_NAME_IS_HEAP = "__is_heap";
 static constexpr std::string_view BUILTIN_FCT_NAME_NEW = "__new";
 static constexpr std::string_view BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_new";
+static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_FILE = "__source_file";
+static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_LINE = "__source_line";
+static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_COLUMN = "__source_column";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -202,6 +205,18 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
                 .minArgTypes = 1,
                 .maxArgTypes = std::numeric_limits<unsigned int>::max(),
             },
+    },
+    BuiltinFunctionEntry{
+        .name = BUILTIN_FCT_NAME_SOURCE_FILE,
+        .info = BuiltinFunctionInfo{},
+    },
+    BuiltinFunctionEntry{
+        .name = BUILTIN_FCT_NAME_SOURCE_LINE,
+        .info = BuiltinFunctionInfo{},
+    },
+    BuiltinFunctionEntry{
+        .name = BUILTIN_FCT_NAME_SOURCE_COLUMN,
+        .info = BuiltinFunctionInfo{},
     },
 };
 

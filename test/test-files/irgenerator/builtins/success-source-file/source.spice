@@ -1,0 +1,4 @@
+f<int> main() {
+    printf("%s\n", __source_file());
+    return 0;
+}
