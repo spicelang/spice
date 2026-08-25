@@ -546,7 +546,9 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
       const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
       fieldTypes.reserve(totalFieldCount);
 
-      // If the struct has no interface types, but a vtable was requested, add another ptr field type
+      // If the struct implements interfaces, the first implicit field (added below via lookupField) is an interface
+      // type, which already lowers to a { ptr } struct carrying the vtable pointer. Only add an explicit ptr field
+      // here for structs without interfaces that still need a vtable (e.g. RTTI root types), to avoid duplicating it.
       assert(structSymbol->declNode->isStructDef());
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
       if (spiceStruct->hasSynthesizedVTablePtr())

@@ -50,7 +50,7 @@ std::string CSTVisualizer::buildRule(const antlr4::ParserRuleContext *ctx) {
 std::string CSTVisualizer::getSpaces() const {
   std::string spaces;
   for (int i = 0; i < currentTabs; i++)
-    spaces += " ";
+    spaces += ' ';
   return spaces;
 } // LCOV_EXCL_LINE - false positive
 
