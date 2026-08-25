@@ -117,6 +117,13 @@ f<int> main() {
     nested.pushBack(Pair<int, int>(1, 2));
     nested.pushBack(Pair<int, int>(3, 4));
 
+    Error myErr = Error(42, "boom");
+
+    Result<int> okResult = ok<int>(1);
+    Result<int> errResult = err<int>(myErr);
+    assert okResult.isOk();
+    assert errResult.isErr();
+
     printf("All structures populated!\n"); // breakpoint line
     return 0;
 }
