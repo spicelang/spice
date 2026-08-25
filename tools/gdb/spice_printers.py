@@ -15,11 +15,11 @@ In a running GDB session:
 
 Or add that line to your `~/.gdbinit` to load it for every session.
 
-Covered types (all of `std/data/` plus the runtime `String` type)
--------------------------------------------------------------------
+Covered types (all of `std/data/` plus the runtime `String`, `Error` and `Result` types)
+-----------------------------------------------------------------------------------------
 Vector, Stack, Queue, Deque, PriorityQueue, LinkedList, DoublyLinkedList, HashTable,
 RedBlackTree, BinaryTree, Map, Set, UnorderedMap, UnorderedSet, Pair, Triple, Optional,
-BitSet, Trie, Graph, Vertex, String.
+BitSet, Trie, Graph, Vertex, String, Error, Result.
 """
 
 import re
@@ -391,6 +391,36 @@ class SpiceStringPrinter:
         return contents.lazy_string(length=length)
 
 
+class SpiceErrorPrinter:
+    """Error - runtime error object (std/runtime/error_rt.spice): an int code plus a message."""
+
+    def __init__(self, val, _type_name):
+        self.val = val
+
+    def to_string(self):
+        code = int(self.val["code"])
+        message = self.val["message"]
+        try:
+            message = message.string()
+        except gdb.error:
+            # Unreadable pointer (e.g. uninitialized/corrupted memory) - fall back to the raw
+            # value instead of failing the whole printer.
+            pass
+        return f'Error(code={code}, message="{message}")'
+
+
+class SpiceResultPrinter:
+    """Result<T> - success/error wrapper (std/runtime/result_rt.spice); mirrors Result.isOk()."""
+
+    def __init__(self, val, _type_name):
+        self.val = val
+
+    def to_string(self):
+        if int(self.val["error"]["code"]) == 0:
+            return f"Ok({self.val['data']})"
+        return f"Err({self.val['error']})"
+
+
 # Base struct name (before the first '<') -> printer class
 _PRINTERS = {
     "Vector": SpiceArrayPrinter,
@@ -415,6 +445,8 @@ _PRINTERS = {
     "Graph": SpiceGraphPrinter,
     "Vertex": SpiceVertexPrinter,
     "String": SpiceStringPrinter,
+    "Error": SpiceErrorPrinter,
+    "Result": SpiceResultPrinter,
 }
 
 _TAG_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(?:<.*>)?$")

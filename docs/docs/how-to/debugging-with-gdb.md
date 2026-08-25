@@ -58,21 +58,23 @@ printer too, and so on.
 
 ## Covered types
 
-| Type(s) | Rendered as |
-|---|---|
-| `Vector`, `Stack`, `PriorityQueue` | `{e0, e1, ...}` in storage order |
-| `Queue`, `Deque` | `{e0, e1, ...}` in logical front-to-back order |
-| `LinkedList`, `DoublyLinkedList` | `{e0, e1, ...}` in push-back order |
-| `HashTable`, `UnorderedMap` | `{key = value, ...}`, unordered |
-| `RedBlackTree`, `Map` | `{key = value, ...}`, sorted by key |
-| `Set`, `UnorderedSet` | `{v0, v1, ...}` (keys only) |
-| `BinaryTree` | `{v0, v1, ...}`, sorted (in-order traversal) |
-| `Pair`, `Triple` | `(first, second[, third])` |
-| `Optional` | `Some(value)` or `None` |
-| `BitSet` | A bit string, e.g. `BitSet of 8 bits = 01001000` |
-| `Trie` | The stored words, e.g. `{car, cart, cat}` |
-| `Graph`, `Vertex` | A directed/undirected summary plus the vertex set |
-| `String` | A quoted string |
+| Type(s)                            | Rendered as                                       |
+|------------------------------------|---------------------------------------------------|
+| `Vector`, `Stack`, `PriorityQueue` | `{e0, e1, ...}` in storage order                  |
+| `Queue`, `Deque`                   | `{e0, e1, ...}` in logical front-to-back order    |
+| `LinkedList`, `DoublyLinkedList`   | `{e0, e1, ...}` in push-back order                |
+| `HashTable`, `UnorderedMap`        | `{key = value, ...}`, unordered                   |
+| `RedBlackTree`, `Map`              | `{key = value, ...}`, sorted by key               |
+| `Set`, `UnorderedSet`              | `{v0, v1, ...}` (keys only)                       |
+| `BinaryTree`                       | `{v0, v1, ...}`, sorted (in-order traversal)      |
+| `Pair`, `Triple`                   | `(first, second[, third])`                        |
+| `Optional`                         | `Some(value)` or `None`                           |
+| `BitSet`                           | A bit string, e.g. `BitSet of 8 bits = 01001000`  |
+| `Trie`                             | The stored words, e.g. `{car, cart, cat}`         |
+| `Graph`, `Vertex`                  | A directed/undirected summary plus the vertex set |
+| `String`                           | A quoted string                                   |
+| `Error`                            | `Error(code=..., message="...")`                  |
+| `Result`                           | `Ok(value)` or `Err(error)`                       |
 
 The dispatch is based on the DWARF struct name that the compiler emits for generic instantiations (e.g.
 `Vector<int>`), so the printers apply to any concrete instantiation of these generic types automatically — there is

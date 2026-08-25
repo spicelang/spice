@@ -14,13 +14,13 @@ Find the GDB manual and other documentation resources online at:
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
 Reading symbols from ./test-tmp/instrumentation_successGdbPrettyPrinters/source...
-Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice, line 120.
+Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice, line 127.
 [Thread debugging using libthread_db enabled]
 Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 Breakpoint 1, main ()
-    at ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice:120
-120	    printf("All structures populated!\n"); // breakpoint line
+    at ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice:127
+127	    printf("All structures populated!\n"); // breakpoint line
 $1 = Vector<int> of length 3 = {10, 20, 30}
 $2 = Stack<int> of length 3 = {1, 2, 3}
 $3 = Queue<int> of length 3 = {4, 5, 6}
@@ -44,5 +44,8 @@ $19 = BitSet of 8 bits = 01001000
 $20 = Trie with 3 words = {car, cart, cat}
 $21 = Directed Graph<int> with 2 vertices = {1, 2}
 $22 = Vector<Pair<int,int>> of length 2 = {(1, 2), (3, 4)}
+$23 = Error(code=42, message="boom")
+$24 = Ok(1)
+$25 = Err(Error(code=42, message="boom"))
 All structures populated!
 [Inferior 1 (process 84578) exited normally]

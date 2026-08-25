@@ -11,7 +11,7 @@ gdb.execute("source " + os.path.join(repo_root, "tools", "gdb", "spice_printers.
 end
 
 # Preparation
-break source.spice:120
+break source.spice:127
 run
 
 # Runtime
@@ -37,6 +37,9 @@ print bits
 print trie
 print graph
 print nested
+print myErr
+print okResult
+print errResult
 continue
 
 # Quit
