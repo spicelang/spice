@@ -3,6 +3,7 @@
 #include "CyclomaticComplexityRule.h"
 
 #include <ast/ASTNodes.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -19,9 +20,8 @@ static constexpr size_t MAX_CYCLOMATIC_COMPLEXITY = 10;
  */
 static size_t countDecisionPoints(const ASTNode *node) { // NOLINT(misc-no-recursion)
   size_t count = 0;
-  if (dynamic_cast<const IfStmtNode *>(node) != nullptr || dynamic_cast<const ForLoopNode *>(node) != nullptr ||
-      dynamic_cast<const ForeachLoopNode *>(node) != nullptr || dynamic_cast<const WhileLoopNode *>(node) != nullptr ||
-      dynamic_cast<const DoWhileLoopNode *>(node) != nullptr || dynamic_cast<const CaseBranchNode *>(node) != nullptr)
+  if (is<const IfStmtNode *>(node) || is<const ForLoopNode *>(node) || is<const ForeachLoopNode *>(node) ||
+      is<const WhileLoopNode *>(node) || is<const DoWhileLoopNode *>(node) || is<const CaseBranchNode *>(node))
     count++;
 
   for (const ASTNode *child : node->getChildren())
