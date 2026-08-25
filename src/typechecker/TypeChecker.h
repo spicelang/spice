@@ -171,6 +171,9 @@ public:
   std::any visitBuiltinIsHeap(FctCallNode *node) const;
   std::any visitBuiltinNewCall(FctCallNode *node) const;
   std::any visitBuiltinPlacementNewCall(FctCallNode *node) const;
+  std::any visitBuiltinSourceFileCall(FctCallNode *node) const;
+  std::any visitBuiltinSourceLineCall(FctCallNode *node) const;
+  std::any visitBuiltinSourceColumnCall(FctCallNode *node) const;
 
 private:
   // Private members

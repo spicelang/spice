@@ -30,6 +30,7 @@ struct CodeLoc {
 
   // Public methods
   [[nodiscard]] std::string toString() const;
+  [[nodiscard]] std::string toPrettyFilePath() const;
   [[nodiscard]] std::string toPrettyString() const;
   [[nodiscard]] std::string toPrettyLine() const;
   [[nodiscard]] std::string toPrettyLineAndColumn() const;

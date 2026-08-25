@@ -1,0 +1,5 @@
+f<int> main() {
+    printf("%ld\n", __source_line());
+    printf("%ld\n", __source_line());
+    return 0;
+}
