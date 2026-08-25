@@ -1,7 +1,3 @@
-p foo_bar() {
-
-}
-
 f<int> main() {
     Result<heap byte*> r = sAlloc(4l);
 }

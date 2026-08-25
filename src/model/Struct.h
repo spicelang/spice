@@ -22,6 +22,7 @@ public:
   [[nodiscard]] std::string getScopeName() const;
   static std::string getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes = {});
   [[nodiscard]] bool hasReferenceFields() const;
+  [[nodiscard]] bool hasSynthesizedVTablePtr() const;
   const SymbolTableEntry *areAllFieldsInState(LifecycleState state) const;
   const SymbolTableEntry *areAllFieldsInitialized() const;
   void resetFieldSymbolsToDeclared(const ASTNode *node) const;

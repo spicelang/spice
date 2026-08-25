@@ -49,6 +49,20 @@ bool Struct::hasReferenceFields() const {
 }
 
 /**
+ * Checks if the LLVM struct type of this struct carries a synthesized vtable pointer as its first element, which
+ * shifts all fields by one element. Structs that implement interfaces receive their vtable pointer through their
+ * leading implicit interface field instead, so only structs that request a vtable without implementing any
+ * interface carry the extra element.
+ *
+ * @return Carries a synthesized vtable pointer or not
+ */
+bool Struct::hasSynthesizedVTablePtr() const {
+  assert(declNode->isStructDef());
+  const auto structDeclNode = spice_pointer_cast<const StructDefNode *>(declNode);
+  return !structDeclNode->hasInterfaces && structDeclNode->emitVTable;
+}
+
+/**
  * Check that all fields are in a certain lifecycle state.
  *
  * @param state Lifecycle state to check for

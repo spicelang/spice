@@ -349,6 +349,10 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     // Insert into cache
     structTypeCache.emplace(hashKey, structDiType);
 
+    // A synthesized vtable pointer takes up the first element of the LLVM struct type, which shifts all fields
+    // by one element
+    const size_t fieldElementOffset = spiceStruct->hasSynthesizedVTablePtr() ? 1 : 0;
+
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
     for (size_t i = 0; i < spiceStruct->scope->getFieldCount(); i++) {
@@ -360,7 +364,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
 
       const QualType &fieldType = fieldEntry->getQualType();
       const uint32_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
-      const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
+      const size_t offsetInBits = structLayout->getElementOffsetInBits(i + fieldElementOffset);
 
       llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldType);
       llvm::DIDerivedType *fieldDiDerivedType =
