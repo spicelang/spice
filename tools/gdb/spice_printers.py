@@ -403,6 +403,8 @@ class SpiceErrorPrinter:
         try:
             message = message.string()
         except gdb.error:
+            # Unreadable pointer (e.g. uninitialized/corrupted memory) - fall back to the raw
+            # value instead of failing the whole printer.
             pass
         return f'Error(code={code}, message="{message}")'
 
