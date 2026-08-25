@@ -338,12 +338,13 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(llvm::cast<llvm::StructType>(structType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
 
-    // Create struct ty
+    // Create struct ty. Generic substantiations are named by their signature (e.g. Vector<int>), so that debuggers can
+    // tell the manifestations of a generic struct apart
+    const std::string structName = spiceStruct->getSignature();
     const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
-        diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
+        diFile, structName, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByReference | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
-    baseDiType = structDiType;
 
     // Insert into cache
     structTypeCache.emplace(hashKey, structDiType);
@@ -369,7 +370,28 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
       fieldTypes.push_back(fieldDiDerivedType);
     }
 
-    structDiType->replaceElements(llvm::MDTuple::get(irGenerator->context, fieldTypes));
+    // Collect DI nodes for the template parameters of generic substantiations
+    std::vector<llvm::Metadata *> templateParams;
+    if (!spiceStruct->templateTypes.empty() && spiceStruct->isFullySubstantiated()) {
+      // The template parameters of a substantiation carry the concrete types, so the declared parameter names
+      // (e.g. 'T') have to be taken from the generic preset
+      const StructBase *nameSource = spiceStruct->isGenericSubstantiation() ? spiceStruct->genericPreset : spiceStruct;
+      const QualTypeList concreteTemplateTypes = spiceStruct->getConcreteTemplateTypes();
+      assert(nameSource->templateTypes.size() == concreteTemplateTypes.size());
+      templateParams.reserve(concreteTemplateTypes.size());
+      for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
+        const std::string &paramName = nameSource->templateTypes.at(i).getSubType();
+        llvm::DIType *paramDiType = getDITypeForQualType(node, concreteTemplateTypes.at(i));
+        templateParams.push_back(diBuilder->createTemplateTypeParameter(compileUnit, paramName, paramDiType, false));
+      }
+    }
+
+    // Attach fields and template parameters. This may re-unique the struct type, so refresh all references to it
+    const llvm::DINodeArray templateParamArray =
+        templateParams.empty() ? llvm::DINodeArray() : diBuilder->getOrCreateArray(templateParams);
+    diBuilder->replaceArrays(structDiType, diBuilder->getOrCreateArray(fieldTypes), templateParamArray);
+    structTypeCache.at(hashKey) = structDiType;
+    baseDiType = structDiType;
     break;
   }
   case TY_INTERFACE: {
