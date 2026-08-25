@@ -1,0 +1,122 @@
+// TEST: -g
+
+import "std/data/vector";
+import "std/data/stack";
+import "std/data/queue";
+import "std/data/deque";
+import "std/data/priority-queue";
+import "std/data/linked-list";
+import "std/data/doubly-linked-list";
+import "std/data/hash-table";
+import "std/data/red-black-tree";
+import "std/data/binary-tree";
+import "std/data/map";
+import "std/data/set";
+import "std/data/unordered-map";
+import "std/data/unordered-set";
+import "std/data/pair";
+import "std/data/triple";
+import "std/data/optional";
+import "std/data/bitset";
+import "std/data/trie";
+import "std/data/graph";
+
+f<int> main() {
+    Vector<int> vec = Vector<int>();
+    vec.pushBack(10);
+    vec.pushBack(20);
+    vec.pushBack(30);
+
+    Stack<int> stack = Stack<int>();
+    stack.push(1);
+    stack.push(2);
+    stack.push(3);
+
+    Queue<int> queue = Queue<int>();
+    queue.push(4);
+    queue.push(5);
+    queue.push(6);
+
+    Deque<int> deque = Deque<int>();
+    deque.pushBack(7);
+    deque.pushFront(8);
+    deque.pushBack(9);
+
+    PriorityQueue<int> pq = PriorityQueue<int>();
+    pq.push(30);
+    pq.push(10);
+    pq.push(20);
+
+    LinkedList<int> list = LinkedList<int>();
+    list.pushBack(100);
+    list.pushBack(200);
+    list.pushBack(300);
+
+    DoublyLinkedList<int> dList = DoublyLinkedList<int>();
+    dList.pushBack(11);
+    dList.pushBack(22);
+    dList.pushBack(33);
+
+    HashTable<String, int> table = HashTable<String, int>();
+    table.upsert(String("one"), 1);
+    table.upsert(String("two"), 2);
+
+    RedBlackTree<int, String> tree = RedBlackTree<int, String>();
+    tree.insert(2, String("two"));
+    tree.insert(1, String("one"));
+    tree.insert(3, String("three"));
+
+    BinaryTree<int> bTree = BinaryTree<int>();
+    bTree.insert(5);
+    bTree.insert(3);
+    bTree.insert(7);
+
+    Map<int, String> map = Map<int, String>();
+    map.insert(1, String("alpha"));
+    map.insert(2, String("beta"));
+
+    Set<int> set = Set<int>();
+    set.insert(3);
+    set.insert(1);
+    set.insert(2);
+
+    UnorderedMap<String, int> uMap = UnorderedMap<String, int>();
+    uMap.upsert(String("x"), 42);
+
+    UnorderedSet<int> uSet = UnorderedSet<int>();
+    uSet.insert(7);
+    uSet.insert(8);
+
+    Pair<int, int> pair = Pair<int, int>(1, 2);
+    assert pair.getFirst() == 1;
+
+    Triple<int, int, int> triple = Triple<int, int, int>(1, 2, 3);
+    assert triple.getFirst() == 1;
+
+    Optional<int> some = Optional<int>(42);
+    assert some.isPresent();
+
+    Optional<int> none = Optional<int>();
+    assert !none.isPresent();
+
+    BitSet bits = BitSet(8ul);
+    bits.set(1ul);
+    bits.set(4ul);
+
+    Trie trie;
+    trie.insert("car");
+    trie.insert("cart");
+    trie.insert("cat");
+
+    Graph<int> graph;
+    Vertex<int>& v1 = graph.addVertex(1);
+    Vertex<int>& v2 = graph.addVertex(2);
+    graph.addEdge(v1, v2);
+
+    Vector<Pair<int, int>> nested = Vector<Pair<int, int>>();
+    nested.pushBack(Pair<int, int>(1, 2));
+    nested.pushBack(Pair<int, int>(3, 4));
+
+    printf("All structures populated!\n"); // breakpoint line
+    return 0;
+}

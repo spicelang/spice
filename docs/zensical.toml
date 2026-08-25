@@ -44,6 +44,7 @@ nav = [
     "how-to/web-assembly.md",
     "how-to/cpp-interop.md",
     "how-to/http-server-client.md",
+    "how-to/debugging-with-gdb.md",
   ] },
   { Documentation = [
     "language/hello-world.md",

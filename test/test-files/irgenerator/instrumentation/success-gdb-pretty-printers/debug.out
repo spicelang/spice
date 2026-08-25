@@ -1,0 +1,48 @@
+GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1
+Copyright (C) 2024 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from ./test-tmp/instrumentation_successGdbPrettyPrinters/source...
+Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice, line 120.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, main ()
+    at ./test-files/irgenerator/instrumentation/success-gdb-pretty-printers/source.spice:120
+120	    printf("All structures populated!\n"); // breakpoint line
+$1 = Vector<int> of length 3 = {10, 20, 30}
+$2 = Stack<int> of length 3 = {1, 2, 3}
+$3 = Queue<int> of length 3 = {4, 5, 6}
+$4 = Deque<int> of length 3 = {8, 7, 9}
+$5 = PriorityQueue<int> of length 3 = {30, 10, 20}
+$6 = LinkedList<int> of length 3 = {100, 200, 300}
+$7 = DoublyLinkedList<int> of length 3 = {11, 22, 33}
+$8 = HashTable<String, int> with 2 elements = {["two"] = 2, ["one"] = 1}
+$9 = RedBlackTree<int, String> with 3 elements = {[1] = "one", [2] = "two", 
+  [3] = "three"}
+$10 = BinaryTree<int> = {3, 5, 7}
+$11 = Map<int, String> with 2 elements = {[1] = "alpha", [2] = "beta"}
+$12 = Set<int> with 3 elements = {1, 2, 3}
+$13 = UnorderedMap<String, int> with 1 element = {["x"] = 42}
+$14 = UnorderedSet<int> with 2 elements = {8, 7}
+$15 = (1, 2)
+$16 = (1, 2, 3)
+$17 = Some(42)
+$18 = None
+$19 = BitSet of 8 bits = 01001000
+$20 = Trie with 3 words = {car, cart, cat}
+$21 = Directed Graph<int> with 2 vertices = {1, 2}
+$22 = Vector<Pair<int,int>> of length 2 = {(1, 2), (3, 4)}
+All structures populated!
+[Inferior 1 (process 84578) exited normally]
