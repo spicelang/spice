@@ -376,7 +376,10 @@ static void execTestCase(const TestCase &testCase) {
             std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
             EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
             gdbScriptPath.make_preferred();
-            const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + executablePath.string();
+            // -nx: ignore any local/system .gdbinit so a developer's own GDB setup (e.g. globally installed
+            // pretty printers) cannot change test output; tests that want the pretty printers source them
+            // explicitly from within their debug script instead.
+            const std::string cmd = "gdb -nx -x " + gdbScriptPath.string() + " " + executablePath.string();
             const auto [output, exitCode] = SystemUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
