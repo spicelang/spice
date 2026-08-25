@@ -25,8 +25,7 @@ BitSet, Trie, Graph, Vertex, String.
 import re
 import gdb
 
-# Slot hash sentinels from std/data/hash-table.spice - a slot is occupied iff hash > HASH_TOMBSTONE
-_HASH_EMPTY = 0
+# Slot hash sentinel from std/data/hash-table.spice - a slot is occupied iff hash > HASH_TOMBSTONE
 _HASH_TOMBSTONE = 1
 
 _BITS_PER_WORD = 64
