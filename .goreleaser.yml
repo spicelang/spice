@@ -43,12 +43,14 @@ dockers_v2:
       "org.opencontainers.image.description": "Spice programming language."
     extra_files:
       - std
+      - tools/gdb
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     files:
       - LICENSE
       - std
+      - tools/gdb
     format_overrides:
       - goos: windows
         formats: [ "zip" ]
@@ -78,6 +80,11 @@ nfpms:
     contents:
       - src: std
         dst: /usr/lib/spice/std
+      - src: tools/gdb/spice_printers.py
+        dst: /usr/lib/spice/gdb/spice_printers.py
+      - src: tools/gdb/spice.gdb
+        dst: /etc/gdb/gdbinit.d/spice.gdb
+        type: config|noreplace
     overrides:
       apk:
         dependencies:
@@ -127,6 +134,8 @@ homebrew_casks:
       The Spice standard library is staged alongside the binary in the cask's
       staged path. If the compiler cannot locate it automatically, set:
         export SPICE_STD_DIR="$(brew --caskroom)/spice/{{ .Version }}/std"
+      The GDB pretty printers for the standard library data structures are staged next to it, at:
+        $(brew --caskroom)/spice/{{ .Version }}/tools/gdb/spice_printers.py
 
 release:
   name_template: "v{{ .Tag }}"
