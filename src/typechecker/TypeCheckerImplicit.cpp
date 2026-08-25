@@ -197,7 +197,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
       hasFieldsWithDefaultValue |= fieldNode->defaultValue != nullptr;
     } else {
-      assert(dynamic_cast<DataTypeNode *>(fieldSymbol->declNode) != nullptr);
+      assert(is<DataTypeNode *>(fieldSymbol->declNode));
     }
 
     if (fieldType.is(TY_STRUCT)) {

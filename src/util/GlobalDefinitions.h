@@ -14,12 +14,18 @@
 // Add this to the function signature to force inlining the function
 #define ALWAYS_INLINE __attribute__((always_inline))
 
+// Checks if a pointer is of a certain type
+template <typename DstT, typename SrcT>
+ALWAYS_INLINE static bool is(SrcT source) {
+  return dynamic_cast<DstT>(source) != nullptr;
+}
+
 // Casts a pointer to another pointer type and asserts that the cast was successful in debug mode
 template <typename DstT, typename SrcT>
 ALWAYS_INLINE static DstT spice_pointer_cast(SrcT source)
   requires(std::is_pointer_v<SrcT> && std::is_pointer_v<DstT>)
 {
-  assert(dynamic_cast<DstT>(source) != nullptr);
+  assert(is<DstT>(source));
   return static_cast<DstT>(source);
 }
 

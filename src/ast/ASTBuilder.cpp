@@ -495,7 +495,7 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
     else if (auto *anonymousScopeCtx = dynamic_cast<SpiceParser::AnonymousBlockStmtContext *>(stmt))
       stmtLstNode->statements.push_back(std::any_cast<AnonymousBlockStmtNode *>(visit(anonymousScopeCtx)));
     else
-      assert(dynamic_cast<TerminalNode *>(stmt) != nullptr); // GCOV_EXCL_LINE
+      assert(is<TerminalNode *>(stmt)); // GCOV_EXCL_LINE
   }
 
   return concludeNode(stmtLstNode);
