@@ -549,7 +549,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
       // If the struct has no interface types, but a vtable was requested, add another ptr field type
       assert(structSymbol->declNode->isStructDef());
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
-      if (!structDeclNode->hasInterfaces && structDeclNode->emitVTable)
+      if (spiceStruct->hasSynthesizedVTablePtr())
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
 
       // Collect all field types
