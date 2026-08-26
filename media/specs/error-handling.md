@@ -2,25 +2,24 @@
 
 ## Status
 
-Design proposal. Not yet implemented. This document describes the target design and a phased,
-independently-shippable migration path away from the current all-library, opt-in `Result`/`Error`/`panic`
-mechanism, towards a compiler-enforced, Zig-style "errors as values" model.
+Design proposal. Not yet implemented. This revision deliberately minimizes new syntax: rather than importing
+Zig's sigils/keywords (`!T`, `try`, `catch |err|`) wholesale, every piece below is either an existing Spice
+construct used as-is, or the smallest possible extension of one that already exists in the grammar.
 
 ## Implementation steps
 
-- [ ] Add `_` as a discard target for declarations/assignments (prerequisite, self-contained)
-- [ ] Adjust grammar for the `!T` error-union type and the `try` / `catch` operators
+- [ ] Add postfix `!` (propagation) to the `postfixUnaryExpr` grammar rule
 - [ ] Update IntelliJ plugin
-- [ ] Desugar `!T` to `Result<T>` in the type checker (no behavior change yet)
-- [ ] Implement `try` as sugar for propagate-or-unwrap
-- [ ] Implement `catch` as sugar for handle-or-produce-fallback
-- [ ] Add semantic checks for mandatory handling of error-union-typed expressions
-- [ ] Add tests for semantic checks
-- [ ] Gate mandatory handling behind an opt-in module attribute / CLI flag
-- [ ] Migrate `std` to return `!T` instead of panicking on recoverable failures
+- [ ] Type-check postfix `!`: operand must be `Result<T>`-shaped, enclosing function must return `Result<U>`
+- [ ] IR-gen postfix `!`: branch on `isErr()`, early-return-with-error or unwrap
+- [ ] Add `Result.unwrapOr(const T&)` and `Result.unwrapOrElse(f<T>(Error))` to `result_rt.spice`
+- [ ] Add tests for postfix `!` and the new `Result` methods
+- [ ] Upgrade the discarded-`Result` case of `UNUSED_RETURN_VALUE` from warning to hard error, gated by a module attribute
+- [ ] Add tests for the new diagnostic (on/off)
+- [ ] Migrate `std`'s internal `panic()`-on-recoverable-failure call sites to return `Result<T>`
 - [ ] Update docs, examples, changelog
-- [ ] Flip mandatory handling on by default (breaking change, major version)
-- [ ] Remove the opt-in gate
+- [ ] Flip the module attribute's default to on (breaking change, major version)
+- [ ] Remove the gate
 
 ## Motivation
 
@@ -30,217 +29,197 @@ Today, error handling in Spice is **entirely a library convention with no compil
   `unwrap()` panics if `error.code != 0`; `isOk()`/`isErr()`/`getErr()` are just field checks.
 - `Error` (`std/runtime/error_rt.spice`) is a plain struct: `int code` + `string message`.
 - `panic(Error)` is a builtin (`TypeChecker::visitBuiltinPanicCall`, `IRGenerator::visitBuiltinPanicCall`) that
-  prints to stderr and calls `exit(EXIT_FAILURE)`. It is recognized by the compiler only insofar as its argument
-  must satisfy `QualType::isErrorObj()`.
+  prints to stderr and calls `exit(EXIT_FAILURE)`.
 
-Nothing stops a caller from:
-- Calling a `Result<T>`-returning function and dropping the result entirely as a bare expression statement.
-- Calling `.unwrap()` without ever checking `.isErr()` first.
-- Ignoring `Error` values that were never wrapped in a `Result` at all.
+Nothing stops a caller from calling a `Result<T>`-returning function and dropping the result as a bare
+expression statement, or from ignoring `.isErr()` before ever touching `.unwrap()`'s payload. The type checker
+already has a related, but generic and non-mandatory, mechanism: `UNUSED_RETURN_VALUE` is a *warning* emitted
+for any discarded call return value (`TypeCheckerValues.cpp:279-291`), suppressible per callee-function via
+`#[core.compiler.ignoreUnusedReturnValue]` (`Attributes.h:29`). It doesn't know or care whether the discarded
+value carries an error.
 
-The type checker *does* already warn (not error) on an unused function-call return value in general
-(`UNUSED_RETURN_VALUE`, `TypeCheckerValues.cpp:290`), suppressible per-function via
-`#[core.compiler.ignoreUnusedReturnValue]` (`Attributes.h:29`). That is the closest thing to enforcement that
-exists, and it is generic, non-error-aware, and only a warning.
+Goal: make it impossible to drop a fallible call's result on the floor by accident, and make propagating an
+error up the call stack a one-token operation — without introducing constructs foreign to Spice's existing
+grammar and standard-library shape.
 
-Goal: move to a model where a function that can fail says so in its signature, the value it returns cannot be
-silently discarded, and propagating or handling the error is part of the language grammar rather than a
-struct method you may or may not remember to call — closer to Zig's `!T` / `try` / `catch`, adapted to Spice's
-existing struct/interface/generics model rather than Zig's error-set model.
+## Survey of what Spice already has to build on
 
-## Goals
+This proposal leans on four things that already exist, unchanged:
 
-1. A function that can fail declares it in its return type, and the type is different from a function that can't.
-2. A caller cannot use the success value without acknowledging the possibility of failure, and cannot discard
-   the failure possibility silently by accident (an explicit opt-out is fine; silence is not).
-3. Propagating an error up the call stack is a one-token operation, not manual `if isErr() { return err }`
-   boilerplate.
-4. `panic` remains available, but becomes the tool for programmer errors / truly unrecoverable state
-   (Zig's `unreachable`/`@panic`), not the primary path for recoverable failures like "file not found".
-5. Migration is incremental: every phase compiles and existing `Result`/`Error`/`panic` user code keeps working
-   until the final, explicitly-versioned breaking phase.
-
-## Non-goals (for this proposal)
-
-- Zig-style compile-time-checked **error sets** (per-function enumerated error types). Spice's `Error` stays a
-  single concrete struct (code + message) for v1; see "Future extensions" below for the interface-based path.
-- Exceptions / stack unwinding / `try`-`catch`-in-the-C++-sense. There is no unwinding — `try`/`catch` here are
-  both sugar over ordinary value returns, matching how `Result<T>` already works today.
-- Changing `panic`'s runtime behavior (print + `exit`). Out of scope here.
+1. **`Result<T>` itself.** Generic instantiation with `<T>` is already the idiom everywhere (`Vector<T>`,
+   `max<T>`, `Result<T>`). There is no need for a new `!T` type sigil — a fallible function simply returns
+   `Result<T>`, exactly as it does today.
+2. **Postfix sigils on `postfixUnaryExpr`.** The grammar rule already reads
+   `postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS)`
+   (`Spice.g4:78`) — i.e. it already hosts multiple single-token postfix operators on an expression. Adding one
+   more alternative is a one-line grammar change, not a new category of syntax.
+3. **Token reuse by grammar position.** Spice already gives `MUL` and `BITWISE_AND` different meanings as an
+   infix operator (`*`, `&`), a prefix unary operator (dereference, address-of, `Spice.g4:77`), and a postfix
+   modifier on `dataType` (pointer/reference type, `Spice.g4:92`). Reusing `NOT` (`!`) — today only a prefix
+   boolean-negation operator — in a new postfix-on-expression position follows the same, already-established
+   pattern rather than introducing a new token.
+4. **First-class lambdas and the underscore-discard convention.** Spice already has lambda literals
+   (`lambdaExpr`, `lambdaFunc`, `Spice.g4:87-89`, e.g. `(int x) -> x + 1`) and already treats any identifier
+   starting with `_` as an intentionally-unused binding that is exempt from the `UNUSED_VARIABLE` warning
+   (`UNUSED_VARIABLE_NAME = '_'` in `SymbolTableBuilder.h:21`, checked in `Scope.cpp:153`). Both are reused
+   below instead of inventing pipe-bound closure syntax (`catch |err|`) or a new discard token (`_ = expr;`).
 
 ## Design
 
-### 1. `!T`: error-union type, sugar over `Result<T>`
+### 1. Fallible functions: still just `Result<T>`
 
-`!T` is new type syntax, valid wherever `dataType` is valid, that the type checker desugars directly to
-`Result<T>`. No new struct layout, no ABI change — `Result<T>` remains the concrete representation, so this is
-purely a front-end (grammar + type-checker) change:
+No new type syntax. A function that can fail returns `Result<T>`, exactly as today:
 
 ```spice
-f<!File> openFile(string path) { ... }   // same runtime type as f<Result<File>> openFile(...)
+f<Result<Config>> loadConfig(string path) { ... }
 ```
 
-Using `!T` instead of spelling out `Result<T>` is what makes the value subject to the mandatory-handling check
-below (see "Marking", not just the raw `Result<T>` spelling) — see open question OQ-1 for whether the check
-should key off the spelling or off the type itself.
+### 2. Postfix `!`: propagate-or-unwrap
 
-### 2. `_` as a discard target
+Add one alternative to `postfixUnaryExpr` (`Spice.g4:78`): `postfixUnaryExpr NOT`. Semantics, for an operand of
+type `Result<T>`:
 
-Prerequisite for everything else. Add `_` as a valid assignment/declaration target that evaluates and discards
-its right-hand side without binding a variable or triggering "unused" diagnostics:
-
-```spice
-_ = mightFail();   // explicitly, visibly acknowledges "I am ignoring this"
-```
-
-This is small and self-contained (grammar + `SymbolTableBuilder` + `TypeChecker` + `IRGenerator`), useful
-independent of error handling, and is the escape hatch mandatory handling needs (see Goal 2: opt-out must be
-explicit, not silent).
-
-### 3. `try`: propagate-or-unwrap
-
-`try <expr>` where `<expr>` has type `!T` (i.e. `Result<T>`):
-- If the callee scope's own return type is not an error-union type, this is a compile error — `try` can only
-  appear inside a function/procedure that itself returns `!U` for some `U`, so the error has somewhere to go.
-- At runtime: if `<expr>.isErr()`, immediately `return err<U>(<expr>.getErr())` from the enclosing function
-  (an early-return of the enclosing function's own error-union return type, analogous to how `terminateBlock`
-  already emits scope cleanup before `panic`'s `exit` call in `GenBuiltinFunctions.cpp:143`).
-- Otherwise, evaluates to `<expr>.unwrap()` (the `T`).
+- The enclosing function/procedure must itself return `Result<U>` for some `U` — otherwise a compile error
+  (there is nowhere for the propagated error to go). This mirrors how `PLUS_PLUS`/`MINUS_MINUS` already require
+  their operand to be an lvalue of a numeric type — a postfix operator with a precondition on its context is
+  already how this grammar rule works.
+- At runtime: if the operand's `isErr()` is true, immediately return that `Error` wrapped as `Result<U>` from
+  the enclosing function (same early-return-with-scope-cleanup shape already used by `panic`'s `exit` path,
+  `GenBuiltinFunctions.cpp:141-149`, minus the `exit` call). Otherwise, the expression evaluates to `unwrap()`'s
+  result (`T`).
 
 ```spice
-f<!Config> loadConfig(string path) {
-    string raw = try readFile(path);      // propagates readFile's error as-is
+f<Result<Config>> loadConfig(string path) {
+    string raw = readFile(path)!;      // propagates readFile's error as Result<Config>'s error
     return parseConfig(raw);
 }
 ```
 
-### 4. `catch`: handle-or-produce-fallback
+This is the one genuinely new piece of grammar in this proposal — there is no existing Spice construct for
+"early-return-with-transformation" — but it is expressed as a single reused token in an existing rule, not a
+new keyword or sigil family.
 
-`<expr> catch |err| <block-or-expr>` where `<expr>` has type `!T`:
-- If `<expr>.isOk()`, evaluates to the unwrapped `T`.
-- Otherwise, binds `err` (type `Error`) in scope and evaluates `<block-or-expr>`, which must either produce a
-  value of type `T` (fallback) or diverge (`return`, `panic`, `break`, `continue` — mirroring how Zig requires
-  the `catch` block to diverge or produce `T`).
+### 3. Inline handling: plain `Result<T>` methods, using existing lambda syntax
+
+No new binary operator, no new binding syntax. Add two methods to `result_rt.spice`, next to the existing
+`unwrap()`/`isOk()`/`isErr()`/`getErr()`:
 
 ```spice
-Config cfg = loadConfig(path) catch |e| {
-    log.warn("using defaults: " + e.message);
-    return Config.default();
-};
+public inline f<T> Result.unwrapOr(const T& fallback) {
+    return this.isOk() ? this.data : fallback;
+}
+
+public f<T> Result.unwrapOrElse(f<T>(Error) handler) {
+    return this.isOk() ? this.data : handler(this.error);
+}
 ```
 
-`.isOk()`/`.isErr()`/`.unwrap()`/`.getErr()` on `Result<T>` keep working exactly as today — `try`/`catch` are
-convenience sugar over them, not a replacement mechanism, which is what keeps `Result<T>` itself unchanged and
-the migration additive.
+(`unwrapOr` is expressible with the existing ternary, `Spice.g4:65`, today. `unwrapOrElse` takes a function
+value with Spice's existing function-typed-parameter and lambda syntax — no grammar change at all.)
 
-### 5. Mandatory handling diagnostic
+```spice
+Config cfg = loadConfig(path).unwrapOrElse((Error e) -> {
+    log.warn("using defaults: " + e.message);
+    return Config.default();
+});
 
-Currently `UNUSED_RETURN_VALUE` (`TypeCheckerValues.cpp:290`) is a warning for *any* discarded return value and
-is suppressible per-callee via `#[core.compiler.ignoreUnusedReturnValue]`. This proposal adds a second,
-narrower check specific to error-union-typed (`!T`) expressions:
+Config cfg2 = loadConfig(path).unwrapOr(Config.default());
+```
 
-- A bare expression statement of type `!T` that is not the direct operand of `try`, `catch`, or an explicit
-  `_ = ...;` discard is a **hard compile error**, not a warning, and is *not* suppressible by
-  `ignoreUnusedReturnValue` (that attribute keeps its existing, weaker meaning for ordinary return values).
-- The general, non-error-aware `UNUSED_RETURN_VALUE` warning is untouched for everything else.
+This covers the same use case as Zig's `catch |err| { ... }`, but as ordinary generic-struct methods taking an
+ordinary lambda — both already-existing constructs — rather than a new operator with new binding syntax.
 
-This is the piece that actually makes handling *mandatory* rather than merely convenient, and it is a
-relatively small addition on top of existing infrastructure (`TypeCheckerValues.cpp:279-291` already has the
-"is this a discarded call result" check; it just needs an error-union-aware branch).
+### 4. Mandatory handling
 
-### 6. `panic` stays, with a narrowed role
+Extend the existing discarded-return-value check (`TypeCheckerValues.cpp:279-291`) with a branch specific to
+`Result<T>`-shaped return types: a bare, receiver-less call statement whose type is `Result<T>` becomes a
+**hard error**, not the generic `UNUSED_RETURN_VALUE` warning, and is not suppressible by
+`ignoreUnusedReturnValue` (which keeps its current, weaker meaning for ordinary return values). The caller is
+forced to bind the result to a variable.
 
-`panic(Error)` keeps its current signature and runtime behavior. Its documented role shifts to: assertion-like,
-programmer-error, "this should be provably impossible" situations (mirrors `assertStmt`, which already exists
-in the grammar) — not the default way to react to a recoverable failure such as I/O errors, parse errors, or
-missing files. `std` migrates its own internal uses of `panic` on recoverable paths to `!T` returns (see
-Migration Phase 5).
+The escape hatch is the convention Spice already has for "I am intentionally not using this binding": name it
+with a leading underscore, exactly as any other intentionally-unused local does today
+(`Scope.cpp:153`) — no new token:
+
+```spice
+Result<LogEntry> _ = writeLog(msg);   // explicitly, visibly acknowledged as ignored
+```
+
+### 5. `panic` stays, with a narrowed role
+
+`panic(Error)` keeps its current signature and runtime behavior. Its role narrows to assertion-like,
+programmer-error, "this should be provably impossible" situations (mirroring the existing `assertStmt`) — not
+the default reaction to a recoverable failure such as a missing file or a parse error. `std` migrates its own
+internal uses of `panic` on recoverable paths to `Result<T>` returns (Migration Phase 3 below).
 
 ## Compatibility strategy
 
-Steps 1-4 above (`_`, `!T`, `try`, `catch`) are pure additions: nothing that compiles today stops compiling.
-Step 5 (mandatory handling) is the one behavior change that can break existing code that silently drops a
-`Result`/error-union value. To keep every phase shippable and non-breaking until explicitly intended:
+Sections 1-3 above are pure additions: nothing that compiles today stops compiling, and `Result<T>` itself is
+untouched. Section 4 (mandatory handling) is the one behavior change that can break code that silently drops a
+`Result`. To keep every phase shippable and non-breaking until explicitly intended:
 
-- Ship mandatory handling behind a module attribute, e.g. `#![core.compiler.explicitErrorHandling = true]`
-  (same mechanism already used by `alwaysKeepOnNameCollision` in `result_rt.spice:1`), defaulting to `false`.
+- Ship the hard-error upgrade behind a module attribute, e.g.
+  `#![core.compiler.explicitErrorHandling = true]` (the same mechanism `result_rt.spice:1` already uses for
+  `alwaysKeepOnNameCollision`), defaulting to `false`.
 - Once `std` and the test suite are migrated and the feature has soaked, flip the default to `true` in a
   documented major/minor version bump, then eventually remove the gate.
 
-This mirrors how `interfaces.md` and `generics.md` shipped incrementally with checklists rather than as one
-atomic change.
-
 ## Step-by-step migration plan
 
-Each phase is independently buildable/testable and leaves the compiler in a working state.
+Each phase is independently buildable/testable.
 
-**Phase 1 — `_` discard target.**
-Grammar (`declStmt`/assignment target), `ASTBuilder`, `SymbolTableBuilder`, `TypeChecker`, `IRGenerator`. Add
-tests under `test/test-files/`. No interaction with error handling yet — a standalone, low-risk feature.
+**Phase 1 — postfix `!`.**
+Grammar: add the `postfixUnaryExpr NOT` alternative (`Spice.g4:78`). Type checker: validate operand is
+`Result<T>`-shaped and enclosing function returns `Result<U>`; unify `T`→ propagated-error-as-`U` conversion.
+IR generator: `isErr()` branch + early-return-with-error, patterned after the existing early-return/cleanup
+handling already used for `panic` (`GenBuiltinFunctions.cpp:141-149`) minus the `exit` call. Update the
+IntelliJ plugin grammar/highlighting. Tests: propagation across nested calls, through generic functions, mixed
+with existing hand-written `Result<T>` code that never uses `!`.
 
-**Phase 2 — `!T` type syntax as pure sugar.**
-Grammar: extend `dataType` (or a new rule referenced from it) with a `NOT dataType` alternative. Type checker:
-resolve `!T` to `Result<T>` at the point `dataType` is turned into a `QualType` (desugar early, so every later
-pass only ever sees `Result<T>`, avoiding a second special-cased type everywhere). No new diagnostics yet;
-`!T` and `Result<T>` are fully interchangeable. Update the IntelliJ plugin grammar/highlighting.
+**Phase 2 — `Result.unwrapOr` / `Result.unwrapOrElse`.**
+Pure `std` addition to `result_rt.spice`; no compiler changes. Tests for both, including a diverging
+`unwrapOrElse` lambda body (`return`/`panic` inside the handler).
 
-**Phase 3 — `try`.**
-Grammar: new prefix operator in the expression grammar, restricted to appear only where `assignExpr` is
-allowed. Type checker: verify enclosing function/procedure return type is an error-union type; verify operand
-type is an error-union type; unify the propagated error's `T` conversion. IR generator: emit the `isErr()`
-check + early-return-with-error, patterned after the existing early-`return`/`terminateBlock` handling in
-`GenStatements.cpp` and `GenBuiltinFunctions.cpp:141-149`. Tests: propagation across nested calls, propagation
-through generic functions, propagation combined with existing `Result<T>` code that doesn't use `try`.
+**Phase 3 — mandatory handling, opt-in.**
+Add the module attribute gate. Add the `Result<T>`-aware branch next to `UNUSED_RETURN_VALUE`
+(`TypeCheckerValues.cpp:279-291`) that hard-errors instead of warning when the attribute is set, pointing users
+at postfix `!`, `.unwrapOr(...)`/`.unwrapOrElse(...)`, or binding to an `_`-prefixed variable. Tests: one file
+per attribute state (on/off) confirming the same source either errors or is silently accepted.
 
-**Phase 4 — `catch`.**
-Grammar: binary-operator-like construct `assignExpr CATCH (PIPE IDENTIFIER PIPE)? (stmtLst | assignExpr)`.
-Type checker: bind the error identifier as `Error` in the block's scope; verify the block either produces `T`
-on every path or diverges (reuse whatever exhaustiveness/return-path analysis already backs `ifStmt`/`switchStmt`
-return checking). IR generator: conditional branch, PHI-merge the fallback value with the unwrapped value.
-Tests mirroring Phase 3's, plus divergent vs. value-producing `catch` bodies.
+**Phase 4 — migrate `std`.**
+Audit `std/` for internal `panic()` calls on recoverable conditions (I/O, parsing — excluding true invariant
+violations) and convert their public signatures to `Result<T>`, updating internal call sites to use postfix
+`!`. Land function-by-function with tests, not as one sweep, since this is where real design gaps (e.g. "does
+this failure even have a sensible `Error` to construct?") are most likely to surface.
 
-**Phase 5 — mandatory handling diagnostic, opt-in.**
-Add the module attribute gate. Add the error-union-aware branch next to `UNUSED_RETURN_VALUE`
-(`TypeCheckerValues.cpp:279-291`): when the discarded value's type is an error union and the module attribute
-is set, hard error instead of warn, pointing users at `try`/`catch`/`_ = `. Tests: one test file per attribute
-state (on/off) confirming the same code errors or is silently accepted respectively.
+**Phase 5 — docs & examples.**
+Update `docs/`, `STYLE_GUIDE.md`, and example `.spice` files to recommend `Result<T>` + postfix `!` +
+`.unwrapOr(...)`/`.unwrapOrElse(...)` as the idiom, with direct `.isOk()`/`.isErr()`/`.unwrap()`/`.getErr()`
+documented as the still-valid lower-level mechanism everything above sugars over.
 
-**Phase 6 — migrate `std`.**
-Audit `std/` for internal `panic()` calls on recoverable conditions (I/O, parsing, allocation-adjacent paths —
-excluding true invariant violations) and convert their public signatures to `!T`, updating call sites within
-`std` to use `try`/`catch`. This is the phase most likely to surface real design gaps (e.g. does every `std`
-error path have a sensible `Error` to construct?) and should land function-by-function, each with its own
-tests, rather than as one sweep.
-
-**Phase 7 — docs & examples.**
-Update `docs/`, `STYLE_GUIDE.md` error-handling guidance, and any example `.spice` files to use `!T`/`try`/
-`catch` as the recommended idiom, with `Result<T>`/`.unwrap()` documented as the lower-level mechanism `!T`
-sugars over (not deprecated — still valid, still needed for interop with code that predates this feature).
-
-**Phase 8 — flip default, remove gate (major version).**
-Change the module attribute's default to `true`. After a deprecation window, remove the attribute and the old
-"discard silently allowed" code path entirely, making mandatory handling unconditional. Update CHANGELOG with
-migration notes for external users (mechanical fix in each case: add `try`, `catch`, or `_ = `).
+**Phase 6 — flip default, remove gate (major version).**
+Change the module attribute's default to `true`; after a deprecation window, remove the attribute and the old
+silently-discardable code path, making mandatory handling unconditional. Update CHANGELOG with migration notes
+(mechanical fix in each case: add `!`, `.unwrapOr(...)`/`.unwrapOrElse(...)`, or bind to `_...`).
 
 ## Testing plan
 
-Follow the existing reference-test convention (`spice-add-test` skill / `test/test-files/`): one grouped suite
-`error-handling/` with subdirectories per construct (`discard/`, `error-union-type/`, `try/`, `catch/`,
-`mandatory-handling/`), each with positive cases (compiles, expected stdout) and negative cases
-(`exception.out` matching the new diagnostics). Unit tests in `test/unittest/` for the `QualType` desugaring of
-`!T` and for the divergence analysis added in Phase 4.
+Following the existing reference-test convention (`spice-add-test` skill / `test/test-files/`): a grouped suite
+`error-handling/` with subdirectories `postfix-propagation/`, `unwrap-or/`, `unwrap-or-else/`,
+`mandatory-handling/` (positive cases plus `exception.out`-matched negative cases for the new diagnostic).
+Unit tests in `test/unittest/` for the postfix-`!` type checks and the new `Result` methods' codegen.
 
 ## Open questions
 
-- **OQ-1**: Should the mandatory-handling check key off the *spelling* `!T` in source, or off the *type*
-  `Result<T>` regardless of spelling (i.e. also flag a hand-declared `Result<T>` return value)? This spec
-  assumes the latter (type-based, not spelling-based) so users can't dodge the check by writing `Result<T>`
-  instead of `!T`; needs confirming before Phase 5.
-- **OQ-2**: Custom/domain error types. Zig's error sets don't map cleanly onto Spice's struct/interface model.
-  A plausible future extension: an `Error` *interface* (structural, like the existing `interfaces.md` mechanism)
-  that user structs can attach to, with the concrete `Error` struct as just one implementation — `Result<T>`
-  would then hold an `Error` interface reference instead of the concrete struct. Deferred out of this proposal
-  to keep v1 scoped; flagged here so Phase 6 doesn't accidentally foreclose it.
-- **OQ-3**: Should `try` be allowed at top level in `main`/`f<int> main()`? Zig allows `main` to return an
-  error union directly. Spice's `mainFunctionDef` is currently fixed to `TYPE_INT`; extending it to accept
-  `!int` is a small, separate grammar change worth doing alongside Phase 3 but not required for it.
+- **OQ-1**: Should `main` be allowed to return `Result<int>`? `mainFunctionDef` currently pins the return type
+  to `TYPE_INT` (`F LESS TYPE_INT GREATER MAIN`), not general `dataType`. Letting `main` propagate a top-level
+  error (printed, then a non-zero exit) is a small, separate grammar change worth doing alongside Phase 1 but
+  not required for it.
+- **OQ-2**: Custom/domain error types. This proposal keeps `Error` a single concrete struct (code + message).
+  A plausible future extension is an `Error` *interface* (structural, like the existing `interfaces.md`
+  mechanism) that user structs can attach to, with `Result<T>` holding an `Error` interface reference instead
+  of the concrete struct. Deferred out of this proposal to keep scope contained.
+- **OQ-3**: Does forcing a bind-or-underscore for every discarded `Result<T>` (Phase 3) ever produce annoying
+  boilerplate at call sites that already fully handle the error through some other means (e.g. a `switch` over
+  `.getErr().code` performed as part of a larger expression)? Worth revisiting once Phase 4 (migrating `std`)
+  produces real-world call sites to check against.
