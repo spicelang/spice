@@ -44,6 +44,24 @@ public inline f<T&> Result.unwrap() {
 }
 
 /**
+ * If no error is present, return the stored data object, otherwise the given value.
+ *
+ * @param alternativeValue Alternative data value for the error case
+ */
+public inline f<T&> Result.unwrapOr(const T& alternativeValue) {
+    return this.error.code == 0 ? this.data : alternativeValue;
+}
+
+/**
+ * If no error is present, return the stored data object, otherwise invoke the given callback.
+ *
+ * @param callback Callback which is invoked in case of an error
+ */
+public inline f<T&> Result.unwrapOrElse(f<T&>(const Error&) callback) {
+    return this.error.code == 0 ? this.data : callback(this.error);
+}
+
+/**
  * Return the enclosed error object.
  */
 public inline f<Error&> Result.getErr() {
