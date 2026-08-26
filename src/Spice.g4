@@ -75,7 +75,7 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | CAST LESS dataType GREATER LPAREN assignExpr RPAREN;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
-postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
+postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS | NOT);
 atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | LPAREN assignExpr RPAREN;
 
 // Values

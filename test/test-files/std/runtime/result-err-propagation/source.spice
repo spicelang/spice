@@ -1,0 +1,34 @@
+// The postfix '!' operator propagates a Result<T> error up to the caller (which itself must return Result<U>),
+// or unwraps the value when there is no error.
+
+f<Result<int>> mightFail(bool doFail) {
+    if doFail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+f<Result<int>> compute(bool doFail) {
+    // Propagates on error, unwraps on success
+    int value = mightFail(doFail)!;
+    return ok<int>(value * 2);
+}
+
+f<Result<int>> chained(bool doFail) {
+    // Propagation also works through nested calls
+    int value = compute(doFail)!;
+    return ok<int>(value + 1);
+}
+
+f<int> main() {
+    Result<int> okResult = chained(false);
+    assert okResult.isOk();
+    assert okResult.unwrap() == 15;
+
+    Result<int> errResult = chained(true);
+    assert errResult.isErr();
+    assert errResult.getErr().code == 42;
+    printf("error message: %s\n", errResult.getErr().message);
+
+    printf("Result error propagation tests passed!\n");
+}

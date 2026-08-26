@@ -1181,6 +1181,8 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS;
     } else if (ctx->MINUS_MINUS()) {
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS;
+    } else if (ctx->NOT()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_ERR_PROPAGATION;
     }
   } else {
     assert_fail("Unknown postfix unary expression type"); // GCOV_EXCL_LINE

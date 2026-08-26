@@ -95,6 +95,7 @@ public:
   [[nodiscard]] bool isIterable(const ASTNode *node) const;
   [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool isErrorObj() const;
+  [[nodiscard]] bool isResultObj() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
 
   // Complex queries on the type

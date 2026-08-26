@@ -321,6 +321,15 @@ bool QualType::isErrorObj() const {
 }
 
 /**
+ * Check if the current type is a result object
+ *
+ * @return Result object or not
+ */
+bool QualType::isResultObj() const {
+  return is(TY_STRUCT) && getSubType() == RESULTOBJ_NAME && getBodyScope()->sourceFile->isStdFile;
+}
+
+/**
  * Check if the current type has any generic parts
  *
  * @return Generic parts or not
