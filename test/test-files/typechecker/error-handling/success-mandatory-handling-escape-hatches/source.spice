@@ -1,0 +1,26 @@
+// With explicitErrorHandling enabled, a discarded Result<T> is a hard error, but every existing way of handling
+// one still compiles cleanly: binding it to a variable, propagating it with '!', consuming it via unwrapOr(...),
+// or explicitly acknowledging the discard by binding to a variable name starting with '_'.
+
+#![core.compiler.explicitErrorHandling = true]
+
+f<Result<int>> mightFail() {
+    return ok<int>(1);
+}
+
+f<Result<int>> propagate() {
+    int v = mightFail()!;
+    return ok<int>(v);
+}
+
+f<int> main() {
+    Result<int> bound = mightFail();
+    Result<int> temp = mightFail();
+    int unwrapped = temp.unwrapOr(-1);
+    Result<int> _ = mightFail();
+
+    Result<int> propagated = propagate();
+    assert bound.isOk() && unwrapped == 1 && propagated.isOk();
+
+    printf("Mandatory handling escape hatches test passed!\n");
+}

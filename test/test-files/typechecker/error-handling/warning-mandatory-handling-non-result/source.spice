@@ -1,0 +1,13 @@
+// The explicitErrorHandling gate only hard-errors on a discarded Result<T>. Discarding a return value of any other
+// type is unaffected and keeps producing the generic, suppressible UNUSED_RETURN_VALUE warning.
+
+#![core.compiler.explicitErrorHandling = true]
+
+f<int> notFallible() {
+    return 1;
+}
+
+f<int> main() {
+    notFallible();
+    return 0;
+}

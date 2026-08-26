@@ -1,0 +1,10 @@
+#![core.compiler.explicitErrorHandling = true]
+
+f<Result<int>> mightFail() {
+    return ok<int>(1);
+}
+
+f<int> main() {
+    mightFail();
+    return 0;
+}

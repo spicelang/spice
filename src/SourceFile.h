@@ -185,6 +185,7 @@ public:
   bool isMainFile = true;
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
+  bool explicitErrorHandling = false;
   bool restoredFromCache = false;
   bool reVisitRequested = true;
   CompileStageType previousStage = NONE;

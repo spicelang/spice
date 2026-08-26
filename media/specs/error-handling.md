@@ -14,8 +14,8 @@ construct used as-is, or the smallest possible extension of one that already exi
 - [x] IR-gen postfix `!`: branch on `isErr()`, early-return-with-error or unwrap
 - [x] Add `Result.unwrapOr(const T&)` and `Result.unwrapOrElse(f<T>(Error))` to `result_rt.spice`
 - [x] Add tests for postfix `!` and the new `Result` methods
-- [ ] Upgrade the discarded-`Result` case of `UNUSED_RETURN_VALUE` from warning to hard error, gated by a module attribute
-- [ ] Add tests for the new diagnostic (on/off)
+- [x] Upgrade the discarded-`Result` case of `UNUSED_RETURN_VALUE` from warning to hard error, gated by a module attribute
+- [x] Add tests for the new diagnostic (on/off)
 - [ ] Add a synthesized, conditionally-present trace field to `Result<T>`'s LLVM layout, gated by a module attribute
 - [ ] Emit trace-frame-recording code at `err<T>(...)`/error-`Result.ctor` (origin) and at each propagating postfix `!` (hop)
 - [ ] Add `Error`/`Result` trace-dumping support and wire it into `panic`'s existing stderr path
