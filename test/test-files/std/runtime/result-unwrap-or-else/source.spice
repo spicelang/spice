@@ -1,0 +1,35 @@
+// unwrapOr()/unwrapOrElse() give callers a fallback for the error case instead of panicking.
+
+f<int> main() {
+    // unwrapOr: an Ok result returns the stored data, ignoring the alternative
+    Result<int> okResult = ok<int>(42);
+    assert okResult.unwrapOr(-99) == 42;
+
+    // unwrapOr: an Err result returns the alternative value
+    Result<int> errResult = err<int>(7, "failed");
+    assert errResult.unwrapOr(-99) == -99;
+
+    // unwrapOrElse: an Ok result returns the stored data without invoking the callback
+    int okFallback = -1;
+    int okCallbackInvocations = 0;
+    int okValue = okResult.unwrapOrElse(f<int&>(const Error& e) {
+        okCallbackInvocations += 1;
+        okFallback = e.code;
+        return okFallback;
+    });
+    assert okValue == 42;
+    assert okCallbackInvocations == 0;
+
+    // unwrapOrElse: an Err result invokes the callback with the enclosed error and returns its result
+    int errFallback = -1;
+    int errCallbackInvocations = 0;
+    int errValue = errResult.unwrapOrElse(f<int&>(const Error& e) {
+        errCallbackInvocations += 1;
+        errFallback = e.code;
+        return errFallback;
+    });
+    assert errValue == 7;
+    assert errCallbackInvocations == 1;
+
+    printf("Result unwrapOr/unwrapOrElse tests passed!\n");
+}
