@@ -1,0 +1,14 @@
+// With error return tracing enabled, a Result<T> constructed via err<T>(...) records its own call site as the
+// trace's origin frame. dumpTrace() prints it.
+
+#![core.compiler.errorReturnTracing = true]
+
+f<Result<int>> mightFail() {
+    return err<int>(1, "boom");
+}
+
+f<int> main() {
+    Result<int> r = mightFail();
+    r.dumpTrace();
+    printf("done\n");
+}

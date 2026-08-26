@@ -174,6 +174,7 @@ public:
   std::any visitBuiltinSourceFileCall(FctCallNode *node) const;
   std::any visitBuiltinSourceLineCall(FctCallNode *node) const;
   std::any visitBuiltinSourceColumnCall(FctCallNode *node) const;
+  std::any visitBuiltinErrTraceBufferCall(FctCallNode *node) const;
   std::any visitBuiltinStdErrCall(FctCallNode *node) const;
 
 private:

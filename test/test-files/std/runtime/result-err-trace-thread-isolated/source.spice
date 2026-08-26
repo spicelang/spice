@@ -1,0 +1,33 @@
+// Each OS thread gets its own, independently zero-initialized ErrorTraceBuffer: a fresh thread never inherits a
+// leftover trace from a previous, unrelated thread (or from main's own thread, which never calls err<T>() here
+// at all). Threads are run one at a time (start, then join) purely to keep this test's output deterministic -
+// the property under test is per-thread isolation, not concurrency.
+
+#![core.compiler.errorReturnTracing = true]
+
+import "std/os/thread";
+
+f<Result<int>> mightFail() {
+    return err<int>(7, "boom");
+}
+
+p worker() {
+    Result<int> r = mightFail();
+    r.dumpTrace();
+}
+
+f<int> main() {
+    Thread first = Thread(worker);
+    first.run();
+    first.join();
+
+    Thread second = Thread(worker);
+    second.run();
+    second.join();
+
+    printf("main dumping (expect no trace - main's own thread never called err<T>()):\n");
+    Result<int> mainOk = ok<int>(1);
+    mainOk.dumpTrace();
+
+    printf("done\n");
+}

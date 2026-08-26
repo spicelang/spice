@@ -1,4 +1,30 @@
+#![core.compiler.errorReturnTracing = true]
+
+import "std/test/bench";
+
+type TestStruct struct {}
+
+f<Result<double>> TestStruct.frame0(bool fail) {
+    return fail ? err<double>("Test error") : ok(4.5);
+}
+
+f<Result<int>> TestStruct.frame1(bool fail) {
+    double _d = this.frame0(fail)!;
+    return ok(1);
+}
+
+f<Result<int>> TestStruct.frame2(bool fail) {
+    int _d = this.frame1(fail)!;
+    return ok(1);
+}
+
+f<Result<int>> TestStruct.frame3(bool fail) {
+    int _d = this.frame2(fail)!;
+    return ok(1);
+}
+
 f<int> main() {
-    Result<heap byte*> ptr = sAlloc(4l);
-    heap byte* rawPtr = ptr.unwrapAndMove();
+    TestStruct ts;
+    Result<int> resultI = ts.frame3(produce(true));
+    resultI.dumpTrace();
 }

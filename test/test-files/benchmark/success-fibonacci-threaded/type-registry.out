@@ -2,6 +2,12 @@
 Error
 Error&
 Error*
+ErrorTraceBuffer
+ErrorTraceBuffer&
+ErrorTraceBuffer*
+ErrorTraceFrame
+ErrorTraceFrame&
+ErrorTraceFrame[]
 Lambda<S>
 Lambda<S>
 Lambda<S>&
@@ -76,6 +82,7 @@ f<long>()
 f<string>()
 import
 import
+import
 int
 invalid
 long
@@ -97,4 +104,5 @@ p(heap byte*,unsigned long)
 p(int,string)
 p(p())
 p(string)
+p(string,string,unsigned int,unsigned int)
 string

@@ -1,0 +1,8 @@
+Error code 7: boom
+Recorded error trace:
+  #0  f<Result<int>> mightFail() at ./source.spice:11:12
+Error code 7: boom
+Recorded error trace:
+  #0  f<Result<int>> mightFail() at ./source.spice:11:12
+main dumping (expect no trace - main's own thread never called err<T>()):
+done

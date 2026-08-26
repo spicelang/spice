@@ -218,6 +218,13 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       else
         SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Procedure '" + signature + "' has insufficient visibility")
     }
+
+    // Mark direct calls to err<T>(...) as an error-return-trace origin site when tracing is enabled for this file.
+    // err<T>'s own internal delegation to Result<T>'s error ctor is a distinct ctor call and is never matched here,
+    // so this only ever fires for the user's own call site, not for that nested one.
+    if (sourceFile->errorReturnTracing && callee->bodyScope != nullptr && callee->bodyScope->sourceFile->isResultRT() &&
+        callee->name == "err")
+      node->isErrorTraceOrigin = true;
   }
 
   // Generate arg infos

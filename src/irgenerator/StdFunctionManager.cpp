@@ -175,6 +175,34 @@ llvm::Function *StdFunctionManager::getResultErrCtorFct(const Function *spiceFun
   return getFunction(functionName.c_str(), resultType, builder.getPtrTy());
 }
 
+llvm::Function *StdFunctionManager::getErrTraceResetFct() const {
+  QualType unsignedInt(TY_INT);
+  unsignedInt.makeUnsigned();
+  const ParamList paramLst = {
+      {QualType(TY_STRING), false}, {QualType(TY_STRING), false}, {unsignedInt, false}, {unsignedInt, false}};
+  const Function function("sErrTraceReset", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(),
+                      {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
+}
+
+llvm::Function *StdFunctionManager::getErrTracePushFct() const {
+  QualType unsignedInt(TY_INT);
+  unsignedInt.makeUnsigned();
+  const ParamList paramLst = {
+      {QualType(TY_STRING), false}, {QualType(TY_STRING), false}, {unsignedInt, false}, {unsignedInt, false}};
+  const Function function("sErrTracePush", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(),
+                      {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
+}
+
+llvm::Function *StdFunctionManager::getErrTraceDumpFct() const {
+  const Function function("sErrTraceDump", nullptr, QualType(TY_DYN), QualType(TY_DYN), {}, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(), {});
+}
+
 llvm::Function *StdFunctionManager::getAcrtIOFuncFct() const {
   llvm::Function *stdErrPFct = getFunction("__acrt_iob_func", builder.getPtrTy(), builder.getInt32Ty());
   stdErrPFct->setDSOLocal(true);

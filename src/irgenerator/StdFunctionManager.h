@@ -42,6 +42,9 @@ public:
   [[nodiscard]] llvm::Function *getResultUnwrapFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getResultGetErrFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getResultErrCtorFct(const Function *spiceFunc) const;
+  [[nodiscard]] llvm::Function *getErrTraceResetFct() const;
+  [[nodiscard]] llvm::Function *getErrTracePushFct() const;
+  [[nodiscard]] llvm::Function *getErrTraceDumpFct() const;
   [[nodiscard]] llvm::Function *getAcrtIOFuncFct() const;
 
 private:

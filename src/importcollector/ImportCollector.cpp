@@ -121,6 +121,12 @@ std::any ImportCollector::visitModAttr(ModAttrNode *node) {
     sourceFile->explicitErrorHandling = explicitErrorHandling;
   }
 
+  // core.compiler.errorReturnTracing
+  if (node->attrLst->hasAttr(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)) {
+    const bool errorReturnTracing = node->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)->boolValue;
+    sourceFile->errorReturnTracing = errorReturnTracing;
+  }
+
   return nullptr;
 }
 
