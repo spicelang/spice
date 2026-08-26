@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:5:
+Discarded Result value: A Result<T> returned from a call must be handled: bind it to a variable, propagate it with the '!' operator, handle it with '.unwrapOr(...)'/'.unwrapOrElse(...)', or explicitly discard it by binding it to a variable with a name starting with '_'
+
+8  mightFail();
+   ^^^^^^^^^^^

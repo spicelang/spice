@@ -1,0 +1,11 @@
+// Without the core.compiler.explicitErrorHandling module attribute, discarding a Result<T> return value is still
+// only the generic, suppressible UNUSED_RETURN_VALUE warning - the default behavior stays backwards compatible.
+
+f<Result<int>> mightFail() {
+    return ok<int>(1);
+}
+
+f<int> main() {
+    mightFail();
+    return 0;
+}

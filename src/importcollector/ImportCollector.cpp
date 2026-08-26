@@ -115,6 +115,12 @@ std::any ImportCollector::visitModAttr(ModAttrNode *node) {
     sourceFile->ignoreWarnings = ignoreWarnings;
   }
 
+  // core.compiler.explicitErrorHandling
+  if (node->attrLst->hasAttr(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)) {
+    const bool explicitErrorHandling = node->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)->boolValue;
+    sourceFile->explicitErrorHandling = explicitErrorHandling;
+  }
+
   return nullptr;
 }
 

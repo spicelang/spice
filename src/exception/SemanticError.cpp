@@ -252,6 +252,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Invalid operand for error propagation operator";
   case ERR_PROPAGATION_INVALID_CONTEXT:
     return "Error propagation operator used in invalid context";
+  case DISCARDED_RESULT_VALUE:
+    return "Discarded Result value";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

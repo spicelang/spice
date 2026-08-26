@@ -278,6 +278,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Check if the return value gets discarded
   if (isFct && !node->hasReturnValueReceiver()) {
+    // Discarding a Result<T> is always a hard error when explicit error handling is enabled for this module,
+    // regardless of ignoreUnusedReturnValue (which only ever weakens the generic warning below).
+    if (sourceFile->explicitErrorHandling && returnType.removeReferenceWrapper().isResultObj())
+      SOFT_ERROR_ER(node, DISCARDED_RESULT_VALUE,
+                    "A Result<T> returned from a call must be handled: bind it to a variable, propagate it with the "
+                    "'!' operator, handle it with '.unwrapOr(...)'/'.unwrapOrElse(...)', or explicitly discard it by "
+                    "binding it to a variable with a name starting with '_'")
+
     // Check if we want to ignore the discarded return value
     bool ignoreUnusedReturnValue = false;
     if (!data.isFctPtrCall()) {
