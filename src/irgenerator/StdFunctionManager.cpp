@@ -146,6 +146,27 @@ llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc
   return getProcedure(functionName.c_str(), builder.getPtrTy());
 }
 
+llvm::Function *StdFunctionManager::getResultIsErrFct(const Function *spiceFunc) const {
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
+  return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
+}
+
+llvm::Function *StdFunctionManager::getResultUnwrapFct(const Function *spiceFunc) const {
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
+  return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
+}
+
+llvm::Function *StdFunctionManager::getResultGetErrFct(const Function *spiceFunc) const {
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
+  return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
+}
+
+llvm::Function *StdFunctionManager::getResultErrCtorFct(const Function *spiceFunc) const {
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
+  llvm::Type *resultType = spiceFunc->returnType.toLLVMType(sourceFile);
+  return getFunction(functionName.c_str(), resultType, builder.getPtrTy());
+}
+
 llvm::Function *StdFunctionManager::getAcrtIOFuncFct() const {
   llvm::Function *stdErrPFct = getFunction("__acrt_iob_func", builder.getPtrTy(), builder.getInt32Ty());
   stdErrPFct->setDSOLocal(true);

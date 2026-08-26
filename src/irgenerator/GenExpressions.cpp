@@ -844,6 +844,41 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
     break;
   }
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_ERR_PROPAGATION: {
+    // Get the address of the Result<T> operand
+    llvm::Value *operandPtr = resolveAddress(lhs);
+
+    // Call isErr() on the operand
+    assert(node->errPropIsErrFct != nullptr);
+    llvm::Function *isErrFct = stdFunctionManager.getResultIsErrFct(node->errPropIsErrFct);
+    llvm::Value *isErr = builder.CreateCall(isErrFct, operandPtr);
+
+    // Create blocks
+    const std::string codeLine = node->codeLoc.toPrettyLine();
+    llvm::BasicBlock *bThen = createBlock("err.prop.then." + codeLine);
+    llvm::BasicBlock *bExit = createBlock("err.prop.exit." + codeLine);
+    insertCondJump(isErr, bThen, bExit, Likelihood::UNLIKELY);
+
+    // Switch to then block: propagate the error as the enclosing function's Result<U>
+    switchToBlock(bThen);
+    assert(node->errPropGetErrFct != nullptr && node->errPropCtorFct != nullptr);
+    llvm::Function *getErrFct = stdFunctionManager.getResultGetErrFct(node->errPropGetErrFct);
+    llvm::Value *errorPtr = builder.CreateCall(getErrFct, operandPtr);
+    llvm::Function *errCtorFct = stdFunctionManager.getResultErrCtorFct(node->errPropCtorFct);
+    llvm::Value *propagatedResult = builder.CreateCall(errCtorFct, errorPtr);
+    // Clean up all scopes between here and the enclosing function/procedure/lambda body, then return the error
+    generateScopeCleanupUpTo(node, currentScope->getFunctionScope());
+    blockAlreadyTerminated = true;
+    builder.CreateRet(propagatedResult);
+
+    // Switch to exit block: unwrap the payload, which becomes the value of the whole expression
+    switchToBlock(bExit);
+    assert(node->errPropUnwrapFct != nullptr);
+    llvm::Function *unwrapFct = stdFunctionManager.getResultUnwrapFct(node->errPropUnwrapFct);
+    llvm::Value *unwrapped = builder.CreateCall(unwrapFct, operandPtr);
+    lhs = {.ptr = unwrapped};
+    break;
+  }
   default:                                                                  // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }

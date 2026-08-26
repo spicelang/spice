@@ -38,6 +38,10 @@ public:
   [[nodiscard]] llvm::Function *getIteratorGetIdxFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorIsValidFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorNextFct(const Function *spiceFunc) const;
+  [[nodiscard]] llvm::Function *getResultIsErrFct(const Function *spiceFunc) const;
+  [[nodiscard]] llvm::Function *getResultUnwrapFct(const Function *spiceFunc) const;
+  [[nodiscard]] llvm::Function *getResultGetErrFct(const Function *spiceFunc) const;
+  [[nodiscard]] llvm::Function *getResultErrCtorFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getAcrtIOFuncFct() const;
 
 private:

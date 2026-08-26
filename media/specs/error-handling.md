@@ -8,12 +8,12 @@ construct used as-is, or the smallest possible extension of one that already exi
 
 ## Implementation steps
 
-- [ ] Add postfix `!` (propagation) to the `postfixUnaryExpr` grammar rule
-- [ ] Update IntelliJ plugin
-- [ ] Type-check postfix `!`: operand must be `Result<T>`-shaped, enclosing function must return `Result<U>`
-- [ ] IR-gen postfix `!`: branch on `isErr()`, early-return-with-error or unwrap
-- [ ] Add `Result.unwrapOr(const T&)` and `Result.unwrapOrElse(f<T>(Error))` to `result_rt.spice`
-- [ ] Add tests for postfix `!` and the new `Result` methods
+- [x] Add postfix `!` (propagation) to the `postfixUnaryExpr` grammar rule
+- [x] Update IntelliJ plugin
+- [x] Type-check postfix `!`: operand must be `Result<T>`-shaped, enclosing function must return `Result<U>`
+- [x] IR-gen postfix `!`: branch on `isErr()`, early-return-with-error or unwrap
+- [x] Add `Result.unwrapOr(const T&)` and `Result.unwrapOrElse(f<T>(Error))` to `result_rt.spice`
+- [x] Add tests for postfix `!` and the new `Result` methods
 - [ ] Upgrade the discarded-`Result` case of `UNUSED_RETURN_VALUE` from warning to hard error, gated by a module attribute
 - [ ] Add tests for the new diagnostic (on/off)
 - [ ] Add a synthesized, conditionally-present trace field to `Result<T>`'s LLVM layout, gated by a module attribute
@@ -84,7 +84,7 @@ This proposal leans on five things that already exist, unchanged:
 No new type syntax. A function that can fail returns `Result<T>`, exactly as today:
 
 ```spice
-f<Result<Config>> loadConfig(string path) { ... }
+f<Result<Config>> loadConfig(string path) { /*...*/ }
 ```
 
 ### 2. Postfix `!`: propagate-or-unwrap

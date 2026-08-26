@@ -1840,6 +1840,7 @@ public:
     OP_MEMBER_ACCESS,
     OP_PLUS_PLUS,
     OP_MINUS_MINUS,
+    OP_ERR_PROPAGATION,
   };
 
   // Constructors
@@ -1864,6 +1865,12 @@ public:
   PostfixUnaryOp op = PostfixUnaryOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   std::string identifier;                           // Only set when operator is member access
+
+  // Only set when operator is error propagation ('!')
+  const Function *errPropIsErrFct = nullptr;  // Result<T>.isErr()
+  const Function *errPropUnwrapFct = nullptr; // Result<T>.unwrap()
+  const Function *errPropGetErrFct = nullptr; // Result<T>.getErr()
+  const Function *errPropCtorFct = nullptr;   // err<U>(const Error&), where Result<U> is the enclosing function's return type
 };
 
 // ====================================================== AtomicExprNode =========================================================

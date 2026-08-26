@@ -1,0 +1,8 @@
+f<Result<int>> mightFail() {
+    return err<int>(1, "boom");
+}
+
+f<int> main() {
+    int v = mightFail()!;
+    return v;
+}

@@ -1,0 +1,28 @@
+// Same ownership rule as Result<T>.unwrap(): the value produced by postfix '!' on success is borrowed from the
+// operand Result, which stays the owner and frees a heap payload when it goes out of scope. Taking ownership of a
+// heap payload therefore still requires sMove(), exactly as it does for a plain .unwrap() call.
+
+f<Result<heap byte*>> allocate(bool doFail) {
+    if doFail {
+        return err<heap byte*>(3, "alloc failed");
+    }
+    return sAlloc(16l);
+}
+
+f<Result<int>> useIt(bool doFail) {
+    heap byte* buf = sMove(allocate(doFail)!);
+    printf("buffer valid: %d\n", buf != nil<heap byte*>);
+    sDealloc(buf);
+    return ok<int>(1);
+}
+
+f<int> main() {
+    Result<int> okResult = useIt(false);
+    assert okResult.isOk();
+
+    Result<int> errResult = useIt(true);
+    assert errResult.isErr();
+    assert errResult.getErr().code == 3;
+
+    printf("Result error propagation heap payload tests passed!\n");
+}

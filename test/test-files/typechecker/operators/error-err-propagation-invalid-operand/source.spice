@@ -1,0 +1,9 @@
+f<Result<int>> foo() {
+    int x = 5;
+    int y = x!;
+    return ok<int>(y);
+}
+
+f<int> main() {
+    return 0;
+}

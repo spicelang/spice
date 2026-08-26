@@ -6,6 +6,7 @@
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 
 namespace spice::compiler {
@@ -647,6 +648,56 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       // Update the state of the variable
       operandEntry->updateState(INITIALIZED, node);
     }
+
+    break;
+  }
+  case PostfixUnaryExprNode::PostfixUnaryOp::OP_ERR_PROPAGATION: {
+    // Check if the operand is of type Result<T>
+    const QualType resultType = operandType.removeReferenceWrapper();
+    if (!resultType.isResultObj())
+      SOFT_ERROR_ER(node, ERR_PROPAGATION_INVALID_OPERAND,
+                    "The error propagation operator '!' can only be applied to a value of type Result<T>, got " +
+                        operandType.getName(false))
+
+    // Check if the enclosing function/procedure/lambda itself returns Result<U>
+    const SymbolTableEntry *enclosingReturnVar = currentScope->lookup(RETURN_VARIABLE_NAME);
+    const QualType enclosingReturnType = enclosingReturnVar ? enclosingReturnVar->getQualType() : QualType(TY_DYN);
+    if (!enclosingReturnVar || !enclosingReturnType.isResultObj())
+      SOFT_ERROR_ER(node, ERR_PROPAGATION_INVALID_CONTEXT,
+                    "The error propagation operator '!' can only be used inside a function that itself returns Result<U>")
+
+    // Retrieve the substantiation scope of the operand's Result<T>
+    Scope *resultScope = resultType.getBodyScope();
+    if (resultScope->isGenericScope) {
+      const Struct *resultStruct = resultType.getStruct(node);
+      assert(resultStruct != nullptr);
+      resultScope = resultStruct->scope;
+    }
+    assert(!resultScope->isGenericScope);
+
+    // Resolve Result<T>.isErr(), Result<T>.unwrap() and Result<T>.getErr()
+    node->errPropIsErrFct = FunctionManager::match(resultScope, "isErr", resultType, {}, {}, false, node);
+    node->errPropUnwrapFct = FunctionManager::match(resultScope, "unwrap", resultType, {}, {}, false, node);
+    node->errPropGetErrFct = FunctionManager::match(resultScope, "getErr", resultType, {}, {}, false, node);
+    if (!node->errPropIsErrFct || !node->errPropUnwrapFct || !node->errPropGetErrFct)
+      SOFT_ERROR_ER(node, ERR_PROPAGATION_INVALID_CONTEXT,
+                    "Failed to resolve the Result<T> helper methods required for the error propagation operator")
+
+    // Resolve err<U>(const Error&), located next to Result in the same module
+    const NameRegistryEntry *resultRegistryEntry = sourceFile->getNameRegistryEntry(RESULTOBJ_NAME);
+    assert(resultRegistryEntry != nullptr);
+    Scope *resultModuleScope = resultRegistryEntry->targetScope->parent;
+    const QualTypeList& enclosingTemplateTypes = enclosingReturnType.getTemplateTypes();
+    const ArgList errArgs = {{node->errPropGetErrFct->returnType, false}};
+    node->errPropCtorFct =
+        FunctionManager::match(resultModuleScope, "err", QualType(TY_DYN), errArgs, enclosingTemplateTypes, false, node);
+    if (!node->errPropCtorFct)
+      SOFT_ERROR_ER(node, ERR_PROPAGATION_INVALID_CONTEXT,
+                    "Failed to resolve 'err<U>(const Error&)' required for the error propagation operator")
+
+    // The whole expression evaluates to the unwrapped payload
+    operandType = node->errPropUnwrapFct->returnType;
+    operandEntry = nullptr;
 
     break;
   }

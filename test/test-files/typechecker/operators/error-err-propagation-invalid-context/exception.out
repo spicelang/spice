@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:13:
+Error propagation operator used in invalid context: The error propagation operator '!' can only be used inside a function that itself returns Result<U>
+
+6  int v = mightFail()!;
+           ^^^^^^^^^^^^

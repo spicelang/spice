@@ -1,0 +1,27 @@
+// The operand's payload type T and the enclosing function's payload type U are independent - propagation only
+// forwards the Error across, never the payload. Here a Result<string> propagates into a Result<double>.
+
+f<Result<string>> readName(bool doFail) {
+    if doFail {
+        return err<string>(5, "name unavailable");
+    }
+    return ok<string>("Ada");
+}
+
+f<Result<double>> parseScore(bool doFail) {
+    string name = readName(doFail)!;
+    printf("name: %s\n", name);
+    return ok<double>(9.5);
+}
+
+f<int> main() {
+    Result<double> okResult = parseScore(false);
+    assert okResult.isOk();
+    assert okResult.unwrap() == 9.5;
+
+    Result<double> errResult = parseScore(true);
+    assert errResult.isErr();
+    assert errResult.getErr().code == 5;
+
+    printf("Result error propagation across different types tests passed!\n");
+}
