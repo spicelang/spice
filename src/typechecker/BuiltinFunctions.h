@@ -49,6 +49,7 @@ static constexpr std::string_view BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_
 static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_FILE = "__source_file";
 static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_LINE = "__source_line";
 static constexpr std::string_view BUILTIN_FCT_NAME_SOURCE_COLUMN = "__source_column";
+static constexpr std::string_view BUILTIN_FCT_NAME_STDERR = "__stderr";
 
 static constexpr std::array BUILTIN_FUNCTIONS = {
     BuiltinFunctionEntry{
@@ -216,6 +217,10 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
     },
     BuiltinFunctionEntry{
         .name = BUILTIN_FCT_NAME_SOURCE_COLUMN,
+        .info = BuiltinFunctionInfo{},
+    },
+    BuiltinFunctionEntry{
+        .name = BUILTIN_FCT_NAME_STDERR,
         .info = BuiltinFunctionInfo{},
     },
 };

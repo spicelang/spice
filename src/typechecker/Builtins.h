@@ -166,6 +166,13 @@ static const std::unordered_map<std::string_view, BuiltinFunctionDispatch> BUILT
             .irGeneratorVisitMethod = nullptr,
         },
     },
+    {
+        BUILTIN_FCT_NAME_STDERR,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinStdErrCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinStdErrCall,
+        },
+    },
 };
 
 } // namespace spice::compiler

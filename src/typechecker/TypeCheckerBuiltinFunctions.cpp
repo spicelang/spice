@@ -604,4 +604,15 @@ std::any TypeChecker::visitBuiltinSourceColumnCall(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
+/**
+ * Resolves to a pointer to the process's stderr stream. Spice source has no syntax for declaring an external
+ * *variable* (only functions/procedures via 'ext'), so this exists as a builtin that reaches the real libc
+ * symbol directly in IR generation, the same way panic()'s own codegen already did before this builtin existed.
+ */
+std::any TypeChecker::visitBuiltinStdErrCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_STDERR);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BYTE).toPtr(node), manIdx)};
+}
+
 } // namespace spice::compiler

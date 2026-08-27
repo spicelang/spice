@@ -103,19 +103,7 @@ std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
   llvm::PointerType *ptrTy = builder.getPtrTy();
 
   // Get value for stderr
-  llvm::Value *stdErr;
-  if (cliOptions.targetTriple.isOSWindows()) {
-    llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
-    stdErr = builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
-  } else {
-    const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
-    module->getOrInsertGlobal(globalName, ptrTy);
-    llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
-    stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
-    stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
-    stdErrPtr->setAlignment(llvm::MaybeAlign(8));
-    stdErr = insertLoad(ptrTy, stdErrPtr);
-  }
+  llvm::Value *stdErr = getStdErrValue();
 
   // Create constant for error message
   const std::string codeLoc = node->codeLoc.toPrettyString();
@@ -252,6 +240,34 @@ std::any IRGenerator::visitBuiltinPlacementNewCall(const FctCallNode *node) {
   }
 
   return LLVMExprResult{.value = targetPtr};
+}
+
+std::any IRGenerator::visitBuiltinStdErrCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_STDERR);
+
+  return LLVMExprResult{.value = getStdErrValue()};
+}
+
+/**
+ * Retrieves the process's stderr stream (FILE*). Spice has no syntax for declaring an external variable, so this
+ * reaches the real libc symbol directly, the same way on every platform: an ACRT accessor call on Windows, and
+ * the platform-specific extern global everywhere else.
+ */
+llvm::Value *IRGenerator::getStdErrValue() {
+  llvm::PointerType *ptrTy = builder.getPtrTy();
+
+  if (cliOptions.targetTriple.isOSWindows()) {
+    llvm::Function *getAcrtIOFuncFct = stdFunctionManager.getAcrtIOFuncFct();
+    return builder.CreateCall(getAcrtIOFuncFct, {builder.getInt32(/*constant for stderr*/ 2)});
+  }
+
+  const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
+  module->getOrInsertGlobal(globalName, ptrTy);
+  llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
+  stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
+  stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
+  stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+  return insertLoad(ptrTy, stdErrPtr);
 }
 
 } // namespace spice::compiler
