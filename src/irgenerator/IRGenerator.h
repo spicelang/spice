@@ -164,9 +164,11 @@ public:
   std::any visitBuiltinSyscallCall(const FctCallNode *node);
   std::any visitBuiltinNewCall(const FctCallNode *node);
   std::any visitBuiltinPlacementNewCall(const FctCallNode *node);
+  std::any visitBuiltinStdErrCall(const FctCallNode *node);
 
 private:
   // Private methods
+  [[nodiscard]] llvm::Value *getStdErrValue();
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
