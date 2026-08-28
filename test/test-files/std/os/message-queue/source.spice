@@ -35,12 +35,14 @@ p Shared.run() {
     Vector<Thread> consumers;
     for int i = 0; i < CONSUMER_COUNT; i++ {
         consumers.pushBack(Thread(consumer));
-        consumers.back().run();
+        Thread& consumerThread = consumers.back();
+        consumerThread.run();
     }
     Vector<Thread> producers;
     for int i = 0; i < PRODUCER_COUNT; i++ {
         producers.pushBack(Thread(producer));
-        producers.back().run();
+        Thread& producerThread = producers.back();
+        producerThread.run();
     }
 
     // Once every producer is done, closing the queue lets the blocked consumers drain
