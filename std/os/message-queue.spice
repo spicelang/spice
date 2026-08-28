@@ -1,0 +1,121 @@
+import "std/data/queue";
+import "std/data/optional";
+import "std/os/mutex";
+import "std/os/cpu";
+
+// Generic type definition
+type T dyn;
+
+/**
+ * A thread-safe FIFO message queue for passing values between threads.
+ *
+ * MessageQueue wraps a `Queue<T>` with a `Mutex`, so `push()`, `pop()`, `tryPop()` and the other
+ * methods may be called concurrently from any number of threads without external synchronization.
+ * `pop()` blocks until an item becomes available or the queue is closed, spin-waiting via `yield()`
+ * between checks, since the standard library has no condition variable to park on.
+ *
+ * Once `close()` has been called, `push()` panics and `pop()`/`tryPop()` keep draining any items
+ * that are still queued, returning an empty `Optional` only once the queue has run dry. This makes
+ * `close()` + drain-until-empty a safe way for producers to signal shutdown to consumers.
+ */
+public type MessageQueue<T> struct {
+    Queue<T> queue
+    Mutex mutex
+    bool closed = false
+}
+
+/**
+ * Construct an empty, open message queue
+ */
+public p MessageQueue.ctor() {}
+
+/**
+ * Push an item to the back of the queue. Safe to call from multiple threads concurrently.
+ *
+ * @param item Item to enqueue
+ */
+public p MessageQueue.push(const T& item) {
+    LockGuard _ = LockGuard(this.mutex);
+    if this.closed { panic(Error("MessageQueue: cannot push to a closed queue")); }
+    this.queue.push(item);
+}
+
+/**
+ * Retrieve and remove the item at the front of the queue, blocking until one becomes available.
+ * If the queue is closed while waiting, this drains any remaining items first and only then
+ * returns an empty Optional instead of blocking forever.
+ *
+ * @return The next item, or an empty Optional if the queue was closed and is now drained
+ */
+public f<Optional<T>> MessageQueue.pop() {
+    while true {
+        bool hasItem = false;
+        bool isClosed = false;
+        Optional<T> result;
+        {
+            LockGuard _ = LockGuard(this.mutex);
+            if !this.queue.isEmpty() {
+                result.set(this.queue.pop());
+                hasItem = true;
+            } else {
+                isClosed = this.closed;
+            }
+        }
+        if hasItem || isClosed { return result; }
+        // Give up the CPU while waiting for a producer instead of busy-spinning at full speed
+        yield();
+    }
+}
+
+/**
+ * Retrieve and remove the item at the front of the queue without blocking.
+ *
+ * @return The next item, or an empty Optional if the queue is currently empty
+ */
+public f<Optional<T>> MessageQueue.tryPop() {
+    LockGuard _ = LockGuard(this.mutex);
+    Optional<T> result;
+    if !this.queue.isEmpty() {
+        result.set(this.queue.pop());
+    }
+    return result;
+}
+
+/**
+ * Close the queue. After this call, `push()` panics. `pop()` and `tryPop()` keep returning any
+ * items that were queued before the close, then start reporting an empty Optional once drained.
+ */
+public p MessageQueue.close() {
+    LockGuard _ = LockGuard(this.mutex);
+    this.closed = true;
+}
+
+/**
+ * Check whether the queue has been closed via `close()`
+ *
+ * @return Closed or not closed
+ */
+public f<bool> MessageQueue.isClosed() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.closed;
+}
+
+/**
+ * Check whether the queue currently holds no items
+ *
+ * @return Empty or not empty
+ */
+public f<bool> MessageQueue.isEmpty() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.queue.isEmpty();
+}
+
+/**
+ * Retrieve the current number of queued items
+ *
+ * @return Current size of the queue
+ */
+public f<long> MessageQueue.getSize() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.queue.getSize();
+}

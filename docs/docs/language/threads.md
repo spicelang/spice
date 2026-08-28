@@ -192,3 +192,41 @@ f<int> main() {
 
 Because both threads increment `this.value` under the same `LockGuard`, no updates are lost. Without the mutex,
 the read-modify-write of `this.value++` would race and the final count would be less than `20000`.
+
+## Message queues
+
+The `std/os/message-queue` module provides a `MessageQueue<T>` type for passing values between threads. It is a
+FIFO queue, just like `std/data/queue`, but every operation is guarded by an internal mutex, so any number of
+producer and consumer threads can push and pop concurrently without extra synchronization.
+
+```spice
+import "std/os/message-queue";
+import "std/os/thread";
+import "std/data/optional";
+
+f<int> main() {
+    MessageQueue<int> mq;
+
+    Thread producer = Thread(p() [[async]] {
+        for int i = 0; i < 10; i++ {
+            mq.push(i);
+        }
+        mq.close(); // signal that no more items will arrive
+    });
+    producer.run();
+
+    while true {
+        Optional<int> item = mq.pop(); // blocks until an item is available or the queue is closed
+        if !item.isPresent() { break; }
+        printf("Received: %d\n", item.get());
+    }
+
+    producer.join();
+}
+```
+
+`pop()` blocks the calling thread until an item is available. Once `close()` has been called, `pop()` still
+returns any items that were queued before the close, and only reports an empty `Optional` once the queue has
+been fully drained — so consumers never have to guess when producers are done. Pushing to a closed queue panics.
+If you don't want to block, use `tryPop()` instead, which returns immediately with an empty `Optional` if the
+queue has no items right now. `isEmpty()` and `getSize()` report the current state of the queue.
