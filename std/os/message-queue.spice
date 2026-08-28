@@ -51,7 +51,7 @@ public f<Optional<T>> MessageQueue.pop() {
     while true {
         bool hasItem = false;
         bool isClosed = false;
-        Optional<T> result;
+        result = Optional<T>();
         {
             LockGuard _ = LockGuard(this.mutex);
             if !this.queue.isEmpty() {
@@ -74,7 +74,7 @@ public f<Optional<T>> MessageQueue.pop() {
  */
 public f<Optional<T>> MessageQueue.tryPop() {
     LockGuard _ = LockGuard(this.mutex);
-    Optional<T> result;
+    result = Optional<T>();
     if !this.queue.isEmpty() {
         result.set(this.queue.pop());
     }
