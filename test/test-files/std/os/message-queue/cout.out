@@ -1,0 +1,3 @@
+Single-threaded smoke tests passed!
+popped count = 20000, popped sum = 50010000
+All assertions passed!

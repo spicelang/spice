@@ -1,0 +1,114 @@
+import "std/os/message-queue";
+import "std/os/thread";
+import "std/os/mutex";
+import "std/data/optional";
+import "std/data/vector";
+
+const int PRODUCER_COUNT = 4;
+const int CONSUMER_COUNT = 3;
+const int ITEMS_PER_PRODUCER = 5000;
+
+// Shared state for the concurrent test. Bundling the queue + counters into a struct lets
+// the async workers capture a single `this` pointer (per the async capture rules). The
+// counters are plain longs guarded by a mutex rather than Atomic<long>, since Atomic only
+// makes each individual load()/store() thread-safe - composing them as
+// `counter.store(counter.load() + 1)` would still race between concurrent consumers.
+type Shared struct {
+    MessageQueue<int> mq
+    Mutex countersMutex
+    long poppedSum = 0l
+    long poppedCount = 0l
+}
+
+p Shared.run() {
+    p() producer = p() [[async]] {
+        for int i = 0; i < ITEMS_PER_PRODUCER; i++ {
+            this.mq.push(i + 1);
+        }
+    };
+    p() consumer = p() [[async]] {
+        while true {
+            Optional<int> item = this.mq.pop();
+            if !item.isPresent() { break; }
+            LockGuard _ = LockGuard(this.countersMutex);
+            this.poppedSum += cast<long>(item.get());
+            this.poppedCount++;
+        }
+    };
+
+    // Start consumers first so they race against producers for the whole run
+    Vector<Thread> consumers;
+    for int i = 0; i < CONSUMER_COUNT; i++ {
+        consumers.pushBack(Thread(consumer));
+        Thread& consumerThread = consumers.back();
+        consumerThread.run();
+    }
+    Vector<Thread> producers;
+    for int i = 0; i < PRODUCER_COUNT; i++ {
+        producers.pushBack(Thread(producer));
+        Thread& producerThread = producers.back();
+        producerThread.run();
+    }
+
+    // Once every producer is done, closing the queue lets the blocked consumers drain
+    // whatever is left and then return instead of waiting forever.
+    foreach const Thread& t : producers { t.join(); }
+    this.mq.close();
+    foreach const Thread& t : consumers { t.join(); }
+}
+
+f<int> main() {
+    // Single-threaded smoke test
+    MessageQueue<int> mq;
+    assert mq.isEmpty();
+    assert mq.getSize() == 0;
+    assert !mq.isClosed();
+
+    mq.push(1);
+    mq.push(2);
+    mq.push(3);
+    assert !mq.isEmpty();
+    assert mq.getSize() == 3;
+
+    // tryPop and pop both dequeue in FIFO order
+    Optional<int> a = mq.tryPop();
+    assert a.isPresent() && a.get() == 1;
+    Optional<int> b = mq.pop();
+    assert b.isPresent() && b.get() == 2;
+    assert mq.getSize() == 1;
+
+    // tryPop on an empty (but open) queue reports absence instead of blocking
+    mq.pop();
+    Optional<int> empty = mq.tryPop();
+    assert !empty.isPresent();
+
+    mq.push(42);
+    mq.close();
+    assert mq.isClosed();
+
+    // A closed queue still hands out items that were queued before the close...
+    Optional<int> afterClose = mq.pop();
+    assert afterClose.isPresent() && afterClose.get() == 42;
+    // ...and only reports empty once fully drained, without blocking
+    Optional<int> drained = mq.pop();
+    assert !drained.isPresent();
+    Optional<int> drainedTry = mq.tryPop();
+    assert !drainedTry.isPresent();
+
+    printf("Single-threaded smoke tests passed!\n");
+
+    // Concurrent producer/consumer stress test. If push()/pop() were not thread-safe,
+    // items would be lost or duplicated and the totals below would not match.
+    Shared s;
+    s.run();
+
+    const long expectedCount = cast<long>(PRODUCER_COUNT) * cast<long>(ITEMS_PER_PRODUCER);
+    const long sumPerProducer = cast<long>(ITEMS_PER_PRODUCER) * cast<long>(ITEMS_PER_PRODUCER + 1) / 2l;
+    const long expectedSum = cast<long>(PRODUCER_COUNT) * sumPerProducer;
+    assert s.mq.isEmpty();
+    assert s.poppedCount == expectedCount;
+    assert s.poppedSum == expectedSum;
+    printf("popped count = %lld, popped sum = %lld\n", s.poppedCount, s.poppedSum);
+
+    printf("All assertions passed!\n");
+}
