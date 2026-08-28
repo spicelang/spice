@@ -1,6 +1,6 @@
 import "std/os/message-queue";
 import "std/os/thread";
-import "std/os/atomic";
+import "std/os/mutex";
 import "std/data/optional";
 import "std/data/vector";
 
@@ -9,11 +9,15 @@ const int CONSUMER_COUNT = 3;
 const int ITEMS_PER_PRODUCER = 5000;
 
 // Shared state for the concurrent test. Bundling the queue + counters into a struct lets
-// the async workers capture a single `this` pointer (per the async capture rules).
+// the async workers capture a single `this` pointer (per the async capture rules). The
+// counters are plain longs guarded by a mutex rather than Atomic<long>, since Atomic only
+// makes each individual load()/store() thread-safe - composing them as
+// `counter.store(counter.load() + 1)` would still race between concurrent consumers.
 type Shared struct {
     MessageQueue<int> mq
-    Atomic<long> poppedSum
-    Atomic<long> poppedCount
+    Mutex countersMutex
+    long poppedSum = 0l
+    long poppedCount = 0l
 }
 
 p Shared.run() {
@@ -26,8 +30,9 @@ p Shared.run() {
         while true {
             Optional<int> item = this.mq.pop();
             if !item.isPresent() { break; }
-            this.poppedSum.store(this.poppedSum.load() + cast<long>(item.get()));
-            this.poppedCount.store(this.poppedCount.load() + 1l);
+            LockGuard _ = LockGuard(this.countersMutex);
+            this.poppedSum += cast<long>(item.get());
+            this.poppedCount++;
         }
     };
 
@@ -101,9 +106,9 @@ f<int> main() {
     const long sumPerProducer = cast<long>(ITEMS_PER_PRODUCER) * cast<long>(ITEMS_PER_PRODUCER + 1) / 2l;
     const long expectedSum = cast<long>(PRODUCER_COUNT) * sumPerProducer;
     assert s.mq.isEmpty();
-    assert s.poppedCount.load() == expectedCount;
-    assert s.poppedSum.load() == expectedSum;
-    printf("popped count = %lld, popped sum = %lld\n", s.poppedCount.load(), s.poppedSum.load());
+    assert s.poppedCount == expectedCount;
+    assert s.poppedSum == expectedSum;
+    printf("popped count = %lld, popped sum = %lld\n", s.poppedCount, s.poppedSum);
 
     printf("All assertions passed!\n");
 }

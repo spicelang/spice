@@ -47,6 +47,7 @@ public p MessageQueue.push(const T& item) {
  *
  * @return The next item, or an empty Optional if the queue was closed and is now drained
  */
+#[ignoreUnusedReturnValue]
 public f<Optional<T>> MessageQueue.pop() {
     while true {
         bool hasItem = false;
