@@ -79,7 +79,7 @@ f<int> main() {
 
     // The error message stays valid after the parser is gone
     const Error mismatchErr = mismatchRes.getErr();
-    assert isRawEqual(mismatchErr.message, "Mismatched closing tag");
+    assert isRawEqual(mismatchErr.getMessage(), "Mismatched closing tag");
 
     Result<XmlNode*> dupAttrRes = parseXml(String("<a x='1' x='2'/>"));
     assert !dupAttrRes.isOk();

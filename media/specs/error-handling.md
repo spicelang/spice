@@ -198,7 +198,7 @@ all.
 **Consumption.** `Error`/`Result` gain a `dumpTrace()` method that, when the hidden field exists, prints each
 recorded frame to stderr; when it doesn't exist (attribute disabled), the method compiles to a no-op rather
 than a compile error — mirroring how Zig's `@errorReturnTrace()` simply returns `null` when tracing is off,
-rather than making calling code conditional on a build flag. `Error.toPanic()` (`error_rt.spice:50`) and the
+rather than making calling code conditional on a build flag. `Error.triggerPanic()` (`error_rt.spice:50`) and the
 `panic` builtin's existing stderr dump (`GenBuiltinFunctions.cpp:100-151`) are the natural place to also print
 the trace when one is present and non-empty, immediately after the error message.
 

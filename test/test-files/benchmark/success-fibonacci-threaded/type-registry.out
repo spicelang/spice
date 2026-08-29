@@ -44,6 +44,7 @@ byte**
 char
 char*
 dyn
+enum(ErrorCode)
 f()
 f<Error&>()
 f<Result<T>>(const Error&)
@@ -66,11 +67,13 @@ f<heap byte*>(heap byte*,heap byte*,unsigned long)
 f<heap byte*>(heap byte*,unsigned long)
 f<heap byte*>(unsigned long)
 f<int>()
+f<int>(byte*,string)
 f<int>(const heap byte*,const heap byte*,unsigned long)
 f<int>(int)
 f<int>(long*,Pthread_attr_t*,p())
 f<int>(long,byte**)
 f<long>()
+f<string>()
 import
 import
 int

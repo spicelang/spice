@@ -1,19 +1,27 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
+// Well-known error codes
+public type ErrorCode enum {
+    Ok = 0,
+    RuntimeError = 1
+}
+
 /**
  * This is the generalized error type in Spice and part of the error handling mechanism.
  */
 public type Error struct {
-    public int code
-    public string message
+    ErrorCode code
+    string message
 }
 
 /**
  * Construct a generic error with code 0 and a default message
  */
 public p Error.ctor() {
-    this.code = 0;
-    this.message = "Runtime error";
+    this.code = ErrorCode::Ok;
+    this.message = "<no error>";
 }
 
 /**
@@ -22,7 +30,7 @@ public p Error.ctor() {
  * @param errorCode Error code
  * @param message Error message
  */
-public p Error.ctor(int errorCode, string message) {
+public p Error.ctor(ErrorCode errorCode, string message) {
     this.code = errorCode;
     this.message = message;
 }
@@ -33,20 +41,47 @@ public p Error.ctor(int errorCode, string message) {
  * @param message Error message
  */
 public p Error.ctor(string message) {
-    this.code = 1;
+    this.code = ErrorCode::RuntimeError;
     this.message = message;
+}
+
+/**
+ * Retrieve error code
+ *
+ * @return Error message
+ */
+public inline f<ErrorCode> Error.getCode() {
+    return this.code;
+}
+
+/**
+ * Retrieve error message as immutable string
+ *
+ * @return Error message
+ */
+public inline f<string> Error.getMessage() {
+    return this.message;
+}
+
+/**
+ * Check if the error is set to the default error code 0, which means ok / no error
+ *
+ * @return Is set to error code 0
+ */
+public inline f<bool> Error.isOk() {
+    return this.code == ErrorCode::Ok;
 }
 
 /**
  * Prints the error message to the console.
  */
-public p Error.print() {
-    printf("%s\n", this.message);
+public inline p Error.print() {
+    fprintf(__stderr(), "Error code %d: %s\n", this.code, this.message);
 }
 
 /**
  * Panic with this error
  */
-public p Error.toPanic() {
+public inline p Error.triggerPanic() {
     panic(*this);
 }

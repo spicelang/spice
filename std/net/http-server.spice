@@ -211,7 +211,8 @@ public f<Result<bool>> HttpServer.start(int connectionBacklog = DEFAULT_CONNECTI
     } else {
         const Result<Socket> socketResult = openServerSocket(this.port, connectionBacklog);
         if socketResult.isErr() {
-            errorMessage = socketResult.getErr().message;
+            const Error& error = socketResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             this.socket = socketResult.unwrap();
             this.listening = true;
@@ -239,7 +240,8 @@ public f<Result<bool>> HttpServer.handleNextRequest() {
     } else {
         const Result<int> connectionResult = this.socket.acceptConnection();
         if connectionResult.isErr() {
-            errorMessage = connectionResult.getErr().message;
+            const Error& error = connectionResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             if this.timeoutMillis != 0l { this.socket.setTimeout(this.timeoutMillis); }
 
@@ -248,7 +250,8 @@ public f<Result<bool>> HttpServer.handleNextRequest() {
             if requestResult.isErr() {
                 // The request never arrived in one piece, so all we can say is that it was bad
                 response.setStatus(STATUS_BAD_REQUEST);
-                const String reasonBody = String(requestResult.getErr().message);
+                const Error& error = requestResult.getErr();
+                const String reasonBody = String(error.getMessage());
                 response.setBody(reasonBody, CONTENT_TYPE_TEXT);
             } else {
                 const HttpRequest& request = requestResult.unwrap();
@@ -282,7 +285,8 @@ public f<Result<bool>> HttpServer.run() {
         while this.running && errorMessage == "" {
             const Result<bool> requestResult = this.handleNextRequest();
             if requestResult.isErr() {
-                errorMessage = requestResult.getErr().message;
+                const Error& error = requestResult.getErr();
+                errorMessage = error.getMessage();
             }
         }
         this.running = false;
