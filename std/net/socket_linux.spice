@@ -317,9 +317,7 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
  */
 public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
     // Resolve the host before spending a file descriptor on it
-    const Result<InAddrT> addrResult = resolveHost(host);
-    if addrResult.isErr() { return err<Socket>(addrResult.getErr()); }
-    const InAddrT hostAddr = addrResult.unwrap();
+    const InAddrT hostAddr = resolveHost(host)!;
 
     const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if sockFd == -1 { return err<Socket>(Error("Error opening socket client connection")); }
