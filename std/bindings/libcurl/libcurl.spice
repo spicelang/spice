@@ -595,11 +595,7 @@ public f<Result<string>> CurlClient.downloadFile(string url, string outputPath, 
     }
 
     // Create + open output file
-    const Result<File> fileRes = openFile(outputPath, MODE_READ_WRITE_OVERWRITE);
-    if fileRes.isErr() {
-        return err<string>(fileRes.getErr());
-    }
-    const File file = fileRes.unwrap();
+    const File file = openFile(outputPath, MODE_READ_WRITE_OVERWRITE)!;
 
     // Set necessary options to CURL
     this.setOption(CurlOption::URL, url);

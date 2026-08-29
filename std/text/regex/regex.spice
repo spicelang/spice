@@ -48,11 +48,7 @@ p Regex.ctor(const RegexProgram& prog) {
  */
 public f<Result<Regex>> compileRegex(const String& pattern) {
     RegexParser parser = RegexParser(pattern);
-    Result<RegexNode*> parseResult = parser.parse();
-    if parseResult.isErr() {
-        return err<Regex>(parseResult.getErr());
-    }
-    RegexNode* root = parseResult.unwrap();
+    RegexNode* root = parser.parse()!;
     const RegexProgram prog = compileToProgram(root, parser.groupCount);
     deleteRegexNode(root);
     return ok(Regex(prog));
