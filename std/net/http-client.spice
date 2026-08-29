@@ -201,7 +201,8 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
     } else {
         const Result<Socket> socketResult = openClientSocket(url.host.getRaw(), url.port);
         if socketResult.isErr() {
-            errorMessage = socketResult.getErr().message;
+            const Error& error = socketResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             Socket socket = socketResult.unwrap();
             if this.timeoutMillis != 0l { socket.setTimeout(this.timeoutMillis); }
@@ -213,7 +214,8 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
                 const bool expectBody = request.method != HttpMethod::HEAD;
                 const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
                 if responseResult.isErr() {
-                    errorMessage = responseResult.getErr().message;
+                    const Error& error = responseResult.getErr();
+                    errorMessage = error.getMessage();
                 } else {
                     const HttpResponse& received = responseResult.unwrap();
                     response = received;

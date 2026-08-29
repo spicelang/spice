@@ -1306,18 +1306,21 @@ public f<Result<HttpRequest>> receiveRequest(Socket& socket, unsigned long maxSi
 
     const Result<String> headResult = readHead(socket, buffer, maxSize);
     if headResult.isErr() {
-        errorMessage = headResult.getErr().message;
+        const Error& error = headResult.getErr();
+        errorMessage = error.getMessage();
     } else {
         const String& head = headResult.unwrap();
         Result<HttpRequest> headParseResult = parseRequestHead(head);
         if headParseResult.isErr() {
-            errorMessage = headParseResult.getErr().message;
+            const Error& error = headParseResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             HttpRequest& parsedRequest = headParseResult.unwrap();
             request = parsedRequest;
             const Result<String> bodyResult = readBody(socket, request.headers, buffer, maxSize, false);
             if bodyResult.isErr() {
-                errorMessage = bodyResult.getErr().message;
+                const Error& error = bodyResult.getErr();
+                errorMessage = error.getMessage();
             } else {
                 const String& body = bodyResult.unwrap();
                 request.body = body;
@@ -1348,12 +1351,14 @@ public f<Result<HttpResponse>> receiveResponse(Socket& socket, bool expectBody =
 
     const Result<String> headResult = readHead(socket, buffer, maxSize);
     if headResult.isErr() {
-        errorMessage = headResult.getErr().message;
+        const Error& error = headResult.getErr();
+        errorMessage = error.getMessage();
     } else {
         const String& head = headResult.unwrap();
         Result<HttpResponse> headParseResult = parseResponseHead(head);
         if headParseResult.isErr() {
-            errorMessage = headParseResult.getErr().message;
+            const Error& error = headParseResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             HttpResponse& parsedResponse = headParseResult.unwrap();
             response = parsedResponse;
@@ -1362,7 +1367,8 @@ public f<Result<HttpResponse>> receiveResponse(Socket& socket, bool expectBody =
             if hasBody {
                 const Result<String> bodyResult = readBody(socket, response.headers, buffer, maxSize, true);
                 if bodyResult.isErr() {
-                    errorMessage = bodyResult.getErr().message;
+                    const Error& error = bodyResult.getErr();
+                    errorMessage = error.getMessage();
                 } else {
                     const String& body = bodyResult.unwrap();
                     response.body = body;
@@ -1471,7 +1477,8 @@ f<Result<String>> readBody(Socket& socket, HttpHeaders& headers, String& buffer,
     if headers.isChunked() {
         const Result<String> chunkedResult = readChunkedBody(socket, buffer, maxSize);
         if chunkedResult.isErr() {
-            errorMessage = chunkedResult.getErr().message;
+            const Error& error = chunkedResult.getErr();
+            errorMessage = error.getMessage();
         } else {
             const String& decoded = chunkedResult.unwrap();
             body = decoded;

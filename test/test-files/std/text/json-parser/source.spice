@@ -120,9 +120,9 @@ f<int> main() {
 
     // The error message stays valid after the parser is gone
     const Error trailErr = trailRes.getErr();
-    assert isRawEqual(trailErr.message, "Trailing data after JSON value");
+    assert isRawEqual(trailErr.getMessage(), "Trailing data after JSON value");
     const Error badErr = badRes.getErr();
-    assert isRawEqual(badErr.message, "Unexpected character in JSON input");
+    assert isRawEqual(badErr.getMessage(), "Unexpected character in JSON input");
 
     // Incomplete number literals must be rejected
     Result<JsonValue*> bareMinusRes = parseJson(String("-"));

@@ -39,7 +39,7 @@ public p Result.ctor(const Error& error) {
  * scope. To take ownership of a heap payload, move it out of the result: `heap byte* p = sMove(result.unwrap());`
  */
 public inline f<T&> Result.unwrap() {
-    if this.error.code != 0 { panic(this.error); }
+    if !this.error.isOk() { panic(this.error); }
     return this.data;
 }
 
@@ -49,7 +49,7 @@ public inline f<T&> Result.unwrap() {
  * @param alternativeValue Alternative data value for the error case
  */
 public inline f<T&> Result.unwrapOr(const T& alternativeValue) {
-    return this.error.code == 0 ? this.data : alternativeValue;
+    return this.error.isOk() ? this.data : alternativeValue;
 }
 
 /**
@@ -58,7 +58,7 @@ public inline f<T&> Result.unwrapOr(const T& alternativeValue) {
  * @param callback Callback which is invoked in case of an error
  */
 public inline f<T&> Result.unwrapOrElse(f<T&>(const Error&) callback) {
-    return this.error.code == 0 ? this.data : callback(this.error);
+    return this.error.isOk() ? this.data : callback(this.error);
 }
 
 /**
@@ -72,14 +72,14 @@ public inline f<Error&> Result.getErr() {
  * Checks if the result contains any data.
  */
 public inline f<bool> Result.isOk() {
-    return this.error.code == 0;
+    return this.error.isOk();
 }
 
 /**
  * Checks if the result contains an error.
  */
 public inline f<bool> Result.isErr() {
-    return this.error.code != 0;
+    return !this.error.isOk();
 }
 
 /**

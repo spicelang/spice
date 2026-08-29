@@ -14,7 +14,7 @@ f<int> main() {
     int okCallbackInvocations = 0;
     int okValue = okResult.unwrapOrElse(f<int&>(const Error& e) {
         okCallbackInvocations += 1;
-        okFallback = e.code;
+        okFallback = e.getCode();
         return okFallback;
     });
     assert okValue == 42;
@@ -25,7 +25,7 @@ f<int> main() {
     int errCallbackInvocations = 0;
     int errValue = errResult.unwrapOrElse(f<int&>(const Error& e) {
         errCallbackInvocations += 1;
-        errFallback = e.code;
+        errFallback = e.getCode();
         return errFallback;
     });
     assert errValue == 7;

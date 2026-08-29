@@ -151,4 +151,4 @@ The `Error` builtin type offers the following constructors:
 The `Error` builtin type offers the following methods:
 
 - `void print()`: Prints the error message to the standard error output
-- `void toPanic()`: Triggers a panic with this error
+- `void triggerPanic()`: Triggers a panic with this error

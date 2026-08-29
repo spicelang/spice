@@ -9,7 +9,7 @@ f<int> main() {
     Result<string> res = client.downloadFile(url, outputPath);
     if res.isErr() {
         Error& err = res.getErr();
-        err.toPanic();
+        err.triggerPanic();
     }
     assert fileExists(outputPath);
     assert isFileReadable(outputPath);
@@ -17,7 +17,7 @@ f<int> main() {
     Result<String> fileContentRes = readFile(outputPath);
     if fileContentRes.isErr() {
         Error& err = fileContentRes.getErr();
-        err.toPanic();
+        err.triggerPanic();
     }
     const String fileContent = fileContentRes.unwrap();
     assert fileContent.contains("Example");
