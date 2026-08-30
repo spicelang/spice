@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:14:
+Referenced undefined struct: Struct 'Optional' could not be found
+
+8  dyn o = Optional{};
+           ^^^^^^^^^^
