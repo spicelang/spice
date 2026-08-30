@@ -5,6 +5,7 @@
 #include <array>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace spice::compiler {
 
@@ -52,7 +53,11 @@ static constexpr std::array ARCHIVER_NAMES_WINDOWS = {ARCHIVER_NAME_LLVM_LIB, AR
 class SystemUtil {
 public:
   static ExecResult exec(const std::string &command, bool redirectStdErrToStdOut = false);
+  static ExecResult exec(const std::string &program, const std::vector<std::string> &args,
+                         bool redirectStdErrToStdOut = false);
   static int run(const std::string &executablePath);
+  static std::string renderCommandForDisplay(const std::string &program, const std::vector<std::string> &args);
+  static std::vector<std::string> expandLinkerFlag(const std::string &flag);
   static bool isCommandAvailable(const std::string &cmd);
   static bool isGraphvizInstalled();
   static ExternalBinaryFinderResult findLinkerInvoker();
