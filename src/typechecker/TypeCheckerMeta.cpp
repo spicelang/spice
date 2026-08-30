@@ -324,6 +324,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(is<DataTypeNode *>(node->parent->parent));
 
+    // Remember how many template types this struct/interface actually declares, before it gets overwritten below
+    const size_t requiredTemplateTypeCount = entryType.getTemplateTypes().size();
+
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
@@ -345,6 +348,15 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         templateTypes.push_back(templateType);
       }
       entryType = entryType.getWithTemplateTypes(templateTypes);
+    }
+
+    // Reject usage with a wrong number of template type arguments (including none, if some are required)
+    if (templateTypes.size() != requiredTemplateTypeCount) {
+      const std::string kind = entryType.is(TY_STRUCT) ? "Struct" : "Interface";
+      const std::string errorMessage = kind + " '" + node->fqTypeName + "' requires " +
+                                        std::to_string(requiredTemplateTypeCount) + " template type argument(s), but got " +
+                                        std::to_string(templateTypes.size());
+      SOFT_ERROR_QT(node, INVALID_TEMPLATE_TYPES, errorMessage)
     }
 
     // Check if struct is defined before the current code location, if defined in the same source file. Across files

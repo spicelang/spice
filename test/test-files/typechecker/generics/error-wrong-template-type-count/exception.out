@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:10:5:
+Invalid template types: Struct 'Pair' requires 2 template type argument(s), but got 1
+
+10  Pair<int> pair;
+    ^^^^^^^^^

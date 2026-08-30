@@ -118,7 +118,8 @@ Struct *QualType::getStruct(const ASTNode *node) const { return getStruct(node, 
  */
 Struct *QualType::getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes) {
   Struct *spiceStruct = getStruct(node, templateTypes);
-  type = type->getWithBodyScope(spiceStruct->scope)->getWithTemplateTypes(spiceStruct->getTemplateTypes());
+  if (spiceStruct != nullptr)
+    type = type->getWithBodyScope(spiceStruct->scope)->getWithTemplateTypes(spiceStruct->getTemplateTypes());
   return spiceStruct;
 }
 

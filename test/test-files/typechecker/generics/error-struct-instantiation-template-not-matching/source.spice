@@ -1,0 +1,9 @@
+type T dyn;
+
+type Optional<T> struct {
+    T value
+}
+
+f<int> main() {
+     dyn o = Optional{};
+}
