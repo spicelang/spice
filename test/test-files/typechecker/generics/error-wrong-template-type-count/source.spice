@@ -1,0 +1,11 @@
+type K dyn;
+type V dyn;
+
+type Pair<K, V> struct {
+    K key
+    V value
+}
+
+f<int> main() {
+    Pair<int> pair;
+}
