@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -165,7 +165,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -264,6 +264,9 @@ jobs:
           choco install graphviz ccache ninja -y
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install sqlite3:x64-windows
+          echo "LIB=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIB" >> $env:GITHUB_ENV
+          echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
       - name: Restore CCache
         uses: actions/cache/restore@v6
@@ -358,7 +361,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install ccache graphviz
+          brew install ccache graphviz sqlite
+          echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
 
       - name: Restore CCache
@@ -448,7 +452,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install ccache graphviz
+          brew install ccache graphviz sqlite
+          echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
 
       - name: Restore CCache
