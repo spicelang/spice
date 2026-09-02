@@ -1,0 +1,214 @@
+#![core.compiler.warnings.ignore]
+#![
+    core.linux.linker.flag = "`pkg-config --cflags --libs sqlite3`",
+    core.darwin.linker.flag = "`pkg-config --cflags --libs sqlite3`",
+    core.windows.linker.flag = "-lsqlite3"
+]
+
+// ===== Open flags =====
+public const int SQLITE_OPEN_READONLY  = 0x00000001;
+public const int SQLITE_OPEN_READWRITE = 0x00000002;
+public const int SQLITE_OPEN_CREATE    = 0x00000004;
+public const int SQLITE_OPEN_URI       = 0x00000040;
+public const int SQLITE_OPEN_MEMORY    = 0x00000080;
+public const int SQLITE_OPEN_NOMUTEX   = 0x00008000;
+public const int SQLITE_OPEN_FULLMUTEX = 0x00010000;
+public const int SQLITE_OPEN_DEFAULT   = 0x00000006; // SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+
+// ===== Enums =====
+public type SqliteResultCode enum {
+    OK = 0,
+    ERROR = 1,
+    INTERNAL = 2,
+    PERM = 3,
+    ABORT = 4,
+    BUSY = 5,
+    LOCKED = 6,
+    NOMEM = 7,
+    READONLY = 8,
+    INTERRUPT = 9,
+    IOERR = 10,
+    CORRUPT = 11,
+    NOTFOUND = 12,
+    FULL = 13,
+    CANTOPEN = 14,
+    PROTOCOL = 15,
+    EMPTY = 16,
+    SCHEMA = 17,
+    TOOBIG = 18,
+    CONSTRAINT = 19,
+    MISMATCH = 20,
+    MISUSE = 21,
+    NOLFS = 22,
+    AUTH = 23,
+    FORMAT = 24,
+    RANGE = 25,
+    NOTADB = 26,
+    NOTICE = 27,
+    WARNING = 28,
+    ROW = 100,
+    DONE = 101
+}
+
+public type SqliteColumnType enum {
+    INTEGER = 1,
+    FLOAT = 2,
+    TEXT = 3,
+    BLOB = 4,
+    NULL = 5
+}
+
+// ===== External type definitions =====
+type ExtSqliteRef alias byte*;
+type ExtSqliteStmtRef alias byte*;
+
+// ===== External function declarations =====
+ext f<SqliteResultCode> sqlite3_open_v2(string /*filename*/, ExtSqliteRef* /*ppDb*/, int /*flags*/, string /*zVfs*/);
+ext f<SqliteResultCode> sqlite3_close(ExtSqliteRef /*db*/);
+ext f<string> sqlite3_errmsg(ExtSqliteRef /*db*/);
+ext f<SqliteResultCode> sqlite3_exec(ExtSqliteRef /*db*/, string /*sql*/, byte* /*callback*/, byte* /*arg*/, byte** /*errmsg*/);
+ext f<long> sqlite3_last_insert_rowid(ExtSqliteRef /*db*/);
+ext f<int> sqlite3_changes(ExtSqliteRef /*db*/);
+ext f<string> sqlite3_libversion();
+
+ext f<SqliteResultCode> sqlite3_prepare_v2(ExtSqliteRef /*db*/, string /*sql*/, int /*nByte*/, ExtSqliteStmtRef* /*ppStmt*/, string* /*pzTail*/);
+ext f<SqliteResultCode> sqlite3_step(ExtSqliteStmtRef /*stmt*/);
+ext f<SqliteResultCode> sqlite3_reset(ExtSqliteStmtRef /*stmt*/);
+ext f<SqliteResultCode> sqlite3_finalize(ExtSqliteStmtRef /*stmt*/);
+ext f<SqliteResultCode> sqlite3_bind_int64(ExtSqliteStmtRef /*stmt*/, int /*index*/, long /*value*/);
+ext f<SqliteResultCode> sqlite3_bind_double(ExtSqliteStmtRef /*stmt*/, int /*index*/, double /*value*/);
+// The destructor param is a function pointer in the C API (SQLITE_STATIC = 0, SQLITE_TRANSIENT = -1); a pointer-sized
+// integer is ABI-compatible and avoids needing an integer-to-pointer cast, which Spice does not support.
+ext f<SqliteResultCode> sqlite3_bind_text(ExtSqliteStmtRef /*stmt*/, int /*index*/, string /*value*/, int /*length*/, long /*destructor*/);
+ext f<SqliteResultCode> sqlite3_bind_null(ExtSqliteStmtRef /*stmt*/, int /*index*/);
+ext f<int> sqlite3_column_count(ExtSqliteStmtRef /*stmt*/);
+ext f<SqliteColumnType> sqlite3_column_type(ExtSqliteStmtRef /*stmt*/, int /*col*/);
+ext f<string> sqlite3_column_name(ExtSqliteStmtRef /*stmt*/, int /*col*/);
+ext f<long> sqlite3_column_int64(ExtSqliteStmtRef /*stmt*/, int /*col*/);
+ext f<double> sqlite3_column_double(ExtSqliteStmtRef /*stmt*/, int /*col*/);
+ext f<string> sqlite3_column_text(ExtSqliteStmtRef /*stmt*/, int /*col*/);
+
+public inline f<string> getSqliteVersion() {
+    return sqlite3_libversion();
+}
+
+// ===== SqliteDatabase =====
+public type SqliteDatabase struct {
+    ExtSqliteRef self
+    SqliteResultCode lastResult
+}
+
+public p SqliteDatabase.ctor(string path, int flags = SQLITE_OPEN_DEFAULT) {
+    this.self = nil<ExtSqliteRef>;
+    this.lastResult = sqlite3_open_v2(path, &this.self, flags, nil<string>);
+}
+
+public p SqliteDatabase.dtor() {
+    if this.self != nil<ExtSqliteRef> {
+        sqlite3_close(this.self);
+    }
+}
+
+public inline f<bool> SqliteDatabase.isValid() {
+    return this.self != nil<ExtSqliteRef> && this.lastResult == SqliteResultCode::OK;
+}
+
+public inline f<string> SqliteDatabase.getErrorMessage() {
+    return sqlite3_errmsg(this.self);
+}
+
+public inline f<long> SqliteDatabase.getLastInsertRowId() {
+    return sqlite3_last_insert_rowid(this.self);
+}
+
+public inline f<int> SqliteDatabase.getChanges() {
+    return sqlite3_changes(this.self);
+}
+
+public f<Result<bool>> SqliteDatabase.exec(string sql) {
+    if !this.isValid() {
+        return err<bool>("SQLite database is not open");
+    }
+
+    const SqliteResultCode rc = sqlite3_exec(this.self, sql, nil<byte*>, nil<byte*>, nil<byte**>);
+    if rc != SqliteResultCode::OK {
+        return err<bool>(this.getErrorMessage());
+    }
+    return ok<bool>(true);
+}
+
+// ===== SqliteStatement =====
+public type SqliteStatement struct {
+    ExtSqliteStmtRef self
+    SqliteResultCode lastResult
+}
+
+public p SqliteStatement.ctor(const SqliteDatabase& db, string sql) {
+    this.self = nil<ExtSqliteStmtRef>;
+    this.lastResult = sqlite3_prepare_v2(db.self, sql, -1, &this.self, nil<string*>);
+}
+
+public p SqliteStatement.dtor() {
+    if this.self != nil<ExtSqliteStmtRef> {
+        sqlite3_finalize(this.self);
+    }
+}
+
+public inline f<bool> SqliteStatement.isValid() {
+    return this.self != nil<ExtSqliteStmtRef> && this.lastResult == SqliteResultCode::OK;
+}
+
+public inline p SqliteStatement.bindInt(int index, long value) {
+    sqlite3_bind_int64(this.self, index, value);
+}
+
+public inline p SqliteStatement.bindDouble(int index, double value) {
+    sqlite3_bind_double(this.self, index, value);
+}
+
+// The bound text is copied by SQLite immediately (SQLITE_TRANSIENT), so it stays valid after this call returns.
+public inline p SqliteStatement.bindText(int index, string value) {
+    sqlite3_bind_text(this.self, index, value, -1, -1l);
+}
+
+public inline p SqliteStatement.bindNull(int index) {
+    sqlite3_bind_null(this.self, index);
+}
+
+public f<SqliteResultCode> SqliteStatement.step() {
+    this.lastResult = sqlite3_step(this.self);
+    return this.lastResult;
+}
+
+public inline f<bool> SqliteStatement.nextRow() {
+    return this.step() == SqliteResultCode::ROW;
+}
+
+public inline p SqliteStatement.reset() {
+    sqlite3_reset(this.self);
+}
+
+public inline f<int> SqliteStatement.getColumnCount() {
+    return sqlite3_column_count(this.self);
+}
+
+public inline f<SqliteColumnType> SqliteStatement.getColumnType(int col) {
+    return sqlite3_column_type(this.self, col);
+}
+
+public inline f<string> SqliteStatement.getColumnName(int col) {
+    return sqlite3_column_name(this.self, col);
+}
+
+public inline f<long> SqliteStatement.getColumnInt(int col) {
+    return sqlite3_column_int64(this.self, col);
+}
+
+public inline f<double> SqliteStatement.getColumnDouble(int col) {
+    return sqlite3_column_double(this.self, col);
+}
+
+// Only valid for a column whose type is not SqliteColumnType::NULL.
+public inline f<String> SqliteStatement.getColumnText(int col) {
+    return String(sqlite3_column_text(this.self, col));
+}

@@ -234,5 +234,5 @@ source, and links everything in a single step.
 
 !!! note "Existing bindings"
     The Spice standard library ships ready-made bindings for several popular C libraries under `std/bindings/`,
-    including `libcurl`, `GTK4`, and LLVM. Check those files for complete, production-ready examples of the
-    patterns shown in this tutorial.
+    including `libcurl`, `GTK4`, LLVM, and SQLite. Check those files for complete, production-ready examples of
+    the patterns shown in this tutorial.

@@ -31,8 +31,9 @@ Spice bindings for common external libraries, allowing them to be called from Sp
 | Module            | Description                                                            |
 |-------------------|------------------------------------------------------------------------|
 | `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                    |
-| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.     |
+| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.      |
 | `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.   |
+| `sqlite/sqlite`   | Bindings for SQLite, an embedded, file-based SQL database.             |
 
 ### `std/crypto`
 Cryptographic hash functions that turn a message of any length into a fixed-size digest.

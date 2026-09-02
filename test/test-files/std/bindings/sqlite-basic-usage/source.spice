@@ -1,0 +1,38 @@
+import "std/bindings/sqlite/sqlite";
+
+f<int> main() {
+    const string version = getSqliteVersion();
+    assert version != nil<string>;
+
+    SqliteDatabase db = SqliteDatabase(":memory:");
+    assert db.isValid();
+
+    Result<bool> createRes = db.exec("CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)");
+    assert createRes.isOk();
+
+    SqliteStatement insertStmt = SqliteStatement(db, "INSERT INTO people (name, age) VALUES (?, ?)");
+    assert insertStmt.isValid();
+    insertStmt.bindText(1, "Ada");
+    insertStmt.bindInt(2, 36l);
+    assert insertStmt.step() == SqliteResultCode::DONE;
+    assert db.getChanges() == 1;
+    printf("Inserted row id: %d\n", db.getLastInsertRowId());
+
+    SqliteStatement selectStmt = SqliteStatement(db, "SELECT id, name, age FROM people ORDER BY id");
+    assert selectStmt.isValid();
+    unsigned int rowCount = 0u;
+    while selectStmt.nextRow() {
+        const long id = selectStmt.getColumnInt(0);
+        const String name = selectStmt.getColumnText(1);
+        const long age = selectStmt.getColumnInt(2);
+        printf("id=%d name=%s age=%d\n", id, name.getRaw(), age);
+        rowCount++;
+    }
+    assert rowCount == 1u;
+
+    // Invalid SQL should surface as an error, not a crash.
+    Result<bool> badExec = db.exec("NOT VALID SQL");
+    assert badExec.isErr();
+
+    printf("All assertions passed!\n");
+}

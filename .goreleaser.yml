@@ -92,24 +92,28 @@ nfpms:
           - gtk4-dev
           - gtkmm4.0-dev
           - curl-dev
+          - sqlite-dev
       deb:
         dependencies:
           - build-essential
           - libgtk-4-dev
           - libgtkmm-4.0-dev
           - libcurl4-openssl-dev
+          - libsqlite3-dev
       rpm:
         dependencies:
           - glibc-devel
           - gtk4-devel
           - gtkmm4.0-devel
           - libcurl-devel
+          - sqlite-devel
       archlinux:
         dependencies:
           - base-devel
           - gtk4
           - gtkmm-4.0
           - curl
+          - sqlite
 
 homebrew_casks:
   - name: spice
