@@ -67,6 +67,14 @@ llvm::Function *StdFunctionManager::getMemcmpFct() const {
   llvm::Function *memcmpFct = getFunction("memcmp", builder.getInt32Ty(), {ptrTy, ptrTy, builder.getInt64Ty()});
   // Set attributes
   memcmpFct->addFnAttr(llvm::Attribute::NoUnwind);
+  memcmpFct->addParamAttr(0, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
+  memcmpFct->addParamAttr(0, llvm::Attribute::NoUndef);
+  memcmpFct->addParamAttr(0, llvm::Attribute::ReadOnly);
+  memcmpFct->addParamAttr(1, llvm::Attribute::getWithCaptureInfo(context, llvm::CaptureInfo::none()));
+  memcmpFct->addParamAttr(1, llvm::Attribute::NoUndef);
+  memcmpFct->addParamAttr(1, llvm::Attribute::ReadOnly);
+  memcmpFct->addParamAttr(2, llvm::Attribute::NoUndef);
+  memcmpFct->addRetAttr(llvm::Attribute::NoUndef);
   return memcmpFct;
 }
 
@@ -170,6 +178,10 @@ llvm::Function *StdFunctionManager::getResultErrCtorFct(const Function *spiceFun
 llvm::Function *StdFunctionManager::getAcrtIOFuncFct() const {
   llvm::Function *stdErrPFct = getFunction("__acrt_iob_func", builder.getPtrTy(), builder.getInt32Ty());
   stdErrPFct->setDSOLocal(true);
+  // Set attributes
+  stdErrPFct->addFnAttr(llvm::Attribute::NoUnwind);
+  stdErrPFct->addParamAttr(0, llvm::Attribute::NoUndef);
+  stdErrPFct->addRetAttr(llvm::Attribute::NoUndef);
   return stdErrPFct;
 }
 

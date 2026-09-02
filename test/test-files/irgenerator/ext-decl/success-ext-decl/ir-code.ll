@@ -1,12 +1,14 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-declare ptr @malloc(i64 noundef)
+; Function Attrs: nounwind
+declare noundef ptr @malloc(i64 noundef) #0
 
-declare void @free(ptr noundef)
+; Function Attrs: nounwind
+declare void @free(ptr noundef) #0
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %address = alloca ptr, align 8
   store i32 0, ptr %result, align 4
@@ -20,7 +22,8 @@ define dso_local noundef i32 @main() #0 {
   ret i32 %4
 }
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { nounwind }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

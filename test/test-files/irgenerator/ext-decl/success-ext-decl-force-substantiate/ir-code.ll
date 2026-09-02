@@ -5,12 +5,14 @@ source_filename = "source.spice"
 @printf.str.1 = private unnamed_addr constant [21 x i8] c"Hello from thread 2\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
-declare i32 @pthread_create(ptr noundef, ptr noundef, { ptr, ptr, i64 } noundef, ptr noundef)
+; Function Attrs: nounwind
+declare noundef i32 @pthread_create(ptr noundef, ptr noundef, { ptr, ptr, i64 } noundef, ptr noundef) #0
 
-declare i32 @pthread_join(i64 noundef, ptr noundef)
+; Function Attrs: nounwind
+declare noundef i32 @pthread_join(i64 noundef, ptr noundef) #0
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #0 {
+define dso_local noundef i32 @main() #1 {
   %result = alloca i32, align 4
   %tid1 = alloca i64, align 8
   %tid2 = alloca i64, align 8
@@ -52,7 +54,7 @@ define dso_local noundef i32 @main() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
+define internal void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #2 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load volatile ptr, ptr %captures, align 8
@@ -64,10 +66,10 @@ define internal void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) #1 {
+define internal void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8) %0) #2 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
@@ -84,9 +86,10 @@ define internal void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8
   ret void
 }
 
-attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { noinline nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #0 = { nounwind }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { noinline nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
