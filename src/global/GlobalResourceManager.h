@@ -17,6 +17,7 @@ namespace spice::compiler {
 // Forward declarations
 struct CliOptions;
 class SourceFile;
+class Struct;
 
 // Constants
 const char *const MAIN_FILE_NAME = "root";
@@ -54,6 +55,7 @@ public:
   BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes
   std::unordered_map<const ASTNode *, size_t> nodeToNodeId;
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
+  std::vector<std::pair<Struct *, bool>> pendingStructDefaultMemberDecisions;
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
   CacheManager cacheManager;

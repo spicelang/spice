@@ -201,6 +201,8 @@ private:
 
   // Implicit code generation
   static void createImplicitDefaultMembers(Struct &spiceStruct, const ASTNode *node, bool withMoveCtor = true);
+  static void decideDefaultMembers(Struct &spiceStruct, bool withMoveCtor);
+  static void drainPendingImplicitDefaultMemberDecisions(GlobalResourceManager &resourceManager);
   static void createDefaultStructMethod(const Struct &spiceStruct, const std::string &entryName, const std::string &name,
                                         const ParamList &params);
   static void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);

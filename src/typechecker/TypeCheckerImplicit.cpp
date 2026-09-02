@@ -20,18 +20,27 @@ namespace spice::compiler {
 static const char *const FCT_NAME_DEALLOC = "sDealloc";
 
 /**
- * Check whether the given struct and all of its by-value struct fields are manifested, transitively. While a circular
- * import is still being prepared, a by-value struct field may (transitively) reference a struct that is not manifested
- * yet; generating implicit special members for such a struct recurses through isTriviallyConstructible and would
- * dereference a null struct lookup. A genuine infinite-size containment cycle among these structs is reported
- * separately by the infinite-size check during struct preparation, so a containment cycle here is treated as manifested.
+ * Check whether the given struct and all of its by-value struct fields are manifested, transitively, and have already
+ * decided their own implicit default members. While a circular import is still being prepared, a by-value struct field
+ * may (transitively) reference a struct that is not manifested yet; generating implicit special members for such a
+ * struct recurses through isTriviallyConstructible and would dereference a null struct lookup. A genuine infinite-size
+ * containment cycle among these structs is reported separately by the infinite-size check during struct preparation,
+ * so a containment cycle here is treated as manifested.
+ *
+ * A field struct can also be manifested (the Struct object exists) but not decided yet: a generic struct like
+ * Result<T> can be substantiated for T = Url while checking a function body during Url's own file's one-shot sweep
+ * (TypeChecker::visitEntry), before that sweep has reached Url's struct declaration and decided that Url needs a
+ * dtor/copy ctor. Deciding Result<Url> right then would see Url as trivial (no dtor found yet) and permanently skip
+ * generating Result<Url>'s dtor, since createImplicitDefaultMembers only ever runs once per manifestation. Requiring
+ * the field struct to have decided its own members first defers Result<Url> the same way as the circular-import case
+ * above, to be picked up again by the fallback sweep in visitStructDefCheck once Url has decided.
  */
 static bool structFullyManifested(const Struct *spiceStruct, const ASTNode *node, std::unordered_set<const Scope *> &visited) {
   for (const QualType &fieldType : spiceStruct->fieldTypes) {
     if (!fieldType.is(TY_STRUCT))
       continue;
     const Struct *fieldStruct = fieldType.getStruct(node);
-    if (fieldStruct == nullptr)
+    if (fieldStruct == nullptr || !fieldStruct->implicitDefaultMembersDecided)
       return false;
     // Recurse into each field struct once. A containment cycle (already visited) is fine here - it is reported
     // separately as an infinite-size error. Leaf structs never touch the set, so the common case stays allocation-free.
@@ -70,21 +79,88 @@ void TypeChecker::createImplicitDefaultMembers(Struct &spiceStruct, const ASTNod
   if (spiceStruct.implicitDefaultMembersDecided)
     return;
 
-  // Skip while a by-value struct field is (transitively) not manifested yet (circular import still in progress). A
-  // genuine infinite-size cycle among such structs is reported by the infinite-size check during preparation. The
-  // manifestation stays undecided and is picked up again by the fallback sweep in visitStructDefCheck.
-  std::unordered_set<const Scope *> visitedScopes;
-  if (!structFullyManifested(&spiceStruct, node, visitedScopes))
-    return;
+  GlobalResourceManager &resourceManager = spiceStruct.scope->sourceFile->resourceManager;
 
+  // Skip while a by-value struct field is (transitively) not manifested yet, or has not decided its own implicit
+  // default members yet (circular import still in progress, or a sibling struct's one-shot sweep has not reached it
+  // yet - see structFullyManifested). Relying solely on the fallback sweep in visitStructDefCheck to pick this back up
+  // can be too late: that sweep only runs during the type-checker POST pass, by which point some other function body
+  // elsewhere may already have looked up (and missed) this manifestation's dtor for good, since a function body is
+  // type-checked exactly once. Queue the manifestation instead, so it gets retried the moment something else's
+  // decision completes (see drainPendingImplicitDefaultMemberDecisions below) - typically still within the same PRE
+  // pass that first substantiated it.
+  std::unordered_set<const Scope *> visitedScopes;
+  if (!structFullyManifested(&spiceStruct, node, visitedScopes)) {
+    std::vector<std::pair<Struct *, bool>> &pending = resourceManager.pendingStructDefaultMemberDecisions;
+    const auto pred = [&](const auto &entry) { return entry.first == &spiceStruct; };
+    const auto it = std::ranges::find_if(pending, pred);
+    if (it == pending.end())
+      pending.emplace_back(&spiceStruct, withMoveCtor);
+    else
+      it->second |= withMoveCtor; // Upgrade to deciding the move ctor too if any deferred caller asked for it
+    return;
+  }
+
+  decideDefaultMembers(spiceStruct, withMoveCtor);
+
+  // This struct just became decided - drain the pending list so it can pick up anything that was blocked on it, directly or
+  // transitively (a chain of Result<Outer<Inner>>-shaped dependencies).
+  drainPendingImplicitDefaultMemberDecisions(resourceManager);
+}
+
+/**
+ * Set a struct manifestation's default members as decided and create whichever of them (ctor, copy ctor, move ctor,
+ * dtor) it actually needs. Only called once structFullyManifested has confirmed the struct is ready.
+ *
+ * @param spiceStruct Struct manifestation to decide the default members for
+ * @param withMoveCtor Also decide about the default move ctor
+ */
+void TypeChecker::decideDefaultMembers(Struct &spiceStruct, bool withMoveCtor) {
   spiceStruct.implicitDefaultMembersDecided = true;
 
-  // Check if we need to create a default ctor, copy ctor, move ctor or dtor
   createDefaultCtorIfRequired(spiceStruct, spiceStruct.scope);
   createDefaultCopyCtorIfRequired(spiceStruct, spiceStruct.scope);
   if (withMoveCtor)
     createDefaultMoveCtorIfRequired(spiceStruct, spiceStruct.scope);
   createDefaultDtorIfRequired(spiceStruct, spiceStruct.scope);
+}
+
+/**
+ * Drain every struct manifestation that createImplicitDefaultMembers previously had to defer because a by-value
+ * field struct had not decided its own default members yet. Called whenever a struct's decision completes, since
+ * that can unblock others - directly (a struct that was waiting on exactly this one) or transitively (a chain of
+ * Result<Outer<Inner>>-shaped dependencies).
+ *
+ * This calls decideDefaultMembers directly rather than createImplicitDefaultMembers, so draining one entry can never
+ * recurse back into this function - no reentrancy guard is needed, the loop below just keeps going until a full pass
+ * makes no further progress.
+ *
+ * @param resourceManager Resource manager that owns the pending list for this compilation
+ */
+void TypeChecker::drainPendingImplicitDefaultMemberDecisions(GlobalResourceManager &resourceManager) {
+  bool progressed;
+  do {
+    progressed = false;
+    // Snapshot before iterating: deciding one pending manifestation can append newly-deferred entries to the very
+    // list being iterated (a struct that unblocks can itself be a field of another, still-blocked struct).
+    const std::vector<std::pair<Struct *, bool>> snapshot = resourceManager.pendingStructDefaultMemberDecisions;
+    for (const auto &[pendingStruct, pendingWithMoveCtor] : snapshot) {
+      if (pendingStruct->implicitDefaultMembersDecided)
+        continue; // Already resolved by an earlier entry in this same pass
+
+      std::unordered_set<const Scope *> visitedScopes;
+      if (!structFullyManifested(pendingStruct, pendingStruct->declNode, visitedScopes))
+        continue; // Still blocked on something else; leave it queued
+
+      decideDefaultMembers(*pendingStruct, pendingWithMoveCtor);
+      progressed = true;
+    }
+  } while (progressed);
+
+  // Drop everything that got resolved. Whatever remains is still genuinely blocked (e.g. a circular import still in
+  // progress) and stays queued to be retried again the next time some other struct's decision completes.
+  const auto pred = [](const std::pair<Struct *, bool> &entry) { return entry.first->implicitDefaultMembersDecided; };
+  std::erase_if(resourceManager.pendingStructDefaultMemberDecisions, pred);
 }
 
 /**
@@ -474,6 +550,15 @@ void TypeChecker::createCtorBodyPreamble(const Scope *bodyScope) const {
     QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, fieldSymbol->declNode);
+
+    // A reference field has no default value to construct - it can only be bound by an explicit assignment in the
+    // ctor body (e.g. Pair<K, V&>'s 'this.second = second;'), and that assignment is what should mark the field's
+    // lifecycle as initialized (see the isDecl / initial-field-ref-assign logic in TypeChecker::visitAssignExpr and
+    // IRGenerator::doAssignment). Marking it initialized here, before that binding assignment runs, would make the
+    // compiler treat the binding as a reassignment through the reference instead of the initial binding - illegal
+    // for a const reference field, and wrong even for a non-const one.
+    if (fieldType.isRef())
+      continue;
 
     if (fieldType.is(TY_STRUCT)) {
       const auto fieldNode = spice_pointer_cast<const FieldNode *>(fieldSymbol->declNode);
