@@ -265,7 +265,9 @@ jobs:
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install sqlite3:x64-windows
-          echo "LIB=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIB" >> $env:GITHUB_ENV
+          # The compiler links via clang's GNU driver (--target=x86_64-w64-windows-gnu, MinGW), which reads
+          # LIBRARY_PATH for '-l' search dirs, not the MSVC-only LIB variable.
+          echo "LIBRARY_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
           echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
       - name: Restore CCache
