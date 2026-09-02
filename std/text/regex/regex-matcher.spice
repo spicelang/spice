@@ -25,16 +25,6 @@ public p Thread.ctor(long pc, const Vector<long>& saved) {
     this.saved = saved;
 }
 
-// Explicit public copy-ctor + dtor, following the std convention that a non-trivial type used
-// generically (here, as a `Vector<Thread>` element) needs both defined explicitly rather than
-// relying on auto-generation - see e.g. "std/runtime/string_rt"'s String.
-public p Thread.ctor(const Thread& original) {
-    this.pc = original.pc;
-    this.saved = original.saved;
-}
-
-public p Thread.dtor() {}
-
 // The set of threads being built for one input position, plus the per-instruction "already added
 // during this build" marker that keeps `addThread` from visiting the same instruction twice in one
 // step - this is what bounds the whole match to O(input length * program size) rather than
@@ -43,12 +33,11 @@ public p Thread.dtor() {}
 public type ThreadList struct {
     public Vector<Thread> threads
     public Vector<long> lastGen
-    public long gen
+    public long gen = 0l
 }
 
 public p ThreadList.ctor(long numInstrs) {
     this.lastGen = Vector<long>(cast<unsigned long>(numInstrs), -1l);
-    this.gen = 0l;
 }
 
 public p ThreadList.reset() {

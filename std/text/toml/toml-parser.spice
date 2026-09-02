@@ -23,11 +23,11 @@ const long PATH_SEPARATOR_CODE = 1l;
  */
 public type TomlParser struct {
     String input
-    unsigned long pos
-    string errorMessage  // always points to a string literal, so it outlives the parser
-    bool hasError
-    TomlValue* root
-    TomlValue* currentTable
+    unsigned long pos = 0l
+    string errorMessage = "" // always points to a string literal, so it outlives the parser
+    bool hasError = false
+    TomlValue* root = nil<TomlValue*>
+    TomlValue* currentTable = nil<TomlValue*>
     Vector<String> definedTablePaths  // paths that were opened by a [table] header
     Vector<String> arrayTablePaths    // paths that were opened by a [[array of table]] header
 }
@@ -39,11 +39,6 @@ public type TomlParser struct {
  */
 public p TomlParser.ctor(const String& input) {
     this.input = input;
-    this.pos = 0l;
-    this.errorMessage = "";
-    this.hasError = false;
-    this.root = nil<TomlValue*>;
-    this.currentTable = nil<TomlValue*>;
 }
 
 /**

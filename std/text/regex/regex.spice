@@ -6,6 +6,7 @@ import "std/text/regex/regex-matcher";
 import "std/data/optional";
 import "std/data/vector";
 import "std/text/analysis";
+import "std/text/stringstream";
 
 /**
  * A single match of a `Regex` against an input string: the whole-match text and bounds, plus one
@@ -35,6 +36,13 @@ public type Match struct {
 public type Regex struct {
     RegexProgram program
 }
+
+/**
+ * Default-constructs an empty, never-matching regex. Not meant to be used directly - it exists so that
+ * Result<Regex> has a valid, destructible payload to fall back on in its error variant, since compileRegex
+ * is the only supported way to obtain a real, matching Regex.
+ */
+public p Regex.ctor() {}
 
 p Regex.ctor(const RegexProgram& prog) {
     this.program = prog;
@@ -95,15 +103,14 @@ public f<Vector<Match>> Regex.findAll(const String& input) {
     Vector<Match> matches;
     const unsigned long length = input.getLength();
     unsigned long pos = 0ul;
-    bool continueSearch = true;
-    while continueSearch && pos <= length {
+    while pos <= length {
         const Optional<Match> m = this.find(input, pos);
         if m.isPresent() {
             const Match& match = m.get();
             matches.pushBack(match);
             pos = match.endIndex > match.startIndex ? match.endIndex : match.endIndex + 1ul;
         } else {
-            continueSearch = false;
+            break;
         }
     }
     return matches;
@@ -121,11 +128,11 @@ public f<String> Regex.replace(const String& input, const String& replacement) {
     const Optional<Match> m = this.find(input);
     if m.isPresent() {
         const Match& match = m.get();
-        String output;
-        output.append(input.getSubstring(0ul, cast<long>(match.startIndex)));
-        output.append(expandReplacement(replacement, match));
-        output.append(input.getSubstring(match.endIndex));
-        return output;
+        StringStream output;
+        output << input.getSubstring(0ul, cast<long>(match.startIndex));
+        output << expandReplacement(replacement, match);
+        output << input.getSubstring(match.endIndex);
+        return output.str();
     } else {
         return input;
     }
@@ -140,25 +147,24 @@ public f<String> Regex.replace(const String& input, const String& replacement) {
  * @return `input` with every non-overlapping match replaced
  */
 public f<String> Regex.replaceAll(const String& input, const String& replacement) {
-    String output;
+    StringStream output;
     const unsigned long length = input.getLength();
     unsigned long pos = 0ul;
     unsigned long segmentEnd = 0ul;
-    bool continueSearch = true;
-    while continueSearch && pos <= length {
+    while pos <= length {
         const Optional<Match> m = this.find(input, pos);
         if m.isPresent() {
             const Match& match = m.get();
-            output.append(input.getSubstring(segmentEnd, cast<long>(match.startIndex - segmentEnd)));
-            output.append(expandReplacement(replacement, match));
+            output << input.getSubstring(segmentEnd, cast<long>(match.startIndex - segmentEnd));
+            output << expandReplacement(replacement, match);
             segmentEnd = match.endIndex;
             pos = match.endIndex > match.startIndex ? match.endIndex : match.endIndex + 1ul;
         } else {
-            continueSearch = false;
+            break;
         }
     }
-    output.append(input.getSubstring(segmentEnd));
-    return output;
+    output << input.getSubstring(segmentEnd);
+    return output.str();
 }
 
 /**
@@ -173,8 +179,7 @@ public f<Vector<String>> Regex.split(const String& input) {
     const unsigned long length = input.getLength();
     unsigned long pos = 0ul;
     unsigned long segmentStart = 0ul;
-    bool continueSearch = true;
-    while continueSearch && pos <= length {
+    while pos <= length {
         const Optional<Match> m = this.find(input, pos);
         if m.isPresent() && m.get().endIndex > m.get().startIndex {
             const Match& match = m.get();
@@ -182,7 +187,7 @@ public f<Vector<String>> Regex.split(const String& input) {
             segmentStart = match.endIndex;
             pos = match.endIndex;
         } else {
-            continueSearch = false;
+            break;
         }
     }
     parts.pushBack(input.getSubstring(segmentStart));
@@ -212,7 +217,7 @@ f<Match> buildMatch(const String& input, const Vector<long>& saved) {
 }
 
 f<String> expandReplacement(const String& replacement, const Match& match) {
-    String output;
+    StringStream output;
     const unsigned long length = replacement.getLength();
     unsigned long i = 0ul;
     while i < length {
@@ -220,26 +225,26 @@ f<String> expandReplacement(const String& replacement, const Match& match) {
         if c == '$' && i + 1ul < length && (replacement[i + 1ul] == '$' || isDigit(replacement[i + 1ul])) {
             const char next = replacement[i + 1ul];
             if next == '$' {
-                output.append('$');
+                output << '$';
             } else {
                 const long groupNum = charToDigit(next);
                 if groupNum == 0l {
-                    output.append(match.value);
+                    output << match.value;
                 } else {
                     const long groupIdx = groupNum - 1l;
                     if groupIdx < cast<long>(match.groups.getSize()) {
                         const Optional<String>& g = match.groups.get(cast<unsigned long>(groupIdx));
                         if g.isPresent() {
-                            output.append(g.get());
+                            output << g.get();
                         }
                     }
                 }
             }
             i += 2ul;
         } else {
-            output.append(c);
+            output << c;
             i++;
         }
     }
-    return output;
+    return output.str();
 }
