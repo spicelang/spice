@@ -1,5 +1,6 @@
 import "std/text/toml/toml-value";
 import "std/text/analysis";
+import "std/text/stringstream";
 import "std/type/type-conversion";
 
 ext f<int> snprintf(char*, unsigned long, string, ...);
@@ -46,10 +47,10 @@ public f<String> TomlSerializer.serialize(TomlValue& root) {
  */
 public f<String> TomlSerializer.serialize(TomlValue* root) {
     assert root.isTable();
-    String out;
+    StringStream out;
     const String rootPath;
-    this.serializeTableBody(root, rootPath, out);
-    return out;
+    this.serializeTableBody(out, root, rootPath);
+    return out.str();
 }
 
 /**
@@ -60,16 +61,16 @@ public f<String> TomlSerializer.serialize(TomlValue* root) {
  * @return TOML representation
  */
 public f<String> TomlSerializer.serializeValue(TomlValue* value) {
-    String out;
-    this.serializeInlineValue(value, out);
-    return out;
+    StringStream out;
+    this.serializeInlineValue(out, value);
+    return out.str();
 }
 
 // --- Internal serializer helpers --------------------------------------------
 
 // Emit the contents of one table: first all entries that fit on a single line,
 // then all entries that get a section of their own.
-p TomlSerializer.serializeTableBody(TomlValue* table, const String& path, String& out) {
+p TomlSerializer.serializeTableBody(StringStream& out, TomlValue* table, const String& path) {
     const unsigned long size = table.getTableSize();
 
     for unsigned long i = 0l; i < size; i++ {
@@ -77,9 +78,9 @@ p TomlSerializer.serializeTableBody(TomlValue* table, const String& path, String
         if !this.inlineTables && needsOwnSection(value) { continue; }
         const String& key = table.getTableKey(i);
         serializeTomlKey(out, key);
-        out += " = ";
-        this.serializeInlineValue(value, out);
-        out += '\n';
+        out << " = ";
+        this.serializeInlineValue(out, value);
+        out << '\n';
     }
 
     if this.inlineTables { return; }
@@ -88,64 +89,62 @@ p TomlSerializer.serializeTableBody(TomlValue* table, const String& path, String
         TomlValue* value = table.getTableValue(i);
         if !needsOwnSection(value) { continue; }
         const String& key = table.getTableKey(i);
-        String childPath = path;
-        if !childPath.isEmpty() { childPath += '.'; }
-        serializeTomlKey(childPath, key);
+        StringStream childPathStream;
+        childPathStream << path;
+        if !childPathStream.isEmpty() { childPathStream << '.'; }
+        serializeTomlKey(childPathStream, key);
+        const String childPath = childPathStream.str();
 
         // Both branches fall through to the end of the scope, so that `childPath` is cleaned up
         if value.isTable() {
-            if !out.isEmpty() { out += '\n'; }
-            out += '[';
-            out += childPath;
-            out += "]\n";
-            this.serializeTableBody(value, childPath, out);
+            if !out.isEmpty() { out << '\n'; }
+            out << '[' << childPath << "]\n";
+            this.serializeTableBody(out, value, childPath);
         } else {
             const unsigned long itemCount = value.getArraySize();
             for unsigned long itemIdx = 0l; itemIdx < itemCount; itemIdx++ {
                 TomlValue* item = value.getArrayItem(itemIdx);
-                if !out.isEmpty() { out += '\n'; }
-                out += "[[";
-                out += childPath;
-                out += "]]\n";
-                this.serializeTableBody(item, childPath, out);
+                if !out.isEmpty() { out << '\n'; }
+                out << "[[" << childPath << "]]\n";
+                this.serializeTableBody(out, item, childPath);
             }
         }
     }
 }
 
-p TomlSerializer.serializeInlineValue(TomlValue* value, String& out) {
+p TomlSerializer.serializeInlineValue(StringStream& out, TomlValue* value) {
     const TomlValueKind kind = value.getKind();
     if kind == TomlValueKind::TOML_STRING {
         serializeTomlString(out, value.getString());
     } else if kind == TomlValueKind::TOML_INTEGER {
-        out += toString(value.getInteger());
+        out << toString(value.getInteger());
     } else if kind == TomlValueKind::TOML_FLOAT {
-        out += serializeTomlFloat(value.getFloat());
+        out << serializeTomlFloat(value.getFloat());
     } else if kind == TomlValueKind::TOML_BOOL {
-        out += value.getBool() ? "true" : "false";
+        out << (value.getBool() ? "true" : "false");
     } else if kind == TomlValueKind::TOML_DATETIME {
-        out += value.getDateTime();
+        out << value.getDateTime();
     } else if kind == TomlValueKind::TOML_ARRAY {
         const unsigned long size = value.getArraySize();
-        out += '[';
+        out << '[';
         for unsigned long i = 0l; i < size; i++ {
-            if i > 0l { out += ", "; }
+            if i > 0l { out << ", "; }
             TomlValue* item = value.getArrayItem(i);
-            this.serializeInlineValue(item, out);
+            this.serializeInlineValue(out, item);
         }
-        out += ']';
+        out << ']';
     } else {
         const unsigned long size = value.getTableSize();
-        out += '{';
+        out << '{';
         for unsigned long i = 0l; i < size; i++ {
-            if i > 0l { out += ", "; }
+            if i > 0l { out << ", "; }
             const String& key = value.getTableKey(i);
             serializeTomlKey(out, key);
-            out += " = ";
+            out << " = ";
             TomlValue* entry = value.getTableValue(i);
-            this.serializeInlineValue(entry, out);
+            this.serializeInlineValue(out, entry);
         }
-        out += '}';
+        out << '}';
     }
 }
 
@@ -164,9 +163,9 @@ f<bool> needsOwnSection(TomlValue* value) {
 }
 
 // Emit a key as a bare key if possible and as a quoted key otherwise.
-p serializeTomlKey(String& out, const String& key) {
+p serializeTomlKey(StringStream& out, const String& key) {
     if isBareKey(key) {
-        out += key;
+        out << key;
         return;
     }
     serializeTomlString(out, key);
@@ -183,38 +182,36 @@ f<bool> isBareKey(const String& key) {
 }
 
 // Serialize a string value as a basic string, i.e. with surrounding quotes and escaping.
-p serializeTomlString(String& out, const String& value) {
-    out += '"';
+p serializeTomlString(StringStream& out, const String& value) {
+    out << '"';
     const unsigned long length = value.getLength();
     for unsigned long i = 0l; i < length; i++ {
         const char c = value[i];
         if c == '"' {
-            out += "\\\"";
+            out << "\\\"";
         } else if c == '\\' {
-            out += "\\\\";
+            out << "\\\\";
         } else if c == '\n' {
-            out += "\\n";
+            out << "\\n";
         } else if c == '\r' {
-            out += "\\r";
+            out << "\\r";
         } else if c == '\t' {
-            out += "\\t";
+            out << "\\t";
         } else if c == '\b' {
-            out += "\\b";
+            out << "\\b";
         } else if c == '\f' {
-            out += "\\f";
+            out << "\\f";
         } else if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F {
             // All other control characters are emitted as \u00XX escapes.
             // Bytes of multi-byte UTF-8 sequences are passed through unchanged.
             string hexDigits = "0123456789ABCDEF";
             const int code = cast<int>(c);
-            out += "\\u00";
-            out += hexDigits[(code >> 4) & 0xF];
-            out += hexDigits[code & 0xF];
+            out << "\\u00" << hexDigits[(code >> 4) & 0xF] << hexDigits[code & 0xF];
         } else {
-            out += c;
+            out << c;
         }
     }
-    out += '"';
+    out << '"';
 }
 
 // Serialize a float, making sure the output is always recognizable as a TOML float.

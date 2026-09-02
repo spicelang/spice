@@ -49,19 +49,12 @@ public type TomlValue struct {
 }
 
 /**
- * Construct an empty TOML table, which is what a TOML document is rooted at
- */
-public p TomlValue.ctor() {
-    this.kind = TomlValueKind::TOML_TABLE;
-}
-
-/**
  * Construct an empty TOML value of the given kind. Useful for building
  * arrays and tables from scratch.
  *
  * @param kind Kind of the value
  */
-public p TomlValue.ctor(TomlValueKind kind) {
+public p TomlValue.ctor(TomlValueKind kind = TomlValueKind::TOML_TABLE) {
     this.kind = kind;
 }
 

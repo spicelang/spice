@@ -142,13 +142,13 @@ public f<JsonValueKind> JsonValue.getKind() { return this.kind; }
  *
  * @return true if the value is null, false otherwise
  */
-public f<bool> JsonValue.isNull()   { return this.kind == JsonValueKind::JSON_NULL; }
+public f<bool> JsonValue.isNull() { return this.kind == JsonValueKind::JSON_NULL; }
 /**
  * Check whether the JSON value is a boolean
  *
  * @return true if the value is a boolean, false otherwise
  */
-public f<bool> JsonValue.isBool()   { return this.kind == JsonValueKind::JSON_BOOL; }
+public f<bool> JsonValue.isBool() { return this.kind == JsonValueKind::JSON_BOOL; }
 /**
  * Check whether the JSON value is a number
  *
@@ -166,7 +166,7 @@ public f<bool> JsonValue.isString() { return this.kind == JsonValueKind::JSON_ST
  *
  * @return true if the value is an array, false otherwise
  */
-public f<bool> JsonValue.isArray()  { return this.kind == JsonValueKind::JSON_ARRAY; }
+public f<bool> JsonValue.isArray() { return this.kind == JsonValueKind::JSON_ARRAY; }
 /**
  * Check whether the JSON value is an object
  *

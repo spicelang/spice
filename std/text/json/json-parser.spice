@@ -13,9 +13,9 @@ import "std/type/type-conversion";
  */
 public type JsonParser struct {
     String input
-    unsigned long pos
-    string errorMessage  // always points to a string literal, so it outlives the parser
-    bool hasError
+    unsigned long pos = 0l
+    string errorMessage = "" // always points to a string literal, so it outlives the parser
+    bool hasError = false
 }
 
 /**
@@ -25,9 +25,6 @@ public type JsonParser struct {
  */
 public p JsonParser.ctor(const String& input) {
     this.input = input;
-    this.pos = 0l;
-    this.errorMessage = "";
-    this.hasError = false;
 }
 
 /**

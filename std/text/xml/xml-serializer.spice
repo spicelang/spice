@@ -1,4 +1,5 @@
 import "std/text/xml/xml-node";
+import "std/text/stringstream";
 
 /**
  * Serializer for XML output.
@@ -41,35 +42,33 @@ public f<String> XmlSerializer.serialize(XmlNode& node) {
  * @return XML representation
  */
 public f<String> XmlSerializer.serialize(XmlNode* node) {
-    String out;
-    this.serializeInto(node, out, 0l);
-    return out;
+    StringStream out;
+    this.serializeInto(out, node, 0l);
+    return out.str();
 }
 
 // --- Internal serializer helpers --------------------------------------------
 
-p XmlSerializer.serializeInto(XmlNode* node, String& out, unsigned long depth) {
+p XmlSerializer.serializeInto(StringStream& out, XmlNode* node, unsigned long depth) {
     if node.getKind() == XmlNodeKind::XML_TEXT {
         appendXmlEscaped(out, node.getText(), false);
         return;
     }
 
-    out += '<';
-    out += node.getName();
+    out << '<';
+    out << node.getName();
     for unsigned long i = 0l; i < node.getAttributeCount(); i++ {
-        out += ' ';
-        out += node.getAttributeKey(i);
-        out += "=\"";
+        out << ' ' << node.getAttributeKey(i) << "=\"";
         appendXmlEscaped(out, node.getAttributeValue(i), true);
-        out += '"';
+        out << '"';
     }
 
     const unsigned long childCount = node.getChildCount();
     if childCount == 0l {
-        out += "/>";
+        out << "/>";
         return;
     }
-    out += '>';
+    out << '>';
 
     // Lay children out on their own lines only when there is structure to show.
     bool hasElementChild = false;
@@ -84,40 +83,38 @@ p XmlSerializer.serializeInto(XmlNode* node, String& out, unsigned long depth) {
 
     for unsigned long i = 0l; i < childCount; i++ {
         if block { appendXmlNewlineIndent(out, depth + 1l); }
-        this.serializeInto(node.getChild(i), out, depth + 1l);
+        this.serializeInto(out, node.getChild(i), depth + 1l);
     }
     if block { appendXmlNewlineIndent(out, depth); }
 
-    out += "</";
-    out += node.getName();
-    out += '>';
+    out << "</" << node.getName() << '>';
 }
 
 // Append a newline followed by `depth` levels of two-space indentation.
-p appendXmlNewlineIndent(String& out, unsigned long depth) {
-    out += '\n';
+p appendXmlNewlineIndent(StringStream& out, unsigned long depth) {
+    out << '\n';
     for unsigned long i = 0l; i < depth; i++ {
-        out += "  ";
+        out << "  ";
     }
 }
 
 // Escape character data: '&', '<' and '>' become their predefined entities.
 // Attribute values are delimited by double quotes, so the '"' character is
 // escaped in them as well.
-p appendXmlEscaped(String& out, const String& value, bool escapeQuotes) {
+p appendXmlEscaped(StringStream& out, const String& value, bool escapeQuotes) {
     const unsigned long length = value.getLength();
     for unsigned long i = 0l; i < length; i++ {
         const char c = value[i];
         if c == '&' {
-            out += "&amp;";
+            out << "&amp;";
         } else if c == '<' {
-            out += "&lt;";
+            out << "&lt;";
         } else if c == '>' {
-            out += "&gt;";
+            out << "&gt;";
         } else if escapeQuotes && c == '"' {
-            out += "&quot;";
+            out << "&quot;";
         } else {
-            out += c;
+            out << c;
         }
     }
 }

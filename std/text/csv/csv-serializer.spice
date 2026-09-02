@@ -1,4 +1,5 @@
 import "std/data/vector";
+import "std/text/stringstream";
 
 // Default control characters (RFC 4180)
 const char DEFAULT_DELIMITER = ',';
@@ -36,10 +37,11 @@ public p CsvSerializer.ctor(char delimiter = DEFAULT_DELIMITER, char quote = DEF
  * also quoted (as `""`): an empty record would otherwise serialize to an
  * empty line, which `parse` does not reproduce as a row.
  *
+ * @param out Output string stream
  * @param field Field value to serialize
  * @return Serialized (and possibly quoted) field
  */
-public f<String> CsvSerializer.serializeField(const String& field) {
+public p CsvSerializer.serializeField(StringStream& out, const String& field) {
     const unsigned long length = field.getLength();
     bool needsQuoting = length == 0l;
     for unsigned long i = 0l; i < length; i++ {
@@ -49,20 +51,53 @@ public f<String> CsvSerializer.serializeField(const String& field) {
             break;
         }
     }
-    if !needsQuoting { return field; }
+    if !needsQuoting {
+        out << field;
+        return;
+    }
 
-    String out;
-    out += this.quote;
+    out << this.quote;
     for unsigned long i = 0l; i < length; i++ {
         const char c = field[i];
         if c == this.quote {
             // Escape by doubling the quote character
-            out += this.quote;
+            out << this.quote;
         }
-        out += c;
+        out << c;
     }
-    out += this.quote;
-    return out;
+    out << this.quote;
+}
+
+/**
+ * Serializes a single field, quoting it when necessary.
+ *
+ * A field is wrapped in quotes when it contains the delimiter, the quote
+ * character or a line terminator. Embedded quotes are escaped by doubling,
+ * so the result round-trips through `parseLine`/`parse`. The empty field is
+ * also quoted (as `""`): an empty record would otherwise serialize to an
+ * empty line, which `parse` does not reproduce as a row.
+ *
+ * @param field Field value to serialize
+ * @return Serialized (and possibly quoted) field
+ */
+public inline f<String> CsvSerializer.serializeField(const String& field) {
+    StringStream out;
+    this.serializeField(out, field);
+    return out.str();
+}
+
+/**
+ * Serializes a single row into one CSV record. Fields are separated by the
+ * configured delimiter; no trailing line terminator is appended.
+ *
+ * @param out Output string stream
+ * @param row Fields of the record
+ */
+public p CsvSerializer.serializeRow(StringStream& out, const Vector<String>& row) {
+    for unsigned long i = 0l; i < row.getSize(); i++ {
+        if i > 0l { out << this.delimiter; }
+        out << this.serializeField(row.get(i));
+    }
 }
 
 /**
@@ -72,13 +107,26 @@ public f<String> CsvSerializer.serializeField(const String& field) {
  * @param row Fields of the record
  * @return Serialized CSV record
  */
-public f<String> CsvSerializer.serializeRow(const Vector<String>& row) {
-    String out;
-    for unsigned long i = 0l; i < row.getSize(); i++ {
-        if i > 0l { out += this.delimiter; }
-        out += this.serializeField(row.get(i));
+public inline f<String> CsvSerializer.serializeRow(const Vector<String>& row) {
+    StringStream out;
+    this.serializeRow(out, row);
+    return out.str();
+}
+
+/**
+ * Serializes a whole document into CSV text. Records are separated by `\r\n`
+ * as recommended by RFC 4180; no trailing line terminator is appended, so
+ * `parse(serialize(rows))` reproduces the input rows.
+ *
+ * @param out Output string stream
+ * @param rows Rows of the document
+ * @return Serialized CSV document
+ */
+public p CsvSerializer.serialize(StringStream& out, const Vector<Vector<String>>& rows) {
+    for unsigned long i = 0l; i < rows.getSize(); i++ {
+        if i > 0l { out << "\r\n"; }
+        out << this.serializeRow(rows.get(i));
     }
-    return out;
 }
 
 /**
@@ -89,11 +137,8 @@ public f<String> CsvSerializer.serializeRow(const Vector<String>& row) {
  * @param rows Rows of the document
  * @return Serialized CSV document
  */
-public f<String> CsvSerializer.serialize(const Vector<Vector<String>>& rows) {
-    String out;
-    for unsigned long i = 0l; i < rows.getSize(); i++ {
-        if i > 0l { out += "\r\n"; }
-        out += this.serializeRow(rows.get(i));
-    }
-    return out;
+public inline f<String> CsvSerializer.serialize(const Vector<Vector<String>>& rows) {
+    StringStream out;
+    this.serialize(out, rows);
+    return out.str();
 }

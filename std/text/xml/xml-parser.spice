@@ -16,9 +16,9 @@ import "std/text/analysis";
  */
 public type XmlParser struct {
     String input
-    unsigned long pos
-    string errorMessage  // always points to a string literal, so it outlives the parser
-    bool hasError
+    unsigned long pos = 0l
+    string errorMessage = "" // always points to a string literal, so it outlives the parser
+    bool hasError = false
 }
 
 /**
@@ -28,9 +28,6 @@ public type XmlParser struct {
  */
 public p XmlParser.ctor(const String& input) {
     this.input = input;
-    this.pos = 0l;
-    this.errorMessage = "";
-    this.hasError = false;
 }
 
 /**

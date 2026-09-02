@@ -37,8 +37,17 @@ public p StringStream.ctor(const String& input) {
 /**
  * Clear the buffer
  */
-public p StringStream.clear() {
+public inline p StringStream.clear() {
     this.buffer.clear();
+}
+
+/**
+ * Check if the underlying buffer is empty
+ *
+ * @return Empty or not
+ */
+public inline f<bool> StringStream.isEmpty() {
+    return this.buffer.isEmpty();
 }
 
 /**
@@ -54,7 +63,7 @@ public f<const String&> StringStream.str() {
  * Append a raw string to the buffer
  */
 #[ignoreUnusedReturnValue]
-public f<StringStream&> operator<<(StringStream& ss, string input) {
+public inline f<StringStream&> operator<<(StringStream& ss, string input) {
     ss.buffer += input;
     return ss;
 }
@@ -63,7 +72,7 @@ public f<StringStream&> operator<<(StringStream& ss, string input) {
  * Append a String to the buffer
  */
 #[ignoreUnusedReturnValue]
-public f<StringStream&> operator<<(StringStream& ss, const String& input) {
+public inline f<StringStream&> operator<<(StringStream& ss, const String& input) {
     ss.buffer += input;
     return ss;
 }
@@ -72,7 +81,7 @@ public f<StringStream&> operator<<(StringStream& ss, const String& input) {
  * Append a single char to the buffer
  */
 #[ignoreUnusedReturnValue]
-public f<StringStream&> operator<<(StringStream& ss, char input) {
+public inline f<StringStream&> operator<<(StringStream& ss, char input) {
     ss.buffer += input;
     return ss;
 }
@@ -82,6 +91,6 @@ public f<StringStream&> operator<<(StringStream& ss, char input) {
  *
  * @return End line character
  */
-public f<char> endl() {
+public inline f<char> endl() {
     return '\n';
 }

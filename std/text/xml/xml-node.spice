@@ -39,18 +39,11 @@ public type XmlNode struct {
 }
 
 /**
- * Construct an empty XML element node
- */
-public p XmlNode.ctor() {
-    this.kind = XmlNodeKind::XML_ELEMENT;
-}
-
-/**
  * Construct an empty XML node of the given kind
  *
  * @param kind Kind of the node
  */
-public p XmlNode.ctor(XmlNodeKind kind) {
+public p XmlNode.ctor(XmlNodeKind kind = XmlNodeKind::XML_ELEMENT) {
     this.kind = kind;
 }
 

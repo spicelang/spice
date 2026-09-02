@@ -1,5 +1,5 @@
 // Imports
-import "std/time/time" as time;
+import "std/time/time";
 
 /**
  * Calendar representation of a point in time in UTC.
@@ -25,14 +25,8 @@ public type DateTime struct {
  * @param second Second in range [0, 59]
  * @return Constructed DateTime
  */
-public f<DateTime> of(int year, int month, int day, int hour, int minute, int second) {
-    result = DateTime{};
-    result.year = year;
-    result.month = month;
-    result.day = day;
-    result.hour = hour;
-    result.minute = minute;
-    result.second = second;
+public inline f<DateTime> of(int year, int month, int day, int hour, int minute, int second) {
+    return DateTime{year, month, day, hour, minute, second};
 }
 
 /**
@@ -43,8 +37,8 @@ public f<DateTime> of(int year, int month, int day, int hour, int minute, int se
  * @param day Day of month in range [1, 31]
  * @return Constructed DateTime
  */
-public f<DateTime> ofDate(int year, int month, int day) {
-    return of(year, month, day, 0, 0, 0);
+public inline f<DateTime> ofDate(int year, int month, int day) {
+    return DateTime{year, month, day, 0, 0, 0};
 }
 
 /**
@@ -55,15 +49,17 @@ public f<DateTime> ofDate(int year, int month, int day) {
  * @return Corresponding DateTime in UTC
  */
 public f<DateTime> fromUnixSecs(long secs) {
+    result = DateTime{};
+
     long days = secs / 86400l;
     long rem = secs % 86400l;
     if rem < 0l {
         rem += 86400l;
         days -= 1l;
     }
-    int hour = cast<int>(rem / 3600l);
-    int minute = cast<int>((rem % 3600l) / 60l);
-    int second = cast<int>(rem % 60l);
+    result.hour = cast<int>(rem / 3600l);
+    result.minute = cast<int>((rem % 3600l) / 60l);
+    result.second = cast<int>(rem % 60l);
 
     // civil_from_days
     long z = days + 719468l;
@@ -74,13 +70,9 @@ public f<DateTime> fromUnixSecs(long secs) {
     long doy = doe - (365l * yoe + yoe / 4l - yoe / 100l);                 // [0, 365]
     long mp = (5l * doy + 2l) / 153l;                                      // [0, 11]
 
-    result = DateTime{};
     result.day = cast<int>(doy - (153l * mp + 2l) / 5l + 1l);             // [1, 31]
     result.month = cast<int>(mp < 10l ? mp + 3l : mp - 9l);              // [1, 12]
     result.year = cast<int>(mp >= 10l ? y + 1l : y);
-    result.hour = hour;
-    result.minute = minute;
-    result.second = second;
 }
 
 /**
@@ -111,7 +103,7 @@ public f<long> toUnixSecs(const DateTime& dt) {
  * @return Current DateTime in UTC
  */
 public f<DateTime> now() {
-    return fromUnixSecs(time::getCurrentMillis() / 1000l);
+    return fromUnixSecs(getCurrentMillis() / 1000l);
 }
 
 /**
@@ -122,13 +114,11 @@ public f<DateTime> now() {
  * @return Number of days in the month
  */
 public f<int> daysInMonth(int year, int month) {
-    if month == 2 {
-        return time::isLeapYear(year) ? 29 : 28;
+    switch (month) {
+        case 2: { return isLeapYear(year) ? 29 : 28; }
+        case 4, 6, 9, 11: { return 30; }
+        default: { return 31; }
     }
-    if month == 4 || month == 6 || month == 9 || month == 11 {
-        return 30;
-    }
-    return 31;
 }
 
 /**
