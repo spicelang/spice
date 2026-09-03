@@ -8,7 +8,7 @@ public type DefaultMemoryManager struct : IMemoryManager {}
 public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
     Result<heap byte*> allocation = sAlloc(size);
     // Take the block out of the result: the caller becomes its owner, so the result must not free it on the way out
-    return sMove(allocation.unwrap());
+    return allocation.unwrapAndMove();
 }
 
 public p DefaultMemoryManager.deallocate(heap byte*& ptr) {

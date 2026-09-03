@@ -298,7 +298,7 @@ f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {
     heap Node<T>* newNode;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = cast<heap Node<T>*>(sMove(allocResult.unwrap()));
+        newNode = cast<heap Node<T>*>(allocResult.unwrapAndMove());
     }
     newNode.value = value;
     newNode.prev = nil<Node<T>*>;

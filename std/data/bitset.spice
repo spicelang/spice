@@ -36,7 +36,7 @@ public p BitSet.ctor(unsigned long numBits = 0l) {
     if this.numWords == 0l { return; }
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<unsigned long>() * this.numWords);
-        this.words = cast<heap unsigned long*>(sMove(allocResult.unwrap()));
+        this.words = cast<heap unsigned long*>(allocResult.unwrapAndMove());
     }
     this.clearAll();
 }
@@ -92,7 +92,7 @@ public p operator=(BitSet& this, const BitSet& newValue) {
         } else {
             unsafe {
                 Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.words), sizeof<unsigned long>() * newValue.numWords);
-                this.words = cast<heap unsigned long*>(sMove(allocResult.unwrap()));
+                this.words = cast<heap unsigned long*>(allocResult.unwrapAndMove());
             }
         }
     }

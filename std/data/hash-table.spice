@@ -377,7 +377,7 @@ f<Entry<K, V>*> HashTable.createEntry(const K& key, const V& value) {
     Entry<K, V>* entry;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Entry<K, V>>());
-        entry = cast<Entry<K, V>*>(sMove(allocResult.unwrap()));
+        entry = cast<Entry<K, V>*>(allocResult.unwrapAndMove());
         // Copy-construct into the raw allocation, so non-trivial keys and values get their own owned
         // resources instead of aliasing the caller's
         __placement_new<K>(&entry.key, key);
@@ -412,7 +412,7 @@ f<Slot<K, V>*> allocSlots<K, V>(unsigned long slotCount) {
     Slot<K, V>* slots;
     unsafe {
         Result<heap byte*> allocResult = sAlloc(sizeof<Slot<K, V>>() * slotCount);
-        slots = cast<Slot<K, V>*>(sMove(allocResult.unwrap()));
+        slots = cast<Slot<K, V>*>(allocResult.unwrapAndMove());
         // sAlloc hands out uninitialized memory, so the empty markers have to be written explicitly
         for unsigned long i = 0l; i < slotCount; i++ {
             slots[i].entry = nil<Entry<K, V>*>;
