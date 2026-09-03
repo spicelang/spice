@@ -1,0 +1,21 @@
+// panic() prints the recorded error return trace right after its own message, with no explicit dumpTrace() call
+// needed - this is what actually happens when an error propagates all the way up to an unhandled unwrap().
+
+#![core.compiler.errorReturnTracing = true]
+
+f<Result<int>> readIt(bool fail) {
+    if fail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+f<Result<int>> compute(bool fail) {
+    int value = readIt(fail)!;
+    return ok<int>(value * 2);
+}
+
+f<int> main() {
+    Result<int> errResult = compute(true);
+    int _ = errResult.unwrap();
+}

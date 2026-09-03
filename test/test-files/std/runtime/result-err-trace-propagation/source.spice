@@ -1,0 +1,27 @@
+// Each propagating postfix '!' appends its own call site to the trace as a hop, on top of the origin recorded at
+// err<T>(...). dumpTrace() then shows the whole origin-to-caller chain.
+
+#![core.compiler.errorReturnTracing = true]
+
+f<Result<int>> readIt(bool fail) {
+    if fail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+f<Result<int>> compute(bool fail) {
+    int value = readIt(fail)!;
+    return ok<int>(value * 2);
+}
+
+f<Result<int>> chained(bool fail) {
+    int value = compute(fail)!;
+    return ok<int>(value + 1);
+}
+
+f<int> main() {
+    Result<int> errResult = chained(true);
+    errResult.dumpTrace();
+    printf("done\n");
+}

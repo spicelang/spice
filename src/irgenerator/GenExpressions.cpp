@@ -2,6 +2,7 @@
 
 #include "IRGenerator.h"
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 
 #include <llvm/IR/Module.h>
@@ -866,6 +867,18 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     llvm::Value *errorPtr = builder.CreateCall(getErrFct, operandPtr);
     llvm::Function *errCtorFct = stdFunctionManager.getResultErrCtorFct(node->errPropCtorFct);
     llvm::Value *propagatedResult = builder.CreateCall(errCtorFct, errorPtr);
+
+    // Record this propagation hop in the error return trace, if tracing is enabled for this file
+    if (sourceFile->errorReturnTracing) {
+      llvm::Function *pushFct = stdFunctionManager.getErrTracePushFct();
+      llvm::Constant *signature =
+          createGlobalStringConst("errtrace.hop.sig.", node->getEnclosingFunctionSignature(manIdx), node->codeLoc);
+      llvm::Constant *fileName = createGlobalStringConst("errtrace.hop.file.", node->codeLoc.toPrettyFilePath(), node->codeLoc);
+      llvm::Value *line = builder.getInt32(node->codeLoc.line);
+      llvm::Value *column = builder.getInt32(node->codeLoc.col);
+      builder.CreateCall(pushFct, {signature, fileName, line, column});
+    }
+
     // Clean up all scopes between here and the enclosing function/procedure/lambda body, then return the error
     generateScopeCleanupUpTo(node, currentScope->getFunctionScope());
     blockAlreadyTerminated = true;

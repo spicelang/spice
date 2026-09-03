@@ -65,6 +65,11 @@ const StmtLstNode *ASTNode::getNextOuterStmtLst() const { // NOLINT(*-no-recursi
   return isStmtLst() ? spice_pointer_cast<const StmtLstNode *>(this) : parent->getNextOuterStmtLst();
 }
 
+std::string ASTNode::getEnclosingFunctionSignature(size_t manIdx) const { // NOLINT(*-no-recursion)
+  assert(parent != nullptr);
+  return isFctOrProcDef() ? getFunctionSignature(manIdx) : parent->getEnclosingFunctionSignature(manIdx);
+}
+
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }

@@ -1,0 +1,94 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Error return trace storage (see media/specs/error-handling.md, "Error return traces"). A fixed-capacity buffer,
+// not a ring buffer - once it's full, further hops are dropped rather than overwriting earlier ones (see push()
+// below). Deliberately kept out of Result<T>'s LLVM layout - see that note for why. One instance per
+// thread: the compiler-internal __err_trace_buffer() builtin below hands back a reference to a thread-local
+// ErrorTraceBuffer, so concurrent threads never see each other's traces. Still not attached to any specific
+// Result<T> value, and not preserved across an unrelated later error on the same thread - both accepted
+// trade-offs for what is explicitly a debugging aid, not a correctness mechanism.
+//
+// sErrTraceReset()/sErrTracePush() are called directly by the compiler (at every err<T>(...) call
+// site and every propagating postfix '!', respectively). Like sAllocUnsafe()/sDealloc() in memory_rt.spice,
+// they keep normal name mangling; the compiler reaches them by reconstructing their mangled name in
+// StdFunctionManager, not by declaring them unmangled.
+
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
+const int ERR_TRACE_CAPACITY = 16;
+
+type ErrorTraceFrame struct {
+    string file
+    string signature
+    unsigned int line
+    unsigned int column
+}
+
+/**
+ * Fixed-capacity backing store for one thread's error return trace. Always accessed through the thread-local
+ * instance __err_trace_buffer() hands back - never instantiated directly from Spice source.
+ */
+type ErrorTraceBuffer struct {
+    ErrorTraceFrame[ERR_TRACE_CAPACITY] frames
+    int count
+}
+
+/**
+ * Starts a fresh trace with the given location as its origin (frame 0).
+ */
+p ErrorTraceBuffer.reset(string signature, string file, unsigned int line, unsigned int column) {
+    this.frames[0] = ErrorTraceFrame{file, signature, line, column};
+    this.count = 1;
+}
+
+/**
+ * Appends a propagation hop to the current trace. A no-op if no origin has been recorded yet. Once the capacity
+ * above is hit, further hops are silently dropped, keeping the origin and the earliest hops rather than the most
+ * recent ones - a real propagation chain this deep is expected to be exceedingly rare.
+ */
+p ErrorTraceBuffer.push(string signature, string file, unsigned int line, unsigned int column) {
+    if this.count > 0 && this.count < ERR_TRACE_CAPACITY {
+        this.frames[this.count] = ErrorTraceFrame{file, signature, line, column};
+        this.count++;
+    }
+}
+
+/**
+ * Prints every recorded frame to stderr. A no-op if there is no active trace.
+ */
+p ErrorTraceBuffer.dump() {
+    if this.count > 0 {
+        fprintf(__stderr(), "Recorded error trace:\n");
+        for int i = 0; i < this.count; i++ {
+            const ErrorTraceFrame& frame = this.frames[i];
+            fprintf(__stderr(), "  #%d  %s at %s:%d:%d\n", i, frame.signature, frame.file, frame.line, frame.column);
+        }
+    }
+}
+
+/**
+ * Starts a fresh trace with the given location as its origin (frame 0).
+ */
+public p sErrTraceReset(string signature, string file, unsigned int line, unsigned int column) {
+    ErrorTraceBuffer& buffer = __err_trace_buffer();
+    buffer.reset(signature, file, line, column);
+}
+
+/**
+ * Appends a propagation hop to the current trace.
+ */
+public p sErrTracePush(string signature, string file, unsigned int line, unsigned int column) {
+    ErrorTraceBuffer& buffer = __err_trace_buffer();
+    buffer.push(signature, file, line, column);
+}
+
+/**
+ * Prints every recorded frame of the current thread's trace. A no-op if there is no active trace, which also
+ * covers the case where error return tracing was never enabled anywhere along the propagation chain in the
+ * first place - callers don't need to check that separately (see Error.dumpTrace() and panic()'s own wiring,
+ * both of which call this unconditionally).
+ */
+public p sErrTraceDump() {
+    ErrorTraceBuffer& buffer = __err_trace_buffer();
+    buffer.dump();
+}

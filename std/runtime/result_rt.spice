@@ -91,6 +91,13 @@ public inline f<bool> Result.isErr() {
 }
 
 /**
+ * Prints the recorded error return trace to stderr. Forwards to the enclosed error's dumpTrace(), see there.
+ */
+public inline p Result.dumpTrace() {
+    this.error.dumpTrace();
+}
+
+/**
  * Returns a result object with a value and no error.
  */
 public inline f<Result<T>> ok<T>(const T& data) {

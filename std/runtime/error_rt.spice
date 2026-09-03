@@ -1,5 +1,7 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
+import "std/runtime/error_trace_rt";
+
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 // Well-known error codes
@@ -84,4 +86,16 @@ public inline p Error.print() {
  */
 public inline p Error.triggerPanic() {
     panic(*this);
+}
+
+/**
+ * Prints the error message and the recorded error return trace to stderr. A no-op if no trace was ever recorded, which
+ * is always the case unless #![core.compiler.errorReturnTracing = true] was set somewhere along the propagation chain -
+ * so this is always safe to call regardless of that attribute's state.
+ */
+public inline p Error.dumpTrace() {
+    if this.code != ErrorCode::Ok {
+        this.print();
+        sErrTraceDump();
+    }
 }

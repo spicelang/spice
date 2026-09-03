@@ -15,6 +15,7 @@ define internal void @_Z3foov() #0 {
   %3 = getelementptr inbounds nuw %struct.Error, ptr %1, i32 0, i32 1
   %4 = load ptr, ptr %3, align 8
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0, ptr %4)
+  call void @_Z13sErrTraceDumpv()
   call void @exit(i32 1)
   unreachable
 }
@@ -23,6 +24,8 @@ declare void @_ZN5Error4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+declare void @_Z13sErrTraceDumpv()
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2

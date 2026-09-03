@@ -165,8 +165,13 @@ public:
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] const StmtLstNode *getNextOuterStmtLst() const;
+  [[nodiscard]] std::string getEnclosingFunctionSignature(size_t manIdx) const;
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
+  [[nodiscard]] virtual std::string getFunctionSignature(size_t manIdx) const { // LCOV_EXCL_LINE
+    assert_fail("Must be called on a function/procedure def node");            // LCOV_EXCL_LINE
+    return "";                                                                 // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
   [[nodiscard]] virtual bool isStructDef() const { return false; }
   [[nodiscard]] virtual bool isParam() const { return false; }
   [[nodiscard]] virtual bool isStmtLst() const { return false; }
@@ -291,6 +296,7 @@ public:
   [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
+  [[nodiscard]] std::string getFunctionSignature(size_t /*manIdx*/) const override { return "f<int> main()"; }
 
   // Public members
   TopLevelDefAttrNode *attrs = nullptr;
@@ -335,6 +341,10 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
+  [[nodiscard]] std::string getFunctionSignature(size_t manIdx) const override {
+    assert(manIdx < manifestations.size());
+    return manifestations.at(manIdx)->getSignature();
+  }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
@@ -2028,6 +2038,7 @@ public:
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   std::vector<FctCallData> data;
+  bool isErrorTraceOrigin = false; // Set if this is a direct call to err<T>(...), and error return tracing is enabled
 };
 
 // ================================================= ArrayInitializationNode =====================================================

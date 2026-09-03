@@ -1,0 +1,22 @@
+// The trace is deliberately per-thread state, not attached to any specific Result<T> value (that would need
+// touching Result<T>'s LLVM layout - see error_trace_rt.spice). So on a single thread, dumpTrace() always shows
+// the most recently active origin-to-caller chain, even when called on an unrelated, successful Result. See
+// result-err-trace-thread-isolated for the (better) behavior across different threads.
+
+#![core.compiler.errorReturnTracing = true]
+
+f<Result<int>> readIt(bool fail) {
+    if fail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+f<int> main() {
+    Result<int> bad = readIt(true);
+    printf("bad.isErr(): %d\n", bad.isErr());
+
+    Result<int> good = readIt(false);
+    good.dumpTrace();
+    printf("done\n");
+}

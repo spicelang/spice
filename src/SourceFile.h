@@ -174,6 +174,7 @@ public:
   const SourceFile *getRootSourceFile() const;
   bool isRT(RuntimeModule runtimeModule) const;
   ALWAYS_INLINE bool isStringRT() const { return isRT(STRING_RT); }
+  ALWAYS_INLINE bool isResultRT() const { return isRT(RESULT_RT); }
   ALWAYS_INLINE bool isMemoryRT() const { return isRT(MEMORY_RT); }
   ALWAYS_INLINE bool isRttiRT() const { return isRT(RTTI_RT); }
 
@@ -187,6 +188,7 @@ public:
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
   bool explicitErrorHandling = false;
+  bool errorReturnTracing = false;
   bool restoredFromCache = false;
   bool reVisitRequested = true;
   CompileStageType previousStage = NONE;

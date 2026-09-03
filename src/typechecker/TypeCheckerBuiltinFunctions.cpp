@@ -605,6 +605,20 @@ std::any TypeChecker::visitBuiltinSourceColumnCall(FctCallNode *node) const {
 }
 
 /**
+ * Resolves to a reference to the calling thread's ErrorTraceBuffer (std/runtime/error_trace_rt.spice). Only ever
+ * called from within that same file, where the struct is always in scope by name.
+ */
+std::any TypeChecker::visitBuiltinErrTraceBufferCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER);
+
+  const SymbolTableEntry *structEntry = rootScope->lookupStrict("ErrorTraceBuffer");
+  assert(structEntry != nullptr);
+  const QualType bufferType = structEntry->getQualType().toRef(node);
+
+  return ExprResult{node->setEvaluatedSymbolType(bufferType, manIdx)};
+}
+
+/**
  * Resolves to a pointer to the process's stderr stream. Spice source has no syntax for declaring an external
  * *variable* (only functions/procedures via 'ext'), so this exists as a builtin that reaches the real libc
  * symbol directly in IR generation, the same way panic()'s own codegen already did before this builtin existed.

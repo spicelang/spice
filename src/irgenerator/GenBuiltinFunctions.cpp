@@ -126,6 +126,10 @@ std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
   llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
   builder.CreateCall(fprintfFct, {stdErr, globalString, errorMessage});
 
+  // Print the recorded error return trace to stderr. A no-op unless error return tracing was enabled somewhere
+  // along the propagation chain that produced this error - see error_trace_rt.spice.
+  builder.CreateCall(stdFunctionManager.getErrTraceDumpFct());
+
   // Cleanup the scope before calling exit()
   // Unreachable below counts as terminator
   terminateBlock(node->getNextOuterStmtLst());
@@ -242,7 +246,26 @@ std::any IRGenerator::visitBuiltinPlacementNewCall(const FctCallNode *node) {
   return LLVMExprResult{.value = targetPtr};
 }
 
-std::any IRGenerator::visitBuiltinStdErrCall(const FctCallNode *node) {
+std::any IRGenerator::visitBuiltinErrTraceBufferCall(const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER);
+
+  // Get or create the thread-local ErrorTraceBuffer instance for this module. It is only ever referenced from
+  // within error_trace_rt.spice's own wrapper procedures (all compiled into this same module), so internal
+  // linkage is enough - no other module ever needs to see this symbol.
+  constexpr auto TLS_GLOBAL_NAME = "__spice_errTraceBufferTLS";
+  llvm::GlobalVariable *tlsBuffer = module->getNamedGlobal(TLS_GLOBAL_NAME);
+  if (!tlsBuffer) {
+    llvm::Type *bufferType = node->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().toLLVMType(sourceFile);
+    llvm::Constant *zeroInit = llvm::Constant::getNullValue(bufferType);
+    tlsBuffer = new llvm::GlobalVariable(*module, bufferType, /*isConstant=*/false, llvm::GlobalValue::InternalLinkage, zeroInit,
+                                         TLS_GLOBAL_NAME);
+    tlsBuffer->setThreadLocal(true);
+  }
+
+  return LLVMExprResult{.ptr = tlsBuffer};
+}
+
+std::any IRGenerator::visitBuiltinStdErrCall([[maybe_unused]] const FctCallNode *node) {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_STDERR);
 
   return LLVMExprResult{.value = getStdErrValue()};
@@ -253,7 +276,7 @@ std::any IRGenerator::visitBuiltinStdErrCall(const FctCallNode *node) {
  * reaches the real libc symbol directly, the same way on every platform: an ACRT accessor call on Windows, and
  * the platform-specific extern global everywhere else.
  */
-llvm::Value *IRGenerator::getStdErrValue() {
+llvm::Value *IRGenerator::getStdErrValue() const {
   llvm::PointerType *ptrTy = builder.getPtrTy();
 
   if (cliOptions.targetTriple.isOSWindows()) {
@@ -262,11 +285,13 @@ llvm::Value *IRGenerator::getStdErrValue() {
   }
 
   const char *globalName = cliOptions.targetTriple.isOSDarwin() ? "__stderrp" : "stderr";
-  module->getOrInsertGlobal(globalName, ptrTy);
   llvm::GlobalVariable *stdErrPtr = module->getNamedGlobal(globalName);
-  stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
-  stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
-  stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+  if (!stdErrPtr) {
+    stdErrPtr = llvm::cast<llvm::GlobalVariable>(module->getOrInsertGlobal(globalName, ptrTy));
+    stdErrPtr->setLinkage(llvm::GlobalVariable::ExternalLinkage);
+    stdErrPtr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Local);
+    stdErrPtr->setAlignment(llvm::MaybeAlign(8));
+  }
   return insertLoad(ptrTy, stdErrPtr);
 }
 

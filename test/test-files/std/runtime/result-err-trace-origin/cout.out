@@ -1,0 +1,4 @@
+Error code 1: boom
+Recorded error trace:
+  #0  f<Result<int>> mightFail() at ./source.spice:7:12
+done

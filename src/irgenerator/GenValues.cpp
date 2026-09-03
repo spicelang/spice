@@ -286,6 +286,17 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     setCallReturnValAttrs(callInst, returnSType);
   }
 
+  // Start a fresh error return trace at this call site, since it is where a new error was just put into existence
+  if (node->isErrorTraceOrigin) {
+    llvm::Function *resetFct = stdFunctionManager.getErrTraceResetFct();
+    llvm::Constant *signature =
+        createGlobalStringConst("errtrace.origin.sig.", node->getEnclosingFunctionSignature(manIdx), node->codeLoc);
+    llvm::Constant *fileName = createGlobalStringConst("errtrace.origin.file.", node->codeLoc.toPrettyFilePath(), node->codeLoc);
+    llvm::Value *line = builder.getInt32(node->codeLoc.line);
+    llvm::Value *column = builder.getInt32(node->codeLoc.col);
+    builder.CreateCall(resetFct, {signature, fileName, line, column});
+  }
+
   // Attach address to anonymous symbol to keep track of de-allocation
   const SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;

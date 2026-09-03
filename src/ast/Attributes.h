@@ -23,6 +23,7 @@ static constexpr auto ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmit
 static constexpr auto ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
 static constexpr auto ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
 static constexpr auto ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING = "core.compiler.explicitErrorHandling";
+static constexpr auto ATTR_CORE_COMPILER_ERROR_RETURN_TRACING = "core.compiler.errorReturnTracing";
 static constexpr auto ATTR_TEST = "test";
 static constexpr auto ATTR_TEST_NAME = "test.name";
 static constexpr auto ATTR_TEST_SKIP = "test.skip";
@@ -139,6 +140,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     },
     {
         ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING,
+        {
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_CORE_COMPILER_ERROR_RETURN_TRACING,
         {
             .target = AttrNode::AttrTarget::TARGET_MODULE,
             .type = AttrNode::AttrType::TYPE_BOOL,
