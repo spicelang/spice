@@ -18,18 +18,19 @@ define internal void @_Z3foov() #0 {
   unreachable
 }
 
-declare dso_local ptr @__acrt_iob_func(i32)
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #1
 
 declare void @_ZN5Error4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: nofree
-declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #3 {
+define dso_local noundef i32 @main() #4 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   call void @_Z3foov()
@@ -38,9 +39,10 @@ define dso_local noundef i32 @main() #3 {
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nofree }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nounwind }
+attributes #2 = { nofree }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

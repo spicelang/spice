@@ -9,8 +9,8 @@ source_filename = "source.spice"
 ; Function Attrs: cold norecurse noreturn nounwind uwtable
 define internal fastcc void @_Z3foov() unnamed_addr #0 {
   %1 = alloca %struct.Error, align 8
-  %2 = tail call ptr @__acrt_iob_func(i32 2) #4
-  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef nonnull @anon.string.1) #4
+  %2 = tail call ptr @__acrt_iob_func(i32 2)
+  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr noundef nonnull @anon.string.1) #1
   %3 = getelementptr inbounds nuw i8, ptr %1, i64 8
   %4 = load ptr, ptr %3, align 8
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr nonnull @anon.string.0, ptr %4)
@@ -18,27 +18,28 @@ define internal fastcc void @_Z3foov() unnamed_addr #0 {
   unreachable
 }
 
-declare dso_local ptr @__acrt_iob_func(i32) local_unnamed_addr
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) local_unnamed_addr #1
 
 declare void @_ZN5Error4ctorEPKc(ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold nofree noreturn nounwind
-declare void @exit(i32) local_unnamed_addr #2
+declare void @exit(i32) local_unnamed_addr #3
 
 ; Function Attrs: cold mustprogress noinline norecurse noreturn nounwind uwtable
-define dso_local noundef i32 @main() local_unnamed_addr #3 {
+define dso_local noundef i32 @main() local_unnamed_addr #4 {
   tail call fastcc void @_Z3foov()
   unreachable
 }
 
 attributes #0 = { cold norecurse noreturn nounwind uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold nofree noreturn nounwind }
-attributes #3 = { cold mustprogress noinline norecurse noreturn nounwind uwtable }
-attributes #4 = { nounwind }
+attributes #1 = { nounwind }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold nofree noreturn nounwind }
+attributes #4 = { cold mustprogress noinline norecurse noreturn nounwind uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
