@@ -131,10 +131,10 @@ jobs:
           python coverage.py
 
       - name: Upload coverage report - coverage.spicelang.com
-        uses: airvzxf/ftp-deployment-action@v2
+        uses: sebastianpopp/ftp-action@releases/v2
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local_dir: ./build/coverage
-          remote_dir: chillibits.com/spice/coverage
+          localDir: ./build/coverage
+          remoteDir: chillibits.com/spice/coverage
