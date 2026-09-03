@@ -1,6 +1,6 @@
-Program panicked at ../../../../../../../std/runtime/result_rt.spice:42:31: it failed
-42  s.error.code != 0 { panic(this.error); }
+Program panicked at ../../../../../../../std/runtime/result_rt.spice:42:29: it failed
+42  this.error.isOk() { panic(this.error); }
                         ^^^^^^^^^^^^^^^^^
 Recorded error trace:
-  #0  readIt at ./source.spice:8
-  #1  compute at ./source.spice:14
+  #0  f<Result<int>> readIt(bool) at ./source.spice:8:16
+  #1  f<Result<int>> compute(bool) at ./source.spice:14:17

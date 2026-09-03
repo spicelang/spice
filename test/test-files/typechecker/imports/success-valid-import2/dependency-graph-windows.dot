@@ -8,6 +8,7 @@ digraph {
  "../../../../../../../std/runtime/error_rt.spice" [color="lightgreen",label="error_rt.spice"];
  "../../../../../../../std/runtime/error_trace_rt.spice" [color="lightgreen",label="error_trace_rt.spice"];
  "../../../../../../../std/runtime/error_rt.spice" -> "../../../../../../../std/runtime/error_trace_rt.spice";
+ "../../../../../../../std/runtime/error_rt.spice" -> "../../../../../../../std/runtime/error_trace_rt.spice";
  "../../../../../../../std/runtime/string_rt.spice" -> "../../../../../../../std/runtime/error_rt.spice";
  "../../../../../../../std/text/analysis.spice" [color="lightgreen",label="analysis.spice"];
  "../../../../../../../std/runtime/string_rt.spice" -> "../../../../../../../std/text/analysis.spice";
