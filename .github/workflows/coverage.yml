@@ -175,7 +175,7 @@ jobs:
           sudo chmod +x coverage-spice.py
           python coverage-spice.py
 
-      - name: Upload coverage report - coverage.spicelang.com
+      - name: Upload coverage report
         uses: Dylan700/sftp-upload-action@v1.2.5
         with:
           server: ${{ secrets.SFTP_SERVER }}
@@ -183,12 +183,5 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           uploads: |
             ./build/coverage/ => coverage/
-
-      - name: Upload Spice coverage report - coverage.spicelang.com
-        uses: Dylan700/sftp-upload-action@v1.2.5
-        with:
-          server: ${{ secrets.SFTP_SERVER }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          uploads: |
             ./build/coverage-spice/ => coverage/std/
+          delete: 'true'

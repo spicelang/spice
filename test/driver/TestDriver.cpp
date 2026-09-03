@@ -23,7 +23,7 @@ void TestDriver::createInterface() {
 
 void TestDriver::addOptions() {
   // --update-refs
-  app.add_flag<bool>("--update-refs", testDriverCliOptions.updateRefs, "Update test reference files");
+  CLI::Option *updateRefsOpt = app.add_flag<bool>("--update-refs", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
   app.add_flag<bool>("--run-benchmarks", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
   // --leak-detection
@@ -35,9 +35,13 @@ void TestDriver::addOptions() {
   // --verbose
   app.add_flag<bool>("--verbose", testDriverCliOptions.isVerbose, "Print debug output for the test runner");
   // --coverage
-  app.add_flag<bool>("--coverage", testDriverCliOptions.enableCoverage,
-                      "Compile and run test programs with Spice code coverage instrumentation enabled, skipping all "
-                      "reference output comparisons (debug info and coverage counters change the generated code)");
+  CLI::Option *coverageOpt =
+      app.add_flag<bool>("--coverage", testDriverCliOptions.enableCoverage,
+                          "Compile and run test programs with Spice code coverage instrumentation enabled, skipping all "
+                          "reference output comparisons (debug info and coverage counters change the generated code)");
+  // Coverage mode never compares against (or writes) reference files, so combining it with --update-refs would silently
+  // overwrite tracked fixtures with coverage-instrumented, no-longer-comparable output. Reject the combination outright.
+  coverageOpt->excludes(updateRefsOpt);
 }
 
 /**
