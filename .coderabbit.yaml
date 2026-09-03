@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!deps/**"
+    - "!gen/**"
+    - "!docs/site/**"
+    - "!docs/docs/std/**"
+    - "!cmake-build-*/**"
+    - "!media/**"
+  path_instructions:
+    - path: "src/**/*.{h,hpp,cpp}"
+      instructions: >
+        Follow the project's C++ coding conventions in STYLE_GUIDE.md
+        (formatting per .clang-format, naming, file layout, the visitor
+        pattern, diagnostics, and memory-management rules). Flag deviations.
+    - path: "src-bootstrap/**/*.spice"
+      instructions: >
+        This is the self-hosted bootstrap compiler written in Spice. Follow
+        the Spice-source conventions in STYLE_GUIDE.md.
+    - path: "std/**/*.spice"
+      instructions: >
+        Standard library code. Follow the Spice-source conventions in
+        STYLE_GUIDE.md.
+    - path: "test/test-files/**"
+      instructions: >
+        Compiler reference/integration test fixtures. Check that new or
+        changed cases follow the layout and reference-file conventions
+        described in AGENTS.md rather than flagging them as production code.
+    - path: "test/unittest/**"
+      instructions: >
+        GoogleTest-based unit tests for compiler components.
+
+chat:
+  auto_reply: true
