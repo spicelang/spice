@@ -88,6 +88,14 @@ jobs:
             ../llvm
           cmake --build .
 
+      - name: Build llvm-cov
+        # Needed to read the gcov data Spice's own --coverage instrumentation emits (see "Run Test target (Spice
+        # coverage)" below) - GNU gcov cannot parse it, only llvm-cov gcov can. LLVM_BUILD_TOOLS=OFF above excludes
+        # tools from the default build, but their targets stay individually buildable, so this only builds the one
+        # tool we need. Runs unconditionally (not gated on the LLVM cache step) so a cache hit still produces it.
+        working-directory: llvm/build
+        run: cmake --build . --target llvm-cov
+
       - name: Download Libs
         run: python setup-deps.py
 
@@ -117,6 +125,27 @@ jobs:
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: ./spicetest --is-github-actions
 
+      - name: Run Test target (Spice coverage)
+        # Separate run: --coverage forces debug info on for every compiled test program, which changes the emitted
+        # LLVM IR and would spuriously fail the (unrelated) exact-match IR/assembly reference comparisons the run
+        # above relies on. This run skips those comparisons (see TestUtil::checkRefMatch) and just compiles, links
+        # and executes every test program that would normally run, to collect gcov data for the std lib code they
+        # exercise.
+        #
+        # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by
+        # the run above), and under sustained load across hundreds of sequential compiles, LLVM's GCOVProfilerPass
+        # has occasionally failed to open a single .gcno file, failing just that one test. A rare, isolated miss like
+        # that should not block generating/uploading the reports below with whatever data the rest of the run did
+        # collect.
+        continue-on-error: true
+        working-directory: build/test
+        env:
+          LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+        run: ./spicetest --is-github-actions --coverage
+
       - name: Save CCache
         uses: actions/cache/save@v6
         if: always()
@@ -130,11 +159,21 @@ jobs:
           sudo chmod +x coverage.py
           python coverage.py
 
-      - name: Upload coverage report - coverage.spicelang.com
-        uses: sebastianpopp/ftp-action@releases/v2
+      - name: Generate Spice coverage report
+        working-directory: build
+        env:
+          LLVM_COV: ${{ github.workspace }}/llvm/build/bin/llvm-cov
+        run: |
+          sudo chmod +x coverage-spice.py
+          python coverage-spice.py
+
+      - name: Upload coverage report
+        uses: Dylan700/sftp-upload-action@v1.2.5
         with:
-          host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          localDir: ./build/coverage
-          remoteDir: chillibits.com/spice/coverage
+          server: ${{ secrets.SFTP_SERVER }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          uploads: |
+            ./build/coverage/ => coverage/
+            ./build/coverage-spice/ => coverage/std/
+          delete: 'true'

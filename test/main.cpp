@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
   driver.createInterface();
   driver.addOptions();
   // Parse command line args
-  driver.parse(argc, argv);
+  if (const int parseResult = driver.parse(argc, argv); parseResult != 0)
+    return parseResult;
   // Run tests
   return RUN_ALL_TESTS();
 }

@@ -122,7 +122,10 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 
     if (testDriverCliOptions.updateRefs) {          // GCOV_EXCL_LINE
       FileUtil::writeToFile(refPath, actualOutput); // GCOV_EXCL_LINE
-    } else {
+    } else if (!testDriverCliOptions.enableCoverage) {
+      // In coverage mode, debug info and coverage counters change the generated output, so comparing it against the
+      // reference would fail spuriously. Still call getActualOutput() above though, to drive the pipeline stage that
+      // produces it (e.g. running the optimizer for the opt levels that have a reference file).
       std::string expectedOutput = FileUtil::getFileContent(refPath);
       modifyOutputFct(expectedOutput, actualOutput);
       EXPECT_EQ(expectedOutput, actualOutput) << "Output does not match the reference file: " << refPath;
@@ -269,6 +272,15 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
     for (const std::string &arg : testArgs)
       if (arg.starts_with("--sanitizer"))
+        return true;
+  }
+  // Code coverage instrumentation is rejected by the driver in combination with LTO or the TPDE backend, and is not tested
+  // together with the sanitizers, so skip any test that requests one of these via its `// TEST: ` header.
+  if (testDriverCliOptions.enableCoverage) {
+    std::vector<std::string> testArgs;
+    parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
+    for (const std::string &arg : testArgs)
+      if (arg == "-lto" || arg == "--backend=tpde" || arg == "--backend=TPDE" || arg.starts_with("--sanitizer"))
         return true;
   }
 #ifndef SPICE_ENABLE_TPDE
