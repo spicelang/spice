@@ -9,6 +9,14 @@ on:
       - 'docs/**'
       - 'media/**'
       - '**.md'
+  # TEMPORARY: run on PRs too, to validate this workflow before merging. Revert before merge.
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'media/**'
+      - '**.md'
   # Allow manual triggering
   workflow_dispatch:
 
