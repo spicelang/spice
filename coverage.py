@@ -11,6 +11,11 @@ base_args = [
     "assert",
     "--gcov-ignore-parse-errors",
     "negative_hits.warn_once_per_file",
+    # test/test-tmp holds gcov data from spicetest --coverage (Spice-level std lib coverage, see
+    # coverage-spice.py), emitted by LLVM's GCOVProfilerPass in a format GNU gcov can't parse. Left
+    # unexcluded, gcovr aborts entirely the moment its search (which isn't limited by -r/filter) finds one.
+    "--exclude-directories",
+    ".*test-tmp.*",
     "-r",
     ".",
 ]
