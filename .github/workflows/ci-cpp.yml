@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -49,10 +49,6 @@ jobs:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Setup Gcovr
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: sudo pipx install gcovr
 
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
@@ -95,30 +91,18 @@ jobs:
           mkdir ./build
           cd ./build
           cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'Debug' || 'Release' }} \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_RUN_COVERAGE=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'ON' || 'OFF' }} \
             -DSPICE_TEST_ARGS=--is-github-actions \
             ..
           cmake --build . --target spicetest
 
       - name: Run Test target
-        if: "!(github.event_name == 'push' && github.ref == 'refs/heads/main')"
         working-directory: build
         run: cmake --build . --target spicetest_parallel
-
-      - name: Run Test target (with coverage)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        working-directory: build/test
-        env:
-          LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
-        run: ./spicetest --is-github-actions
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -126,23 +110,6 @@ jobs:
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-
-      - name: Generate coverage report
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        working-directory: build
-        run: |
-          sudo chmod +x coverage.py
-          python coverage.py
-
-      - name: Upload coverage report - coverage.spicelang.com
-        uses: sebastianpopp/ftp-action@releases/v2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        with:
-          host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          localDir: ./build/coverage
-          remoteDir: chillibits.com/spice/coverage
 
   build-linux-aarch64:
     name: C++ CI - Linux/AArch64
