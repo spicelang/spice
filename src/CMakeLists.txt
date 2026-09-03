@@ -97,6 +97,7 @@ set(SOURCES
         irgenerator/NameMangling.cpp
         # IR optimizer
         iroptimizer/IROptimizer.cpp
+        iroptimizer/CoverageWorkingDirFileSystem.cpp
         # Object emitter
         objectemitter/LLVMObjectEmitter.cpp
         # Linker
@@ -182,6 +183,10 @@ set_property(SOURCE irgenerator/IRGenerator.cpp APPEND PROPERTY COMPILE_OPTIONS 
 # compile this single translation unit without RTTI to drop the unused type_info and avoid the
 # dangling reference at link time.
 set_source_files_properties(util/RawStringOStream.cpp PROPERTIES COMPILE_OPTIONS -fno-rtti)
+# Same issue as above: CoverageWorkingDirFileSystem derives from the polymorphic LLVM type
+# llvm::vfs::ProxyFileSystem. It lives in its own translation unit (rather than alongside IROptimizer, which needs
+# RTTI for spice_pointer_cast on AST nodes) so only this one small file has to give it up.
+set_source_files_properties(iroptimizer/CoverageWorkingDirFileSystem.cpp PROPERTIES COMPILE_OPTIONS -fno-rtti)
 
 ################## spice executable ##################
 

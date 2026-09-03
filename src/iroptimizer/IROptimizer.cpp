@@ -14,6 +14,8 @@
 #include <llvm/Transforms/Instrumentation/TypeSanitizer.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 
+#include "CoverageWorkingDirFileSystem.h"
+
 namespace spice::compiler {
 
 IROptimizer::IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
@@ -124,7 +126,8 @@ void IROptimizer::addInstrumentationPassToPipeline(llvm::ModulePassManager &modu
 void IROptimizer::addCoveragePassToPipeline(llvm::ModulePassManager &modulePassMgr) const {
   if (!cliOptions.instrumentation.codeCoverage)
     return;
-  modulePassMgr.addPass(llvm::GCOVProfilerPass(llvm::GCOVOptions::getDefault()));
+  const auto vfs = createFixedWorkingDirFileSystem(absolute(cliOptions.outputDir).string());
+  modulePassMgr.addPass(llvm::GCOVProfilerPass(llvm::GCOVOptions::getDefault(), vfs));
 }
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {

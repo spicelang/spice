@@ -19,6 +19,7 @@ struct TestDriverCliOptions {
   bool isGitHubActions = false;
   bool skipSanitizerTests = false;
   bool isVerbose = false;
+  bool enableCoverage = false;
 };
 
 /**

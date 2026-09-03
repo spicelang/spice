@@ -34,6 +34,10 @@ void TestDriver::addOptions() {
   app.add_flag<bool>("--skip-sanitizer-tests", testDriverCliOptions.skipSanitizerTests, "Skip tests that exercise Spice language sanitizers (e.g. ASAN, TSAN, MSAN, TYSAN)");
   // --verbose
   app.add_flag<bool>("--verbose", testDriverCliOptions.isVerbose, "Print debug output for the test runner");
+  // --coverage
+  app.add_flag<bool>("--coverage", testDriverCliOptions.enableCoverage,
+                      "Compile and run test programs with Spice code coverage instrumentation enabled, skipping all "
+                      "reference output comparisons (debug info and coverage counters change the generated code)");
 }
 
 /**

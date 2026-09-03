@@ -51,6 +51,7 @@ endif ()
 
 # Coverage
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.py ${CMAKE_CURRENT_BINARY_DIR}/coverage.py SYMBOLIC)
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage-spice.py ${CMAKE_CURRENT_BINARY_DIR}/coverage-spice.py SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gcovr.cfg ${CMAKE_CURRENT_BINARY_DIR}/gcovr.cfg SYMBOLIC)
 
 # Include main module

@@ -1,0 +1,15 @@
+// TEST: -g
+
+f<int> add(int a, int b) {
+    return a + b;
+}
+
+#[test]
+f<bool> testAdd() {
+    assert add(1, 2) == 3;
+    return true;
+}
+
+f<int> main() {
+    printf("%d\n", add(1, 2));
+}

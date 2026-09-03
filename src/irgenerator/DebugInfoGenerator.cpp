@@ -86,6 +86,10 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
     return;
 
   const ASTNode *node = spiceFunc->declNode;
+  // Compiler-synthesized functions without a source declaration (e.g. the generated test-suite main) have no code
+  // location to attach debug info to, so skip them
+  if (!node)
+    return;
   const uint32_t lineNo = spiceFunc->getDeclCodeLoc().line;
 
   // Prepare flags
@@ -144,8 +148,10 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
 void DebugInfoGenerator::concludeFunctionDebugInfo() {
   if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
     return;
+  // Functions generateFunctionDebugInfo skipped (no declNode, see there) never pushed a scope to conclude here.
+  if (lexicalBlocks.empty())
+    return;
 
-  assert(!lexicalBlocks.empty());
   lexicalBlocks.pop();
 }
 
