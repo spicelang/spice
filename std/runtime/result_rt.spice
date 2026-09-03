@@ -36,7 +36,7 @@ public p Result.ctor(const Error& error) {
  * If an error is present, this function will panic.
  *
  * The returned reference is borrowed - the result stays the owner of the data and destructs it when it goes out of
- * scope. To take ownership of a heap payload, move it out of the result: `heap byte* p = sMove(result.unwrap());`
+ * scope. To take ownership of a heap payload, move it out of the result: `heap byte* p = result.unwrapAndMove();`
  */
 public inline f<T&> Result.unwrap() {
     if !this.error.isOk() { panic(this.error); }
@@ -59,6 +59,14 @@ public inline f<T&> Result.unwrapOr(const T& alternativeValue) {
  */
 public inline f<T&> Result.unwrapOrElse(f<T&>(const Error&) callback) {
     return this.error.isOk() ? this.data : callback(this.error);
+}
+
+/**
+ * Move the stored data object out of the result object
+ * If an error is present, this function will panic.
+ */
+public inline f<T> Result.unwrapAndMove() {
+    return sMove(this.unwrap());
 }
 
 /**

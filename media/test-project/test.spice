@@ -1,5 +1,4 @@
-import "std/data/vector";
-
 f<int> main() {
-    Vector vec;
+    Result<heap byte*> ptr = sAlloc(4l);
+    heap byte* rawPtr = ptr.unwrapAndMove();
 }

@@ -30,18 +30,15 @@ define internal void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align
   store %struct.Result %3, ptr %res, align 8
   %4 = load ptr, ptr %this, align 8
   %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %4, i64 0, i32 0
-  %5 = call noundef ptr @_ZN6ResultIPVhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
-  %6 = call noundef ptr @_Z5sMoveIVhEPVhRPVh(ptr noundef %5)
-  store ptr %6, ptr %data.addr, align 8
+  %5 = call noundef ptr @_ZN6ResultIPVhE13unwrapAndMoveEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  store ptr %5, ptr %data.addr, align 8
   call void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   ret void
 }
 
 declare %struct.Result @_Z6sAllocm(i64)
 
-declare ptr @_ZN6ResultIPVhE6unwrapEv(ptr)
-
-declare ptr @_Z5sMoveIVhEPVhRPVh(ptr)
+declare ptr @_ZN6ResultIPVhE13unwrapAndMoveEv(ptr)
 
 declare void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 

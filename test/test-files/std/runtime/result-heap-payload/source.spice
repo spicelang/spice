@@ -22,7 +22,7 @@ f<int> main() {
     // Moving the payload out makes the caller the owner: the result's dtor sees a nil payload and does nothing
     Result<heap byte*> allocResult = sAlloc(16l);
     printf("alloc ok: %d\n", allocResult.isOk());
-    heap byte* buffer = sMove(allocResult.unwrap());
+    heap byte* buffer = allocResult.unwrapAndMove();
     printf("buffer valid: %d\n", buffer != nil<heap byte*>);
     printf("payload taken out: %d\n", allocResult.unwrap() == nil<heap byte*>);
     sDealloc(buffer);
