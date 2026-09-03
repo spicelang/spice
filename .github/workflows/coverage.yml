@@ -1,0 +1,140 @@
+# Code coverage
+name: Coverage
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'media/**'
+      - '**.md'
+  # Allow manual triggering
+  workflow_dispatch:
+
+env:
+  LLVM_VERSION: "llvmorg-23.1.0"
+  GCC_VERSION: "16"
+
+jobs:
+  coverage-linux-x86:
+    name: Coverage - Linux/x86_64
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: 25
+          java-package: jre
+
+      - name: Setup Dependencies
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo pipx install gcovr
+          mkdir -p ~/.cache/ccache
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-coverage-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ runner.arch }}-coverage-
+            ccache-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/llvm/build
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: python setup-deps.py
+
+      - name: Build test target with coverage
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSPICE_BUILT_BY="ghactions" \
+            -DSPICE_ENABLE_TPDE=ON \
+            -DSPICE_RUN_COVERAGE=ON \
+            -DSPICE_TEST_ARGS=--is-github-actions \
+            ..
+          cmake --build . --target spicetest
+
+      - name: Run Test target (with coverage)
+        working-directory: build/test
+        env:
+          LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+        run: ./spicetest --is-github-actions
+
+      - name: Save CCache
+        uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-coverage-${{ github.sha }}
+
+      - name: Generate coverage report
+        working-directory: build
+        run: |
+          sudo chmod +x coverage.py
+          python coverage.py
+
+      - name: Upload coverage report - coverage.spicelang.com
+        uses: airvzxf/ftp-deployment-action@v2
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          user: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local_dir: ./build/coverage
+          remote_dir: chillibits.com/spice/coverage
