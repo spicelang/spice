@@ -2,6 +2,11 @@
 language: "en-US"
 early_access: false
 
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "**/STYLE_GUIDE.md"
+
 reviews:
   profile: "chill"
   request_changes_workflow: false
@@ -44,3 +49,4 @@ reviews:
 
 chat:
   auto_reply: true
+  art: false
