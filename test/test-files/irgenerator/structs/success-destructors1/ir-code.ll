@@ -48,7 +48,7 @@ assert.exit.L9:                                   ; preds = %assert.exit.L8
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: nounwind
-declare i32 @memcmp(ptr, ptr, i64) #2
+declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef readonly captures(none), i64 noundef) #2
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3

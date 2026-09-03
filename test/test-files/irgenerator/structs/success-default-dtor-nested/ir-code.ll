@@ -8,12 +8,14 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 4
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 4
 
-declare ptr @malloc(i64 noundef)
+; Function Attrs: nounwind
+declare noundef ptr @malloc(i64 noundef) #0
 
-declare void @free(ptr noundef)
+; Function Attrs: nounwind
+declare void @free(ptr noundef) #0
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -35,12 +37,12 @@ nullptrcheck.exit:                                ; preds = %nullptrcheck.then, 
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
 
 declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -54,7 +56,7 @@ define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
+define internal void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #3 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -69,7 +71,7 @@ define internal void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
+define internal void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #3 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -81,10 +83,10 @@ define internal void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -93,7 +95,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -102,7 +104,7 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorER6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #0 {
+define void @_ZN6Middle4ctorER6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -111,7 +113,7 @@ define void @_ZN6Middle4ctorER6Middle(ptr noundef nonnull align 8 dereferenceabl
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -120,7 +122,7 @@ define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -129,7 +131,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
+define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -138,7 +140,7 @@ define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #4 {
+define dso_local noundef i32 @main() #5 {
   %result = alloca i32, align 4
   %_outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
@@ -148,11 +150,12 @@ define dso_local noundef i32 @main() #4 {
   ret i32 %1
 }
 
-attributes #0 = { mustprogress noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { noinline nounwind optnone uwtable }
-attributes #3 = { nofree nounwind }
-attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #0 = { nounwind }
+attributes #1 = { mustprogress noinline nounwind optnone uwtable }
+attributes #2 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #3 = { noinline nounwind optnone uwtable }
+attributes #4 = { nofree nounwind }
+attributes #5 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -65,7 +65,7 @@ assert.exit.L14:                                  ; preds = %assert.exit.L13
 }
 
 ; Function Attrs: nounwind
-declare i32 @memcmp(ptr, ptr, i64) #3
+declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef readonly captures(none), i64 noundef) #3
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #4
