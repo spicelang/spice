@@ -11,13 +11,11 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %shortIterator = alloca %struct.NumberIterator, align 8
   %s = alloca i16, align 2
   %1 = alloca %struct.NumberIterator.0, align 8
   %l = alloca ptr, align 8
   %2 = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   %3 = call noundef %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 noundef signext 3, i16 noundef signext 8)
   store %struct.NumberIterator %3, ptr %shortIterator, align 8
   br label %foreach.head.L5
@@ -72,8 +70,7 @@ foreach.tail.L5:                                  ; preds = %if.exit.L7
 
 foreach.exit.L5:                                  ; preds = %foreach.body.L8, %foreach.head.L5
   %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
-  %21 = load i32, ptr %result, align 4
-  ret i32 %21
+  ret i32 0
 }
 
 declare %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16, i16)

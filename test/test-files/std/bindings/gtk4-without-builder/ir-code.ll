@@ -121,12 +121,10 @@ declare void @_ZN9GtkWindow7presentEv(ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main(i32 %0, ptr %1) #1 {
-  %result = alloca i32, align 4
   %argc = alloca i32, align 4
   %argv = alloca ptr, align 8
   %app = alloca %struct.GtkApplication, align 8
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
-  store i32 0, ptr %result, align 4
   store i32 %0, ptr %argc, align 4
   store ptr %1, ptr %argv, align 8
   call void @_ZN14GtkApplication4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(8) %app, ptr noundef @anon.string.4)

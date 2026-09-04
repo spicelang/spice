@@ -44,10 +44,8 @@ define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceabl
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %i = alloca i32, align 4
   %t = alloca %struct.Test, align 8
-  store i32 0, ptr %result, align 4
   store i32 123, ptr %i, align 4
   %1 = load i32, ptr %i, align 4
   store i32 %1, ptr %i, align 4
@@ -62,8 +60,7 @@ assign.copy:                                      ; preds = %0
 
 assign.copy.end:                                  ; preds = %assign.copy, %0
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

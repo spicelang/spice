@@ -38,7 +38,6 @@ define internal void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %0) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Thing @_Z7takeRefRK5Thingb(ptr noundef %0, i1 noundef zeroext %1) #0 {
-  %result = alloca %struct.Thing, align 8
   %ref = alloca ptr, align 8
   %cond = alloca i1, align 1
   %3 = alloca %struct.Thing, align 8
@@ -70,7 +69,6 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Thing @_Z7takeVal5Thingb(%struct.Thing noundef %0, i1 noundef zeroext %1) #0 {
-  %result = alloca %struct.Thing, align 8
   %val = alloca %struct.Thing, align 8
   %cond = alloca i1, align 1
   %3 = alloca %struct.Thing, align 8
@@ -98,7 +96,6 @@ cond.exit.L19C23:                                 ; preds = %cond.false.L19C23, 
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #3 {
-  %result = alloca i32, align 4
   %t = alloca %struct.Thing, align 8
   %viaRef = alloca %struct.Thing, align 8
   %viaRefTemp = alloca %struct.Thing, align 8
@@ -106,7 +103,6 @@ define dso_local noundef i32 @main() #3 {
   %viaVal = alloca %struct.Thing, align 8
   %arg.copy1 = alloca %struct.Thing, align 8
   %viaValTemp = alloca %struct.Thing, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN5Thing4ctorEv(ptr noundef nonnull align 1 %t)
   %1 = call noundef %struct.Thing @_Z7takeRefRK5Thingb(ptr noundef %t, i1 noundef zeroext true)
   store %struct.Thing %1, ptr %viaRef, align 1
@@ -127,8 +123,7 @@ define dso_local noundef i32 @main() #3 {
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %arg.copy1)
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %viaValTemp)
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %t)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

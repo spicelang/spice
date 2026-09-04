@@ -54,7 +54,6 @@ define internal void @_ZN6Vector4ctorEPKc(ptr noundef nonnull align 8 dereferenc
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
-  %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   ret ptr @anon.string.1
@@ -62,10 +61,8 @@ define internal noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 deref
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   %1 = alloca %struct.Vector, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %field1.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
   %2 = load i1, ptr %field1.addr, align 1
@@ -83,8 +80,7 @@ define dso_local noundef i32 @main() #1 {
   %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %7, ptr noundef %8)
   %10 = call noundef ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr noundef %10)
-  %12 = load i32, ptr %result, align 4
-  ret i32 %12
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

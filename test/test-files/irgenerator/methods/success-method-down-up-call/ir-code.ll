@@ -7,13 +7,10 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %s = alloca %struct.TestStruct, align 8
-  store i32 0, ptr %result, align 4
   store %struct.TestStruct { i8 97, i32 1 }, ptr %s, align 4
   call void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %s)
-  %1 = load i32, ptr %result, align 4
-  ret i32 %1
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -28,7 +25,6 @@ define internal void @_ZN10TestStructIcE9printTestEv(ptr noundef nonnull align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZN10TestStructIcE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #1 {
-  %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
