@@ -855,6 +855,11 @@ void SourceFile::checkForSoftErrors() const {
   }
 }
 
+bool SourceFile::isLibraryOutput() const {
+  return cliOptions.outputContainer == OutputContainer::STATIC_LIBRARY ||
+         cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
+}
+
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
   // imports from recursing infinitely, since the dependency graph may contain cycles.

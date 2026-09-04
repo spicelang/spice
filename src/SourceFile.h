@@ -169,6 +169,7 @@ public:
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors() const;
+  [[nodiscard]] bool isLibraryOutput() const;
   void collectAndPrintWarnings();
   void collectAndPrintLintFindings();
   const SourceFile *getRootSourceFile() const;
