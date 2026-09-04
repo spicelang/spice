@@ -4,6 +4,7 @@ f<bool> condFct() {
 
 f<string> trueFct() {
     assert false; // Should not be called
+    return "true";
 }
 
 f<string> falseFct() {

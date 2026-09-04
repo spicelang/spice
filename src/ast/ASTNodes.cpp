@@ -2,6 +2,8 @@
 
 #include <ast/ASTNodes.h>
 
+#include <ANTLRInputStream.h>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
@@ -190,11 +192,6 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
 }
 
 const CompileTimeValue *AttrNode::getValue() const { return value ? &value->compileTimeValue : nullptr; }
-
-bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
-  // If the expression, passed to the assert statement is always evaluated to false, the assert statement will never succeed
-  return assignExpr->hasCompileTimeValue(manIdx) && !assignExpr->getCompileTimeValue(manIdx).boolValue;
-}
 
 bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {
   // If it's a ternary, do the default thing

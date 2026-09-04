@@ -1417,7 +1417,6 @@ public:
 
   // Other methods
   GET_CHILDREN(assignExpr);
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
 
   // Public members
   ExprNode *assignExpr = nullptr;
