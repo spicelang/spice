@@ -1,8 +1,8 @@
 f<int> foo() {
-    assert(false);
+    assert(true);
     return 1;
 }
 
 f<int> main() {
-    foo();
+    dyn _ = foo();
 }
