@@ -185,6 +185,31 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   if (cliOptions.buildMode == BuildMode::RELEASE)
     return nullptr;
 
+  const auto generateBody = [&] {
+    // Create constant for error message
+    const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.\n";
+    llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+    // If the output should be comparable, fix alignment to 4 bytes
+    if (cliOptions.comparableOutput)
+      globalString->setAlignment(llvm::Align(4));
+    // Print the error message
+    llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
+    builder.CreateCall(printfFct, globalString);
+    // Generate call to exit()
+    llvm::Function *exitFct = stdFunctionManager.getExitFct();
+    builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
+    // Create unreachable instruction
+    builder.CreateUnreachable();
+    blockAlreadyTerminated = true;
+  };
+
+  // If we have a compile time decision, only evaluate the respective branch
+  if (node->assignExpr->hasCompileTimeValue(manIdx)) {
+    if (!node->assignExpr->getCompileTimeValue(manIdx).boolValue)
+      generateBody();
+    return nullptr;
+  }
+
   // Create blocks
   const std::string &codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bThen = createBlock("assert.then." + codeLine);
@@ -198,20 +223,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
 
   // Switch to then block
   switchToBlock(bThen);
-  // Create constant for error message
-  const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.\n";
-  llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
-  // If the output should be comparable, fix alignment to 4 bytes
-  if (cliOptions.comparableOutput)
-    globalString->setAlignment(llvm::Align(4));
-  // Print the error message
-  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
-  builder.CreateCall(printfFct, globalString);
-  // Generate call to exit()
-  llvm::Function *exitFct = stdFunctionManager.getExitFct();
-  builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
-  // Create unreachable instruction
-  builder.CreateUnreachable();
+  generateBody();
 
   // Switch to exit block
   switchToBlock(bExit);

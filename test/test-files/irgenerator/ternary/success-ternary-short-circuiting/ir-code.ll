@@ -14,16 +14,9 @@ define internal noundef zeroext i1 @_Z7condFctv() #0 {
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z7trueFctv() #0 {
   %result = alloca ptr, align 8
-  br i1 false, label %assert.exit.L6, label %assert.then.L6, !prof !5
-
-assert.then.L6:                                   ; preds = %0
   %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
-
-assert.exit.L6:                                   ; preds = %0
-  %2 = load ptr, ptr %result, align 8
-  ret ptr %2
 }
 
 ; Function Attrs: nofree nounwind
@@ -73,4 +66,3 @@ attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!5 = !{!"branch_weights", i32 1048575, i32 1}
