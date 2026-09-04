@@ -330,7 +330,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install ccache graphviz sqlite svn
+          brew install subversion
+          brew install ccache graphviz sqlite
           echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
 
