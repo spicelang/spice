@@ -15,66 +15,42 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable
 define dso_local noundef i32 @main() #0 {
   call void @llvm.donothing()
-  %result = alloca i32, align 4
   %i = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(ptr %result)
-  %1 = ptrtoint ptr %result to i64
+  call void @llvm.lifetime.start.p0(ptr %i)
+  %1 = ptrtoint ptr %i to i64
   %2 = xor i64 %1, 87960930222080
   %3 = inttoptr i64 %2 to ptr
   call void @llvm.memset.p0.i64(ptr align 4 %3, i8 -1, i64 4, i1 false)
-  %4 = ptrtoint ptr %result to i64
-  %5 = xor i64 %4, 87960930222080
-  %6 = inttoptr i64 %5 to ptr
-  store i32 0, ptr %6, align 4
-  store i32 0, ptr %result, align 4
-  call void @llvm.lifetime.start.p0(ptr %i)
-  %7 = ptrtoint ptr %i to i64
-  %8 = xor i64 %7, 87960930222080
-  %9 = inttoptr i64 %8 to ptr
-  call void @llvm.memset.p0.i64(ptr align 4 %9, i8 -1, i64 4, i1 false)
-  %10 = load i32, ptr %i, align 4
-  %11 = ptrtoint ptr %i to i64
-  %12 = xor i64 %11, 87960930222080
-  %13 = inttoptr i64 %12 to ptr
-  %_msld = load i32, ptr %13, align 4
+  %4 = load i32, ptr %i, align 4
+  %5 = ptrtoint ptr %i to i64
+  %6 = xor i64 %5, 87960930222080
+  %7 = inttoptr i64 %6 to ptr
+  %_msld = load i32, ptr %7, align 4
   %_msprop = or i32 %_msld, 0
-  %14 = add nsw i32 %10, 1
-  %15 = ptrtoint ptr %i to i64
-  %16 = xor i64 %15, 87960930222080
-  %17 = inttoptr i64 %16 to ptr
-  store i32 %_msprop, ptr %17, align 4
-  store i32 %14, ptr %i, align 4
-  %18 = load i32, ptr %i, align 4
-  %19 = ptrtoint ptr %i to i64
-  %20 = xor i64 %19, 87960930222080
-  %21 = inttoptr i64 %20 to ptr
-  %_msld1 = load i32, ptr %21, align 4
+  %8 = add nsw i32 %4, 1
+  %9 = ptrtoint ptr %i to i64
+  %10 = xor i64 %9, 87960930222080
+  %11 = inttoptr i64 %10 to ptr
+  store i32 %_msprop, ptr %11, align 4
+  store i32 %8, ptr %i, align 4
+  %12 = load i32, ptr %i, align 4
+  %13 = ptrtoint ptr %i to i64
+  %14 = xor i64 %13, 87960930222080
+  %15 = inttoptr i64 %14 to ptr
+  %_msld1 = load i32, ptr %15, align 4
   store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8
   store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8
   %_mscmp = icmp ne i32 %_msld1, 0
-  br i1 %_mscmp, label %22, label %23, !prof !6
+  br i1 %_mscmp, label %16, label %17, !prof !6
 
-22:                                               ; preds = %0
+16:                                               ; preds = %0
   call void @__msan_warning_noreturn() #6
   unreachable
 
-23:                                               ; preds = %0
-  %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %18)
+17:                                               ; preds = %0
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12)
   call void @llvm.lifetime.end.p0(ptr %i)
-  %25 = load i32, ptr %result, align 4
-  %26 = ptrtoint ptr %result to i64
-  %27 = xor i64 %26, 87960930222080
-  %28 = inttoptr i64 %27 to ptr
-  %_msld2 = load i32, ptr %28, align 4
-  %_mscmp3 = icmp ne i32 %_msld2, 0
-  br i1 %_mscmp3, label %29, label %30, !prof !6
-
-29:                                               ; preds = %23
-  call void @__msan_warning_noreturn() #6
-  unreachable
-
-30:                                               ; preds = %23
-  ret i32 %25
+  ret i32 0
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)

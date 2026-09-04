@@ -8,7 +8,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %z = alloca i32, align 4
   %w = alloca i32, align 4
   %captures = alloca { i32, i32 }, align 8
@@ -18,7 +17,6 @@ define dso_local noundef i32 @main() #0 {
   %fat.ptr2 = alloca { ptr, ptr, i64 }, align 8
   %foo2 = alloca { ptr, ptr, i64 }, align 8
   %x = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   store i32 2, ptr %z, align 4
   store i32 3, ptr %w, align 4
   %1 = load i32, ptr %w, align 4
@@ -83,8 +81,7 @@ assert.then.L15:                                  ; preds = %assert.exit.L14
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
   %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %24 = load i32, ptr %result, align 4
-  ret i32 %24
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -107,7 +104,6 @@ define internal void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #1 {
-  %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8

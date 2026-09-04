@@ -9,7 +9,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
-  %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -33,15 +32,12 @@ define internal void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 der
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %letter = alloca %struct.Letter, align 8
-  store i32 0, ptr %result, align 4
   store %struct.Letter { ptr @anon.string.0 }, ptr %letter, align 8
   call void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dereferenceable(8) %letter, ptr noundef @anon.string.1)
   %1 = call noundef ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %letter)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

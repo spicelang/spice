@@ -14,7 +14,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef zeroext i1 @_Z7testAddv() #0 {
-  %result = alloca i1, align 1
   ret i1 false
 }
 

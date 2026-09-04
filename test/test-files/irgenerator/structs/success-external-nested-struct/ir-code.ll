@@ -9,10 +9,8 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %s = alloca %struct.Socket, align 8
   %n = alloca %struct.NestedSocket, align 8
-  store i32 0, ptr %result, align 4
   %1 = call noundef %struct.Socket @_Z16openServerSockett(i16 noundef zeroext 8080)
   store %struct.Socket %1, ptr %s, align 8
   %nested.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 2
@@ -23,8 +21,7 @@ define dso_local noundef i32 @main() #0 {
   %sock.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 0
   %4 = load i32, ptr %sock.addr, align 4
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  ret i32 0
 }
 
 declare %struct.Socket @_Z16openServerSockett(i16)

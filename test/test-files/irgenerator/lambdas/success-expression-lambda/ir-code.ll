@@ -107,10 +107,8 @@ for.exit.L8:                                      ; preds = %for.head.L8
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %array = alloca [10 x i32], align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
-  store i32 0, ptr %result, align 4
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
   store ptr @_Z15lambda.L19C17.0ii, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
@@ -120,8 +118,7 @@ define dso_local noundef i32 @main() #1 {
   %3 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8
   call void @_Z4sortRA10_iPFbiiE(ptr noundef %array, { ptr, ptr, i64 } noundef %3)
   call void @_Z10printArrayRA10_i(ptr noundef %array)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

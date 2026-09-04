@@ -5,12 +5,9 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %_node = alloca %struct.Node, align 8
-  store i32 0, ptr %result, align 4
   store %struct.Node zeroinitializer, ptr %_node, align 8
-  %1 = load i32, ptr %result, align 4
-  ret i32 %1
+  ret i32 0
 }
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }

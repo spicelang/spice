@@ -13,7 +13,6 @@ declare noundef i32 @pthread_join(i64 noundef, ptr noundef) #0
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %tid1 = alloca i64, align 8
   %tid2 = alloca i64, align 8
   %i = alloca i32, align 4
@@ -21,7 +20,6 @@ define dso_local noundef i32 @main() #1 {
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %captures = alloca { ptr, ptr }, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
-  store i32 0, ptr %result, align 4
   store i64 0, ptr %tid1, align 8
   store i64 0, ptr %tid2, align 8
   store i32 123, ptr %i, align 4
@@ -49,8 +47,7 @@ define dso_local noundef i32 @main() #1 {
   %13 = call noundef i32 @pthread_join(i64 noundef %12, ptr noundef align 8 dereferenceable(8) null)
   %14 = load volatile i32, ptr %i, align 4
   %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %14)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

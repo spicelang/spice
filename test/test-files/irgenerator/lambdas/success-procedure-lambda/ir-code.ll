@@ -11,7 +11,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %callbackWithoutArgs = alloca { ptr, ptr, i64 }, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
@@ -21,7 +20,6 @@ define dso_local noundef i32 @main() #0 {
   %callbackWithArgs2 = alloca { ptr, ptr, i64 }, align 8
   %2 = alloca %struct.String, align 8
   %arg.copy = alloca %struct.String, align 8
-  store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C31.0v, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %3, align 8
@@ -62,8 +60,7 @@ define dso_local noundef i32 @main() #0 {
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

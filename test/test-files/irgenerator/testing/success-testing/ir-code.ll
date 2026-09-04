@@ -29,7 +29,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
-  %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
   store i32 %0, ptr %a, align 4
@@ -42,7 +41,6 @@ define internal noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z3subii(i32 noundef %0, i32 noundef %1) #0 {
-  %result = alloca i32, align 4
   %a = alloca i32, align 4
   %b = alloca i32, align 4
   store i32 %0, ptr %a, align 4
@@ -55,7 +53,6 @@ define internal noundef i32 @_Z3subii(i32 noundef %0, i32 noundef %1) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef zeroext i1 @_Z8testAdd1v() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 @_Z3addii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L12, label %assert.then.L12, !prof !5
@@ -97,7 +94,6 @@ declare void @exit(i32) #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef zeroext i1 @_Z8testAdd2v() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 @_Z3addii(i32 noundef 5, i32 noundef -4)
   %2 = icmp eq i32 %1, 1
   br i1 %2, label %assert.exit.L20, label %assert.then.L20, !prof !5
@@ -133,7 +129,6 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef zeroext i1 @_Z8testSub1v() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 @_Z3subii(i32 noundef 1, i32 noundef 2)
   %2 = icmp eq i32 %1, -1
   br i1 %2, label %assert.exit.L28, label %assert.then.L28, !prof !5
@@ -169,7 +164,6 @@ assert.exit.L30:                                  ; preds = %assert.exit.L29
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef zeroext i1 @_Z8testSub2v() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 @_Z3subii(i32 noundef 5, i32 noundef -4)
   %2 = icmp eq i32 %1, 9
   br i1 %2, label %assert.exit.L36, label %assert.then.L36, !prof !5

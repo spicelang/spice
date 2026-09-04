@@ -4,13 +4,13 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [6 x i8] c"Apple\00", align 4
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Banana\00", align 4
 @anon.string.2 = private unnamed_addr constant [7 x i8] c"Orange\00", align 4
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z7getNamei(i32 noundef %0) #0 {
-  %result = alloca ptr, align 8
   %input = alloca i32, align 4
   store i32 %0, ptr %input, align 4
   %2 = load i32, ptr %input, align 4
@@ -30,14 +30,11 @@ switch.case.L11:                                  ; preds = %1
   ret ptr @anon.string.2
 
 switch.exit.L8:                                   ; preds = %1
-  %3 = load ptr, ptr %result, align 8
-  ret ptr %3
+  ret ptr @0
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %1 = call noundef ptr @_Z7getNamei(i32 noundef 0)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
   %3 = call noundef ptr @_Z7getNamei(i32 noundef 1)

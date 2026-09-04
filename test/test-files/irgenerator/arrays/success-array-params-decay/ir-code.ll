@@ -15,7 +15,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z3sumA4_i(ptr noundef %values) #0 {
-  %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
   store i32 0, ptr %total, align 4
@@ -59,7 +58,6 @@ define internal void @_Z8setFirstA4_ii(ptr noundef %values, i32 noundef %0) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, ptr noundef %values) #0 {
-  %result = alloca i32, align 4
   %offset = alloca %struct.Offset, align 8
   store %struct.Offset %0, ptr %offset, align 4
   %base.addr = getelementptr inbounds %struct.Offset, ptr %offset, i64 0, i32 0
@@ -78,7 +76,6 @@ define internal noundef i32 @_Z7op.plus6OffsetA2_i(%struct.Offset noundef %0, pt
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z9sumMatrixA3_A2_b(ptr noundef %matrix) #0 {
-  %result = alloca i32, align 4
   %total = alloca i32, align 4
   %i = alloca i32, align 4
   %j = alloca i32, align 4
@@ -134,7 +131,6 @@ for.exit.L28:                                     ; preds = %for.head.L28
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %numbers = alloca [4 x i32], align 4
   %matrix = alloca [3 x [2 x i1]], align 1
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
@@ -142,7 +138,6 @@ define dso_local noundef i32 @main() #1 {
   %arg.decay = alloca [4 x i32], align 4
   %offset = alloca %struct.Offset, align 8
   %arg.decay1 = alloca [2 x i32], align 4
-  store i32 0, ptr %result, align 4
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %numbers, align 4
   %1 = call noundef i32 @_Z3sumA4_i(ptr noundef %numbers)
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1)
@@ -181,8 +176,7 @@ define dso_local noundef i32 @main() #1 {
   call void @llvm.memcpy.p0.p0.i64(ptr %arg.decay1, ptr @anon.array.2, i64 8, i1 false)
   %21 = call i32 @_Z7op.plus6OffsetA2_i(%struct.Offset %20, ptr %arg.decay1)
   %22 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i32 noundef %21)
-  %23 = load i32, ptr %result, align 4
-  ret i32 %23
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
@@ -190,7 +184,6 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) #0 {
-  %result = alloca i32, align 4
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = getelementptr inbounds [4 x i32], ptr %values, i64 0, i32 3

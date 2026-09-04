@@ -26,7 +26,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.ShoppingCart @_Z15newShoppingCartv() #0 {
-  %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
   store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }], ptr %items, align 8
@@ -46,7 +45,6 @@ define internal noundef %struct.ShoppingCart @_Z15newShoppingCartv() #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.ShoppingCart @_Z19anotherShoppingCartv() #0 {
-  %result = alloca %struct.ShoppingCart, align 8
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
   store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @anon.string.7, double 1.000000e+02, ptr @anon.string.8 }, %struct.ShoppingItem { ptr @anon.string.9, double 1.255000e+02, ptr @anon.string.10 }, %struct.ShoppingItem { ptr @anon.string.11, double 6.000000e+00, ptr @anon.string.12 }], ptr %items, align 8
@@ -60,9 +58,7 @@ define internal noundef %struct.ShoppingCart @_Z19anotherShoppingCartv() #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %shoppingCart = alloca %struct.ShoppingCart, align 8
-  store i32 0, ptr %result, align 4
   %1 = call noundef %struct.ShoppingCart @_Z15newShoppingCartv()
   store %struct.ShoppingCart %1, ptr %shoppingCart, align 8
   %items.addr = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
@@ -77,8 +73,7 @@ define dso_local noundef i32 @main() #1 {
   %unit.addr = getelementptr inbounds %struct.ShoppingItem, ptr %6, i64 0, i32 2
   %7 = load ptr, ptr %unit.addr, align 8
   %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %7)
-  %9 = load i32, ptr %result, align 4
-  ret i32 %9
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

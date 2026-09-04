@@ -43,12 +43,10 @@ for.exit.L8:                                      ; preds = %for.head.L8
 define dso_local noundef i32 @main() #1 {
   %1 = call ptr @llvm.returnaddress.p0(i32 0)
   call void @__tsan_func_entry(ptr %1)
-  %result = alloca i32, align 4
   %thread1 = alloca %struct.Thread, align 8
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %thread2 = alloca %struct.Thread, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
-  store i32 0, ptr %result, align 4
   store ptr @_Z6workerv.fatthunk, ptr %fat.ptr, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %2, align 8
@@ -69,9 +67,8 @@ define dso_local noundef i32 @main() #1 {
   call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
-  %8 = load i32, ptr %result, align 4
   call void @__tsan_func_exit()
-  ret i32 %8
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

@@ -86,6 +86,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
     // Get address of the referenced variable / struct instance
     thisPtr = getAddress(firstFragEntry);
+    assert(thisPtr != nullptr);
 
     // Auto de-reference 'this' pointer
     QualType firstFragmentType = firstFragEntry->getQualType();
@@ -601,10 +602,12 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Declare result variable
   const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
-  llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-  updateAddress(resultEntry, resultAddr);
-  // Generate debug info
-  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
+  if (resultEntry->isInitialized()) {
+    llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+    updateAddress(resultEntry, resultAddr);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
+  }
 
   // Store function argument values
   llvm::Value *captureStructPtrPtr = nullptr;
@@ -649,7 +652,9 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = insertLoad(returnType, getAddress(resultEntry));
+    llvm::Value *result = getDefaultValueForSymbolType(spiceFunc.returnType);
+    if (resultEntry->isInitialized())
+      result = insertLoad(returnType, getAddress(resultEntry));
     builder.CreateRet(result);
   }
 

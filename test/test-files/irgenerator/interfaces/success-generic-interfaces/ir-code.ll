@@ -52,7 +52,6 @@ define internal void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 derefe
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr noundef %1, ptr noundef %2) #0 {
-  %result = alloca i32, align 4
   %this = alloca ptr, align 8
   %a = alloca ptr, align 8
   %b = alloca ptr, align 8
@@ -86,12 +85,10 @@ if.exit.L27:                                      ; preds = %if.exit.L26
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %mike = alloca %struct.Person, align 8
   %1 = alloca i64, align 8
   %2 = alloca i64, align 8
   %isEqual = alloca i1, align 1
-  store i32 0, ptr %result, align 4
   call void @_ZN6Person4ctorEPKcPKcj(ptr noundef nonnull align 8 dereferenceable(32) %mike, ptr noundef @anon.string.0, ptr noundef @anon.string.1, i32 noundef 43)
   store i64 22, ptr %1, align 8
   store i64 22, ptr %2, align 8
@@ -101,8 +98,7 @@ define dso_local noundef i32 @main() #1 {
   %5 = load i1, ptr %isEqual, align 1
   %6 = zext i1 %5 to i32
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

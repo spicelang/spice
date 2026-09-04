@@ -8,7 +8,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef zeroext i1 @_Z12functionTruev() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 true
 }
@@ -18,15 +17,12 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef zeroext i1 @_Z13functionFalsev() #0 {
-  %result = alloca i1, align 1
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 false
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %1 = call noundef zeroext i1 @_Z13functionFalsev()
   br i1 %1, label %land.1.L13C46, label %land.exit.L13C46
 
@@ -49,8 +45,7 @@ lor.exit.L16C45:                                  ; preds = %lor.1.L16C45, %land
   %lor_phi = phi i1 [ %5, %land.exit.L13C46 ], [ %6, %lor.1.L16C45 ]
   %7 = zext i1 %lor_phi to i32
   %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef %7)
-  %9 = load i32, ptr %result, align 4
-  ret i32 %9
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

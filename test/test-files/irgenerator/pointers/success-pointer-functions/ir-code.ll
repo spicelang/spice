@@ -23,9 +23,7 @@ define internal void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenc
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %mike = alloca %struct.Person, align 8
-  store i32 0, ptr %result, align 4
   store %struct.Person { ptr @anon.string.0, ptr @anon.string.1, i32 32 }, ptr %mike, align 8
   %lastName.addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 1
   %1 = load ptr, ptr %lastName.addr, align 8
@@ -39,8 +37,7 @@ define dso_local noundef i32 @main() #1 {
   %age.addr1 = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
   %6 = load i32, ptr %age.addr1, align 4
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

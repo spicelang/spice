@@ -10,13 +10,11 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %intArray = alloca [7 x i32], align 4
   %1 = alloca %struct.ArrayIterator, align 8
   %index = alloca i64, align 8
   %item = alloca i32, align 4
   %pair.addr = alloca %struct.Pair, align 8
-  store i32 0, ptr %result, align 4
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
   %2 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
   %3 = call noundef %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr noundef %2, i64 noundef 7)
@@ -45,8 +43,7 @@ foreach.tail.L5:                                  ; preds = %foreach.body.L5
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.head.L5
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  ret i32 0
 }
 
 declare %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr, i64)

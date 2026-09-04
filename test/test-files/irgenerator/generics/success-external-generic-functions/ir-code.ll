@@ -8,12 +8,10 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %arg.decay = alloca [2 x ptr], align 8
   %test = alloca i32, align 4
   %i = alloca i32, align 4
   %iPtr = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_Z11printFormatIdEvd(double noundef 1.123000e+00)
   call void @_Z11printFormatIiEvi(i32 noundef 543)
   call void @llvm.memcpy.p0.p0.i64(ptr %arg.decay, ptr @anon.array.0, i64 16, i1 false)
@@ -34,8 +32,7 @@ assert.then.L12:                                  ; preds = %0
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  ret i32 0
 }
 
 declare void @_Z11printFormatIdEvd(double)

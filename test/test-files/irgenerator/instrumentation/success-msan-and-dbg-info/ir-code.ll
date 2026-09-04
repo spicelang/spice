@@ -15,68 +15,43 @@ source_filename = "source.spice"
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable
 define dso_local noundef i32 @main() #0 !dbg !15 {
   call void @llvm.donothing()
-  %result = alloca i32, align 4
   %i = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(ptr %result), !dbg !20
-    #dbg_declare(ptr %result, !21, !DIExpression(), !20)
-  %1 = ptrtoint ptr %result to i64, !dbg !20
+  call void @llvm.lifetime.start.p0(ptr %i), !dbg !20
+    #dbg_declare(ptr %i, !21, !DIExpression(), !20)
+  %1 = ptrtoint ptr %i to i64, !dbg !20
   %2 = xor i64 %1, 87960930222080, !dbg !20
   %3 = inttoptr i64 %2 to ptr, !dbg !20
   call void @llvm.memset.p0.i64(ptr align 4 %3, i8 -1, i64 4, i1 false), !dbg !20
-  %4 = ptrtoint ptr %result to i64, !dbg !20
-  %5 = xor i64 %4, 87960930222080, !dbg !20
-  %6 = inttoptr i64 %5 to ptr, !dbg !20
-  store i32 0, ptr %6, align 4, !dbg !20
-  store i32 0, ptr %result, align 4, !dbg !20
-  call void @llvm.lifetime.start.p0(ptr %i), !dbg !22
-    #dbg_declare(ptr %i, !23, !DIExpression(), !22)
-  %7 = ptrtoint ptr %i to i64, !dbg !22
-  %8 = xor i64 %7, 87960930222080, !dbg !22
-  %9 = inttoptr i64 %8 to ptr, !dbg !22
-  call void @llvm.memset.p0.i64(ptr align 4 %9, i8 -1, i64 4, i1 false), !dbg !22
-  %10 = load i32, ptr %i, align 4, !dbg !24
-  %11 = ptrtoint ptr %i to i64, !dbg !24
-  %12 = xor i64 %11, 87960930222080, !dbg !24
-  %13 = inttoptr i64 %12 to ptr, !dbg !24
-  %_msld = load i32, ptr %13, align 4, !dbg !24
-  %_msprop = or i32 %_msld, 0, !dbg !24
-  %14 = add nsw i32 %10, 1, !dbg !24
-  %15 = ptrtoint ptr %i to i64, !dbg !24
-  %16 = xor i64 %15, 87960930222080, !dbg !24
-  %17 = inttoptr i64 %16 to ptr, !dbg !24
-  store i32 %_msprop, ptr %17, align 4, !dbg !24
-  store i32 %14, ptr %i, align 4, !dbg !24
-  %18 = load i32, ptr %i, align 4, !dbg !25
-  %19 = ptrtoint ptr %i to i64, !dbg !25
-  %20 = xor i64 %19, 87960930222080, !dbg !25
-  %21 = inttoptr i64 %20 to ptr, !dbg !25
-  %_msld1 = load i32, ptr %21, align 4, !dbg !25
-  store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8, !dbg !25
-  store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8, !dbg !25
-  %_mscmp = icmp ne i32 %_msld1, 0, !dbg !25
-  br i1 %_mscmp, label %22, label %23, !dbg !25, !prof !26
+  %4 = load i32, ptr %i, align 4, !dbg !22
+  %5 = ptrtoint ptr %i to i64, !dbg !22
+  %6 = xor i64 %5, 87960930222080, !dbg !22
+  %7 = inttoptr i64 %6 to ptr, !dbg !22
+  %_msld = load i32, ptr %7, align 4, !dbg !22
+  %_msprop = or i32 %_msld, 0, !dbg !22
+  %8 = add nsw i32 %4, 1, !dbg !22
+  %9 = ptrtoint ptr %i to i64, !dbg !22
+  %10 = xor i64 %9, 87960930222080, !dbg !22
+  %11 = inttoptr i64 %10 to ptr, !dbg !22
+  store i32 %_msprop, ptr %11, align 4, !dbg !22
+  store i32 %8, ptr %i, align 4, !dbg !22
+  %12 = load i32, ptr %i, align 4, !dbg !23
+  %13 = ptrtoint ptr %i to i64, !dbg !23
+  %14 = xor i64 %13, 87960930222080, !dbg !23
+  %15 = inttoptr i64 %14 to ptr, !dbg !23
+  %_msld1 = load i32, ptr %15, align 4, !dbg !23
+  store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8, !dbg !23
+  store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8, !dbg !23
+  %_mscmp = icmp ne i32 %_msld1, 0, !dbg !23
+  br i1 %_mscmp, label %16, label %17, !dbg !23, !prof !24
 
-22:                                               ; preds = %0
-  call void @__msan_warning_noreturn() #6, !dbg !25
-  unreachable, !dbg !25
+16:                                               ; preds = %0
+  call void @__msan_warning_noreturn() #6, !dbg !23
+  unreachable, !dbg !23
 
-23:                                               ; preds = %0
-  %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %18), !dbg !25
-  call void @llvm.lifetime.end.p0(ptr %i), !dbg !27
-  %25 = load i32, ptr %result, align 4, !dbg !27
-  %26 = ptrtoint ptr %result to i64, !dbg !27
-  %27 = xor i64 %26, 87960930222080, !dbg !27
-  %28 = inttoptr i64 %27 to ptr, !dbg !27
-  %_msld2 = load i32, ptr %28, align 4, !dbg !27
-  %_mscmp3 = icmp ne i32 %_msld2, 0, !dbg !27
-  br i1 %_mscmp3, label %29, label %30, !dbg !27, !prof !26
-
-29:                                               ; preds = %23
-  call void @__msan_warning_noreturn() #6, !dbg !27
-  unreachable, !dbg !27
-
-30:                                               ; preds = %23
-  ret i32 %25, !dbg !27
+17:                                               ; preds = %0
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12), !dbg !23
+  call void @llvm.lifetime.end.p0(ptr %i), !dbg !25
+  ret i32 0, !dbg !25
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
@@ -172,11 +147,9 @@ attributes #6 = { nomerge }
 !17 = !{!18}
 !18 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !19 = !{}
-!20 = !DILocation(line: 3, column: 1, scope: !15)
-!21 = !DILocalVariable(name: "result", scope: !15, file: !5, line: 3, type: !18)
-!22 = !DILocation(line: 4, column: 5, scope: !15)
-!23 = !DILocalVariable(name: "i", scope: !15, file: !5, line: 4, type: !18)
-!24 = !DILocation(line: 5, column: 5, scope: !15)
-!25 = !DILocation(line: 6, column: 18, scope: !15)
-!26 = !{!"branch_weights", i32 1, i32 1048575}
-!27 = !DILocation(line: 7, column: 1, scope: !15)
+!20 = !DILocation(line: 4, column: 5, scope: !15)
+!21 = !DILocalVariable(name: "i", scope: !15, file: !5, line: 4, type: !18)
+!22 = !DILocation(line: 5, column: 5, scope: !15)
+!23 = !DILocation(line: 6, column: 18, scope: !15)
+!24 = !{!"branch_weights", i32 1, i32 1048575}
+!25 = !DILocation(line: 7, column: 1, scope: !15)

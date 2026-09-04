@@ -5,15 +5,12 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %integer = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %1 = call noundef i32 @_Z20forwardToOtherModulev()
   store i32 %1, ptr %integer, align 4
   %2 = load i32, ptr %integer, align 4
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  ret i32 0
 }
 
 declare i32 @_Z20forwardToOtherModulev()

@@ -35,7 +35,6 @@ define internal void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereference
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
-  %result = alloca i64, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -46,7 +45,6 @@ define internal noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -64,7 +62,6 @@ define internal noundef %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Coun
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -82,7 +79,6 @@ define internal noundef %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Cou
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -100,7 +96,6 @@ define internal noundef %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Count
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z6op.div7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -118,7 +113,6 @@ define internal noundef %struct.Counter @_Z6op.div7Counter7Counter(%struct.Count
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -136,7 +130,6 @@ define internal noundef %struct.Counter @_Z6op.shl7Counter7Counter(%struct.Count
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counter noundef %0, %struct.Counter noundef %1) #0 {
-  %result = alloca %struct.Counter, align 8
   %c1 = alloca %struct.Counter, align 8
   %c2 = alloca %struct.Counter, align 8
   %3 = alloca %struct.Counter, align 8
@@ -218,7 +211,6 @@ define internal void @_Z11op.divequalR7Counter7Counter(ptr noundef %0, %struct.C
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 noundef %1) #0 {
-  %result = alloca ptr, align 8
   %c = alloca ptr, align 8
   %summand = alloca i32, align 4
   store ptr %0, ptr %c, align 8
@@ -237,7 +229,6 @@ define internal noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 noun
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %counter1 = alloca %struct.Counter, align 8
   %counter2 = alloca %struct.Counter, align 8
   %counter3 = alloca %struct.Counter, align 8
@@ -247,7 +238,6 @@ define dso_local noundef i32 @main() #1 {
   %counter7 = alloca %struct.Counter, align 8
   %counter8 = alloca %struct.Counter, align 8
   %res = alloca i64, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter1, i64 noundef 2)
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %counter2, i64 noundef 3)
   %1 = call noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter1)
@@ -321,8 +311,7 @@ assert.then.L86:                                  ; preds = %0
 assert.exit.L86:                                  ; preds = %0
   %52 = call noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
   %53 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 noundef %52)
-  %54 = load i32, ptr %result, align 4
-  ret i32 %54
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
