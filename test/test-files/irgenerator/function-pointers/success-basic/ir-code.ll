@@ -5,17 +5,14 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z4testv() #0 {
-  %result = alloca i32, align 4
   ret i32 12
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %testFct = alloca { ptr, ptr, i64 }, align 8
   %i = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   store ptr @_Z4testv.fatthunk, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %1, align 8
@@ -30,8 +27,7 @@ define dso_local noundef i32 @main() #1 {
   store i32 %5, ptr %i, align 4
   %6 = load i32, ptr %i, align 4
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

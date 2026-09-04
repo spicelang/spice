@@ -19,18 +19,15 @@ define internal void @_Z4noopIPVhEvRPVh(ptr noundef %0) #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %a = alloca ptr, align 8
   %b = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   store ptr null, ptr %a, align 8
   store ptr null, ptr %b, align 8
   call void @_Z4noopIPhEvRPh(ptr noundef %a)
   call void @_Z4noopIPVhEvRPVh(ptr noundef %b)
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   call void @_Z8sDeallocRPVh(ptr %b)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

@@ -35,7 +35,6 @@ define internal void @_ZN4Base4initEi(ptr noundef nonnull align 4 dereferenceabl
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
-  %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -94,7 +93,6 @@ define internal void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenc
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZN7Derived6markerEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
-  %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -140,7 +138,6 @@ define internal void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferencea
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 dereferenceable(32) %0) #0 {
-  %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -151,13 +148,11 @@ define internal noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 deref
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #3 {
-  %result = alloca i32, align 4
   %der = alloca %struct.Derived, align 8
   %b = alloca ptr, align 8
   %leaf = alloca %struct.Leaf, align 8
   %lb = alloca ptr, align 8
   %m = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN7Derived4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %der)
   call void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %der, i32 noundef 7, i32 noundef 99)
   %1 = getelementptr inbounds nuw %struct.Derived, ptr %der, i32 0, i32 1
@@ -180,8 +175,7 @@ define dso_local noundef i32 @main() #3 {
   %fct = load ptr, ptr %vfct.addr, align 8
   %11 = call noundef i32 %fct(ptr noundef nonnull align 8 dereferenceable(8) %10)
   %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %11)
-  %13 = load i32, ptr %result, align 4
-  ret i32 %13
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

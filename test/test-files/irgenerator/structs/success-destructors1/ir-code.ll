@@ -57,9 +57,7 @@ declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #4 {
-  %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
-  store i32 0, ptr %result, align 4
   store %struct.Vector { i1 true, ptr @anon.string.3 }, ptr %vec, align 8
   %field1.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
   %1 = load i1, ptr %field1.addr, align 1
@@ -68,8 +66,7 @@ define dso_local noundef i32 @main() #4 {
   %3 = load ptr, ptr %field2.addr, align 8
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %2, ptr noundef %3)
   call void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

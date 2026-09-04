@@ -7,7 +7,6 @@ target triple = "wasm32-unknown-unknown"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local noundef i32 @fibo(i32 noundef %0) #0 {
-  %result = alloca i32, align 4
   %n = alloca i32, align 4
   store i32 %0, ptr %n, align 4
   %2 = load i32, ptr %n, align 4
@@ -31,16 +30,13 @@ if.exit.L5:                                       ; preds = %1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %fiboBase = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   store i32 45, ptr %fiboBase, align 4
   %1 = load i32, ptr %fiboBase, align 4
   %2 = load i32, ptr %fiboBase, align 4
   %3 = call noundef i32 @fibo(i32 noundef %2)
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1, i32 noundef %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

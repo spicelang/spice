@@ -11,7 +11,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0 {
-  %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8
   %2 = load ptr, ptr %ts, align 8
@@ -25,7 +24,6 @@ define internal noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0) #0 {
-  %result = alloca ptr, align 8
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8
   %2 = load ptr, ptr %ts, align 8
@@ -39,10 +37,8 @@ define internal noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %ts = alloca %struct.TestStruct, align 8
   %output = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   store %struct.TestStruct { i64 123 }, ptr %ts, align 8
   %1 = load %struct.TestStruct, ptr %ts, align 8
   %2 = call ptr @_Z16op.plusplus.postR10TestStruct(ptr %ts)
@@ -104,8 +100,7 @@ assert.then.L24:                                  ; preds = %assert.exit.L23
 
 assert.exit.L24:                                  ; preds = %assert.exit.L23
   %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %24 = load i32, ptr %result, align 4
-  ret i32 %24
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

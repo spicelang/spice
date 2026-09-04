@@ -37,17 +37,14 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %outer)
   %middle.addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
   %inner.addr = getelementptr inbounds %struct.Middle, ptr %middle.addr, i64 0, i32 0
   %message.addr = getelementptr inbounds %struct.Inner, ptr %inner.addr, i64 0, i32 0
   %1 = load ptr, ptr %message.addr, align 8
   %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

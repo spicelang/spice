@@ -41,7 +41,6 @@ define internal void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceabl
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
-  %result = alloca i1, align 1
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -52,10 +51,8 @@ define internal noundef zeroext i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull alig
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %car = alloca %struct.Car, align 8
   %driveable = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %car)
   store ptr %car, ptr %driveable, align 8
   %1 = load ptr, ptr %driveable, align 8
@@ -70,8 +67,7 @@ define dso_local noundef i32 @main() #1 {
   %3 = call noundef zeroext i1 %fct3(ptr noundef nonnull align 8 dereferenceable(8) %2)
   %4 = zext i1 %3 to i32
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

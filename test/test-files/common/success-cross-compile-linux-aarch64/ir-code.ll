@@ -14,14 +14,12 @@ target triple = "aarch64-unknown-linux-gnu"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %stringVec = alloca %struct.Vector, align 8
   %1 = alloca %struct.String, align 8
   %2 = alloca %struct.String, align 8
   %3 = alloca %struct.VectorIterator, align 8
   %str = alloca ptr, align 8
   %4 = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN6VectorI6StringE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %stringVec)
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
   call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr noundef %1)
@@ -51,8 +49,7 @@ foreach.exit.L10:                                 ; preds = %foreach.head.L10
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   call void @_ZN6VectorI6StringE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %stringVec)
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  ret i32 0
 }
 
 declare void @_ZN6VectorI6StringE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32))

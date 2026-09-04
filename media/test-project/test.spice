@@ -1,8 +1,7 @@
-f<int> foo() {
-    assert(true);
-    return 1;
-}
+import "bootstrap/model/interface";
 
+// Wrapper for 'spice test' unit test
 f<int> main() {
-    dyn _ = foo();
+    testInterfaceSmoke();
+    printf("All assertions passed!\n");
 }

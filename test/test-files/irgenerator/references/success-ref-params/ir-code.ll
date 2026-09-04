@@ -32,7 +32,6 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z4funcRdRK6Struct(ptr noundef %0, ptr noundef %1) #0 {
-  %result = alloca i32, align 4
   %doubleRef = alloca ptr, align 8
   %structRef = alloca ptr, align 8
   store ptr %0, ptr %doubleRef, align 8
@@ -56,7 +55,6 @@ define dso_local noundef i32 @main() #2 {
   %1 = alloca %struct.Struct, align 8
   %d = alloca double, align 8
   %2 = alloca %struct.Struct, align 8
-  store i32 0, ptr %result, align 4
   store i32 -4321, ptr %i, align 4
   store ptr %i, ptr %1, align 8
   %3 = getelementptr inbounds nuw %struct.Struct, ptr %1, i32 0, i32 1

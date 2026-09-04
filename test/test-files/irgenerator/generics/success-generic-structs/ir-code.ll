@@ -7,10 +7,8 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %dbl = alloca double, align 8
   %doubleVec = alloca %struct.Vector, align 8
-  store i32 0, ptr %result, align 4
   store double 3.467000e+00, ptr %dbl, align 8
   store ptr %dbl, ptr %doubleVec, align 8
   %1 = getelementptr inbounds nuw %struct.Vector, ptr %doubleVec, i32 0, i32 1
@@ -18,8 +16,7 @@ define dso_local noundef i32 @main() #0 {
   %cap.addr = getelementptr inbounds %struct.Vector, ptr %doubleVec, i64 0, i32 1
   %2 = load i32, ptr %cap.addr, align 4
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %2)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

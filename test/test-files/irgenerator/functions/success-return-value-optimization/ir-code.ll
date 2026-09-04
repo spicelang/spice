@@ -43,7 +43,6 @@ define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceabl
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) #0 {
-  %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   store %struct.Test %0, ptr %old, align 4
   %2 = load %struct.Test, ptr %old, align 4
@@ -52,7 +51,6 @@ define internal noundef %struct.Test @_Z8testRVO14Test(%struct.Test noundef %0) 
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
-  %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %2 = alloca %struct.Test, align 8
   store ptr %0, ptr %old, align 8
@@ -64,7 +62,6 @@ define internal noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %0) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) #0 {
-  %result = alloca %struct.Test, align 8
   %old = alloca %struct.Test, align 8
   %old1 = alloca %struct.Test, align 8
   store %struct.Test %0, ptr %old, align 4
@@ -75,7 +72,6 @@ define internal noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %0) 
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) #0 {
-  %result = alloca %struct.Test, align 8
   %old = alloca ptr, align 8
   %old1 = alloca ptr, align 8
   %2 = alloca %struct.Test, align 8
@@ -90,7 +86,6 @@ define internal noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %0) #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %arg.copy = alloca %struct.Test, align 8
   %t1 = alloca %struct.Test, align 8
@@ -98,7 +93,6 @@ define dso_local noundef i32 @main() #1 {
   %arg.copy2 = alloca %struct.Test, align 8
   %t3 = alloca %struct.Test, align 8
   %t4 = alloca %struct.Test, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy, ptr %t)
   %1 = load %struct.Test, ptr %arg.copy, align 4
@@ -164,8 +158,7 @@ assert.exit.L44:                                  ; preds = %assert.exit.L41
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t1)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
-  %20 = load i32, ptr %result, align 4
-  ret i32 %20
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

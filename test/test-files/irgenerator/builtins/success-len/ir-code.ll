@@ -6,13 +6,10 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %testIntArray = alloca [4 x i32], align 4
-  store i32 0, ptr %result, align 4
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %testIntArray, align 4
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef 4)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

@@ -10,7 +10,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %intVector = alloca %struct.Vector, align 8
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
@@ -21,7 +20,6 @@ define dso_local noundef i32 @main() #0 {
   %7 = alloca i32, align 4
   %8 = alloca %struct.VectorIterator, align 8
   %item = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %intVector)
   store i32 1, ptr %1, align 4
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %1)
@@ -59,8 +57,7 @@ foreach.tail.L12:                                 ; preds = %foreach.body.L12
 
 foreach.exit.L12:                                 ; preds = %foreach.head.L12
   call void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %intVector)
-  %15 = load i32, ptr %result, align 4
-  ret i32 %15
+  ret i32 0
 }
 
 declare void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32))

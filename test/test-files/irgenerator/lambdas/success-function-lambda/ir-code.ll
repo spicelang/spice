@@ -15,7 +15,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %callbackWithoutArgs = alloca { ptr, ptr, i64 }, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
@@ -25,7 +24,6 @@ define dso_local noundef i32 @main() #0 {
   %callbackWithArgs2 = alloca { ptr, ptr, i64 }, align 8
   %2 = alloca %struct.String, align 8
   %arg.copy = alloca %struct.String, align 8
-  store i32 0, ptr %result, align 4
   store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %3, align 8
@@ -74,13 +72,11 @@ define dso_local noundef i32 @main() #0 {
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
-  %27 = load i32, ptr %result, align 4
-  ret i32 %27
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal ptr @_Z14lambda.L2C39.0v(ptr %0) #1 {
-  %result = alloca ptr, align 8
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   ret ptr @anon.string.0
@@ -91,7 +87,6 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, ptr %1, double %2) #1 {
-  %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %str = alloca ptr, align 8
   %d = alloca double, align 8
@@ -125,7 +120,6 @@ declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal i16 @_Z15lambda.L13C49.06Strings(ptr %0, %struct.String %1, i16 %2) #1 {
-  %result = alloca i16, align 2
   %captures = alloca ptr, align 8
   %str = alloca %struct.String, align 8
   %b = alloca i16, align 2

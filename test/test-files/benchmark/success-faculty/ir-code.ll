@@ -28,10 +28,8 @@ if.exit.L2:                                       ; preds = %1
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %input = alloca i32, align 4
   %faculty = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   store i32 10, ptr %input, align 4
   %1 = load i32, ptr %input, align 4
   %2 = call noundef i32 @_Z7facultyi(i32 noundef %1)
@@ -39,8 +37,7 @@ define dso_local noundef i32 @main() #1 {
   %3 = load i32, ptr %input, align 4
   %4 = load i32, ptr %faculty, align 4
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3, i32 noundef %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

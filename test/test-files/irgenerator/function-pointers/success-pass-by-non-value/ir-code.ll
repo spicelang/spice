@@ -8,7 +8,6 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
-  %result = alloca i32, align 4
   %_input = alloca ptr, align 8
   store ptr %0, ptr %_input, align 8
   ret i32 12
@@ -16,7 +15,6 @@ define internal noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
-  %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fctPtr, i32 0, i32 1
@@ -30,7 +28,6 @@ define internal noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 dere
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) #0 {
-  %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fctPtr, i32 0, i32 1
@@ -43,11 +40,9 @@ define internal noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %testFct = alloca { ptr, ptr, i64 }, align 8
   %testFctPtr = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   store ptr @_Z4testPKc.fatthunk, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %1, align 8
@@ -60,8 +55,7 @@ define dso_local noundef i32 @main() #1 {
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %4)
   %6 = call noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %testFct)
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

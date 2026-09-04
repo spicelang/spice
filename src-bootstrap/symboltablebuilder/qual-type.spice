@@ -124,6 +124,7 @@ public f<QualType> QualType.getFunctionReturnType() {
  * @return Function parameter types
  */
 public f<QualTypeList> QualType.getFunctionParamTypes() {
+    result = QualTypeList();
     const unsigned long count = this.rawType.getFunctionParamAndReturnTypeCount();
     for unsigned long i = 1ul; i < count; i++ {
         const IType* raw = this.rawType.getFunctionParamAndReturnTypeRaw(i);
@@ -139,6 +140,7 @@ public f<QualTypeList> QualType.getFunctionParamTypes() {
  * @return Function parameter and return types
  */
 public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
+    result = QualTypeList();
     const unsigned long count = this.rawType.getFunctionParamAndReturnTypeCount();
     for unsigned long i = 0ul; i < count; i++ {
         const IType* raw = this.rawType.getFunctionParamAndReturnTypeRaw(i);
@@ -163,6 +165,7 @@ public f<bool> QualType.hasLambdaCaptures() {
  * @return Template types
  */
 public f<QualTypeList> QualType.getTemplateTypes() {
+    result = QualTypeList();
     const unsigned long count = this.rawType.getTemplateTypeCount();
     for unsigned long i = 0ul; i < count; i++ {
         const IType* raw = this.rawType.getTemplateTypeRaw(i);

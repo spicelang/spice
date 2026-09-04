@@ -10,7 +10,6 @@ define dso_local noundef i32 @main() #0 {
   %condB = alloca i1, align 1
   %condC = alloca i1, align 1
   %condD = alloca i1, align 1
-  store i32 0, ptr %result, align 4
   store i1 true, ptr %condA, align 1
   store i1 false, ptr %condB, align 1
   store i1 true, ptr %condC, align 1

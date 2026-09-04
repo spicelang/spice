@@ -44,10 +44,8 @@ declare void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %sPtr = alloca ptr, align 8
   %s = alloca %struct.StructWithHeapFields, align 8
-  store i32 0, ptr %result, align 4
   store ptr null, ptr %sPtr, align 8
   call void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   store ptr %s, ptr %sPtr, align 8
@@ -63,8 +61,7 @@ define dso_local noundef i32 @main() #2 {
   %7 = icmp eq ptr %6, null
   %8 = zext i1 %7 to i32
   %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind

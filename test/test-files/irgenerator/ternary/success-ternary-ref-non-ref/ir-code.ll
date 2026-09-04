@@ -38,7 +38,6 @@ define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef %struct.Test @_Z3fooRK4Test(ptr noundef %0) #0 {
-  %result = alloca %struct.Test, align 8
   %t = alloca ptr, align 8
   %copy = alloca %struct.Test, align 8
   %2 = alloca %struct.Test, align 8
@@ -64,17 +63,14 @@ cond.exit.L12C12:                                 ; preds = %cond.false.L12C12, 
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %1 = alloca %struct.Test, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %t)
   %2 = call noundef %struct.Test @_Z3fooRK4Test(ptr noundef %t)
   store %struct.Test %2, ptr %1, align 1
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %1)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %t)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

@@ -102,9 +102,7 @@ land.exit.L8C15:                                  ; preds = %land.2.L8C15, %land
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #1 {
-  %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %t)
   %f1.addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %1 = load i32, ptr %f1.addr, align 4
@@ -322,8 +320,7 @@ assert.then.L49:                                  ; preds = %assert.exit.L48
 
 assert.exit.L49:                                  ; preds = %assert.exit.L48
   %56 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %57 = load i32, ptr %result, align 4
-  ret i32 %57
+  ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
