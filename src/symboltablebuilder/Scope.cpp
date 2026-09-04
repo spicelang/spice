@@ -155,6 +155,13 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
     const QualType entryType = entry.getQualType();
 
+    // When compiling a static or shared library, publicly accessible symbols form part of the library's exported
+    // API. They may legitimately go unused within the library itself, since external consumers are expected to
+    // use them, so do not report them as unused. isPublic() is only defined for the type categories checked here
+    // (see the assertion in QualType::isPublic()), so guard the call accordingly.
+    if ((entryType.isExtendedPrimitive() || entryType.is(TY_ENUM)) && entryType.isPublic() && sourceFile->isLibraryOutput())
+      continue;
+
     // Determine warning type and message by the scope type and the symbol type
     CompilerWarningType warningType = UNUSED_VARIABLE;
     std::string warningMessage;
