@@ -79,7 +79,7 @@ python build.py # Linux/macOS/Windows
 You can find the build output in the `build` subdirectory.
 
 ## Available target platforms
-Currently, Spice only offers stable support for linux/x86_64, linux/aarch64, windows/x86_64, darwin/x86_64, darwin/aarch64 and webassembly.
+Currently, Spice only offers stable support for linux/x86_64, linux/aarch64, windows/x86_64, darwin/aarch64 and webassembly.
 But you can try to compile to the following architectures without any stability promises:
 
 `aarch64`, `amdgpu`, `armv5`, `armv6`, `armv7`, `mips`, `nvptx`, `powerpc`, `riscv`, `webassembly`, `x86`, `x86_64`
