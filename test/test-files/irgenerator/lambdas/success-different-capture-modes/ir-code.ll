@@ -7,13 +7,11 @@ source_filename = "source.spice"
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
-  %result = alloca i32, align 4
   %i = alloca i32, align 4
   %j = alloca i32, align 4
   %captures = alloca { ptr, i32 }, align 8
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %lambda = alloca { ptr, ptr, i64 }, align 8
-  store i32 0, ptr %result, align 4
   store i32 123, ptr %i, align 4
   store i32 321, ptr %j, align 4
   store ptr %i, ptr %captures, align 8
@@ -33,8 +31,7 @@ define dso_local noundef i32 @main() #0 {
   call void %fct(ptr %captures1)
   %7 = load i32, ptr %i, align 4
   %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7)
-  %9 = load i32, ptr %result, align 4
-  ret i32 %9
+  ret i32 0
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

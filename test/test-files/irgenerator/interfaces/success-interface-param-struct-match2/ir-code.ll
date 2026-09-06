@@ -59,18 +59,15 @@ define internal void @_Z3fooR5ITest(ptr noundef %0) #2 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #4 {
-  %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %t1 = alloca %struct.Test, align 8
   %tRef = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %t)
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 8 dereferenceable(8) %t1, ptr %t)
   store ptr %t1, ptr %tRef, align 8
   %1 = load ptr, ptr %tRef, align 8
   call void @_Z3fooR5ITest(ptr noundef %1)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  ret i32 0
 }
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }

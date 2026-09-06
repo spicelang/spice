@@ -81,16 +81,17 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   allocaInsertBlock = bEntry;
   allocaInsertInst = nullptr;
 
-  // Allocate result variable
-  llvm::Value *resultAddress = insertAlloca(QualType(TY_INT), RETURN_VARIABLE_NAME);
-  // Update the symbol table entry
+  // Result variable
   const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
-  updateAddress(resultEntry, resultAddress);
-  // Generate debug info
-  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress);
-  // Store the default result value
-  insertStore(builder.getInt32(0), resultAddress, QualType(TY_INT));
+  if (resultEntry->isInitialized()) {
+    // Allocate result variable
+    llvm::Value *resultAddr = insertAlloca(QualType(TY_INT), RETURN_VARIABLE_NAME);
+    // Update the symbol table entry
+    updateAddress(resultEntry, resultAddr);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
+  }
 
   // Store function argument values
   for (auto &arg : fct->args()) {
@@ -116,7 +117,9 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = insertLoad(fct->getReturnType(), getAddress(resultEntry));
+    llvm::Value *result = builder.getInt32(0);
+    if (resultEntry->isInitialized())
+      result = insertLoad(fct->getReturnType(), getAddress(resultEntry));
     builder.CreateRet(result);
   }
 
@@ -225,13 +228,17 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     allocaInsertBlock = bEntry;
     allocaInsertInst = nullptr;
 
-    // Declare result variable
-    llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
+    // Result variable
     const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
-    updateAddress(resultEntry, resultAddr);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
+    if (resultEntry->isInitialized()) {
+      // Allocate result variable
+      llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
+      // Update the symbol table entry
+      updateAddress(resultEntry, resultAddr);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
+    }
 
     // Store function argument values
     for (auto &arg : func->args()) {
@@ -266,7 +273,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
-      llvm::Value *result = insertLoad(returnType, getAddress(resultEntry));
+      llvm::Value *result = getDefaultValueForSymbolType(manifestation->returnType);
+      if (resultEntry->isInitialized())
+        result = insertLoad(returnType, getAddress(resultEntry));
       builder.CreateRet(result);
     }
 
@@ -450,8 +459,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
  * @param paramSymbol Symbol table entry of the parameter
  * @return Whether the argument was bound (false if the parameter does not carry a decayed array)
  */
-bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName,
-                                        const SymbolTableEntry *paramSymbol) {
+bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName, const SymbolTableEntry *paramSymbol) {
   if (paramSymbol == nullptr || !paramSymbol->getQualType().isDecayedArray())
     return false;
 
@@ -713,7 +721,8 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   // Add noundef attribute to all parameters and, for sub-32-bit integers, the ABI-required sext/zext attribute
   for (size_t i = 0; i < paramTypes.size(); i++) {
     fct->addParamAttr(i, llvm::Attribute::NoUndef);
-    if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramTypes.at(i)); extAttrKind != llvm::Attribute::None)
+    if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramTypes.at(i));
+        extAttrKind != llvm::Attribute::None)
       fct->addParamAttr(i, extAttrKind);
   }
 

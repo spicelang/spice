@@ -47,10 +47,8 @@ define internal void @_Z7testFctR5ITest(ptr noundef %0) #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %test = alloca %struct.Test, align 8
   %itest = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %test)
   store ptr %test, ptr %itest, align 8
   %1 = load ptr, ptr %itest, align 8

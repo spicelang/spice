@@ -3,7 +3,6 @@
 #include "ScopeHandle.h"
 
 #include <CompilerPass.h>
-#include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
 

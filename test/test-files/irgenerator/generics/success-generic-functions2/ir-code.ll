@@ -125,14 +125,12 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %numberList1 = alloca [7 x i16], align 2
   %result1 = alloca i32, align 4
   %numberList2 = alloca [4 x i64], align 8
   %result2 = alloca i32, align 4
   %1 = alloca [2 x i32], align 4
   %resultList = alloca [2 x i32], align 4
-  store i32 0, ptr %result, align 4
   store [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7], ptr %numberList1, align 2
   %2 = getelementptr inbounds [7 x i16], ptr %numberList1, i64 0, i32 0
   %3 = call noundef i32 @_Z10sumNumbersIsEiPsl(ptr noundef %2, i64 noundef 7)
@@ -154,8 +152,7 @@ define dso_local noundef i32 @main() #2 {
   %12 = load i32, ptr %result1, align 4
   %13 = load i32, ptr %result2, align 4
   %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %12, i32 noundef %13)
-  %15 = load i32, ptr %result, align 4
-  ret i32 %15
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

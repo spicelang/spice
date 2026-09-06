@@ -5,10 +5,6 @@ $__tysan_v1_Simple_20Spice_20TBAA = comdat any
 
 $__tysan_v1_omnipotent_20byte = comdat any
 
-$__tysan_v1_int = comdat any
-
-$__tysan_v1_int_o_0 = comdat any
-
 $__tysan_v1_long = comdat any
 
 $__tysan_v1_long_o_0 = comdat any
@@ -24,15 +20,13 @@ $__tysan_v1_double_o_0 = comdat any
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 0, ptr @tysan.module_ctor, ptr null }]
 @__tysan_v1_Simple_20Spice_20TBAA = linkonce_odr constant { i64, i64, [18 x i8] } { i64 2, i64 0, [18 x i8] c"Simple Spice TBAA\00" }, comdat
 @__tysan_v1_omnipotent_20byte = linkonce_odr constant { i64, i64, ptr, i64, [16 x i8] } { i64 2, i64 1, ptr @__tysan_v1_Simple_20Spice_20TBAA, i64 0, [16 x i8] c"omnipotent byte\00" }, comdat
-@__tysan_v1_int = linkonce_odr constant { i64, i64, ptr, i64, [4 x i8] } { i64 2, i64 1, ptr @__tysan_v1_omnipotent_20byte, i64 0, [4 x i8] c"int\00" }, comdat
-@__tysan_v1_int_o_0 = linkonce_odr constant { i64, ptr, ptr, i64 } { i64 1, ptr @__tysan_v1_int, ptr @__tysan_v1_int, i64 0 }, comdat
 @__tysan_v1_long = linkonce_odr constant { i64, i64, ptr, i64, [5 x i8] } { i64 2, i64 1, ptr @__tysan_v1_omnipotent_20byte, i64 0, [5 x i8] c"long\00" }, comdat
 @__tysan_v1_long_o_0 = linkonce_odr constant { i64, ptr, ptr, i64 } { i64 1, ptr @__tysan_v1_long, ptr @__tysan_v1_long, i64 0 }, comdat
 @__tysan_v1_double_2a = linkonce_odr constant { i64, i64, ptr, i64, [8 x i8] } { i64 2, i64 1, ptr @__tysan_v1_omnipotent_20byte, i64 0, [8 x i8] c"double*\00" }, comdat
 @__tysan_v1_double_2a_o_0 = linkonce_odr constant { i64, ptr, ptr, i64 } { i64 1, ptr @__tysan_v1_double_2a, ptr @__tysan_v1_double_2a, i64 0 }, comdat
 @__tysan_v1_double = linkonce_odr constant { i64, i64, ptr, i64, [7 x i8] } { i64 2, i64 1, ptr @__tysan_v1_omnipotent_20byte, i64 0, [7 x i8] c"double\00" }, comdat
 @__tysan_v1_double_o_0 = linkonce_odr constant { i64, ptr, ptr, i64 } { i64 1, ptr @__tysan_v1_double, ptr @__tysan_v1_double, i64 0 }, comdat
-@llvm.used = appending global [11 x ptr] [ptr @tysan.module_ctor, ptr @__tysan_v1_Simple_20Spice_20TBAA, ptr @__tysan_v1_omnipotent_20byte, ptr @__tysan_v1_int, ptr @__tysan_v1_int_o_0, ptr @__tysan_v1_long, ptr @__tysan_v1_long_o_0, ptr @__tysan_v1_double_2a, ptr @__tysan_v1_double_2a_o_0, ptr @__tysan_v1_double, ptr @__tysan_v1_double_o_0], section "llvm.metadata"
+@llvm.used = appending global [9 x ptr] [ptr @tysan.module_ctor, ptr @__tysan_v1_Simple_20Spice_20TBAA, ptr @__tysan_v1_omnipotent_20byte, ptr @__tysan_v1_long, ptr @__tysan_v1_long_o_0, ptr @__tysan_v1_double_2a, ptr @__tysan_v1_double_2a_o_0, ptr @__tysan_v1_double, ptr @__tysan_v1_double_o_0], section "llvm.metadata"
 @__tysan_shadow_memory_address = external global i64
 @__tysan_app_memory_mask = external global i64
 
@@ -40,31 +34,24 @@ $__tysan_v1_double_o_0 = comdat any
 define dso_local noundef i32 @main() #0 !dbg !9 {
   %app.mem.mask = load i64, ptr @__tysan_app_memory_mask, align 8
   %shadow.base = load i64, ptr @__tysan_shadow_memory_address, align 8
-  %result = alloca i32, align 4, !type !15
-  call void @__tysan_instrument_mem_inst(ptr %result, ptr null, i64 4, i1 false)
-  %l = alloca i64, align 8, !type !16
+  %l = alloca i64, align 8, !type !15
   call void @__tysan_instrument_mem_inst(ptr %l, ptr null, i64 8, i1 false)
-  %ptr = alloca ptr, align 8, !dbg !17, !type !18
-    #dbg_declare(ptr %result, !19, !DIExpression(), !17)
-  call void @__tysan_instrument_mem_inst(ptr %ptr, ptr null, i64 8, i1 false), !dbg !17
-  call void @__tysan_instrument_with_shadow_update(ptr %result, ptr @__tysan_v1_int_o_0, i1 true, i64 4, i32 2), !dbg !17
-  store i32 0, ptr %result, align 4, !dbg !17, !tbaa !20
-    #dbg_declare(ptr %l, !24, !DIExpression(), !26)
-  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !26
-  store i64 100, ptr %l, align 8, !dbg !26, !tbaa !27
-    #dbg_declare(ptr %ptr, !29, !DIExpression(), !33)
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !33
-  store ptr %l, ptr %ptr, align 8, !dbg !33, !tbaa !34
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !36
-  %1 = load ptr, ptr %ptr, align 8, !dbg !36
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !36
-  %2 = load double, ptr %1, align 8, !dbg !36, !tbaa !37
-  %3 = fadd double %2, 2.000000e+00, !dbg !36
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !36
-  store double %3, ptr %1, align 8, !dbg !36
-  call void @__tysan_instrument_with_shadow_update(ptr %result, ptr null, i1 true, i64 4, i32 1), !dbg !39
-  %4 = load i32, ptr %result, align 4, !dbg !39
-  ret i32 %4, !dbg !39
+  %ptr = alloca ptr, align 8, !dbg !16, !type !17
+    #dbg_declare(ptr %l, !18, !DIExpression(), !16)
+  call void @__tysan_instrument_mem_inst(ptr %ptr, ptr null, i64 8, i1 false), !dbg !16
+  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !16
+  store i64 100, ptr %l, align 8, !dbg !16, !tbaa !20
+    #dbg_declare(ptr %ptr, !24, !DIExpression(), !28)
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !28
+  store ptr %l, ptr %ptr, align 8, !dbg !28, !tbaa !29
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !31
+  %1 = load ptr, ptr %ptr, align 8, !dbg !31
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !31
+  %2 = load double, ptr %1, align 8, !dbg !31, !tbaa !32
+  %3 = fadd double %2, 2.000000e+00, !dbg !31
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !31
+  store double %3, ptr %1, align 8, !dbg !31
+  ret i32 0, !dbg !34
 }
 
 declare void @__tysan_init()
@@ -110,28 +97,23 @@ attributes #2 = { nounwind }
 !12 = !{!13}
 !13 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !14 = !{}
-!15 = !{i64 -5436590890822487957, !"int"}
-!16 = !{i64 6042226155786013045, !"long"}
-!17 = !DILocation(line: 3, column: 1, scope: !9)
-!18 = !{i64 7516313782037075379, !"double*"}
-!19 = !DILocalVariable(name: "result", scope: !9, file: !10, line: 3, type: !13)
+!15 = !{i64 6042226155786013045, !"long"}
+!16 = !DILocation(line: 4, column: 14, scope: !9)
+!17 = !{i64 7516313782037075379, !"double*"}
+!18 = !DILocalVariable(name: "l", scope: !9, file: !10, line: 4, type: !19)
+!19 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
 !20 = !{!21, !21, i64 0}
-!21 = !{!"int", !22, i64 0}
+!21 = !{!"long", !22, i64 0}
 !22 = !{!"omnipotent byte", !23, i64 0}
 !23 = !{!"Simple Spice TBAA"}
-!24 = !DILocalVariable(name: "l", scope: !9, file: !10, line: 4, type: !25)
-!25 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!26 = !DILocation(line: 4, column: 14, scope: !9)
-!27 = !{!28, !28, i64 0}
-!28 = !{!"long", !22, i64 0}
-!29 = !DILocalVariable(name: "ptr", scope: !30, file: !10, line: 6, type: !31)
-!30 = distinct !DILexicalBlock(scope: !9, file: !10, line: 5, column: 5)
-!31 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !32, size: 64)
-!32 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
-!33 = !DILocation(line: 6, column: 37, scope: !30)
-!34 = !{!35, !35, i64 0}
-!35 = !{!"double*", !22, i64 0}
-!36 = !DILocation(line: 7, column: 9, scope: !30)
-!37 = !{!38, !38, i64 0}
-!38 = !{!"double", !22, i64 0}
-!39 = !DILocation(line: 9, column: 1, scope: !9)
+!24 = !DILocalVariable(name: "ptr", scope: !25, file: !10, line: 6, type: !26)
+!25 = distinct !DILexicalBlock(scope: !9, file: !10, line: 5, column: 5)
+!26 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
+!27 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
+!28 = !DILocation(line: 6, column: 37, scope: !25)
+!29 = !{!30, !30, i64 0}
+!30 = !{!"double*", !22, i64 0}
+!31 = !DILocation(line: 7, column: 9, scope: !25)
+!32 = !{!33, !33, i64 0}
+!33 = !{!"double", !22, i64 0}
+!34 = !DILocation(line: 9, column: 1, scope: !9)

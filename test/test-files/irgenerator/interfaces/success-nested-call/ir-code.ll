@@ -41,11 +41,9 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %innerTest = alloca %struct.InnerTest, align 8
   %test = alloca %struct.Test, align 8
   %test2 = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   call void @_ZN9InnerTest4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %innerTest)
   store ptr %innerTest, ptr %test, align 8
   store ptr %innerTest, ptr %test2, align 8
@@ -59,8 +57,7 @@ define dso_local noundef i32 @main() #2 {
   %vfct.addr2 = getelementptr inbounds ptr, ptr %vtable.addr1, i64 0
   %fct3 = load ptr, ptr %vfct.addr2, align 8
   call void %fct3(ptr noundef nonnull align 8 dereferenceable(8) %2)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

@@ -40,15 +40,12 @@ define internal void @_Z4testRK6String(ptr noundef %0) #0 {
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %1 = alloca %struct.String, align 8
-  store i32 0, ptr %result, align 4
   call void @_Z4testv()
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.1)
   call void @_Z4testRK6String(ptr noundef %1)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }

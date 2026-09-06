@@ -43,11 +43,9 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %result = alloca i32, align 4
   %intArray = alloca [4 x i32], align 4
   %1 = alloca ptr, align 8
   %2 = alloca ptr, align 8
-  store i32 0, ptr %result, align 4
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
   %3 = getelementptr inbounds [4 x i32], ptr %intArray, i64 0, i32 1
   %4 = load i32, ptr %3, align 4
@@ -55,8 +53,7 @@ define dso_local noundef i32 @main() #2 {
   store ptr %intArray, ptr %1, align 8
   store ptr %1, ptr %2, align 8
   call void @_Z8testProcPPPA4_i(ptr noundef align 8 dereferenceable(8) %2)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }
