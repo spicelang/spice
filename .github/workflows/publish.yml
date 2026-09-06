@@ -21,13 +21,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
       - name: Setup Dependencies
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -108,13 +101,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
       - name: Setup Dependencies
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -194,12 +180,6 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
       - name: Setup Dependencies
         run: |
           choco install ninja -y
@@ -267,13 +247,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
-
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -358,7 +331,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: false
 
       - name: Docker login GHCR
@@ -396,7 +369,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
-          version: v2.17.1
+          version: v2.18.1
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

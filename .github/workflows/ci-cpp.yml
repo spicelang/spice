@@ -23,13 +23,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
       - name: Setup Dependencies
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -120,13 +113,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
-
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
 
       - name: Setup Dependencies
         run: |
@@ -219,13 +205,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
-
       - name: Install Dependencies
         run: |
           choco install graphviz ccache ninja -y
@@ -316,13 +295,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
-
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: 25
-          java-package: jre
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
