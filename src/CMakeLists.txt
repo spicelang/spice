@@ -68,6 +68,7 @@ set(SOURCES
         typechecker/FunctionManager.cpp
         typechecker/StructManager.cpp
         typechecker/InterfaceManager.cpp
+        typechecker/UnionManager.cpp
         typechecker/TypeMatcher.cpp
         typechecker/PostTypeCheckingVerifier.cpp
         # Linter
@@ -108,6 +109,7 @@ set(SOURCES
         model/StructBase.cpp
         model/Struct.cpp
         model/Interface.cpp
+        model/Union.cpp
         model/GenericType.cpp
         # Exception handling
         exception/ErrorManager.cpp

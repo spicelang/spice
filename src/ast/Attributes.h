@@ -85,7 +85,8 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     {
         ATTR_CORE_COMPILER_FIXED_TYPE_ID,
         {
-            .target = AttrNode::AttrTarget::TARGET_STRUCT | AttrNode::AttrTarget::TARGET_INTERFACE,
+            .target = AttrNode::AttrTarget::TARGET_STRUCT | AttrNode::AttrTarget::TARGET_INTERFACE |
+                      AttrNode::AttrTarget::TARGET_UNION,
             .type = AttrNode::AttrType::TYPE_INT,
         },
     },

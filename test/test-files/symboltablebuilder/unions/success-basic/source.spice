@@ -1,0 +1,6 @@
+type TestUnion union {
+    long a
+    double b
+}
+
+f<int> main() {}

@@ -1,0 +1,14 @@
+type WithCtor struct {
+    int x
+}
+
+public p WithCtor.ctor() {
+    this.x = 5;
+}
+
+type TestUnion union {
+    int a
+    WithCtor b
+}
+
+f<int> main() {}

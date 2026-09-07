@@ -50,6 +50,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
     return "Unused struct";
   case UNUSED_INTERFACE:
     return "Unused interface";
+  case UNUSED_UNION:
+    return "Unused union";
   case UNUSED_IMPORT:
     return "Unused import";
   case UNUSED_FIELD:

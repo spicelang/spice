@@ -22,6 +22,7 @@ public:
   void checkProcDef(ProcDefNode *node, std::vector<LintFinding> &findings) override;
   void checkStructDef(StructDefNode *node, std::vector<LintFinding> &findings) override;
   void checkInterfaceDef(InterfaceDefNode *node, std::vector<LintFinding> &findings) override;
+  void checkUnionDef(UnionDefNode *node, std::vector<LintFinding> &findings) override;
   void checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) override;
 };
 

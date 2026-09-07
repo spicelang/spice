@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 
 #include <llvm/IR/Module.h>
 
@@ -761,16 +762,88 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS: {
-    // Get the address of the struct instance
+    // Get the address of the struct/union instance
     resolveAddress(lhs);
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Auto de-reference pointer
     autoDeReferencePtr(lhs.ptr, lhsSTy);
+
+    const std::string &fieldName = node->identifier;
+
+    // Union field access is handled separately, since it is backed by a tagged { i32 tag, ..., payload } layout
+    // instead of one LLVM struct member per Spice field (see Type::toLLVMType's TY_UNION branch), and needs a
+    // runtime tag read-guard/write-update around the payload access.
+    if (lhsSTy.is(TY_UNION)) {
+      Scope *unionScope = lhsSTy.getBodyScope();
+      SymbolTableEntry *fieldEntry = unionScope->symbolTable.lookupStrict(fieldName);
+      assert(fieldEntry != nullptr);
+      const QualType fieldSymbolType = fieldEntry->getQualType();
+      // Tag 0 is reserved for the "unset" state, so a field's tag is its order index shifted up by one. This makes
+      // an all-zero union (e.g. from .bss, a generic memset, or a nested aggregate's zero default) correctly unset
+      // rather than aliasing field 0, so the tag-mismatch guard below also catches accidental zero-initialization.
+      const auto fieldTagIndex = static_cast<uint32_t>(fieldEntry->orderIndex) + 1;
+
+      llvm::Type *unionLLVMTy = lhsSTy.toLLVMType(sourceFile);
+      llvm::Value *unionBasePtr = lhs.ptr;
+      llvm::Value *tagAddr = insertStructGEP(unionLLVMTy, unionBasePtr, 0, "tag.addr");
+
+      // A plain `u.field = value` assignment is the only access that should update the tag instead of checking it:
+      // it is the sole case where this exact node is the direct, unwrapped left-hand side of a plain '=' assignment.
+      // Every other use (reads, compound-assign's read-then-store-back, address-of, pass-by-ref, or descending
+      // further into a by-value struct/union field) must first prove the field is currently active.
+      const auto *assignParent = dynamic_cast<const AssignExprNode *>(node->parent);
+      const bool isDirectAssignTarget =
+          assignParent != nullptr && assignParent->lhs == node && assignParent->op == AssignExprNode::AssignOp::OP_ASSIGN;
+
+      if (isDirectAssignTarget) {
+        insertStore(builder.getInt32(fieldTagIndex), tagAddr);
+      } else {
+        // Guard the read with a runtime tag check. This is an always-on safety check (unlike e.g. the assert
+        // statement, which is skipped in release builds), since it protects a core invariant of the union type
+        // itself, not an optional user-level debug assertion.
+        llvm::Value *tagValue = insertLoad(builder.getInt32Ty(), tagAddr);
+        llvm::Value *tagMatches = builder.CreateICmpEQ(tagValue, builder.getInt32(fieldTagIndex));
+
+        const std::string &codeLine = node->codeLoc.toPrettyLine();
+        llvm::BasicBlock *bOk = createBlock("union.tag.ok." + codeLine);
+        llvm::BasicBlock *bPanic = createBlock("union.tag.panic." + codeLine);
+        insertCondJump(tagMatches, bOk, bPanic, Likelihood::LIKELY);
+
+        switchToBlock(bPanic);
+        llvm::Value *stdErrValue = getStdErrValue();
+        const std::string errorMsg = "Program panicked at " + node->codeLoc.toPrettyString() +
+                                      ": active field mismatch on union field access '" + fieldName + "'\n";
+        llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+        if (cliOptions.comparableOutput)
+          globalString->setAlignment(llvm::Align(4));
+        builder.CreateCall(stdFunctionManager.getFPrintfFct(), {stdErrValue, globalString});
+        builder.CreateCall(stdFunctionManager.getExitFct(), builder.getInt32(EXIT_FAILURE));
+        builder.CreateUnreachable();
+
+        switchToBlock(bOk);
+      }
+
+      // Get address of the payload (index 2: { tag, alignPad, payload })
+      llvm::Value *memberAddr = insertStructGEP(unionLLVMTy, unionBasePtr, 2, fieldName + ".addr");
+
+      // Set as ptr or refPtr, depending on the type
+      if (fieldSymbolType.isRef()) {
+        lhs.ptr = nullptr;
+        lhs.refPtr = memberAddr;
+      } else {
+        lhs.ptr = memberAddr;
+        lhs.refPtr = nullptr;
+      }
+
+      lhs.entry = fieldEntry;
+      lhs.value = nullptr;
+      break;
+    }
+
     assert(lhsSTy.is(TY_STRUCT));
 
     // Retrieve struct scope
-    const std::string &fieldName = node->identifier;
     Scope *structScope = lhsSTy.getBodyScope();
 
     // Retrieve field entry

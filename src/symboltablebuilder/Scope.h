@@ -10,6 +10,7 @@
 #include <model/Function.h>
 #include <model/Interface.h>
 #include <model/Struct.h>
+#include <model/Union.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/GlobalDefinitions.h>
 
@@ -31,6 +32,8 @@ using StructManifestationList = std::map</*mangledName=*/std::string, Struct>;
 using StructRegistry = std::map</*structId=*/std::string, /*manifestationList=*/StructManifestationList>;
 using InterfaceManifestationList = std::map</*mangledName=*/std::string, Interface>;
 using InterfaceRegistry = std::map<CodeLoc, InterfaceManifestationList>;
+using UnionManifestationList = std::map</*mangledName=*/std::string, Union>;
+using UnionRegistry = std::map</*unionId=*/std::string, /*manifestationList=*/UnionManifestationList>;
 
 enum class ScopeType : uint8_t {
   GLOBAL,
@@ -38,6 +41,7 @@ enum class ScopeType : uint8_t {
   LAMBDA_BODY,
   STRUCT,
   INTERFACE,
+  UNION,
   ENUM,
   IF_ELSE_BODY,
   WHILE_BODY,
@@ -76,6 +80,7 @@ public:
   friend class FunctionManager;
   friend class StructManager;
   friend class InterfaceManager;
+  friend class UnionManager;
 
   // Public methods
   // Scope management
@@ -96,6 +101,7 @@ public:
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] std::vector<const Function *> getVirtualMethods();
   [[nodiscard]] std::vector<Struct *> getAllStructManifestationsInDeclarationOrder();
+  [[nodiscard]] std::vector<Union *> getAllUnionManifestationsInDeclarationOrder();
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] bool isInCaseBranch() const;
@@ -112,7 +118,7 @@ public:
   ALWAYS_INLINE SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
   ALWAYS_INLINE SymbolTableEntry *lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }
   ALWAYS_INLINE SymbolTableEntry *lookupField(unsigned int n) {
-    assert(type == ScopeType::STRUCT);
+    assert(type == ScopeType::STRUCT || type == ScopeType::UNION);
     return symbolTable.lookupStrictByIndex(n);
   }
 
@@ -132,6 +138,7 @@ private:
   FunctionRegistry functions;
   StructRegistry structs;
   InterfaceRegistry interfaces;
+  UnionRegistry unions;
   std::map<std::string, GenericType> genericTypes;
 };
 

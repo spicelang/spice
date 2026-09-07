@@ -10,7 +10,7 @@ namespace spice::compiler {
 Capture::Capture(SymbolTableEntry *entry) : capturedSymbol(entry) {
   // Set the capture mode depending on the symbol type
   // All types with guaranteed size <= 64 bit are captured by value, all others by reference.
-  captureMode = entry->getQualType().isOneOf({TY_STRUCT, TY_INTERFACE}) ? BY_REFERENCE : BY_VALUE;
+  captureMode = entry->getQualType().isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION}) ? BY_REFERENCE : BY_VALUE;
 }
 
 /**

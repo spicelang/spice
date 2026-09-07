@@ -1,0 +1,13 @@
+type T dyn;
+
+type Box<T> union {
+    T value
+    int fallback
+}
+
+f<int> main() {
+    Box<int> box;
+    box.value = 5;
+    printf("%d\n", box.value);
+    return 0;
+}

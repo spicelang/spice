@@ -44,6 +44,7 @@ size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler
     break;
   case TY_STRUCT:
   case TY_INTERFACE:
+  case TY_UNION:
   case TY_ENUM:
     // Stable hash based on pointer identity, but randomized for safety
     hashCombine64(hash, hashPointer(tce.data.bodyScope));

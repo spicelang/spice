@@ -1,7 +1,12 @@
-import "bootstrap/model/interface";
+type Data union {
+    int f1
+    int* f2
+}
 
 // Wrapper for 'spice test' unit test
 f<int> main() {
-    testInterfaceSmoke();
-    printf("All assertions passed!\n");
+    Data data;
+    data.f1 = 123;
+    data.f2 = &123;
+    printf("%p", data.f2);
 }

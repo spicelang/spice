@@ -45,6 +45,12 @@ std::any LintPass::visitInterfaceDef(InterfaceDefNode *node) {
   return visitChildren(node);
 }
 
+std::any LintPass::visitUnionDef(UnionDefNode *node) {
+  for (const std::unique_ptr<LintRule> &rule : rules)
+    rule->checkUnionDef(node, findings);
+  return visitChildren(node);
+}
+
 std::any LintPass::visitGlobalVarDef(GlobalVarDefNode *node) {
   for (const std::unique_ptr<LintRule> &rule : rules)
     rule->checkGlobalVarDef(node, findings);

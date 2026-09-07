@@ -164,6 +164,11 @@ public:
     return nullptr;                                                              // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
+  [[nodiscard]] virtual std::vector<Union *> *getUnionManifestations() { // LCOV_EXCL_LINE
+    assert_fail("Must be called on a UnionDefNode");                    // LCOV_EXCL_LINE
+    return nullptr;                                                     // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
+
   [[nodiscard]] const StmtLstNode *getNextOuterStmtLst() const;
   [[nodiscard]] std::string getEnclosingFunctionSignature(size_t manIdx) const;
 
@@ -173,6 +178,7 @@ public:
     return "";                                                                 // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
   [[nodiscard]] virtual bool isStructDef() const { return false; }
+  [[nodiscard]] virtual bool isUnionDef() const { return false; }
   [[nodiscard]] virtual bool isParam() const { return false; }
   [[nodiscard]] virtual bool isStmtLst() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
@@ -468,6 +474,36 @@ public:
   SymbolTableEntry *entry = nullptr;
   std::vector<Interface *> interfaceManifestations;
   Scope *interfaceScope = nullptr;
+};
+
+// ========================================================== UnionDefNode =======================================================
+
+class UnionDefNode final : public TopLevelDefNode {
+public:
+  // Constructors
+  using TopLevelDefNode::TopLevelDefNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnionDef(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitUnionDef(this); }
+
+  // Other methods
+  GET_CHILDREN(attrs, qualifierLst, templateTypeLst, fields);
+  std::vector<Union *> *getUnionManifestations() override { return &unionManifestations; }
+  [[nodiscard]] bool isUnionDef() const override { return true; }
+
+  // Public members
+  TopLevelDefAttrNode *attrs = nullptr;
+  QualifierLstNode *qualifierLst = nullptr;
+  TypeLstNode *templateTypeLst = nullptr;
+  std::vector<FieldNode *> fields;
+  bool hasTemplateTypes = false;
+  TypeQualifiers qualifiers = TypeQualifiers::of(TY_UNION);
+  std::string unionName;
+  uint64_t typeId;
+  SymbolTableEntry *entry = nullptr;
+  std::vector<Union *> unionManifestations;
+  Scope *unionScope = nullptr;
 };
 
 // ========================================================== EnumDefNode ========================================================
@@ -1283,6 +1319,7 @@ public:
     TARGET_FCT_PROC = 1 << 3,
     TARGET_EXT_DECL = 1 << 4,
     TARGET_LAMBDA = 1 << 5,
+    TARGET_UNION = 1 << 6,
   };
 
   enum class AttrType : uint8_t {

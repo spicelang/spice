@@ -589,6 +589,41 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Check if lhs is enum or strobj
     const QualType lhsBaseTy = operandType.autoDeReference();
+
+    // Union field access is handled separately: a union field is always a direct, non-composed lookup by name
+    // (unlike struct fields, union fields never nest/compose), and reading/writing it requires a runtime tag
+    // check/update in the IR generator, which relies on the field entry resolved here.
+    if (lhsBaseTy.is(TY_UNION)) {
+      const std::string &unionName = lhsBaseTy.getSubType();
+      Scope *unionScope = lhsBaseTy.getBodyScope();
+
+      // If we only have the generic union scope, lookup the concrete manifestation scope
+      if (unionScope->isGenericScope) {
+        const Union *spiceUnion = lhsBaseTy.getUnion(node);
+        assert(spiceUnion != nullptr);
+        unionScope = spiceUnion->scope;
+      }
+      assert(!unionScope->isGenericScope); // At this point we always expect a substantiation scope
+
+      // Get accessed field
+      SymbolTableEntry *memberEntry = unionScope->symbolTable.lookupStrict(fieldName);
+      if (!memberEntry)
+        SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in union " + unionName)
+      const QualType memberType = memberEntry->getQualType();
+
+      // Check for insufficient visibility
+      if (unionScope->isImportedBy(rootScope) && !memberEntry->getQualType().getBase().isPublic())
+        SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility")
+
+      // Set field to used
+      memberEntry->used = true;
+
+      // Overwrite type and entry of left side with member type and entry
+      operandType = memberType;
+      operandEntry = memberEntry;
+      break;
+    }
+
     if (!lhsBaseTy.is(TY_STRUCT))
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + operandType.getName(false))
 

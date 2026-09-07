@@ -31,6 +31,8 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
       entryNode->topLevelDefs.push_back(std::any_cast<StructDefNode *>(visit(structDefCtx)));
     else if (auto *interfaceDefCtx = dynamic_cast<SpiceParser::InterfaceDefContext *>(child))
       entryNode->topLevelDefs.push_back(std::any_cast<InterfaceDefNode *>(visit(interfaceDefCtx)));
+    else if (auto *unionDefCtx = dynamic_cast<SpiceParser::UnionDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<UnionDefNode *>(visit(unionDefCtx)));
     else if (auto *enumDefCtx = dynamic_cast<SpiceParser::EnumDefContext *>(child))
       entryNode->topLevelDefs.push_back(std::any_cast<EnumDefNode *>(visit(enumDefCtx)));
     else if (auto *genericTypeDefCtx = dynamic_cast<SpiceParser::GenericTypeDefContext *>(child))
@@ -214,6 +216,37 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     interfaceDefNode->signatures.push_back(std::any_cast<SignatureNode *>(visit(signature)));
 
   return concludeNode(interfaceDefNode);
+}
+
+std::any ASTBuilder::visitUnionDef(SpiceParser::UnionDefContext *ctx) {
+  const auto unionDefNode = createNode<UnionDefNode>(ctx);
+
+  // Enrich
+  unionDefNode->unionName = getIdentifier(ctx->TYPE_IDENTIFIER(), true);
+  unionDefNode->typeId = resourceManager.getNextCustomTypeId();
+
+  // Visit children
+  if (ctx->topLevelDefAttr()) {
+    unionDefNode->attrs = std::any_cast<TopLevelDefAttrNode *>(visit(ctx->topLevelDefAttr()));
+
+    // Tell the attributes that they are union attributes
+    for (AttrNode *attr : unionDefNode->attrs->attrLst->attributes)
+      attr->target = AttrNode::TARGET_UNION;
+
+    // Check if a custom type id was set
+    if (unionDefNode->attrs && unionDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+      unionDefNode->typeId = unionDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+  }
+  if (ctx->qualifierLst())
+    unionDefNode->qualifierLst = std::any_cast<QualifierLstNode *>(visit(ctx->qualifierLst()));
+  if (ctx->LESS()) {
+    unionDefNode->hasTemplateTypes = true;
+    unionDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  for (SpiceParser::FieldContext *field : ctx->field())
+    unionDefNode->fields.push_back(std::any_cast<FieldNode *>(visit(field)));
+
+  return concludeNode(unionDefNode);
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {

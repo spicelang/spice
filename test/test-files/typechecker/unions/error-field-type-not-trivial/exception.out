@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:11:5:
+Union field type not trivial: The type of the union field 'b' is not trivial. Only trivial types are allowed as union fields
+
+11  WithCtor b
+    ^^^^^^^^^^

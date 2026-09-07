@@ -14,6 +14,7 @@ class FctDefNode;
 class ProcDefNode;
 class StructDefNode;
 class InterfaceDefNode;
+class UnionDefNode;
 class GlobalVarDefNode;
 
 /**
@@ -36,6 +37,7 @@ public:
   virtual void checkProcDef(ProcDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkStructDef(StructDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkInterfaceDef(InterfaceDefNode *node, std::vector<LintFinding> &findings) {}
+  virtual void checkUnionDef(UnionDefNode *node, std::vector<LintFinding> &findings) {}
   virtual void checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) {}
 };
 

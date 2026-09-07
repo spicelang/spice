@@ -70,6 +70,7 @@ nav = [
     "language/references.md",
     "language/enums.md",
     "language/structs.md",
+    "language/unions.md",
     "language/methods.md",
     "language/constructors-destructors.md",
     "language/interfaces.md",

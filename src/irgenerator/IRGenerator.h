@@ -70,6 +70,7 @@ public:
   std::any visitProcDef(const ProcDefNode *node) override;
   std::any visitStructDef(const StructDefNode *node) override;
   std::any visitInterfaceDef(const InterfaceDefNode *node) override;
+  std::any visitUnionDef(const UnionDefNode *node) override;
   std::any visitEnumDef(const EnumDefNode *node) override;
   std::any visitGenericTypeDef(const GenericTypeDefNode *node) override;
   std::any visitAliasDef(const AliasDefNode *node) override;
@@ -171,6 +172,7 @@ private:
   // Private methods
   [[nodiscard]] llvm::Value *getStdErrValue() const;
   llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const;
+  llvm::Constant *packConstantAsByteArray(llvm::Constant *value, llvm::ArrayType *byteArrayType) const;
   llvm::BasicBlock *createBlock(const std::string &blockName = "") const;
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void terminateBlock(const StmtLstNode *stmtLstNode);

@@ -215,6 +215,49 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   return exprResult.ptr;
 }
 
+/**
+ * Pack a scalar compile-time constant (integer, float, or a null pointer/aggregate) into a raw byte-array constant of
+ * the given type, using the target's endianness. This is used to embed a union's default field value into its
+ * byte-buffer payload without needing a bitcast between unrelated LLVM types (which is not something opaque-pointer-
+ * era LLVM supports between arbitrary aggregate/scalar types).
+ *
+ * Non-null pointer-shaped constants (e.g. a string literal's global address) cannot be represented this way, since
+ * their real value is only known at link/load time (a relocation) and a plain byte array cannot carry one.
+ *
+ * @param value Compile-time constant to pack
+ * @param byteArrayType Target byte-array type (element type i8)
+ * @return Packed byte-array constant
+ */
+llvm::Constant *IRGenerator::packConstantAsByteArray(llvm::Constant *value, llvm::ArrayType *byteArrayType) const {
+  assert(byteArrayType->getElementType()->isIntegerTy(8));
+  const uint64_t numBytes = byteArrayType->getNumElements();
+
+  // A null/zero constant (e.g. a null pointer, or a zero-initialized aggregate) packs trivially as all-zero bytes.
+  if (value->isNullValue())
+    return llvm::Constant::getNullValue(byteArrayType);
+
+  llvm::APInt bits;
+  if (const auto *constantInt = llvm::dyn_cast<llvm::ConstantInt>(value)) {
+    bits = constantInt->getValue();
+  } else if (const auto *constantFP = llvm::dyn_cast<llvm::ConstantFP>(value)) {
+    bits = constantFP->getValueAPF().bitcastToAPInt();
+  } else {
+    // See the function comment: this is a rare case in practice (most union field defaults are numeric), so it is
+    // deliberately unsupported for now rather than silently producing a wrong default value.
+    throw CompilerError(INTERNAL_ERROR, "Unsupported default value for a union field of this type"); // GCOV_EXCL_LINE
+  }
+  bits = bits.zext(numBytes * 8);
+
+  const bool isLittleEndian = module->getDataLayout().isLittleEndian();
+  std::vector<uint8_t> bytes(numBytes);
+  for (uint64_t i = 0; i < numBytes; i++) {
+    const uint64_t byteIndex = isLittleEndian ? i : numBytes - 1 - i;
+    bytes[byteIndex] = static_cast<uint8_t>(bits.extractBits(8, i * 8).getZExtValue());
+  }
+
+  return llvm::ConstantDataArray::get(context, bytes);
+}
+
 llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbolType) { // NOLINT(misc-no-recursion)
   // Double
   if (symbolType.is(TY_DOUBLE))
@@ -305,6 +348,43 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
     const auto structType = llvm::cast<llvm::StructType>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, fieldConstants);
+  }
+
+  // Union
+  if (symbolType.is(TY_UNION)) {
+    Scope *unionScope = symbolType.getBodyScope();
+    assert(unionScope != nullptr);
+    const size_t fieldCount = unionScope->getFieldCount();
+
+    // Find the (at most one) field with a default value. Tag 0 is reserved for the "unset" state (see the matching
+    // comment in IRGenerator::visitPostfixUnaryExpr's TY_UNION branch), so a field's tag is its index shifted by one.
+    uint32_t defaultFieldTag = 0; // Sentinel: no field is active ("unset" state)
+    llvm::Constant *defaultFieldValue = nullptr;
+    for (size_t i = 0; i < fieldCount; i++) {
+      const SymbolTableEntry *fieldEntry = unionScope->lookupField(i);
+      assert(fieldEntry != nullptr && fieldEntry->isField());
+      const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode);
+      if (fieldNode && fieldNode->defaultValue) {
+        defaultFieldTag = static_cast<uint32_t>(i) + 1;
+        defaultFieldValue = getConst(fieldNode->defaultValue->getCompileTimeValue(manIdx), fieldEntry->getQualType(), fieldNode);
+        break;
+      }
+    }
+
+    const auto unionType = llvm::cast<llvm::StructType>(symbolType.toLLVMType(sourceFile));
+
+    // With no default field, tag 0 and an all-zero payload is exactly the "unset" state, so the whole constant
+    // collapses to a plain zero value. This also makes such a union eligible for zero-initialized (.bss) storage
+    // when used as a global, rather than requiring an explicit non-zero initializer.
+    if (!defaultFieldValue)
+      return llvm::Constant::getNullValue(unionType);
+
+    llvm::Constant *tagConstant = builder.getInt32(defaultFieldTag);
+    llvm::Constant *alignPadConstant = llvm::Constant::getNullValue(unionType->getElementType(1));
+    auto *payloadType = llvm::cast<llvm::ArrayType>(unionType->getElementType(2));
+    llvm::Constant *payloadConstant = packConstantAsByteArray(defaultFieldValue, payloadType);
+
+    return llvm::ConstantStruct::get(unionType, {tagConstant, alignPadConstant, payloadConstant});
   }
 
   // Interface

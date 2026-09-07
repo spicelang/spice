@@ -41,6 +41,13 @@ std::any TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitUnionDef(UnionDefNode *node) {
+  if (typeCheckerMode == TC_MODE_PRE)
+    return visitUnionDefPrepare(node);
+  else
+    return visitUnionDefCheck(node);
+}
+
 /**
  * Assign the opaque type to a struct, interface, enum or alias that is referenced before it has been prepared. This
  * effectively acts as an implicit forward declaration and is what makes circular imports work: two types in mutually
@@ -67,6 +74,12 @@ void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
     const TypeChainElementData data = {.bodyScope = interfaceDef->interfaceScope};
     const Type *type = TypeRegistry::getOrInsert(TY_INTERFACE, interfaceDef->interfaceName, interfaceDef->typeId, data, {});
     entry->updateType(QualType(type, interfaceDef->qualifiers), false);
+  } else if (const auto *unionDef = dynamic_cast<UnionDefNode *>(declNode)) {
+    if (unionDef->hasTemplateTypes)
+      return;
+    const TypeChainElementData data = {.bodyScope = unionDef->unionScope};
+    const Type *type = TypeRegistry::getOrInsert(TY_UNION, unionDef->unionName, unionDef->typeId, data, {});
+    entry->updateType(QualType(type, unionDef->qualifiers), false);
   } else if (const auto *enumDef = dynamic_cast<EnumDefNode *>(declNode)) {
     const TypeChainElementData data = {.bodyScope = enumDef->enumScope};
     const Type *type = TypeRegistry::getOrInsert(TY_ENUM, enumDef->enumName, enumDef->typeId, data, {});

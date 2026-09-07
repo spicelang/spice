@@ -40,6 +40,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Referenced undefined struct";
   case REFERENCED_UNDEFINED_INTERFACE:
     return "Referenced undefined interface";
+  case REFERENCED_UNDEFINED_UNION:
+    return "Referenced undefined union";
   case REFERENCED_UNDEFINED_FIELD:
     return "Referenced undefined struct field";
   case USED_BEFORE_DECLARED:
@@ -254,6 +256,16 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Error propagation operator used in invalid context";
   case DISCARDED_RESULT_VALUE:
     return "Discarded Result value";
+  case UNION_AMBIGUITY:
+    return "Union ambiguity";
+  case UNION_INFINITE_SIZE:
+    return "Union with infinite size detected";
+  case UNION_FIELD_TYPE_NOT_TRIVIAL:
+    return "Union field type not trivial";
+  case UNION_FIELD_MUST_NOT_BE_REFERENCE:
+    return "Union field must not be a reference";
+  case DUPLICATE_UNION_DEFAULT_VALUE:
+    return "Duplicate default value in union";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

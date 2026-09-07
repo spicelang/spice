@@ -10,12 +10,14 @@
 #include <global/TypeRegistry.h>
 #include <model/GenericType.h>
 #include <model/Interface.h>
+#include <model/Union.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/StructManager.h>
+#include <typechecker/UnionManager.h>
 
 namespace spice::compiler {
 
@@ -318,32 +320,48 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 }
 
 /**
- * Determine whether a field type (transitively) contains a struct with the given origin body scope by value, which would
- * give the origin struct an infinite size. Only by-value struct fields are followed; pointers and references break the
- * cycle and have a fixed size. Struct types that are not manifested yet (e.g. still being prepared as part of a circular
- * import) end a branch - such a cycle is still detected once the last struct in it is prepared, when all the others are
- * manifested.
+ * Determine whether a field type (transitively) contains a struct or union with the given origin body scope by value,
+ * which would give the origin struct/union an infinite size. Only by-value struct/union fields are followed, including
+ * through fixed-size arrays thereof (e.g. `T[3]`), since those embed their element by value as well. Dynamic arrays,
+ * pointers and references break the cycle and have a fixed size. Struct/union types that are not manifested yet (e.g.
+ * still being prepared as part of a circular import) end a branch - such a cycle is still detected once the last one
+ * in it is prepared, when all the others are manifested.
  *
  * @param fieldType Type of the field to inspect
- * @param originScope Body scope of the struct whose infinite size we are checking for
- * @param node Accessing AST node (for struct lookup diagnostics)
- * @param visited Set of already-visited struct scopes, to keep the walk finite
- * @return true if the origin struct is reachable by value, i.e. it has infinite size
+ * @param originScope Body scope of the struct/union whose infinite size we are checking for
+ * @param node Accessing AST node (for struct/union lookup diagnostics)
+ * @param visited Set of already-visited struct/union scopes, to keep the walk finite
+ * @return true if the origin struct/union is reachable by value, i.e. it has infinite size
  */
-static bool fieldContainsStructByValue(const QualType &fieldType, const Scope *originScope, const ASTNode *node,
-                                       std::unordered_set<const Scope *> &visited) {
-  if (!fieldType.is(TY_STRUCT))
+static bool fieldContainsAggregateByValue(const QualType &fieldType, const Scope *originScope, const ASTNode *node,
+                                          std::unordered_set<const Scope *> &visited) {
+  // Unwrap fixed-size arrays, so that e.g. a `T[3]` field is treated like a `T` field for cycle detection. Dynamic
+  // arrays, pointers and references keep breaking the cycle, since they do not embed the element by value.
+  if (fieldType.isArray() && fieldType.getArraySize() > 0)
+    return fieldContainsAggregateByValue(fieldType.getContained(), originScope, node, visited);
+  if (!fieldType.isOneOf({TY_STRUCT, TY_UNION}))
     return false;
   const Scope *fieldScope = fieldType.getBodyScope();
   if (fieldScope == originScope)
     return true;
   if (fieldScope == nullptr || !visited.insert(fieldScope).second)
     return false;
-  const Struct *spiceStruct = fieldType.getStruct(node);
-  if (spiceStruct == nullptr)
-    return false; // Not manifested yet; the cycle is caught once the last struct in it is prepared
-  return std::ranges::any_of(spiceStruct->fieldTypes, [&](const QualType &memberType) {
-    return fieldContainsStructByValue(memberType, originScope, node, visited);
+
+  QualTypeList memberTypes;
+  if (fieldType.is(TY_STRUCT)) {
+    const Struct *spiceStruct = fieldType.getStruct(node);
+    if (spiceStruct == nullptr)
+      return false; // Not manifested yet; the cycle is caught once the last aggregate in it is prepared
+    memberTypes = spiceStruct->fieldTypes;
+  } else {
+    const Union *spiceUnion = fieldType.getUnion(node);
+    if (spiceUnion == nullptr)
+      return false; // Not manifested yet; the cycle is caught once the last aggregate in it is prepared
+    memberTypes = spiceUnion->fieldTypes;
+  }
+
+  return std::ranges::any_of(memberTypes, [&](const QualType &memberType) {
+    return fieldContainsAggregateByValue(memberType, originScope, node, visited);
   });
 }
 
@@ -427,7 +445,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Check for struct with infinite size. This happens if a struct (transitively, through by-value struct fields)
     // contains itself - either directly (struct A has a field of type A) or through a cycle of structs in mutually
     // importing files (A has a field of type B and B has a field of type A).
-    if (fieldContainsStructByValue(fieldType, node->structScope, field, visitedScopes))
+    if (fieldContainsAggregateByValue(fieldType, node->structScope, field, visitedScopes))
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types
@@ -546,6 +564,109 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
   if (!sourceFile->isRttiRT())
     sourceFile->requestRuntimeModule(RTTI_RT);
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitUnionDefPrepare(UnionDefNode *node) {
+  QualTypeList usedTemplateTypes;
+  std::vector<GenericType> templateTypesGeneric;
+
+  // Retrieve union template types
+  if (node->hasTemplateTypes) {
+    usedTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    templateTypesGeneric.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
+      // Visit template type
+      auto templateType = std::any_cast<QualType>(visit(dataType));
+      if (templateType.is(TY_UNRESOLVED))
+        continue;
+      // Check if it is a generic type
+      if (!templateType.is(TY_GENERIC))
+        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      // Convert generic symbol type to generic type
+      GenericType *genericType = rootScope->lookupGenericTypeStrict(templateType.getSubType());
+      assert(genericType != nullptr);
+      usedTemplateTypes.push_back(*genericType);
+      templateTypesGeneric.push_back(*genericType);
+    }
+  }
+
+  // Update type of union entry
+  assert(node->entry != nullptr);
+  const TypeChainElementData data = {.bodyScope = node->unionScope};
+  const Type *type = TypeRegistry::getOrInsert(TY_UNION, node->unionName, node->typeId, data, usedTemplateTypes);
+  // If the entry was implicitly forward-declared because it is referenced across a circular import
+  // (assignDeferredOpaqueType), the existing type was already set to the opaque union type. Overwriting it with the
+  // identical interned type is expected here.
+  const bool overwrite = node->entry->getQualType().is(TY_UNION);
+  node->entry->updateType(QualType(type, node->qualifiers), overwrite);
+
+  // Change to union scope
+  currentScope = node->unionScope;
+  assert(currentScope->type == ScopeType::UNION);
+
+  // Retrieve field types
+  QualTypeList fieldTypes;
+  fieldTypes.reserve(node->fields.size());
+  // Shared across all fields: the origin (node->unionScope) is constant, so an aggregate already proven not to reach
+  // it via one field need not be re-walked for another.
+  std::unordered_set<const Scope *> visitedScopes;
+  size_t defaultFieldIndex = SIZE_MAX;
+  for (size_t i = 0; i < node->fields.size(); i++) {
+    FieldNode *field = node->fields.at(i);
+
+    // Visit field type
+    auto fieldType = std::any_cast<QualType>(visit(field));
+    if (fieldType.is(TY_UNRESOLVED))
+      sourceFile->checkForSoftErrors(); // We get into trouble if we continue without the field type -> abort
+
+    // Check for union/struct with infinite size. This happens if the union (transitively, through by-value
+    // struct/union fields) contains itself - either directly or through a cycle of aggregates in mutually
+    // importing files.
+    if (fieldContainsAggregateByValue(fieldType, node->unionScope, field, visitedScopes))
+      throw SemanticError(field, UNION_INFINITE_SIZE, "Union with infinite size detected");
+
+    // Union fields must not be references
+    if (fieldType.isRef())
+      softError(field, UNION_FIELD_MUST_NOT_BE_REFERENCE, "A union field must not be a reference");
+
+    // Union fields must be trivially constructible, copyable and destructible, since the union does not know which
+    // field is currently active and therefore cannot run any non-trivial special member on its own.
+    if (!fieldType.isRef() &&
+        (!fieldType.isTriviallyConstructible(field) || !fieldType.isTriviallyCopyable(field) || !fieldType.isTriviallyDestructible(field)))
+      softError(field, UNION_FIELD_TYPE_NOT_TRIVIAL,
+                "The type of the union field '" + field->fieldName + "' is not trivial. Only trivial types are allowed as union fields");
+
+    // At most one field may carry a default value
+    if (field->defaultValue != nullptr) {
+      if (defaultFieldIndex != SIZE_MAX)
+        softError(field, DUPLICATE_UNION_DEFAULT_VALUE, "A union may only have one field with a default value");
+      else
+        defaultFieldIndex = i;
+    }
+
+    // Add to field types
+    fieldTypes.push_back(fieldType);
+
+    // Update type of field entry
+    SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
+    assert(fieldEntry != nullptr);
+    fieldEntry->updateType(fieldType, false);
+
+    // Check if the template type list contains this type
+    if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
+      throw SemanticError(field->dataType, GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in union template");
+  }
+
+  // Change to the root scope
+  currentScope = rootScope;
+  assert(currentScope->type == ScopeType::GLOBAL);
+
+  // Build union object
+  Union spiceUnion(node->unionName, node->entry, node->unionScope, fieldTypes, templateTypesGeneric, node);
+  spiceUnion.defaultFieldIndex = defaultFieldIndex;
+  UnionManager::insert(currentScope, spiceUnion, &node->unionManifestations);
 
   return nullptr;
 }

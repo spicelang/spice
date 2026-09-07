@@ -22,6 +22,7 @@ class ASTNode;
 class Scope;
 class Struct;
 class Interface;
+class Union;
 class GenericType;
 class QualType;
 class SymbolTableEntry;
@@ -76,6 +77,10 @@ public:
   [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node);
   [[nodiscard]] Interface *getInterface(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
+  [[nodiscard]] Union *getUnion(const ASTNode *node, const QualTypeList &templateTypes) const;
+  [[nodiscard]] Union *getUnion(const ASTNode *node) const;
+  [[nodiscard]] Union *getUnionAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes);
+  [[nodiscard]] Union *getUnionAndAdjustType(const ASTNode *node);
 
   // Queries on the type
   [[nodiscard]] bool is(SuperType superType) const;

@@ -13,6 +13,7 @@
 #include <global/TypeRegistry.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Struct.h>
+#include <model/Union.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
@@ -48,7 +49,7 @@ SuperType Type::getSuperType() const {
  */
 const std::string &Type::getSubType() const {
   assert(!typeChain.empty());
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION, TY_ENUM, TY_GENERIC}));
   return typeChain.back().subType;
 }
 
@@ -68,7 +69,7 @@ unsigned int Type::getArraySize() const {
  * @return Body scope
  */
 Scope *Type::getBodyScope() const {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION}));
   return typeChain.back().data.bodyScope;
 }
 
@@ -172,7 +173,9 @@ bool Type::isPrimitive() const { return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY
  *
  * @return Extended primitive or not
  */
-bool Type::isExtendedPrimitive() const { return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}); }
+bool Type::isExtendedPrimitive() const {
+  return isPrimitive() || isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION, TY_FUNCTION, TY_PROCEDURE});
+}
 
 /**
  * Check if the current type is a pointer type
@@ -437,7 +440,7 @@ const Type *Type::getWithLambdaCaptures(bool enabled) const {
  * @return Type with body scope removed
  */
 const Type *Type::getWithBodyScope(Scope *bodyScope) const {
-  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION}));
 
   // Create new type chain
   TypeChain newTypeChain = typeChain;
@@ -453,7 +456,7 @@ const Type *Type::getWithBodyScope(Scope *bodyScope) const {
  * @return Type with new template types
  */
 const Type *Type::getWithTemplateTypes(const QualTypeList &templateTypes) const {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION}));
   return getWithBaseTemplateTypes(templateTypes);
 }
 
@@ -463,7 +466,7 @@ const Type *Type::getWithTemplateTypes(const QualTypeList &templateTypes) const 
  * @return Type with new base template types
  */
 const Type *Type::getWithBaseTemplateTypes(const QualTypeList &templateTypes) const {
-  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION}));
 
   // Create new type chain
   TypeChain newTypeChain = typeChain;
@@ -574,6 +577,48 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     }
 
     return llvm::StructType::create(context, fieldTypes, mangledName, isPacked);
+  }
+
+  if (is(TY_UNION)) {
+    // A union is lowered to { i32 tag, [0 x MaxAlignTy] alignPad, [maxSize x i8] payload }. The tag tracks which field
+    // is currently active. The zero-length array contributes no bytes but forces the whole struct's (and therefore the
+    // payload's) ABI alignment to be at least as strict as the most-aligned field, so that every field can be safely
+    // loaded/stored at the payload's address regardless of its own alignment requirement. The payload itself is always
+    // a raw byte buffer (not a typed array), so that any field's value can be stored/loaded there directly, and any
+    // compile-time constant for it can be built uniformly as packed raw bytes, without needing a legal LLVM constant
+    // conversion between the payload's declared element type and a field's unrelated type.
+    const Scope *unionBodyScope = getBodyScope();
+    const std::string unionSignature = Union::getSignature(getSubType(), getTemplateTypes());
+    const SymbolTableEntry *unionSymbol = unionBodyScope->parent->lookupStrict(unionSignature);
+    assert(unionSymbol != nullptr);
+
+    const Union *spiceUnion = unionSymbol->getQualType().getUnion(unionSymbol->declNode);
+    assert(spiceUnion != nullptr);
+    const std::string mangledName = NameMangling::mangleUnion(*spiceUnion);
+
+    const llvm::DataLayout &dataLayout = sourceFile->targetMachine->createDataLayout();
+    const size_t totalFieldCount = spiceUnion->scope->getFieldCount();
+
+    uint64_t maxSize = 0;
+    uint64_t maxAlign = 1;
+    llvm::Type *maxAlignFieldType = llvm::Type::getInt8Ty(context);
+    for (size_t i = 0; i < totalFieldCount; i++) {
+      const SymbolTableEntry *fieldSymbol = spiceUnion->scope->lookupField(i);
+      assert(fieldSymbol != nullptr);
+      llvm::Type *fieldType = sourceFile->getLLVMType(fieldSymbol->getQualType().getType());
+      const uint64_t fieldSize = dataLayout.getTypeAllocSize(fieldType);
+      const uint64_t fieldAlign = dataLayout.getABITypeAlign(fieldType).value();
+      maxSize = std::max(maxSize, fieldSize);
+      if (fieldAlign > maxAlign) {
+        maxAlign = fieldAlign;
+        maxAlignFieldType = fieldType;
+      }
+    }
+
+    llvm::Type *tagType = llvm::Type::getInt32Ty(context);
+    llvm::Type *alignPadType = llvm::ArrayType::get(maxAlignFieldType, 0);
+    llvm::Type *payloadType = llvm::ArrayType::get(llvm::Type::getInt8Ty(context), maxSize);
+    return llvm::StructType::create(context, {tagType, alignPadType, payloadType}, mangledName);
   }
 
   if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {

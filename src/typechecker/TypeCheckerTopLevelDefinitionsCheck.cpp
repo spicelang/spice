@@ -6,6 +6,7 @@
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <model/Interface.h>
+#include <model/Union.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
@@ -280,6 +281,50 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     // Reset field symbols to declared state for the next manifestation
     manifestation->resetFieldSymbolsToDeclared(node);
+
+    // Clear type mapping
+    typeMapping.clear();
+
+    // Return to the root scope
+    currentScope = rootScope;
+    assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);
+
+    manIdx++; // Increase the manifestation index
+  }
+  manIdx = 0; // Reset the manifestation index
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitUnionDefCheck(UnionDefNode *node) {
+  node->resizeToNumberOfManifestations(node->unionManifestations.size());
+  manIdx = 0; // Reset the manifestation index
+
+  // Get all manifestations for this union definition
+  for (Union *manifestation : node->unionManifestations) {
+    // Skip non-substantiated manifestations
+    if (!manifestation->isFullySubstantiated()) {
+      manIdx++; // Increase the manifestation index
+      continue;
+    }
+
+    // Change to union scope
+    changeToScope(manifestation->scope, ScopeType::UNION);
+
+    // Mount type mapping for this manifestation, so that the default value below can substantiate generic field types
+    assert(typeMapping.empty());
+    typeMapping = manifestation->typeMapping;
+
+    // Re-visit the default value (at most one field may have one). This is required, since the type of the default
+    // value might vary for different manifestations
+    for (const FieldNode *field : node->fields) {
+      if (field->defaultValue != nullptr) {
+        visit(field->defaultValue);
+        SymbolTableEntry *fieldEntry = manifestation->scope->lookupStrict(field->fieldName);
+        assert(fieldEntry != nullptr);
+        fieldEntry->updateState(INITIALIZED, field);
+      }
+    }
 
     // Clear type mapping
     typeMapping.clear();

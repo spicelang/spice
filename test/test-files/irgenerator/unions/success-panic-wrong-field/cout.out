@@ -1,0 +1,2 @@
+Program panicked at ./source.spice:10:20: active field mismatch on union field access 'b'
+before

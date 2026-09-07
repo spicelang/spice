@@ -1,0 +1,10 @@
+type TestUnion union {
+    int a = 42
+    double b
+}
+
+f<int> main() {
+    TestUnion u;
+    printf("%d\n", u.a);
+    return 0;
+}
