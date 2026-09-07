@@ -321,10 +321,11 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
 /**
  * Determine whether a field type (transitively) contains a struct or union with the given origin body scope by value,
- * which would give the origin struct/union an infinite size. Only by-value struct/union fields are followed; pointers
- * and references break the cycle and have a fixed size. Struct/union types that are not manifested yet (e.g. still
- * being prepared as part of a circular import) end a branch - such a cycle is still detected once the last one in it
- * is prepared, when all the others are manifested.
+ * which would give the origin struct/union an infinite size. Only by-value struct/union fields are followed, including
+ * through fixed-size arrays thereof (e.g. `T[3]`), since those embed their element by value as well. Dynamic arrays,
+ * pointers and references break the cycle and have a fixed size. Struct/union types that are not manifested yet (e.g.
+ * still being prepared as part of a circular import) end a branch - such a cycle is still detected once the last one
+ * in it is prepared, when all the others are manifested.
  *
  * @param fieldType Type of the field to inspect
  * @param originScope Body scope of the struct/union whose infinite size we are checking for
@@ -334,6 +335,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
  */
 static bool fieldContainsAggregateByValue(const QualType &fieldType, const Scope *originScope, const ASTNode *node,
                                           std::unordered_set<const Scope *> &visited) {
+  // Unwrap fixed-size arrays, so that e.g. a `T[3]` field is treated like a `T` field for cycle detection. Dynamic
+  // arrays, pointers and references keep breaking the cycle, since they do not embed the element by value.
+  if (fieldType.isArray() && fieldType.getArraySize() > 0)
+    return fieldContainsAggregateByValue(fieldType.getContained(), originScope, node, visited);
   if (!fieldType.isOneOf({TY_STRUCT, TY_UNION}))
     return false;
   const Scope *fieldScope = fieldType.getBodyScope();

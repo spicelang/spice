@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:5:
+Union with infinite size detected: Union with infinite size detected
+
+3  TestUnion[2] b
+   ^^^^^^^^^^^^^^

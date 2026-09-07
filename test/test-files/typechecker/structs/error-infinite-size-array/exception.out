@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:5:
+Struct with infinite size: Struct with infinite size detected
+
+3  TestStruct[2] b
+   ^^^^^^^^^^^^^^^

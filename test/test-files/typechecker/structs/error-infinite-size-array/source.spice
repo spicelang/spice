@@ -1,0 +1,6 @@
+type TestStruct struct {
+    int a
+    TestStruct[2] b
+}
+
+f<int> main() {}
