@@ -1,0 +1,16 @@
+type Point struct {
+    int x
+    int y
+}
+
+type TestUnion union {
+    int a
+    Point pt
+}
+
+f<int> main() {
+    TestUnion u;
+    u.pt = Point{1, 2};
+    printf("%d %d\n", u.pt.x, u.pt.y);
+    return 0;
+}

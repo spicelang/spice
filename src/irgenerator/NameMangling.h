@@ -11,6 +11,7 @@ class Function;
 class StructBase;
 class Struct;
 class Interface;
+class Union;
 class QualType;
 struct TypeChainElement;
 
@@ -48,6 +49,7 @@ public:
   [[nodiscard]] static std::string mangleFunction(const Function &spiceFunc);
   [[nodiscard]] static std::string mangleStruct(const Struct &spiceStruct);
   [[nodiscard]] static std::string mangleInterface(const Interface &spiceInterface);
+  [[nodiscard]] static std::string mangleUnion(const Union &spiceUnion);
   [[nodiscard]] static std::string mangleTypeInfoName(const StructBase *structBase);
   [[nodiscard]] static std::string mangleTypeInfoValue(const std::string &value);
   [[nodiscard]] static std::string mangleTypeInfo(const StructBase *structBase);

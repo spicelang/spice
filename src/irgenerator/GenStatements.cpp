@@ -74,9 +74,11 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     if (node->calledInitCtor) {
       // Call no-args constructor
       generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
-    } else if (!node->isForEachItem && cliOptions.buildMode != BuildMode::RELEASE) {
+      // A union with no default field must start in the "unset" tag state, and a union with a default field must
+      // start with that field active. Either way, the tag bits carry real runtime safety meaning (unlike a struct's
+      // all-zero debug-only default), so they must be initialized unconditionally, in every build mode.
+    } else if (!node->isForEachItem && (cliOptions.buildMode != BuildMode::RELEASE || varSymbolType.is(TY_UNION))) {
       assert(!node->isCtorCallRequired);
-      assert(cliOptions.buildMode == BuildMode::DEBUG || cliOptions.buildMode == BuildMode::TEST);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
       insertStore(defaultValue, varAddress);

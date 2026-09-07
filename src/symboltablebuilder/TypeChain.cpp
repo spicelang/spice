@@ -21,6 +21,9 @@ bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
     return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
   case TY_INTERFACE:
     return lhs.typeId == rhs.typeId;
+  case TY_UNION:
+    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+    return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
   case TY_ENUM:
     assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
     return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
@@ -81,6 +84,7 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
     break;
   case TY_STRUCT: // fall-through
   case TY_INTERFACE:
+  case TY_UNION:
     name << subType << TypeNameDisambiguator::getDisambiguationSuffix(subType, typeId);
     if (!templateTypes.empty()) {
       name << "<";

@@ -46,6 +46,7 @@ public:
   std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override;
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
+  std::any visitUnionDef(SpiceParser::UnionDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
@@ -168,7 +169,7 @@ private:
   }
 
   template <typename T>
-  ALWAYS_INLINE ExprNode *concludeExprNode(T* node)
+  ALWAYS_INLINE ExprNode *concludeExprNode(T *node)
     requires std::is_base_of_v<ExprNode, T>
   {
     // This node is no longer the parent for its children

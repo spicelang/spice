@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:1:
+Qualifier at illegal context: Cannot use this qualifier on a union definition
+
+1  const type TestUnion unio
+   ^^^^^

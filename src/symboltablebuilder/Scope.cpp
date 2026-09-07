@@ -167,8 +167,9 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     std::string warningMessage;
     switch (type) {
     case ScopeType::GLOBAL: {
-      // Skip generic function/procedure/struct/interface entries
-      if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_STRUCT, TY_INTERFACE}) && !entryType.getTemplateTypes().empty())
+      // Skip generic function/procedure/struct/interface/union entries
+      if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_STRUCT, TY_INTERFACE, TY_UNION}) &&
+          !entryType.getTemplateTypes().empty())
         continue;
 
       if (entryType.is(TY_FUNCTION)) {
@@ -185,6 +186,9 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       } else if (entryType.is(TY_INTERFACE)) {
         warningType = UNUSED_INTERFACE;
         warningMessage = "The interface '" + entry.name + "' is unused";
+      } else if (entryType.is(TY_UNION)) {
+        warningType = UNUSED_UNION;
+        warningMessage = "The union '" + entry.name + "' is unused";
       } else if (entryType.is(TY_ENUM)) {
         continue; // Do not report unused enums. Only unused enum items are reported
       } else if (entryType.is(TY_IMPORT)) {
@@ -200,8 +204,9 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
       break;
     }
-    case ScopeType::STRUCT: // fall-through
-    case ScopeType::INTERFACE: {
+    case ScopeType::STRUCT:    // fall-through
+    case ScopeType::INTERFACE: // fall-through
+    case ScopeType::UNION: {
       if (entry.isField()) {
         warningType = UNUSED_FIELD;
         warningMessage = "The field '" + entry.name + "' is unused";
@@ -259,7 +264,7 @@ void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
  * @return Number of fields
  */
 size_t Scope::getFieldCount() const {
-  assert(type == ScopeType::STRUCT);
+  assert(type == ScopeType::STRUCT || type == ScopeType::UNION);
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols | std::views::values) {
     if (symbol.anonymous)
@@ -268,7 +273,7 @@ size_t Scope::getFieldCount() const {
     if (symbolType.is(TY_IMPORT))
       continue;
     const ASTNode *declNode = symbol.declNode;
-    if (declNode->isFctOrProcDef() || declNode->isStructDef())
+    if (declNode->isFctOrProcDef() || declNode->isStructDef() || declNode->isUnionDef())
       continue;
     fieldCount++;
   }
@@ -317,6 +322,25 @@ std::vector<Struct *> Scope::getAllStructManifestationsInDeclarationOrder() {
 
   // Sort manifestations by declaration code location
   auto sortLambda = [](const Struct *lhs, const Struct *rhs) { return lhs->getDeclCodeLoc() < rhs->getDeclCodeLoc(); };
+  std::ranges::sort(manifestations, sortLambda);
+  return manifestations;
+} // LCOV_EXCL_LINE - false positive
+
+/**
+ * Retrieve all union manifestations in this scope in the order of their declaration
+ *
+ * @return All union manifestations in declaration order
+ */
+std::vector<Union *> Scope::getAllUnionManifestationsInDeclarationOrder() {
+  // Retrieve all union manifestations in this scope
+  std::vector<Union *> manifestations;
+  manifestations.reserve(unions.size()); // Reserve at least the size of individual generic unions
+  for (auto &unionManifestations : unions | std::views::values)
+    for (auto &manifestation : unionManifestations | std::views::values)
+      manifestations.push_back(&manifestation);
+
+  // Sort manifestations by declaration code location
+  auto sortLambda = [](const Union *lhs, const Union *rhs) { return lhs->getDeclCodeLoc() < rhs->getDeclCodeLoc(); };
   std::ranges::sort(manifestations, sortLambda);
   return manifestations;
 } // LCOV_EXCL_LINE - false positive

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:5:
+Referenced undefined variable: Field 'c' not found in union TestUnion
+
+8  u.c = 5;
+   ^^^

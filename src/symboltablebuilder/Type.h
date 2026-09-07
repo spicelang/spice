@@ -22,6 +22,7 @@ class Scope;
 class GenericType;
 class Struct;
 class Interface;
+class Union;
 
 class Type {
 public:

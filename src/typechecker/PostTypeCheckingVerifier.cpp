@@ -38,6 +38,11 @@ std::any PostTypeCheckingVerifier::visitInterfaceDef(InterfaceDefNode *node) {
   return visitChildren(node);
 }
 
+std::any PostTypeCheckingVerifier::visitUnionDef(UnionDefNode *node) {
+  assert(node->entry != nullptr);
+  return visitChildren(node);
+}
+
 std::any PostTypeCheckingVerifier::visitEnumDef(EnumDefNode *node) {
   assert(node->entry != nullptr);
   return visitChildren(node);

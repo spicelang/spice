@@ -37,15 +37,15 @@ public const string OP_FCT_ASSIGN = "op.assign";
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
-public type CompileTimeValue struct {
-    double doubleValue = 0.0
-    int intValue = 0
-    short shortValue = 0s
-    long longValue = 0l
-    byte byteValue = cast<byte>(0)
-    char charValue = '\0'
-    unsigned long stringValueOffset = 0ul // Offset into vector of strings in GlobalResourceManager
-    bool boolValue = false
+public type CompileTimeValue union {
+    double doubleValue
+    int intValue
+    short shortValue
+    long longValue
+    byte byteValue
+    char charValue
+    unsigned long stringValueOffset // Offset into vector of strings in GlobalResourceManager
+    bool boolValue
 }
 
 public type IASTNode interface {

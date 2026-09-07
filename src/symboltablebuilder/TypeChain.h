@@ -16,6 +16,9 @@ class Scope;
 // Constants
 static constexpr long ARRAY_SIZE_UNKNOWN = 0;
 
+// New super types must be appended at the end: TypeChainElement's hash (see CustomHashFunctions.cpp) and other
+// reference-tested output (e.g. the TySan instrumentation's type hashes) incorporate the raw enum ordinal, so
+// inserting a value in the middle would shift every later ordinal and silently change those hashes.
 enum SuperType : uint8_t {
   TY_INVALID,
   TY_UNRESOLVED,
@@ -39,11 +42,12 @@ enum SuperType : uint8_t {
   TY_FUNCTION,
   TY_PROCEDURE,
   TY_IMPORT,
+  TY_UNION,
 };
 
 union TypeChainElementData {
   unsigned int arraySize;     // TY_ARRAY
-  Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
+  Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_UNION, TY_ENUM
   bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas) or TY_STRUCT (special Lambda std type only)
 };
 

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:5:
+Union field must not be a reference: A union field must not be a reference
+
+3  string& b
+   ^^^^^^^^^

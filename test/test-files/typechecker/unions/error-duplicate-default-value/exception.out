@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:5:
+Duplicate default value in union: A union may only have one field with a default value
+
+3  double b = 2.5
+   ^^^^^^^^^^^^^^

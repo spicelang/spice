@@ -645,6 +645,10 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
   return nullptr;
 }
 
+std::any IRGenerator::visitUnionDef(const UnionDefNode *node) {
+  return nullptr; // Noop (unions carry no per-definition IR work; their LLVM type is materialized lazily on first use)
+}
+
 std::any IRGenerator::visitEnumDef(const EnumDefNode *node) {
   return nullptr; // Noop (enums are high-level semantic-only structures)
 }
@@ -679,8 +683,9 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   if (node->hasValue) { // Set the constant value as variable initializer
     const auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
     var->setInitializer(constantValue);
-  } else if (cliOptions.buildMode != BuildMode::RELEASE) { // Set the default value as variable initializer
-    assert(cliOptions.buildMode == BuildMode::DEBUG || cliOptions.buildMode == BuildMode::TEST);
+  } else if (cliOptions.buildMode != BuildMode::RELEASE || entryType.is(TY_UNION)) {
+    // Set the default value as variable initializer. For a union this is not just a debug convenience (unlike for a
+    // struct): the tag bits carry real runtime safety meaning, so they must be initialized unconditionally.
     llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
     var->setInitializer(constantValue);
   }

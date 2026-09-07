@@ -8,6 +8,7 @@
 #include <model/GenericType.h>
 #include <model/Interface.h>
 #include <model/Struct.h>
+#include <model/Union.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 #include <symboltablebuilder/Type.h>
 #include <util/CommonUtil.h>
@@ -134,6 +135,14 @@ std::string NameMangling::mangleStruct(const Struct &spiceStruct) { return "stru
 std::string NameMangling::mangleInterface(const Interface &spiceInterface) { return "interface." + spiceInterface.name; }
 
 /**
+ * Mangle a union
+ *
+ * @param spiceUnion Input union
+ * @return Mangled name
+ */
+std::string NameMangling::mangleUnion(const Union &spiceUnion) { return "union." + spiceUnion.name; }
+
+/**
  * Mangle a fully qualified name like e.g. test::s1::calledMethod to 4test2s112calledMethod
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
  *
@@ -249,11 +258,13 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     assert(!signedness && "Signed bool types are forbidden");
     out << "b";
     break;
-  case TY_STRUCT: // fall-through
-  case TY_INTERFACE: {
+  case TY_STRUCT:    // fall-through
+  case TY_INTERFACE: // fall-through
+  case TY_UNION: {
     bool nestedType = false;
-    // Append a disambiguation suffix for same-named but distinct structs/interfaces (see issue #1253), so that two
-    // independent types sharing a name do not end up with the same mangled name (and thus clash at link time).
+    // Append a disambiguation suffix for same-named but distinct structs/interfaces/unions (see issue #1253), so
+    // that two independent types sharing a name do not end up with the same mangled name (and thus clash at link
+    // time).
     const std::string name =
         chainElement.subType + TypeNameDisambiguator::getDisambiguationSuffix(chainElement.subType, chainElement.typeId);
     mangleName(out, name, nestedType);

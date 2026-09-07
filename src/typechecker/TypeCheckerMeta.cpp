@@ -11,6 +11,7 @@
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/StructManager.h>
+#include <typechecker/UnionManager.h>
 
 namespace spice::compiler {
 
@@ -40,9 +41,9 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
     // Only check in the check stage (not the prepare stage), because generic param types are not substantiated yet there.
     if (typeCheckerMode == TC_MODE_POST && !paramType.isTriviallyCopyable(param)) {
       const std::string message = "Parameter '" + param->varName + "' has the non-trivially copyable type '" +
-                                   paramType.getName() +
-                                   "' and is passed by value, which requires an implicit copy on every call. Consider "
-                                   "passing it by reference instead.";
+                                  paramType.getName() +
+                                  "' and is passed by value, which requires an implicit copy on every call. Consider "
+                                  "passing it by reference instead.";
       warnings.emplace_back(param->codeLoc, NON_TRIVIAL_TYPE_PASSED_BY_VALUE, message);
     }
 
@@ -321,10 +322,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.is(TY_ENUM))
     return QualType(TY_INT);
 
-  if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
+  if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_UNION})) {
     assert(is<DataTypeNode *>(node->parent->parent));
 
-    // Remember how many template types this struct/interface actually declares, before it gets overwritten below
+    // Remember how many template types this struct/interface/union actually declares, before it gets overwritten below
     const size_t requiredTemplateTypeCount = entryType.getTemplateTypes().size();
 
     // Collect the concrete template types
@@ -352,10 +353,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
     // Reject usage with a wrong number of template type arguments (including none, if some are required)
     if (templateTypes.size() != requiredTemplateTypeCount) {
-      const std::string kind = entryType.is(TY_STRUCT) ? "Struct" : "Interface";
+      const std::string kind = entryType.is(TY_STRUCT) ? "Struct" : entryType.is(TY_INTERFACE) ? "Interface" : "Union";
       const std::string errorMessage = kind + " '" + node->fqTypeName + "' requires " +
-                                        std::to_string(requiredTemplateTypeCount) + " template type argument(s), but got " +
-                                        std::to_string(templateTypes.size());
+                                       std::to_string(requiredTemplateTypeCount) + " template type argument(s), but got " +
+                                       std::to_string(templateTypes.size());
       SOFT_ERROR_QT(node, INVALID_TEMPLATE_TYPES, errorMessage)
     }
 
@@ -364,26 +365,32 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
     const CodeLoc &codeLoc = node->codeLoc;
     if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc) {
-      if (entryType.is(TY_STRUCT)) {
+      if (entryType.is(TY_STRUCT))
         SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
-      } else {
-        assert(entryType.is(TY_INTERFACE));
+      if (entryType.is(TY_INTERFACE))
         SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_INTERFACE, "Interfaces must be defined before usage")
-      }
+      if (entryType.is(TY_UNION))
+        SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_UNION, "Unions must be defined before usage")
+      assert_fail("Unexpected entry type");
     }
 
     if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
-      // Set the struct/interface instance to used, if found
-      // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
+      // Set the struct/interface/union instance to used, if found
+      // Here, it is allowed to accept, that the struct/interface/union cannot be found, because there are
+      // self-referencing ones
       if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
         if (const Struct *spiceStruct = StructManager::match(defScope, structName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
-      } else {
-        assert(entryType.is(TY_INTERFACE));
+      } else if (entryType.is(TY_INTERFACE)) {
         const std::string interfaceName = node->typeNameFragments.back();
         if (const Interface *spiceInterface = InterfaceManager::match(defScope, interfaceName, templateTypes, node))
           entryType = entryType.getWithBodyScope(spiceInterface->scope);
+      } else {
+        assert(entryType.is(TY_UNION));
+        const std::string unionName = node->typeNameFragments.back();
+        if (const Union *spiceUnion = UnionManager::match(defScope, unionName, templateTypes, node))
+          entryType = entryType.getWithBodyScope(spiceUnion->scope);
       }
     }
 

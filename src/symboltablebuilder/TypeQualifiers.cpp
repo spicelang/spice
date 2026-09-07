@@ -29,6 +29,7 @@ TypeQualifiers TypeQualifiers::of(uint16_t superType) {
   case TY_ARRAY:     // fall-through
   case TY_STRUCT:    // fall-through
   case TY_INTERFACE: // fall-through
+  case TY_UNION:     // fall-through
   case TY_FUNCTION:  // fall-through
   case TY_PROCEDURE:
     return {/*const*/ false, /*signed*/ false, /*unsigned*/ true};

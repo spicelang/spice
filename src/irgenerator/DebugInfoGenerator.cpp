@@ -7,6 +7,7 @@
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 #include <model/Struct.h>
+#include <model/Union.h>
 #include <util/CustomHashFunctions.h>
 #include <util/FileUtil.h>
 
@@ -436,6 +437,61 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     // Insert into cache
     structTypeCache.emplace(hashKey, interfaceDiType);
 
+    break;
+  }
+  case TY_UNION: {
+    // Do cache lookup
+    const size_t hashKey = std::hash<QualType>{}(ty);
+    const auto it = structTypeCache.find(hashKey);
+    if (it != structTypeCache.end())
+      return it->second;
+
+    // Cache miss, generate union type
+    const Union *spiceUnion = ty.getUnion(node);
+    assert(spiceUnion != nullptr);
+
+    // Retrieve information about the union
+    const uint32_t lineNo = spiceUnion->getDeclCodeLoc().line;
+    llvm::Type *unionType = spiceUnion->entry->getQualType().toLLVMType(irGenerator->sourceFile);
+    assert(unionType != nullptr);
+    const auto unionStructType = llvm::cast<llvm::StructType>(unionType);
+    const llvm::DataLayout &dataLayout = irGenerator->module->getDataLayout();
+    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(unionStructType);
+    const uint32_t alignInBits = dataLayout.getABITypeAlign(unionType).value() * 8;
+    // Element 2 is the raw byte-buffer payload that every field aliases at runtime (see Type::toLLVMType's TY_UNION
+    // branch); element 0 is the hidden discriminant tag, which is not surfaced in the debug view.
+    const uint64_t payloadOffsetInBits = structLayout->getElementOffsetInBits(2);
+
+    const std::string unionName = spiceUnion->getSignature();
+    const std::string mangledName = NameMangling::mangleUnion(*spiceUnion);
+    llvm::DICompositeType *unionDiType =
+        diBuilder->createUnionType(diFile, unionName, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
+                                   llvm::DINode::FlagZero, {}, 0, mangledName);
+
+    // Insert into cache before computing field types, so that a self-referential field (e.g. a pointer to this same
+    // union) can find this (still-empty) type instead of recursing infinitely
+    structTypeCache.emplace(hashKey, unionDiType);
+
+    // Collect DI types for fields. Every field overlaps the same payload bytes, so they all share the same offset
+    std::vector<llvm::Metadata *> fieldTypes;
+    for (size_t i = 0; i < spiceUnion->scope->getFieldCount(); i++) {
+      const SymbolTableEntry *fieldEntry = spiceUnion->scope->lookupField(i);
+      assert(fieldEntry != nullptr && fieldEntry->isField());
+
+      const QualType &fieldType = fieldEntry->getQualType();
+      const uint32_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
+      llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldType);
+      llvm::DIDerivedType *fieldDiDerivedType = diBuilder->createMemberType(
+          unionDiType, fieldEntry->name, diFile, fieldLineNo, fieldDiType->getSizeInBits(), fieldDiType->getAlignInBits(),
+          payloadOffsetInBits, llvm::DINode::FlagZero, fieldDiType);
+
+      fieldTypes.push_back(fieldDiDerivedType);
+    }
+
+    // Attach fields. This may re-unique the union type, so refresh all references to it
+    diBuilder->replaceArrays(unionDiType, diBuilder->getOrCreateArray(fieldTypes));
+    structTypeCache.at(hashKey) = unionDiType;
+    baseDiType = unionDiType;
     break;
   }
   case TY_FUNCTION: // fall-through

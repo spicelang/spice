@@ -49,8 +49,8 @@ std::pair<QualType, Function *> OpRuleManager::getAssignResultType(ASTNode *node
       return {lhsType, nullptr};
     }
   }
-  // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
-  if (lhsType.isOneOf({TY_ARRAY, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
+  // Allow arrays, unions, interfaces, functions, procedures of the same type straight away
+  if (lhsType.isOneOf({TY_ARRAY, TY_UNION, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhsType.matches(rhsType, false, true, true))
     return {rhsType, nullptr};
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
@@ -84,7 +84,7 @@ std::pair<QualType, Function *> OpRuleManager::getFieldAssignResultType(ASTNode 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhsType, isDecl);
 
-  // Allow pointers, arrays and structs of the same type straight away
+  // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_ARRAY}) && lhsType == rhsType) {
     // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
     if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
@@ -94,6 +94,9 @@ std::pair<QualType, Function *> OpRuleManager::getFieldAssignResultType(ASTNode 
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
     return performStructAssign(node, lhs, rhs, rhsType, isDecl, false);
+  // Allow union of the same type straight away (always trivially copyable, so no copy-ctor machinery is needed)
+  if (lhsType.is(TY_UNION) && lhsType.matches(rhsType, false, true, true))
+    return {rhsType, nullptr};
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
     // Check is there is an overloaded operator function available

@@ -13,6 +13,7 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
+#include <typechecker/UnionManager.h>
 #include <util/FileUtil.h>
 
 #include <llvm/IR/Module.h>
@@ -63,6 +64,7 @@ GlobalResourceManager::~GlobalResourceManager() {
   FunctionManager::cleanup();
   StructManager::cleanup();
   InterfaceManager::cleanup();
+  UnionManager::cleanup();
   // Cleanup all LLVM statics
   llvm::llvm_shutdown();
 }

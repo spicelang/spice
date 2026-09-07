@@ -9,12 +9,14 @@
 #include <global/TypeRegistry.h>
 #include <model/GenericType.h>
 #include <model/Struct.h>
+#include <model/Union.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <symboltablebuilder/Type.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
+#include <typechecker/UnionManager.h>
 
 namespace spice::compiler {
 
@@ -153,6 +155,52 @@ Interface *QualType::getInterface(const ASTNode *node, const QualTypeList &templ
  * @return Interface instance
  */
 Interface *QualType::getInterface(const ASTNode *node) const { return getInterface(node, type->getTemplateTypes()); }
+
+/**
+ * Get the union instance for a union type
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Union instance
+ */
+Union *QualType::getUnion(const ASTNode *node, const QualTypeList &templateTypes) const {
+  assert(is(TY_UNION));
+  Scope *unionDefScope = getBodyScope()->parent;
+  const std::string &unionName = getSubType();
+  return UnionManager::match(unionDefScope, unionName, templateTypes, node);
+}
+
+/**
+ * Get the union instance for a union type
+ *
+ * @param node Accessing AST node
+ * @return Union instance
+ */
+Union *QualType::getUnion(const ASTNode *node) const { return getUnion(node, type->getTemplateTypes()); }
+
+/**
+ * Get the union instance for a union type
+ * Adopt information from the union to this type.
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Union instance
+ */
+Union *QualType::getUnionAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes) {
+  Union *spiceUnion = getUnion(node, templateTypes);
+  if (spiceUnion != nullptr)
+    type = type->getWithBodyScope(spiceUnion->scope)->getWithTemplateTypes(spiceUnion->getTemplateTypes());
+  return spiceUnion;
+}
+
+/**
+ * Get the union instance for a union type
+ * Adopt information from the union to this type.
+ *
+ * @param node Accessing AST node
+ * @return Union instance
+ */
+Union *QualType::getUnionAndAdjustType(const ASTNode *node) { return getUnionAndAdjustType(node, type->getTemplateTypes()); }
 
 /**
  * Check if the underlying type is of a certain super type
@@ -947,7 +995,8 @@ bool QualType::isInline() const {
  * @return Is public or not
  */
 bool QualType::isPublic() const {
-  assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+  assert(type->isPrimitive() /* Global variables */ ||
+         isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE, TY_UNION}));
   return qualifiers.isPublic;
 }
 
@@ -989,7 +1038,8 @@ void QualType::makeUnsigned(bool isUnsigned) {
  * @param isPublic Is public or not
  */
 void QualType::makePublic(bool isPublic) {
-  assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+  assert(type->isPrimitive() /* Global variables */ ||
+         isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE, TY_UNION}));
   qualifiers.isPublic = isPublic;
 }
 

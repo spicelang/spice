@@ -68,6 +68,12 @@ void NamingConventionRule::checkInterfaceDef(InterfaceDefNode *node, std::vector
                           "Interface name '" + node->interfaceName + "' should be PascalCase");
 }
 
+void NamingConventionRule::checkUnionDef(UnionDefNode *node, std::vector<LintFinding> &findings) {
+  if (!isPascalCase(node->unionName))
+    findings.emplace_back(node->codeLoc, id(), LintSeverity::WARNING,
+                          "Union name '" + node->unionName + "' should be PascalCase");
+}
+
 void NamingConventionRule::checkGlobalVarDef(GlobalVarDefNode *node, std::vector<LintFinding> &findings) {
   if (!isSnakeCase(node->varName))
     findings.emplace_back(node->codeLoc, id(), LintSeverity::WARNING,

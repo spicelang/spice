@@ -3,13 +3,14 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | unionDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
 mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst;
 functionDef: topLevelDefAttr? qualifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 procedureDef: topLevelDefAttr? qualifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
 structDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature* RBRACE;
+unionDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? UNION LBRACE field* RBRACE;
 enumDef: qualifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: qualifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
@@ -135,6 +136,7 @@ RETURN: 'return';
 AS: 'as';
 STRUCT: 'struct';
 INTERFACE: 'interface';
+UNION: 'union';
 TYPE: 'type';
 ENUM: 'enum';
 OPERATOR: 'operator';

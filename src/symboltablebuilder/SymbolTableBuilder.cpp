@@ -282,6 +282,44 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitUnionDef(UnionDefNode *node) {
+  // Visit attributes
+  if (node->attrs)
+    visit(node->attrs);
+
+  // Check if this name already exists
+  if (rootScope->lookupStrict(node->unionName))
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->unionName + "'");
+
+  // Create scope for the union
+  const std::string &scopeName = Union::getScopeName(node->unionName);
+  node->unionScope = currentScope = rootScope->createChildScope(scopeName, ScopeType::UNION, &node->codeLoc);
+  currentScope->isGenericScope = node->hasTemplateTypes;
+
+  // Visit children
+  visitChildren(node);
+
+  // Leave the union scope
+  currentScope = node->unionScope->parent;
+
+  // Build union qualifiers
+  if (const QualifierLstNode *qualifierLst = node->qualifierLst) {
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers) {
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        node->qualifiers.isPublic = true;
+      else
+        throw SemanticError(qualifier, QUALIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this qualifier on a union definition");
+    }
+  }
+
+  // Add the union to the symbol table
+  node->entry = rootScope->insert(node->unionName, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->unionName, node->typeId, node->entry, node->unionScope, true);
+
+  return nullptr;
+}
+
 std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Check if this name already exists
   if (rootScope->lookupStrict(node->enumName))

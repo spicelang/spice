@@ -57,7 +57,8 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  * @return Struct field or not
  */
 bool SymbolTableEntry::isField() const {
-  return scope->type == ScopeType::STRUCT && orderIndex < scope->getFieldCount() && !anonymous;
+  return (scope->type == ScopeType::STRUCT || scope->type == ScopeType::UNION) && orderIndex < scope->getFieldCount() &&
+         !anonymous;
 }
 
 /**

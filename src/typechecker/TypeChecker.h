@@ -84,6 +84,9 @@ public:
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitInterfaceDefPrepare(InterfaceDefNode *node);
   void assignDeferredOpaqueType(SymbolTableEntry *entry);
+  std::any visitUnionDef(UnionDefNode *node) override;
+  std::any visitUnionDefPrepare(UnionDefNode *node);
+  std::any visitUnionDefCheck(UnionDefNode *node);
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitEnumDefPrepare(EnumDefNode *node);
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;

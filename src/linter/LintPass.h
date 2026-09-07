@@ -32,6 +32,7 @@ public:
   std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
+  std::any visitUnionDef(UnionDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
 
   // Members
