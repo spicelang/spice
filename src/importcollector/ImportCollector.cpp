@@ -108,9 +108,14 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   std::filesystem::path ownFileDir = sourceFile->filePath.parent_path();
   if (ownFileDir.empty())
     ownFileDir = ".";
-  const std::filesystem::path allowedRoot = canonical(isStd         ? SystemUtil::getStdDir()
-                                                      : isBootstrap ? SystemUtil::getBootstrapDir()
-                                                                    : ownFileDir);
+  std::filesystem::path intendedRoot;
+  if (isStd)
+    intendedRoot = SystemUtil::getStdDir();
+  else if (isBootstrap)
+    intendedRoot = SystemUtil::getBootstrapDir();
+  else
+    intendedRoot = ownFileDir;
+  const std::filesystem::path allowedRoot = canonical(intendedRoot);
   const std::filesystem::path canonicalImportPath = canonical(importPath);
   const auto [in1, in2] = std::ranges::mismatch(allowedRoot, canonicalImportPath);
   if (in1 != allowedRoot.end())
