@@ -183,8 +183,13 @@ std::string SystemUtil::renderCommandForDisplay(const std::string &program, cons
  * directly (argv-based, whitespace-split) rather than through a shell - no other shell metacharacters (';', '&&',
  * pipes, redirects, quoting, globbing, ...) are interpreted, so this cannot be used to inject additional commands.
  *
+ * A plain env-var reference can itself expand to several whitespace-separated flags (e.g. LLVM_INCLUDE_DIRS is set to
+ * "-I<dir1> -I<dir2>" by CMake/CI). A shell would word-split that as part of parsing the overall command line; since
+ * there is no shell here anymore, the expanded text is word-split explicitly so each flag still becomes its own argv
+ * entry instead of one invalid, space-containing argument.
+ *
  * @param flag Raw linker flag, as configured via a 'core.[os.]linker.flag' attribute
- * @return One or more expanded flags (a backtick command substitution can expand to several whitespace-separated flags)
+ * @return One or more expanded flags (an expansion can result in several whitespace-separated flags)
  */
 std::vector<std::string> SystemUtil::expandLinkerFlag(const std::string &flag) {
   // Expand environment variable references within the flag ('$VAR' on Unix, '%VAR%' on Windows)
@@ -235,11 +240,13 @@ std::vector<std::string> SystemUtil::expandLinkerFlag(const std::string &flag) {
     const auto [output, exitCode] = exec(tokens.front(), cmdArgs);
     if (exitCode != 0) // GCOV_EXCL_LINE
       throw LinkerError(LINKER_ERROR, "Command substitution for linker flag failed: " + innerCommand); // GCOV_EXCL_LINE
-    std::istringstream outputStream(output);
-    return {std::istream_iterator<std::string>{outputStream}, std::istream_iterator<std::string>{}};
+    expanded = output;
   }
 
-  return {expanded};
+  // Word-split the (possibly command-substituted) text on whitespace, so an expansion that contains several flags
+  // (e.g. a multi-directory LLVM_INCLUDE_DIRS, or a pkg-config command's output) ends up as separate argv entries.
+  std::istringstream expandedStream(expanded);
+  return {std::istream_iterator<std::string>{expandedStream}, std::istream_iterator<std::string>{}};
 }
 
 /**
