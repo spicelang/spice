@@ -2,6 +2,8 @@
 
 #include "ImportCollector.h"
 
+#include <algorithm>
+
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
@@ -96,6 +98,23 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
     errorMessage << "- " << defaultPathObfuscated;
     throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, errorMessage.str());
   }
+
+  // The lexical '..'-component check above only rejects traversal spelled out in the import path itself. A
+  // same-looking relative import can still resolve outside the intended std/bootstrap/project root if a directory
+  // along the way is a symlink. Canonicalize the resolved file and its intended base directory (this also resolves
+  // symlinks) and reject the import unless the former stays contained in the latter.
+  // A main source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent_path(); treat
+  // that as the current directory, since that is what the empty path already means to every other join above.
+  std::filesystem::path ownFileDir = sourceFile->filePath.parent_path();
+  if (ownFileDir.empty())
+    ownFileDir = ".";
+  const std::filesystem::path allowedRoot = canonical(isStd         ? SystemUtil::getStdDir()
+                                                      : isBootstrap ? SystemUtil::getBootstrapDir()
+                                                                    : ownFileDir);
+  const std::filesystem::path canonicalImportPath = canonical(importPath);
+  const auto [in1, in2] = std::ranges::mismatch(allowedRoot, canonicalImportPath);
+  if (in1 != allowedRoot.end())
+    throw SemanticError(node, INVALID_IMPORT_PATH, "Import path '" + node->importPath + "' escapes the permitted directory tree");
 
   // Check if the import already exists
   if (rootScope->lookupStrict(node->importName) != nullptr)
