@@ -34,7 +34,7 @@ ext p SSL_CTX_free(SslCtx /*ctx*/);
 ext p SSL_CTX_set_verify(SslCtx /*ctx*/, int /*mode*/, byte* /*callback*/);
 ext f<int> SSL_CTX_set_default_verify_paths(SslCtx /*ctx*/);
 ext f<int> SSL_CTX_load_verify_locations(SslCtx /*ctx*/, byte* /*caFile*/, byte* /*caPath*/);
-ext f<int> SSL_CTX_use_certificate_file(SslCtx /*ctx*/, string /*file*/, int /*type*/);
+ext f<int> SSL_CTX_use_certificate_chain_file(SslCtx /*ctx*/, string /*file*/);
 ext f<int> SSL_CTX_use_PrivateKey_file(SslCtx /*ctx*/, string /*file*/, int /*type*/);
 ext f<int> SSL_CTX_check_private_key(SslCtx /*ctx*/);
 
@@ -113,12 +113,15 @@ public p sslCtxSetVerifyPeer(SslCtx ctx) {
 }
 
 /**
- * Loads a PEM certificate (chain) into a context.
+ * Loads a PEM certificate chain into a context: the server's own leaf certificate, followed by
+ * whatever intermediate CA certificates the file carries. Uses the chain-loading API rather than
+ * the single-certificate one, since a client cannot build a trusted path to the leaf without the
+ * intermediates being sent along with it.
  *
  * @return true on success
  */
-public f<bool> sslCtxUseCertificateFile(SslCtx ctx, string certFile) {
-    return SSL_CTX_use_certificate_file(ctx, certFile, SSL_FILETYPE_PEM) == 1;
+public f<bool> sslCtxUseCertificateChainFile(SslCtx ctx, string certFile) {
+    return SSL_CTX_use_certificate_chain_file(ctx, certFile) == 1;
 }
 
 /**

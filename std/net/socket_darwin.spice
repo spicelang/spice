@@ -127,6 +127,22 @@ public f<int> Socket.getConnFd() {
 }
 
 /**
+ * Detaches the current connection from this socket and hands it back as a new, independent
+ * `Socket` that owns it, leaving this socket without a connection. Used when a connection's
+ * ownership moves to another object (like the TLS wrapper in "std/net/tls"), so that only the new
+ * owner's `close`/`closeConnection` ever reaches the file descriptor - otherwise this socket
+ * accepting (and then closing) a later, unrelated connection that happens to reuse the same
+ * descriptor number could close it out from under the new owner instead.
+ *
+ * @return A standalone socket that owns the detached connection
+ */
+public f<Socket> Socket.detachConnection() {
+    const Socket detached = Socket { -1, this.connFd };
+    this.connFd = 0;
+    return detached;
+}
+
+/**
  * Returns the value the `sinLen` field of a socket address has to carry. The size is taken from the
  * struct itself, but has to pass through an int on the way, since there is no long to byte cast.
  *

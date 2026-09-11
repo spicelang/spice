@@ -79,6 +79,7 @@ public const string HEADER_USER_AGENT = "User-Agent";
 public const string HEADER_SERVER = "Server";
 public const string HEADER_ACCEPT = "Accept";
 public const string HEADER_DATE = "Date";
+public const string HEADER_AUTHORIZATION = "Authorization";
 
 const string CRLF = "\r\n";
 

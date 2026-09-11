@@ -1,6 +1,7 @@
 import "std/net/http";
 import "std/net/http-client";
 import "std/net/http-server";
+import "std/net/socket";
 import "std/io/file";
 import "std/os/thread-pool";
 import "std/time/delay";
@@ -43,8 +44,9 @@ f<int> main() {
         Result<bool> started = server.start();
         assert started.isOk();
 
-        // index, greet
-        for int i = 0; i < 2; i++ {
+        // garbage handshake, index, greet - a failed handshake must not stop the server from
+        // going on to serve the requests that follow it
+        for int i = 0; i < 3; i++ {
             Result<bool> handled = server.handleNextRequest();
             assert handled.isOk();
         }
@@ -53,6 +55,15 @@ f<int> main() {
 
     pool.enqueue(p() [[async]] {
         delay(500); // give the server time to bind its port and load the certificate
+
+        // A client that connects but sends garbage instead of a TLS handshake must only fail its
+        // own connection, not wedge or bring down the server for the real requests that follow
+        Result<Socket> garbageSocket = openClientSocket("127.0.0.1", 18446s);
+        assert garbageSocket.isOk();
+        Socket garbage = garbageSocket.unwrap();
+        garbage.write("not a tls handshake, just garbage bytes\n");
+        garbage.close();
+        delay(200); // give the server time to fail the handshake before the real requests arrive
 
         HttpClient client = HttpClient();
         client.trustedCaFile = String("./https-test-cert.pem");

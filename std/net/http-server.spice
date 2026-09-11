@@ -286,9 +286,10 @@ public f<Result<bool>> HttpServer.handleNextRequest() {
             if this.tlsEnabled {
                 const Result<TlsSocket> tlsResult = acceptTlsConnection(this.socket, this.tlsContext);
                 if tlsResult.isErr() {
-                    // The handshake never completed, so there is no connection left to answer on
-                    const Error& error = tlsResult.getErr();
-                    errorMessage = error.getMessage();
+                    // The handshake never completed, so there is no connection left to answer on.
+                    // This is a problem with the one client that sent it, not with the server, so
+                    // it must not fail this call and stop `run` from serving later connections -
+                    // the same way a request that fails to parse doesn't, below.
                     this.socket.closeConnection();
                 } else {
                     TlsSocket tlsSocket = tlsResult.unwrap();

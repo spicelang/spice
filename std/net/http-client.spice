@@ -177,9 +177,25 @@ public f<Result<HttpResponse>> HttpClient.send(const HttpRequest& request, const
                 if !response.isRedirect() || remainingRedirects == 0u || location.isEmpty() {
                     done = true;
                 } else {
-                    currentUrl = resolveLocation(target, location);
-                    applyRedirectMethod(currentRequest, response.statusCode);
-                    remainingRedirects--;
+                    const String nextUrl = resolveLocation(target, location);
+                    const Result<Url> nextUrlResult = parseUrl(nextUrl);
+                    if nextUrlResult.isErr() {
+                        done = true;
+                    } else {
+                        const Url& nextTarget = nextUrlResult.unwrap();
+                        if target.scheme == "https" && nextTarget.scheme != "https" {
+                            // Refuse to silently carry an https exchange over to plain http - the
+                            // caller gets the redirect response back instead of a downgraded replay
+                            done = true;
+                        } else {
+                            if !sameAuthority(target, nextTarget) {
+                                currentRequest.headers.remove(HEADER_AUTHORIZATION);
+                            }
+                            currentUrl = nextUrl;
+                            applyRedirectMethod(currentRequest, response.statusCode);
+                            remainingRedirects--;
+                        }
+                    }
                 }
             }
         }
@@ -209,13 +225,13 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
             errorMessage = error.getMessage();
         } else {
             TlsContext context = contextResult.unwrap();
-            const Result<TlsSocket> socketResult = openTlsClientSocket(url.host.getRaw(), url.port, context);
+            const Result<TlsSocket> socketResult =
+                openTlsClientSocket(url.host.getRaw(), url.port, context, this.timeoutMillis);
             if socketResult.isErr() {
                 const Error& error = socketResult.getErr();
                 errorMessage = error.getMessage();
             } else {
                 TlsSocket socket = socketResult.unwrap();
-                if this.timeoutMillis != 0l { socket.setTimeout(this.timeoutMillis); }
 
                 if !sendRequest(socket, request) {
                     errorMessage = "Could not send the request";
@@ -284,6 +300,19 @@ p HttpClient.completeRequest(HttpRequest& request, const Url& url) {
     request.headers.set(HEADER_HOST, authority);
     // Without keep-alive support, every exchange ends with its connection
     request.headers.set(HEADER_CONNECTION, "close");
+}
+
+/**
+ * Checks whether two URLs point at the same host and port, i.e. whether a request to one of them
+ * carries any business being sent to the other - used to decide whether credentials survive a
+ * redirect.
+ *
+ * @param a First URL
+ * @param b Second URL
+ * @return true if host and port match
+ */
+f<bool> sameAuthority(const Url& a, const Url& b) {
+    return a.host == b.host && a.port == b.port;
 }
 
 /**
