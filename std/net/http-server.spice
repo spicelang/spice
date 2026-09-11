@@ -2,8 +2,13 @@
 import "std/data/vector";
 import "std/net/http";
 import "std/net/socket";
+import "std/net/tls";
 import "std/type/lambda";
 import "std/type/type-conversion";
+
+// Generic connection type of HttpServer.buildResponse - see the identical declaration in
+// "std/net/http" for why it carries no interface constraint.
+type C dyn;
 
 /**
  * A registered route: the method and path it answers, plus what answers it - either a handler, or a
@@ -31,7 +36,9 @@ type HttpRoute struct {
  * method answers 405 instead of 404, and a HEAD request falls back to the GET route of the same
  * path, with the body dropped again afterwards.
  *
- * There is no TLS underneath, so the server speaks plain http only.
+ * The server speaks plain http by default. Call `useTls` with a certificate and private key
+ * (before `start`) to serve https instead - every connection is then TLS-handshaked (see
+ * "std/net/tls") before its request is read and its response is written.
  *
  * Note on handlers: a handler is stored in a `Lambda` (see "std/type/lambda"), which relocates the
  * captures of the lambda onto the heap with a shallow copy. A handler may therefore capture plain
@@ -45,6 +52,8 @@ public type HttpServer struct {
     public unsigned long maxMessageSize // Upper bound on the size of a request
     public unsigned long timeoutMillis  // Per read/write timeout of a connection, 0 to block indefinitely
     Socket socket
+    TlsContext tlsContext
+    bool tlsEnabled
     Vector<HttpRoute> routes
     Lambda<p(const HttpRequest&, HttpResponse&)> notFoundHandler
     bool hasNotFoundHandler
@@ -73,6 +82,7 @@ public p HttpServer.ctor(unsigned short port = HTTP_PORT_FALLBACK) {
     this.hasNotFoundHandler = false;
     this.listening = false;
     this.running = false;
+    this.tlsEnabled = false;
 }
 
 /**
@@ -80,6 +90,35 @@ public p HttpServer.ctor(unsigned short port = HTTP_PORT_FALLBACK) {
  */
 public p HttpServer.dtor() {
     this.close();
+}
+
+/**
+ * Switches the server from plain http to https: every connection accepted from here on is
+ * TLS-handshaked with the given certificate before its request is read.
+ *
+ * Must be called before `start`, since the listening socket itself is unaffected - only what
+ * happens to a connection right after it is accepted changes.
+ *
+ * @param certFile Path to a PEM file with the server's certificate (chain)
+ * @param keyFile Path to a PEM file with the private key matching the certificate
+ * @return true once TLS is configured, or an error describing why it could not be
+ */
+public f<Result<bool>> HttpServer.useTls(string certFile, string keyFile) {
+    string errorMessage = "";
+    if this.listening {
+        errorMessage = "useTls must be called before start()";
+    } else {
+        const Result<TlsContext> contextResult = newServerTlsContext(certFile, keyFile);
+        if contextResult.isErr() {
+            const Error& error = contextResult.getErr();
+            errorMessage = error.getMessage();
+        } else {
+            this.tlsContext = contextResult.unwrap();
+            this.tlsEnabled = true;
+        }
+    }
+
+    return errorMessage == "" ? ok(true) : err<bool>(Error(errorMessage));
 }
 
 // ================================================ Route registration =================================================
@@ -219,8 +258,7 @@ public f<Result<bool>> HttpServer.start(int connectionBacklog = DEFAULT_CONNECTI
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(true) : err<bool>(error);
+    return errorMessage == "" ? ok(true) : err<bool>(Error(errorMessage));
 }
 
 /**
@@ -245,27 +283,52 @@ public f<Result<bool>> HttpServer.handleNextRequest() {
         } else {
             if this.timeoutMillis != 0l { this.socket.setTimeout(this.timeoutMillis); }
 
-            HttpResponse response = HttpResponse();
-            const Result<HttpRequest> requestResult = receiveRequest(this.socket, this.maxMessageSize);
-            if requestResult.isErr() {
-                // The request never arrived in one piece, so all we can say is that it was bad
-                response.setStatus(STATUS_BAD_REQUEST);
-                const Error& error = requestResult.getErr();
-                const String reasonBody = String(error.getMessage());
-                response.setBody(reasonBody, CONTENT_TYPE_TEXT);
+            if this.tlsEnabled {
+                const Result<TlsSocket> tlsResult = acceptTlsConnection(this.socket, this.tlsContext);
+                if tlsResult.isErr() {
+                    // The handshake never completed, so there is no connection left to answer on
+                    const Error& error = tlsResult.getErr();
+                    errorMessage = error.getMessage();
+                    this.socket.closeConnection();
+                } else {
+                    TlsSocket tlsSocket = tlsResult.unwrap();
+                    const HttpResponse response = this.buildResponse(tlsSocket);
+                    served = sendResponse(tlsSocket, response);
+                    tlsSocket.closeConnection();
+                }
             } else {
-                const HttpRequest& request = requestResult.unwrap();
-                this.dispatch(request, response);
+                const HttpResponse response = this.buildResponse(this.socket);
+                served = sendResponse(this.socket, response);
+                this.socket.closeConnection();
             }
-
-            this.completeResponse(response);
-            served = sendResponse(this.socket, response);
-            this.socket.closeConnection();
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(served) : err<bool>(error);
+    return errorMessage == "" ? ok(served) : err<bool>(Error(errorMessage));
+}
+
+/**
+ * Reads the request off a freshly accepted connection and dispatches it, no matter whether the
+ * connection is plain or TLS.
+ *
+ * @param conn Connection to read the request from
+ * @return The response to send back
+ */
+f<HttpResponse> HttpServer.buildResponse<C>(C& conn) {
+    HttpResponse response = HttpResponse();
+    const Result<HttpRequest> requestResult = receiveRequest(conn, this.maxMessageSize);
+    if requestResult.isErr() {
+        // The request never arrived in one piece, so all we can say is that it was bad
+        response.setStatus(STATUS_BAD_REQUEST);
+        const Error& error = requestResult.getErr();
+        const String reasonBody = String(error.getMessage());
+        response.setBody(reasonBody, CONTENT_TYPE_TEXT);
+    } else {
+        const HttpRequest& request = requestResult.unwrap();
+        this.dispatch(request, response);
+    }
+    this.completeResponse(response);
+    return response;
 }
 
 /**
@@ -292,8 +355,7 @@ public f<Result<bool>> HttpServer.run() {
         this.running = false;
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(true) : err<bool>(error);
+    return errorMessage == "" ? ok(true) : err<bool>(Error(errorMessage));
 }
 
 /**
@@ -327,6 +389,10 @@ public p HttpServer.close() {
     if this.listening {
         this.socket.close();
         this.listening = false;
+    }
+    if this.tlsEnabled {
+        this.tlsContext.close();
+        this.tlsEnabled = false;
     }
 }
 

@@ -117,6 +117,16 @@ public type Socket struct {
 }
 
 /**
+ * Returns the file descriptor of the current connection, i.e. what a layer on top of the raw
+ * socket (like the TLS handshake in "std/net/tls") has to hand to its own I/O calls.
+ *
+ * @return Connection file descriptor
+ */
+public f<int> Socket.getConnFd() {
+    return this.connFd;
+}
+
+/**
  * Accept an incoming connection to the socket and save the connection file desceiptor
  * to the socket object.
  *

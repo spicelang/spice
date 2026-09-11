@@ -30,7 +30,7 @@ else:
     run(
         "sudo", "apt-get", "install", "-y",
         "cmake", "make", "ninja-build", "valgrind", "ccache",
-        "uuid-dev", "pkg-config", "openjdk-11-jre-headless", "clang", "lld",
+        "uuid-dev", "pkg-config", "openjdk-11-jre-headless", "clang", "lld", "libssl-dev",
     )
     log("done.")
 

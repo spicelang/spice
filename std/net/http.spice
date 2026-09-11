@@ -1264,28 +1264,35 @@ const long READ_CHUNK_SIZE = 4096l;
 // Upper bound on how much of a message is kept in memory before it is rejected, 8 MiB by default
 public const unsigned long DEFAULT_MAX_MESSAGE_SIZE = 8388608l;
 
+// Generic connection type of the wire transport below. It is never constrained to an interface -
+// any type that provides `writeAll(byte*, unsigned long) -> bool` and `read(byte*, long) -> long`
+// works, which both `Socket` (see "std/net/socket") and `TlsSocket` (see "std/net/tls") do. This
+// keeps the framing logic (Content-Length, chunked transfer, ...) in one place for plain and TLS
+// connections alike, instead of duplicating it per transport.
+type C dyn;
+
 /**
- * Writes a request to the socket
+ * Writes a request to the connection
  *
- * @param socket Socket to write to
+ * @param socket Connection to write to
  * @param request Request to write
  * @return true if the whole request reached the peer
  */
-public f<bool> sendRequest(Socket& socket, const HttpRequest& request) {
+public f<bool> sendRequest<C>(C& socket, const HttpRequest& request) {
     const String wire = request.serialize();
-    result = writeString(socket, wire);
+    return writeString(socket, wire);
 }
 
 /**
- * Writes a response to the socket
+ * Writes a response to the connection
  *
- * @param socket Socket to write to
+ * @param socket Connection to write to
  * @param response Response to write
  * @return true if the whole response reached the peer
  */
-public f<bool> sendResponse(Socket& socket, const HttpResponse& response) {
+public f<bool> sendResponse<C>(C& socket, const HttpResponse& response) {
     const String wire = response.serialize();
-    result = writeString(socket, wire);
+    return writeString(socket, wire);
 }
 
 /**
@@ -1299,7 +1306,7 @@ public f<bool> sendResponse(Socket& socket, const HttpResponse& response) {
  * @param maxSize Maximum number of bytes to accept for head and body each
  * @return The received request, or an error describing why it could not be received
  */
-public f<Result<HttpRequest>> receiveRequest(Socket& socket, unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
+public f<Result<HttpRequest>> receiveRequest<C>(C& socket, unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
     HttpRequest request = HttpRequest();
     String buffer = String();
     string errorMessage = "";
@@ -1328,8 +1335,7 @@ public f<Result<HttpRequest>> receiveRequest(Socket& socket, unsigned long maxSi
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(request) : err<HttpRequest>(error);
+    return errorMessage == "" ? ok(request) : err<HttpRequest>(Error(errorMessage));
 }
 
 /**
@@ -1343,8 +1349,7 @@ public f<Result<HttpRequest>> receiveRequest(Socket& socket, unsigned long maxSi
  * @param maxSize Maximum number of bytes to accept for head and body each
  * @return The received response, or an error describing why it could not be received
  */
-public f<Result<HttpResponse>> receiveResponse(Socket& socket, bool expectBody = true,
-                                               unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
+public f<Result<HttpResponse>> receiveResponse<C>(C& socket, bool expectBody = true, unsigned long maxSize = DEFAULT_MAX_MESSAGE_SIZE) {
     HttpResponse response = HttpResponse();
     String buffer = String();
     string errorMessage = "";
@@ -1377,8 +1382,7 @@ public f<Result<HttpResponse>> receiveResponse(Socket& socket, bool expectBody =
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+    return errorMessage == "" ? ok(response) : err<HttpResponse>(Error(errorMessage));
 }
 
 /**
@@ -1391,14 +1395,14 @@ f<bool> isBodylessStatus(unsigned short statusCode) {
 /**
  * Writes a string to the socket in full
  */
-f<bool> writeString(Socket& socket, const String& text) {
-    result = true;
+f<bool> writeString<C>(C& socket, const String& text) {
     const unsigned long length = text.getLength();
     if length != 0l {
         unsafe {
-            result = socket.writeAll(cast<byte*>(text.getRaw()), length);
+            return socket.writeAll(cast<byte*>(text.getRaw()), length);
         }
     }
+    return true;
 }
 
 /**
@@ -1408,7 +1412,7 @@ f<bool> writeString(Socket& socket, const String& text) {
  * @param buffer Buffer to append to
  * @return true if bytes arrived, false if the peer closed the connection or the read timed out
  */
-f<bool> readChunkInto(Socket& socket, String& buffer) {
+f<bool> readChunkInto<C>(C& socket, String& buffer) {
     byte[4096] chunk;
     long bytesRead = 0l;
     unsafe {
@@ -1428,7 +1432,7 @@ f<bool> readChunkInto(Socket& socket, String& buffer) {
  * @param maxSize Maximum number of head bytes to accept
  * @return The head block, without its terminating empty line
  */
-f<Result<String>> readHead(Socket& socket, String& buffer, unsigned long maxSize) {
+f<Result<String>> readHead<C>(C& socket, String& buffer, unsigned long maxSize) {
     String head = String();
     String pending = String();
     string errorMessage = "";
@@ -1455,8 +1459,7 @@ f<Result<String>> readHead(Socket& socket, String& buffer, unsigned long maxSize
         buffer = pending.getSubstring(cast<unsigned long>(headEnd) + 4l);
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(head) : err<String>(error);
+    return errorMessage == "" ? ok(head) : err<String>(Error(errorMessage));
 }
 
 /**
@@ -1469,8 +1472,7 @@ f<Result<String>> readHead(Socket& socket, String& buffer, unsigned long maxSize
  * @param readUntilClose Whether a message without any framing runs until the connection closes
  * @return The body
  */
-f<Result<String>> readBody(Socket& socket, HttpHeaders& headers, String& buffer, unsigned long maxSize,
-                           bool readUntilClose) {
+f<Result<String>> readBody<C>(C& socket, HttpHeaders& headers, String& buffer, unsigned long maxSize, bool readUntilClose) {
     String body = String();
     string errorMessage = "";
 
@@ -1514,8 +1516,7 @@ f<Result<String>> readBody(Socket& socket, HttpHeaders& headers, String& buffer,
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(body) : err<String>(error);
+    return errorMessage == "" ? ok(body) : err<String>(Error(errorMessage));
 }
 
 /**
@@ -1527,7 +1528,7 @@ f<Result<String>> readBody(Socket& socket, HttpHeaders& headers, String& buffer,
  * @param maxSize Maximum number of decoded body bytes to accept
  * @return The decoded body
  */
-f<Result<String>> readChunkedBody(Socket& socket, String& buffer, unsigned long maxSize) {
+f<Result<String>> readChunkedBody<C>(C& socket, String& buffer, unsigned long maxSize) {
     String body = String();
     string errorMessage = "";
     unsigned long pos = 0l;
@@ -1586,8 +1587,7 @@ f<Result<String>> readChunkedBody(Socket& socket, String& buffer, unsigned long 
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(body) : err<String>(error);
+    return errorMessage == "" ? ok(body) : err<String>(Error(errorMessage));
 }
 
 /**

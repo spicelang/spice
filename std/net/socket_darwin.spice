@@ -117,6 +117,16 @@ public type Socket struct {
 }
 
 /**
+ * Returns the file descriptor of the current connection, i.e. what a layer on top of the raw
+ * socket (like the TLS handshake in "std/net/tls") has to hand to its own I/O calls.
+ *
+ * @return Connection file descriptor
+ */
+public f<int> Socket.getConnFd() {
+    return this.connFd;
+}
+
+/**
  * Returns the value the `sinLen` field of a socket address has to carry. The size is taken from the
  * struct itself, but has to pass through an int on the way, since there is no long to byte cast.
  *

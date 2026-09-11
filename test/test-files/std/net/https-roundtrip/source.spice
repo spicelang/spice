@@ -1,0 +1,72 @@
+import "std/net/http";
+import "std/net/http-client";
+import "std/net/http-server";
+import "std/io/file";
+import "std/os/thread-pool";
+import "std/time/delay";
+
+// Self-signed certificate for "CN=localhost" with subjectAltName "DNS:localhost,IP:127.0.0.1",
+// valid until 2126. Regenerate with:
+//   openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 36500 \
+//     -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+const string TEST_CERT_PEM = "-----BEGIN CERTIFICATE-----\nMIIDJzCCAg+gAwIBAgIUdEjK+qqAIM9+yHb+0krvGCKdxA8wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MCAXDTI2MDkxMTIwMDM1OFoYDzIxMjYw\nODE4MjAwMzU4WjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEB\nAQUAA4IBDwAwggEKAoIBAQDegWN11iOYZYLhCcKOl82+cGcD4QCBtbd/XnrzZpAL\nitLIVG+0pD0iHpeKrR4DW7gnbQu5mv7wFLbu3LPeouojoi7L0hawRSgisHC75tFR\nC9Vr7ONfVf94eQGOM/rsJG8EF8uweLP0bD7QA8of2tocPYkZrnB8uXMRD9W5pby9\n94dRhKTHHx3XSBhNJ/ktmxIYwTq4OT90cUdYXK4WJ2xJHaeKh/MS/Rob6eUGwE2n\nIKY0Td0gGH3HLOH1/IWJO9dh9eJV7cw99gUuFCXUZlnIkbdJh4o2Ebx5E0OzeDXH\nlFaFG5/H5SsTRvd+S0VI3O2yAQVX7gsbrP15eKglw9mDAgMBAAGjbzBtMB0GA1Ud\nDgQWBBRHOrqQ6DMlWmnOZL4nO8kH0OcnvDAfBgNVHSMEGDAWgBRHOrqQ6DMlWmnO\nZL4nO8kH0OcnvDAPBgNVHRMBAf8EBTADAQH/MBoGA1UdEQQTMBGCCWxvY2FsaG9z\ndIcEfwAAATANBgkqhkiG9w0BAQsFAAOCAQEAAW76Bt09LX3KTf91UFUBnEX20/yQ\nPHLYPRjfE23riKBUZMqOyN0Wx6L2fswcverAFJQXXpxl5Lf3AiZ7iWRUwChLx5ev\n/8M2N1g4e8a37XK84Gg+znrLzDMLV/bDgSO5HxThf+s0Idma3wAoNtyIZdH772kg\n4G1dIVzO79sTUEZVHdJrkBCbrCKyoSHSdRy9X3MR22+kRaATniSTsIZPhfiwdNR1\nq0hu+i4PytwMCY0+pC8m1tTyFh8ijjAniYegwjJ0DMt2PdYIzmXdufH7Rarxlewn\nXU7SQBa5svKUJXEsyGiiwIi4wM8luiTERpektg1gx3g5F1KI6RbGIZmqrg==\n-----END CERTIFICATE-----";
+
+const string TEST_KEY_PEM = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDegWN11iOYZYLh\nCcKOl82+cGcD4QCBtbd/XnrzZpALitLIVG+0pD0iHpeKrR4DW7gnbQu5mv7wFLbu\n3LPeouojoi7L0hawRSgisHC75tFRC9Vr7ONfVf94eQGOM/rsJG8EF8uweLP0bD7Q\nA8of2tocPYkZrnB8uXMRD9W5pby994dRhKTHHx3XSBhNJ/ktmxIYwTq4OT90cUdY\nXK4WJ2xJHaeKh/MS/Rob6eUGwE2nIKY0Td0gGH3HLOH1/IWJO9dh9eJV7cw99gUu\nFCXUZlnIkbdJh4o2Ebx5E0OzeDXHlFaFG5/H5SsTRvd+S0VI3O2yAQVX7gsbrP15\neKglw9mDAgMBAAECggEAReuuCCEXRXQc2T/aajnM9zvWO3NQ1/H1LGrRwzwnJuFk\nlHxoMAFujpLDd1oodNC1QXp0dUp+M46m38/uHBfg8PqtrvIhnBnXX3NHsdx6SXgp\nBIXH+7UIF2EbOoceImfelRAvO5Dqp/P+FxshwLni0X4K382f3qnePW3W8URiV+Vj\ni43Q65mYmTFb0tzmOXe53cWhk/2dxG5n9cYpUayY8DPehwiSN74slP3pbLaOzRjC\nqfYrAUBXIMwIKPAqEWnnIm7QwEKQUjSRbW8dwVmmpH+6aAVm/giX3fjlDxHROzCz\n1P1DEHF5Qlk9Wt9pt5rEVQy8njZ0/djsO5NZQpShcQKBgQD1UjO2WALXtgH3E1K6\njKUFlpPcuYgZ5znKaVrnygOI/1PXvNYyNw4J+HaISjFZTBfXvec+d58VmN0Jk7ml\nXQ90MwXSbF1KZyTmjbWKNAl/EYxDgXFxpJnvPlcQxvdI6QPWZqXak8TzP4Su3SF/\nZW8EHog0k6+fmOCZhpB1a6F58wKBgQDoMO8o2ir+0zRnV/fM5Cxo1golruXt+wA0\nZ9YMlN9B9Ik+rbc1DKG1z2bgeTXNgiPW7/X5lpazcI7rDHF3Ellw8ipnBj5z0gUj\nv27PCH6EKNL8UKzQzsfGSUNeKe40TRqA7kjSKoRAAjfK/jiG4lkcWcmORS2keE1J\nm8/K+6T2MQKBgQDtmFSvSORP6V5T3uoj9S2qkODaSPKxK8pD6O/7SCNOXwPkEWde\nsQWu0G50p27OLq107N73GEICV8/Ug7esmcnq37PGzd84vVb22M63cJi18dfoVYj6\n6NGR7c3DWQCNI+jskPQXE0EP2jf2aAMWcLYpxixix5qztwvohXSJ1NlK0wKBgG9Z\nkEfyIG5mURpCWIb84cNA6kraDlBLb/Sx2zfbaRnTMMJLQrIBJcfv97Esz72HbLKW\nD0sriYfyMcfNBtkIhrYgnG8d0nNuw6I6GuTUeP/eKBhyg/37PFj+J32P9DlGxLAS\nFgAb/aJIrgL+WZNuFzf+YyeES3g1bTMgsszwU1LxAoGBAO5OeyvFzz55b00LT6uT\nDrhB/Zg5GxiJ5n8JsYqjoxMOcPkvjbVdc6gdwkQ8x0tVehviUg+BCfdwqPkPGh9l\nbFthun00KwE9Q+pKIl1Iyo4hJ/T74lwXZ2ktMjR4CrorhMpJjYwFWXl0hg3fx6nL\ni+q1Zfy1LKZGaMxl/CENAHPc\n-----END PRIVATE KEY-----";
+
+/**
+ * Drives a Spice HTTPS server and a Spice HTTP client against each other over the loopback
+ * interface, exercising the TLS handshake, certificate/host verification and the record-layer
+ * read/write path end to end. The server stays silent so the output only depends on the client.
+ */
+f<int> main() {
+    // Write the fixture certificate/key to disk once, before either thread touches them
+    Result<bool> certWritten = writeFile("./https-test-cert.pem", TEST_CERT_PEM);
+    assert certWritten.isOk();
+    Result<bool> keyWritten = writeFile("./https-test-key.pem", TEST_KEY_PEM);
+    assert keyWritten.isOk();
+
+    ThreadPool pool = ThreadPool(2s);
+
+    pool.enqueue(p() [[async]] {
+        HttpServer server = HttpServer(18446s);
+        Result<bool> tlsConfigured = server.useTls("./https-test-cert.pem", "./https-test-key.pem");
+        assert tlsConfigured.isOk();
+
+        server.serve("/", "<h1>Secure Index</h1>");
+        server.get("/greet", p(const HttpRequest& request, HttpResponse& response) {
+            String greeting = String("secure hi ");
+            String who = request.getQueryParam("who");
+            greeting.append(who);
+            response.setBody(greeting, CONTENT_TYPE_TEXT);
+        });
+
+        Result<bool> started = server.start();
+        assert started.isOk();
+
+        // index, greet
+        for int i = 0; i < 2; i++ {
+            Result<bool> handled = server.handleNextRequest();
+            assert handled.isOk();
+        }
+        server.close();
+    });
+
+    pool.enqueue(p() [[async]] {
+        delay(500); // give the server time to bind its port and load the certificate
+
+        HttpClient client = HttpClient();
+        client.trustedCaFile = String("./https-test-cert.pem");
+
+        Result<HttpResponse> index = client.get("https://127.0.0.1:18446/");
+        HttpResponse& indexResponse = index.unwrap();
+        printf("index: %d [%s]\n", indexResponse.statusCode, indexResponse.body);
+
+        Result<HttpResponse> greet = client.get("https://127.0.0.1:18446/greet?who=Spice");
+        HttpResponse& greetResponse = greet.unwrap();
+        printf("greet: %d [%s]\n", greetResponse.statusCode, greetResponse.body);
+    });
+
+    pool.start();
+    pool.join();
+    return 0;
+}
