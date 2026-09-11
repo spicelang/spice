@@ -1,0 +1,267 @@
+// TLS for "std/net/http": context setup, the client/server handshake and the record-layer
+// read/write that replaces plain socket I/O, built on the OpenSSL binding in
+// "std/bindings/openssl".
+
+// Imports
+import "std/bindings/openssl/openssl";
+import "std/net/socket";
+
+/**
+ * Owns an `SSL_CTX`, i.e. the certificate/trust/verification setup that is shared by every
+ * connection made or accepted through it. Build one with `newClientTlsContext` or
+ * `newServerTlsContext`, and hand it to `openTlsClientSocket` or `acceptTlsConnection`.
+ *
+ * A default-constructed context wraps no `SSL_CTX` and must not be used - it only exists so that
+ * structs which embed a `TlsContext` (like `HttpServer`) can be default-constructed themselves.
+ */
+public type TlsContext struct {
+    SslCtx ctx
+}
+
+/**
+ * Releases the underlying `SSL_CTX`. Safe to call more than once and on a default-constructed,
+ * never-initialized context.
+ */
+public p TlsContext.close() {
+    if this.ctx != nil<SslCtx> {
+        sslCtxFree(this.ctx);
+        this.ctx = nil<SslCtx>;
+    }
+}
+
+/**
+ * Builds the TLS context a client hands to `openTlsClientSocket`. Server certificates are always
+ * verified; there is no escape hatch to turn that off, since a client that does not verify the
+ * server it talks to gets no confidentiality guarantee worth having.
+ *
+ * @param caFile Path to a PEM file with trusted CA certificates, or "" to trust the operating
+ *               system's default trust store
+ * @return A ready-to-use client context, or an error describing why it could not be built
+ */
+public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
+    string errorMessage = "";
+    SslCtx ctx = sslCtxNewClient();
+
+    if ctx == nil<SslCtx> {
+        errorMessage = "Could not create TLS client context";
+    } else {
+        const bool trusted = caFile == "" ? sslCtxSetDefaultVerifyPaths(ctx) : sslCtxLoadVerifyLocations(ctx, caFile);
+        if !trusted {
+            errorMessage = "Could not load the TLS trust store";
+            sslCtxFree(ctx);
+            ctx = nil<SslCtx>;
+        } else {
+            sslCtxSetVerifyPeer(ctx);
+        }
+    }
+
+    const TlsContext context = TlsContext { ctx };
+    const Error error = Error(errorMessage);
+    return errorMessage == "" ? ok(context) : err<TlsContext>(error);
+}
+
+/**
+ * Builds the TLS context an `HttpServer` hands to `acceptTlsConnection`, loading the
+ * certificate chain and private key it presents to clients.
+ *
+ * @param certFile Path to a PEM file with the server's certificate (chain)
+ * @param keyFile Path to a PEM file with the private key matching the certificate
+ * @return A ready-to-use server context, or an error describing why it could not be built
+ */
+public f<Result<TlsContext>> newServerTlsContext(string certFile, string keyFile) {
+    string errorMessage = "";
+    SslCtx ctx = sslCtxNewServer();
+
+    if ctx == nil<SslCtx> {
+        errorMessage = "Could not create TLS server context";
+    } else if !sslCtxUseCertificateChainFile(ctx, certFile) {
+        errorMessage = "Could not load the TLS certificate file";
+    } else if !sslCtxUsePrivateKeyFile(ctx, keyFile) {
+        errorMessage = "Could not load the TLS private key file";
+    } else if !sslCtxCheckPrivateKey(ctx) {
+        errorMessage = "The TLS private key does not match the certificate";
+    }
+
+    if errorMessage != "" && ctx != nil<SslCtx> {
+        sslCtxFree(ctx);
+        ctx = nil<SslCtx>;
+    }
+
+    const TlsContext context = TlsContext { ctx };
+    const Error error = Error(errorMessage);
+    return errorMessage == "" ? ok(context) : err<TlsContext>(error);
+}
+
+/**
+ * A TCP socket with a TLS record layer on top. Exposes the same `read`/`writeAll`/`setTimeout`
+ * shape as `Socket`, so the generic wire transport of "std/net/http" (`sendRequest`,
+ * `receiveResponse`, ...) works on it unchanged.
+ */
+public type TlsSocket struct {
+    Socket sock
+    Ssl ssl
+}
+
+/**
+ * Opens a TCP connection to the given host and port and performs a TLS client handshake on top of
+ * it, verifying the server's certificate against `context` and its name against `host`.
+ *
+ * @param host Host to connect to, either as dotted IPv4 address or as hostname
+ * @param port Port to connect to
+ * @param context Client context that decides which certificates are trusted
+ * @param timeoutMillis Read/write timeout applied before the handshake, 0 to block indefinitely.
+ *                      Without this, a peer that accepts the TCP connection but never sends any
+ *                      TLS data would hang the handshake forever, regardless of any timeout the
+ *                      caller applies to the socket afterwards.
+ * @return The established TLS connection, or an error describing why it could not be established
+ */
+public f<Result<TlsSocket>> openTlsClientSocket(string host, unsigned short port, const TlsContext& context,
+                                                unsigned long timeoutMillis = 0l) {
+    string errorMessage = "";
+    Ssl ssl = nil<Ssl>;
+    Socket sock = Socket {};
+
+    const Result<Socket> socketResult = openClientSocket(host, port);
+    if socketResult.isErr() {
+        const Error& error = socketResult.getErr();
+        errorMessage = error.getMessage();
+    } else {
+        sock = socketResult.unwrap();
+        if timeoutMillis != 0l { sock.setTimeout(timeoutMillis); }
+        ssl = sslNew(context.ctx);
+        if ssl == nil<Ssl> {
+            errorMessage = "Could not create TLS connection state";
+            sock.close();
+        } else {
+            sslSetFd(ssl, sock.getConnFd());
+            sslSetExpectedHost(ssl, host);
+            if !sslConnect(ssl) {
+                errorMessage = sslVerifyResultOk(ssl) ? "TLS handshake failed" : "TLS certificate verification failed";
+                sslFree(ssl);
+                ssl = nil<Ssl>;
+                sock.close();
+            }
+        }
+    }
+
+    const TlsSocket tlsSocket = TlsSocket { sock, ssl };
+    const Error error = Error(errorMessage);
+    return errorMessage == "" ? ok(tlsSocket) : err<TlsSocket>(error);
+}
+
+/**
+ * Performs a TLS server handshake on the connection `sock` most recently accepted via
+ * `Socket.acceptConnection`.
+ *
+ * This is a free function rather than a method on `Socket` because `Socket` is defined per-platform
+ * (see "std/net/socket_linux" and friends) and Spice does not support adding methods to a struct
+ * from outside the file that defines it.
+ *
+ * @param sock Socket whose current connection to handshake
+ * @param context Server context that supplies the certificate and private key
+ * @return The established TLS connection, or an error describing why it could not be established
+ */
+public f<Result<TlsSocket>> acceptTlsConnection(Socket& sock, const TlsContext& context) {
+    string errorMessage = "";
+    Ssl ssl = sslNew(context.ctx);
+
+    if ssl == nil<Ssl> {
+        errorMessage = "Could not create TLS connection state";
+    } else {
+        sslSetFd(ssl, sock.getConnFd());
+        if !sslAccept(ssl) {
+            errorMessage = "TLS handshake failed";
+            sslFree(ssl);
+            ssl = nil<Ssl>;
+        }
+    }
+
+    Socket sockCopy = Socket {};
+    if errorMessage == "" {
+        // Transfer ownership of the connection to the TlsSocket: `sock` (the caller's listening
+        // socket) forgets the file descriptor, so only the TlsSocket's own close ever reaches it -
+        // otherwise the caller accepting and closing a later, unrelated connection that reuses the
+        // same descriptor number could close it out from under the TlsSocket instead. This also
+        // sidesteps a type checker limitation where a struct literal cannot copy-construct a field
+        // directly from a reference parameter like `sock`.
+        sockCopy = sock.detachConnection();
+    }
+    const TlsSocket tlsSocket = TlsSocket { sockCopy, ssl };
+    const Error error = Error(errorMessage);
+    return errorMessage == "" ? ok(tlsSocket) : err<TlsSocket>(error);
+}
+
+/**
+ * Reads up to `size` bytes from the connection into the given buffer.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param buffer Buffer to write the result into
+ * @param size Number of bytes to read
+ * @return Number of bytes read, or a value <= 0 on error/EOF
+ */
+public f<long> TlsSocket.read(byte* buffer, long size) {
+    return sslRead(this.ssl, buffer, size);
+}
+
+/**
+ * Writes an array of bytes to the connection, retrying until either all of them were handed over to
+ * TLS or the connection breaks.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return true if all bytes were written, false if the connection broke in between
+ */
+public f<bool> TlsSocket.writeAll(byte* content, unsigned long size) {
+    unsigned long bytesWritten = 0l;
+    while bytesWritten < size {
+        long written = 0l;
+        unsafe {
+            written = sslWrite(this.ssl, content + bytesWritten, cast<long>(size - bytesWritten));
+        }
+        if written <= 0l { return false; }
+        bytesWritten += cast<unsigned long>(written);
+    }
+    return true;
+}
+
+/**
+ * Limits how long a single read or write on this connection may block. Forwards to the underlying
+ * `Socket`, see `Socket.setTimeout`.
+ *
+ * @param milliseconds Timeout in milliseconds, 0 to block indefinitely again
+ * @return Setting the timeout was successful or not
+ */
+public f<bool> TlsSocket.setTimeout(unsigned long milliseconds) {
+    return this.sock.setTimeout(milliseconds);
+}
+
+/**
+ * Shuts down the TLS layer and closes the current connection, while keeping the listening socket
+ * (for a server) open. This is what a server does after it has finished serving a single client.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> TlsSocket.closeConnection() {
+    if this.ssl != nil<Ssl> {
+        sslShutdown(this.ssl);
+        sslFree(this.ssl);
+        this.ssl = nil<Ssl>;
+    }
+    return this.sock.closeConnection();
+}
+
+/**
+ * Shuts down the TLS layer and closes the socket. This method should always be called by the user
+ * before exiting the program.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> TlsSocket.close() {
+    if this.ssl != nil<Ssl> {
+        sslShutdown(this.ssl);
+        sslFree(this.ssl);
+        this.ssl = nil<Ssl>;
+    }
+    return this.sock.close();
+}

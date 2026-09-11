@@ -1,6 +1,7 @@
 // Imports
 import "std/net/http";
 import "std/net/socket";
+import "std/net/tls";
 
 /**
  * A blocking HTTP/1.1 client, built on the plain TCP sockets of "std/net/socket".
@@ -10,14 +11,17 @@ import "std/net/socket";
  * Content-Length, by the chunked transfer coding, or by the connection close of an HTTP/1.0 server
  * are all understood.
  *
- * There is no TLS underneath, so https URLs are rejected instead of being silently downgraded. Use
- * the libcurl bindings in "std/bindings/libcurl" when a request has to go over https.
+ * https URLs are carried over a TLS connection (see "std/net/tls"), with the server's certificate
+ * and host name verified on every request. `trustedCaFile` points that verification at a specific
+ * CA bundle instead of the operating system's default trust store, e.g. to talk to a server with a
+ * self-signed certificate in tests.
  */
 public type HttpClient struct {
     public HttpHeaders defaultHeaders     // Fields that are added to every request that lacks them
     public unsigned long timeoutMillis    // Per read/write timeout, 0 to block indefinitely
     public unsigned long maxMessageSize   // Upper bound on the size of a response
     public unsigned int maxRedirects      // Number of redirects to follow, 0 to hand 3xx back as-is
+    public String trustedCaFile           // PEM file of trusted CAs for https, "" for the OS default store
 }
 
 // Default identification of the client, sent unless the caller sets its own User-Agent
@@ -173,16 +177,31 @@ public f<Result<HttpResponse>> HttpClient.send(const HttpRequest& request, const
                 if !response.isRedirect() || remainingRedirects == 0u || location.isEmpty() {
                     done = true;
                 } else {
-                    currentUrl = resolveLocation(target, location);
-                    applyRedirectMethod(currentRequest, response.statusCode);
-                    remainingRedirects--;
+                    const String nextUrl = resolveLocation(target, location);
+                    const Result<Url> nextUrlResult = parseUrl(nextUrl);
+                    if nextUrlResult.isErr() {
+                        done = true;
+                    } else {
+                        const Url& nextTarget = nextUrlResult.unwrap();
+                        if target.scheme == "https" && nextTarget.scheme != "https" {
+                            // Refuse to silently carry an https exchange over to plain http - the
+                            // caller gets the redirect response back instead of a downgraded replay
+                            done = true;
+                        } else {
+                            if !sameAuthority(target, nextTarget) {
+                                currentRequest.headers.remove(HEADER_AUTHORIZATION);
+                            }
+                            currentUrl = nextUrl;
+                            applyRedirectMethod(currentRequest, response.statusCode);
+                            remainingRedirects--;
+                        }
+                    }
                 }
             }
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+    return errorMessage == "" ? ok(response) : err<HttpResponse>(Error(errorMessage));
 }
 
 /**
@@ -196,8 +215,40 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
     HttpResponse response = HttpResponse();
     string errorMessage = "";
 
+    this.completeRequest(request, url);
+    const bool expectBody = request.method != HttpMethod::HEAD;
+
     if url.scheme == "https" {
-        errorMessage = "HTTPS is not supported by std/net/http-client, since the socket layer carries no TLS";
+        const Result<TlsContext> contextResult = newClientTlsContext(this.trustedCaFile.getRaw());
+        if contextResult.isErr() {
+            const Error& error = contextResult.getErr();
+            errorMessage = error.getMessage();
+        } else {
+            TlsContext context = contextResult.unwrap();
+            const Result<TlsSocket> socketResult =
+                openTlsClientSocket(url.host.getRaw(), url.port, context, this.timeoutMillis);
+            if socketResult.isErr() {
+                const Error& error = socketResult.getErr();
+                errorMessage = error.getMessage();
+            } else {
+                TlsSocket socket = socketResult.unwrap();
+
+                if !sendRequest(socket, request) {
+                    errorMessage = "Could not send the request";
+                } else {
+                    const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
+                    if responseResult.isErr() {
+                        const Error& error = responseResult.getErr();
+                        errorMessage = error.getMessage();
+                    } else {
+                        const HttpResponse& received = responseResult.unwrap();
+                        response = received;
+                    }
+                }
+                socket.close();
+            }
+            context.close();
+        }
     } else {
         const Result<Socket> socketResult = openClientSocket(url.host.getRaw(), url.port);
         if socketResult.isErr() {
@@ -206,12 +257,10 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
         } else {
             Socket socket = socketResult.unwrap();
             if this.timeoutMillis != 0l { socket.setTimeout(this.timeoutMillis); }
-            this.completeRequest(request, url);
 
             if !sendRequest(socket, request) {
                 errorMessage = "Could not send the request";
             } else {
-                const bool expectBody = request.method != HttpMethod::HEAD;
                 const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
                 if responseResult.isErr() {
                     const Error& error = responseResult.getErr();
@@ -225,8 +274,7 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
         }
     }
 
-    const Error error = Error(errorMessage);
-    result = errorMessage == "" ? ok(response) : err<HttpResponse>(error);
+    return errorMessage == "" ? ok(response) : err<HttpResponse>(Error(errorMessage));
 }
 
 /**
@@ -255,6 +303,19 @@ p HttpClient.completeRequest(HttpRequest& request, const Url& url) {
 }
 
 /**
+ * Checks whether two URLs point at the same host and port, i.e. whether a request to one of them
+ * carries any business being sent to the other - used to decide whether credentials survive a
+ * redirect.
+ *
+ * @param a First URL
+ * @param b Second URL
+ * @return true if host and port match
+ */
+f<bool> sameAuthority(const Url& a, const Url& b) {
+    return a.host == b.host && a.port == b.port;
+}
+
+/**
  * Turns the value of a Location field into an absolute URL, resolving it against the URL the
  * redirect came from if it is relative
  *
@@ -263,25 +324,24 @@ p HttpClient.completeRequest(HttpRequest& request, const Url& url) {
  * @return Absolute URL to follow
  */
 f<String> resolveLocation(const Url& base, const String& location) {
-    result = String();
     if location.contains("://") {
         // Already absolute
-        result = location;
+        return location;
     } else {
-        result.append(base.scheme);
-        result.append("://");
-        const String authority = base.getAuthority();
-        result.append(authority);
+        result = String();
+        result += base.scheme;
+        result += "://";
+        result += base.getAuthority();
         if location.startsWith("/") {
             // Absolute path, replacing the path of the base URL
-            result.append(location);
+            result += location;
         } else {
             // Relative path, resolved against the directory of the base path
             const long lastSlash = base.path.rfind('/');
             String directory = String("/");
             if lastSlash != -1l { directory = base.path.getSubstring(0l, lastSlash + 1l); }
-            result.append(directory);
-            result.append(location);
+            result += directory;
+            result += location;
         }
     }
 }
@@ -297,8 +357,7 @@ f<String> resolveLocation(const Url& base, const String& location) {
  */
 p applyRedirectMethod(HttpRequest& request, unsigned short statusCode) {
     const bool isSafeMethod = request.method == HttpMethod::GET || request.method == HttpMethod::HEAD;
-    const bool rewritesToGet = statusCode == STATUS_SEE_OTHER
-                            || ((statusCode == STATUS_MOVED_PERMANENTLY || statusCode == STATUS_FOUND) && !isSafeMethod);
+    const bool rewritesToGet = statusCode == STATUS_SEE_OTHER || ((statusCode == STATUS_MOVED_PERMANENTLY || statusCode == STATUS_FOUND) && !isSafeMethod);
     if rewritesToGet {
         request.method = HttpMethod::GET;
         request.body = String();

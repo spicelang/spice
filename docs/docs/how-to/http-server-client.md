@@ -9,10 +9,10 @@ and chunked transfer encoding, so you get a working HTTP stack without pulling i
 This tutorial builds a small server with a few routes, and a client that talks to it, as two separate programs -
 which is how you would run them in practice.
 
-!!! note "No TLS"
-    Neither the server nor the client speaks TLS - the client rejects `https://` URLs outright. If you need to talk
-    to an HTTPS endpoint, use the libcurl bindings in `std/bindings/libcurl` instead, as described in the
-    [C/C++ interoperability tutorial](cpp-interop.md).
+!!! note "TLS"
+    `HttpClient` and `HttpServer` both speak TLS via `std/net/tls`, built on the OpenSSL bindings in
+    `std/bindings/openssl` - see [TLS / HTTPS](#tls-https) below. This adds a build-time dependency on OpenSSL
+    (`libssl-dev` on Debian/Ubuntu), the same way the libcurl bindings in `std/bindings/libcurl` depend on libcurl.
 
 ## A minimal server
 
@@ -182,6 +182,40 @@ client.maxRedirects = 0u;      // hand 3xx responses back as-is instead of follo
 
 `defaultHeaders` fields are only added to a request if it does not already carry a field with that name, so a
 one-off request can always override them.
+
+## TLS / HTTPS
+
+`HttpClient.get` (and the other request methods) transparently use TLS whenever the URL starts with `https://` - no
+extra code needed on the client side beyond the URL itself:
+
+```spice
+Result<HttpResponse> secure = client.get("https://example.com/");
+```
+
+By default, the server's certificate is verified against the operating system's trust store, and its host name is
+checked against the URL. Point verification at a specific CA bundle instead - for example to talk to a server with
+a self-signed certificate - with `trustedCaFile`:
+
+```spice
+client.trustedCaFile = String("./ca-bundle.pem");
+```
+
+There is no way to switch verification off: a client that does not verify the server it talks to gets no real
+confidentiality guarantee, so `std/net/tls` does not offer that option.
+
+To serve https instead of plain http, call `useTls` with a certificate and private key (PEM files) before `start`:
+
+```spice
+HttpServer server = HttpServer(8443s);
+Result<bool> tlsConfigured = server.useTls("./cert.pem", "./key.pem");
+if tlsConfigured.isErr() {
+    printf("Could not configure TLS: %s\n", tlsConfigured.getErr().message);
+    return 1;
+}
+```
+
+Everything else - routes, handlers, `start`/`run`/`stop` - stays the same; only the listening socket's connections
+are now TLS-handshaked before their request is read.
 
 ## Putting it all together
 
