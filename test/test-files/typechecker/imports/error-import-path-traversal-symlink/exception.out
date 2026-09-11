@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:1:
+Invalid import path: Import path 'escape/secret' escapes the permitted directory tree
+
+1  import "escape/secret" as s;
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
