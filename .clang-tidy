@@ -1,0 +1,30 @@
+---
+# clang-tidy configuration for the Spice compiler (src/, test/).
+#
+# Scope: bug-finding checks (bugprone, clang-analyzer, performance, portability,
+# misc) rather than style/opinion checks — formatting is handled by .clang-format
+# and naming/layout conventions are documented in STYLE_GUIDE.md. See that file's
+# "Memory management" section for why cppcoreguidelines' ownership/pointer checks
+# are intentionally left out: the codebase favors raw pointers owned by long-lived
+# containers (Scope*, ASTNode*, llvm::Value*) and arena-allocated AST nodes, which
+# those checks are not designed for.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  clang-analyzer-*,
+  performance-*,
+  portability-*,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-no-recursion,
+  -misc-include-cleaner,
+  readability-avoid-const-params-in-decls,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-declaration
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '(src|test)/.*'
+FormatStyle: none

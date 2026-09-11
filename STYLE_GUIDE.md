@@ -59,6 +59,12 @@ git diff --name-only --diff-filter=d origin/main | grep -E '\.(cpp|h)$' | xargs 
 
 There is currently no CI gate enforcing formatting, so this discipline is on the author (human or agent).
 
+Bug-pattern linting (as opposed to formatting) is checked in CI: the `Clang-Tidy` workflow
+(`.github/workflows/clang-tidy.yml`) runs `clang-tidy` against the lines changed in each push, using the root
+[`.clang-tidy`](.clang-tidy) config. It intentionally omits style/naming checks (those are covered by `.clang-format`
+and this guide) and the `cppcoreguidelines` ownership/pointer checks, which don't fit the raw-pointer/arena-allocation
+style described in [Memory management](#memory-management).
+
 ## File layout (C++)
 
 `.cpp` and `.h` files come in matching **PascalCase** pairs (`TypeChecker.h` / `TypeChecker.cpp`). Each file is structured

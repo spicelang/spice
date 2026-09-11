@@ -1,0 +1,126 @@
+# Clang-Tidy CI
+name: Clang-Tidy
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - 'media/**'
+      - '**.md'
+
+env:
+  LLVM_VERSION: "llvmorg-23.1.1"
+  GCC_VERSION: "16"
+
+jobs:
+  clang-tidy:
+    name: Clang-Tidy - Linux/x86_64
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Dependencies
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang-tidy
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          mkdir -p ~/.cache/ccache
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ccache
+          key: ccache-clangtidy-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-clangtidy-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Clone LLVM
+        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/llvm/build
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
+            -DLLVM_BUILD_TOOLS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            ../llvm
+          cmake --build .
+
+      - name: Download Libs
+        run: python setup-deps.py
+
+      - name: Configure and generate sources
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSPICE_BUILT_BY="ghactions" \
+            ..
+          # Builds the core library so ANTLR-generated parser sources/headers exist on
+          # disk for clang-tidy to parse; compile_commands.json is written at configure
+          # time regardless (CMAKE_EXPORT_COMPILE_COMMANDS is ON in the top-level file).
+          cmake --build . --target spicecore
+
+      - name: Determine base commit
+        id: diff
+        run: |
+          BASE_SHA="${{ github.event.before }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+            BASE_SHA=$(git rev-parse HEAD^ 2>/dev/null || echo "")
+          fi
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Run clang-tidy on changed lines
+        if: steps.diff.outputs.base_sha != ''
+        run: |
+          git diff -U0 "${{ steps.diff.outputs.base_sha }}" "${{ github.sha }}" -- '*.cpp' '*.h' > changes.diff
+          if [ ! -s changes.diff ]; then
+            echo "No changed C++ files; skipping clang-tidy."
+            exit 0
+          fi
+          python3 llvm/clang-tools-extra/clang-tidy/tool/clang-tidy-diff.py \
+            -p1 -path build -j "$(nproc)" \
+            < changes.diff | tee clang-tidy-report.txt
+          if grep -qE ':[0-9]+:[0-9]+: (warning|error):' clang-tidy-report.txt; then
+            echo "::error::clang-tidy reported issues on changed lines. See the job log above for details."
+            exit 1
+          fi
+
+      - name: Save CCache
+        uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/.cache/ccache
+          key: ccache-clangtidy-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
