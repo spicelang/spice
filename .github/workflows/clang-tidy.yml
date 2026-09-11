@@ -98,13 +98,14 @@ jobs:
         run: |
           BASE_SHA="${{ github.event.before }}"
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
-            BASE_SHA=$(git rev-parse HEAD^ 2>/dev/null || echo "")
+            BASE_SHA=$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)
           fi
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Run clang-tidy on changed lines
         if: steps.diff.outputs.base_sha != ''
         run: |
+          set -o pipefail
           git diff -U0 "${{ steps.diff.outputs.base_sha }}" "${{ github.sha }}" -- '*.cpp' '*.h' > changes.diff
           if [ ! -s changes.diff ]; then
             echo "No changed C++ files; skipping clang-tidy."
