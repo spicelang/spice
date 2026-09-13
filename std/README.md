@@ -127,7 +127,7 @@ Interacting with the underlying operating system: processes, threads, memory, en
 | `system` / `os`          | System and OS information (platform-specific variants). |
 | `thread` / `thread-pool` | Spawning threads and managing pools of workers.         |
 | `mutex` / `atomic`       | Synchronization primitives.                             |
-| `allocator`              | Memory allocation utilities.                            |
+| `offset-allocator`       | Offset-based memory allocator.                          |
 | `syscall`                | Architecture-specific raw system call interfaces.       |
 
 ### `std/runtime`
