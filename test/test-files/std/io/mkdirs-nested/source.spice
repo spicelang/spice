@@ -1,0 +1,18 @@
+import "std/io/dir" as dir;
+
+f<int> main() {
+    printf("Nested existing before create: %d\n", dirExists("./test-mkdirs-nested/a/b"));
+    dyn mkReturnCode = mkDirs("./test-mkdirs-nested/a/b", dir::MODE_ALL_RWX);
+    printf("mkDirs return code: %d\n", mkReturnCode);
+    printf("Nested existing after create: %d\n", dirExists("./test-mkdirs-nested/a/b"));
+    printf("Intermediate existing after create: %d\n", dirExists("./test-mkdirs-nested/a"));
+
+    // Calling again on a path that already fully exists must be a harmless no-op
+    dyn mkReturnCodeAgain = mkDirs("./test-mkdirs-nested/a/b", dir::MODE_ALL_RWX);
+    printf("mkDirs return code (already existing): %d\n", mkReturnCodeAgain);
+
+    dyn rmReturnCode1 = rmDir("./test-mkdirs-nested/a/b");
+    dyn rmReturnCode2 = rmDir("./test-mkdirs-nested/a");
+    dyn rmReturnCode3 = rmDir("./test-mkdirs-nested");
+    printf("Nested existing after delete: %d\n", dirExists("./test-mkdirs-nested"));
+}

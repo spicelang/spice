@@ -92,28 +92,6 @@ public f<int> mkDir(string path, int mode) {
 }
 
 /**
- * Creates an empty directory at the specified path, with the specified mode.
- * Unlike mkDir, mkDirs can also create nested path structures.
- *
- * There are predefined constants for the mode available:
- * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
- * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
- * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
- * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
- *
- * @return Result code of the create operation: 0 = successful, -1 = failed
- */
-public f<int> mkDirs(string path, int mode) {
-    // ToDo: Implement
-
-    /*char[] pathChars = (char[]) path;
-    for int i = 0; i < path.length(); i++ {
-
-    }*/
-    return -1;
-}
-
-/**
  * Deletes an empty directory at the specified path.
  *
  * @return Result code of the delete operation: 0 = successful, -1 = failed
@@ -147,6 +125,46 @@ public f<bool> dirExists(string path) {
         return (fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
+}
+
+/**
+ * Creates an empty directory at the specified path, with the specified mode.
+ * Unlike mkDir, mkDirs can also create nested path structures: any missing parent directories
+ * are created along the way, in order. Directories that already exist anywhere along the path
+ * (including the target itself) are left as is. Both '/' and '\' are accepted as separators.
+ *
+ * There are predefined constants for the mode available:
+ * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
+ * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
+ * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
+ * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+public f<int> mkDirs(string path, int mode) {
+    String fullPath = String(path);
+    if fullPath.isEmpty() { return -1; }
+    fullPath.replaceAll('/', '\\');
+
+    // Walk the path component by component, creating each missing directory along the way.
+    // A leading separator (or a drive letter like "C:\") produces an empty/short first prefix,
+    // which mkdir rejects; dirExists/mkdir failing on it is harmless, since it always pre-exists.
+    unsigned long searchStart = 0l;
+    while true {
+        const long sepIndex = fullPath.find('\\', searchStart);
+        const bool isLast = sepIndex == -1l;
+        const long end = isLast ? cast<long>(fullPath.getLength()) : sepIndex;
+        const String prefix = fullPath.getSubstring(0l, end);
+
+        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 {
+            return -1;
+        }
+
+        if isLast { break; }
+        searchStart = cast<unsigned long>(end) + 1l;
+    }
+
+    return 0;
 }
 
 /**
@@ -190,8 +208,14 @@ public p listDirRecursive(string path) {
         while readMore {
             printf("Filename: %s\n", dirEntry.fileName);
             if (dirEntry.fileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 {
-                // ToDo: Uncomment when string concatenation is supported
-                //listDirRecursive(path + "\\" + dirEntry.fileName);
+                unsafe {
+                    const String entryName = String(cast<string>(&dirEntry.fileName));
+                    // Skip "." and ".." so recursion does not loop between a directory and itself/its parent
+                    if entryName != "." && entryName != ".." {
+                        const String childPath = path + "\\" + entryName;
+                        listDirRecursive(childPath.getRaw());
+                    }
+                }
             }
             // Check if there is another file
             readMore = findNextFileA(handle, &dirEntry);
