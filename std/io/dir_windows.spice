@@ -212,7 +212,8 @@ public p listDirRecursive(string path) {
                     const String entryName = String(cast<string>(&dirEntry.fileName));
                     // Skip "." and ".." so recursion does not loop between a directory and itself/its parent
                     if entryName != "." && entryName != ".." {
-                        listDirRecursive((path + "\\" + entryName).getRaw());
+                        const String childPath = path + "\\" + entryName;
+                        listDirRecursive(childPath.getRaw());
                     }
                 }
             }

@@ -1,0 +1,6 @@
+Nested existing before create: 0
+mkDirs return code: 0
+Nested existing after create: 1
+Intermediate existing after create: 1
+mkDirs return code (already existing): 0
+Nested existing after delete: 0
