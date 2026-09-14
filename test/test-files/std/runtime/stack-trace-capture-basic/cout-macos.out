@@ -1,8 +1,0 @@
-[==========] Running 1 test(s) from 1 source file(s)
-[----------] Running 1 test(s) from source.spice
-[ RUN      ] testStackTraceCapture
-count=1
-[1m[32m[ PASSED   ][0m[22m testStackTraceCapture
-[----------] Ran 1 test(s) from source.spice
-
-[==========] Ran 1 test(s) from 1 source file(s)
