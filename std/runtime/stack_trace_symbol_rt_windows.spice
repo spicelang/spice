@@ -59,11 +59,12 @@ const unsigned int SYMBOL_NAME_BUFFER_CAPACITY = 511u;
 ext f<byte*> GetCurrentProcess();
 ext f<bool> SymInitialize(byte* /*hProcess*/, byte* /*userSearchPath*/, bool /*fInvadeProcess*/);
 ext f<bool> SymFromAddr(byte* /*hProcess*/, byte* /*address*/, unsigned long* /*displacement*/, SymbolInfo* /*symbol*/);
-// Real, exported kernel32 atomic (not just a compiler intrinsic - it's a genuine, linkable Kernel32.dll export,
-// see <winnt.h>/InterlockedExchange), used below to hand-roll a minimal spinlock: Spice's global-variable grammar
-// only accepts primitive types with a constant-literal initializer, so a global Mutex (which needs a constructor
-// call, see std/os/mutex.spice) can't be declared here, but a plain int initialized to 0 can.
-ext f<int> InterlockedExchange(int* /*target*/, int /*value*/);
+// Real, ordinary kernel32 exports (<synchapi.h>) used below as a lock around SymInitialize()/SymFromAddr() - not
+// compiler-intrinsic-backed the way the Interlocked* family is (an earlier version of this file tried
+// InterlockedExchange() for a hand-rolled spinlock and it failed to link: MinGW's import library has no such
+// symbol, since MSVC/Clang normally fold it straight into a machine instruction instead of a real call).
+ext p AcquireSRWLockExclusive(long* /*srwLock*/);
+ext p ReleaseSRWLockExclusive(long* /*srwLock*/);
 
 // Guards against calling SymInitialize() more than once per process: DbgHelp documents that a second
 // SymInitialize() call without an intervening SymCleanup() is invalid, unlike SymFromAddr() itself, which is
@@ -74,12 +75,16 @@ ext f<int> InterlockedExchange(int* /*target*/, int /*value*/);
 // uppercase letter, the same identifier form used for types and true constants - there is no separate lowercase
 // form for mutable globals.
 bool SymInitialized = false;
-// Spinlock guarding both SymInitialize() and SymFromAddr() below: DbgHelp's own functions are documented as not
-// safe to call from more than one thread at a time, and SymInitialized above is a plain (non-atomic) flag, so
-// without this, concurrent sDumpStacktrace() calls from different threads could both observe it unset and race
-// into SymInitialize(), or race a SymFromAddr() call against a concurrent SymInitialize()/SymCleanup(). 0 means
-// unlocked, 1 means held - see resolveSymbolName() for acquire/release.
-int Lock = 0;
+// Backing storage for a Windows SRWLOCK, guarding both SymInitialize() and SymFromAddr() below: DbgHelp's own
+// functions are documented as not safe to call from more than one thread at a time, and SymInitialized above is
+// a plain (non-atomic) flag, so without this, concurrent sDumpStacktrace() calls from different threads could
+// both observe it unset and race into SymInitialize(), or race a SymFromAddr() call against a concurrent
+// SymInitialize()/SymCleanup(). An SRWLOCK is documented as valid once zero-initialized (SRWLOCK_INIT is exactly
+// that, no InitializeSRWLock() call needed), and is pointer-sized, so a `long` global fits it exactly - unlike a
+// Mutex/CRITICAL_SECTION (which need a constructor call) or a raw pointer-typed global (Spice's constant-literal
+// grammar has no way to spell a nil pointer initializer), both of which Spice's global-variable grammar - plain
+// primitive types with a constant-literal initializer only - can't accommodate.
+long Lock = 0l;
 
 /**
  * Resolves an address to the name of its containing symbol via SymFromAddr(), or an empty/unallocated String if
@@ -87,7 +92,7 @@ int Lock = 0;
  */
 public f<String> resolveSymbolName(byte* address) {
     unsafe {
-        while InterlockedExchange(&Lock, 1) != 0 {} // spin until this thread is the one that sets 0 -> 1
+        AcquireSRWLockExclusive(&Lock);
 
         byte* process = GetCurrentProcess();
         if !SymInitialized {
@@ -105,7 +110,7 @@ public f<String> resolveSymbolName(byte* address) {
         info.maxNameLen = SYMBOL_NAME_BUFFER_CAPACITY;
 
         const bool found = SymFromAddr(process, address, nil<unsigned long*>, &info);
-        InterlockedExchange(&Lock, 0); // release, before returning either way
+        ReleaseSRWLockExclusive(&Lock); // release, before returning either way
 
         if found {
             return String(cast<string>(info.name));
