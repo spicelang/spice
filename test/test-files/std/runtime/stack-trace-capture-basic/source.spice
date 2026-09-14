@@ -35,17 +35,17 @@ f<bool> levelC() {
 }
 
 f<bool> levelB() {
-    const bool result = levelC(); // not a tail call - keeps levelB's own frame on every platform
-    return result;
+    const bool ok = levelC(); // not a tail call - keeps levelB's own frame on every platform
+    return ok;
 }
 
 f<bool> levelA() {
-    const bool result = levelB();
-    return result;
+    const bool ok = levelB();
+    return ok;
 }
 
 #[test]
 f<bool> testStackTraceCapture() {
-    const bool result = levelA();
-    return result;
+    const bool ok = levelA();
+    return ok;
 }
