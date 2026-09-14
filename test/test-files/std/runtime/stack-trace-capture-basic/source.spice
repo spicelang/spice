@@ -1,42 +1,51 @@
-// Diagnostic round 2: round 1 revealed macOS/AArch64 hits a nil "return address" slot on the second frame of the
-// walk (capture()'s own frame is fine, but the next hop up - levelC's own frame record - reads nil at its +8
-// offset), while Linux/x86_64 and Linux/AArch64 both walk cleanly to a consistent count of 3. Since Linux/AArch64
-// is unaffected, this isn't a general AAPCS64 frame-record layout problem - it's macOS-specific.
+// Diagnostic round 3: rounds 1-2 found two compounding issues.
 //
-// This round bypasses capture() entirely and calls __frame_address() directly here in levelC (a compiler
-// builtin, callable from any Spice source, not just std/runtime - see BUILTIN_FCT_NAME_FRAME_ADDRESS), printing
-// every raw pointer value in hex at each hop, to see exactly what levelC's own frame record looks like on the
-// platform that's failing.
+// 1. capture() didn't recognize the chain's sentinel/terminator frame: on macOS/AArch64 specifically, the
+//    sentinel's return-address field reads zero (one hop before its saved-frame-pointer field does, which is
+//    the more commonly documented signal), so the walk recorded a bogus nil entry instead of stopping. Fixed in
+//    stack_trace_rt.spice/stack_trace_rt_windows.spice: the walk now stops without recording once the
+//    return-address about to be captured is itself nil.
+// 2. levelA/levelB/levelC/testStackTraceCapture were all trivial `return foo();` tail calls, which is exactly
+//    the shape a compiler can collapse via tail-call optimization - and apparently one platform's toolchain does
+//    that more aggressively here than another's, so the *real* number of frames wasn't even the same source-level
+//    depth across platforms to begin with. Fixed below by assigning each call's result to a local before
+//    returning it, taking the call out of tail position so every wrapper keeps its own frame regardless of
+//    platform.
+//
+// This round re-enables the actual capture()/dump() path (not the raw __frame_address() probing of round 2) to
+// confirm both fixes together produce a consistent count with no nil entries, on every platform, before locking
+// in the real assertion and cout.out.
 
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
-    unsafe {
-        byte** frame0 = cast<byte**>(__frame_address());
-        printf("frame0=%p\n", frame0);
-        printf("frame0[0](saved fp)=%p  frame0[1](return addr)=%p\n", frame0[0], frame0[1]);
+    StackTraceBuffer trace;
+    trace.capture();
 
-        if frame0[0] != nil<byte*> {
-            byte** frame1 = cast<byte**>(frame0[0]);
-            printf("frame1=%p\n", frame1);
-            printf("frame1[0](saved fp)=%p  frame1[1](return addr)=%p\n", frame1[0], frame1[1]);
-        } else {
-            printf("frame0[0] is nil, stopping here\n");
+    printf("count=%d\n", trace.count);
+    for int i = 0; i < trace.count; i++ {
+        if trace.addresses[i] == nil<byte*> {
+            printf("nil at %d\n", i);
         }
     }
+
+    sDumpStacktrace(false);
 
     return true;
 }
 
 f<bool> levelB() {
-    return levelC();
+    const bool result = levelC(); // not a tail call - keeps levelB's own frame on every platform
+    return result;
 }
 
 f<bool> levelA() {
-    return levelB();
+    const bool result = levelB();
+    return result;
 }
 
 #[test]
 f<bool> testStackTraceCapture() {
-    return levelA();
+    const bool result = levelA();
+    return result;
 }

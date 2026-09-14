@@ -37,6 +37,12 @@ public type StackTraceBuffer struct {
  * current instruction pointer (i.e. the return address capture() will resume at), not one of its parents' - so
  * by default the trace starts exactly at the call site of capture() itself.
  *
+ * The chain's outermost frame is a sentinel, conventionally marked by a zeroed saved-frame-pointer field - but
+ * on at least one observed platform (macOS/AArch64) its return-address field reads zero too, one hop before the
+ * saved-frame-pointer field does. So termination is checked on the return-address value about to be recorded,
+ * not only on the frame pointer itself - a zero return address means this frame is (or already looks like) the
+ * sentinel, and the walk stops without recording it, rather than recording a bogus nil entry.
+ *
  * @param skipFrames Number of additional frames to omit above the direct caller, for wrapper functions like
  *                    sDumpStacktrace() that call capture() on a caller's behalf and want their own frame hidden.
  */
@@ -52,7 +58,11 @@ public p StackTraceBuffer.capture(int skipFrames = 0) {
         }
 
         while frame != nil<byte**> && this.count < STACK_TRACE_CAPACITY {
-            this.addresses[this.count] = frame[1]; // return address for this frame
+            byte* returnAddress = frame[1];
+            if returnAddress == nil<byte*> {
+                break; // sentinel frame - no real caller above this, stop without recording it
+            }
+            this.addresses[this.count] = returnAddress;
             this.count++;
             frame = cast<byte**>(frame[0]); // saved frame pointer of the parent frame
         }
