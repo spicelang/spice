@@ -36,7 +36,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.9
+        uses: github/codeql-action/init@v4.38.0
         with:
           languages: cpp
 
@@ -92,4 +92,4 @@ jobs:
           cmake --build . --target spicetest
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4.37.9
+        uses: github/codeql-action/analyze@v4.38.0
