@@ -10,8 +10,9 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-LLVM_MAJOR="23"
 LLVM_VERSION="llvmorg-23.1.1"
+LLVM_MAJOR="${LLVM_VERSION#llvmorg-}"
+LLVM_MAJOR="${LLVM_MAJOR%%.*}"
 GCC_VERSION="16"
 LLVM_PKG_CMAKE_DIR="/usr/lib/llvm-${LLVM_MAJOR}/lib/cmake/llvm"
 LLVM_SRC_DIR="$CLAUDE_PROJECT_DIR/llvm"
