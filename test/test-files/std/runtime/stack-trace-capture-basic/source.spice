@@ -1,24 +1,29 @@
-// Diagnostic round: a prior version asserted trace.count == 4 and failed identically on Linux and macOS (exit
-// code 1), which - since those platforms' CRTs are otherwise very different - points at an extra frame
-// contributed by Spice's own generated test-entry (from #[test]/run-builtin-tests) rather than anything
-// platform-specific. Printing the actual count (instead of asserting on it) and deliberately mismatching
-// cout.out.placeholder below forces the CI diff to show the real captured output, so the exact expected count
-// and dump() text can be filled in for real once observed - see cout.out.
+// Diagnostic round 2: round 1 revealed macOS/AArch64 hits a nil "return address" slot on the second frame of the
+// walk (capture()'s own frame is fine, but the next hop up - levelC's own frame record - reads nil at its +8
+// offset), while Linux/x86_64 and Linux/AArch64 both walk cleanly to a consistent count of 3. Since Linux/AArch64
+// is unaffected, this isn't a general AAPCS64 frame-record layout problem - it's macOS-specific.
+//
+// This round bypasses capture() entirely and calls __frame_address() directly here in levelC (a compiler
+// builtin, callable from any Spice source, not just std/runtime - see BUILTIN_FCT_NAME_FRAME_ADDRESS), printing
+// every raw pointer value in hex at each hop, to see exactly what levelC's own frame record looks like on the
+// platform that's failing.
 
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
-    StackTraceBuffer trace;
-    trace.capture();
+    unsafe {
+        byte** frame0 = cast<byte**>(__frame_address());
+        printf("frame0=%p\n", frame0);
+        printf("frame0[0](saved fp)=%p  frame0[1](return addr)=%p\n", frame0[0], frame0[1]);
 
-    printf("count=%d\n", trace.count);
-    for int i = 0; i < trace.count; i++ {
-        if trace.addresses[i] == nil<byte*> {
-            printf("nil at %d\n", i);
+        if frame0[0] != nil<byte*> {
+            byte** frame1 = cast<byte**>(frame0[0]);
+            printf("frame1=%p\n", frame1);
+            printf("frame1[0](saved fp)=%p  frame1[1](return addr)=%p\n", frame1[0], frame1[1]);
+        } else {
+            printf("frame0[0] is nil, stopping here\n");
         }
     }
-
-    sDumpStacktrace(false);
 
     return true;
 }
