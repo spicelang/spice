@@ -1,22 +1,41 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-// Raw stack trace capture via frame-pointer walking. Relies on the compiler-internal __frame_address() builtin
-// (src/irgenerator/GenBuiltinFunctions.cpp), which lowers to LLVM's target-independent 'llvm.frameaddress'
-// intrinsic and hands back the calling function's own frame address - the same value as C's
-// `__builtin_frame_address(0)`. From there, the walk itself is plain Spice: on every supported target and ABI
-// (x86-64 System V, AArch64 AAPCS, ...) the first pointer-sized slot at the frame address holds the caller's
-// saved frame pointer and the next slot holds the return address, so following that chain one hop at a time
-// recovers the call stack without any further compiler support. This only works because IRGenerator
+// Stack trace capture via frame-pointer walking, plus best-effort symbol resolution. Relies on the
+// compiler-internal __frame_address() builtin (src/irgenerator/GenBuiltinFunctions.cpp), which lowers to LLVM's
+// target-independent 'llvm.frameaddress' intrinsic and hands back the calling function's own frame address - the
+// same value as C's `__builtin_frame_address(0)`. From there, the walk itself is plain Spice: on every supported
+// target and ABI (x86-64 System V, AArch64 AAPCS, ...) the first pointer-sized slot at a frame address holds the
+// caller's saved frame pointer and the next slot holds the return address, so following that chain one hop at a
+// time recovers the call stack without any further compiler support. This only works because IRGenerator
 // unconditionally keeps frame pointers for every function (see the `module->setFramePointer(...)` call in
 // IRGenerator.cpp) - omitting them would break the chain.
 //
-// Deliberately scoped to raw address capture only - there is no symbol resolution here (that would need either
-// debug info or a retained symbol table, neither of which the compiler emits today), so addresses are reported
-// as-is. A future consumer can turn them into names via `dladdr()` or similar.
+// Symbol resolution goes through the libc/POSIX dladdr(), which looks addresses up in the dynamic symbol table
+// (.dynsym) of whichever loaded object contains them - not the full static symbol table, and not debug info.
+// Spice does not link its executables with -rdynamic/--export-dynamic, so a Spice program's own functions are
+// typically NOT present in .dynsym: dladdr() will usually resolve addresses that land in a dynamically linked
+// library (e.g. libc), but not the caller's own Spice-level frames. Until Spice exports its own symbols (or grows
+// a dedicated PC->function table), dump() falls back to the raw address whenever dladdr() can't name a symbol.
+//
+// This file is the default (POSIX) implementation. Windows has no dladdr(), so it gets its own variant,
+// stack_trace_rt_windows.spice, picked up automatically by the compiler's OS-suffixed import resolution - see
+// that file for what differs.
 
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 const int STACK_TRACE_CAPACITY = 64;
+
+/**
+ * Mirrors libc's 'Dl_info' (<dlfcn.h>), field for field, so it can be passed to dladdr() by pointer.
+ */
+type DlInfo struct {
+    string dliFName // Pathname of the shared object that contains the address
+    byte*  dliFBase // Base address at which the shared object is loaded
+    string dliSName // Name of the nearest symbol with an address <= the given one, nil if none was found
+    byte*  dliSAddr // Exact address of that symbol
+}
+
+ext f<int> dladdr(byte* /*addr*/, DlInfo* /*info*/);
 
 /**
  * Fixed-capacity buffer holding one captured stack trace, as raw return addresses (most recent call first).
@@ -29,20 +48,26 @@ public type StackTraceBuffer struct {
 }
 
 /**
- * Captures the stack trace of the calling function, i.e. the frame that calls capture() is not itself included -
- * the first recorded address is that frame's own return address.
+ * Captures the stack trace of the calling function. The first recorded address is the calling function's own
+ * current instruction pointer (i.e. the return address capture() will resume at), not one of its parents' - so
+ * by default the trace starts exactly at the call site of capture() itself.
+ *
+ * @param skipFrames Number of additional frames to omit above the direct caller, for wrapper functions like
+ *                    sDumpStacktrace() that call capture() on a caller's behalf and want their own frame hidden.
  */
-public p StackTraceBuffer.capture() {
+public p StackTraceBuffer.capture(int skipFrames = 0) {
     this.count = 0;
 
     unsafe {
-        // __frame_address() yields this procedure's own frame; step to the caller's frame once before
-        // recording anything, so the trace starts at the call site of capture() itself.
-        byte** ownFrame = cast<byte**>(__frame_address());
-        byte** frame = cast<byte**>(ownFrame[0]);
+        byte** frame = cast<byte**>(__frame_address());
+
+        while skipFrames > 0 && frame != nil<byte**> {
+            frame = cast<byte**>(frame[0]);
+            skipFrames--;
+        }
 
         while frame != nil<byte**> && this.count < STACK_TRACE_CAPACITY {
-            this.addresses[this.count] = frame[1]; // saved return address
+            this.addresses[this.count] = frame[1]; // return address for this frame
             this.count++;
             frame = cast<byte**>(frame[0]); // saved frame pointer of the parent frame
         }
@@ -50,13 +75,35 @@ public p StackTraceBuffer.capture() {
 }
 
 /**
- * Prints every recorded frame of this trace to stderr, as raw return addresses. A no-op if nothing was captured.
+ * Prints every recorded frame of this trace to stderr, resolving each address to a 'symbol+offset' via dladdr()
+ * where possible and falling back to the raw address otherwise (see the file-level comment on why that is
+ * common for a Spice program's own frames today). A no-op if nothing was captured.
  */
 public p StackTraceBuffer.dump() {
     if this.count == 0 { return; }
 
     fprintf(__stderr(), "Stack trace:\n");
     for int i = 0; i < this.count; i++ {
-        fprintf(__stderr(), "  #%d  %p\n", i, this.addresses[i]);
+        byte* address = this.addresses[i];
+        DlInfo info;
+        unsafe {
+            if dladdr(address, &info) != 0 && cast<char*>(info.dliSName) != nil<char*> {
+                const unsigned long offset = cast<unsigned long>(address) - cast<unsigned long>(info.dliSAddr);
+                fprintf(__stderr(), "  #%d  %p  %s+0x%lx\n", i, address, info.dliSName, offset);
+                continue;
+            }
+        }
+        fprintf(__stderr(), "  #%d  %p\n", i, address);
     }
+}
+
+/**
+ * Captures and immediately dumps the calling function's stack trace to stderr - the one-call convenience entry
+ * point, auto-imported like the other 's'-prefixed runtime functions (see RuntimeModuleManager.h). Skips its own
+ * frame, so the first printed frame is the call site of sDumpStacktrace() itself.
+ */
+public p sDumpStacktrace() {
+    StackTraceBuffer trace;
+    trace.capture(1);
+    trace.dump();
 }

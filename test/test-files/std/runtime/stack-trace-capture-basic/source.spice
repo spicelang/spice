@@ -1,7 +1,9 @@
 // Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
-// calls. How many frames get captured beyond this call chain depends on how many further frames the platform's
-// CRT/libc keeps below main() (e.g. _start, __libc_start_main), so this only asserts a lower bound instead of an
-// exact frame count - anything less than the number of Spice-level frames below would mean the walk is broken.
+// calls. capture()'s first recorded frame is the call site of capture() itself (levelC below), so this chain
+// contributes at least 4 frames: levelC, levelB, levelA and main. How many more get captured beyond that depends
+// on how many further frames the platform's CRT/libc keeps below main() (e.g. _start, __libc_start_main), so
+// this only asserts a lower bound instead of an exact frame count - anything less than 4 would mean the walk is
+// broken (e.g. dropping the innermost frame again).
 
 import "std/runtime/stack_trace_rt";
 
@@ -9,8 +11,8 @@ f<int> levelC() {
     StackTraceBuffer trace;
     trace.capture();
 
-    if trace.count < 3 {
-        printf("FAIL: expected at least 3 frames, got %d\n", trace.count);
+    if trace.count < 4 {
+        printf("FAIL: expected at least 4 frames, got %d\n", trace.count);
         return 1;
     }
 

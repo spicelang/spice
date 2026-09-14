@@ -1,0 +1,74 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Windows variant of stack_trace_rt.spice. The frame-pointer walk itself is identical (LLVM's 'llvm.frameaddress'
+// intrinsic and the saved-frame-pointer chain are portable across targets), but Windows has no dladdr() - that is
+// a POSIX/libdl API - so there is no symbol resolution here yet. dump() falls back to raw addresses
+// unconditionally. A real implementation would go through DbgHelp's SymFromAddr() (after SymInitialize()), which
+// is enough of a self-contained addition that it is left as a follow-up rather than done here.
+//
+// See stack_trace_rt.spice for the shared design notes (frame-pointer chain layout, capture() semantics).
+
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
+const int STACK_TRACE_CAPACITY = 64;
+
+/**
+ * Fixed-capacity buffer holding one captured stack trace, as raw return addresses (most recent call first).
+ * Once the capacity above is hit, the walk stops early - deeper frames are silently dropped rather than
+ * overwriting the ones closest to the capture point, which are the most relevant for diagnostics.
+ */
+public type StackTraceBuffer struct {
+    byte*[STACK_TRACE_CAPACITY] addresses
+    int count
+}
+
+/**
+ * Captures the stack trace of the calling function. The first recorded address is the calling function's own
+ * current instruction pointer (i.e. the return address capture() will resume at), not one of its parents' - so
+ * by default the trace starts exactly at the call site of capture() itself.
+ *
+ * @param skipFrames Number of additional frames to omit above the direct caller, for wrapper functions like
+ *                    sDumpStacktrace() that call capture() on a caller's behalf and want their own frame hidden.
+ */
+public p StackTraceBuffer.capture(int skipFrames = 0) {
+    this.count = 0;
+
+    unsafe {
+        byte** frame = cast<byte**>(__frame_address());
+
+        while skipFrames > 0 && frame != nil<byte**> {
+            frame = cast<byte**>(frame[0]);
+            skipFrames--;
+        }
+
+        while frame != nil<byte**> && this.count < STACK_TRACE_CAPACITY {
+            this.addresses[this.count] = frame[1]; // return address for this frame
+            this.count++;
+            frame = cast<byte**>(frame[0]); // saved frame pointer of the parent frame
+        }
+    }
+}
+
+/**
+ * Prints every recorded frame of this trace to stderr as a raw address - no symbol resolution on Windows yet,
+ * see the file-level comment. A no-op if nothing was captured.
+ */
+public p StackTraceBuffer.dump() {
+    if this.count == 0 { return; }
+
+    fprintf(__stderr(), "Stack trace:\n");
+    for int i = 0; i < this.count; i++ {
+        fprintf(__stderr(), "  #%d  %p\n", i, this.addresses[i]);
+    }
+}
+
+/**
+ * Captures and immediately dumps the calling function's stack trace to stderr - the one-call convenience entry
+ * point, auto-imported like the other 's'-prefixed runtime functions (see RuntimeModuleManager.h). Skips its own
+ * frame, so the first printed frame is the call site of sDumpStacktrace() itself.
+ */
+public p sDumpStacktrace() {
+    StackTraceBuffer trace;
+    trace.capture(1);
+    trace.dump();
+}

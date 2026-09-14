@@ -72,6 +72,8 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(RuntimeModule runtimeModule
     return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
   case RTTI_RT:
     return {RTTI_RT_IMPORT_NAME, "rtti_rt"};
+  case STACK_TRACE_RT:
+    return {STACK_TRACE_RT_IMPORT_NAME, "stack_trace_rt"};
   default:                                                                   // LCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module"); // LCOV_EXCL_LINE
   }

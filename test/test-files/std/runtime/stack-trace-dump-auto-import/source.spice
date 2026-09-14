@@ -1,0 +1,19 @@
+// Exercises sDumpStacktrace() (std/runtime/stack_trace_rt.spice) being auto-imported purely by name - the same
+// mechanism std/data/vector.spice relies on for sAlloc()/sDealloc() without ever importing memory_rt. There is
+// deliberately no "import std/runtime/stack_trace_rt" statement in this file.
+//
+// Its stderr output (raw addresses and, where dladdr() resolves them, symbol names) is not deterministic enough
+// to assert on here, so this only checks that calling it runs to completion without crashing (see exit-code.out).
+
+f<int> inner() {
+    sDumpStacktrace();
+    return 0;
+}
+
+f<int> outer() {
+    return inner();
+}
+
+f<int> main() {
+    return outer();
+}

@@ -284,6 +284,7 @@ std::any IRGenerator::visitBuiltinFrameAddressCall([[maybe_unused]] const FctCal
 
   llvm::Type *ptrTy = builder.getPtrTy();
   llvm::Function *frameAddressFct = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::frameaddress, {ptrTy});
+  // Level 0 = this frame; LLVM does not guarantee levels > 0 work on every target.
   llvm::Value *frameAddress = builder.CreateCall(frameAddressFct, {builder.getInt32(0)});
 
   return LLVMExprResult{.value = frameAddress};
