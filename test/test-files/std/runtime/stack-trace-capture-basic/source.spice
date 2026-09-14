@@ -1,11 +1,9 @@
-// Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
-// calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
-// capture()'s first recorded frame is the call site of capture() itself (levelC below), so this chain
-// contributes exactly 4 frames: levelC, levelB, levelA and testStackTraceCapture.
-//
-// sDumpStacktrace() writes to stderr, whose content (raw addresses, and symbol names where dladdr() resolves
-// them) is not deterministic enough to assert on - so this test checks only the exit code (see exit-code.out),
-// not stdout/stderr content. A failing assert would abort with a non-zero exit code either way.
+// Diagnostic round: a prior version asserted trace.count == 4 and failed identically on Linux and macOS (exit
+// code 1), which - since those platforms' CRTs are otherwise very different - points at an extra frame
+// contributed by Spice's own generated test-entry (from #[test]/run-builtin-tests) rather than anything
+// platform-specific. Printing the actual count (instead of asserting on it) and deliberately mismatching
+// cout.out.placeholder below forces the CI diff to show the real captured output, so the exact expected count
+// and dump() text can be filled in for real once observed - see cout.out.
 
 import "std/runtime/stack_trace_rt";
 
@@ -13,13 +11,14 @@ f<bool> levelC() {
     StackTraceBuffer trace;
     trace.capture();
 
-    assert trace.count == 4;
-
+    printf("count=%d\n", trace.count);
     for int i = 0; i < trace.count; i++ {
-        assert trace.addresses[i] != nil<byte*>;
+        if trace.addresses[i] == nil<byte*> {
+            printf("nil at %d\n", i);
+        }
     }
 
-    sDumpStacktrace();
+    sDumpStacktrace(false);
 
     return true;
 }

@@ -76,14 +76,19 @@ public p StackTraceBuffer.capture(int skipFrames = 0) {
 
 /**
  * Prints every recorded frame of this trace to stderr, resolving each address to a symbol name via dladdr()
- * where possible and falling back to the raw address otherwise (see the file-level comment on why that is
+ * where possible and falling back to a fixed placeholder otherwise (see the file-level comment on why that is
  * common for a Spice program's own frames today). A no-op if nothing was captured.
  *
  * No offset from the symbol's own start address is printed alongside the name: Spice has no pointer<->integer
  * cast and no pointer-difference operator today (only pointer +/- integer, which computes a new pointer, not a
  * numeric difference), so there is currently no way to compute one from dliSAddr/address in Spice itself.
+ *
+ * @param includeAddresses Whether to print each frame's raw address alongside its resolved name. Off by default
+ *                          makes the output deterministic (addresses vary run to run due to ASLR/PIE and are not
+ *                          meaningful to compare in a test), which is what a caller that wants to assert on
+ *                          dump()'s exact output should pass.
  */
-public p StackTraceBuffer.dump() {
+public p StackTraceBuffer.dump(bool includeAddresses = true) {
     if this.count == 0 { return; }
 
     fprintf(__stderr(), "Stack trace:\n");
@@ -92,11 +97,19 @@ public p StackTraceBuffer.dump() {
         DlInfo info;
         unsafe {
             if dladdr(address, &info) != 0 && cast<char*>(info.dliSName) != nil<char*> {
-                fprintf(__stderr(), "  #%d  %p  %s\n", i, address, info.dliSName);
+                if includeAddresses {
+                    fprintf(__stderr(), "  #%d  %p  %s\n", i, address, info.dliSName);
+                } else {
+                    fprintf(__stderr(), "  #%d  %s\n", i, info.dliSName);
+                }
                 continue;
             }
         }
-        fprintf(__stderr(), "  #%d  %p\n", i, address);
+        if includeAddresses {
+            fprintf(__stderr(), "  #%d  %p\n", i, address);
+        } else {
+            fprintf(__stderr(), "  #%d  <unknown>\n", i);
+        }
     }
 }
 
@@ -104,9 +117,11 @@ public p StackTraceBuffer.dump() {
  * Captures and immediately dumps the calling function's stack trace to stderr - the one-call convenience entry
  * point, auto-imported like the other 's'-prefixed runtime functions (see RuntimeModuleManager.h). Skips its own
  * frame, so the first printed frame is the call site of sDumpStacktrace() itself.
+ *
+ * @param includeAddresses Forwarded to dump() - see there.
  */
-public p sDumpStacktrace() {
+public p sDumpStacktrace(bool includeAddresses = true) {
     StackTraceBuffer trace;
     trace.capture(1);
-    trace.dump();
+    trace.dump(includeAddresses);
 }
