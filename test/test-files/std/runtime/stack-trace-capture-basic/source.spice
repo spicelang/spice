@@ -1,47 +1,38 @@
 // Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
 // calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
 // capture()'s first recorded frame is the call site of capture() itself (levelC below), so this chain
-// contributes at least 4 frames: levelC, levelB, levelA and main. How many more get captured beyond that depends
-// on how many further frames the platform's CRT/libc keeps below main() (e.g. _start, __libc_start_main), so
-// this only asserts a lower bound instead of an exact frame count - anything less than 4 would mean the walk is
-// broken (e.g. dropping the innermost frame again).
+// contributes exactly 4 frames: levelC, levelB, levelA and testStackTraceCapture.
 //
 // sDumpStacktrace() writes to stderr, whose content (raw addresses, and symbol names where dladdr() resolves
 // them) is not deterministic enough to assert on - so this test checks only the exit code (see exit-code.out),
-// not stdout/stderr content.
+// not stdout/stderr content. A failing assert would abort with a non-zero exit code either way.
 
 import "std/runtime/stack_trace_rt";
 
-f<int> levelC() {
+f<bool> levelC() {
     StackTraceBuffer trace;
     trace.capture();
 
-    if trace.count < 4 {
-        printf("FAIL: expected at least 4 frames, got %d\n", trace.count);
-        return 1;
-    }
+    assert trace.count == 4;
 
     for int i = 0; i < trace.count; i++ {
-        if trace.addresses[i] == nil<byte*> {
-            printf("FAIL: frame %d has a nil address\n", i);
-            return 1;
-        }
+        assert trace.addresses[i] != nil<byte*>;
     }
 
     sDumpStacktrace();
 
-    printf("PASS\n");
-    return 0;
+    return true;
 }
 
-f<int> levelB() {
+f<bool> levelB() {
     return levelC();
 }
 
-f<int> levelA() {
+f<bool> levelA() {
     return levelB();
 }
 
-f<int> main() {
+#[test]
+f<bool> testStackTraceCapture() {
     return levelA();
 }
