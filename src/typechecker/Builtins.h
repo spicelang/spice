@@ -180,6 +180,13 @@ static const std::unordered_map<std::string_view, BuiltinFunctionDispatch> BUILT
             .irGeneratorVisitMethod = &IRGenerator::visitBuiltinStdErrCall,
         },
     },
+    {
+        BUILTIN_FCT_NAME_FRAME_ADDRESS,
+        {
+            .typeCheckerVisitMethod = &TypeChecker::visitBuiltinFrameAddressCall,
+            .irGeneratorVisitMethod = &IRGenerator::visitBuiltinFrameAddressCall,
+        },
+    },
 };
 
 } // namespace spice::compiler

@@ -1,0 +1,62 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Raw stack trace capture via frame-pointer walking. Relies on the compiler-internal __frame_address() builtin
+// (src/irgenerator/GenBuiltinFunctions.cpp), which lowers to LLVM's target-independent 'llvm.frameaddress'
+// intrinsic and hands back the calling function's own frame address - the same value as C's
+// `__builtin_frame_address(0)`. From there, the walk itself is plain Spice: on every supported target and ABI
+// (x86-64 System V, AArch64 AAPCS, ...) the first pointer-sized slot at the frame address holds the caller's
+// saved frame pointer and the next slot holds the return address, so following that chain one hop at a time
+// recovers the call stack without any further compiler support. This only works because IRGenerator
+// unconditionally keeps frame pointers for every function (see the `module->setFramePointer(...)` call in
+// IRGenerator.cpp) - omitting them would break the chain.
+//
+// Deliberately scoped to raw address capture only - there is no symbol resolution here (that would need either
+// debug info or a retained symbol table, neither of which the compiler emits today), so addresses are reported
+// as-is. A future consumer can turn them into names via `dladdr()` or similar.
+
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
+const int STACK_TRACE_CAPACITY = 64;
+
+/**
+ * Fixed-capacity buffer holding one captured stack trace, as raw return addresses (most recent call first).
+ * Once the capacity above is hit, the walk stops early - deeper frames are silently dropped rather than
+ * overwriting the ones closest to the capture point, which are the most relevant for diagnostics.
+ */
+public type StackTraceBuffer struct {
+    byte*[STACK_TRACE_CAPACITY] addresses
+    int count
+}
+
+/**
+ * Captures the stack trace of the calling function, i.e. the frame that calls capture() is not itself included -
+ * the first recorded address is that frame's own return address.
+ */
+public p StackTraceBuffer.capture() {
+    this.count = 0;
+
+    unsafe {
+        // __frame_address() yields this procedure's own frame; step to the caller's frame once before
+        // recording anything, so the trace starts at the call site of capture() itself.
+        byte** ownFrame = cast<byte**>(__frame_address());
+        byte** frame = cast<byte**>(ownFrame[0]);
+
+        while frame != nil<byte**> && this.count < STACK_TRACE_CAPACITY {
+            this.addresses[this.count] = frame[1]; // saved return address
+            this.count++;
+            frame = cast<byte**>(frame[0]); // saved frame pointer of the parent frame
+        }
+    }
+}
+
+/**
+ * Prints every recorded frame of this trace to stderr, as raw return addresses. A no-op if nothing was captured.
+ */
+public p StackTraceBuffer.dump() {
+    if this.count == 0 { return; }
+
+    fprintf(__stderr(), "Stack trace:\n");
+    for int i = 0; i < this.count; i++ {
+        fprintf(__stderr(), "  #%d  %p\n", i, this.addresses[i]);
+    }
+}

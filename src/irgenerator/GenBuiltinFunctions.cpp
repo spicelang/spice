@@ -10,6 +10,7 @@
 #include <typechecker/TypeChecker.h>
 
 #include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/Module.h>
 
 namespace spice::compiler {
@@ -269,6 +270,23 @@ std::any IRGenerator::visitBuiltinStdErrCall([[maybe_unused]] const FctCallNode 
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_STDERR);
 
   return LLVMExprResult{.value = getStdErrValue()};
+}
+
+/**
+ * Emits a call to LLVM's target-independent 'llvm.frameaddress' intrinsic at level 0, yielding the frame address
+ * (saved frame-pointer slot) of whichever Spice function this builtin call is inlined into - the same value as
+ * C's `__builtin_frame_address(0)`. Relies on frame pointers being kept for every function (see the
+ * `module->setFramePointer(...)` call in IRGenerator.cpp), since without them there is no frame-pointer chain to
+ * walk. stack_trace_rt.spice builds a pure-Spice frame-pointer walk on top of this single primitive.
+ */
+std::any IRGenerator::visitBuiltinFrameAddressCall([[maybe_unused]] const FctCallNode *node) {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_FRAME_ADDRESS);
+
+  llvm::Type *ptrTy = builder.getPtrTy();
+  llvm::Function *frameAddressFct = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::frameaddress, {ptrTy});
+  llvm::Value *frameAddress = builder.CreateCall(frameAddressFct, {builder.getInt32(0)});
+
+  return LLVMExprResult{.value = frameAddress};
 }
 
 /**

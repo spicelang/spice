@@ -179,6 +179,7 @@ public:
   std::any visitBuiltinSourceColumnCall(FctCallNode *node) const;
   std::any visitBuiltinErrTraceBufferCall(FctCallNode *node) const;
   std::any visitBuiltinStdErrCall(FctCallNode *node) const;
+  std::any visitBuiltinFrameAddressCall(FctCallNode *node) const;
 
 private:
   // Private members
