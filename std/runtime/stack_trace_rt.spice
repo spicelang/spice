@@ -43,8 +43,8 @@ ext f<int> dladdr(byte* /*addr*/, DlInfo* /*info*/);
  * overwriting the ones closest to the capture point, which are the most relevant for diagnostics.
  */
 public type StackTraceBuffer struct {
-    byte*[STACK_TRACE_CAPACITY] addresses
-    int count
+    public byte*[STACK_TRACE_CAPACITY] addresses
+    public int count
 }
 
 /**
