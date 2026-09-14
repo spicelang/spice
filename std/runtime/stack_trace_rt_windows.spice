@@ -97,10 +97,12 @@ const unsigned int SYMBOL_INFO_SIZE = 88u;
 const unsigned int SYMBOL_NAME_BUFFER_CAPACITY = 511u;
 
 ext f<byte*> GetCurrentProcess();
-// Its return value is intentionally ignored below: SymInitialize() fails harmlessly if the process was already
-// initialized (which it will be on every call after the first), and that's not distinguishable here from a real
-// failure worth handling - either way, the subsequent SymFromAddr() call already fails gracefully on its own.
-#[ignoreUnusedReturnValue]
+// Its return value is intentionally ignored where called below (the #[ignoreUnusedReturnValue] attribute exists
+// for exactly this, but only targets function/procedure/lambda definitions, not ext declarations - so this just
+// accepts the harmless unused-return-value warning instead): SymInitialize() fails harmlessly if the process was
+// already initialized (which it will be on every call after the first), and that's not distinguishable here from
+// a real failure worth handling - either way, the subsequent SymFromAddr() call already fails gracefully on its
+// own.
 ext f<bool> SymInitialize(byte* /*hProcess*/, byte* /*userSearchPath*/, bool /*fInvadeProcess*/);
 ext f<bool> SymFromAddr(byte* /*hProcess*/, byte* /*address*/, unsigned long* /*displacement*/, SymbolInfo* /*symbol*/);
 
