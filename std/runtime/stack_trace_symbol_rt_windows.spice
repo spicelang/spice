@@ -57,14 +57,24 @@ const unsigned int SYMBOL_INFO_SIZE = 88u;
 const unsigned int SYMBOL_NAME_BUFFER_CAPACITY = 511u;
 
 ext f<byte*> GetCurrentProcess();
-// Its return value is intentionally ignored where called below (the #[ignoreUnusedReturnValue] attribute exists
-// for exactly this, but only targets function/procedure/lambda definitions, not ext declarations - so this just
-// accepts the harmless unused-return-value warning instead): SymInitialize() fails harmlessly if the process was
-// already initialized (which it will be on every call after the first), and that's not distinguishable here from
-// a real failure worth handling - either way, the subsequent SymFromAddr() call already fails gracefully on its
-// own.
 ext f<bool> SymInitialize(byte* /*hProcess*/, byte* /*userSearchPath*/, bool /*fInvadeProcess*/);
 ext f<bool> SymFromAddr(byte* /*hProcess*/, byte* /*address*/, unsigned long* /*displacement*/, SymbolInfo* /*symbol*/);
+
+// Guards against calling SymInitialize() more than once per process: DbgHelp documents that a second
+// SymInitialize() call without an intervening SymCleanup() is invalid, unlike SymFromAddr() itself, which is
+// meant to be called repeatedly (once per resolved address) against one initialized session. A whole trace dump
+// resolves many addresses through many resolveSymbolName() calls, so this flag - not the #[ignoreUnusedReturnValue]
+// route used elsewhere in this file - is what keeps initialization to a single call across all of them.
+//
+// This flag is a plain, non-atomic global: Spice's global-variable grammar only accepts a constant-literal
+// initializer, so a global Mutex (which needs a constructor call, see std/os/mutex.spice) can't be declared here
+// to guard it, and DbgHelp's own APIs are documented as not thread-safe regardless. Concurrent calls to
+// sDumpStacktrace() from multiple threads are therefore still unsafe on Windows today, same as the underlying
+// DbgHelp session they share - single-threaded use (or external synchronization by the caller) is required.
+// Capitalized despite not being a constant: Spice's grammar requires every global variable name to start with an
+// uppercase letter, the same identifier form used for types and true constants - there is no separate lowercase
+// form for mutable globals.
+bool SymInitialized = false;
 
 /**
  * Resolves an address to the name of its containing symbol via SymFromAddr(), or an empty/unallocated String if
@@ -73,7 +83,15 @@ ext f<bool> SymFromAddr(byte* /*hProcess*/, byte* /*address*/, unsigned long* /*
 public f<String> resolveSymbolName(byte* address) {
     unsafe {
         byte* process = GetCurrentProcess();
-        SymInitialize(process, nil<byte*>, true);
+        if !SymInitialized {
+            // Its return value is intentionally ignored (the #[ignoreUnusedReturnValue] attribute exists for
+            // exactly this, but only targets function/procedure/lambda definitions, not ext declarations - so
+            // this just accepts the harmless unused-return-value warning instead): a real failure here is not
+            // distinguishable from any other SymInitialize() failure, and either way the subsequent
+            // SymFromAddr() call already fails gracefully on its own.
+            SymInitialize(process, nil<byte*>, true);
+            SymInitialized = true;
+        }
 
         SymbolInfo info;
         info.sizeOfStruct = SYMBOL_INFO_SIZE;
