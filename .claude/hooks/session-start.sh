@@ -19,13 +19,17 @@ LLVM_SRC_DIR="$CLAUDE_PROJECT_DIR/llvm"
 LLVM_BUILD_DIR="$LLVM_SRC_DIR/build"
 
 # 1. System dependencies (matches "Setup Dependencies" step in ci-cpp.yml,
-#    plus a few tools llvm.sh itself needs to add the apt.llvm.org repo)
+#    plus a few tools llvm.sh itself needs to add the apt.llvm.org repo).
+#    software-properties-common is installed first since it provides
+#    add-apt-repository itself, which a fresh image may not have yet.
+sudo apt-get update
+sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install -y \
   ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev \
   libssl-dev "gcc-${GCC_VERSION}" "g++-${GCC_VERSION}" clang \
-  wget gnupg lsb-release software-properties-common
+  wget gnupg lsb-release
 sudo update-alternatives --install /usr/bin/gcc gcc "/usr/bin/gcc-${GCC_VERSION}" "1${GCC_VERSION}"
 sudo update-alternatives --install /usr/bin/g++ g++ "/usr/bin/g++-${GCC_VERSION}" "1${GCC_VERSION}"
 sudo update-alternatives --install /usr/bin/gcov gcov "/usr/bin/gcov-${GCC_VERSION}" "1${GCC_VERSION}"
@@ -53,9 +57,18 @@ if [ "$llvm_pkg_status" -eq 0 ] && [ -f "$LLVM_PKG_CMAKE_DIR/LLVMConfig.cmake" ]
 else
   echo "apt.llvm.org install of LLVM ${LLVM_MAJOR} unavailable, building from source instead" >&2
 
-  # 2b. Clone LLVM (matches "Clone LLVM" step; skipped once /llvm exists)
+  # 2b. Clone LLVM (matches "Clone LLVM" step; skipped once /llvm already
+  #     holds this exact version). A stale checkout from a previous
+  #     LLVM_VERSION is wiped (build dir included, since it lives under
+  #     LLVM_SRC_DIR) so it can't silently be reused.
+  LLVM_VERSION_MARKER="$LLVM_SRC_DIR/.claude-llvm-version"
+  if [ -d "$LLVM_SRC_DIR" ] && [ "$(cat "$LLVM_VERSION_MARKER" 2>/dev/null)" != "$LLVM_VERSION" ]; then
+    echo "Cached LLVM checkout does not match LLVM_VERSION=$LLVM_VERSION, rebuilding" >&2
+    rm -rf "$LLVM_SRC_DIR"
+  fi
   if [ ! -d "$LLVM_SRC_DIR" ]; then
     git clone --depth 1 --branch "$LLVM_VERSION" https://github.com/llvm/llvm-project "$LLVM_SRC_DIR"
+    echo "$LLVM_VERSION" > "$LLVM_VERSION_MARKER"
   fi
 
   # 2c. Build LLVM (matches "Build LLVM" step; skipped once already built, so
