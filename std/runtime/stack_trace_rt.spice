@@ -75,9 +75,13 @@ public p StackTraceBuffer.capture(int skipFrames = 0) {
 }
 
 /**
- * Prints every recorded frame of this trace to stderr, resolving each address to a 'symbol+offset' via dladdr()
+ * Prints every recorded frame of this trace to stderr, resolving each address to a symbol name via dladdr()
  * where possible and falling back to the raw address otherwise (see the file-level comment on why that is
  * common for a Spice program's own frames today). A no-op if nothing was captured.
+ *
+ * No offset from the symbol's own start address is printed alongside the name: Spice has no pointer<->integer
+ * cast and no pointer-difference operator today (only pointer +/- integer, which computes a new pointer, not a
+ * numeric difference), so there is currently no way to compute one from dliSAddr/address in Spice itself.
  */
 public p StackTraceBuffer.dump() {
     if this.count == 0 { return; }
@@ -88,8 +92,7 @@ public p StackTraceBuffer.dump() {
         DlInfo info;
         unsafe {
             if dladdr(address, &info) != 0 && cast<char*>(info.dliSName) != nil<char*> {
-                const unsigned long offset = cast<unsigned long>(address) - cast<unsigned long>(info.dliSAddr);
-                fprintf(__stderr(), "  #%d  %p  %s+0x%lx\n", i, address, info.dliSName, offset);
+                fprintf(__stderr(), "  #%d  %p  %s\n", i, address, info.dliSName);
                 continue;
             }
         }
