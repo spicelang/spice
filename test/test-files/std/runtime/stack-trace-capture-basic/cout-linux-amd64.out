@@ -1,0 +1,4 @@
+Stack trace:
+  #0  __libc_start_main
+  #1  <unknown>
+count=3

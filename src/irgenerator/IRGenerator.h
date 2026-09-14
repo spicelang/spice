@@ -167,6 +167,7 @@ public:
   std::any visitBuiltinPlacementNewCall(const FctCallNode *node);
   std::any visitBuiltinErrTraceBufferCall(const FctCallNode *node);
   std::any visitBuiltinStdErrCall(const FctCallNode *node);
+  std::any visitBuiltinFrameAddressCall(const FctCallNode *node);
 
 private:
   // Private methods

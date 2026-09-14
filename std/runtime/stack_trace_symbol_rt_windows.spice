@@ -1,0 +1,120 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+#![core.windows.linker.flag = "-ldbghelp"]
+
+// Windows variant of stack_trace_symbol_rt.spice - see that file for why this is split out on its own rather
+// than living directly in stack_trace_rt.spice's dump() method.
+//
+// Windows has no dladdr() - that is a POSIX/libdl API. This uses DbgHelp's SymFromAddr() instead, which
+// resolves via loaded debug info (PDB) rather than a dynamic export table, so - unlike the POSIX dladdr() path -
+// it does not depend on Spice linking with an equivalent of -rdynamic. It does depend on debug info actually
+// being available for the running executable at all (SymInitialize(..., fInvadeProcess=TRUE) auto-loads it from
+// the module's own PDB if present next to the executable).
+//
+// CAUTION: SymbolInfo below mirrors DbgHelp's SYMBOL_INFO struct (<dbghelp.h>), which is a real, non-trivial,
+// padded C struct with a documented quirk (its 'SizeOfStruct' field must be set to sizeof(SYMBOL_INFO) *without*
+// the trailing name buffer - see the struct's own comment). This was written from documented field order/sizes,
+// not verified against a real Windows build or the actual header in this environment (no Windows toolchain was
+// available to compile/run this file here) - treat this as the least-verified part of stack trace support and
+// double check field offsets/sizeOfStruct against <dbghelp.h> on a real Windows machine before relying on it.
+
+import "std/runtime/string_rt";
+
+/**
+ * Mirrors the fixed header of DbgHelp's SYMBOL_INFO (<dbghelp.h>), with the flexible 'Name[1]' member expanded
+ * into a fixed 520-byte buffer (519 usable chars + null terminator, with a few bytes of margin - see
+ * SYMBOL_NAME_BUFFER_CAPACITY below). Field order/sizes below follow the documented struct layout; ULONG fields
+ * are 4 bytes (Spice `unsigned int`), ULONG64 fields are 8 bytes (Spice `unsigned long`, always 64-bit
+ * regardless of platform - see docs/docs/language/primitive-types.md), and struct layout is otherwise assumed
+ * to follow ordinary C alignment rules (matching every other FFI struct in std/, e.g. HostEnt/SockAddrIn/
+ * DirEntry), so no explicit padding fields are added here.
+ */
+type SymbolInfo struct {
+    unsigned int  sizeOfStruct
+    unsigned int  typeIndex
+    unsigned long reserved0
+    unsigned long reserved1
+    unsigned int  index
+    unsigned int  size
+    unsigned long modBase
+    unsigned int  flags
+    unsigned long value
+    unsigned long address
+    unsigned int  registerNum
+    unsigned int  scope
+    unsigned int  tag
+    unsigned int  nameLen
+    unsigned int  maxNameLen
+    char[520] name
+}
+
+// sizeof(SYMBOL_INFO) as declared by <dbghelp.h> on a 64-bit build - the fixed header only (through the single
+// placeholder byte of 'Name[1]'), rounded up to the struct's own 8-byte alignment. SymFromAddr() documents that
+// SizeOfStruct must carry this value, not sizeof(our expanded SymbolInfo) - that would include the whole 520-byte
+// name buffer, which is not what the API expects there.
+const unsigned int SYMBOL_INFO_SIZE = 88u;
+// Capacity passed as maxNameLen: one byte under the 520-byte buffer's actual size, as a margin of safety against
+// an off-by-one in how many bytes SymFromAddr() writes for a given maxNameLen (including the null terminator).
+const unsigned int SYMBOL_NAME_BUFFER_CAPACITY = 511u;
+
+ext f<byte*> GetCurrentProcess();
+ext f<bool> SymInitialize(byte* /*hProcess*/, byte* /*userSearchPath*/, bool /*fInvadeProcess*/);
+ext f<bool> SymFromAddr(byte* /*hProcess*/, byte* /*address*/, unsigned long* /*displacement*/, SymbolInfo* /*symbol*/);
+// Real, ordinary kernel32 exports (<synchapi.h>) used below as a lock around SymInitialize()/SymFromAddr() - not
+// compiler-intrinsic-backed the way the Interlocked* family is (an earlier version of this file tried
+// InterlockedExchange() for a hand-rolled spinlock and it failed to link: MinGW's import library has no such
+// symbol, since MSVC/Clang normally fold it straight into a machine instruction instead of a real call).
+ext p AcquireSRWLockExclusive(long* /*srwLock*/);
+ext p ReleaseSRWLockExclusive(long* /*srwLock*/);
+
+// Guards against calling SymInitialize() more than once per process: DbgHelp documents that a second
+// SymInitialize() call without an intervening SymCleanup() is invalid, unlike SymFromAddr() itself, which is
+// meant to be called repeatedly (once per resolved address) against one initialized session. A whole trace dump
+// resolves many addresses through many resolveSymbolName() calls, so this flag - not the #[ignoreUnusedReturnValue]
+// route used elsewhere in this file - is what keeps initialization to a single call across all of them.
+// Capitalized despite not being a constant: Spice's grammar requires every global variable name to start with an
+// uppercase letter, the same identifier form used for types and true constants - there is no separate lowercase
+// form for mutable globals.
+bool SymInitialized = false;
+// Backing storage for a Windows SRWLOCK, guarding both SymInitialize() and SymFromAddr() below: DbgHelp's own
+// functions are documented as not safe to call from more than one thread at a time, and SymInitialized above is
+// a plain (non-atomic) flag, so without this, concurrent sDumpStacktrace() calls from different threads could
+// both observe it unset and race into SymInitialize(), or race a SymFromAddr() call against a concurrent
+// SymInitialize()/SymCleanup(). An SRWLOCK is documented as valid once zero-initialized (SRWLOCK_INIT is exactly
+// that, no InitializeSRWLock() call needed), and is pointer-sized, so a `long` global fits it exactly - unlike a
+// Mutex/CRITICAL_SECTION (which need a constructor call) or a raw pointer-typed global (Spice's constant-literal
+// grammar has no way to spell a nil pointer initializer), both of which Spice's global-variable grammar - plain
+// primitive types with a constant-literal initializer only - can't accommodate.
+long Lock = 0l;
+
+/**
+ * Resolves an address to the name of its containing symbol via SymFromAddr(), or an empty/unallocated String if
+ * no symbol could be found.
+ */
+public f<String> resolveSymbolName(byte* address) {
+    unsafe {
+        AcquireSRWLockExclusive(&Lock);
+
+        byte* process = GetCurrentProcess();
+        if !SymInitialized {
+            // Its return value is intentionally ignored (the #[ignoreUnusedReturnValue] attribute exists for
+            // exactly this, but only targets function/procedure/lambda definitions, not ext declarations - so
+            // this just accepts the harmless unused-return-value warning instead): a real failure here is not
+            // distinguishable from any other SymInitialize() failure, and either way the subsequent
+            // SymFromAddr() call already fails gracefully on its own.
+            SymInitialize(process, nil<byte*>, true);
+            SymInitialized = true;
+        }
+
+        SymbolInfo info;
+        info.sizeOfStruct = SYMBOL_INFO_SIZE;
+        info.maxNameLen = SYMBOL_NAME_BUFFER_CAPACITY;
+
+        const bool found = SymFromAddr(process, address, nil<unsigned long*>, &info);
+        ReleaseSRWLockExclusive(&Lock); // release, before returning either way
+
+        if found {
+            return String(cast<string>(info.name));
+        }
+    }
+    return String();
+}

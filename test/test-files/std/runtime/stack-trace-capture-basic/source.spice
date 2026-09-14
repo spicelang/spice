@@ -1,0 +1,52 @@
+// Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
+// calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
+//
+// The exact captured frame count is genuinely platform-dependent, confirmed via CI:
+//   - Linux (x86_64 and AArch64): 3 - levelC, levelB and levelA each keep their own frame.
+//   - macOS/AArch64 AND Windows/x86_64: 1 - only levelC's own frame is walkable; the next hop is already the
+//     chain's sentinel. Not tail-call collapsing specifically - taking each call out of tail position below
+//     made no difference to the count on macOS. Windows agreeing with macOS despite a very different ABI/CRT
+//     suggests these two toolchains omit frame pointers for such trivial pass-through functions somewhere
+//     Linux's don't; not fully pinned down, but reproducible across two separate CI rounds each.
+// Since the count varies by platform, and Spice has no source-level conditional compilation to branch on target
+// OS, the exact-count expectation lives in cout.out/cout-linux-amd64.out/cout-linux-aarch64.out rather than as a
+// hardcoded assertion here (macOS and Windows share the same output, so both fall back to the generic cout.out;
+// only the two Linux architectures need an override). What IS genuinely platform-independent, and so what IS
+// asserted directly below, is that the sentinel-frame fix holds everywhere: no captured address is ever nil.
+//
+// sDumpStacktrace()'s own output is also part of what these refs compare (dladdr()/DbgHelp resolve whatever
+// they can - see stack_trace_symbol_rt.spice/stack_trace_symbol_rt_windows.spice for what to expect there); on
+// macOS/Windows there's nothing to dump at all, since sDumpStacktrace()'s own frame-skip leaves zero frames once
+// the raw count is only 1.
+
+import "std/runtime/stack_trace_rt";
+
+f<bool> levelC() {
+    StackTraceBuffer trace;
+    trace.capture();
+
+    printf("count=%d\n", trace.count);
+    for int i = 0; i < trace.count; i++ {
+        assert trace.addresses[i] != nil<byte*>;
+    }
+
+    sDumpStacktrace(false);
+
+    return true;
+}
+
+f<bool> levelB() {
+    const bool ok = levelC(); // not a tail call - keeps levelB's own frame on every platform
+    return ok;
+}
+
+f<bool> levelA() {
+    const bool ok = levelB();
+    return ok;
+}
+
+f<int> main() {
+    const bool ok = levelA();
+    if !ok { return 1; }
+    return 0;
+}

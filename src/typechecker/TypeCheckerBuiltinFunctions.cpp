@@ -629,4 +629,16 @@ std::any TypeChecker::visitBuiltinStdErrCall(FctCallNode *node) const {
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BYTE).toPtr(node), manIdx)};
 }
 
+/**
+ * Resolves to the frame address (saved frame-pointer slot) of the calling function's own stack frame, i.e. the
+ * same value as C's `__builtin_frame_address(0)`. Requires frame pointers to be kept for every function, which
+ * IRGenerator guarantees unconditionally (see stack_trace_rt.spice for the pure-Spice frame-pointer walk built
+ * on top of this).
+ */
+std::any TypeChecker::visitBuiltinFrameAddressCall(FctCallNode *node) const {
+  assert(node->fqFunctionName == BUILTIN_FCT_NAME_FRAME_ADDRESS);
+
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BYTE).toPtr(node), manIdx)};
+}
+
 } // namespace spice::compiler

@@ -19,6 +19,7 @@ const char *const ERROR_RT_IMPORT_NAME = "__rt_error";
 const char *const ERROR_TRACE_RT_IMPORT_NAME = "__rt_error_trace";
 const char *const MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const char *const RTTI_RT_IMPORT_NAME = "__rt_rtti";
+const char *const STACK_TRACE_RT_IMPORT_NAME = "__rt_stack_trace";
 
 enum RuntimeModule : uint8_t {
   STRING_RT = 1 << 0,
@@ -27,6 +28,7 @@ enum RuntimeModule : uint8_t {
   ERROR_TRACE_RT = 1 << 3,
   MEMORY_RT = 1 << 4,
   RTTI_RT = 1 << 5,
+  STACK_TRACE_RT = 1 << 6,
 };
 
 const std::unordered_map<const char *, RuntimeModule> TYPE_NAME_TO_RT_MODULE_MAPPING = {
@@ -55,16 +57,19 @@ const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPP
     {"sErrTraceReset", ERROR_TRACE_RT},
     {"sErrTracePush", ERROR_TRACE_RT},
     {"sErrTraceDump", ERROR_TRACE_RT},
+    // Stack Trace RT
+    {"sDumpStacktrace", STACK_TRACE_RT},
 };
 
 // This serves for the compiler to detect if a source file is a specific runtime module
 const std::unordered_map<RuntimeModule, const char *> IDENTIFYING_TOP_LEVEL_NAMES = {
-    {STRING_RT, STROBJ_NAME},          // String struct
-    {RESULT_RT, RESULTOBJ_NAME},       // Result struct
-    {ERROR_RT, ERROBJ_NAME},           // Error struct
-    {ERROR_TRACE_RT, "sErrTracePush"}, // sErrTracePush function
-    {MEMORY_RT, "sAlloc"},             // sAlloc function
-    {RTTI_RT, TIOBJ_NAME},             // TypeInfo struct
+    {STRING_RT, STROBJ_NAME},            // String struct
+    {RESULT_RT, RESULTOBJ_NAME},         // Result struct
+    {ERROR_RT, ERROBJ_NAME},             // Error struct
+    {ERROR_TRACE_RT, "sErrTracePush"},   // sErrTracePush function
+    {MEMORY_RT, "sAlloc"},               // sAlloc function
+    {RTTI_RT, TIOBJ_NAME},               // TypeInfo struct
+    {STACK_TRACE_RT, "sDumpStacktrace"}, // sDumpStacktrace function
 };
 
 struct ModuleNamePair {
