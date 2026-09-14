@@ -1,9 +1,14 @@
 // Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
-// calls. capture()'s first recorded frame is the call site of capture() itself (levelC below), so this chain
+// calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
+// capture()'s first recorded frame is the call site of capture() itself (levelC below), so this chain
 // contributes at least 4 frames: levelC, levelB, levelA and main. How many more get captured beyond that depends
 // on how many further frames the platform's CRT/libc keeps below main() (e.g. _start, __libc_start_main), so
 // this only asserts a lower bound instead of an exact frame count - anything less than 4 would mean the walk is
 // broken (e.g. dropping the innermost frame again).
+//
+// sDumpStacktrace() writes to stderr, whose content (raw addresses, and symbol names where dladdr() resolves
+// them) is not deterministic enough to assert on - so this test checks only the exit code (see exit-code.out),
+// not stdout/stderr content.
 
 import "std/runtime/stack_trace_rt";
 
@@ -22,6 +27,8 @@ f<int> levelC() {
             return 1;
         }
     }
+
+    sDumpStacktrace();
 
     printf("PASS\n");
     return 0;
