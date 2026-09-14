@@ -1,20 +1,27 @@
-// Diagnostic round 3: rounds 1-2 found two compounding issues.
+// Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
+// calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
 //
-// 1. capture() didn't recognize the chain's sentinel/terminator frame: on macOS/AArch64 specifically, the
-//    sentinel's return-address field reads zero (one hop before its saved-frame-pointer field does, which is
-//    the more commonly documented signal), so the walk recorded a bogus nil entry instead of stopping. Fixed in
-//    stack_trace_rt.spice/stack_trace_rt_windows.spice: the walk now stops without recording once the
-//    return-address about to be captured is itself nil.
-// 2. levelA/levelB/levelC/testStackTraceCapture were all trivial `return foo();` tail calls, which is exactly
-//    the shape a compiler can collapse via tail-call optimization - and apparently one platform's toolchain does
-//    that more aggressively here than another's, so the *real* number of frames wasn't even the same source-level
-//    depth across platforms to begin with. Fixed below by assigning each call's result to a local before
-//    returning it, taking the call out of tail position so every wrapper keeps its own frame regardless of
-//    platform.
+// The exact captured frame count is genuinely platform-dependent, confirmed via CI rather than assumed:
+//   - Linux (x86_64 and AArch64): 3 - levelC, levelB and levelA each keep their own frame, and the chain's
+//     sentinel is reached right after levelA's.
+//   - macOS/AArch64: 1 - only levelC's own frame is walkable; the very next hop is already the chain's
+//     sentinel. (levelB/levelA/testStackTraceCapture aren't individually visible in the frame-pointer chain
+//     there, for reasons not fully pinned down - ruled out tail-call collapsing specifically, since taking each
+//     call out of tail position below made no difference to the count.)
+// Since the count varies by platform, and Spice has no source-level conditional compilation to branch on target
+// OS, the exact-count check lives in the OS/arch-specific cout.out files (cout-linux-amd64.out,
+// cout-linux-aarch64.out, cout-macos.out) rather than as a hardcoded assertion here - the printed "count=N" line
+// is what those compare against. What's genuinely platform-independent, and so what IS asserted directly below,
+// is that the sentinel fix holds everywhere: no captured address should ever be nil.
 //
-// This round re-enables the actual capture()/dump() path (not the raw __frame_address() probing of round 2) to
-// confirm both fixes together produce a consistent count with no nil entries, on every platform, before locking
-// in the real assertion and cout.out.
+// sDumpStacktrace()'s own output is also part of what cout.out compares (dladdr()/DbgHelp resolve whatever they
+// can - see stack_trace_symbol_rt.spice/stack_trace_symbol_rt_windows.spice for what to expect there), so its
+// text is included in the platform-specific refs too.
+//
+// No Windows ref yet: CI currently reports completely empty captured output there (not even the test harness's
+// own unconditional lines), with a clean exit code - looks like a capture/redirection anomaly rather than
+// anything wrong with this test's logic, but unconfirmed. Needs a real look before locking in a Windows
+// expectation.
 
 import "std/runtime/stack_trace_rt";
 
@@ -24,9 +31,7 @@ f<bool> levelC() {
 
     printf("count=%d\n", trace.count);
     for int i = 0; i < trace.count; i++ {
-        if trace.addresses[i] == nil<byte*> {
-            printf("nil at %d\n", i);
-        }
+        assert trace.addresses[i] != nil<byte*>;
     }
 
     sDumpStacktrace(false);
