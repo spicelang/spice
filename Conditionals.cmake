@@ -34,8 +34,8 @@ foreach (_spice_lang IN ITEMS C CXX)
 endforeach ()
 
 # Set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fdata-sections -ffunction-sections ${GC_SECTIONS_FLAG} -fvisibility=hidden")
-set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${RELRO_NOW_FLAG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fdata-sections -ffunction-sections -fvisibility=hidden")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${GC_SECTIONS_FLAG} ${RELRO_NOW_FLAG}")
 
 # Harden Linux release binaries: full RELRO (above) + fortify source. Requires -O1+, which the
 # release flags above already provide. macOS/Windows toolchains don't share glibc's *_chk symbols.
