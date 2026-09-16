@@ -56,5 +56,22 @@ f<int> main() {
     check("_Z99truncated", "_Z99truncated");
     check("_ZN13ArrayIterator", "_ZN13ArrayIterator");
 
+    // Malformed input must come back untouched rather than parse into a plausible-looking signature. These are
+    // the cases the parser has to actively reject, not ones it happens to fail on:
+    //   - an oversized length prefix, which used to wrap the accumulator and the bounds check with it, and then
+    //     read past the end of the input (the first two segfaulted before this was guarded)
+    //   - a truncated name with no parameter marker at all, which mangleFunction() never emits: '_Z3foo' must
+    //     not be mistaken for the valid '_Z3foov'
+    //   - a zero-length function or type name, which mangleFunction() likewise never emits
+    check("_Z36893488147419103231x", "_Z36893488147419103231x");
+    check("_Z18446744073709551615x", "_Z18446744073709551615x");
+    check("_Z999999999999999999999v", "_Z999999999999999999999v");
+    check("_Z3foo", "_Z3foo");
+    check("_Z0v", "_Z0v");
+    check("_Z3foo0", "_Z3foo0");
+    check("_Z3fooN0E", "_Z3fooN0E");
+    check("_ZTV", "_ZTV");
+    check("_ZTV0", "_ZTV0");
+
     printf("All assertions passed!\n");
 }

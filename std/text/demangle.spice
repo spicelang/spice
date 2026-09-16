@@ -31,6 +31,10 @@ const string TYPE_INFO_NAME_PREFIX = "_ZTS";
 const int MAX_TYPE_WRAPPERS = 16;
 // Enough digits for any unsigned long an array size could hold
 const int MAX_DIGITS = 20;
+// Most digits readNumber() will accept. Any 18-digit number fits an unsigned long (10^18 is comfortably below
+// its maximum), so capping the digit count keeps the accumulator from wrapping without costing anything real:
+// a fragment length is bounded by the input, and no plausible array size comes close.
+const int MAX_NUMBER_DIGITS = 18;
 
 /**
  * Cursor over the characters of one mangled name.
@@ -92,13 +96,19 @@ p Reader.expect(char c) {
  */
 f<unsigned long> Reader.readNumber() {
     unsigned long value = 0l;
-    bool anyDigit = false;
+    unsigned long digitCount = 0l;
     while !this.failed && isDigit(this.peek()) {
+        // Give up before the accumulator can wrap. Without this, an absurd length prefix silently becomes a
+        // small number, and every bounds check derived from it is then meaningless.
+        digitCount++;
+        if digitCount > cast<unsigned long>(MAX_NUMBER_DIGITS) {
+            this.failed = true;
+            return 0l;
+        }
         value = value * 10l + cast<unsigned long>(cast<int>(this.peek()) - cast<int>('0'));
         this.pos++;
-        anyDigit = true;
     }
-    if !anyDigit { this.failed = true; }
+    if digitCount == 0l { this.failed = true; }
     return value;
 }
 
@@ -107,7 +117,10 @@ f<unsigned long> Reader.readNumber() {
  */
 f<String> Reader.readFragment() {
     const unsigned long fragmentLength = this.readNumber();
-    if this.failed || this.pos + fragmentLength > this.length {
+    // Compared against the remaining input rather than as 'pos + fragmentLength > length': that sum wraps for a
+    // large length, passes the check, and lets the loop below run off the end of the input. 'pos' never exceeds
+    // 'length', so this subtraction cannot wrap in turn.
+    if this.failed || fragmentLength > this.length - this.pos {
         this.failed = true;
         return String();
     }
@@ -155,6 +168,9 @@ f<String> Reader.readName() {
     }
 
     if isNested { this.expect('E'); }
+    // Every name mangleName() writes has at least one non-empty fragment, so an empty result means the input is
+    // malformed. Without this, '_Z3foo0' renders as 'foo()' - indistinguishable from the valid '_Z3foov'.
+    if name.isEmpty() { this.failed = true; }
     return name;
 }
 
@@ -316,6 +332,11 @@ f<String> Reader.readFunction() {
     }
 
     String name = this.readFragment();
+    // mangleFunction() always writes a non-empty name, so '_Z0v' is malformed rather than a nameless function
+    if this.failed || name.isEmpty() {
+        this.failed = true;
+        return String();
+    }
     const bool isGeneric = this.peek() == 'I';
     if isGeneric {
         this.expect('I');
@@ -341,6 +362,12 @@ f<String> Reader.readFunction() {
     }
 
     String params = String();
+    // mangleFunction() always writes the parameter types, or a lone 'v' when there are none, so reaching the end
+    // of the input here means the name was truncated. Without this, '_Z3foo' also renders as 'foo()'.
+    if this.isAtEnd() {
+        this.failed = true;
+        return String();
+    }
     if this.peek() == 'v' && this.pos + 1l == this.length {
         this.expect('v'); // the no-parameter marker
     } else {
