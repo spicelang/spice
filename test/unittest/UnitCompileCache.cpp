@@ -140,6 +140,20 @@ TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForLTO) {
   ASSERT_NE(keyNoLto, keyLto);
 }
 
+TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForFramePointers) {
+  const std::string source = "f<int> main() { return 0; }";
+
+  cliOptions.keepFramePointers = false;
+  const CacheManager managerNoFramePointers(cliOptions);
+  const std::string keyNoFramePointers = managerNoFramePointers.computeCacheKey(source);
+
+  cliOptions.keepFramePointers = true;
+  const CacheManager managerFramePointers(cliOptions);
+  const std::string keyFramePointers = managerFramePointers.computeCacheKey(source);
+
+  ASSERT_NE(keyNoFramePointers, keyFramePointers);
+}
+
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForDepCacheKeys) {
   const CacheManager manager(cliOptions);
   const std::string source = "f<int> main() { return 0; }";
