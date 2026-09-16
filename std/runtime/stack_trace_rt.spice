@@ -27,7 +27,7 @@ import "std/runtime/stack_trace_capture_rt";
 
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
-const int STACK_TRACE_CAPACITY = 64;
+public const int STACK_TRACE_CAPACITY = 64;
 // Frames belonging to the stack trace runtime itself that sit between the unwinder and the caller of capture():
 // captureReturnAddresses() and capture(). They are dropped so a trace starts at the code that asked for it.
 //

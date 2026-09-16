@@ -13,7 +13,8 @@
 //   - no captured address is ever nil.
 //   - skipping n frames drops exactly n, as long as that many are there. This is the property that catches an
 //     off-by-one in the runtime's own frame accounting, and it holds under inlining because inlining removes
-//     the same frames from every capture.
+//     the same frames from every capture. It does NOT hold once the stack is deeper than STACK_TRACE_CAPACITY,
+//     since every capture is then capped at the same number, so it is asserted only below that.
 //
 // The trace is not dumped here: the test runner folds stderr into the compared output, and dump() prints one
 // line per frame, so its output is only as portable as the frame count. It becomes worth asserting once symbol
@@ -28,24 +29,30 @@ f<bool> levelC() {
         assert noSkip.addresses[i] != nil<byte*>;
     }
 
-    // Skipping n frames must drop exactly n of them, never more and never fewer
     StackTraceBuffer skipOne;
     skipOne.capture(1);
-    assert skipOne.count == noSkip.count - 1;
-
     StackTraceBuffer skipTwo;
     skipTwo.capture(2);
-    assert skipTwo.count == noSkip.count - 2;
 
-    // The frames left after skipping are the tail of the unskipped trace, not a different walk
-    for int i = 0; i < skipTwo.count; i++ {
-        assert skipTwo.addresses[i] == noSkip.addresses[i + 2];
+    // The remaining invariants hold only while the trace is not truncated. A capture is capped at
+    // STACK_TRACE_CAPACITY, so once the stack is deeper than that, skipping frames stops reducing the count -
+    // every capture comes back at the cap - and comparing tails would run off the end of the fixed array. The
+    // stack here is nowhere near that deep, but the guard keeps the assertions honest wherever this runs.
+    if noSkip.count < STACK_TRACE_CAPACITY {
+        // Skipping n frames must drop exactly n of them, never more and never fewer
+        assert skipOne.count == noSkip.count - 1;
+        assert skipTwo.count == noSkip.count - 2;
+
+        // The frames left after skipping are the tail of the unskipped trace, not a different walk
+        for int i = 0; i < skipTwo.count; i++ {
+            assert skipTwo.addresses[i] == noSkip.addresses[i + 2];
+        }
+
+        // Skipping past the bottom of the stack yields nothing rather than reading past it
+        StackTraceBuffer skipAll;
+        skipAll.capture(noSkip.count + 10);
+        assert skipAll.count == 0;
     }
-
-    // Skipping past the bottom of the stack yields nothing rather than reading past it
-    StackTraceBuffer skipAll;
-    skipAll.capture(noSkip.count + 10);
-    assert skipAll.count == 0;
 
     return true;
 }

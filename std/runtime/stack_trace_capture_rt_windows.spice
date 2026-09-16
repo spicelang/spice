@@ -14,11 +14,6 @@
 // workflow) as well as under MSVC. Unlike the POSIX side it needs no callback: one call fills the buffer, which
 // also means there is no fat-pointer marshaling to work around here.
 
-// Frames the OS will hand back in one call. Documented as capped below 2^16, and older Windows versions capped
-// the total of skip + capture at 63; staying at or below that keeps this working everywhere without a version
-// check. The caller's own capacity is clamped to this.
-const int MAX_CAPTURED_FRAMES = 62;
-
 ext f<unsigned short> RtlCaptureStackBackTrace(unsigned int /*framesToSkip*/, unsigned int /*framesToCapture*/,
                                                byte** /*backTrace*/, unsigned int* /*backTraceHash*/);
 
@@ -32,20 +27,20 @@ ext f<unsigned short> RtlCaptureStackBackTrace(unsigned int /*framesToSkip*/, un
  * @return Number of addresses written
  */
 public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFrames) {
-    // RtlCaptureStackBackTrace does the skipping itself, so 'skipFrames' goes straight through rather than being
-    // handled here. Its own frame is not counted, which is why the accounting matches the POSIX side: frame 0 is
-    // this function either way.
-    int framesToCapture = capacity;
-    if framesToCapture > MAX_CAPTURED_FRAMES {
-        framesToCapture = MAX_CAPTURED_FRAMES;
-    }
-    if framesToCapture <= 0 {
+    // Both bounds are checked before the casts below, which are to unsigned: a negative skip count would
+    // otherwise turn into an enormous framesToSkip. This mirrors the guard the POSIX implementation applies.
+    if capacity <= 0 || skipFrames < 0 {
         return 0;
     }
 
+    // RtlCaptureStackBackTrace does the skipping itself, so 'skipFrames' goes straight through rather than being
+    // handled here. Its own frame is not counted, which is why the accounting matches the POSIX side: frame 0 is
+    // this function either way. The caller's capacity is passed on unclamped: the documented limit is 2^16
+    // frames, and the older 'skip + capture must be under 63' restriction applies only to Windows XP and Server
+    // 2003, which Spice does not target - clamping for it would cap Windows traces below what POSIX returns.
     unsafe {
         const unsigned short capturedFrames = RtlCaptureStackBackTrace(cast<unsigned int>(skipFrames),
-                                                                       cast<unsigned int>(framesToCapture),
+                                                                       cast<unsigned int>(capacity),
                                                                        addresses, nil<unsigned int*>);
         return cast<int>(capturedFrames);
     }
