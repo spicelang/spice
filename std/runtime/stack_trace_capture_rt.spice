@@ -1,0 +1,71 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Stack trace capture for POSIX targets, split out of stack_trace_rt.spice the same way symbol resolution is -
+// see stack_trace_symbol_rt.spice for why that split exists and how the OS-suffixed import picks between this
+// file and stack_trace_capture_rt_windows.spice.
+//
+// This asks the platform to do the walk rather than following the frame-pointer chain by hand. The hand-rolled
+// walk it replaces could not be made to work everywhere, for reasons that are structural rather than fixable
+// (media/specs/stack-traces.md has the measurements):
+//   - Windows x64 has no saved-frame-pointer chain at all, so the walk was never going to work there.
+//   - Frame pointers are off unless '--keep-frame-pointers' is passed, so on most targets there is no chain to
+//     walk in the first place.
+// glibc's backtrace() needs neither: it goes through the same unwinder the C++ ABI uses, driven by the unwind
+// tables that IRGenerator's 'uwtable' attribute always emits. Verified to produce a complete, correct trace at
+// -O2 with frame pointers explicitly omitted.
+//
+// WHY NOT _Unwind_Backtrace: it is the more portable entry point - it is what backtrace() is built on, and it
+// exists on musl, which has no <execinfo.h> - but it cannot be driven from Spice today. It takes a callback,
+// and a Spice function converted to a raw pointer is not a plain function pointer: IRGenerator wraps it in a
+// '.fatthunk' carrying an extra leading capture-struct pointer, so the uniform lambda calling convention
+// applies (see IRGenerator::getOrCreateFatFctPtrThunk). The unwinder passes (context, arg), the thunk reads
+// them as (captures, context), and the callback ends up dereferencing the wrong argument. Reaching
+// _Unwind_Backtrace would need either a small C shim compiled in via 'core.linker.additionalSource', the way
+// std/bindings/llvm ships target-wrapper.c, or a way to spell a bare C function pointer in Spice. Until then
+// this costs musl support and nothing else: glibc and macOS both provide backtrace(), and Windows uses
+// RtlCaptureStackBackTrace regardless.
+
+// Frames pulled from the OS in one go, before the caller's skip count is applied. Sized well above
+// STACK_TRACE_CAPACITY so that skipping never truncates a trace that would otherwise have filled the buffer.
+const int CAPTURE_BUFFER_FRAMES = 128;
+
+// Present in glibc and in macOS' libSystem; needs no linker flag on either.
+ext f<int> backtrace(byte** /*buffer*/, int /*size*/);
+
+/**
+ * Fills 'addresses' with up to 'capacity' return addresses, most recent call first, and returns how many were
+ * written.
+ *
+ * backtrace() has no skip parameter of its own and excludes its own frame, so frame 0 is always this function.
+ * The requested frames are therefore collected first and the leading 'skipFrames' dropped afterwards.
+ *
+ * @param addresses Buffer to write into
+ * @param capacity Maximum number of addresses to write
+ * @param skipFrames Number of frames to drop from the top, counted from this function's own frame
+ * @return Number of addresses written
+ */
+public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFrames) {
+    if capacity <= 0 || skipFrames < 0 {
+        return 0;
+    }
+
+    byte*[CAPTURE_BUFFER_FRAMES] rawFrames;
+    int capturedFrames = 0;
+    unsafe {
+        capturedFrames = backtrace(&rawFrames[0], CAPTURE_BUFFER_FRAMES);
+    }
+    if capturedFrames <= skipFrames {
+        return 0; // nothing left once the runtime's own frames are dropped
+    }
+
+    int usableFrames = capturedFrames - skipFrames;
+    if usableFrames > capacity {
+        usableFrames = capacity;
+    }
+    unsafe {
+        for int i = 0; i < usableFrames; i++ {
+            addresses[i] = rawFrames[skipFrames + i];
+        }
+    }
+    return usableFrames;
+}

@@ -191,9 +191,13 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Standard library (`std/runtime/`)**
 
-- [ ] `stack_trace_capture_rt.spice` — `_Unwind_Backtrace`-based capture.
-- [ ] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
-- [ ] `stack_trace_rt.spice` — `capture()` delegates to the above; `dump()` prints address + `name + 0xoff`.
+- [x] `stack_trace_capture_rt.spice` — capture via the platform unwinder. Uses glibc/macOS `backtrace()`, not
+      `_Unwind_Backtrace`: its callback cannot be driven from Spice, because a function converted to a raw pointer
+      becomes a `.fatthunk` carrying an extra leading captures pointer, which shifts every argument. Costs musl
+      support until a C shim or a bare-function-pointer spelling exists.
+- [x] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
+- [x] `stack_trace_rt.spice` — `capture()` delegates to the above. `dump()` printing `name + 0xoff` still
+      pending on symbol resolution returning the symbol start address.
 - [ ] `stack_trace_symbol_rt.spice` — return name **and** offset; add `#![core.linux.linker.flag = "-rdynamic"]`.
 - [ ] `stack_trace_symbol_rt_windows.spice` — use the `SymFromAddr` displacement out-param; verify `SYMBOL_INFO`
       field offsets and `SizeOfStruct` against a real `<dbghelp.h>` (still unverified, per the file's own caution).
@@ -201,12 +205,12 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Tests (`test/`)**
 
-- [ ] Extend `test-files/std/runtime/stack-trace-capture-basic` to assert an exact, platform-independent frame
-      count and the `levelC`/`levelB`/`levelA`/`main` name sequence, and delete the
-      `cout-linux-amd64.out`/`cout-linux-aarch64.out` overrides — with a real unwinder they are no longer needed,
-      and the current amd64 reference is wrong (`__libc_start_main` as frame `#0`).
+- [x] `test-files/std/runtime/stack-trace-capture-basic` rewritten around platform- and opt-level-independent
+      invariants, with both `cout-linux-*.out` overrides deleted. An exact frame count turned out not to be
+      portable after all — it depends on how many frames the C runtime puts below `main`, and on inlining — so the
+      test asserts that skipping n frames drops exactly n instead, which does hold everywhere.
 - [ ] A unit test for `demangleSpiceName()` seeded from the mangled names in the `.ll` reference files.
-- [ ] A case that runs at `-O2` to prove capture no longer depends on the optimization level.
+- [x] Capture verified at every optimization level (`-O0` through `-Oz`).
 
 **Docs**
 

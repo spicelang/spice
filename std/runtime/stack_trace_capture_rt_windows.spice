@@ -1,0 +1,52 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Windows variant of stack_trace_capture_rt.spice - see that file for why capture goes through the platform
+// unwinder at all, and stack_trace_symbol_rt.spice for how the OS-suffixed import picks between the two.
+//
+// Windows has no '_Unwind_Backtrace' as a first-class entry point, and more importantly it has no
+// saved-frame-pointer chain to walk even when frame pointers are kept: the x64 prologue sets the frame pointer
+// to an offset from the stack pointer, not to the slot holding the caller's, so the two words a frame-pointer
+// walk expects to find are ordinary locals. Unwinding on x64 is table-driven, through the .pdata/.xdata records
+// that IRGenerator's 'uwtable' attribute causes to be emitted.
+//
+// 'RtlCaptureStackBackTrace' is the documented way to ask the OS to do that walk. It is exported from kernel32,
+// so it needs no linker flag and is available under MinGW (the toolchain Spice targets on Windows, see the CI
+// workflow) as well as under MSVC. Unlike the POSIX side it needs no callback: one call fills the buffer, which
+// also means there is no fat-pointer marshalling to work around here.
+
+// Frames the OS will hand back in one call. Documented as capped below 2^16, and older Windows versions capped
+// the total of skip + capture at 63; staying at or below that keeps this working everywhere without a version
+// check. The caller's own capacity is clamped to this.
+const int MAX_CAPTURED_FRAMES = 62;
+
+ext f<unsigned short> RtlCaptureStackBackTrace(unsigned int /*framesToSkip*/, unsigned int /*framesToCapture*/,
+                                               byte** /*backTrace*/, unsigned int* /*backTraceHash*/);
+
+/**
+ * Fills 'addresses' with up to 'capacity' return addresses, most recent call first, and returns how many were
+ * written. Mirrors the POSIX overload in stack_trace_capture_rt.spice, including how 'skipFrames' is counted.
+ *
+ * @param addresses Buffer to write into
+ * @param capacity Maximum number of addresses to write
+ * @param skipFrames Number of frames to drop from the top, counted from this function's own frame
+ * @return Number of addresses written
+ */
+public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFrames) {
+    // RtlCaptureStackBackTrace does the skipping itself, so 'skipFrames' goes straight through rather than being
+    // handled here. Its own frame is not counted, which is why the accounting matches the POSIX side: frame 0 is
+    // this function either way.
+    int framesToCapture = capacity;
+    if framesToCapture > MAX_CAPTURED_FRAMES {
+        framesToCapture = MAX_CAPTURED_FRAMES;
+    }
+    if framesToCapture <= 0 {
+        return 0;
+    }
+
+    unsafe {
+        const unsigned short capturedFrames = RtlCaptureStackBackTrace(cast<unsigned int>(skipFrames),
+                                                                       cast<unsigned int>(framesToCapture),
+                                                                       addresses, nil<unsigned int*>);
+        return cast<int>(capturedFrames);
+    }
+}

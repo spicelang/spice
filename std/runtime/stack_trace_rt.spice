@@ -1,23 +1,16 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-// Stack trace capture via frame-pointer walking, plus best-effort symbol resolution. Relies on the
-// compiler-internal __frame_address() builtin (src/irgenerator/GenBuiltinFunctions.cpp), which lowers to LLVM's
-// target-independent 'llvm.frameaddress' intrinsic and hands back the calling function's own frame address - the
-// same value as C's `__builtin_frame_address(0)`. From there, the walk itself is plain Spice: on every supported
-// target and ABI (x86-64 System V, AArch64 AAPCS, ...) the first pointer-sized slot at a frame address holds the
-// caller's saved frame pointer and the next slot holds the return address, so following that chain one hop at a
-// time recovers the call stack without any further compiler support. This only works because IRGenerator
-// unconditionally keeps frame pointers for every function (see the `module->setFramePointer(...)` call in
-// IRGenerator.cpp) - omitting them would break the chain.
+// Stack trace capture, plus best-effort symbol resolution. The walk itself is done by the platform unwinder,
+// reached through captureReturnAddresses() - see std/runtime/stack_trace_capture_rt.spice for which entry point
+// that is per platform, and for why the frame-pointer walk this replaced could not work everywhere.
 //
 // This one file is shared across every target - unlike most other OS-specific std runtime pieces, it does NOT
-// have an OS-suffixed sibling of its own. Only symbol resolution actually differs per platform (POSIX's
-// dladdr() vs Windows' DbgHelp), and Spice requires a method to be declared in the same file as its struct, so
-// dump() itself can't be split across an OS-suffixed pair of files the way the struct/capture()/dump() trio
-// would need to be as a whole. Instead, dump() delegates just that one piece to the ordinary (non-method)
-// resolveSymbolName() function, imported below - ordinary functions face no such restriction, so THAT import
-// resolves to stack_trace_symbol_rt.spice or stack_trace_symbol_rt_windows.spice as appropriate, exactly like an
-// import anywhere else would. See whichever of those applies for that platform's resolution details/caveats.
+// have an OS-suffixed sibling of its own. Both halves that actually differ per platform (capturing the frames,
+// and resolving an address to a name) live in their own OS-suffixed files, and Spice requires a method to be
+// declared in the same file as its struct, so capture() and dump() cannot be split that way themselves. Each
+// therefore delegates its platform-specific piece to an ordinary (non-method) function - captureReturnAddresses()
+// and resolveSymbolName() - which faces no such restriction, so THOSE imports resolve to the '_windows' variant
+// or the POSIX one as appropriate, exactly like an import anywhere else would.
 //
 // This split also matters beyond code reuse: sDumpStacktrace() is reachable two ways - an explicit
 // `import "std/runtime/stack_trace_rt"`, which the compiler's OS-suffixed import resolution handles correctly,
@@ -30,10 +23,19 @@
 // always resolve to the same file, so that can't happen.
 
 import "std/runtime/stack_trace_symbol_rt";
+import "std/runtime/stack_trace_capture_rt";
 
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 const int STACK_TRACE_CAPACITY = 64;
+// Frames belonging to the stack trace runtime itself that sit between the unwinder and the caller of capture():
+// captureReturnAddresses() and capture(). They are dropped so a trace starts at the code that asked for it.
+//
+// This count is exact as long as the two live in their own compile units, which they do: Spice emits one object
+// file per source file, so neither can be inlined into the other or into the caller. Link-time optimization
+// removes that guarantee - under '-lto' one or both may be inlined away, and the trace then starts a frame or
+// two further out than intended.
+const int RUNTIME_FRAMES = 2;
 
 /**
  * Fixed-capacity buffer holding one captured stack trace, as raw return addresses (most recent call first).
@@ -50,35 +52,16 @@ public type StackTraceBuffer struct {
  * current instruction pointer (i.e. the return address capture() will resume at), not one of its parents' - so
  * by default the trace starts exactly at the call site of capture() itself.
  *
- * The chain's outermost frame is a sentinel, conventionally marked by a zeroed saved-frame-pointer field - but
- * on at least one observed platform (macOS/AArch64) its return-address field reads zero too, one hop before the
- * saved-frame-pointer field does. So termination is checked on the return-address value about to be recorded,
- * not only on the frame pointer itself - a zero return address means this frame is (or already looks like) the
- * sentinel, and the walk stops without recording it, rather than recording a bogus nil entry.
+ * The walk itself is done by the platform unwinder, via captureReturnAddresses() - see
+ * stack_trace_capture_rt.spice for which entry point that is per platform, and why a hand-rolled
+ * frame-pointer walk could not do this job on every target.
  *
  * @param skipFrames Number of additional frames to omit above the direct caller, for wrapper functions like
  *                    sDumpStacktrace() that call capture() on a caller's behalf and want their own frame hidden.
  */
 public p StackTraceBuffer.capture(int skipFrames = 0) {
-    this.count = 0;
-
     unsafe {
-        byte** frame = cast<byte**>(__frame_address());
-
-        while skipFrames > 0 && frame != nil<byte**> {
-            frame = cast<byte**>(frame[0]);
-            skipFrames--;
-        }
-
-        while frame != nil<byte**> && this.count < STACK_TRACE_CAPACITY {
-            byte* returnAddress = frame[1];
-            if returnAddress == nil<byte*> {
-                break; // sentinel frame - no real caller above this, stop without recording it
-            }
-            this.addresses[this.count] = returnAddress;
-            this.count++;
-            frame = cast<byte**>(frame[0]); // saved frame pointer of the parent frame
-        }
+        this.count = captureReturnAddresses(&this.addresses[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES + skipFrames);
     }
 }
 
@@ -88,9 +71,9 @@ public p StackTraceBuffer.capture(int skipFrames = 0) {
  * stack_trace_symbol_rt.spice for why that is common for a Spice program's own frames today). A no-op if
  * nothing was captured.
  *
- * No offset from the symbol's own start address is printed alongside the name: Spice has no pointer<->integer
- * cast and no pointer-difference operator today (only pointer +/- integer, which computes a new pointer, not a
- * numeric difference), so there is currently no way to compute one in Spice itself.
+ * No offset from the symbol's own start address is printed alongside the name yet. Computing one is possible
+ * now that pointer<->integer casts exist, but it needs resolveSymbolName() to hand back the symbol's start
+ * address as well as its name, which is the next piece of work rather than part of this one.
  *
  * @param includeAddresses Whether to print each frame's raw address alongside its resolved name. Defaults to true;
  *                          pass false for deterministic output, since addresses vary run to run due to ASLR/PIE
