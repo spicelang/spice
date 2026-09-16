@@ -1,0 +1,10 @@
+// Only 'long' is accepted on the integer side of a pointer cast - it is the only Spice integer type that is
+// guaranteed to be 64 bit wide on every target, so it is the only one that cannot silently truncate a pointer.
+f<int> main() {
+    long l = 1234l;
+    long* lPtr = &l;
+    unsafe {
+        int truncated = cast<int>(lPtr);
+        printf("Address: %d\n", truncated);
+    }
+}

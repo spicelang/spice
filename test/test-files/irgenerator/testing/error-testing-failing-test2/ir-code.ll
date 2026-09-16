@@ -73,6 +73,6 @@ attributes #3 = { mustprogress noinline nounwind optnone uwtable }
 !0 = !{i32 8, !"PIC Level", i32 2}
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !5 = !{!"branch_weights", i32 1048575, i32 1}

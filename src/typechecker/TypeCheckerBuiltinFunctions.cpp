@@ -631,9 +631,9 @@ std::any TypeChecker::visitBuiltinStdErrCall(FctCallNode *node) const {
 
 /**
  * Resolves to the frame address (saved frame-pointer slot) of the calling function's own stack frame, i.e. the
- * same value as C's `__builtin_frame_address(0)`. Requires frame pointers to be kept for every function, which
- * IRGenerator guarantees unconditionally (see stack_trace_rt.spice for the pure-Spice frame-pointer walk built
- * on top of this).
+ * same value as C's `__builtin_frame_address(0)`. IRGenerator keeps frame pointers for every function it emits, so
+ * the value is always a real frame address - but see the IR generator side of this builtin for why that alone does
+ * not make the surrounding frame chain walkable on every target.
  */
 std::any TypeChecker::visitBuiltinFrameAddressCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_FRAME_ADDRESS);

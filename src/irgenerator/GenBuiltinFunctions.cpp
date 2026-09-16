@@ -275,9 +275,14 @@ std::any IRGenerator::visitBuiltinStdErrCall([[maybe_unused]] const FctCallNode 
 /**
  * Emits a call to LLVM's target-independent 'llvm.frameaddress' intrinsic at level 0, yielding the frame address
  * (saved frame-pointer slot) of whichever Spice function this builtin call is inlined into - the same value as
- * C's `__builtin_frame_address(0)`. Relies on frame pointers being kept for every function (see the
- * `module->setFramePointer(...)` call in IRGenerator.cpp), since without them there is no frame-pointer chain to
- * walk. stack_trace_rt.spice builds a pure-Spice frame-pointer walk on top of this single primitive.
+ * C's `__builtin_frame_address(0)`.
+ *
+ * Frame pointers are kept for every Spice function we emit (see 'frame-pointer' in IRGenerator::addCommonFctAttrs),
+ * so the returned address is a real frame address. That does NOT make a frame-pointer chain walkable in general:
+ * the layout of the slots around it is target- and ABI-specific, and on Windows x64 in particular there is no
+ * saved-frame-pointer chain at all, since the frame pointer points into the middle of the frame and unwinding goes
+ * through the .pdata/.xdata tables instead. Anything that needs an actual call stack must go through the platform
+ * unwinder rather than walking from this value.
  */
 std::any IRGenerator::visitBuiltinFrameAddressCall([[maybe_unused]] const FctCallNode *node) {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_FRAME_ADDRESS);

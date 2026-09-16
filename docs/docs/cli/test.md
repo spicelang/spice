@@ -44,3 +44,4 @@ You can apply following options to the `test` subcommand:
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                                          |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |
 | -            | `--use-tbaa-metadata`     | Generate metadata for type-based alias analysis to enhance optimizations                                             |
+| -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                                            |

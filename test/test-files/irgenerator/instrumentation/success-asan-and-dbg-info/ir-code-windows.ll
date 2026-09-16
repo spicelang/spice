@@ -376,7 +376,7 @@ declare void @__asan_version_mismatch_check_v8()
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_address uwtable }
 attributes #1 = { nobuiltin nocallback nofree nosync nounwind willreturn memory(readwrite, inaccessiblemem: none, errnomem: none, target_mem: none) }
 attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #3 = { nounwind uwtable "frame-pointer"="all" }
+attributes #3 = { nounwind uwtable }
 attributes #4 = { nomerge }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6}
@@ -386,7 +386,7 @@ attributes #4 = { nomerge }
 !0 = !{i32 8, !"PIC Level", i32 2}
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 7, !"Dwarf Version", i32 5}
 !5 = !{i32 2, !"Debug Info Version", i32 3}
 !6 = !{i32 4, !"nosanitize_address", i32 1}

@@ -1694,6 +1694,14 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     llvm::Value *indices[1] = {builder.getInt32(0)};
     return {.value = builder.CreateInBoundsGEP(builder.getInt8Ty(), rhsP(), indices)};
   }
+  case COMB(TY_LONG, TY_PTR): // fallthrough
+  case COMB(TY_LONG, TY_STRING):
+    // The type checker only lets a pointer be cast to 'long', which is 64 bit wide on every Spice target, so this
+    // never truncates. On a target with narrower pointers (e.g. wasm32) 'ptrtoint' zero-extends instead.
+    return {.value = builder.CreatePtrToInt(rhsV(), lhsT)};
+  case COMB(TY_PTR, TY_LONG): // fallthrough
+  case COMB(TY_STRING, TY_LONG):
+    return {.value = builder.CreateIntToPtr(rhsV(), lhsT)};
   case COMB(TY_PTR, TY_FUNCTION): // fallthrough
   case COMB(TY_PTR, TY_PROCEDURE): {
     assert(lhsSTy.isPtrTo(TY_BYTE));

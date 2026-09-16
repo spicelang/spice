@@ -52,5 +52,6 @@ You can apply following options to the `build` subcommand:
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                                          |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |
 | -            | `--use-tbaa-metadata`     | Generate metadata for type-based alias analysis to enhance optimizations                                             |
+| -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                                            |
 | -            | `--output-container`      | Format of the compilation output container. <br> Valid values: `exec` (default), `obj`, `lib`, `dylib`)              |
 | -            | `--backend`               | Codegen backend. <br> Valid values: `llvm` (default), `tpde` (experimental — [see how-to](../how-to/experimental-backends.md); requires opt-in build with `-DSPICE_ENABLE_TPDE=ON`). |

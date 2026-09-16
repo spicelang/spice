@@ -73,7 +73,7 @@ declare void @__tysan_instrument_with_shadow_update(ptr, ptr, i1, i64, i32) #2
 declare void @__tysan_set_shadow_type(ptr, ptr, i64) #2
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_type uwtable }
-attributes #1 = { nounwind uwtable "frame-pointer"="all" }
+attributes #1 = { nounwind uwtable }
 attributes #2 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
@@ -82,7 +82,7 @@ attributes #2 = { nounwind }
 !0 = !{i32 8, !"PIC Level", i32 2}
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !5 = !{i64 6042226155786013045, !"long"}
 !6 = !{i64 7516313782037075379, !"double*"}

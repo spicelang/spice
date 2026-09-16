@@ -117,7 +117,7 @@ declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immar
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nounwind uwtable "frame-pointer"="all" }
+attributes #3 = { nounwind uwtable }
 attributes #4 = { nocallback nofree nosync nounwind willreturn memory(none) }
 attributes #5 = { nocallback nofree nosync nounwind willreturn memory(argmem: write) }
 attributes #6 = { nomerge }
@@ -128,7 +128,7 @@ attributes #6 = { nomerge }
 !0 = !{i32 8, !"PIC Level", i32 2}
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 4, !"nosanitize_memory", i32 1}
 !5 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !6 = !{!"branch_weights", i32 1, i32 1048575}

@@ -30,6 +30,9 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   components << cliOptions.instrumentation.codeCoverage;
   components << cliOptions.targetTriple.str();
   components << cliOptions.useLTO;
+  // Frame pointers are a codegen decision baked into the emitted object, so an object built without them must not
+  // be reused once '--keep-frame-pointers' is passed, and vice versa.
+  components << cliOptions.keepFramePointers;
   // The output container influences codegen (PIC/PIE levels, DSO-local attributes for symbols,
   // etc.), so reusing an object emitted for a different container would produce wrong output.
   components << static_cast<uint8_t>(cliOptions.outputContainer);

@@ -433,6 +433,10 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   // --use-tbaa-metadata
   subCmd->add_flag<bool>("--use-tbaa-metadata", cliOptions.useTBAAMetadata,
                          "Generate metadata for type-based alias analysis to enhance optimizations");
+  // --keep-frame-pointers
+  subCmd->add_flag<bool>("--keep-frame-pointers", cliOptions.keepFramePointers,
+                         "Set up a frame pointer in every function, so external profilers and debuggers can walk "
+                         "the stack (costs a register and a bit of performance)");
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
