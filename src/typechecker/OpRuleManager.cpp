@@ -740,6 +740,18 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
     return lhsType;
   }
+  // Allow casts any* -> long and long -> any*. Only 'long' is accepted on the integer side: it is the only Spice
+  // integer type that is guaranteed to be 64 bit wide on every target (see docs/docs/language/primitive-types.md),
+  // so it is the only one that can round-trip a pointer without silently truncating it on a 64-bit target. The
+  // qualifiers of the cast destination are preserved, so 'unsigned long' works just as well as the signed variant.
+  if (lhsType.is(TY_LONG) && rhsType.isOneOf({TY_PTR, TY_STRING})) {
+    ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
+    return lhsType;
+  }
+  if (lhsType.isOneOf({TY_PTR, TY_STRING}) && rhsType.is(TY_LONG)) {
+    ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
+    return lhsType;
+  }
   // Allow casts p()/f<>() -> byte*
   if (lhsType.isPtrTo(TY_BYTE) && rhsType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);

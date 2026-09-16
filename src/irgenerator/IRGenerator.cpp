@@ -795,6 +795,12 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
  * Spice does not know exceptions and we never emit landing pads, so none of our functions can unwind. We still request
  * an unwind table, so that debuggers and profilers are able to produce correct stack traces.
  *
+ * The frame pointer is requested here, per function, and not via the 'frame-pointer' module flag that IRGenerator's
+ * constructor also sets: the module flag exists for consumers that inspect the module, but the backend decides frame
+ * pointer elimination purely from this function attribute. Without it, the backend falls back to the target default,
+ * which omits the frame pointer on most targets - including x86-64 Linux at every optimization level, and AArch64,
+ * where the frame record is still spilled but the chain is never linked up.
+ *
  * The size levels are not communicated to LLVM by the pass pipeline alone - since Os and Oz both select the O2
  * pipeline, 'optsize' and 'minsize' on the individual function are what actually distinguishes them. Without 'minsize',
  * Oz is indistinguishable from Os.
@@ -805,6 +811,7 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
 void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) const {
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
+  fct->addFnAttr("frame-pointer", "all");
 
   // Explicitly inlined functions must not be marked as 'optnone', because that is incompatible with 'alwaysinline'.
   // This matches the behavior of other frontends: an inline request is honored, even at O0.

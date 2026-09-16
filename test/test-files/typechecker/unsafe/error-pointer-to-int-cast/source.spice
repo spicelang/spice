@@ -1,0 +1,6 @@
+f<int> main() {
+    long l = 1234l;
+    long* lPtr = &l;
+    long asInt = cast<long>(lPtr);
+    printf("Address: %d\n", asInt);
+}

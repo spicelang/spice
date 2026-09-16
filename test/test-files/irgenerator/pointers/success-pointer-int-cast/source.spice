@@ -1,0 +1,48 @@
+// Covers the pointer <-> integer casts: cast<long>(ptr) lowers to 'ptrtoint', cast<T*>(long) to 'inttoptr'.
+// Both are unsafe operations, so each one sits inside an unsafe block. 'long' is the only integer type accepted
+// on the integer side, since it is the only one guaranteed to be 64 bit wide on every target.
+//
+// Everything observable is asserted rather than printed: the actual addresses vary run to run under ASLR/PIE,
+// and the width of C's 'long' (and therefore the right printf specifier for it) differs between LP64 and the
+// LLP64 used on Windows, while Spice's own 'long' is always 64 bit.
+f<int> main() {
+    int[3] a = [11, 22, 33];
+    int* aPtr = a;
+
+    // Round-tripping a pointer through a long must yield the very same pointer back
+    long asLong = 0l;
+    unsafe { asLong = cast<long>(aPtr); }
+    assert asLong != 0l;
+    int* backPtr = nil<int*>;
+    unsafe { backPtr = cast<int*>(asLong); }
+    assert backPtr == aPtr;
+    assert *backPtr == 11;
+
+    // The numeric difference of two pointers is exactly what these casts make expressible: &a[2] and &a[0] are
+    // two int elements apart, so the byte distance between them is 2 * sizeof(int).
+    int* thirdPtr = aPtr;
+    unsafe { thirdPtr += 2; }
+    assert *thirdPtr == 33;
+    long byteDistance = 0l;
+    unsafe { byteDistance = cast<long>(thirdPtr) - cast<long>(aPtr); }
+    assert byteDistance == 8l;
+
+    // The cast destination's qualifiers are preserved, so 'unsigned long' works just as well
+    unsigned long asUnsigned = 0ul;
+    unsafe { asUnsigned = cast<unsigned long>(aPtr); }
+    assert asUnsigned != 0ul;
+    int* fromUnsigned = nil<int*>;
+    unsafe { fromUnsigned = cast<int*>(asUnsigned); }
+    assert fromUnsigned == aPtr;
+
+    // 'string' is a char* in Spice, so it takes part in the same two casts
+    string text = "hello";
+    long textAsLong = 0l;
+    unsafe { textAsLong = cast<long>(text); }
+    assert textAsLong != 0l;
+    string textBack = "";
+    unsafe { textBack = cast<string>(textAsLong); }
+    printf("text=%s\n", textBack);
+
+    printf("All assertions passed!\n");
+}

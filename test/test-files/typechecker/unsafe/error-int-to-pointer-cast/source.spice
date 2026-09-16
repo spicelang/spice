@@ -1,0 +1,5 @@
+f<int> main() {
+    long address = 1234l;
+    byte* bPtr = cast<byte*>(address);
+    printf("Pointer: %p\n", bPtr);
+}
