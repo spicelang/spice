@@ -1,0 +1,442 @@
+// Imports
+import "std/text/analysis";
+
+// Decoder for the names the Spice compiler puts on the ABI level, turning e.g.
+// '_ZN13ArrayIteratorIiE3getEv' back into 'ArrayIterator<int>.get()'.
+//
+// The scheme is documented in media/specs/name-mangling.md and implemented in
+// src/irgenerator/NameMangling.cpp, which is the authority this file mirrors. It is oriented on the C++ Itanium
+// ABI but deliberately not identical to it, so a C++ demangler is not a drop-in substitute: Spice's function
+// types ('PFvE' for p(), 'PF' + return type for f<>()) are not valid Itanium, and abi::__cxa_demangle rejects
+// them. Going the other way, this decoder only understands what Spice actually emits, not the whole Itanium
+// grammar - it is not a general C++ demangler either.
+//
+// Output is written in Spice syntax rather than C++ syntax, since that is what a Spice programmer reading a
+// stack trace or a linker diagnostic expects: methods print as 'Type.method()', not 'Type::method()'.
+//
+// Anything that does not parse cleanly, including a name that never went through mangling in the first place
+// (the 'main' function, anything marked with #[core.compiler.mangle = false], or a plain C symbol), is handed
+// back exactly as it came in. Demangling is a display aid, so failing loudly would be worse than useless.
+
+// Prefix every mangled name carries
+const string MANGLE_PREFIX = "_Z";
+// Suffix that IRGenerator appends to the thunks it emits for lambda fat pointers (see GenValues.cpp)
+const string FAT_THUNK_SUFFIX = ".fatthunk";
+// Prefixes of the RTTI symbols, which are a fixed marker followed by a single mangled type
+const string VTABLE_PREFIX = "_ZTV";
+const string TYPE_INFO_PREFIX = "_ZTI";
+const string TYPE_INFO_NAME_PREFIX = "_ZTS";
+// Upper bound on the pointer/reference/array/qualifier wrappers one type can carry. Real signatures use a
+// handful at most; anything beyond this is treated as unparseable rather than growing a buffer for it.
+const int MAX_TYPE_WRAPPERS = 16;
+// Enough digits for any unsigned long an array size could hold
+const int MAX_DIGITS = 20;
+// Most digits readNumber() will accept. Any 18-digit number fits an unsigned long (10^18 is comfortably below
+// its maximum), so capping the digit count keeps the accumulator from wrapping without costing anything real:
+// a fragment length is bounded by the input, and no plausible array size comes close.
+const int MAX_NUMBER_DIGITS = 18;
+
+/**
+ * Cursor over the characters of one mangled name.
+ *
+ * 'failed' is sticky: once any step gives up, every later step short-circuits and demangle() returns the input
+ * unchanged. That keeps the recursive descent below free of error plumbing at each call site - a parse either
+ * consumes the whole name or is discarded wholesale.
+ */
+type Reader struct {
+    string input
+    unsigned long length
+    unsigned long pos
+    bool failed
+}
+
+p Reader.ctor(string input, unsigned long length) {
+    this.input = input;
+    this.length = length;
+    this.pos = 0l;
+    this.failed = false;
+}
+
+/**
+ * Character at the cursor, or '\0' when the input is exhausted or the parse has already failed. Deliberately
+ * total rather than bounds-checked at every call site: '\0' matches none of the expected characters, so an
+ * overrun turns into an ordinary parse failure instead of a read past the end.
+ */
+inline f<char> Reader.peek() {
+    if this.failed || this.pos >= this.length { return '\0'; }
+    return this.input[this.pos];
+}
+
+/**
+ * Character one past the cursor, for the single spot that needs two characters of lookahead ('P' starting a
+ * pointer versus 'PF' starting a function type).
+ */
+inline f<char> Reader.peekNext() {
+    if this.failed || this.pos + 1l >= this.length { return '\0'; }
+    return this.input[this.pos + 1l];
+}
+
+inline f<bool> Reader.isAtEnd() {
+    return this.pos >= this.length;
+}
+
+/**
+ * Consumes the given character, or marks the parse failed if the cursor is not on it.
+ */
+p Reader.expect(char c) {
+    if this.peek() != c {
+        this.failed = true;
+        return;
+    }
+    this.pos++;
+}
+
+/**
+ * Reads a decimal length prefix. A missing or empty number is a parse failure.
+ */
+f<unsigned long> Reader.readNumber() {
+    unsigned long value = 0l;
+    unsigned long digitCount = 0l;
+    while !this.failed && isDigit(this.peek()) {
+        // Give up before the accumulator can wrap. Without this, an absurd length prefix silently becomes a
+        // small number, and every bounds check derived from it is then meaningless.
+        digitCount++;
+        if digitCount > cast<unsigned long>(MAX_NUMBER_DIGITS) {
+            this.failed = true;
+            return 0l;
+        }
+        value = value * 10l + cast<unsigned long>(cast<int>(this.peek()) - cast<int>('0'));
+        this.pos++;
+    }
+    if digitCount == 0l { this.failed = true; }
+    return value;
+}
+
+/**
+ * Reads one '<length><characters>' fragment, the unit every identifier in the scheme is built from.
+ */
+f<String> Reader.readFragment() {
+    const unsigned long fragmentLength = this.readNumber();
+    // Compared against the remaining input rather than as 'pos + fragmentLength > length': that sum wraps for a
+    // large length, passes the check, and lets the loop below run off the end of the input. 'pos' never exceeds
+    // 'length', so this subtraction cannot wrap in turn.
+    if this.failed || fragmentLength > this.length - this.pos {
+        this.failed = true;
+        return String();
+    }
+    String fragment = String();
+    for unsigned long i = 0l; i < fragmentLength; i++ {
+        fragment.append(this.input[this.pos + i]);
+    }
+    this.pos += fragmentLength;
+    return fragment;
+}
+
+/**
+ * Reads a (possibly scope-nested, possibly templated) type or function name.
+ *
+ * NameMangling::mangleName() splits a name on ':' and '/' and, when that yields more than one fragment, wraps
+ * the sequence in 'N' ... 'E'. Empty fragments come from the doubled colon in 'a::b' and are dropped again
+ * here, so the fragments rejoin with '::'.
+ */
+f<String> Reader.readName() {
+    const bool isNested = this.peek() == 'N';
+    if isNested { this.expect('N'); }
+
+    String name = this.readFragment();
+    if isNested {
+        while !this.failed && isDigit(this.peek()) {
+            const String fragment = this.readFragment();
+            if fragment.isEmpty() { continue; } // artifact of splitting on the ':' of a '::'
+            if !name.isEmpty() { name += "::"; }
+            name += fragment;
+        }
+    }
+
+    // Template argument list
+    if this.peek() == 'I' {
+        this.expect('I');
+        name += "<";
+        bool isFirst = true;
+        while !this.failed && this.peek() != 'E' {
+            if !isFirst { name += ", "; }
+            name += this.readType();
+            isFirst = false;
+        }
+        this.expect('E');
+        name += ">";
+    }
+
+    if isNested { this.expect('E'); }
+    // Every name mangleName() writes has at least one non-empty fragment, so an empty result means the input is
+    // malformed. Without this, '_Z3foo0' renders as 'foo()' - indistinguishable from the valid '_Z3foov'.
+    if name.isEmpty() { this.failed = true; }
+    return name;
+}
+
+/**
+ * Reads one mangled type.
+ *
+ * mangleType() emits the type chain from the outside in - the pointer/reference/array wrappers first, then the
+ * 'heap' and 'const' qualifiers, then the base type. Rendering therefore walks the collected wrappers back to
+ * front, so the one read last is the one that binds tightest to the base.
+ */
+f<String> Reader.readType() {
+    // Collected wrappers, as the characters they were read as. 'A' additionally records its size below.
+    char[MAX_TYPE_WRAPPERS] wrappers;
+    unsigned long[MAX_TYPE_WRAPPERS] arraySizes;
+    unsigned long wrapperCount = 0l;
+
+    while !this.failed {
+        const char c = this.peek();
+        // 'PF' introduces a function type, which readBaseType() handles as a whole - only a lone 'P' is a pointer
+        if c == 'P' && this.peekNext() == 'F' { break; }
+        if c != 'P' && c != 'R' && c != 'V' && c != 'K' && c != 'A' { break; }
+        if wrapperCount >= cast<unsigned long>(MAX_TYPE_WRAPPERS) {
+            this.failed = true;
+            return String();
+        }
+        this.pos++;
+        wrappers[wrapperCount] = c;
+        arraySizes[wrapperCount] = 0l;
+        if c == 'A' {
+            arraySizes[wrapperCount] = this.readNumber();
+            this.expect('_');
+        }
+        wrapperCount++;
+    }
+
+    String typeName = this.readBaseType();
+    if this.failed { return String(); }
+
+    unsigned long i = wrapperCount;
+    while i > 0l {
+        const char wrapper = wrappers[i - 1l];
+        // 'string' and 'const char*' are both emitted as 'PKc' and cannot be told apart here. Print the Spice
+        // spelling, which is by far the more common source of it. The pair always sits innermost, so it has to
+        // be collapsed as the walk reaches it rather than only when it makes up the entire type: 'A2_PKc' is a
+        // string[2], not a const char*[2].
+        if wrapper == 'K' && typeName == "char" && i >= 2l && wrappers[i - 2l] == 'P' {
+            typeName = String("string");
+            i -= 2l;
+            continue;
+        }
+        if wrapper == 'P' {
+            typeName += "*";
+        } else if wrapper == 'R' {
+            typeName += "&";
+        } else if wrapper == 'A' {
+            typeName += "[";
+            appendNumber(typeName, arraySizes[i - 1l]);
+            typeName += "]";
+        } else if wrapper == 'K' {
+            typeName = String("const ") + typeName;
+        } else { // 'V' - the heap qualifier, which rides the Itanium 'volatile' slot
+            typeName = String("heap ") + typeName;
+        }
+        i--;
+    }
+    return typeName;
+}
+
+/**
+ * Reads the base of a type: a primitive letter, a function/procedure type, or a named struct/interface/union/enum.
+ */
+f<String> Reader.readBaseType() {
+    const char c = this.peek();
+
+    // Function and procedure types: 'PF'/'PFC' + return type + params + 'E', or 'PFv'/'PFCv' + params + 'E'.
+    // The 'C' variant marks a lambda that carries captures, which makes no difference to the printed signature.
+    if c == 'P' {
+        this.expect('P');
+        this.expect('F');
+        if this.peek() == 'C' { this.expect('C'); }
+        const bool isProcedure = this.peek() == 'v';
+        String signature = String();
+        if isProcedure {
+            this.expect('v');
+            signature += "p(";
+        } else {
+            const String returnType = this.readType(); // functions mangle the return type as the first entry
+            signature += "f<";
+            signature += returnType;
+            signature += ">(";
+        }
+        bool isFirst = true;
+        while !this.failed && this.peek() != 'E' {
+            if !isFirst { signature += ", "; }
+            signature += this.readType();
+            isFirst = false;
+        }
+        this.expect('E');
+        signature += ")";
+        return signature;
+    }
+
+    // Primitives. 'unsigned' variants get their own letter, so signedness needs no separate flag.
+    if c == 'd' { this.pos++; return String("double"); }
+    if c == 'i' { this.pos++; return String("int"); }
+    if c == 'j' { this.pos++; return String("unsigned int"); }
+    if c == 's' { this.pos++; return String("short"); }
+    if c == 't' { this.pos++; return String("unsigned short"); }
+    if c == 'l' { this.pos++; return String("long"); }
+    if c == 'm' { this.pos++; return String("unsigned long"); }
+    if c == 'a' { this.pos++; return String("byte"); }
+    if c == 'h' { this.pos++; return String("unsigned byte"); }
+    if c == 'c' { this.pos++; return String("char"); }
+    if c == 'b' { this.pos++; return String("bool"); }
+
+    // Struct, interface, union or enum - all four are just a name at this level
+    if c == 'N' || isDigit(c) {
+        return this.readName();
+    }
+
+    this.failed = true;
+    return String();
+}
+
+/**
+ * Appends a decimal number to the given string. Hand-rolled rather than routed through std/type/type-conversion,
+ * whose toString() overloads are all signed, so that array sizes stay in the unsigned type they were read as.
+ */
+p appendNumber(String& target, unsigned long value) {
+    if value == 0l {
+        target += '0';
+        return;
+    }
+    char[MAX_DIGITS] digits;
+    unsigned long digitCount = 0l;
+    while value > 0l {
+        digits[digitCount] = cast<char>(cast<int>('0') + cast<int>(value % 10l));
+        value /= 10l;
+        digitCount++;
+    }
+    for unsigned long i = digitCount; i > 0l; i-- {
+        target += digits[i - 1l];
+    }
+}
+
+/**
+ * Reads a whole mangled function or procedure name, i.e. everything after the '_Z' prefix.
+ *
+ * Mirrors NameMangling::mangleFunction(): an optional 'N' + this type for methods, the name itself, an optional
+ * template argument list (which for a generic signature is followed by the return type - consumed, but not
+ * printed, exactly as a C++ demangler drops it), and finally the parameter types, or a lone 'v' for none.
+ */
+f<String> Reader.readFunction() {
+    const bool isMethod = this.peek() == 'N';
+    String thisType = String();
+    if isMethod {
+        this.expect('N');
+        thisType = this.readType();
+    }
+
+    String name = this.readFragment();
+    // mangleFunction() always writes a non-empty name, so '_Z0v' is malformed rather than a nameless function
+    if this.failed || name.isEmpty() {
+        this.failed = true;
+        return String();
+    }
+    const bool isGeneric = this.peek() == 'I';
+    if isGeneric {
+        this.expect('I');
+        name += "<";
+        bool isFirst = true;
+        while !this.failed && this.peek() != 'E' {
+            if !isFirst { name += ", "; }
+            name += this.readType();
+            isFirst = false;
+        }
+        this.expect('E');
+        name += ">";
+        if isMethod { this.expect('E'); } // closes the nested type opened by the leading 'N'
+        // Only generic signatures carry a return type, as 'v' for a procedure or a mangled type for a function.
+        // It is part of the signature but not of how a frame reads, so it is consumed and dropped.
+        if this.peek() == 'v' {
+            this.expect('v');
+        } else {
+            this.readType();
+        }
+    } else if isMethod {
+        this.expect('E');
+    }
+
+    String params = String();
+    // mangleFunction() always writes the parameter types, or a lone 'v' when there are none, so reaching the end
+    // of the input here means the name was truncated. Without this, '_Z3foo' also renders as 'foo()'.
+    if this.isAtEnd() {
+        this.failed = true;
+        return String();
+    }
+    if this.peek() == 'v' && this.pos + 1l == this.length {
+        this.expect('v'); // the no-parameter marker
+    } else {
+        bool isFirst = true;
+        while !this.failed && !this.isAtEnd() {
+            if !isFirst { params += ", "; }
+            params += this.readType();
+            isFirst = false;
+        }
+    }
+
+    result = String();
+    if isMethod {
+        result += thisType;
+        result += "."; // Spice spells method access with a dot, unlike C++'s '::'
+    }
+    result += name;
+    result += "(";
+    result += params;
+    result += ")";
+}
+
+/**
+ * Turns a mangled Spice symbol name back into a readable signature, e.g. '_ZN13ArrayIteratorIiE3getEv' into
+ * 'ArrayIterator<int>.get()'.
+ *
+ * Also understands the vtable and type info symbols ('vtable for Car'), and the '.fatthunk' suffix that lambda
+ * fat-pointer thunks carry.
+ *
+ * @param mangled Mangled name, as it appears on the ABI level
+ * @return Demangled signature, or the input unchanged if it is not a mangled Spice name or does not parse
+ */
+public f<String> demangle(const String& mangled) {
+    // A thunk is an ordinary mangled name plus a literal suffix, so peel the suffix and put it back at the end
+    String body = mangled;
+    String suffix = String();
+    if mangled.endsWith(FAT_THUNK_SUFFIX) {
+        body = mangled.getSubstring(0l, cast<long>(mangled.getLength() - getRawLength(FAT_THUNK_SUFFIX)));
+        suffix = String(" [fat thunk]");
+    }
+
+    // RTTI symbols: a fixed marker plus exactly one mangled type
+    String rttiLabel = String();
+    if body.startsWith(VTABLE_PREFIX) {
+        rttiLabel = String("vtable for ");
+    } else if body.startsWith(TYPE_INFO_PREFIX) {
+        rttiLabel = String("typeinfo for ");
+    } else if body.startsWith(TYPE_INFO_NAME_PREFIX) {
+        rttiLabel = String("typeinfo name for ");
+    }
+    if !rttiLabel.isEmpty() {
+        Reader reader = Reader(body.getRaw(), body.getLength());
+        reader.pos = getRawLength(VTABLE_PREFIX); // all three markers are the same length
+        const String rttiType = reader.readType();
+        if reader.failed || !reader.isAtEnd() { return mangled; }
+        return rttiLabel + rttiType + suffix;
+    }
+
+    if !body.startsWith(MANGLE_PREFIX) { return mangled; }
+    Reader reader = Reader(body.getRaw(), body.getLength());
+    reader.pos = getRawLength(MANGLE_PREFIX);
+    const String signature = reader.readFunction();
+    if reader.failed || !reader.isAtEnd() { return mangled; }
+    return signature + suffix;
+}
+
+/**
+ * Convenience overload for a raw string. See the String overload above.
+ */
+public f<String> demangle(string mangled) {
+    return demangle(String(mangled));
+}
