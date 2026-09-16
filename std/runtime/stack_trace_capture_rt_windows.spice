@@ -12,7 +12,7 @@
 // 'RtlCaptureStackBackTrace' is the documented way to ask the OS to do that walk. It is exported from kernel32,
 // so it needs no linker flag and is available under MinGW (the toolchain Spice targets on Windows, see the CI
 // workflow) as well as under MSVC. Unlike the POSIX side it needs no callback: one call fills the buffer, which
-// also means there is no fat-pointer marshalling to work around here.
+// also means there is no fat-pointer marshaling to work around here.
 
 // Frames the OS will hand back in one call. Documented as capped below 2^16, and older Windows versions capped
 // the total of skip + capture at 63; staying at or below that keeps this working everywhere without a version

@@ -112,11 +112,12 @@ living in the shared `stack_trace_rt.spice` and just calls it, preserving the si
 
 - **POSIX** — `_Unwind_Backtrace(callback, ctx)` from libgcc/libunwind, implicitly linked by the gcc/clang
   driver on both Linux and macOS. Verified working on `-O2 -fomit-frame-pointer` code, producing a complete
-  and correct chain. Spice can express the callback: `ext f<int> _Unwind_Backtrace(f<int>(byte*, byte*), byte*)`
-  (`functionDataType` at `Spice.g4:96`; the same pattern `std/os/thread.spice:16` already uses for
-  `pthread_create`).
-  `backtrace()` from `<execinfo.h>` is simpler (no callback) and present on glibc and macOS, but absent on musl
-  — `_Unwind_Backtrace` is the portable choice.
+  and correct chain. **Spice cannot express the callback**: a function converted to a raw pointer becomes a
+  `.fatthunk` with an extra leading captures pointer, shifting every argument (spicelang/spice#1392), so the
+  call is made from a C shim instead.
+  `backtrace()` from `<execinfo.h>` looks simpler (no callback) but is not equivalent across platforms: Apple's
+  implementation walks the frame-pointer chain rather than unwinding, and captures nothing when frame pointers
+  are omitted. It is also absent on musl.
 - **Windows** — `RtlCaptureStackBackTrace(DWORD skip, DWORD capture, void** out, ULONG* hash)` from kernel32.
   Single call, no callback, table-driven, correct on x64 where the FP walk cannot be. Works under MinGW and
   MSVC alike.
@@ -191,10 +192,14 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Standard library (`std/runtime/`)**
 
-- [x] `stack_trace_capture_rt.spice` — capture via the platform unwinder. Uses glibc/macOS `backtrace()`, not
-      `_Unwind_Backtrace`: its callback cannot be driven from Spice, because a function converted to a raw pointer
-      becomes a `.fatthunk` carrying an extra leading captures pointer, which shifts every argument. Costs musl
-      support until a C shim or a bare-function-pointer spelling exists.
+- [x] `stack_trace_capture_rt.spice` — capture via `_Unwind_Backtrace`, called through a small C shim
+      (`stack-trace-unwind.c`, pulled in with `core.linker.additionalSource`). The shim is needed because the
+      unwinder's callback cannot be driven from Spice: a function converted to a raw pointer becomes a
+      `.fatthunk` carrying an extra leading captures pointer, which shifts every argument (spicelang/spice#1392).
+      `backtrace(3)` was tried first and had to be abandoned — glibc's routes through the same unwinder, but
+      Apple's walks the frame-pointer chain, so it captured **zero** frames on macOS once frame pointers were
+      omitted, which is the very dependency this work removes. Going through the unwinder directly also covers
+      musl, which has no `<execinfo.h>`.
 - [x] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
 - [x] `stack_trace_rt.spice` — `capture()` delegates to the above. `dump()` printing `name + 0xoff` still
       pending on symbol resolution returning the symbol start address.

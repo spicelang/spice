@@ -1,43 +1,44 @@
-#![core.compiler.alwaysKeepOnNameCollision = true]
+#![
+    core.compiler.alwaysKeepOnNameCollision = true,
+    // The call into the unwinder lives in C - see the note below on why it cannot be written in Spice today
+    core.linker.additionalSource = "stack-trace-unwind.c"
+]
 
 // Stack trace capture for POSIX targets, split out of stack_trace_rt.spice the same way symbol resolution is -
 // see stack_trace_symbol_rt.spice for why that split exists and how the OS-suffixed import picks between this
 // file and stack_trace_capture_rt_windows.spice.
 //
-// This asks the platform to do the walk rather than following the frame-pointer chain by hand. The hand-rolled
-// walk it replaces could not be made to work everywhere, for reasons that are structural rather than fixable
-// (media/specs/stack-traces.md has the measurements):
+// This asks the platform unwinder to do the walk rather than following the frame-pointer chain by hand. The
+// hand-rolled walk it replaces could not be made to work everywhere, for reasons that are structural rather
+// than fixable (media/specs/stack-traces.md has the measurements):
 //   - Windows x64 has no saved-frame-pointer chain at all, so the walk was never going to work there.
 //   - Frame pointers are off unless '--keep-frame-pointers' is passed, so on most targets there is no chain to
 //     walk in the first place.
-// glibc's backtrace() needs neither: it goes through the same unwinder the C++ ABI uses, driven by the unwind
-// tables that IRGenerator's 'uwtable' attribute always emits. Verified to produce a complete, correct trace at
-// -O2 with frame pointers explicitly omitted.
+// The unwinder needs neither: it is driven by the unwind tables that IRGenerator's 'uwtable' attribute always
+// emits, whatever the optimization level and whether or not frame pointers are kept.
 //
-// WHY NOT _Unwind_Backtrace: it is the more portable entry point - it is what backtrace() is built on, and it
-// exists on musl, which has no <execinfo.h> - but it cannot be driven from Spice today. It takes a callback,
-// and a Spice function converted to a raw pointer is not a plain function pointer: IRGenerator wraps it in a
-// '.fatthunk' carrying an extra leading capture-struct pointer, so the uniform lambda calling convention
-// applies (see IRGenerator::getOrCreateFatFctPtrThunk). The unwinder passes (context, arg), the thunk reads
-// them as (captures, context), and the callback ends up dereferencing the wrong argument. Reaching
-// _Unwind_Backtrace would need either a small C shim compiled in via 'core.linker.additionalSource', the way
-// std/bindings/llvm ships target-wrapper.c, or a way to spell a bare C function pointer in Spice. Until then
-// this costs musl support and nothing else: glibc and macOS both provide backtrace(), and Windows uses
-// RtlCaptureStackBackTrace regardless.
+// The call into it goes through a small C shim (stack-trace-unwind.c, compiled in via the attribute above)
+// rather than being written here, for two reasons, both properties of Spice today rather than preferences:
+//   - _Unwind_Backtrace takes a callback, and a Spice function converted to a raw pointer is not a bare
+//     function pointer: IRGenerator wraps it in a '.fatthunk' carrying an extra leading capture-struct pointer,
+//     so the unwinder's (context, arg) arrives as (captures, context) and every argument shifts by one. See
+//     spicelang/spice#1392.
+//   - backtrace(3) would avoid the callback entirely, but is not equivalent across platforms: glibc's goes
+//     through this same unwinder, while Apple's walks the frame-pointer chain and so finds nothing once frame
+//     pointers are omitted. That is the very dependency this change exists to remove, so it cannot be relied
+//     on - an earlier version of this file used it and captured zero frames on macOS.
+// Going through the unwinder directly also covers musl, which has no <execinfo.h> and thus no backtrace(3).
 
-// Frames pulled from the OS in one go, before the caller's skip count is applied. Sized well above
-// STACK_TRACE_CAPACITY so that skipping never truncates a trace that would otherwise have filled the buffer.
-const int CAPTURE_BUFFER_FRAMES = 128;
+// The shim's own frame, which sits between the unwinder and this function and is never worth showing.
+const int SHIM_FRAMES = 1;
 
-// Present in glibc and in macOS' libSystem; needs no linker flag on either.
-ext f<int> backtrace(byte** /*buffer*/, int /*size*/);
+// Defined in stack-trace-unwind.c. Prefixed to keep a C-linkage symbol of this generality out of the way of
+// anything the program being compiled might define itself.
+ext f<int> spiceCaptureReturnAddresses(byte** /*addresses*/, int /*capacity*/, int /*skipFrames*/);
 
 /**
  * Fills 'addresses' with up to 'capacity' return addresses, most recent call first, and returns how many were
  * written.
- *
- * backtrace() has no skip parameter of its own and excludes its own frame, so frame 0 is always this function.
- * The requested frames are therefore collected first and the leading 'skipFrames' dropped afterwards.
  *
  * @param addresses Buffer to write into
  * @param capacity Maximum number of addresses to write
@@ -48,24 +49,7 @@ public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFra
     if capacity <= 0 || skipFrames < 0 {
         return 0;
     }
-
-    byte*[CAPTURE_BUFFER_FRAMES] rawFrames;
-    int capturedFrames = 0;
     unsafe {
-        capturedFrames = backtrace(&rawFrames[0], CAPTURE_BUFFER_FRAMES);
+        return spiceCaptureReturnAddresses(addresses, capacity, skipFrames + SHIM_FRAMES);
     }
-    if capturedFrames <= skipFrames {
-        return 0; // nothing left once the runtime's own frames are dropped
-    }
-
-    int usableFrames = capturedFrames - skipFrames;
-    if usableFrames > capacity {
-        usableFrames = capacity;
-    }
-    unsafe {
-        for int i = 0; i < usableFrames; i++ {
-            addresses[i] = rawFrames[skipFrames + i];
-        }
-    }
-    return usableFrames;
 }
