@@ -1,0 +1,60 @@
+// Exercises std/text/demangle against names the Spice compiler really emits. Every mangled name below was taken
+// verbatim from the committed ir-code.ll reference files, so these are the compiler's own output rather than
+// hand-written guesses at the scheme.
+import "std/text/demangle";
+
+// Asserts rather than only printing, so a regression fails the test on its own instead of quietly changing the
+// reference output. The printf runs first, to name the offending case before the assert aborts.
+p check(string mangled, string expected) {
+    const String actual = demangle(mangled);
+    if actual != expected {
+        printf("MISMATCH for '%s'\n  expected: %s\n  actual:   %s\n", mangled, expected, actual.getRaw());
+    }
+    assert actual == expected;
+}
+
+f<int> main() {
+    // Plain functions, with and without parameters
+    check("_Z12functionTruev", "functionTrue()");
+    check("_Z3addii", "add(int, int)");
+    check("_Z10isRawEqualPKcPKc", "isRawEqual(string, string)");
+    check("_Z13getTestStringidb", "getTestString(int, double, bool)");
+
+    // Methods: Spice spells these with a dot, not '::'
+    check("_ZN10GtkBuilder4ctorEv", "GtkBuilder.ctor()");
+    check("_ZN10GtkBuilder11addFromFileEPKc", "GtkBuilder.addFromFile(string)");
+    check("_ZN13ArrayIteratorIiE3getEv", "ArrayIterator<int>.get()");
+    check("_ZN10TestStructI5OuterE4ctorEv", "TestStruct<Outer>.ctor()");
+
+    // Generic functions: the template list is shown, the return type that follows it is consumed but not printed
+    check("_Z10sumNumbersIlEiPll", "sumNumbers<long>(long*, long)");
+    check("_Z15genericFunctionIidEdid", "genericFunction<int, double>(int, double)");
+    check("_Z11printFormatIA2_PKcEvA2_PKc", "printFormat<string[2]>(string[2])");
+
+    // References and sized arrays
+    check("_Z10printArrayRA10_i", "printArray(int[10]&)");
+    check("_Z11op.divequalR7Counter7Counter", "op.divequal(Counter&, Counter)");
+
+    // Function and procedure types - the part a C++ demangler cannot do, since 'PFvE' is not valid Itanium
+    check("_ZN6Thread4ctorEPFvE", "Thread.ctor(p())");
+
+    // Lambda fat-pointer thunks carry a literal suffix after the mangled name
+    check("_Z4testv.fatthunk", "test() [fat thunk]");
+    check("_Z11btnYesClick9GtkWidget.fatthunk", "btnYesClick(GtkWidget) [fat thunk]");
+
+    // RTTI symbols are a marker plus a single type
+    check("_ZTV3Car", "vtable for Car");
+    check("_ZTI9Driveable", "typeinfo for Driveable");
+    check("_ZTS19ExampleIterableType", "typeinfo name for ExampleIterableType");
+    check("_ZTV11CompareableIlE", "vtable for Compareable<long>");
+
+    // Anything that is not a mangled Spice name comes back untouched
+    check("main", "main");
+    check("printf", "printf");
+    check("", "");
+    check("_Z", "_Z");
+    check("_Z99truncated", "_Z99truncated");
+    check("_ZN13ArrayIterator", "_ZN13ArrayIterator");
+
+    printf("All assertions passed!\n");
+}
