@@ -232,12 +232,16 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 ## Verification performed
 
-All measurements above were taken on this repository's Linux/x86-64 container with GCC 13 / LLVM 18 tooling:
-the `dladdr()` link-flag matrix, the `_Unwind_Backtrace` run at `-O2 -fomit-frame-pointer`, the `llc`
-frame-pointer table, and the `c++filt` sweep over the 330 mangled names in `test/test-files/**/*.ll`.
+The analysis above was measured on this repository's Linux/x86-64 container: the `dladdr()` link-flag matrix,
+the `_Unwind_Backtrace` run at `-O2 -fomit-frame-pointer`, the `llc` frame-pointer table, and the `c++filt`
+sweep over the 330 mangled names in `test/test-files/**/*.ll`.
 
-The Spice compiler itself could **not** be built here: it requires LLVM 23.1.1, the container only has LLVM 18,
-and `.claude/hooks/session-start.sh`'s apt.llvm.org fast path fails in this environment (`apt-get update` is
-blocked by unrelated third-party PPAs returning 403 through the proxy). Consequently none of the proposed
-changes have been compiled or run — the Windows and macOS claims in particular rest on toolchain documentation
-and `llc` cross-target output, not on execution.
+The compiler changes listed above as done were then built and tested for real, against LLVM 23.1.1 built from
+source (apt.llvm.org is blocked by this environment's network policy, so the packaged fast path was
+unavailable). `spicetest` compiles clean, and the suite is at **731/732**. The one failure,
+`StdTests.bindings_libcurlFileDownload`, downloads a file over the network and fails on the blocked proxy; it
+is unrelated to these changes.
+
+What is still **not** verified by execution: everything about Windows and macOS. Those claims rest on toolchain
+documentation and `llc` cross-target output, since only a Linux/x86-64 runner was available here. The Windows
+`SYMBOL_INFO` layout in particular remains the least-verified part of the existing code.
