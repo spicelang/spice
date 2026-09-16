@@ -31,6 +31,6 @@ attributes #2 = { nofree nounwind }
 !2 = !{i32 8, !"PIC Level", i32 2}
 !3 = !{i32 7, !"PIE Level", i32 2}
 !4 = !{i32 7, !"uwtable", i32 2}
-!5 = !{i32 7, !"frame-pointer", i32 2}
+!5 = !{i32 7, !"frame-pointer", i32 0}
 !6 = !{i64 1143632153537408826}
 !7 = !{i64 -2624081020897602054}

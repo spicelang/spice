@@ -31,7 +31,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
     module->setPIELevel(llvm::PIELevel::Large);
   }
   module->setUwtable(llvm::UWTableKind::Default);
-  module->setFramePointer(llvm::FramePointerKind::All);
+  module->setFramePointer(cliOptions.keepFramePointers ? llvm::FramePointerKind::All : llvm::FramePointerKind::None);
 
   // Add module identifier metadata
   llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
@@ -795,11 +795,16 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
  * Spice does not know exceptions and we never emit landing pads, so none of our functions can unwind. We still request
  * an unwind table, so that debuggers and profilers are able to produce correct stack traces.
  *
- * The frame pointer is requested here, per function, and not via the 'frame-pointer' module flag that IRGenerator's
- * constructor also sets: the module flag exists for consumers that inspect the module, but the backend decides frame
- * pointer elimination purely from this function attribute. Without it, the backend falls back to the target default,
- * which omits the frame pointer on most targets - including x86-64 Linux at every optimization level, and AArch64,
- * where the frame record is still spilled but the chain is never linked up.
+ * Frame pointers are off by default and are requested per function by '--keep-frame-pointers'. This attribute is the
+ * only thing the backend reads. The 'frame-pointer' module flag that IRGenerator's constructor sets from the same
+ * option covers a different set of functions - Function::createWithDefaultAttr() stamps it onto the functions LLVM
+ * itself synthesizes, such as the sanitizer module ctors - so both have to be set, and the module flag alone changes
+ * nothing about the functions we emit: x86-64 Linux then omits the frame pointer at every optimization level, and
+ * AArch64 spills the frame record but never links the chain up.
+ *
+ * Nothing is emitted in the default case, rather than an explicit "none", which is exactly what LLVM does for its own
+ * synthesized functions. It also leaves the decision to the backend, so targets whose ABI mandates a frame pointer
+ * (e.g. AArch64 on Darwin) keep theirs.
  *
  * The size levels are not communicated to LLVM by the pass pipeline alone - since Os and Oz both select the O2
  * pipeline, 'optsize' and 'minsize' on the individual function are what actually distinguishes them. Without 'minsize',
@@ -811,7 +816,8 @@ void IRGenerator::attachComdatToSymbol(llvm::GlobalVariable *global, const std::
 void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) const {
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
-  fct->addFnAttr("frame-pointer", "all");
+  if (cliOptions.keepFramePointers)
+    fct->addFnAttr("frame-pointer", "all");
 
   // Explicitly inlined functions must not be marked as 'optnone', because that is incompatible with 'alwaysinline'.
   // This matches the behavior of other frontends: an inline request is honored, even at O0.

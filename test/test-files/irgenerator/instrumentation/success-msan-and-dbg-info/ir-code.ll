@@ -118,7 +118,7 @@ declare void @llvm.memset.p0.i64(ptr writeonly captures(none), i8, i64, i1 immar
 attributes #0 = { mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nounwind uwtable "frame-pointer"="all" }
+attributes #3 = { nounwind uwtable }
 attributes #4 = { nocallback nofree nosync nounwind willreturn memory(none) }
 attributes #5 = { nocallback nofree nosync nounwind willreturn memory(argmem: write) }
 attributes #6 = { nomerge }
@@ -137,7 +137,7 @@ attributes #6 = { nomerge }
 !7 = !{i32 8, !"PIC Level", i32 2}
 !8 = !{i32 7, !"PIE Level", i32 2}
 !9 = !{i32 7, !"uwtable", i32 2}
-!10 = !{i32 7, !"frame-pointer", i32 2}
+!10 = !{i32 7, !"frame-pointer", i32 0}
 !11 = !{i32 7, !"Dwarf Version", i32 5}
 !12 = !{i32 2, !"Debug Info Version", i32 3}
 !13 = !{i32 4, !"nosanitize_memory", i32 1}

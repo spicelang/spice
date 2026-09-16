@@ -1,0 +1,12 @@
+// TEST: --keep-frame-pointers
+
+// Frame pointers are off by default; --keep-frame-pointers puts "frame-pointer"="all" on every function we emit
+// and raises the matching module flag. The function attribute is the part that actually reaches the backend - the
+// module flag alone changes nothing about codegen.
+f<int> addUp(int a, int b) {
+    return a + b;
+}
+
+f<int> main() {
+    printf("Sum: %d\n", addUp(2, 3));
+}

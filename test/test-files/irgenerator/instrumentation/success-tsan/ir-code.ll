@@ -436,7 +436,7 @@ declare ptr @llvm.returnaddress.p0(i32 immarg) #5
 attributes #0 = { noinline nounwind optnone sanitize_thread uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone sanitize_thread uwtable }
 attributes #2 = { noinline nounwind optnone uwtable }
-attributes #3 = { nounwind uwtable "frame-pointer"="all" }
+attributes #3 = { nounwind uwtable }
 attributes #4 = { nounwind }
 attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 
@@ -446,6 +446,6 @@ attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !0 = !{i32 8, !"PIC Level", i32 2}
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 4, !"nosanitize_thread", i32 1}
 !5 = !{!"spice version dev (https://github.com/spicelang/spice)"}

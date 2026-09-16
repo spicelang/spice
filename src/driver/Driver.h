@@ -124,6 +124,7 @@ struct CliOptions {
   // New fields must be appended here, at the very end: test/TestRunner.cpp positionally aggregate-initializes
   // CliOptions, so inserting a field anywhere else silently shifts every field after it into the wrong slot.
   bool lintOnly = false;
+  bool keepFramePointers = false;
 };
 
 /**

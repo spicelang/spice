@@ -125,18 +125,17 @@ living in the shared `stack_trace_rt.spice` and just calls it, preserving the si
 doc comments in `GenBuiltinFunctions.cpp:276` and `TypeCheckerBuiltinFunctions.cpp:633` must stop claiming the
 compiler guarantees a frame-pointer chain, since it does not.
 
-### Frame pointers (independent fix)
+### Frame pointers (independent fix) — done
 
-Regardless of the unwinder switch, emit the real attribute in `IRGenerator::createFunction` (near the existing
-`addFnAttr` calls at `IRGenerator.cpp:806`):
+Implemented behind a new `--keep-frame-pointers` CLI flag, off by default, since forcing a frame pointer into
+every function costs a register and some performance and the unwinder route below does not need one.
 
-```cpp
-fct->addFnAttr("frame-pointer", "all"); // or "non-leaf"
-```
-
-and keep or drop the module flag for consumers that read it. This is what makes external profilers/debuggers
-(`perf`, sampling profilers) able to unwind Spice programs, and it is what the `__frame_address()` builtin's
-documentation currently promises.
+`IRGenerator::addCommonFctAttrs()` emits `"frame-pointer"="all"` per function when the flag is set, which is the
+only thing the backend reads. The `frame-pointer` module flag is set from the same option, because it covers a
+different set of functions: `Function::createWithDefaultAttr()` stamps it onto the functions LLVM itself
+synthesizes, such as the sanitizer module ctors. Neither is emitted when the flag is off — matching what LLVM
+does for its own synthesized functions, and leaving targets whose ABI mandates a frame pointer (AArch64 on
+Darwin) to keep theirs. The flag is part of the compile cache key, since it changes the emitted object.
 
 ### Symbolization — name + exact offset
 
@@ -185,12 +184,10 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Compiler (`src/`)**
 
-- [ ] Add pointer↔integer casts in unsafe mode: `cast<long>(ptr)` → `ptrtoint`, `cast<byte*>(long)` → `inttoptr`.
-      Touches `OpRuleManager::getCastResultType()` (new rules next to the existing `any* -> any*` rule, guarded by
-      `ensureUnsafeAllowed`) and the cast lowering in `OpRuleConversionManager`. Add `docs/docs/language/casts.md`
-      coverage plus success/`exception.out` test cases.
-- [ ] Emit the per-function `"frame-pointer"="all"` attribute in `IRGenerator::createFunction`.
-- [ ] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
+- [x] Add pointer↔integer casts in unsafe mode: `cast<long>(ptr)` → `ptrtoint`, `cast<byte*>(long)` → `inttoptr`.
+      Only `long` is accepted on the integer side, since it is the only Spice integer guaranteed to be 64 bit wide.
+- [x] Emit the per-function `"frame-pointer"="all"` attribute, behind `--keep-frame-pointers` (default off).
+- [x] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
 
 **Standard library (`std/runtime/`)**
 
@@ -213,7 +210,8 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Docs**
 
-- [ ] `docs/docs/language/casts.md` — pointer↔integer casts.
+- [x] `docs/docs/language/casts.md` — pointer↔integer casts.
+- [x] `docs/docs/cli/*.md` — the `--keep-frame-pointers` flag.
 - [ ] Document `sDumpStacktrace()` and the output format.
 
 ## Open questions / risks

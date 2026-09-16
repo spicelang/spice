@@ -42,3 +42,4 @@ You can apply following options to the `install` subcommand:
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                     |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                    |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
+| -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
