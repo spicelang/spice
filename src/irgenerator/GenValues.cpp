@@ -211,7 +211,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
     // Load the captures pointer and add it to the argument list as the trailing argument
     llvm::Value *capturesPtrPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 1);
-    llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
+    llvm::Value *const capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
     argValues.push_back(capturesPtr);
   }
 
