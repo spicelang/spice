@@ -22,7 +22,7 @@ define internal noundef i32 @_Z6invokePPPFiPKcE(ptr noundef nonnull align 8 dere
   %3 = load ptr, ptr %fctPtr, align 8
   %4 = load ptr, ptr %3, align 8
   %fct = load ptr, ptr %4, align 8
-  %5 = call i32 %fct(ptr %captures, ptr @anon.string.0)
+  %5 = call i32 %fct(ptr @anon.string.0, ptr %captures)
   ret i32 %5
 }
 
@@ -34,7 +34,7 @@ define internal noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) #0 {
   %captures = load ptr, ptr %2, align 8
   %3 = load ptr, ptr %fctPtr, align 8
   %fct = load ptr, ptr %3, align 8
-  %4 = call i32 %fct(ptr %captures, ptr @anon.string.1)
+  %4 = call i32 %fct(ptr @anon.string.1, ptr %captures)
   ret i32 %4
 }
 
@@ -61,7 +61,7 @@ define dso_local noundef i32 @main() #1 {
 ; Function Attrs: noinline nounwind optnone uwtable
 define private i32 @_Z4testPKc.fatthunk(ptr %0, ptr %1) #0 {
 entry:
-  %2 = call i32 @_Z4testPKc(ptr %1)
+  %2 = call i32 @_Z4testPKc(ptr %0)
   ret i32 %2
 }
 
