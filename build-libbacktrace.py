@@ -15,6 +15,8 @@ the compiler falls back to the platform's own symbol resolution wherever no preb
 explicit --target, an unsupported target or a missing cross toolchain is an error instead: the caller asked for
 that target by name, so silently skipping it would hide a real build-configuration problem.
 """
+from __future__ import annotations
+
 import argparse
 import platform
 import shutil
