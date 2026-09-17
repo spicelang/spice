@@ -43,4 +43,3 @@ You can apply following options to the `install` subcommand:
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                    |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
 | -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
-| -            | `--keep-symbol-table`     | Keep the binary's own symbol table instead of stripping it, so stack traces resolve names libbacktrace would otherwise not find (costs binary size) |

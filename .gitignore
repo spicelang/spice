@@ -22,7 +22,7 @@ spice
 # LLVM
 /llvm
 
-# Prebuilt libbacktrace static libs (built locally by build-libbacktrace.py for '--keep-symbol-table';
+# Prebuilt libbacktrace static libs (built locally by build-libbacktrace.py for stack trace symbol resolution;
 # CI builds and ships its own per release target, see .github/workflows/publish.yml)
 /std/runtime/lib/
 

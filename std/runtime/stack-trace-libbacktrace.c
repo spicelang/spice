@@ -7,9 +7,13 @@
  * lookup can tell "found, this far into the function" apart from "found nothing nearby", unlike dladdr()'s
  * Dl_info, which carries no size at all; COFF has no size field to report, so this is ELF/Mach-O only.
  *
- * The state is scoped to one file - the main executable, resolved by libbacktrace itself when passed a NULL
- * filename - so it does not see shared library frames (libc, etc.); those still go through the dladdr()-based
- * resolveSymbol() in stack_trace_symbol_rt.spice, which resolveFromLibbacktrace() falls back to.
+ * The state is opened against the main executable, resolved by libbacktrace itself when passed a NULL filename
+ * - but on ELF and Mach-O, backtrace_initialize() also walks every shared library already loaded at the time
+ * of the first lookup (dl_iterate_phdr()/dyld image APIs) and folds each one into the same state, so this
+ * resolves libc/.so frames too on those two platforms. PE/COFF has no such enumeration, so on Windows only the
+ * main executable is covered. Either way, a library dlopen()'d after the first lookup, or one with no symbol
+ * table of its own, still falls through to the dladdr()-based resolveSymbol() in stack_trace_symbol_rt.spice,
+ * which resolveFromLibbacktrace() falls back to.
  *
  * Wrapped in a shim rather than called directly from Spice for two reasons: backtrace_syminfo() takes a C
  * callback, and a Spice function converted to a raw pointer is not a bare function pointer - it becomes a

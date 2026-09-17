@@ -12,15 +12,20 @@
 // this far into the function" apart from "nothing here" - dladdr()'s Dl_info carries no size at all.
 //
 // libbacktrace itself is linked in whenever a prebuilt archive exists for the target (see
-// ExternalLinkerInterface::prepare() / SystemUtil::findLibbacktraceStaticLib()), regardless of
-// '--keep-symbol-table' - but by default the binary's symbol table is stripped at link time, same as before
-// this file existed, so there is nothing for it to read and every lookup here falls straight through to
-// resolveSymbol(). '--keep-symbol-table' keeps that symbol table around instead, which is the only thing that
-// actually makes resolution here succeed. With no prebuilt archive for the target, the C shim behind this file
-// compiles as a permanent no-op (see stack-trace-libbacktrace.c) and every lookup falls through the same way.
+// ExternalLinkerInterface::prepare() / SystemUtil::findLibbacktraceStaticLib()). The binary's own symbol table
+// is never stripped at link time, so there is always something for it to read. With no prebuilt archive for
+// the target, the C shim behind this file compiles as a permanent no-op (see stack-trace-libbacktrace.c) and
+// every lookup falls through to resolveSymbol() instead.
 //
-// The state libbacktrace builds is scoped to the main executable's own file, so it does not see shared library
-// frames (libc, a DLL, etc.); those still resolve through the resolveSymbol() fallback in stack_trace_rt.spice.
+// The state is opened against the main executable's own file (backtrace_create_state(NULL, ...)), but on ELF
+// and Mach-O that is not as narrow as it sounds: backtrace_initialize() walks every shared library already
+// loaded at the time of the first lookup (via dl_iterate_phdr() on ELF, the dyld image APIs on Mach-O - see
+// elf.c/macho.c) and folds each one's own symbol table into the same state, so backtrace_syminfo() resolves
+// libc/.so frames too, not just the main executable's - confirmed empirically by resolving '&printf' through
+// this exact call pattern. PE/COFF has no equivalent enumeration in pecoff.c, so on Windows the state really is
+// main-executable-only. Two gaps remain even on ELF/Mach-O: a library dlopen()'d after that first lookup is not
+// in the snapshot (dladdr()'s resolveSymbol() fallback re-scans live, so it still catches that case), and a
+// module with no symbol table at all (fully stripped .so) resolves nothing either way.
 
 import "std/runtime/stack_trace_symbol_rt";
 

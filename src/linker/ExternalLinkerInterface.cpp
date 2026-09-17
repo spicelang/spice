@@ -27,10 +27,10 @@ void ExternalLinkerInterface::prepare() {
   }
 
   // libbacktrace (see stack-trace-libbacktrace.c) is linked in for any build that actually links (an executable
-  // or a shared library) whenever a prebuilt archive is available for the target - not gated on
-  // '--keep-symbol-table'. The C shim that would call into it compiles and is added to the link whenever a
-  // program imports std/runtime/stack_trace_rt.spice, regardless of that flag or of whether an archive exists;
-  // '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that shim an archive is actually on the link line, so it only
+  // or a shared library) whenever a prebuilt archive is available for the target. The C shim that would call
+  // into it compiles and is added to the link whenever a program imports std/runtime/stack_trace_rt.spice,
+  // regardless of whether an archive exists; '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that shim an archive
+  // is actually on the link line, so it only
   // references libbacktrace.h when linking against it will actually succeed - without it, the shim compiles as
   // a permanent no-op instead (see its own comment). '-pthread' is needed for the shim's pthread_once() call:
   // on Linux/macOS this is already a no-op (pthread symbols live in libc there), but MinGW's pthread
@@ -52,13 +52,10 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Stripping symbols. Skipped behind '--keep-symbol-table', which keeps the platform's own ELF/Mach-O/PE-COFF
-  // symbol table in the binary so libbacktrace can read it back to resolve stack trace frames; without the
-  // flag, backtrace_syminfo() simply finds nothing in the stripped binary and every frame falls back to the
-  // platform's own resolver (dladdr()/SymFromAddr()) instead, same as if libbacktrace were not linked at all.
-  // Verified for PE/COFF too: '-Wl,-s' strips the COFF symbol table pecoff.c reads just as it strips ELF's.
-  if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin() && !cliOptions.keepSymbolTable)
-    addLinkerFlag("-Wl,-s");
+  // Symbols are never stripped: the platform's own ELF/Mach-O/PE-COFF symbol table stays in the binary so
+  // libbacktrace can read it back to resolve stack trace frames (backtrace_syminfo(), see
+  // stack-trace-libbacktrace.c). Verified for PE/COFF too: pecoff.c reads the same COFF symbol table '-Wl,-s'
+  // would otherwise strip.
 
   // Sanitizers
   switch (cliOptions.instrumentation.sanitizer) {

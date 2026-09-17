@@ -1,8 +1,8 @@
 Stack trace:
-  <unknown>
-  <unknown>
-  <unknown>
+  innerFrame(bool) + <offset>
+  middleFrame(bool) + <offset>
+  main + <offset>
 Stack trace:
-  <address>  <unknown>
-  <address>  <unknown>
-  <address>  <unknown>
+  <address>  innerFrame(bool) + <offset>
+  <address>  middleFrame(bool) + <offset>
+  <address>  main + <offset>

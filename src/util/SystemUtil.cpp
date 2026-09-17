@@ -388,9 +388,9 @@ std::filesystem::path SystemUtil::getStdDir() {
 
 /**
  * Locate the prebuilt libbacktrace static library (see deps/libbacktrace) for the current compilation target,
- * linked in when found (see ExternalLinkerInterface::prepare() and stack-trace-libbacktrace.c) - the symbol
- * table it reads back is only actually kept around behind '--keep-symbol-table'. One prebuilt archive per
- * supported target ships under the std lib itself, at 'runtime/lib/<arch>-<os>/libbacktrace.a', so a Spice
+ * linked in when found (see ExternalLinkerInterface::prepare() and stack-trace-libbacktrace.c), which never
+ * strips the binary's own symbol table so libbacktrace always has something to read back. One prebuilt archive
+ * per supported target ships under the std lib itself, at 'runtime/lib/<arch>-<os>/libbacktrace.a', so a Spice
  * install needs nothing beyond what it already ships. Covers ELF (Linux), Mach-O (macOS) and PE/COFF (Windows)
  * alike - libbacktrace reads all three directly out of the binary's own symbol table.
  *

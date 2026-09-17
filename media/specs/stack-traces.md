@@ -5,8 +5,8 @@
 Implemented; see the "done" work items below for what shipped and in what order. Capture goes through the
 platform unwinder (`_Unwind_Backtrace` on POSIX, `RtlCaptureStackBackTrace` on Windows) rather than a
 hand-rolled frame-pointer walk. Symbolization falls back through, in order: libbacktrace (ELF/Mach-O/PE-COFF
-alike, behind `--keep-symbol-table` and a prebuilt archive for the target) → the platform's own resolver
-(`dladdr()`/DbgHelp) → unresolved. Everything below the "Symbolization — libbacktrace" section is the
+alike, whenever a prebuilt archive exists for the target - the binary's own symbol table is never stripped) →
+the platform's own resolver (`dladdr()`/DbgHelp) → unresolved. Everything below the "Symbolization — libbacktrace" section is the
 historical design/investigation record this file grew from, including one superseded design (a
 compiler-emitted symbol table) kept for context rather than deleted.
 
@@ -171,8 +171,8 @@ libbacktrace reads the symbol table that is already in the binary rather than ha
 into a second, custom section:
 
 - No compiler-side codegen at all: `IRGenerator` no longer collects functions or emits anything symbol-table
-  related. `--keep-symbol-table` now only decides one thing at link time - whether `-Wl,-s` is skipped, i.e.
-  whether the binary's own symbol table survives to be read back.
+  related. `ExternalLinkerInterface::prepare()` never emits `-Wl,-s` either, so the binary's own symbol table
+  always survives to be read back - there is no flag gating this any more.
 - `backtrace_syminfo()` returns the symbol's real **size** on ELF/Mach-O (not on PE/COFF, which has no size
   field to report), so a lookup can reject an address that is past the end of the function it nominally
   follows, rather than reporting a bogus large offset the way the old table (and `dladdr()`) had to on every
@@ -180,24 +180,29 @@ into a second, custom section:
   (see the now-removed work item below) - `StackTrace.capture()` just tries libbacktrace first and falls
   through to `resolveSymbol()` on failure.
 - One prebuilt static library per supported target (`std/runtime/lib/<arch>-<os>/libbacktrace.a`) ships with the
-  std lib and is linked in whenever an archive is available for the target (not gated on the flag) by
-  `ExternalLinkerInterface::prepare()`, since the small C shim that calls into it
-  (`std/runtime/stack-trace-libbacktrace.c`) is part of the build whenever a program imports
-  `stack_trace_rt.spice`, flag or not - only the symbol table it reads is gated. `deps/libbacktrace` (a git
-  submodule) is a build-time-only dependency used to produce that archive (locally via `build-libbacktrace.py`,
-  in CI via `.github/workflows/publish.yml`); nothing under `deps/` ships.
-- `backtrace_create_state(NULL, ...)` scopes the resulting state to the running executable's own file only, so
-  - like the old table - it never sees shared-library frames (libc, a DLL, etc.); those still resolve through
-  the `resolveSymbol()`/`dladdr()`/`SymFromAddr()` fallback.
+  std lib and is linked in whenever an archive is available for the target by `ExternalLinkerInterface::prepare()`,
+  since the small C shim that calls into it (`std/runtime/stack-trace-libbacktrace.c`) is part of the build
+  whenever a program imports `stack_trace_rt.spice` - only whether an archive exists gates resolution now, not
+  a flag. `deps/libbacktrace` (a git submodule) is a build-time-only dependency used to produce that archive
+  (locally via `build-libbacktrace.py`, in CI via `.github/workflows/publish.yml`); nothing under `deps/` ships.
+- `backtrace_create_state(NULL, ...)` scopes the resulting state to the running executable's own file - but on
+  ELF and Mach-O, `backtrace_initialize()` also walks every shared library already loaded at the time of the
+  first lookup (`dl_iterate_phdr()` on ELF, the dyld image APIs on Mach-O) and folds each one's own symbol table
+  into the same state, so `backtrace_syminfo()` resolves libc/`.so` frames too on those two platforms - not just
+  the main executable, contrary to what an earlier draft of this doc (and the shim's own comment) claimed;
+  confirmed empirically by resolving `&printf` through this exact call pattern. PE/COFF's `pecoff.c` has no
+  equivalent module enumeration, so on Windows the state really is main-executable-only. Two gaps remain even on
+  ELF/Mach-O: a library `dlopen()`'d after that first lookup is not in the snapshot (`resolveSymbol()`'s
+  `dladdr()` re-scans live, so it still catches that case), and a fully stripped shared library with no symbol
+  table left resolves nothing either way.
 - **Windows is covered too, via libbacktrace's own `pecoff.c` backend** - not, as first assumed, left to DbgHelp
   alone. `SymFromAddr()` reads a PDB, which this project's clang/MinGW builds do not emit, so it does not
   resolve a program's own frames at all (confirmed by `stack-trace-dump-basic`'s own Windows reference).
   libbacktrace instead reads the PE/COFF symbol table the MinGW linker already writes into the `.exe` itself -
   the exact same kind of "read it directly out of the binary" trick as ELF/Mach-O, just a different container
-  format. Verified end to end: cross-compiled a Spice program to `x86_64-pc-windows-gnu` with
-  `--keep-symbol-table`, ran it under Wine, and watched `innerFrame`/`middleFrame`/`main` resolve by name; with
-  the flag off, `-Wl,-s` strips the same COFF symbol table pecoff.c needs, and those frames go back to
-  `<unknown>`, confirming the flag is what gates it, on Windows exactly like ELF/Mach-O. One difference from a
+  format. Verified end to end: cross-compiled a Spice program to `x86_64-pc-windows-gnu`, ran it under Wine, and
+  watched `innerFrame`/`middleFrame`/`main` resolve by name, reading the same COFF symbol table `-Wl,-s` used to
+  strip before stripping was removed entirely, on Windows exactly like ELF/Mach-O. One difference from a
   MinGW GCC build: clang's `x86_64-w64-windows-gnu` driver does not auto-link pthread the way GCC's `-posix`
   runtime variant does, so `ExternalLinkerInterface::prepare()` adds `-pthread` alongside the archive itself
   (harmless on Linux/macOS, where pthread symbols already live in libc).
@@ -244,19 +249,16 @@ suppress the address (and should also suppress the offset) so tests stay determi
       Only `long` is accepted on the integer side, since it is the only Spice integer guaranteed to be 64 bit wide.
 - [x] Emit the per-function `"frame-pointer"="all"` attribute, behind `--keep-frame-pointers` (default off).
 - [x] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
-- [x] ~~`IRGenerator::generateSymbolTable()`~~ — implemented behind `--keep-symbol-table`, then removed again once
-      libbacktrace replaced it (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)
-      above). `IRGenerator` no longer collects functions or emits a table at all; `--keep-symbol-table` is now a
-      pure link-time decision handled entirely in `ExternalLinkerInterface::prepare()`.
-- [x] `ExternalLinkerInterface::prepare()` — link the prebuilt `libbacktrace.a` for the current target
-      unconditionally on POSIX (executable/shared-library outputs only), and skip `-Wl,-s` when
-      `--keep-symbol-table` is set, so the binary's own symbol table survives for libbacktrace to read. Resolved
-      via the new `SystemUtil::findLibbacktraceStaticLib()`, which maps `cliOptions.targetTriple` to
-      `std/runtime/lib/<arch>-<os>/libbacktrace.a` and returns an empty path (linking nothing) for any target
-      without a prebuilt archive.
-- [x] `CacheManager` — `--keep-symbol-table` dropped from the per-object cache key (codegen no longer depends on
-      it) and needs no new entry in the executable-level key either: its only remaining effect is whether
-      `-Wl,-s` ends up in `linkerFlags`, which that key already hashes.
+- [x] ~~`IRGenerator::generateSymbolTable()`~~ — implemented behind a `--keep-symbol-table` flag, then removed
+      again once libbacktrace replaced it (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)
+      above). `IRGenerator` no longer collects functions or emits a table at all.
+- [x] ~~`--keep-symbol-table`~~ — the flag itself is gone. `ExternalLinkerInterface::prepare()` links the
+      prebuilt `libbacktrace.a` for the current target whenever `SystemUtil::findLibbacktraceStaticLib()` finds
+      one (maps `cliOptions.targetTriple` to `std/runtime/lib/<arch>-<os>/libbacktrace.a`, empty path/no linkage
+      for any target without a prebuilt archive), and never emits `-Wl,-s` any more, so the binary's own symbol
+      table always survives for libbacktrace to read back - keeping it is no longer optional.
+- [x] `CacheManager` — no longer needs a cache-key entry for this at all, since there is no flag left whose
+      value could vary between two otherwise-identical builds.
 
 **Standard library (`std/runtime/`)**
 
@@ -291,10 +293,9 @@ suppress the address (and should also suppress the offset) so tests stay determi
       the end of the function it nominally follows outright, instead of needing the "keep whichever resolver
       reports the smaller offset" comparison the table required to avoid misattributing a libc/shared-library
       frame to the wrong Spice function. Verified end to end on Linux x86_64 and (link-only, cross-compiled)
-      aarch64: with `--keep-symbol-table` on, `innerFrame`/`middleFrame` (neither `public`) and `main` all
-      resolve to their demangled names without `-rdynamic`, reading the ELF symbol table directly out of the
-      binary; with it off, `-Wl,-s` strips that table, every lookup here finds nothing, and the build/output are
-      unchanged from before this file existed.
+      aarch64: `innerFrame`/`middleFrame` (neither `public`) and `main` all resolve to their demangled names
+      without `-rdynamic`, reading the ELF symbol table directly out of the binary - covered by
+      `stack-trace-dump-basic` itself now, since the symbol table is always kept.
 - [x] ~~`stack_trace_libbacktrace_rt_windows.spice`~~ — implemented as an always-unresolved stub, on the initial
       (mistaken) assumption that DbgHelp already covered what libbacktrace would add on Windows. Deleted once
       that assumption was checked and found wrong: DbgHelp's `SymFromAddr()` needs a PDB this project's builds
@@ -314,9 +315,8 @@ suppress the address (and should also suppress the offset) so tests stay determi
       cross-compiled from the `build-compiler-linux-x86` job instead (`gcc-mingw-w64-x86-64`, `--target
       x86_64-windows`) and uploaded as its own artifact, picked up by `build-artifacts`' existing generic
       `libbacktrace-*` download/assemble step unmodified. macOS/x86_64 has no CI job at all today (Apple Silicon
-      only), so it has no prebuilt archive either; `--keep-symbol-table` degrades there the same way it does on
-      any other target with no matching archive - libbacktrace, if linked in at all for that target, simply
-      finds nothing to read.
+      only), so it has no prebuilt archive either - same as any other target with no matching archive,
+      resolution there just falls through to `resolveSymbol()`.
 - [x] `ExternalLinkerInterface::prepare()` links `-pthread` alongside the archive whenever one is found. Needed
       for Windows: clang's `x86_64-w64-windows-gnu` driver does not auto-link pthread the way a MinGW GCC
       `-posix` runtime build does, and the shim's `pthread_once()` call needs it. A no-op everywhere else
@@ -334,23 +334,24 @@ suppress the address (and should also suppress the offset) so tests stay determi
       stdout with those two columns masked. Only the three frames the test owns are printed; everything below
       `main` is C runtime and differs per platform. What remains — which symbols resolve and how they
       demangle — is pinned per platform in `cout-linux.out`, `cout-macos.out` and `cout-windows.out`.
+      `innerFrame`/`middleFrame` (neither `public`) resolving by name on Linux and macOS *is* the libbacktrace
+      path being exercised now that the symbol table is always kept - `cout-linux.out` was updated accordingly
+      once stripping was removed (macOS already expected resolution, via `dladdr()`, since Darwin was already
+      excluded from `-Wl,-s` beforehand). `cout-windows.out` still expects `<unknown>`, since the regular test
+      workflow (`ci-cpp.yml`) does not build a Windows libbacktrace archive (see the work item above) and
+      DbgHelp resolves nothing without a PDB either.
 - [x] Demangler test seeded from the mangled names in the `.ll` reference files.
 - [x] Capture verified at every optimization level (`-O0` through `-Oz`).
-- [x] `test-files/std/runtime/stack-trace-dump-libbacktrace` (renamed from `...-symtab` when the table was
-      replaced) — `--keep-symbol-table` on, asserting `innerFrame`, `middleFrame` and `main` resolve to real
-      demangled names wherever a prebuilt libbacktrace archive is linked in (offset masked, same technique as
-      stack-trace-dump-basic; an unresolved `<unknown>` line, where that happens, is tolerated rather than
-      asserted against). Reference output is pinned per platform in `cout-<os>.out`, same as
-      stack-trace-dump-basic: `cout-linux.out`/`cout-macos.out` expect full resolution (this CI job builds
-      those archives), `cout-windows.out` still expects `<unknown>` throughout, since the regular test workflow
-      does not build a Windows archive (see the work item above) even though the mechanism itself does resolve
-      there - verified separately, outside this test, by cross-compiling to `x86_64-pc-windows-gnu` and running
-      under Wine.
+- [x] ~~`test-files/std/runtime/stack-trace-dump-libbacktrace`~~ — added to exercise `--keep-symbol-table`
+      specifically, then deleted once that flag was removed: with the symbol table always kept,
+      `stack-trace-dump-basic` already exercises the identical scenario (a non-`public`, unexported function
+      resolving via libbacktrace), making this a redundant copy rather than a distinct case.
 
 **Docs**
 
 - [x] `docs/docs/language/casts.md` — pointer↔integer casts.
-- [x] `docs/docs/cli/*.md` — the `--keep-frame-pointers` and `--keep-symbol-table` flags.
+- [x] `docs/docs/cli/*.md` — `--keep-frame-pointers`; `--keep-symbol-table` was documented too, then its row was
+      removed again once the flag itself was.
 - [ ] Document `sDumpStacktrace()` and the output format.
 
 ## Open questions / risks
@@ -358,12 +359,14 @@ suppress the address (and should also suppress the offset) so tests stay determi
 - **`-rdynamic` is not enough, and is not applied.** Measured: it exports only `public` Spice functions, so
   `dladdr` still misses everything that stayed local to its object file. It also grows `.dynsym`, inhibits
   `--gc-sections`, and does nothing for `-static`. It is deliberately not added to the runtime; resolution today
-  covers libc, shared libraries and a program's `public` functions - plus, behind `--keep-symbol-table` on
-  POSIX, every function regardless of visibility or linkage, via libbacktrace reading the binary's own symbol
-  table directly (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)).
-- **Static linking.** `dladdr()` returns 0 in a fully static glibc binary, so `spice build -static` will lose
-  symbol names on Linux, unless `--keep-symbol-table` is also passed - libbacktrace reads the symbol table
-  directly out of the binary's own file and does not go through `dladdr()` at all.
+  covers libc, shared libraries and a program's `public` functions via `dladdr()`/DbgHelp - plus, via
+  libbacktrace reading the binary's own symbol table directly, every function regardless of visibility or
+  linkage, on any target with a prebuilt archive, unconditionally now that the symbol table is never stripped
+  (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)).
+- **Static linking.** `dladdr()` returns 0 in a fully static glibc binary, so `spice build -static` would lose
+  symbol names on Linux if libbacktrace could not step in - it reads the symbol table directly out of the
+  binary's own file and does not go through `dladdr()` at all, so a statically linked binary on a target with a
+  prebuilt archive still resolves.
 - **MinGW + DbgHelp — resolved, by not depending on DbgHelp for this.** `SymFromAddr()` reads PDB/COFF symbols,
   not the DWARF the MinGW toolchain emits, and this project's builds emit no PDB either, so DbgHelp alone
   resolves nothing of a Spice program's own frames (confirmed on a real Windows CI runner, via

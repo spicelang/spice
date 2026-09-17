@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the prebuilt libbacktrace static library std/runtime/ ships for '--keep-symbol-table'.
+"""Build the prebuilt libbacktrace static library std/runtime/ ships for stack trace symbol resolution.
 
 deps/libbacktrace (a git submodule, see setup-deps.py) is build-time only - what actually ships with an
 installed Spice is a prebuilt static archive per supported target, at std/runtime/lib/<arch>-<os>/libbacktrace.a
@@ -48,9 +48,30 @@ def host_os_dir_name():
         return "macos"
     return None
 
-# Cross-compilation toolchains for a target this script cannot build natively on its own host (Windows has no
-# autotools/make toolchain by default, so its archive is cross-compiled from Linux instead - see module
-# docstring). Maps a "<arch>-<os>" target name to the configure/compiler invocation that produces it.
+# Cross-compilation toolchains for a target this script cannot build natively on its own host. Maps a
+# "<arch>-<os>" target name to the configure/compiler invocation that produces it. Covers every first-class
+# Spice target that CAN be cross-compiled this way:
+#
+# - Windows has no autotools/make toolchain by default, so its archive is cross-compiled from Linux (see module
+#   docstring).
+# - linux/x86_64 and linux/aarch64 are ordinarily built natively, one per architecture's own CI runner (see
+#   .github/workflows/ci-cpp.yml / publish.yml) - these entries exist for the case that isn't native, e.g.
+#   running this script on a non-Linux dev machine, or cross-compiling aarch64 from an x86_64 Linux host.
+#
+# Two other first-class Spice targets are deliberately NOT here:
+#
+# - darwin/aarch64 (macOS) has no entry because there is no equivalent apt-installable cross toolchain: a real
+#   macOS cross-compile from Linux needs an actual macOS SDK (e.g. via osxcross), and redistributing or fetching
+#   Apple's SDK outside Apple hardware is against its license - not a "missing package" problem the way the
+#   MinGW/glibc cross toolchains below are. publish.yml/ci-cpp.yml already build this natively on a real macOS
+#   runner instead, which sidesteps the issue entirely.
+# - wasm32 has no entry because libbacktrace fundamentally cannot help it, cross toolchain or not: its ELF/
+#   Mach-O/PE-COFF/XCOFF backends (elf.c/macho.c/pecoff.c/xcoff.c) cover every object format libbacktrace
+#   understands, and none of them is the WebAssembly binary format - there is no wasm.c. A libbacktrace.a built
+#   for wasm32 anyway would only ever exercise unknown.c, the always-"not found" fallback backend, so it would
+#   ship real bytes that do nothing. Spice's own wasm32 output is also '-nostdlib' (see
+#   ExternalLinkerInterface::prepare()'s Wasm branch), which cannot even link against a libc-dependent static
+#   archive like libbacktrace.a in the first place.
 CROSS_TOOLCHAINS = {
     "x86_64-windows": {
         "host_triple": "x86_64-w64-mingw32",
@@ -61,6 +82,22 @@ CROSS_TOOLCHAINS = {
         # "-fPIC ignored" if passed, so it is left out here (the native-host path below still uses it).
         "cflags": "-O2",
         "install_hint": "sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64",
+    },
+    "x86_64-linux": {
+        "host_triple": "x86_64-linux-gnu",
+        "cc": "x86_64-linux-gnu-gcc",
+        "ar": "x86_64-linux-gnu-ar",
+        "ranlib": "x86_64-linux-gnu-ranlib",
+        "cflags": "-O2 -fPIC",
+        "install_hint": "sudo apt-get install -y crossbuild-essential-amd64",
+    },
+    "aarch64-linux": {
+        "host_triple": "aarch64-linux-gnu",
+        "cc": "aarch64-linux-gnu-gcc",
+        "ar": "aarch64-linux-gnu-ar",
+        "ranlib": "aarch64-linux-gnu-ranlib",
+        "cflags": "-O2 -fPIC",
+        "install_hint": "sudo apt-get install -y crossbuild-essential-arm64",
     },
 }
 
@@ -89,7 +126,7 @@ def main():
         osname = host_os_dir_name()
         if arch is None or osname is None:
             warn(f"No prebuilt libbacktrace target for this host ({platform.machine()}/{sys.platform}); "
-                 "'--keep-symbol-table' will fall back to the platform's own symbol resolution here. Skipping.")
+                 "stack traces will fall back to the platform's own symbol resolution here. Skipping.")
             return
         configure_args = ["CFLAGS=-O2 -fPIC"]
 

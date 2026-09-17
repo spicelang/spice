@@ -125,7 +125,6 @@ struct CliOptions {
   // CliOptions, so inserting a field anywhere else silently shifts every field after it into the wrong slot.
   bool lintOnly = false;
   bool keepFramePointers = false;
-  bool keepSymbolTable = false;
 };
 
 /**

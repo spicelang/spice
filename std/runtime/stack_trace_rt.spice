@@ -105,11 +105,12 @@ public p StackTrace.capture(int skipFrames = 0) {
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
-        // Behind '--keep-symbol-table', libbacktrace resolves this program's own functions exactly, including
-        // ones the platform's own resolver cannot see - reading the symbol table directly out of the
-        // executable file (ELF/Mach-O/PE-COFF) rather than through dladdr()/.dynsym or a DbgHelp-read PDB.
-        // Falls through to resolveSymbol() whenever it can't: the flag is off, or there is no prebuilt
-        // libbacktrace archive for this target (see stack_trace_libbacktrace_rt.spice).
+        // libbacktrace resolves this program's own functions exactly, including ones the platform's own
+        // resolver cannot see - reading the symbol table directly out of the executable file
+        // (ELF/Mach-O/PE-COFF) rather than through dladdr()/.dynsym or a DbgHelp-read PDB; the binary's symbol
+        // table is never stripped, so it is always there for libbacktrace to read. Falls through to
+        // resolveSymbol() only when there is no prebuilt libbacktrace archive for this target (see
+        // stack_trace_libbacktrace_rt.spice).
         SymbolLookup symbol = resolveFromLibbacktrace(addresses[i]);
         if !symbol.resolved {
             symbol = resolveSymbol(addresses[i]);
