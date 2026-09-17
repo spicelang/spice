@@ -17,16 +17,8 @@
  * struct-by-value/callback shapes this API uses.
  */
 
-#include <pthread.h>
 #include <stdint.h>
 #include <stddef.h>
-
-/* Vendored copy of deps/libbacktrace/backtrace.h, unmodified but for this comment, alongside its own license
- * text further up in that file. The compiler compiles this shim on demand from the std lib it ships - deps/ is
- * a build-time-only submodule used to produce runtime/lib/<arch>-<os>/libbacktrace.a (see dev-setup.py and
- * .github/workflows/publish.yml), not something an installed Spice ships - so the public header this shim needs
- * has to live somewhere the std lib actually carries. */
-#include "backtrace.h"
 
 /* Mirrors the fields resolveFromLibbacktrace() needs: the symbol's mangled name, its start address and its
  * size. 'name' points into memory libbacktrace keeps mapped for the life of the process, so it stays valid
@@ -37,6 +29,25 @@ struct SpiceSyminfoResult {
   uintptr_t address;
   uintptr_t size;
 };
+
+/* SPICE_HAVE_LIBBACKTRACE is passed by ExternalLinkerInterface::prepare() only when it also puts
+ * runtime/lib/<arch>-<os>/libbacktrace.a on the link line - i.e. only when a prebuilt archive exists for the
+ * current target (see SystemUtil::findLibbacktraceStaticLib()). This file is compiled unconditionally
+ * whenever a program imports stack_trace_rt.spice, regardless of that - so without the define, it must not
+ * reference anything from libbacktrace.h at all, or the link would fail with undefined symbols wherever no
+ * prebuilt archive is available (an unsupported host arch/os, or one CI/dev setup has not built one for yet).
+ * Below this guard, resolution just always reports "unresolved", the same as if libbacktrace ran and found
+ * nothing - callers fall through to the platform's own resolver either way. */
+#ifdef SPICE_HAVE_LIBBACKTRACE
+
+#include <pthread.h>
+
+/* Vendored copy of deps/libbacktrace/backtrace.h, unmodified but for this comment, alongside its own license
+ * text further up in that file. The compiler compiles this shim on demand from the std lib it ships - deps/ is
+ * a build-time-only submodule used to produce runtime/lib/<arch>-<os>/libbacktrace.a (see dev-setup.py and
+ * .github/workflows/publish.yml), not something an installed Spice ships - so the public header this shim needs
+ * has to live somewhere the std lib actually carries. */
+#include "backtrace.h"
 
 static struct backtrace_state *spiceBacktraceState;
 static pthread_once_t spiceBacktraceInitOnce = PTHREAD_ONCE_INIT;
@@ -84,3 +95,15 @@ int spiceBacktraceSyminfo(uintptr_t addr, struct SpiceSyminfoResult *out) {
 
   return backtrace_syminfo(spiceBacktraceState, addr, spiceBacktraceSyminfoCallback, spiceBacktraceErrorCallback, out);
 }
+
+#else
+
+int spiceBacktraceSyminfo(uintptr_t addr, struct SpiceSyminfoResult *out) {
+  (void)addr;
+  out->name = NULL;
+  out->address = 0;
+  out->size = 0;
+  return 0;
+}
+
+#endif

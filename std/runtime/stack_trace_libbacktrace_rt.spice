@@ -9,11 +9,13 @@
 // exported or not, with no '-rdynamic' involved, and reports each symbol's real size, so a lookup can tell
 // "resolved, this far into the function" apart from "nothing here" - dladdr()'s Dl_info carries no size at all.
 //
-// libbacktrace itself is always linked in on POSIX (see ExternalLinkerInterface::prepare()), regardless of
+// libbacktrace itself is linked in on POSIX whenever a prebuilt archive exists for the target (see
+// ExternalLinkerInterface::prepare() / SystemUtil::findLibbacktraceStaticLib()), regardless of
 // '--keep-symbol-table' - but by default the binary's symbol table is stripped at link time, same as before
 // this file existed, so there is nothing for it to read and every lookup here falls straight through to
 // resolveSymbol(). '--keep-symbol-table' keeps that symbol table around instead, which is the only thing that
-// actually makes resolution here succeed.
+// actually makes resolution here succeed. With no prebuilt archive for the target, the C shim behind this file
+// compiles as a permanent no-op (see stack-trace-libbacktrace.c) and every lookup falls through the same way.
 //
 // The state libbacktrace builds is scoped to the main executable's own file, so it does not see shared library
 // frames (libc, etc.); those still resolve through the resolveSymbol() fallback in stack_trace_rt.spice.

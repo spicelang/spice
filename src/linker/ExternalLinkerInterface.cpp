@@ -26,20 +26,25 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
   }
 
-  // libbacktrace (see stack-trace-libbacktrace.c) is linked in unconditionally on POSIX, for any build that
-  // actually links (an executable or a shared library) - not gated on '--keep-symbol-table'. The C shim that
-  // needs it compiles and is added to the link whenever a program imports std/runtime/stack_trace_rt.spice, via
-  // its own core.linker.additionalSource attribute, regardless of that flag; skipping the archive here would
-  // leave its calls into libbacktrace unresolved. Nothing is added on Windows, which never compiles the shim in
-  // the first place (see stack_trace_libbacktrace_rt_windows.spice), or for a POSIX target with no prebuilt
-  // archive (see SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace support was already
-  // incomplete before this feature, and gains no new failure mode from it.
+  // libbacktrace (see stack-trace-libbacktrace.c) is linked in on POSIX, for any build that actually links (an
+  // executable or a shared library), whenever a prebuilt archive is available for the target - not gated on
+  // '--keep-symbol-table'. The C shim that would call into it compiles and is added to the link whenever a
+  // program imports std/runtime/stack_trace_rt.spice, via its own core.linker.additionalSource attribute,
+  // regardless of that flag or of whether an archive exists; '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that
+  // shim an archive is actually on the link line, so it only references libbacktrace.h when linking against it
+  // will actually succeed - without it, the shim compiles as a permanent no-op instead (see its own comment).
+  // Nothing is added on Windows, which never compiles the shim in the first place (see
+  // stack_trace_libbacktrace_rt_windows.spice), or for a POSIX target with no prebuilt archive (see
+  // SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace support was already incomplete before
+  // this feature, and gains no new failure mode from it.
   const bool emitsLinkedBinary =
       cliOptions.outputContainer == OutputContainer::EXECUTABLE || cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
   if (emitsLinkedBinary && !cliOptions.targetTriple.isOSWindows()) {
     const std::filesystem::path libbacktracePath = SystemUtil::findLibbacktraceStaticLib(cliOptions);
-    if (!libbacktracePath.empty())
+    if (!libbacktracePath.empty()) {
       addFileToLinkage(libbacktracePath);
+      addLinkerFlag("-DSPICE_HAVE_LIBBACKTRACE=1");
+    }
   }
 
   // The following flags only make sense if we want to emit an executable
