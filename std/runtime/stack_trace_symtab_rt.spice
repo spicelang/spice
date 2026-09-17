@@ -12,12 +12,13 @@
 import "std/runtime/stack_trace_symbol_rt";
 
 // One entry as IRGenerator lays it out: the function's address, followed by a pointer to its (still mangled)
-// name. Both fields are pointer-sized, so an entry is exactly 16 bytes with no padding.
+// name. Both fields are pointer-sized, so an entry is exactly two pointers with no padding. Its size is
+// computed via sizeof() inside resolveFromSymtab() rather than hardcoded here, since a global const's
+// initializer is restricted to literal constants - a 32-bit target would make IRGenerator emit 8-byte entries.
 type SymtabEntry struct {
     byte* address
     string name
 }
-const long SYMTAB_ENTRY_SIZE = 16l;
 // Generous upper bound on how far a single function's body can extend past its recorded start address. There is
 // no real size to check against - like dladdr()'s Dl_info, an entry only carries where a function starts - so
 // the highest recorded address on its own would reject every address inside whichever function happens to sit
@@ -43,6 +44,8 @@ ext p spiceSymtabRange(byte** /*outBegin*/, byte** /*outEnd*/);
  * @return Mangled name and byte offset into that symbol, or an unresolved result if there is no match
  */
 public f<SymbolLookup> resolveFromSymtab(byte* address) {
+    const long entrySize = sizeof<SymtabEntry>();
+
     byte* rangeBegin = nil<byte*>;
     byte* rangeEnd = nil<byte*>;
     unsafe {
@@ -67,7 +70,7 @@ public f<SymbolLookup> resolveFromSymtab(byte* address) {
                     bestName = entry.name;
                 }
             }
-            cursor += SYMTAB_ENTRY_SIZE;
+            cursor += entrySize;
         }
     }
 

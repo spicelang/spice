@@ -228,7 +228,13 @@ suppress the address (and should also suppress the offset) so tests stay determi
       when the target sits more than `SYMTAB_MAX_FUNCTION_EXTENT` (1 MiB) past every recorded address, which
       exists to reject a completely different mapping (libc, the stack) rather than to bound any real
       function's size precisely - there is no real size to check against, matching `dladdr()`'s own
-      `Dl_info`. Verified end to end on Linux: with the flag on, `innerFrame`/`middleFrame` (neither `public`)
+      `Dl_info`. Since that fence is loose, `StackTrace.capture()` resolves both `resolveFromSymtab()` and
+      `resolveSymbol()` for every frame and keeps whichever has the smaller offset, rather than letting a
+      resolved table guess win outright - caught by CodeRabbit on #1395: a libc/shared-library frame at a
+      lower address than our own code would otherwise "resolve" to the wrong Spice function. The entry stride
+      is computed via `sizeof<SymtabEntry>()` inside `resolveFromSymtab()`, not hardcoded, so a 32-bit target
+      (where `IRGenerator::generateSymbolTable()` would emit 8-byte entries) stays correct - also from that
+      review. Verified end to end on Linux: with the flag on, `innerFrame`/`middleFrame` (neither `public`)
       and `main` all resolve to their demangled names without `-rdynamic`; with it off, the build and output are
       unchanged from before this table existed. The Mach-O and COFF halves of the shim follow the same
       boundary-symbol techniques compiler-rt's own profiling runtime uses for identical problems; CI confirmed

@@ -106,12 +106,16 @@ public p StackTrace.capture(int skipFrames = 0) {
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
         // The compiler-emitted table (populated only behind '--keep-symbol-table') resolves this program's own
-        // functions exactly, including ones the platform's own resolver cannot see. Anything it does not cover
-        // - because the flag was off, or the frame belongs to libc or a shared library - falls back to the
-        // platform-specific resolver.
+        // functions exactly, including ones the platform's own resolver cannot see. Both are tried and the
+        // tighter match wins rather than letting a resolved table guess win outright: the table has no real
+        // per-function size, so a frame that belongs to libc or a shared library can still land at or below
+        // one of our own function addresses (e.g. if that mapping sits at a lower address than ours) and
+        // "resolve" to the wrong function with a large, spurious offset. The true match - table or platform,
+        // whichever actually contains the address - has a far smaller offset than that.
         SymbolLookup symbol = resolveFromSymtab(addresses[i]);
-        if !symbol.resolved {
-            symbol = resolveSymbol(addresses[i]);
+        const SymbolLookup platformSymbol = resolveSymbol(addresses[i]);
+        if !symbol.resolved || (platformSymbol.resolved && platformSymbol.offset < symbol.offset) {
+            symbol = platformSymbol;
         }
         String name = String();
         if symbol.resolved {
