@@ -215,6 +215,12 @@ suppress the address (and should also suppress the offset) so tests stay determi
       invariants, with both `cout-linux-*.out` overrides deleted. An exact frame count turned out not to be
       portable after all — it depends on how many frames the C runtime puts below `main`, and on inlining — so the
       test asserts that skipping n frames drops exactly n instead, which does hold everywhere.
+- [x] `test-files/std/runtime/stack-trace-dump-basic` covers `sDumpStacktrace()` on every platform. Addresses
+      (ASLR) and offsets (codegen) are not reproducible, and the dump goes to stderr, which the test runner
+      folds into the compared output — so the test points stderr at a file, then prints the trace back to
+      stdout with those two columns masked. Only the three frames the test owns are printed; everything below
+      `main` is C runtime and differs per platform. What remains — which symbols resolve and how they
+      demangle — is pinned per platform in `cout-linux.out`, `cout-macos.out` and `cout-windows.out`.
 - [x] Demangler test seeded from the mangled names in the `.ll` reference files.
 - [x] Capture verified at every optimization level (`-O0` through `-Oz`).
 

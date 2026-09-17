@@ -1,0 +1,8 @@
+Stack trace:
+  innerFrame(bool) + <offset>
+  middleFrame(bool) + <offset>
+  main + <offset>
+Stack trace:
+  <address>  innerFrame(bool) + <offset>
+  <address>  middleFrame(bool) + <offset>
+  <address>  main + <offset>
