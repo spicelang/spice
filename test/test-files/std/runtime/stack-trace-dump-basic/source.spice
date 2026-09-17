@@ -1,9 +1,13 @@
-// Exercises sDumpStacktrace() end to end: the capture, the symbol resolution and the printed format.
+// Exercises sDumpStacktrace() on every platform: the capture, the symbol resolution and the printed format.
 //
-// The dump goes to stderr, which the test runner folds into the compared output, and none of what it prints
-// is portable: the frame count, the resolved names and the offsets all differ per platform. stderr is
-// therefore pointed at a file up front and the dump is inspected line by line afterwards, so only
-// deterministic text reaches the compared output.
+// Two of the three columns a dump prints cannot be compared as they are: addresses move between runs under
+// ASLR, and offsets shift with every codegen change. The dump also goes to stderr, which the test runner
+// folds into the compared output. It is therefore pointed at a file first and printed back to stdout with
+// those two columns masked. What is left - which symbols resolve, and how they demangle - depends on what
+// the platform's resolver can see, so the expected output is pinned per platform in 'cout-<os>.out'.
+//
+// Only the frames this test owns are printed. Everything below main belongs to the C runtime, which adds a
+// different number of frames on every platform.
 //
 // sDumpStacktrace() is not imported: like the other 's'-prefixed runtime functions, it is pulled in by name.
 import "std/data/vector";
@@ -14,9 +18,12 @@ ext f<int> fflush(byte* /*stream*/);
 
 const string DUMP_FILE_PATH = "./stack-trace-dump.txt";
 const string HEADER_LINE = "Stack trace:";
+const string INDENT = "  ";
+// innerFrame, middleFrame and main - the frames below them are the C runtime's
+const long PRINTED_FRAMES = 3l;
 
 p innerFrame(bool includeAddresses) {
-    // Both dumps are taken here, from the same call site, so their topmost frame is the same return address
+    // Both dumps are taken here, from the same call site, so they see the same frames
     sDumpStacktrace(includeAddresses);
 }
 
@@ -43,8 +50,54 @@ f<Vector<String>> readDumpLines() {
     return lines;
 }
 
+/**
+ * Masks the address and the offset of one frame line, leaving only what is reproducible.
+ *
+ * @param line Frame line, as dump() printed it
+ * @param hasAddress Whether the line was printed with the address column
+ */
+f<String> normalizeFrameLine(String& line, bool hasAddress) {
+    assert line.startsWith(INDENT);
+    String rest = line.getSubstring(2l);
+
+    String normalized = String(INDENT);
+    if hasAddress {
+        // '%p' leaves the address format to the platform. The column ends at the double space behind it.
+        const long addressEnd = rest.find(INDENT);
+        assert addressEnd > 0l;
+        normalized += "<address>";
+        normalized += INDENT;
+        rest = rest.getSubstring(addressEnd + 2l);
+    }
+
+    // A resolved frame prints as '<name> + <offset>', an unresolved one as '<unknown>'
+    const long offsetStart = rest.find(" + ");
+    if offsetStart == -1l {
+        normalized += rest;
+        return normalized;
+    }
+    normalized += rest.getSubstring(0l, offsetStart + 3l);
+    normalized += "<offset>";
+    return normalized;
+}
+
+/**
+ * Prints one dump back to stdout, masked.
+ *
+ * @param lines All lines of the dump file
+ * @param firstFrameIdx Index of the dump's first frame line
+ * @param hasAddresses Whether the dump was taken with the address column
+ */
+p printMaskedDump(Vector<String>& lines, long firstFrameIdx, bool hasAddresses) {
+    printf("%s\n", HEADER_LINE);
+    for long i = 0l; i < PRINTED_FRAMES; i++ {
+        String normalized = normalizeFrameLine(lines.get(firstFrameIdx + i), hasAddresses);
+        printf("%s\n", normalized.getRaw());
+    }
+}
+
 f<int> main() {
-    // Point stderr at a file before anything is dumped
+    // Point stderr at a file, so the dump does not reach the compared output unmasked
     assert freopen(DUMP_FILE_PATH, MODE_WRITE, __stderr()) != nil<byte*>;
 
     middleFrame(false);
@@ -53,8 +106,9 @@ f<int> main() {
 
     Vector<String> lines = readDumpLines();
 
-    // Each dump opens with its own header line
-    assert lines.getSize() >= 2l;
+    // The file holds the trace without addresses first, then the same trace with them. Each opens with its
+    // own header line.
+    assert !lines.isEmpty();
     assert lines.get(0l) == HEADER_LINE;
     long secondHeaderIdx = -1l;
     for long i = 1l; i < lines.getSize(); i++ {
@@ -68,39 +122,15 @@ f<int> main() {
     const long plainFrameCount = secondHeaderIdx - 1l;
     const long addressFrameCount = lines.getSize() - secondHeaderIdx - 1l;
 
-    // innerFrame, middleFrame and main are always on the stack, and at O0 none of them can be inlined away.
-    // How many frames the C runtime adds below main is up to the platform.
-    assert plainFrameCount >= 3l;
+    // innerFrame, middleFrame and main are always on the stack, and at O0 none of them can be inlined away
+    assert plainFrameCount >= PRINTED_FRAMES;
     // Both dumps walk the same call chain, so they see the same frames
     assert addressFrameCount == plainFrameCount;
 
-    // Without addresses, a frame prints as '  <name> + <offset>', or as '  <unknown>' where the symbol did
-    // not resolve. Which of the two it is depends on what the platform's resolver can see.
-    for long i = 0l; i < plainFrameCount; i++ {
-        String& line = lines.get(1l + i);
-        assert line.startsWith("  ");
-        String payload = line.getSubstring(2l);
-        assert payload == "<unknown>" || payload.contains(" + ");
-    }
-
-    // With addresses, the raw address is prepended. Its format is left to the platform's printf, so only the
-    // part behind it is checked here.
-    for long i = 0l; i < addressFrameCount; i++ {
-        String& line = lines.get(secondHeaderIdx + 1l + i);
-        assert line.startsWith("  ");
-        assert line.contains("<unknown>") || line.contains(" + ");
-    }
-
-    // Both traces start at the same call site, so the address column is all that sets their topmost frames
-    // apart - the name and the offset behind it have to be identical
-    String& plainTop = lines.get(1l);
-    String& addressTop = lines.get(secondHeaderIdx + 1l);
-    String plainTopPayload = plainTop.getSubstring(2l);
-    assert addressTop.getLength() > plainTop.getLength();
-    assert addressTop.endsWith(plainTopPayload.getRaw());
+    printMaskedDump(lines, 1l, false);
+    printMaskedDump(lines, secondHeaderIdx + 1l, true);
 
     // The dump file is deliberately left behind: stderr is still attached to it, which Windows refuses to
     // unlink, and it is what one looks at when this test goes red
-    printf("All assertions passed!\n");
     return 0;
 }
