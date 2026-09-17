@@ -1,0 +1,106 @@
+// Exercises sDumpStacktrace() end to end: the capture, the symbol resolution and the printed format.
+//
+// The dump goes to stderr, which the test runner folds into the compared output, and none of what it prints
+// is portable: the frame count, the resolved names and the offsets all differ per platform. stderr is
+// therefore pointed at a file up front and the dump is inspected line by line afterwards, so only
+// deterministic text reaches the compared output.
+//
+// sDumpStacktrace() is not imported: like the other 's'-prefixed runtime functions, it is pulled in by name.
+import "std/data/vector";
+import "std/io/file";
+
+ext f<byte*> freopen(string /*file path*/, string /*mode*/, byte* /*stream*/);
+ext f<int> fflush(byte* /*stream*/);
+
+const string DUMP_FILE_PATH = "./stack-trace-dump.txt";
+const string HEADER_LINE = "Stack trace:";
+
+p innerFrame(bool includeAddresses) {
+    // Both dumps are taken here, from the same call site, so their topmost frame is the same return address
+    sDumpStacktrace(includeAddresses);
+}
+
+p middleFrame(bool includeAddresses) {
+    innerFrame(includeAddresses);
+}
+
+/**
+ * Reads the dump back in, dropping the empty line that the trailing newline yields at EOF.
+ */
+f<Vector<String>> readDumpLines() {
+    Result<File> fileResult = openFile(DUMP_FILE_PATH, MODE_READ);
+    assert fileResult.isOk();
+    File dumpFile = fileResult.unwrap();
+
+    Vector<String> lines;
+    while !dumpFile.isEOF() {
+        String line = dumpFile.readLine();
+        if !line.isEmpty() {
+            lines.pushBack(line);
+        }
+    }
+    assert dumpFile.close();
+    return lines;
+}
+
+f<int> main() {
+    // Point stderr at a file before anything is dumped
+    assert freopen(DUMP_FILE_PATH, MODE_WRITE, __stderr()) != nil<byte*>;
+
+    middleFrame(false);
+    middleFrame(true);
+    assert fflush(__stderr()) == 0;
+
+    Vector<String> lines = readDumpLines();
+
+    // Each dump opens with its own header line
+    assert lines.getSize() >= 2l;
+    assert lines.get(0l) == HEADER_LINE;
+    long secondHeaderIdx = -1l;
+    for long i = 1l; i < lines.getSize(); i++ {
+        if lines.get(i) == HEADER_LINE {
+            secondHeaderIdx = i;
+            break;
+        }
+    }
+    assert secondHeaderIdx != -1l;
+
+    const long plainFrameCount = secondHeaderIdx - 1l;
+    const long addressFrameCount = lines.getSize() - secondHeaderIdx - 1l;
+
+    // innerFrame, middleFrame and main are always on the stack, and at O0 none of them can be inlined away.
+    // How many frames the C runtime adds below main is up to the platform.
+    assert plainFrameCount >= 3l;
+    // Both dumps walk the same call chain, so they see the same frames
+    assert addressFrameCount == plainFrameCount;
+
+    // Without addresses, a frame prints as '  <name> + <offset>', or as '  <unknown>' where the symbol did
+    // not resolve. Which of the two it is depends on what the platform's resolver can see.
+    for long i = 0l; i < plainFrameCount; i++ {
+        String& line = lines.get(1l + i);
+        assert line.startsWith("  ");
+        String payload = line.getSubstring(2l);
+        assert payload == "<unknown>" || payload.contains(" + ");
+    }
+
+    // With addresses, the raw address is prepended. Its format is left to the platform's printf, so only the
+    // part behind it is checked here.
+    for long i = 0l; i < addressFrameCount; i++ {
+        String& line = lines.get(secondHeaderIdx + 1l + i);
+        assert line.startsWith("  ");
+        assert line.contains("<unknown>") || line.contains(" + ");
+    }
+
+    // Both traces start at the same call site, so the address column is all that sets their topmost frames
+    // apart - the name and the offset behind it have to be identical
+    String& plainTop = lines.get(1l);
+    String& addressTop = lines.get(secondHeaderIdx + 1l);
+    String plainTopPayload = plainTop.getSubstring(2l);
+    assert addressTop.getLength() > plainTop.getLength();
+    assert addressTop.endsWith(plainTopPayload.getRaw());
+
+    // The dump file is deliberately left behind: stderr is still attached to it, which Windows refuses to
+    // unlink, and it is what one looks at when this test goes red
+    printf("All assertions passed!\n");
+    return 0;
+}
