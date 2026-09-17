@@ -59,6 +59,11 @@ jobs:
       - name: Build libbacktrace
         run: python build-libbacktrace.py
 
+      - name: Build libbacktrace for Windows
+        run: |
+          sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+          python build-libbacktrace.py --target x86_64-windows
+
       - name: Build compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
@@ -99,6 +104,12 @@ jobs:
         with:
           name: libbacktrace-x86_64-linux
           path: ./std/runtime/lib/x86_64-linux/libbacktrace.a
+
+      - name: Upload libbacktrace artifact (Windows)
+        uses: actions/upload-artifact@v7
+        with:
+          name: libbacktrace-x86_64-windows
+          path: ./std/runtime/lib/x86_64-windows/libbacktrace.a
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64

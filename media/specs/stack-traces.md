@@ -4,10 +4,11 @@
 
 Implemented; see the "done" work items below for what shipped and in what order. Capture goes through the
 platform unwinder (`_Unwind_Backtrace` on POSIX, `RtlCaptureStackBackTrace` on Windows) rather than a
-hand-rolled frame-pointer walk. Symbolization falls back through, in order: libbacktrace (POSIX only, behind
-`--keep-symbol-table`) → the platform's own resolver (`dladdr()`/DbgHelp) → unresolved. Everything below the
-"Symbolization — libbacktrace on POSIX" section is the historical design/investigation record this file grew
-from, including one superseded design (a compiler-emitted symbol table) kept for context rather than deleted.
+hand-rolled frame-pointer walk. Symbolization falls back through, in order: libbacktrace (ELF/Mach-O/PE-COFF
+alike, behind `--keep-symbol-table` and a prebuilt archive for the target) → the platform's own resolver
+(`dladdr()`/DbgHelp) → unresolved. Everything below the "Symbolization — libbacktrace" section is the
+historical design/investigation record this file grew from, including one superseded design (a
+compiler-emitted symbol table) kept for context rather than deleted.
 
 Target output, identical on every platform:
 
@@ -159,37 +160,57 @@ public f<SymbolInfoResult> resolveSymbol(byte* address)
 - **Windows** — `SymFromAddr()`'s third parameter is the displacement out-param; the current code passes
   `nil<unsigned long*>` and throws it away. Pass a real `unsigned long` and use it directly.
 
-### Symbolization — libbacktrace on POSIX (supersedes the compiler-emitted symbol table below)
+### Symbolization — libbacktrace (supersedes the compiler-emitted symbol table below)
 
 The compiler-emitted symbol table described as "done" further down (`IRGenerator::generateSymbolTable()`,
 `stack_trace_symtab_rt.spice`) shipped in #1395 and was then replaced end to end by
 [libbacktrace](https://github.com/ianlancetaylor/libbacktrace) before this superseding note was written - the
 table approach never reached a tagged release. Both directions solve the same problem (resolving a Spice
-function `dladdr()` cannot see, because it was never exported or the binary was stripped), but libbacktrace
-reads the ELF/Mach-O symbol table that is already there rather than having the compiler duplicate it into a
-second, custom section:
+function the platform's own resolver cannot see, because it was never exported or the binary was stripped), but
+libbacktrace reads the symbol table that is already in the binary rather than having the compiler duplicate it
+into a second, custom section:
 
 - No compiler-side codegen at all: `IRGenerator` no longer collects functions or emits anything symbol-table
   related. `--keep-symbol-table` now only decides one thing at link time - whether `-Wl,-s` is skipped, i.e.
   whether the binary's own symbol table survives to be read back.
-- `backtrace_syminfo()` returns the symbol's real **size**, not just its start address, so a lookup can reject
-  an address that is past the end of the function it nominally follows, rather than reporting a bogus large
-  offset the way the old table (and `dladdr()`) had to. This removed the "keep whichever resolver reports the
-  smaller offset" workaround the table needed (see the now-removed work item below) - `StackTrace.capture()`
-  just tries libbacktrace first and falls through to `resolveSymbol()` on failure.
+- `backtrace_syminfo()` returns the symbol's real **size** on ELF/Mach-O (not on PE/COFF, which has no size
+  field to report), so a lookup can reject an address that is past the end of the function it nominally
+  follows, rather than reporting a bogus large offset the way the old table (and `dladdr()`) had to on every
+  platform. This removed the "keep whichever resolver reports the smaller offset" workaround the table needed
+  (see the now-removed work item below) - `StackTrace.capture()` just tries libbacktrace first and falls
+  through to `resolveSymbol()` on failure.
 - One prebuilt static library per supported target (`std/runtime/lib/<arch>-<os>/libbacktrace.a`) ships with the
-  std lib and is linked in unconditionally on POSIX (not gated on the flag) by
+  std lib and is linked in whenever an archive is available for the target (not gated on the flag) by
   `ExternalLinkerInterface::prepare()`, since the small C shim that calls into it
   (`std/runtime/stack-trace-libbacktrace.c`) is part of the build whenever a program imports
   `stack_trace_rt.spice`, flag or not - only the symbol table it reads is gated. `deps/libbacktrace` (a git
   submodule) is a build-time-only dependency used to produce that archive (locally via `build-libbacktrace.py`,
   in CI via `.github/workflows/publish.yml`); nothing under `deps/` ships.
 - `backtrace_create_state(NULL, ...)` scopes the resulting state to the running executable's own file only, so
-  - like the old table - it never sees shared-library frames (libc, etc.); those still resolve through the
-  `resolveSymbol()`/`dladdr()` fallback.
-- No Windows work needed: DbgHelp's `SymFromAddr()` already reads a Windows binary's own symbol/PDB data
-  directly, the same way libbacktrace does for ELF/Mach-O, so `stack_trace_libbacktrace_rt_windows.spice` is an
-  always-unresolved stub and libbacktrace is never linked into a Windows build.
+  - like the old table - it never sees shared-library frames (libc, a DLL, etc.); those still resolve through
+  the `resolveSymbol()`/`dladdr()`/`SymFromAddr()` fallback.
+- **Windows is covered too, via libbacktrace's own `pecoff.c` backend** - not, as first assumed, left to DbgHelp
+  alone. `SymFromAddr()` reads a PDB, which this project's clang/MinGW builds do not emit, so it does not
+  resolve a program's own frames at all (confirmed by `stack-trace-dump-basic`'s own Windows reference).
+  libbacktrace instead reads the PE/COFF symbol table the MinGW linker already writes into the `.exe` itself -
+  the exact same kind of "read it directly out of the binary" trick as ELF/Mach-O, just a different container
+  format. Verified end to end: cross-compiled a Spice program to `x86_64-pc-windows-gnu` with
+  `--keep-symbol-table`, ran it under Wine, and watched `innerFrame`/`middleFrame`/`main` resolve by name; with
+  the flag off, `-Wl,-s` strips the same COFF symbol table pecoff.c needs, and those frames go back to
+  `<unknown>`, confirming the flag is what gates it, on Windows exactly like ELF/Mach-O. One difference from a
+  MinGW GCC build: clang's `x86_64-w64-windows-gnu` driver does not auto-link pthread the way GCC's `-posix`
+  runtime variant does, so `ExternalLinkerInterface::prepare()` adds `-pthread` alongside the archive itself
+  (harmless on Linux/macOS, where pthread symbols already live in libc).
+- **The Windows archive is cross-compiled from Linux, not built natively on the Windows runner.**
+  libbacktrace's build is autotools-based (`configure` + `make`), which a bare Windows runner does not have;
+  `build-libbacktrace.py --target x86_64-windows` instead cross-compiles it using `gcc-mingw-w64-x86-64`, run
+  from the `build-compiler-linux-x86` release job, and uploads it as its own artifact
+  (`libbacktrace-x86_64-windows`) that `build-artifacts`' existing generic `libbacktrace-*` download/assemble
+  step already picks up unmodified. Only wired into the release pipeline (`publish.yml`) so far - the regular
+  PR test workflow (`ci-cpp.yml`) does not build this archive, so `stack-trace-dump-libbacktrace`'s Windows
+  reference still expects `<unknown>` there; extending it would mean giving the Windows CI job a dependency on
+  the Linux job finishing first, which was judged not worth losing job parallelism for given the mechanism was
+  already verified locally via Wine.
 
 ### Demangling — in Spice
 
@@ -224,7 +245,7 @@ suppress the address (and should also suppress the offset) so tests stay determi
 - [x] Emit the per-function `"frame-pointer"="all"` attribute, behind `--keep-frame-pointers` (default off).
 - [x] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
 - [x] ~~`IRGenerator::generateSymbolTable()`~~ — implemented behind `--keep-symbol-table`, then removed again once
-      libbacktrace replaced it (see [Symbolization — libbacktrace on POSIX](#symbolization--libbacktrace-on-posix-supersedes-the-compiler-emitted-symbol-table-below)
+      libbacktrace replaced it (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)
       above). `IRGenerator` no longer collects functions or emits a table at all; `--keep-symbol-table` is now a
       pure link-time decision handled entirely in `ExternalLinkerInterface::prepare()`.
 - [x] `ExternalLinkerInterface::prepare()` — link the prebuilt `libbacktrace.a` for the current target
@@ -274,19 +295,32 @@ suppress the address (and should also suppress the offset) so tests stay determi
       resolve to their demangled names without `-rdynamic`, reading the ELF symbol table directly out of the
       binary; with it off, `-Wl,-s` strips that table, every lookup here finds nothing, and the build/output are
       unchanged from before this file existed.
-- [x] `stack_trace_libbacktrace_rt_windows.spice` — always-unresolved stub; DbgHelp already covers what
-      libbacktrace would add, so nothing links on Windows.
+- [x] ~~`stack_trace_libbacktrace_rt_windows.spice`~~ — implemented as an always-unresolved stub, on the initial
+      (mistaken) assumption that DbgHelp already covered what libbacktrace would add on Windows. Deleted once
+      that assumption was checked and found wrong: DbgHelp's `SymFromAddr()` needs a PDB this project's builds
+      never emit, so it resolves nothing of the program's own, while libbacktrace's `pecoff.c` reads the PE/COFF
+      symbol table the linker already writes into the `.exe` - the same "read it out of the binary itself"
+      trick as ELF/Mach-O. `stack_trace_libbacktrace_rt.spice` (the base file, no longer POSIX-only) now covers
+      all three formats; nothing Windows-specific remained to keep once that was true.
 - [x] `std/runtime/lib/<arch>-<os>/libbacktrace.a` — one prebuilt static archive per supported target
-      (`x86_64-linux`, `aarch64-linux`, `aarch64-macos`), built from the `deps/libbacktrace` submodule and
-      resolved at link time by `SystemUtil::findLibbacktraceStaticLib()`. Not committed to the repository
-      (`/std/runtime/lib/` is gitignored, since these are build outputs, not source) - `build-libbacktrace.py`
-      produces the host's own archive for local dev (wired into `dev-setup.py`), and
+      (`x86_64-linux`, `aarch64-linux`, `aarch64-macos`, `x86_64-windows`), built from the `deps/libbacktrace`
+      submodule and resolved at link time by `SystemUtil::findLibbacktraceStaticLib()`. Not committed to the
+      repository (`/std/runtime/lib/` is gitignored, since these are build outputs, not source) -
+      `build-libbacktrace.py` produces the host's own archive for local dev (wired into `dev-setup.py`), and
       `.github/workflows/publish.yml` builds one per release target in its own job and assembles them into
       `std/` in `build-artifacts` right before GoReleaser packages it, so every release artifact carries the
-      full set. Windows is deliberately never built, matching the point above. macOS/x86_64 has no CI job at
-      all today (Apple Silicon only), so it has no prebuilt archive either; `--keep-symbol-table` degrades
-      there the same way it does on any other target with no matching archive - libbacktrace, if linked in at
-      all for that target, simply finds nothing to read.
+      full set. The Windows archive is the one exception to "built on that target's own job": libbacktrace's
+      autotools build needs a real shell/make toolchain a bare Windows runner doesn't have, so it's
+      cross-compiled from the `build-compiler-linux-x86` job instead (`gcc-mingw-w64-x86-64`, `--target
+      x86_64-windows`) and uploaded as its own artifact, picked up by `build-artifacts`' existing generic
+      `libbacktrace-*` download/assemble step unmodified. macOS/x86_64 has no CI job at all today (Apple Silicon
+      only), so it has no prebuilt archive either; `--keep-symbol-table` degrades there the same way it does on
+      any other target with no matching archive - libbacktrace, if linked in at all for that target, simply
+      finds nothing to read.
+- [x] `ExternalLinkerInterface::prepare()` links `-pthread` alongside the archive whenever one is found. Needed
+      for Windows: clang's `x86_64-w64-windows-gnu` driver does not auto-link pthread the way a MinGW GCC
+      `-posix` runtime build does, and the shim's `pthread_once()` call needs it. A no-op everywhere else
+      (Linux/macOS already have pthread symbols in libc), so this isn't platform-gated.
 
 **Tests (`test/`)**
 
@@ -303,11 +337,15 @@ suppress the address (and should also suppress the offset) so tests stay determi
 - [x] Demangler test seeded from the mangled names in the `.ll` reference files.
 - [x] Capture verified at every optimization level (`-O0` through `-Oz`).
 - [x] `test-files/std/runtime/stack-trace-dump-libbacktrace` (renamed from `...-symtab` when the table was
-      replaced) — `--keep-symbol-table` on, asserting `innerFrame`, `middleFrame` and `main` all resolve to real
-      demangled names (offset masked, same technique as stack-trace-dump-basic). A single `cout.out` covers
-      every platform here, unlike stack-trace-dump-basic: names now come from libbacktrace reading the binary's
-      own symbol table directly rather than each platform's resolver, so they are expected to read identically
-      everywhere - the flag's whole point.
+      replaced) — `--keep-symbol-table` on, asserting `innerFrame`, `middleFrame` and `main` resolve to real
+      demangled names wherever a prebuilt libbacktrace archive is linked in (offset masked, same technique as
+      stack-trace-dump-basic; an unresolved `<unknown>` line, where that happens, is tolerated rather than
+      asserted against). Reference output is pinned per platform in `cout-<os>.out`, same as
+      stack-trace-dump-basic: `cout-linux.out`/`cout-macos.out` expect full resolution (this CI job builds
+      those archives), `cout-windows.out` still expects `<unknown>` throughout, since the regular test workflow
+      does not build a Windows archive (see the work item above) even though the mechanism itself does resolve
+      there - verified separately, outside this test, by cross-compiling to `x86_64-pc-windows-gnu` and running
+      under Wine.
 
 **Docs**
 
@@ -322,14 +360,18 @@ suppress the address (and should also suppress the offset) so tests stay determi
   `--gc-sections`, and does nothing for `-static`. It is deliberately not added to the runtime; resolution today
   covers libc, shared libraries and a program's `public` functions - plus, behind `--keep-symbol-table` on
   POSIX, every function regardless of visibility or linkage, via libbacktrace reading the binary's own symbol
-  table directly (see [Symbolization — libbacktrace on POSIX](#symbolization--libbacktrace-on-posix-supersedes-the-compiler-emitted-symbol-table-below)).
+  table directly (see [Symbolization — libbacktrace](#symbolization--libbacktrace-supersedes-the-compiler-emitted-symbol-table-below)).
 - **Static linking.** `dladdr()` returns 0 in a fully static glibc binary, so `spice build -static` will lose
   symbol names on Linux, unless `--keep-symbol-table` is also passed - libbacktrace reads the symbol table
   directly out of the binary's own file and does not go through `dladdr()` at all.
-- **MinGW + DbgHelp.** `SymFromAddr()` reads PDB/COFF symbols, not the DWARF that the MinGW toolchain emits,
-  and `-Wl,-s` strips what is left. Windows symbolization likely needs `-Wl,--export-all-symbols` (so DbgHelp
-  falls back to PE export symbols) and/or dropping `-Wl,-s` there. This needs to be confirmed on a real Windows
-  runner — it could not be tested here.
+- **MinGW + DbgHelp — resolved, by not depending on DbgHelp for this.** `SymFromAddr()` reads PDB/COFF symbols,
+  not the DWARF the MinGW toolchain emits, and this project's builds emit no PDB either, so DbgHelp alone
+  resolves nothing of a Spice program's own frames (confirmed on a real Windows CI runner, via
+  stack-trace-dump-basic's `cout-windows.out`). Rather than chase `-Wl,--export-all-symbols` or a PDB, libbacktrace
+  covers Windows the same way it covers ELF/Mach-O: `pecoff.c` reads the PE/COFF symbol table directly, which
+  `-Wl,-s` still gates the same way it gates ELF's `.symtab` - dropping it Windows-only is not needed. Verified
+  by cross-compiling to `x86_64-pc-windows-gnu` and running under Wine, though not (yet) inside this repo's own
+  Windows CI job - see the libbacktrace archive work item above for that gap.
 - **Inlining.** At `-O2` the unwinder reports physical frames only; inlined Spice functions vanish from the
   trace. Recovering them requires reading DWARF/PDB inline records, which is out of scope here.
 

@@ -3,12 +3,17 @@
 
 deps/libbacktrace (a git submodule, see setup-deps.py) is build-time only - what actually ships with an
 installed Spice is a prebuilt static archive per supported target, at std/runtime/lib/<arch>-<os>/libbacktrace.a
-(see SystemUtil::findLibbacktraceStaticLib in the compiler). This script builds that archive for the host this
-script runs on. CI builds one such archive per release target the same way (see .github/workflows/publish.yml);
-this script is what a local dev environment uses to get the same file for its own host triple.
+(see SystemUtil::findLibbacktraceStaticLib in the compiler). This script builds that archive. With no
+arguments, it builds for the host this script runs on - that's what a local dev environment uses to get a
+working archive for its own machine. CI builds one such archive per release target the same way (see
+.github/workflows/publish.yml), passing --target for any target that isn't the host it's running on (e.g.
+cross-compiling the Windows archive from the Linux/x86_64 job, since libbacktrace's autotools build needs a
+real shell/make toolchain that a bare Windows runner doesn't have).
 
-No-ops (with a message, not an error) on Windows and on any host arch/os this feature does not support - the
-compiler falls back to the platform's own symbol resolution wherever no prebuilt archive is found.
+With no --target, no-ops (with a message, not an error) on any host arch/os this feature does not support -
+the compiler falls back to the platform's own symbol resolution wherever no prebuilt archive is found. With an
+explicit --target, an unsupported target or a missing cross toolchain is an error instead: the caller asked for
+that target by name, so silently skipping it would hide a real build-configuration problem.
 """
 import argparse
 import platform
@@ -43,19 +48,51 @@ def host_os_dir_name() -> str | None:
         return "macos"
     return None
 
+# Cross-compilation toolchains for a target this script cannot build natively on its own host (Windows has no
+# autotools/make toolchain by default, so its archive is cross-compiled from Linux instead - see module
+# docstring). Maps a "<arch>-<os>" target name to the configure/compiler invocation that produces it.
+CROSS_TOOLCHAINS = {
+    "x86_64-windows": {
+        "host_triple": "x86_64-w64-mingw32",
+        "cc": "x86_64-w64-mingw32-gcc-posix",
+        "ar": "x86_64-w64-mingw32-ar",
+        "ranlib": "x86_64-w64-mingw32-ranlib",
+        # PE/COFF has no notion of position-independent code the way ELF does; MinGW GCC just warns
+        # "-fPIC ignored" if passed, so it is left out here (the native-host path below still uses it).
+        "cflags": "-O2",
+        "install_hint": "sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64",
+    },
+}
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--force", action="store_true", help="Rebuild even if the archive already exists")
+    parser.add_argument("--target", choices=sorted(CROSS_TOOLCHAINS),
+                         help="Cross-compile for this target instead of the host this script runs on")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
+    configure_args: list[str]
 
-    arch = host_arch_dir_name()
-    osname = host_os_dir_name()
-    if arch is None or osname is None:
-        warn(f"No prebuilt libbacktrace target for this host ({platform.machine()}/{sys.platform}); "
-             "'--keep-symbol-table' will fall back to the platform's own symbol resolution here. Skipping.")
-        return
+    if args.target:
+        arch, osname = args.target.split("-", 1)
+        toolchain = CROSS_TOOLCHAINS[args.target]
+        if shutil.which(toolchain["cc"]) is None:
+            warn(f"{toolchain['cc']} not found - install the cross toolchain first:\n  {toolchain['install_hint']}")
+            sys.exit(1)
+        configure_args = [
+            f"--host={toolchain['host_triple']}",
+            f"CC={toolchain['cc']}", f"AR={toolchain['ar']}", f"RANLIB={toolchain['ranlib']}",
+            f"CFLAGS={toolchain['cflags']}",
+        ]
+    else:
+        arch = host_arch_dir_name()
+        osname = host_os_dir_name()
+        if arch is None or osname is None:
+            warn(f"No prebuilt libbacktrace target for this host ({platform.machine()}/{sys.platform}); "
+                 "'--keep-symbol-table' will fall back to the platform's own symbol resolution here. Skipping.")
+            return
+        configure_args = ["CFLAGS=-O2 -fPIC"]
 
     libbacktrace_src = repo_root / "deps" / "libbacktrace"
     if not (libbacktrace_src / "configure").exists():
@@ -71,7 +108,7 @@ def main() -> None:
     log(f"Building libbacktrace for {arch}-{osname} ...")
     with tempfile.TemporaryDirectory(prefix="spice-libbacktrace-") as build_dir:
         subprocess.run(
-            [str(libbacktrace_src / "configure"), "--disable-shared", "--enable-static", "CFLAGS=-O2 -fPIC"],
+            [str(libbacktrace_src / "configure"), "--disable-shared", "--enable-static", *configure_args],
             cwd=build_dir, check=True,
         )
         subprocess.run(["make", f"-j{shutil.os.cpu_count() or 1}"], cwd=build_dir, check=True)

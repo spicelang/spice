@@ -1,10 +1,11 @@
 /* Symbol resolution for stack_trace_libbacktrace_rt.spice, backed by libbacktrace (deps/libbacktrace).
  *
- * libbacktrace reads the ELF/Mach-O symbol table (and, if present, DWARF debug info, which is not used here)
- * directly from the executable file itself - not through dladdr()/.dynsym - so it resolves every function that
- * made it into the symbol table, public or not, exported or not, with no '-rdynamic' involved. It also reports
- * each symbol's size, so a lookup can tell "found, this far into the function" apart from "found nothing
- * nearby", unlike dladdr()'s Dl_info, which carries no size at all.
+ * libbacktrace reads the ELF/Mach-O/PE-COFF symbol table (and, on ELF/Mach-O, DWARF debug info if present,
+ * which is not used here) directly from the executable file itself - not through dladdr()/.dynsym on POSIX, or
+ * a DbgHelp-read PDB on Windows - so it resolves every function that made it into the symbol table, public or
+ * not, exported or not, with no '-rdynamic' involved. On ELF/Mach-O it also reports each symbol's size, so a
+ * lookup can tell "found, this far into the function" apart from "found nothing nearby", unlike dladdr()'s
+ * Dl_info, which carries no size at all; COFF has no size field to report, so this is ELF/Mach-O only.
  *
  * The state is scoped to one file - the main executable, resolved by libbacktrace itself when passed a NULL
  * filename - so it does not see shared library frames (libc, etc.); those still go through the dladdr()-based
@@ -63,8 +64,9 @@ static void spiceBacktraceErrorCallback(void *data, const char *msg, int errnum)
 
 static void spiceBacktraceCreateState(void) {
   /* NULL asks libbacktrace to resolve the running executable's own path itself (e.g. via /proc/self/exe on
-   * Linux), rather than requiring argv[0]. Flag 1 sets THREADED, so libbacktrace's own atomics make concurrent
-   * backtrace_syminfo() calls from multiple threads safe without a lock on our side. */
+   * Linux, or GetModuleFileName() on Windows), rather than requiring argv[0]. Flag 1 sets THREADED, so
+   * libbacktrace's own atomics make concurrent backtrace_syminfo() calls from multiple threads safe without a
+   * lock on our side. */
   spiceBacktraceState = backtrace_create_state(NULL, 1, spiceBacktraceErrorCallback, NULL);
 }
 

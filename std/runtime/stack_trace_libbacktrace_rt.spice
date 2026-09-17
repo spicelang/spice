@@ -3,13 +3,15 @@
     core.linker.additionalSource = "stack-trace-libbacktrace.c"
 ]
 
-// POSIX-only symbol resolution backed by libbacktrace (deps/libbacktrace). Unlike resolveSymbol() in
-// stack_trace_symbol_rt.spice, this reads the ELF/Mach-O symbol table directly out of the executable file - not
-// through dladdr()/.dynsym - so it resolves every function that made it into the symbol table, public or not,
-// exported or not, with no '-rdynamic' involved, and reports each symbol's real size, so a lookup can tell
-// "resolved, this far into the function" apart from "nothing here" - dladdr()'s Dl_info carries no size at all.
+// Symbol resolution backed by libbacktrace (deps/libbacktrace), one file for every target - ELF (Linux),
+// Mach-O (macOS) and PE/COFF (Windows) alike. Unlike the platform-native resolvers in stack_trace_symbol_rt.spice
+// (dladdr() on POSIX, DbgHelp's SymFromAddr() on Windows), this reads the executable's own symbol table
+// directly out of the file - not through dladdr()/.dynsym, and not through a PDB DbgHelp would need generated -
+// so it resolves every function that made it into the symbol table, public or not, exported or not, with no
+// '-rdynamic' involved, and (on ELF/Mach-O) reports each symbol's real size, so a lookup can tell "resolved,
+// this far into the function" apart from "nothing here" - dladdr()'s Dl_info carries no size at all.
 //
-// libbacktrace itself is linked in on POSIX whenever a prebuilt archive exists for the target (see
+// libbacktrace itself is linked in whenever a prebuilt archive exists for the target (see
 // ExternalLinkerInterface::prepare() / SystemUtil::findLibbacktraceStaticLib()), regardless of
 // '--keep-symbol-table' - but by default the binary's symbol table is stripped at link time, same as before
 // this file existed, so there is nothing for it to read and every lookup here falls straight through to
@@ -18,10 +20,7 @@
 // compiles as a permanent no-op (see stack-trace-libbacktrace.c) and every lookup falls through the same way.
 //
 // The state libbacktrace builds is scoped to the main executable's own file, so it does not see shared library
-// frames (libc, etc.); those still resolve through the resolveSymbol() fallback in stack_trace_rt.spice.
-//
-// No Windows sibling: DbgHelp already reads a Windows binary's own symbol/PDB data directly, the same way
-// libbacktrace does here for ELF/Mach-O, so stack_trace_symbol_rt_windows.spice needs no equivalent.
+// frames (libc, a DLL, etc.); those still resolve through the resolveSymbol() fallback in stack_trace_rt.spice.
 
 import "std/runtime/stack_trace_symbol_rt";
 
@@ -57,10 +56,11 @@ public f<SymbolLookup> resolveFromLibbacktrace(byte* address) {
         offset = cast<unsigned long>(cast<long>(address) - cast<long>(syminfo.address));
     }
 
-    // libbacktrace reports the symbol's real size, unlike dladdr()'s Dl_info - so an address past the end of
-    // the function it nominally follows is rejected outright, rather than reported with a bogus large offset.
-    // A size of 0 means the symbol table did not record one (uncommon, but not an error), in which case the
-    // offset is accepted as-is, same as dladdr()'s own always-unbounded behavior.
+    // On ELF/Mach-O, libbacktrace reports the symbol's real size, unlike dladdr()'s Dl_info - so an address
+    // past the end of the function it nominally follows is rejected outright, rather than reported with a
+    // bogus large offset. A size of 0 means no size was recorded - always true on Windows, since COFF symbol
+    // table entries carry no size field at all (unlike ELF/Mach-O, where it is only the rare exception) - in
+    // which case the offset is accepted as-is, same as dladdr()'s/SymFromAddr()'s own always-unbounded behavior.
     if syminfo.size != 0l && offset >= syminfo.size {
         return SymbolLookup{String(), 0l, false};
     }

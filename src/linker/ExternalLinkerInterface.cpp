@@ -26,24 +26,25 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
   }
 
-  // libbacktrace (see stack-trace-libbacktrace.c) is linked in on POSIX, for any build that actually links (an
-  // executable or a shared library), whenever a prebuilt archive is available for the target - not gated on
+  // libbacktrace (see stack-trace-libbacktrace.c) is linked in for any build that actually links (an executable
+  // or a shared library) whenever a prebuilt archive is available for the target - not gated on
   // '--keep-symbol-table'. The C shim that would call into it compiles and is added to the link whenever a
-  // program imports std/runtime/stack_trace_rt.spice, via its own core.linker.additionalSource attribute,
-  // regardless of that flag or of whether an archive exists; '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that
-  // shim an archive is actually on the link line, so it only references libbacktrace.h when linking against it
-  // will actually succeed - without it, the shim compiles as a permanent no-op instead (see its own comment).
-  // Nothing is added on Windows, which never compiles the shim in the first place (see
-  // stack_trace_libbacktrace_rt_windows.spice), or for a POSIX target with no prebuilt archive (see
-  // SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace support was already incomplete before
-  // this feature, and gains no new failure mode from it.
+  // program imports std/runtime/stack_trace_rt.spice, regardless of that flag or of whether an archive exists;
+  // '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that shim an archive is actually on the link line, so it only
+  // references libbacktrace.h when linking against it will actually succeed - without it, the shim compiles as
+  // a permanent no-op instead (see its own comment). '-pthread' is needed for the shim's pthread_once() call:
+  // on Linux/macOS this is already a no-op (pthread symbols live in libc there), but MinGW's pthread
+  // implementation is a genuinely separate library that has to be linked explicitly. Nothing is added for a
+  // target with no prebuilt archive (see SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace
+  // support was already incomplete before this feature, and gains no new failure mode from it.
   const bool emitsLinkedBinary =
       cliOptions.outputContainer == OutputContainer::EXECUTABLE || cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
-  if (emitsLinkedBinary && !cliOptions.targetTriple.isOSWindows()) {
+  if (emitsLinkedBinary) {
     const std::filesystem::path libbacktracePath = SystemUtil::findLibbacktraceStaticLib(cliOptions);
     if (!libbacktracePath.empty()) {
       addFileToLinkage(libbacktracePath);
       addLinkerFlag("-DSPICE_HAVE_LIBBACKTRACE=1");
+      addLinkerFlag("-pthread");
     }
   }
 
@@ -51,10 +52,11 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Stripping symbols. Skipped behind '--keep-symbol-table', which keeps the platform's own ELF/Mach-O symbol
-  // table in the binary so libbacktrace can read it back to resolve stack trace frames; without the flag,
-  // backtrace_syminfo() simply finds nothing in the stripped binary and every frame falls back to the
+  // Stripping symbols. Skipped behind '--keep-symbol-table', which keeps the platform's own ELF/Mach-O/PE-COFF
+  // symbol table in the binary so libbacktrace can read it back to resolve stack trace frames; without the
+  // flag, backtrace_syminfo() simply finds nothing in the stripped binary and every frame falls back to the
   // platform's own resolver (dladdr()/SymFromAddr()) instead, same as if libbacktrace were not linked at all.
+  // Verified for PE/COFF too: '-Wl,-s' strips the COFF symbol table pecoff.c reads just as it strips ELF's.
   if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin() && !cliOptions.keepSymbolTable)
     addLinkerFlag("-Wl,-s");
 
