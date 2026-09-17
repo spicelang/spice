@@ -15,8 +15,6 @@ the compiler falls back to the platform's own symbol resolution wherever no preb
 explicit --target, an unsupported target or a missing cross toolchain is an error instead: the caller asked for
 that target by name, so silently skipping it would hide a real build-configuration problem.
 """
-from __future__ import annotations
-
 import argparse
 import platform
 import shutil
@@ -35,7 +33,7 @@ def log(msg: str) -> None:
 def warn(msg: str) -> None:
     print(f"{YELLOW}{msg}{NC}", flush=True)
 
-def host_arch_dir_name() -> str | None:
+def host_arch_dir_name():
     machine = platform.machine().lower()
     if machine in ("x86_64", "amd64"):
         return "x86_64"
@@ -43,7 +41,7 @@ def host_arch_dir_name() -> str | None:
         return "aarch64"
     return None
 
-def host_os_dir_name() -> str | None:
+def host_os_dir_name():
     if sys.platform.startswith("linux"):
         return "linux"
     if sys.platform == "darwin":
@@ -66,7 +64,7 @@ CROSS_TOOLCHAINS = {
     },
 }
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--force", action="store_true", help="Rebuild even if the archive already exists")
     parser.add_argument("--target", choices=sorted(CROSS_TOOLCHAINS),
@@ -74,7 +72,6 @@ def main() -> None:
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
-    configure_args: list[str]
 
     if args.target:
         arch, osname = args.target.split("-", 1)
