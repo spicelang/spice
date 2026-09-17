@@ -77,6 +77,9 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
+      - name: Build libbacktrace
+        run: python build-libbacktrace.py
+
       - name: Build test target
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
@@ -167,6 +170,9 @@ jobs:
 
       - name: Download Libs
         run: python setup-deps.py
+
+      - name: Build libbacktrace
+        run: python build-libbacktrace.py
 
       - name: Build test target
         env:
@@ -343,6 +349,9 @@ jobs:
 
       - name: Download Libs
         run: python setup-deps.py
+
+      - name: Build libbacktrace
+        run: python build-libbacktrace.py
 
       - name: Build test target
         env:

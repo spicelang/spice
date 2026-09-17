@@ -2,15 +2,22 @@
 //
 // Exercises libbacktrace-backed symbol resolution (std/runtime/stack_trace_libbacktrace_rt, backed by
 // deps/libbacktrace), which resolveFromLibbacktrace() consults ahead of the platform's own resolver in
-// StackTrace.capture(). Unlike stack-trace-dump-basic, which accepts '<unknown>' as a legitimate outcome, this
-// build turns the flag on - keeping the binary's own symbol table instead of stripping it - and expects every
-// frame this program owns to resolve to a real, demangled name: the point of the flag is resolving functions
-// the platform's own resolver cannot see (not exported, no debug info shipped), including 'innerFrame' below,
-// which is neither 'public' nor ever passed to '-rdynamic'.
+// StackTrace.capture(). This build turns the flag on - keeping the binary's own symbol table instead of
+// stripping it - so on POSIX every frame this program owns is expected to resolve to a real, demangled name:
+// the point of the flag is resolving functions the platform's own resolver cannot see (not exported, no debug
+// info shipped), including 'innerFrame' below, which is neither 'public' nor ever passed to '-rdynamic'.
 //
-// The offset column is still not portable (it moves with any codegen change), so it is masked the same way
-// stack-trace-dump-basic masks it. The address column is dropped entirely here - this test is about names, not
-// about the address/offset format, which the other test already covers.
+// Windows has no libbacktrace-backed resolution at all (stack_trace_libbacktrace_rt_windows.spice is an
+// always-unresolved stub - DbgHelp already reads a Windows binary's own symbol/PDB data directly, the same way
+// libbacktrace does here for ELF/Mach-O), and DbgHelp's SymFromAddr() does not resolve either frame in this
+// clang/MinGW build (no PDB emitted in this configuration - the same limitation stack-trace-dump-basic already
+// documents for its own Windows reference). So unlike Linux/macOS, Windows sees no benefit from the flag here;
+// its own reference file expects '<unknown>' throughout, same as without the flag.
+//
+// The offset column is still not portable (it moves with any codegen change), so a resolved frame masks it the
+// same way stack-trace-dump-basic masks it. The address column is dropped entirely here - this test is about
+// names, not about the address/offset format, which the other test already covers. Expected output is pinned
+// per platform in 'cout-<os>.out', same as stack-trace-dump-basic.
 import "std/data/vector";
 import "std/io/file";
 
@@ -50,13 +57,16 @@ f<Vector<String>> readDumpLines() {
 }
 
 /**
- * Masks the offset of a resolved frame line ('  <name> + 0x...' -> '  <name> + <offset>'), so what remains is
- * deterministic across codegen changes.
+ * Masks the offset of a resolved frame line ('  <name> + 0x...' -> '  <name> + <offset>'). An unresolved
+ * frame ('  <unknown>') has no offset to mask and is returned unchanged - see the module comment above for why
+ * that is the expected outcome on Windows.
  */
 f<String> maskOffset(String& line) {
     assert line.startsWith("  ");
     const long offsetStart = line.find(" + ");
-    assert offsetStart != -1l; // a name must have resolved - see the module comment above
+    if offsetStart == -1l {
+        return line;
+    }
     return line.getSubstring(0l, offsetStart + 3l) + "<offset>";
 }
 
