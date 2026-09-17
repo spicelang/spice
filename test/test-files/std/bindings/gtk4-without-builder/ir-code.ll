@@ -98,9 +98,9 @@ declare void @_ZN9GtkWindow8setChildE6GtkBox(ptr, %struct.GtkBox)
 declare void @_ZN9GtkButton4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z13destroyWindow9GtkWidget9GtkWindow.fatthunk(ptr %0, %struct.GtkWidget %1, %struct.GtkWindow %2) #0 {
+define private void @_Z13destroyWindow9GtkWidget9GtkWindow.fatthunk(%struct.GtkWidget %0, %struct.GtkWindow %1, ptr %2) #0 {
 entry:
-  call void @_Z13destroyWindow9GtkWidget9GtkWindow(%struct.GtkWidget %1, %struct.GtkWindow %2)
+  call void @_Z13destroyWindow9GtkWidget9GtkWindow(%struct.GtkWidget %0, %struct.GtkWindow %1)
   ret void
 }
 
@@ -109,9 +109,9 @@ declare void @_ZN9GtkButton18setOnClickCallbackI9GtkWindowEEvPFv9GtkWidget9GtkWi
 declare void @_ZN6GtkBox6appendE9GtkButton(ptr, %struct.GtkButton)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z11btnYesClick9GtkWidget.fatthunk(ptr %0, %struct.GtkWidget %1) #0 {
+define private void @_Z11btnYesClick9GtkWidget.fatthunk(%struct.GtkWidget %0, ptr %1) #0 {
 entry:
-  call void @_Z11btnYesClick9GtkWidget(%struct.GtkWidget %1)
+  call void @_Z11btnYesClick9GtkWidget(%struct.GtkWidget %0)
   ret void
 }
 
@@ -145,9 +145,9 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #1 {
 declare void @_ZN14GtkApplication4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define private void @_Z8activate14GtkApplicationPh.fatthunk(ptr %0, %struct.GtkApplication %1, ptr %2) #0 {
+define private void @_Z8activate14GtkApplicationPh.fatthunk(%struct.GtkApplication %0, ptr %1, ptr %2) #0 {
 entry:
-  call void @_Z8activate14GtkApplicationPh(%struct.GtkApplication %1, ptr %2)
+  call void @_Z8activate14GtkApplicationPh(%struct.GtkApplication %0, ptr %1)
   ret void
 }
 

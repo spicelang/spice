@@ -136,19 +136,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Every callable behind a fat function pointer uses the same calling convention: the capture-struct pointer
-  // (fat ptr slot 1) is always passed as the leading argument, regardless of whether the target actually captures.
-  // Non-capturing lambdas and plain function references ignore it. This lets a lambda be called without the call
-  // site knowing statically whether it captures (e.g. when it was retrieved from the std Lambda wrapper).
+  // (fat ptr slot 1) is always passed as the trailing argument, after all real arguments, regardless of whether the
+  // target actually captures. Non-capturing lambdas and plain function references ignore it. Passing captures last
+  // (instead of first) keeps fat ptr slot 0 directly callable through a plain C calling convention, so a Spice
+  // function or lambda cast to a raw pointer can be handed to a C API as a callback without shifting its arguments.
   llvm::Value *fctPtr = nullptr;
-  if (data.isFctPtrCall()) {
-    llvm::Value *fatPtr = getAddress(firstFragEntry);
-    // Load fctPtr
-    fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
-    // Load the captures pointer and add it to the argument list
-    llvm::Value *capturesPtrPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 1);
-    llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
-    argValues.push_back(capturesPtr);
-  }
 
   // Get arg values
   if (node->hasArgs) {
@@ -212,6 +204,17 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     }
   }
 
+  // Append the trailing capture-struct pointer for fat function pointer calls (see the ABI note above)
+  if (data.isFctPtrCall()) {
+    llvm::Value *fatPtr = getAddress(firstFragEntry);
+    // Remember the address of the function pointer slot for the call below
+    fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
+    // Load the captures pointer and add it to the argument list as the trailing argument
+    llvm::Value *capturesPtrPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 1);
+    llvm::Value *const capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
+    argValues.push_back(capturesPtr);
+  }
+
   // Retrieve return and param types
   QualType returnSType(TY_DYN);
   QualTypeList paramSTypes;
@@ -238,10 +241,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
       argTypes.push_back(builder.getPtrTy()); // This pointer
-    if (data.isFctPtrCall())
-      argTypes.push_back(builder.getPtrTy()); // Capture pointer (always present in the uniform lambda ABI)
     for (const QualType &paramType : paramSTypes)
       argTypes.push_back(paramType.getParamLLVMType(sourceFile));
+    if (data.isFctPtrCall())
+      argTypes.push_back(builder.getPtrTy()); // Trailing capture pointer (always present in the uniform lambda ABI)
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
     if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
@@ -530,22 +533,21 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // Every lambda uniformly takes a trailing capture-struct pointer as its last argument, even when it captures
   // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
   // can be stored, retrieved and called without the call site knowing statically whether it captures. A
-  // non-capturing lambda simply ignores the passed (poison) pointer.
+  // non-capturing lambda simply ignores the passed (poison) pointer. Passing captures last (rather than first) keeps
+  // fat ptr slot 0 directly callable through a plain C calling convention (e.g. when handed to a C API as a callback).
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
-  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-  paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramInfoList.reserve(numOfParams);
-    paramTypes.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams + 1);
+    paramTypes.reserve(numOfParams + 1);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
@@ -558,6 +560,11 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       paramTypes.push_back(paramType);
     }
   }
+
+  // Append the trailing capture-struct pointer (always passed as pointer)
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy());
+  const size_t capturesArgIdx = paramTypes.size() - 1;
 
   // Get return type
   llvm::Type *returnType = spiceFunc.returnType.toLLVMType(sourceFile);
@@ -577,9 +584,9 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
-    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
-    lambda->addParamAttr(0, llvm::Attribute::NonNull);
-    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(capturesArgIdx, module->getDataLayout().getPointerSize());
   }
 
   // Add debug info
@@ -622,7 +629,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = argNumber == 0;
+    const bool isCapturesStruct = argNumber == capturesArgIdx;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -693,22 +700,21 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // Every lambda uniformly takes a trailing capture-struct pointer as its last argument, even when it captures
   // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
   // can be stored, retrieved and called without the call site knowing statically whether it captures. A
-  // non-capturing lambda simply ignores the passed (poison) pointer.
+  // non-capturing lambda simply ignores the passed (poison) pointer. Passing captures last (rather than first) keeps
+  // fat ptr slot 0 directly callable through a plain C calling convention (e.g. when handed to a C API as a callback).
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
-  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-  paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramInfoList.reserve(numOfParams);
-    paramTypes.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams + 1);
+    paramTypes.reserve(numOfParams + 1);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
@@ -721,6 +727,11 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       paramTypes.push_back(paramType);
     }
   }
+
+  // Append the trailing capture-struct pointer (always passed as pointer)
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy());
+  const size_t capturesArgIdx = paramTypes.size() - 1;
 
   // Create function or implement declared function
   spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
@@ -737,9 +748,9 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
-    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
-    lambda->addParamAttr(0, llvm::Attribute::NonNull);
-    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(capturesArgIdx, module->getDataLayout().getPointerSize());
   }
 
   // Add debug info
@@ -772,7 +783,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = argNumber == 0;
+    const bool isCapturesStruct = argNumber == capturesArgIdx;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -839,22 +850,21 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Change scope
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
-  // Every lambda uniformly takes a leading capture-struct pointer as its first argument, even when it captures
+  // Every lambda uniformly takes a trailing capture-struct pointer as its last argument, even when it captures
   // nothing. This keeps the calling convention of all lambdas (and plain function pointers) identical, so a lambda
   // can be stored, retrieved and called without the call site knowing statically whether it captures. A
-  // non-capturing lambda simply ignores the passed (poison) pointer.
+  // non-capturing lambda simply ignores the passed (poison) pointer. Passing captures last (rather than first) keeps
+  // fat ptr slot 0 directly callable through a plain C calling convention (e.g. when handed to a C API as a callback).
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::Type *capturesStructType = hasCaptures ? buildCapturesContainerType(captures) : nullptr;
-  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-  paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
 
   // Visit parameters
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramInfoList.reserve(numOfParams);
-    paramTypes.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams + 1);
+    paramTypes.reserve(numOfParams + 1);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst->params.at(argIdx);
       // Get symbol table entry of param
@@ -867,6 +877,11 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       paramTypes.push_back(paramType);
     }
   }
+
+  // Append the trailing capture-struct pointer (always passed as pointer)
+  paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+  paramTypes.push_back(builder.getPtrTy());
+  const size_t capturesArgIdx = paramTypes.size() - 1;
 
   // Get return type
   llvm::Type *returnType = builder.getVoidTy();
@@ -887,9 +902,9 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
-    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
-    lambda->addParamAttr(0, llvm::Attribute::NonNull);
-    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(capturesArgIdx, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(capturesArgIdx, module->getDataLayout().getPointerSize());
   }
 
   // Add debug info
@@ -922,7 +937,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = argNumber == 0;
+    const bool isCapturesStruct = argNumber == capturesArgIdx;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -986,18 +1001,18 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 
 llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
   // Plain function/procedure references are stored in fat function pointers and called through the uniform lambda
-  // calling convention, which always passes a leading capture-struct pointer. A named function does not have that
+  // calling convention, which always passes a trailing capture-struct pointer. A named function does not have that
   // parameter, so we wrap it in a thunk that has the extra (ignored) pointer and forwards to the real function.
   const std::string thunkName = target->getName().str() + ".fatthunk";
   if (llvm::Function *existing = module->getFunction(thunkName))
     return existing;
 
-  // Build the thunk signature: the target's signature with an additional leading capture-struct pointer
+  // Build the thunk signature: the target's signature with an additional trailing capture-struct pointer
   const llvm::FunctionType *targetType = target->getFunctionType();
   std::vector<llvm::Type *> paramTypes;
   paramTypes.reserve(targetType->getNumParams() + 1);
-  paramTypes.push_back(builder.getPtrTy()); // Ignored captures pointer
   paramTypes.insert(paramTypes.end(), targetType->param_begin(), targetType->param_end());
+  paramTypes.push_back(builder.getPtrTy()); // Ignored captures pointer
   llvm::FunctionType *thunkType = llvm::FunctionType::get(targetType->getReturnType(), paramTypes, targetType->isVarArg());
 
   llvm::Function *thunk = llvm::Function::Create(thunkType, llvm::Function::PrivateLinkage, thunkName, module);
@@ -1012,10 +1027,10 @@ llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
   llvm::BasicBlock *bEntry = createBlock("entry");
   switchToBlock(bEntry, thunk);
 
-  // Forward all arguments except the leading (ignored) captures pointer
+  // Forward all arguments except the trailing (ignored) captures pointer
   std::vector<llvm::Value *> fwdArgs;
   fwdArgs.reserve(targetType->getNumParams());
-  for (size_t i = 1; i < thunk->arg_size(); i++)
+  for (size_t i = 0; i < targetType->getNumParams(); i++)
     fwdArgs.push_back(thunk->getArg(i));
   llvm::CallInst *call = builder.CreateCall(target, fwdArgs);
   if (targetType->getReturnType()->isVoidTy())

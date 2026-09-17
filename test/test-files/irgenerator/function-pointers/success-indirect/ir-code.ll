@@ -18,7 +18,7 @@ define internal noundef i32 @_Z6invokePFiPKcE({ ptr, ptr, i64 } noundef %0) #0 {
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fctPtr, i32 0, i32 1
   %captures = load ptr, ptr %2, align 8
   %fct = load ptr, ptr %fctPtr, align 8
-  %3 = call i32 %fct(ptr %captures, ptr @anon.string.0)
+  %3 = call i32 %fct(ptr @anon.string.0, ptr %captures)
   ret i32 %3
 }
 
@@ -45,7 +45,7 @@ define dso_local noundef i32 @main() #1 {
 ; Function Attrs: noinline nounwind optnone uwtable
 define private i32 @_Z4testPKc.fatthunk(ptr %0, ptr %1) #0 {
 entry:
-  %2 = call i32 @_Z4testPKc(ptr %1)
+  %2 = call i32 @_Z4testPKc(ptr %0)
   ret i32 %2
 }
 

@@ -57,19 +57,19 @@ for.head.L9:                                      ; preds = %for.tail.L9, %for.b
   br i1 %12, label %for.body.L9, label %for.exit.L9
 
 for.body.L9:                                      ; preds = %for.head.L9
-  %13 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %sortFct, i32 0, i32 1
-  %captures = load ptr, ptr %13, align 8
-  %14 = load i32, ptr %j, align 4
-  %15 = load ptr, ptr %array, align 8
-  %16 = getelementptr inbounds [10 x i32], ptr %15, i64 0, i32 %14
-  %17 = load i32, ptr %16, align 4
-  %18 = load i32, ptr %j, align 4
-  %19 = add nsw i32 %18, 1
-  %20 = load ptr, ptr %array, align 8
-  %21 = getelementptr inbounds [10 x i32], ptr %20, i64 0, i32 %19
-  %22 = load i32, ptr %21, align 4
+  %13 = load i32, ptr %j, align 4
+  %14 = load ptr, ptr %array, align 8
+  %15 = getelementptr inbounds [10 x i32], ptr %14, i64 0, i32 %13
+  %16 = load i32, ptr %15, align 4
+  %17 = load i32, ptr %j, align 4
+  %18 = add nsw i32 %17, 1
+  %19 = load ptr, ptr %array, align 8
+  %20 = getelementptr inbounds [10 x i32], ptr %19, i64 0, i32 %18
+  %21 = load i32, ptr %20, align 4
+  %22 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %sortFct, i32 0, i32 1
+  %captures = load ptr, ptr %22, align 8
   %fct = load ptr, ptr %sortFct, align 8
-  %23 = call i1 %fct(ptr %captures, i32 %17, i32 %22)
+  %23 = call i1 %fct(i32 %16, i32 %21, ptr %captures)
   br i1 %23, label %if.then.L10, label %if.exit.L10
 
 if.then.L10:                                      ; preds = %for.body.L9
@@ -122,13 +122,13 @@ define dso_local noundef i32 @main() #1 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal i1 @_Z15lambda.L19C17.0ii(ptr %0, i32 %1, i32 %2) #0 {
-  %captures = alloca ptr, align 8
+define internal i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1, ptr %2) #0 {
   %a = alloca i32, align 4
   %b = alloca i32, align 4
-  store ptr %0, ptr %captures, align 8
-  store i32 %1, ptr %a, align 4
-  store i32 %2, ptr %b, align 4
+  %captures = alloca ptr, align 8
+  store i32 %0, ptr %a, align 4
+  store i32 %1, ptr %b, align 4
+  store ptr %2, ptr %captures, align 8
   %4 = load i32, ptr %b, align 4
   %5 = load i32, ptr %a, align 4
   %6 = icmp sgt i32 %5, %4

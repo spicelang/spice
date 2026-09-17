@@ -47,7 +47,7 @@ define dso_local noundef i32 @main() #0 {
   %13 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %foo1, i32 0, i32 1
   %captures3 = load ptr, ptr %13, align 8
   %fct = load ptr, ptr %foo1, align 8
-  call void %fct(ptr %captures3, ptr %x)
+  call void %fct(ptr %x, ptr %captures3)
   %14 = load i32, ptr %x, align 4
   %15 = icmp eq i32 %14, 6
   br i1 %15, label %assert.exit.L13, label %assert.then.L13, !prof !5
@@ -61,7 +61,7 @@ assert.exit.L13:                                  ; preds = %0
   %17 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %foo2, i32 0, i32 1
   %captures4 = load ptr, ptr %17, align 8
   %fct5 = load ptr, ptr %foo2, align 8
-  %18 = call i1 %fct5(ptr %captures4, ptr %x)
+  %18 = call i1 %fct5(ptr %x, ptr %captures4)
   br i1 %18, label %assert.exit.L14, label %assert.then.L14, !prof !5
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
@@ -85,11 +85,11 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #1 {
-  %captures = alloca ptr, align 8
+define internal void @_Z14lambda.L4C20.0Ri(ptr %0, ptr noundef nonnull dereferenceable(8) %1) #1 {
   %x = alloca ptr, align 8
-  store ptr %0, ptr %captures, align 8
-  store ptr %1, ptr %x, align 8
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %x, align 8
+  store ptr %1, ptr %captures, align 8
   %3 = load ptr, ptr %captures, align 8
   %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4
@@ -103,11 +103,11 @@ define internal void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #1 {
-  %captures = alloca ptr, align 8
+define internal i1 @_Z14lambda.L7C26.0Ri(ptr %0, ptr noundef nonnull dereferenceable(8) %1) #1 {
   %x = alloca ptr, align 8
-  store ptr %0, ptr %captures, align 8
-  store ptr %1, ptr %x, align 8
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %x, align 8
+  store ptr %1, ptr %captures, align 8
   %3 = load ptr, ptr %captures, align 8
   %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4

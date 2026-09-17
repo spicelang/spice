@@ -167,7 +167,7 @@ define dso_local noundef i32 @main() #1 {
   %17 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %lambda, i32 0, i32 1
   %captures = load ptr, ptr %17, align 8
   %fct = load ptr, ptr %lambda, align 8
-  %18 = call i32 %fct(ptr %captures, ptr %numbers)
+  %18 = call i32 %fct(ptr %numbers, ptr %captures)
   %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %18)
   call void @llvm.memcpy.p0.p0.i64(ptr %arg.decay, ptr @anon.array.1, i64 16, i1 false)
   call void @_Z8setFirstA4_ii(ptr noundef %arg.decay, i32 noundef 5)
@@ -183,7 +183,7 @@ define dso_local noundef i32 @main() #1 {
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal i32 @_Z15lambda.L52C29.0A4_i(ptr %0, ptr %values) #0 {
+define internal i32 @_Z15lambda.L52C29.0A4_i(ptr %values, ptr %0) #0 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = getelementptr inbounds [4 x i32], ptr %values, i64 0, i32 3

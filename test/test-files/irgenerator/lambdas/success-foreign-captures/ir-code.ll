@@ -17,7 +17,7 @@ define internal void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr, i64 } noundef %0, { ptr,
   %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l1, i32 0, i32 1
   %captures = load ptr, ptr %3, align 8
   %fct = load ptr, ptr %l1, align 8
-  call void %fct(ptr %captures, ptr %x)
+  call void %fct(ptr %x, ptr %captures)
   %4 = load i32, ptr %x, align 4
   %5 = icmp eq i32 %4, 6
   br i1 %5, label %assert.exit.L4, label %assert.then.L4, !prof !5
@@ -31,7 +31,7 @@ assert.exit.L4:                                   ; preds = %2
   %7 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %l2, i32 0, i32 1
   %captures1 = load ptr, ptr %7, align 8
   %fct2 = load ptr, ptr %l2, align 8
-  %8 = call i1 %fct2(ptr %captures1, ptr %x)
+  %8 = call i1 %fct2(ptr %x, ptr %captures1)
   br i1 %8, label %assert.exit.L5, label %assert.then.L5, !prof !5
 
 assert.then.L5:                                   ; preds = %assert.exit.L4
@@ -103,11 +103,11 @@ define dso_local noundef i32 @main() #3 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
-  %captures = alloca ptr, align 8
+define internal void @_Z15lambda.L12C20.0Ri(ptr %0, ptr noundef nonnull dereferenceable(8) %1) #0 {
   %x = alloca ptr, align 8
-  store ptr %0, ptr %captures, align 8
-  store ptr %1, ptr %x, align 8
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %x, align 8
+  store ptr %1, ptr %captures, align 8
   %3 = load ptr, ptr %captures, align 8
   %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4
@@ -121,11 +121,11 @@ define internal void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) #0 {
-  %captures = alloca ptr, align 8
+define internal i1 @_Z15lambda.L15C26.0Ri(ptr %0, ptr noundef nonnull dereferenceable(8) %1) #0 {
   %x = alloca ptr, align 8
-  store ptr %0, ptr %captures, align 8
-  store ptr %1, ptr %x, align 8
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %x, align 8
+  store ptr %1, ptr %captures, align 8
   %3 = load ptr, ptr %captures, align 8
   %z = getelementptr inbounds nuw { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %3, align 4
