@@ -112,11 +112,12 @@ living in the shared `stack_trace_rt.spice` and just calls it, preserving the si
 
 - **POSIX** — `_Unwind_Backtrace(callback, ctx)` from libgcc/libunwind, implicitly linked by the gcc/clang
   driver on both Linux and macOS. Verified working on `-O2 -fomit-frame-pointer` code, producing a complete
-  and correct chain. Spice can express the callback: `ext f<int> _Unwind_Backtrace(f<int>(byte*, byte*), byte*)`
-  (`functionDataType` at `Spice.g4:96`; the same pattern `std/os/thread.spice:16` already uses for
-  `pthread_create`).
-  `backtrace()` from `<execinfo.h>` is simpler (no callback) and present on glibc and macOS, but absent on musl
-  — `_Unwind_Backtrace` is the portable choice.
+  and correct chain. **Spice cannot express the callback**: a function converted to a raw pointer becomes a
+  `.fatthunk` with an extra leading captures pointer, shifting every argument (spicelang/spice#1392), so the
+  call is made from a C shim instead.
+  `backtrace()` from `<execinfo.h>` looks simpler (no callback) but is not equivalent across platforms: Apple's
+  implementation walks the frame-pointer chain rather than unwinding, and captures nothing when frame pointers
+  are omitted. It is also absent on musl.
 - **Windows** — `RtlCaptureStackBackTrace(DWORD skip, DWORD capture, void** out, ULONG* hash)` from kernel32.
   Single call, no callback, table-driven, correct on x64 where the FP walk cannot be. Works under MinGW and
   MSVC alike.
@@ -191,22 +192,31 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 **Standard library (`std/runtime/`)**
 
-- [ ] `stack_trace_capture_rt.spice` — `_Unwind_Backtrace`-based capture.
-- [ ] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
-- [ ] `stack_trace_rt.spice` — `capture()` delegates to the above; `dump()` prints address + `name + 0xoff`.
-- [ ] `stack_trace_symbol_rt.spice` — return name **and** offset; add `#![core.linux.linker.flag = "-rdynamic"]`.
-- [ ] `stack_trace_symbol_rt_windows.spice` — use the `SymFromAddr` displacement out-param; verify `SYMBOL_INFO`
-      field offsets and `SizeOfStruct` against a real `<dbghelp.h>` (still unverified, per the file's own caution).
-- [ ] `stack_trace_demangle_rt.spice` — Itanium-subset demangler.
+- [x] `stack_trace_capture_rt.spice` — capture via `_Unwind_Backtrace`, called through a small C shim
+      (`stack-trace-unwind.c`, pulled in with `core.linker.additionalSource`). The shim is needed because the
+      unwinder's callback cannot be driven from Spice: a function converted to a raw pointer becomes a
+      `.fatthunk` carrying an extra leading captures pointer, which shifts every argument (spicelang/spice#1392).
+      `backtrace(3)` was tried first and had to be abandoned — glibc's routes through the same unwinder, but
+      Apple's walks the frame-pointer chain, so it captured **zero** frames on macOS once frame pointers were
+      omitted, which is the very dependency this work removes. Going through the unwinder directly also covers
+      musl, which has no `<execinfo.h>`.
+- [x] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
+- [x] `stack_trace_rt.spice` — the public API: `StackTraceEntry` (address, offset, demangled name) with its own
+      `dump()`, `StackTrace` wrapping a `Vector<StackTraceEntry>`, and the auto-imported `sGetStacktrace()` /
+      `sDumpStacktrace()`.
+- [x] `stack_trace_symbol_rt.spice` — `resolveSymbol()` returns name **and** offset, from `dladdr`'s `dli_saddr`.
+- [x] `stack_trace_symbol_rt_windows.spice` — same, from the `SymFromAddr` displacement out-param. The
+      `SYMBOL_INFO` layout is still unverified against a real `<dbghelp.h>`.
+- [x] Demangling — shipped as `std/text/demangle`, wired into `StackTrace.capture()`.
 
 **Tests (`test/`)**
 
-- [ ] Extend `test-files/std/runtime/stack-trace-capture-basic` to assert an exact, platform-independent frame
-      count and the `levelC`/`levelB`/`levelA`/`main` name sequence, and delete the
-      `cout-linux-amd64.out`/`cout-linux-aarch64.out` overrides — with a real unwinder they are no longer needed,
-      and the current amd64 reference is wrong (`__libc_start_main` as frame `#0`).
-- [ ] A unit test for `demangleSpiceName()` seeded from the mangled names in the `.ll` reference files.
-- [ ] A case that runs at `-O2` to prove capture no longer depends on the optimization level.
+- [x] `test-files/std/runtime/stack-trace-capture-basic` rewritten around platform- and opt-level-independent
+      invariants, with both `cout-linux-*.out` overrides deleted. An exact frame count turned out not to be
+      portable after all — it depends on how many frames the C runtime puts below `main`, and on inlining — so the
+      test asserts that skipping n frames drops exactly n instead, which does hold everywhere.
+- [x] Demangler test seeded from the mangled names in the `.ll` reference files.
+- [x] Capture verified at every optimization level (`-O0` through `-Oz`).
 
 **Docs**
 
@@ -216,8 +226,10 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 ## Open questions / risks
 
-- **`-rdynamic` cost.** It exports every symbol, growing `.dynsym` and inhibiting `--gc-sections`. Scoping the
-  flag to the stack-trace module keeps non-users unaffected, but a program that imports it pays on every link.
+- **`-rdynamic` is not enough, and is not applied.** Measured: it exports only `public` Spice functions, so
+  `dladdr` still misses everything that stayed local to its object file. It also grows `.dynsym`, inhibits
+  `--gc-sections`, and does nothing for `-static`. It is deliberately not added to the runtime; resolution today
+  covers libc, shared libraries and a program's `public` functions.
   An alternative that avoids it entirely is a compiler-emitted `(function start, name)` side table in a
   dedicated section, binary-searched at runtime — fully self-contained and identical on every platform, at the
   cost of binary size and real IR-generator work. Worth considering if `-rdynamic` proves too blunt.

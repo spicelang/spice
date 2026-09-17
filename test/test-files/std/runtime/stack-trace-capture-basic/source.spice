@@ -1,42 +1,65 @@
-// Exercises StackTraceBuffer.capture() (the frame-pointer walk in stack_trace_rt.spice) through a few nested
-// calls, and calls sDumpStacktrace() directly as a smoke test of the capture+dump convenience wrapper.
+// Exercises StackTrace.capture() and the StackTrace/StackTraceEntry API.
 //
-// The exact captured frame count is genuinely platform-dependent, confirmed via CI:
-//   - Linux (x86_64 and AArch64): 3 - levelC, levelB and levelA each keep their own frame.
-//   - macOS/AArch64 AND Windows/x86_64: 1 - only levelC's own frame is walkable; the next hop is already the
-//     chain's sentinel. Not tail-call collapsing specifically - taking each call out of tail position below
-//     made no difference to the count on macOS. Windows agreeing with macOS despite a very different ABI/CRT
-//     suggests these two toolchains omit frame pointers for such trivial pass-through functions somewhere
-//     Linux's don't; not fully pinned down, but reproducible across two separate CI rounds each.
-// Since the count varies by platform, and Spice has no source-level conditional compilation to branch on target
-// OS, the exact-count expectation lives in cout.out/cout-linux-amd64.out/cout-linux-aarch64.out rather than as a
-// hardcoded assertion here (macOS and Windows share the same output, so both fall back to the generic cout.out;
-// only the two Linux architectures need an override). What IS genuinely platform-independent, and so what IS
-// asserted directly below, is that the sentinel-frame fix holds everywhere: no captured address is ever nil.
-//
-// sDumpStacktrace()'s own output is also part of what these refs compare (dladdr()/DbgHelp resolve whatever
-// they can - see stack_trace_symbol_rt.spice/stack_trace_symbol_rt_windows.spice for what to expect there); on
-// macOS/Windows there's nothing to dump at all, since sDumpStacktrace()'s own frame-skip leaves zero frames once
-// the raw count is only 1.
-
+// Only properties that hold on every platform and at every optimization level are asserted. The exact frame
+// count is not one of them: it depends on how many frames the C runtime puts below main, and on whether the
+// optimizer inlined the helpers below. Neither is the presence of symbol names, which needs the program's
+// symbols to be visible to the platform's resolver.
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
-    StackTraceBuffer trace;
-    trace.capture();
+    StackTrace noSkip;
+    noSkip.capture(0);
+    assert noSkip.getSize() > 0l;
+    assert !noSkip.isEmpty();
 
-    printf("count=%d\n", trace.count);
-    for int i = 0; i < trace.count; i++ {
-        assert trace.addresses[i] != nil<byte*>;
+    // Every frame carries a real return address, whether or not its symbol resolved
+    for long i = 0l; i < noSkip.getSize(); i++ {
+        const StackTraceEntry& entry = noSkip.getEntry(i);
+        assert entry.address != nil<byte*>;
     }
 
-    sDumpStacktrace(false);
+    StackTrace skipOne;
+    skipOne.capture(1);
+    StackTrace skipTwo;
+    skipTwo.capture(2);
+
+    // A capture is capped at STACK_TRACE_CAPACITY, and once the stack is deeper than that every capture comes
+    // back at the cap, so skipping stops reducing the size. The assertions below only hold below the cap.
+    if noSkip.getSize() < cast<long>(STACK_TRACE_CAPACITY) {
+        // Skipping n frames drops exactly n of them, never more and never fewer
+        assert skipOne.getSize() == noSkip.getSize() - 1l;
+        assert skipTwo.getSize() == noSkip.getSize() - 2l;
+
+        // What remains is the tail of the unskipped trace, not a different walk
+        for long i = 0l; i < skipTwo.getSize(); i++ {
+            const StackTraceEntry& skipped = skipTwo.getEntry(i);
+            const StackTraceEntry& full = noSkip.getEntry(i + 2l);
+            assert skipped.address == full.address;
+        }
+
+        // Skipping past the bottom of the stack yields nothing rather than reading past it
+        StackTrace skipAll;
+        skipAll.capture(cast<int>(noSkip.getSize()) + 10);
+        assert skipAll.isEmpty();
+    }
+
+    // A negative skip is rejected rather than canceling out the runtime's own frame count, which would start
+    // the trace inside the stack trace runtime. Capturing over an existing trace must clear it either way.
+    StackTrace reused;
+    reused.capture(0);
+    assert !reused.isEmpty();
+    reused.capture(-1);
+    assert reused.isEmpty();
+
+    // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack
+    const StackTrace fromRuntimeFct = sGetStacktrace();
+    assert fromRuntimeFct.getSize() == noSkip.getSize();
 
     return true;
 }
 
 f<bool> levelB() {
-    const bool ok = levelC(); // not a tail call - keeps levelB's own frame on every platform
+    const bool ok = levelC(); // not a tail call - keeps levelB's own frame where the optimizer leaves it
     return ok;
 }
 
@@ -48,5 +71,6 @@ f<bool> levelA() {
 f<int> main() {
     const bool ok = levelA();
     if !ok { return 1; }
+    printf("All assertions passed!\n");
     return 0;
 }

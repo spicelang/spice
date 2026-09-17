@@ -1,17 +1,12 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-// Symbol resolution for stack_trace_rt.spice, POSIX variant. dump() there calls resolveSymbolName() by name;
-// this file (or stack_trace_symbol_rt_windows.spice, picked automatically via the compiler's OS-suffixed import
-// resolution for the "std/runtime/stack_trace_symbol_rt" import in that file) supplies the platform-specific
-// implementation, so the struct/capture()/dump() logic itself stays in one shared file - Spice requires a
-// method to be declared in the same file as its struct, so dump() can't be split per platform directly, but the
-// one piece that actually differs can live in an ordinary function instead, which faces no such restriction.
+// Symbol resolution for stack_trace_rt.spice, POSIX variant. The OS-suffixed import in that file picks between
+// this and stack_trace_symbol_rt_windows.spice; it is an ordinary function rather than a method because Spice
+// requires a method to live in the same file as its struct, which would make the split impossible.
 //
-// Goes through the libc/POSIX dladdr(), which looks addresses up in the dynamic symbol table (.dynsym) of
-// whichever loaded object contains them - not the full static symbol table, and not debug info. Spice does not
-// link its executables with -rdynamic/--export-dynamic, so a Spice program's own functions are typically NOT
-// present in .dynsym: dladdr() will usually resolve addresses that land in a dynamically linked library (e.g.
-// libc), but not the caller's own Spice-level frames.
+// dladdr() looks addresses up in the dynamic symbol table of whichever loaded object contains them, so it
+// resolves anything exported - libc, shared libraries, and a Spice program's own 'public' functions - but not
+// symbols that stayed local to their object file.
 
 import "std/runtime/string_rt";
 
@@ -28,16 +23,27 @@ type DlInfo struct {
 ext f<int> dladdr(byte* /*addr*/, DlInfo* /*info*/);
 
 /**
- * Resolves an address to the name of its containing symbol via dladdr(), or an empty/unallocated String if no
- * symbol could be found (see the file-level comment on why that is common for a Spice program's own frames
- * today).
+ * Outcome of one symbol lookup. 'name' is still mangled; the caller demangles it for display.
  */
-public f<String> resolveSymbolName(byte* address) {
+public type SymbolLookup struct {
+    public String name
+    public unsigned long offset
+    public bool resolved
+}
+
+/**
+ * Looks up the symbol containing the given address.
+ *
+ * @param address Address to resolve
+ * @return Mangled name and byte offset into that symbol, or an unresolved result if there is no match
+ */
+public f<SymbolLookup> resolveSymbol(byte* address) {
     DlInfo info;
     unsafe {
         if dladdr(address, &info) != 0 && cast<char*>(info.dliSName) != nil<char*> {
-            return String(info.dliSName);
+            const unsigned long offset = cast<unsigned long>(cast<long>(address) - cast<long>(info.dliSAddr));
+            return SymbolLookup{String(info.dliSName), offset, true};
         }
     }
-    return String();
+    return SymbolLookup{String(), 0l, false};
 }
