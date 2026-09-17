@@ -43,7 +43,7 @@ f<bool> levelC() {
         assert skipAll.isEmpty();
     }
 
-    // A negative skip is rejected rather than cancelling out the runtime's own frame count, which would start
+    // A negative skip is rejected rather than canceling out the runtime's own frame count, which would start
     // the trace inside the stack trace runtime. Capturing over an existing trace must clear it either way.
     StackTrace reused;
     reused.capture(0);
