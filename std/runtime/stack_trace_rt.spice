@@ -13,6 +13,7 @@
 
 import "std/runtime/stack_trace_symbol_rt";
 import "std/runtime/stack_trace_capture_rt";
+import "std/runtime/stack_trace_symtab_rt";
 import "std/text/demangle";
 import "std/data/vector";
 
@@ -104,7 +105,14 @@ public p StackTrace.capture(int skipFrames = 0) {
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
-        const SymbolLookup symbol = resolveSymbol(addresses[i]);
+        // The compiler-emitted table (populated only behind '--keep-symbol-table') resolves this program's own
+        // functions exactly, including ones the platform's own resolver cannot see. Anything it does not cover
+        // - because the flag was off, or the frame belongs to libc or a shared library - falls back to the
+        // platform-specific resolver.
+        SymbolLookup symbol = resolveFromSymtab(addresses[i]);
+        if !symbol.resolved {
+            symbol = resolveSymbol(addresses[i]);
+        }
         String name = String();
         if symbol.resolved {
             name = demangle(symbol.name);

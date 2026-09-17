@@ -211,7 +211,8 @@ private:
   llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
   llvm::GlobalValue::LinkageTypes getVTableLinkageType(bool isPublic) const;
   void attachComdatToSymbol(llvm::GlobalVariable *global, const std::string &comdatName, bool isPublic) const;
-  void addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline = false) const;
+  void addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline = false);
+  void generateSymbolTable();
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
@@ -268,6 +269,9 @@ private:
   bool blockAlreadyTerminated = false;
   bool isInCtorBody = false;
   std::vector<DeferredLogic> deferredVTableInitializations;
+  // Functions to list in this module's contribution to the compiler-emitted symbol table, collected while their
+  // attributes are set. Only populated behind '--keep-symbol-table'; see generateSymbolTable().
+  std::vector<llvm::Function *> symbolTableFunctions;
   // IR-side state: separate from semantic objects to keep the type-checker model clean
   std::unordered_map<const SymbolTableEntry *, std::stack<llvm::Value *>> addressMap;
   std::unordered_map<const Function *, llvm::Function *> llvmFunctions;

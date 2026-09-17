@@ -1,0 +1,86 @@
+#![
+    core.compiler.alwaysKeepOnNameCollision = true,
+    core.linker.additionalSource = "stack-trace-symtab.c"
+]
+
+// Resolves addresses against the compiler-emitted symbol table (IRGenerator::generateSymbolTable(), behind
+// '--keep-symbol-table'). Unlike resolveSymbol() in stack_trace_symbol_rt(_windows).spice, this does not depend
+// on the platform's own symbol resolution, so it also resolves functions that were never exported, and behaves
+// the same way on every platform - but only for functions this build actually compiled with the flag on. The
+// caller falls back to resolveSymbol() for anything this does not resolve, e.g. libc and shared library frames.
+
+import "std/runtime/stack_trace_symbol_rt";
+
+// One entry as IRGenerator lays it out: the function's address, followed by a pointer to its (still mangled)
+// name. Both fields are pointer-sized, so an entry is exactly 16 bytes with no padding.
+type SymtabEntry struct {
+    byte* address
+    string name
+}
+const long SYMTAB_ENTRY_SIZE = 16l;
+// Generous upper bound on how far a single function's body can extend past its recorded start address. There is
+// no real size to check against - like dladdr()'s Dl_info, an entry only carries where a function starts - so
+// the highest recorded address on its own would reject every address inside whichever function happens to sit
+// last, including its own legitimate frames. This margin comfortably covers any real function body while
+// staying far below the multi-megabyte-or-larger gaps ASLR puts between separate mappings (e.g. libc, the
+// stack), which is the actual case this bound exists to catch.
+const long SYMTAB_MAX_FUNCTION_EXTENT = 1048576l; // 1 MiB
+
+// Defined in stack-trace-symtab.c: the address range the linker actually placed the (possibly empty, possibly
+// scattered across many object files) symbol table section at.
+ext p spiceSymtabRange(byte** /*outBegin*/, byte** /*outEnd*/);
+
+/**
+ * Looks up the symbol containing the given address in the compiler-emitted table.
+ *
+ * Entries are not sorted by address, so the range is walked linearly, keeping the closest entry at or below the
+ * address - the same "nearest preceding symbol" semantics resolveSymbol() gets from dladdr()/SymFromAddr(). A
+ * match is discarded if the address sits far above every recorded entry (see SYMTAB_MAX_FUNCTION_EXTENT): the
+ * table only ever contains addresses from this program's own code, so an address that far out almost certainly
+ * belongs to a different mapping entirely (e.g. libc or the stack), not to one of our own functions.
+ *
+ * @param address Address to resolve
+ * @return Mangled name and byte offset into that symbol, or an unresolved result if there is no match
+ */
+public f<SymbolLookup> resolveFromSymtab(byte* address) {
+    byte* rangeBegin = nil<byte*>;
+    byte* rangeEnd = nil<byte*>;
+    unsafe {
+        spiceSymtabRange(&rangeBegin, &rangeEnd);
+    }
+
+    byte* bestAddress = nil<byte*>;
+    string bestName = "";
+    byte* highestAddress = nil<byte*>;
+
+    unsafe {
+        byte* cursor = rangeBegin;
+        while cursor < rangeEnd {
+            const SymtabEntry* entry = cast<SymtabEntry*>(cursor);
+            const byte* entryAddress = entry.address;
+            if entryAddress != nil<byte*> {
+                if entryAddress > highestAddress {
+                    highestAddress = cast<byte*>(entryAddress);
+                }
+                if entryAddress <= address && entryAddress > bestAddress {
+                    bestAddress = cast<byte*>(entryAddress);
+                    bestName = entry.name;
+                }
+            }
+            cursor += SYMTAB_ENTRY_SIZE;
+        }
+    }
+
+    if bestAddress != nil<byte*> {
+        bool withinExtent = false;
+        unsigned long offset = 0l;
+        unsafe {
+            withinExtent = cast<long>(address) <= cast<long>(highestAddress) + SYMTAB_MAX_FUNCTION_EXTENT;
+            offset = cast<unsigned long>(cast<long>(address) - cast<long>(bestAddress));
+        }
+        if withinExtent {
+            return SymbolLookup{String(bestName), offset, true};
+        }
+    }
+    return SymbolLookup{String(), 0l, false};
+}

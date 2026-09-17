@@ -437,6 +437,11 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   subCmd->add_flag<bool>("--keep-frame-pointers", cliOptions.keepFramePointers,
                          "Set up a frame pointer in every function, so external profilers and debuggers can walk "
                          "the stack (costs a register and a bit of performance)");
+  // --keep-symbol-table
+  subCmd->add_flag<bool>("--keep-symbol-table", cliOptions.keepSymbolTable,
+                         "Emit a table mapping every function to its address, so stack traces can resolve "
+                         "Spice function names without relying on the platform's own symbol resolution "
+                         "(costs some binary size)");
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");

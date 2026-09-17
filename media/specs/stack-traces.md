@@ -189,6 +189,14 @@ suppress the address (and should also suppress the offset) so tests stay determi
       Only `long` is accepted on the integer side, since it is the only Spice integer guaranteed to be 64 bit wide.
 - [x] Emit the per-function `"frame-pointer"="all"` attribute, behind `--keep-frame-pointers` (default off).
 - [x] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
+- [x] `IRGenerator::generateSymbolTable()` — behind `--keep-symbol-table` (default off), emit one
+      `{ function address, mangled name }` entry per function this module generated a body for, into a section
+      named for the target's object format (`spice_symtab` on ELF, `__DATA,__spice_symtab` on Mach-O,
+      `.spicesym$m` on COFF). This is the compiler-emitted side table the "Open questions" section below
+      proposed as the alternative to `-rdynamic`: resolves every Spice function regardless of `public`-ness or
+      static linking, identically on every platform, at the cost of binary size. `llvm.compiler.used` keeps the
+      table alive through `-lto`'s whole-module optimizer, which would otherwise see nothing referencing it and
+      discard it as dead.
 
 **Standard library (`std/runtime/`)**
 
@@ -208,6 +216,23 @@ suppress the address (and should also suppress the offset) so tests stay determi
 - [x] `stack_trace_symbol_rt_windows.spice` — same, from the `SymFromAddr` displacement out-param. The
       `SYMBOL_INFO` layout is still unverified against a real `<dbghelp.h>`.
 - [x] Demangling — shipped as `std/text/demangle`, wired into `StackTrace.capture()`.
+- [x] `stack_trace_symtab_rt.spice` — `resolveFromSymtab()`, which `StackTrace.capture()` tries before
+      `resolveSymbol()`. Reads the compiler-emitted table through `spiceSymtabRange()`
+      (`stack-trace-symtab.c`), a small C shim needed because Spice's `ext` declarations can only import
+      functions, not the external data symbols the linker synthesizes for a section's bounds. The shim is
+      always linked once this file is imported, regardless of the flag: on ELF and Mach-O the boundary symbols
+      are declared weak, so an absent section (flag off) resolves them to null rather than failing the link; on
+      COFF the shim's own marker entries bracket the group unconditionally, needing no such fallback. Entries
+      are not sorted, so a lookup is a linear scan keeping the closest address at or below the target - the
+      same "nearest preceding symbol" semantics `dladdr()`/`SymFromAddr()` already have. A match is discarded
+      when the target sits more than `SYMTAB_MAX_FUNCTION_EXTENT` (1 MiB) past every recorded address, which
+      exists to reject a completely different mapping (libc, the stack) rather than to bound any real
+      function's size precisely - there is no real size to check against, matching `dladdr()`'s own
+      `Dl_info`. Verified end to end on Linux: with the flag on, `innerFrame`/`middleFrame` (neither `public`)
+      and `main` all resolve to their demangled names without `-rdynamic`; with it off, the build and output are
+      unchanged from before this table existed. The Mach-O and COFF halves of the shim follow the same
+      boundary-symbol techniques compiler-rt's own profiling runtime uses for identical problems, but are
+      unverified - this repository has no macOS or Windows toolchain to build and run them against.
 
 **Tests (`test/`)**
 
@@ -223,11 +248,18 @@ suppress the address (and should also suppress the offset) so tests stay determi
       demangle — is pinned per platform in `cout-linux.out`, `cout-macos.out` and `cout-windows.out`.
 - [x] Demangler test seeded from the mangled names in the `.ll` reference files.
 - [x] Capture verified at every optimization level (`-O0` through `-Oz`).
+- [x] `test-files/std/runtime/stack-trace-dump-symtab` — `--keep-symbol-table` on, asserting `innerFrame`,
+      `middleFrame` and `main` all resolve to real demangled names (offset masked, same technique as
+      stack-trace-dump-basic). A single `cout.out` covers every platform here, unlike stack-trace-dump-basic:
+      names now come entirely from the compiler's own table rather than each platform's resolver, so they are
+      expected to read identically everywhere - the flag's whole point. Verified to fail red when the
+      resolution logic regresses (checked by temporarily reintroducing the `SYMTAB_MAX_FUNCTION_EXTENT` bug
+      below and reverting).
 
 **Docs**
 
 - [x] `docs/docs/language/casts.md` — pointer↔integer casts.
-- [x] `docs/docs/cli/*.md` — the `--keep-frame-pointers` flag.
+- [x] `docs/docs/cli/*.md` — the `--keep-frame-pointers` and `--keep-symbol-table` flags.
 - [ ] Document `sDumpStacktrace()` and the output format.
 
 ## Open questions / risks
@@ -235,12 +267,13 @@ suppress the address (and should also suppress the offset) so tests stay determi
 - **`-rdynamic` is not enough, and is not applied.** Measured: it exports only `public` Spice functions, so
   `dladdr` still misses everything that stayed local to its object file. It also grows `.dynsym`, inhibits
   `--gc-sections`, and does nothing for `-static`. It is deliberately not added to the runtime; resolution today
-  covers libc, shared libraries and a program's `public` functions.
-  An alternative that avoids it entirely is a compiler-emitted `(function start, name)` side table in a
-  dedicated section, binary-searched at runtime — fully self-contained and identical on every platform, at the
-  cost of binary size and real IR-generator work. Worth considering if `-rdynamic` proves too blunt.
+  covers libc, shared libraries and a program's `public` functions - plus, behind `--keep-symbol-table`, every
+  function regardless of visibility or linkage (see the compiler work items above). The table is a linear scan
+  rather than binary-searched as first proposed here, since entries are not sorted by address; that only
+  matters for very large programs, and can be revisited if it shows up in profiling.
 - **Static linking.** `dladdr()` returns 0 in a fully static glibc binary, so `spice build -static` will lose
-  symbol names on Linux. The side-table approach above is the only fix.
+  symbol names on Linux, unless `--keep-symbol-table` is also passed - the table is read directly out of the
+  binary's own address space and does not go through `dladdr()` at all.
 - **MinGW + DbgHelp.** `SymFromAddr()` reads PDB/COFF symbols, not the DWARF that the MinGW toolchain emits,
   and `-Wl,-s` strips what is left. Windows symbolization likely needs `-Wl,--export-all-symbols` (so DbgHelp
   falls back to PE export symbols) and/or dropping `-Wl,-s` there. This needs to be confirmed on a real Windows

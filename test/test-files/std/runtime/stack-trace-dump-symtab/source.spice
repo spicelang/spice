@@ -1,0 +1,82 @@
+// TEST: --keep-symbol-table
+//
+// Exercises the compiler-emitted symbol table (IRGenerator::generateSymbolTable(), std/runtime/stack_trace_symtab_rt),
+// which resolveFromSymtab() consults ahead of the platform's own resolver in StackTrace.capture(). Unlike
+// stack-trace-dump-basic, which accepts '<unknown>' as a legitimate outcome, this build turns the flag on and expects
+// every frame this program owns to resolve to a real, demangled name - the point of the flag is resolving functions
+// the platform's own resolver cannot see (not exported, no debug info shipped), including 'innerFrame' below, which
+// is neither 'public' nor ever passed to '-rdynamic'.
+//
+// The offset column is still not portable (it moves with any codegen change), so it is masked the same way
+// stack-trace-dump-basic masks it. The address column is dropped entirely here - this test is about names, not
+// about the address/offset format, which the other test already covers.
+import "std/data/vector";
+import "std/io/file";
+
+ext f<byte*> freopen(string /*file path*/, string /*mode*/, byte* /*stream*/);
+ext f<int> fflush(byte* /*stream*/);
+
+const string DUMP_FILE_PATH = "./stack-trace-dump-symtab.txt";
+const string HEADER_LINE = "Stack trace:";
+// innerFrame, middleFrame and main - the frames below them are the C runtime's, which this build does not touch
+const long OWNED_FRAMES = 3l;
+
+p innerFrame() {
+    sDumpStacktrace(false);
+}
+
+p middleFrame() {
+    innerFrame();
+}
+
+/**
+ * Reads the dump back in, dropping the empty line that the trailing newline yields at EOF.
+ */
+f<Vector<String>> readDumpLines() {
+    Result<File> fileResult = openFile(DUMP_FILE_PATH, MODE_READ);
+    assert fileResult.isOk();
+    File dumpFile = fileResult.unwrap();
+
+    Vector<String> lines;
+    while !dumpFile.isEOF() {
+        String line = dumpFile.readLine();
+        if !line.isEmpty() {
+            lines.pushBack(line);
+        }
+    }
+    assert dumpFile.close();
+    return lines;
+}
+
+/**
+ * Masks the offset of a resolved frame line ('  <name> + 0x...' -> '  <name> + <offset>'), so what remains is
+ * deterministic across codegen changes.
+ */
+f<String> maskOffset(String& line) {
+    assert line.startsWith("  ");
+    const long offsetStart = line.find(" + ");
+    assert offsetStart != -1l; // a name must have resolved - see the module comment above
+    return line.getSubstring(0l, offsetStart + 3l) + "<offset>";
+}
+
+f<int> main() {
+    // Point stderr at a file, so the dump does not reach the compared output unmasked
+    assert freopen(DUMP_FILE_PATH, MODE_WRITE, __stderr()) != nil<byte*>;
+
+    middleFrame();
+    assert fflush(__stderr()) == 0;
+
+    Vector<String> lines = readDumpLines();
+    assert lines.getSize() >= 1l + OWNED_FRAMES;
+    assert lines.get(0l) == HEADER_LINE;
+
+    for long i = 0l; i < OWNED_FRAMES; i++ {
+        String masked = maskOffset(lines.get(1l + i));
+        printf("%s\n", masked.getRaw());
+    }
+
+    // The dump file is deliberately left behind: stderr is still attached to it, which Windows refuses to
+    // unlink, and it is what one looks at when this test goes red
+    printf("All assertions passed!\n");
+    return 0;
+}
