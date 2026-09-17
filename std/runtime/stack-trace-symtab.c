@@ -36,16 +36,22 @@ void spiceSymtabRange(const void **outBegin, const void **outEnd) {
  * MSVC's CRT uses for its init-function arrays. IRGenerator places its entries in '.spicesym$m'; the markers
  * here bracket that group regardless of whether anything landed in '$m'. They are typed and aligned exactly
  * like a real entry (two pointers), so no padding can separate a marker from the real entries next to it.
+ *
+ * '#pragma section'/'__declspec(allocate(...))' are MSVC-only and are silently ignored - not even a hard error
+ * - by the clang GNU driver this project actually builds Windows with ('--target=x86_64-w64-windows-gnu',
+ * confirmed in ci-cpp.yml), leaving both markers in the default data section instead of bracketing '$m'.
+ * 'section(...)' is the GNU-style spelling that both clang and MinGW GCC honor identically for COFF, which is
+ * how MinGW's own CRT brackets '.ctors'/'.dtors' the same way. 'used' keeps an otherwise-unreferenced-looking
+ * static const from being dropped before the address-taking use below is seen - verified by disassembling the
+ * object file for both spellings.
  */
 struct SpiceSymtabEntry {
   const void *address;
   const char *name;
 };
 
-#pragma section(".spicesym$a", read)
-#pragma section(".spicesym$z", read)
-__declspec(allocate(".spicesym$a")) static const struct SpiceSymtabEntry spiceSymtabBegin = {NULL, NULL};
-__declspec(allocate(".spicesym$z")) static const struct SpiceSymtabEntry spiceSymtabEndMarker = {NULL, NULL};
+__attribute__((used, section(".spicesym$a"))) static const struct SpiceSymtabEntry spiceSymtabBegin = {NULL, NULL};
+__attribute__((used, section(".spicesym$z"))) static const struct SpiceSymtabEntry spiceSymtabEndMarker = {NULL, NULL};
 
 void spiceSymtabRange(const void **outBegin, const void **outEnd) {
   /* The first real entry, if there is one, starts right after the begin marker. */

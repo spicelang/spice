@@ -231,8 +231,17 @@ suppress the address (and should also suppress the offset) so tests stay determi
       `Dl_info`. Verified end to end on Linux: with the flag on, `innerFrame`/`middleFrame` (neither `public`)
       and `main` all resolve to their demangled names without `-rdynamic`; with it off, the build and output are
       unchanged from before this table existed. The Mach-O and COFF halves of the shim follow the same
-      boundary-symbol techniques compiler-rt's own profiling runtime uses for identical problems, but are
-      unverified - this repository has no macOS or Windows toolchain to build and run them against.
+      boundary-symbol techniques compiler-rt's own profiling runtime uses for identical problems; CI confirmed
+      `stack-trace-dump-symtab` green on macOS unmodified. The initial COFF version did not survive first
+      contact with CI: `#pragma section`/`__declspec(allocate(...))` are MSVC-only and were silently ignored -
+      not even a warning that reached the build log - by the `clang --target=x86_64-w64-windows-gnu` driver
+      this project actually builds Windows with, leaving both boundary markers in the default data section
+      instead of bracketing `.spicesym$m`. Fixed to the GNU-style `__attribute__((section(...)))` spelling,
+      which both clang and MinGW GCC honor identically for COFF - the same convention MinGW's own CRT uses to
+      bracket `.ctors`/`.dtors`. Verified by cross-linking a minimal repro with `lld-link` (the linker this
+      project's Windows CI actually uses) and dumping the merged section's raw bytes: entries contributed by
+      object files linked in arbitrary order land between the begin and end markers every time, which is the
+      only guarantee `resolveFromSymtab()` depends on.
 
 **Tests (`test/`)**
 
