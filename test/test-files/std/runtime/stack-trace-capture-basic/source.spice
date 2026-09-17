@@ -1,58 +1,51 @@
-// Exercises StackTraceBuffer.capture(), which goes through the platform unwinder (see
-// std/runtime/stack_trace_capture_rt.spice).
+// Exercises StackTrace.capture() and the StackTrace/StackTraceEntry API.
 //
-// Everything asserted here is invariant across platform AND optimization level, which the previous version of
-// this test could not manage: it pinned an exact frame count, and needed a different reference file per target
-// because the hand-rolled frame-pointer walk it tested produced a different (and, on Linux, plainly wrong)
-// result on each one. The exact count is still not portable - it depends on how many frames the C runtime puts
-// below main, and on whether the optimizer inlined the helpers below - so it is deliberately not asserted.
-//
-// What IS invariant:
-//   - at least one frame is always captured, on every platform. The old walk captured a single bogus frame on
-//     macOS and Windows, which left sDumpStacktrace() with nothing at all to print once it skipped its own.
-//   - no captured address is ever nil.
-//   - skipping n frames drops exactly n, as long as that many are there. This is the property that catches an
-//     off-by-one in the runtime's own frame accounting, and it holds under inlining because inlining removes
-//     the same frames from every capture. It does NOT hold once the stack is deeper than STACK_TRACE_CAPACITY,
-//     since every capture is then capped at the same number, so it is asserted only below that.
-//
-// The trace is not dumped here: the test runner folds stderr into the compared output, and dump() prints one
-// line per frame, so its output is only as portable as the frame count. It becomes worth asserting once symbol
-// resolution lands and the frames carry names.
+// Only properties that hold on every platform and at every optimization level are asserted. The exact frame
+// count is not one of them: it depends on how many frames the C runtime puts below main, and on whether the
+// optimizer inlined the helpers below. Neither is the presence of symbol names, which needs the program's
+// symbols to be visible to the platform's resolver.
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
-    StackTraceBuffer noSkip;
-    noSkip.capture();
-    assert noSkip.count > 0;
-    for int i = 0; i < noSkip.count; i++ {
-        assert noSkip.addresses[i] != nil<byte*>;
+    StackTrace noSkip;
+    noSkip.capture(0);
+    assert noSkip.getSize() > 0l;
+    assert !noSkip.isEmpty();
+
+    // Every frame carries a real return address, whether or not its symbol resolved
+    for long i = 0l; i < noSkip.getSize(); i++ {
+        const StackTraceEntry& entry = noSkip.getEntry(i);
+        assert entry.address != nil<byte*>;
     }
 
-    StackTraceBuffer skipOne;
+    StackTrace skipOne;
     skipOne.capture(1);
-    StackTraceBuffer skipTwo;
+    StackTrace skipTwo;
     skipTwo.capture(2);
 
-    // The remaining invariants hold only while the trace is not truncated. A capture is capped at
-    // STACK_TRACE_CAPACITY, so once the stack is deeper than that, skipping frames stops reducing the count -
-    // every capture comes back at the cap - and comparing tails would run off the end of the fixed array. The
-    // stack here is nowhere near that deep, but the guard keeps the assertions honest wherever this runs.
-    if noSkip.count < STACK_TRACE_CAPACITY {
-        // Skipping n frames must drop exactly n of them, never more and never fewer
-        assert skipOne.count == noSkip.count - 1;
-        assert skipTwo.count == noSkip.count - 2;
+    // A capture is capped at STACK_TRACE_CAPACITY, and once the stack is deeper than that every capture comes
+    // back at the cap, so skipping stops reducing the size. The assertions below only hold below the cap.
+    if noSkip.getSize() < cast<long>(STACK_TRACE_CAPACITY) {
+        // Skipping n frames drops exactly n of them, never more and never fewer
+        assert skipOne.getSize() == noSkip.getSize() - 1l;
+        assert skipTwo.getSize() == noSkip.getSize() - 2l;
 
-        // The frames left after skipping are the tail of the unskipped trace, not a different walk
-        for int i = 0; i < skipTwo.count; i++ {
-            assert skipTwo.addresses[i] == noSkip.addresses[i + 2];
+        // What remains is the tail of the unskipped trace, not a different walk
+        for long i = 0l; i < skipTwo.getSize(); i++ {
+            const StackTraceEntry& skipped = skipTwo.getEntry(i);
+            const StackTraceEntry& full = noSkip.getEntry(i + 2l);
+            assert skipped.address == full.address;
         }
 
         // Skipping past the bottom of the stack yields nothing rather than reading past it
-        StackTraceBuffer skipAll;
-        skipAll.capture(noSkip.count + 10);
-        assert skipAll.count == 0;
+        StackTrace skipAll;
+        skipAll.capture(cast<int>(noSkip.getSize()) + 10);
+        assert skipAll.isEmpty();
     }
+
+    // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack
+    const StackTrace fromRuntimeFct = sGetStacktrace();
+    assert fromRuntimeFct.getSize() == noSkip.getSize();
 
     return true;
 }

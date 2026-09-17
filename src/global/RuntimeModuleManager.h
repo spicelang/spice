@@ -59,6 +59,7 @@ const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPP
     {"sErrTraceDump", ERROR_TRACE_RT},
     // Stack Trace RT
     {"sDumpStacktrace", STACK_TRACE_RT},
+    {"sGetStacktrace", STACK_TRACE_RT},
 };
 
 // This serves for the compiler to detect if a source file is a specific runtime module

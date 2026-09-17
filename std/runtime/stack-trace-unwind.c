@@ -1,23 +1,8 @@
-/* Stack trace capture for POSIX targets, backing captureReturnAddresses() in
- * stack_trace_capture_rt.spice.
+/* Frame capture for POSIX targets, backing captureReturnAddresses() in stack_trace_capture_rt.spice.
  *
- * This exists as C rather than Spice for two reasons, both of which are properties of Spice today rather than
- * preferences:
- *
- *   1. _Unwind_Backtrace takes a callback, and a Spice function converted to a raw pointer is not a bare
- *      function pointer - IRGenerator wraps it in a '.fatthunk' carrying an extra leading capture-struct
- *      pointer, so the unwinder's (context, arg) arrives as (captures, context) and every argument shifts by
- *      one. See spicelang/spice#1392. A C callback has no such problem.
- *
- *   2. The obvious callback-free alternative, backtrace(3), is not equivalent across platforms. glibc's
- *      implementation goes through this same unwinder, but Apple's walks the frame-pointer chain - and since
- *      Spice omits frame pointers unless --keep-frame-pointers is passed, it finds nothing there. That is
- *      exactly the dependency the move to the unwinder was meant to remove, so it cannot be relied on.
- *
- * Going through _Unwind_Backtrace directly avoids both. It is driven by the unwind tables that IRGenerator's
- * 'uwtable' attribute always emits, so it needs no frame pointers, and it is available wherever a C++ ABI
- * unwinder is - libgcc_s on Linux, the libunwind inside libSystem on macOS, and musl, which has no
- * <execinfo.h> and therefore no backtrace(3) at all.
+ * Written in C because _Unwind_Backtrace takes a callback, and a Spice function converted to a raw pointer is
+ * not a bare function pointer: it becomes a '.fatthunk' carrying an extra leading capture-struct pointer, which
+ * shifts every argument (spicelang/spice#1392). A C callback has no such problem.
  */
 
 #include <stddef.h>

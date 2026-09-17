@@ -201,12 +201,13 @@ suppress the address (and should also suppress the offset) so tests stay determi
       omitted, which is the very dependency this work removes. Going through the unwinder directly also covers
       musl, which has no `<execinfo.h>`.
 - [x] `stack_trace_capture_rt_windows.spice` — `RtlCaptureStackBackTrace`-based capture.
-- [x] `stack_trace_rt.spice` — `capture()` delegates to the above. `dump()` printing `name + 0xoff` still
-      pending on symbol resolution returning the symbol start address.
-- [ ] `stack_trace_symbol_rt.spice` — return name **and** offset; add `#![core.linux.linker.flag = "-rdynamic"]`.
-- [ ] `stack_trace_symbol_rt_windows.spice` — use the `SymFromAddr` displacement out-param; verify `SYMBOL_INFO`
-      field offsets and `SizeOfStruct` against a real `<dbghelp.h>` (still unverified, per the file's own caution).
-- [ ] `stack_trace_demangle_rt.spice` — Itanium-subset demangler.
+- [x] `stack_trace_rt.spice` — the public API: `StackTraceEntry` (address, offset, demangled name) with its own
+      `dump()`, `StackTrace` wrapping a `Vector<StackTraceEntry>`, and the auto-imported `sGetStacktrace()` /
+      `sDumpStacktrace()`.
+- [x] `stack_trace_symbol_rt.spice` — `resolveSymbol()` returns name **and** offset, from `dladdr`'s `dli_saddr`.
+- [x] `stack_trace_symbol_rt_windows.spice` — same, from the `SymFromAddr` displacement out-param. The
+      `SYMBOL_INFO` layout is still unverified against a real `<dbghelp.h>`.
+- [x] Demangling — shipped as `std/text/demangle`, wired into `StackTrace.capture()`.
 
 **Tests (`test/`)**
 
@@ -214,7 +215,7 @@ suppress the address (and should also suppress the offset) so tests stay determi
       invariants, with both `cout-linux-*.out` overrides deleted. An exact frame count turned out not to be
       portable after all — it depends on how many frames the C runtime puts below `main`, and on inlining — so the
       test asserts that skipping n frames drops exactly n instead, which does hold everywhere.
-- [ ] A unit test for `demangleSpiceName()` seeded from the mangled names in the `.ll` reference files.
+- [x] Demangler test seeded from the mangled names in the `.ll` reference files.
 - [x] Capture verified at every optimization level (`-O0` through `-Oz`).
 
 **Docs**
@@ -225,8 +226,10 @@ suppress the address (and should also suppress the offset) so tests stay determi
 
 ## Open questions / risks
 
-- **`-rdynamic` cost.** It exports every symbol, growing `.dynsym` and inhibiting `--gc-sections`. Scoping the
-  flag to the stack-trace module keeps non-users unaffected, but a program that imports it pays on every link.
+- **`-rdynamic` is not enough, and is not applied.** Measured: it exports only `public` Spice functions, so
+  `dladdr` still misses everything that stayed local to its object file. It also grows `.dynsym`, inhibits
+  `--gc-sections`, and does nothing for `-static`. It is deliberately not added to the runtime; resolution today
+  covers libc, shared libraries and a program's `public` functions.
   An alternative that avoids it entirely is a compiler-emitted `(function start, name)` side table in a
   dedicated section, binary-searched at runtime — fully self-contained and identical on every platform, at the
   cost of binary size and real IR-generator work. Worth considering if `-rdynamic` proves too blunt.
