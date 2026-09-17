@@ -49,10 +49,6 @@ def main() -> None:
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
-    libbacktrace_src = repo_root / "deps" / "libbacktrace"
-    if not (libbacktrace_src / "configure").exists():
-        warn(f"{libbacktrace_src} is missing or not checked out. Run setup-deps.py first.")
-        sys.exit(1)
 
     arch = host_arch_dir_name()
     osname = host_os_dir_name()
@@ -60,6 +56,11 @@ def main() -> None:
         warn(f"No prebuilt libbacktrace target for this host ({platform.machine()}/{sys.platform}); "
              "'--keep-symbol-table' will fall back to the platform's own symbol resolution here. Skipping.")
         return
+
+    libbacktrace_src = repo_root / "deps" / "libbacktrace"
+    if not (libbacktrace_src / "configure").exists():
+        warn(f"{libbacktrace_src} is missing or not checked out. Run setup-deps.py first.")
+        sys.exit(1)
 
     target_dir = repo_root / "std" / "runtime" / "lib" / f"{arch}-{osname}"
     target_lib = target_dir / "libbacktrace.a"
