@@ -387,6 +387,41 @@ std::filesystem::path SystemUtil::getStdDir() {
 }
 
 /**
+ * Locate the prebuilt libbacktrace static library (see deps/libbacktrace) for the current compilation target,
+ * linked in behind '--keep-symbol-table' on POSIX targets (see ExternalLinkerInterface::prepare() and
+ * stack-trace-libbacktrace.c). One prebuilt archive per supported target ships under the std lib itself, at
+ * 'runtime/lib/<arch>-<os>/libbacktrace.a', so a Spice install needs nothing beyond what it already ships.
+ *
+ * @param cliOptions CLI options, for the target triple to resolve a prebuilt archive for
+ * @return Path to the static library, or an empty path if this target has no prebuilt one available
+ */
+std::filesystem::path SystemUtil::findLibbacktraceStaticLib(const CliOptions &cliOptions) {
+  const char *archName;
+  switch (cliOptions.targetTriple.getArch()) {
+  case llvm::Triple::x86_64:
+    archName = "x86_64";
+    break;
+  case llvm::Triple::aarch64:
+    archName = "aarch64";
+    break;
+  default:
+    return {};
+  }
+
+  const char *osName;
+  if (cliOptions.targetTriple.isOSLinux())
+    osName = "linux";
+  else if (cliOptions.targetTriple.isOSDarwin())
+    osName = "macos";
+  else
+    return {};
+
+  const std::filesystem::path libPath =
+      getStdDir() / "runtime" / "lib" / (std::string(archName) + "-" + osName) / "libbacktrace.a";
+  return exists(libPath) ? libPath : std::filesystem::path{};
+}
+
+/**
  * Retrieve the dir, where the bootstrap compiler lives.
  * Returns an empty string if the bootstrap compiler was not found.
  *

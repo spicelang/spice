@@ -1,11 +1,12 @@
 // TEST: --keep-symbol-table
 //
-// Exercises the compiler-emitted symbol table (IRGenerator::generateSymbolTable(), std/runtime/stack_trace_symtab_rt),
-// which resolveFromSymtab() consults ahead of the platform's own resolver in StackTrace.capture(). Unlike
-// stack-trace-dump-basic, which accepts '<unknown>' as a legitimate outcome, this build turns the flag on and expects
-// every frame this program owns to resolve to a real, demangled name - the point of the flag is resolving functions
-// the platform's own resolver cannot see (not exported, no debug info shipped), including 'innerFrame' below, which
-// is neither 'public' nor ever passed to '-rdynamic'.
+// Exercises libbacktrace-backed symbol resolution (std/runtime/stack_trace_libbacktrace_rt, backed by
+// deps/libbacktrace), which resolveFromLibbacktrace() consults ahead of the platform's own resolver in
+// StackTrace.capture(). Unlike stack-trace-dump-basic, which accepts '<unknown>' as a legitimate outcome, this
+// build turns the flag on - keeping the binary's own symbol table instead of stripping it - and expects every
+// frame this program owns to resolve to a real, demangled name: the point of the flag is resolving functions
+// the platform's own resolver cannot see (not exported, no debug info shipped), including 'innerFrame' below,
+// which is neither 'public' nor ever passed to '-rdynamic'.
 //
 // The offset column is still not portable (it moves with any codegen change), so it is masked the same way
 // stack-trace-dump-basic masks it. The address column is dropped entirely here - this test is about names, not
@@ -16,7 +17,7 @@ import "std/io/file";
 ext f<byte*> freopen(string /*file path*/, string /*mode*/, byte* /*stream*/);
 ext f<int> fflush(byte* /*stream*/);
 
-const string DUMP_FILE_PATH = "./stack-trace-dump-symtab.txt";
+const string DUMP_FILE_PATH = "./stack-trace-dump-libbacktrace.txt";
 const string HEADER_LINE = "Stack trace:";
 // innerFrame, middleFrame and main - the frames below them are the C runtime's, which this build does not touch
 const long OWNED_FRAMES = 3l;

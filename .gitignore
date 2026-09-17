@@ -22,6 +22,10 @@ spice
 # LLVM
 /llvm
 
+# Prebuilt libbacktrace static libs (built locally by build-libbacktrace.py for '--keep-symbol-table';
+# CI builds and ships its own per release target, see .github/workflows/publish.yml)
+/std/runtime/lib/
+
 # FASTBuild
 *.fdb
 

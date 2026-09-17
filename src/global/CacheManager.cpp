@@ -33,9 +33,6 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   // Frame pointers are a codegen decision baked into the emitted object, so an object built without them must not
   // be reused once '--keep-frame-pointers' is passed, and vice versa.
   components << cliOptions.keepFramePointers;
-  // Whether a function contributes an entry to the compiler-emitted symbol table is decided while generating its
-  // IR, so an object built without '--keep-symbol-table' must not be reused once it is passed, and vice versa.
-  components << cliOptions.keepSymbolTable;
   // The output container influences codegen (PIC/PIE levels, DSO-local attributes for symbols,
   // etc.), so reusing an object emitted for a different container would produce wrong output.
   components << static_cast<uint8_t>(cliOptions.outputContainer);
@@ -198,6 +195,10 @@ std::string computeExecutableCacheKey(const std::vector<std::string> &objectFile
     components << additionalSource.string() << '\0' << hashLinkedFile(additionalSource);
   components << static_cast<uint8_t>(cliOptions.outputContainer);
   components << cliOptions.staticLinking;
+  // '--keep-symbol-table' needs no entry of its own here: it only ever changes whether '-Wl,-s' is among
+  // 'linkerFlags' (see ExternalLinkerInterface::prepare()), already folded in above, and libbacktrace is linked
+  // in unconditionally now, so two builds that land on the same linker flags always produce the same output
+  // regardless of the flag.
   return std::to_string(std::hash<std::string>{}(components.str()));
 }
 

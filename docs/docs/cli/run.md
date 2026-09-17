@@ -47,4 +47,4 @@ You can apply following options to the `run` subcommand:
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |
 | -            | `--use-tbaa-metadata`     | Generate metadata for type-based alias analysis to enhance optimizations                                             |
 | -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                                            |
-| -            | `--keep-symbol-table`     | Emit a table mapping functions to addresses, so stack traces resolve names without the platform's own symbol resolution (costs binary size) |
+| -            | `--keep-symbol-table`     | Keep the binary's own symbol table instead of stripping it, so stack traces resolve names libbacktrace would otherwise not find (costs binary size) |

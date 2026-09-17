@@ -58,9 +58,6 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   for (DeferredLogic &deferredVTableInit : deferredVTableInitializations)
     deferredVTableInit.execute();
 
-  // Emit this module's contribution to the compiler-emitted symbol table, if any function requested one
-  generateSymbolTable();
-
   // Finalize debug info generator
   diGenerator.finalize();
 
@@ -837,61 +834,6 @@ void IRGenerator::addCommonFctAttrs(llvm::Function *fct, bool isAlwaysInline) {
     if (cliOptions.optLevel == OptLevel::Oz)
       fct->addFnAttr(llvm::Attribute::MinSize);
   }
-
-  // Every function we emit a body for is a candidate for the compiler-emitted symbol table (see
-  // generateSymbolTable()), gated behind '--keep-symbol-table' since it costs binary size.
-  if (cliOptions.keepSymbolTable)
-    symbolTableFunctions.push_back(fct);
-}
-
-/**
- * Emits this module's contribution to the compiler-emitted symbol table, behind '--keep-symbol-table': one
- * { function address, mangled name } entry per function this module generated a body for, placed in a section
- * that std/runtime/stack_trace_symtab_rt.spice reads back to resolve stack trace frames on its own, rather than
- * relying on the platform's symbol resolution (dladdr()/SymFromAddr()), which cannot see a function that was
- * never exported or has no debug info shipped alongside the binary.
- *
- * A no-op when the flag is off, so this has no effect on any other build - nothing is emitted, and no other
- * module's IR changes.
- *
- * The section name follows each object format's own convention for a metadata section the linker can locate at
- * a known address range without a linker script:
- * - ELF: a section whose name is a valid C identifier gets '__start_<name>'/'__stop_<name>' boundary symbols
- *   synthesized by the linker automatically.
- * - Mach-O: 'section$start$<segment>$<section>'/'section$end$...' are synthesized the same way.
- * - COFF has no such convention; the runtime shim instead places marker entries in the alphabetically first and
- *   last of a group of sections sharing a name up to '$', which the COFF linker concatenates in suffix order.
- * See stack-trace-symtab.c for the platform-specific half of this.
- */
-void IRGenerator::generateSymbolTable() {
-  if (symbolTableFunctions.empty())
-    return;
-
-  // One entry is { function address, pointer to the mangled name }, matching SymtabEntry in
-  // stack_trace_symtab_rt.spice field for field - both pointer-sized, so 16 bytes with no padding.
-  llvm::StructType *entryType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-
-  std::vector<llvm::Constant *> entries;
-  entries.reserve(symbolTableFunctions.size());
-  for (llvm::Function *fct : symbolTableFunctions) {
-    llvm::GlobalVariable *nameGlobal = createGlobalStringConst("spice.symtab.name.", fct->getName().str());
-    entries.push_back(llvm::ConstantStruct::get(entryType, {fct, nameGlobal}));
-  }
-
-  llvm::ArrayType *tableType = llvm::ArrayType::get(entryType, entries.size());
-  llvm::Constant *tableConstant = llvm::ConstantArray::get(tableType, entries);
-  llvm::GlobalVariable *table = createGlobalConst("spice.symtab.table.", tableConstant);
-
-  if (cliOptions.targetTriple.isOSDarwin())
-    table->setSection("__DATA,__spice_symtab");
-  else if (cliOptions.targetTriple.isOSWindows())
-    table->setSection(".spicesym$m");
-  else
-    table->setSection("spice_symtab");
-
-  // Nothing in the generated code ever references this table, so protect it from being discarded as dead by the
-  // optimizer - most relevant for '-lto', which runs a whole-module optimizer pass over the merged module.
-  llvm::appendToCompilerUsed(*module, {table});
 }
 
 llvm::Value *IRGenerator::getAddress(const SymbolTableEntry *entry) {

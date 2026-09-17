@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Build the prebuilt libbacktrace static library std/runtime/ ships for '--keep-symbol-table'.
+
+deps/libbacktrace (a git submodule, see setup-deps.py) is build-time only - what actually ships with an
+installed Spice is a prebuilt static archive per supported target, at std/runtime/lib/<arch>-<os>/libbacktrace.a
+(see SystemUtil::findLibbacktraceStaticLib in the compiler). This script builds that archive for the host this
+script runs on. CI builds one such archive per release target the same way (see .github/workflows/publish.yml);
+this script is what a local dev environment uses to get the same file for its own host triple.
+
+No-ops (with a message, not an error) on Windows and on any host arch/os this feature does not support - the
+compiler falls back to the platform's own symbol resolution wherever no prebuilt archive is found.
+"""
+import argparse
+import platform
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+GREEN = "\033[0;92m"
+YELLOW = "\033[0;93m"
+NC = "\033[0m"
+
+def log(msg: str) -> None:
+    print(f"{GREEN}{msg}{NC}", flush=True)
+
+def warn(msg: str) -> None:
+    print(f"{YELLOW}{msg}{NC}", flush=True)
+
+def host_arch_dir_name() -> str | None:
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        return "x86_64"
+    if machine in ("aarch64", "arm64"):
+        return "aarch64"
+    return None
+
+def host_os_dir_name() -> str | None:
+    if sys.platform.startswith("linux"):
+        return "linux"
+    if sys.platform == "darwin":
+        return "macos"
+    return None
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--force", action="store_true", help="Rebuild even if the archive already exists")
+    args = parser.parse_args()
+
+    repo_root = Path(__file__).resolve().parent
+    libbacktrace_src = repo_root / "deps" / "libbacktrace"
+    if not (libbacktrace_src / "configure").exists():
+        warn(f"{libbacktrace_src} is missing or not checked out. Run setup-deps.py first.")
+        sys.exit(1)
+
+    arch = host_arch_dir_name()
+    osname = host_os_dir_name()
+    if arch is None or osname is None:
+        warn(f"No prebuilt libbacktrace target for this host ({platform.machine()}/{sys.platform}); "
+             "'--keep-symbol-table' will fall back to the platform's own symbol resolution here. Skipping.")
+        return
+
+    target_dir = repo_root / "std" / "runtime" / "lib" / f"{arch}-{osname}"
+    target_lib = target_dir / "libbacktrace.a"
+    if target_lib.exists() and not args.force:
+        log(f"{target_lib} already exists. Pass --force to rebuild.")
+        return
+
+    log(f"Building libbacktrace for {arch}-{osname} ...")
+    with tempfile.TemporaryDirectory(prefix="spice-libbacktrace-") as build_dir:
+        subprocess.run(
+            [str(libbacktrace_src / "configure"), "--disable-shared", "--enable-static", "CFLAGS=-O2 -fPIC"],
+            cwd=build_dir, check=True,
+        )
+        subprocess.run(["make", f"-j{shutil.os.cpu_count() or 1}"], cwd=build_dir, check=True)
+
+        built_lib = Path(build_dir) / ".libs" / "libbacktrace.a"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(built_lib, target_lib)
+    log(f"done: {target_lib}")
+
+if __name__ == "__main__":
+    main()

@@ -26,12 +26,31 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
   }
 
+  // libbacktrace (see stack-trace-libbacktrace.c) is linked in unconditionally on POSIX, for any build that
+  // actually links (an executable or a shared library) - not gated on '--keep-symbol-table'. The C shim that
+  // needs it compiles and is added to the link whenever a program imports std/runtime/stack_trace_rt.spice, via
+  // its own core.linker.additionalSource attribute, regardless of that flag; skipping the archive here would
+  // leave its calls into libbacktrace unresolved. Nothing is added on Windows, which never compiles the shim in
+  // the first place (see stack_trace_libbacktrace_rt_windows.spice), or for a POSIX target with no prebuilt
+  // archive (see SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace support was already
+  // incomplete before this feature, and gains no new failure mode from it.
+  const bool emitsLinkedBinary =
+      cliOptions.outputContainer == OutputContainer::EXECUTABLE || cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
+  if (emitsLinkedBinary && !cliOptions.targetTriple.isOSWindows()) {
+    const std::filesystem::path libbacktracePath = SystemUtil::findLibbacktraceStaticLib(cliOptions);
+    if (!libbacktracePath.empty())
+      addFileToLinkage(libbacktracePath);
+  }
+
   // The following flags only make sense if we want to emit an executable
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Stripping symbols
-  if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin())
+  // Stripping symbols. Skipped behind '--keep-symbol-table', which keeps the platform's own ELF/Mach-O symbol
+  // table in the binary so libbacktrace can read it back to resolve stack trace frames; without the flag,
+  // backtrace_syminfo() simply finds nothing in the stripped binary and every frame falls back to the
+  // platform's own resolver (dladdr()/SymFromAddr()) instead, same as if libbacktrace were not linked at all.
+  if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin() && !cliOptions.keepSymbolTable)
     addLinkerFlag("-Wl,-s");
 
   // Sanitizers

@@ -154,20 +154,6 @@ TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForFramePointers) {
   ASSERT_NE(keyNoFramePointers, keyFramePointers);
 }
 
-TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForSymbolTable) {
-  const std::string source = "f<int> main() { return 0; }";
-
-  cliOptions.keepSymbolTable = false;
-  const CacheManager managerNoSymbolTable(cliOptions);
-  const std::string keyNoSymbolTable = managerNoSymbolTable.computeCacheKey(source);
-
-  cliOptions.keepSymbolTable = true;
-  const CacheManager managerSymbolTable(cliOptions);
-  const std::string keySymbolTable = managerSymbolTable.computeCacheKey(source);
-
-  ASSERT_NE(keyNoSymbolTable, keySymbolTable);
-}
-
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForDepCacheKeys) {
   const CacheManager manager(cliOptions);
   const std::string source = "f<int> main() { return 0; }";

@@ -13,7 +13,7 @@
 
 import "std/runtime/stack_trace_symbol_rt";
 import "std/runtime/stack_trace_capture_rt";
-import "std/runtime/stack_trace_symtab_rt";
+import "std/runtime/stack_trace_libbacktrace_rt";
 import "std/text/demangle";
 import "std/data/vector";
 
@@ -105,17 +105,13 @@ public p StackTrace.capture(int skipFrames = 0) {
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
-        // The compiler-emitted table (populated only behind '--keep-symbol-table') resolves this program's own
-        // functions exactly, including ones the platform's own resolver cannot see. Both are tried and the
-        // tighter match wins rather than letting a resolved table guess win outright: the table has no real
-        // per-function size, so a frame that belongs to libc or a shared library can still land at or below
-        // one of our own function addresses (e.g. if that mapping sits at a lower address than ours) and
-        // "resolve" to the wrong function with a large, spurious offset. The true match - table or platform,
-        // whichever actually contains the address - has a far smaller offset than that.
-        SymbolLookup symbol = resolveFromSymtab(addresses[i]);
-        const SymbolLookup platformSymbol = resolveSymbol(addresses[i]);
-        if !symbol.resolved || (platformSymbol.resolved && platformSymbol.offset < symbol.offset) {
-            symbol = platformSymbol;
+        // On POSIX (behind '--keep-symbol-table'), libbacktrace resolves this program's own functions exactly,
+        // including ones the platform's own resolver cannot see - reading the symbol table directly out of the
+        // executable file rather than through dladdr()/.dynsym. On Windows it never resolves (there is nothing
+        // it would do that SymFromAddr doesn't already), so this always falls through to resolveSymbol().
+        SymbolLookup symbol = resolveFromLibbacktrace(addresses[i]);
+        if !symbol.resolved {
+            symbol = resolveSymbol(addresses[i]);
         }
         String name = String();
         if symbol.resolved {

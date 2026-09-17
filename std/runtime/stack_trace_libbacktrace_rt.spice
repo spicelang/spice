@@ -1,0 +1,67 @@
+#![
+    core.compiler.alwaysKeepOnNameCollision = true,
+    core.linker.additionalSource = "stack-trace-libbacktrace.c"
+]
+
+// POSIX-only symbol resolution backed by libbacktrace (deps/libbacktrace). Unlike resolveSymbol() in
+// stack_trace_symbol_rt.spice, this reads the ELF/Mach-O symbol table directly out of the executable file - not
+// through dladdr()/.dynsym - so it resolves every function that made it into the symbol table, public or not,
+// exported or not, with no '-rdynamic' involved, and reports each symbol's real size, so a lookup can tell
+// "resolved, this far into the function" apart from "nothing here" - dladdr()'s Dl_info carries no size at all.
+//
+// libbacktrace itself is always linked in on POSIX (see ExternalLinkerInterface::prepare()), regardless of
+// '--keep-symbol-table' - but by default the binary's symbol table is stripped at link time, same as before
+// this file existed, so there is nothing for it to read and every lookup here falls straight through to
+// resolveSymbol(). '--keep-symbol-table' keeps that symbol table around instead, which is the only thing that
+// actually makes resolution here succeed.
+//
+// The state libbacktrace builds is scoped to the main executable's own file, so it does not see shared library
+// frames (libc, etc.); those still resolve through the resolveSymbol() fallback in stack_trace_rt.spice.
+//
+// No Windows sibling: DbgHelp already reads a Windows binary's own symbol/PDB data directly, the same way
+// libbacktrace does here for ELF/Mach-O, so stack_trace_symbol_rt_windows.spice needs no equivalent.
+
+import "std/runtime/stack_trace_symbol_rt";
+
+// Mirrors SpiceSyminfoResult in stack-trace-libbacktrace.c, field for field.
+type SyminfoResult struct {
+    string name
+    byte* address
+    unsigned long size
+}
+
+// Defined in stack-trace-libbacktrace.c. Prefixed to keep a C-linkage symbol of this generality out of the way
+// of anything the program being compiled might define itself.
+ext f<int> spiceBacktraceSyminfo(byte* /*addr*/, SyminfoResult* /*out*/);
+
+/**
+ * Looks up the symbol containing the given address in the main executable's own symbol table.
+ *
+ * @param address Address to resolve
+ * @return Mangled name and byte offset into that symbol, or an unresolved result if there is no match
+ */
+public f<SymbolLookup> resolveFromLibbacktrace(byte* address) {
+    SyminfoResult syminfo;
+    unsafe {
+        spiceBacktraceSyminfo(address, &syminfo);
+    }
+
+    if cast<char*>(syminfo.name) == nil<char*> {
+        return SymbolLookup{String(), 0l, false};
+    }
+
+    unsigned long offset = 0l;
+    unsafe {
+        offset = cast<unsigned long>(cast<long>(address) - cast<long>(syminfo.address));
+    }
+
+    // libbacktrace reports the symbol's real size, unlike dladdr()'s Dl_info - so an address past the end of
+    // the function it nominally follows is rejected outright, rather than reported with a bogus large offset.
+    // A size of 0 means the symbol table did not record one (uncommon, but not an error), in which case the
+    // offset is accepted as-is, same as dladdr()'s own always-unbounded behavior.
+    if syminfo.size != 0l && offset >= syminfo.size {
+        return SymbolLookup{String(), 0l, false};
+    }
+
+    return SymbolLookup{String(syminfo.name), offset, true};
+}

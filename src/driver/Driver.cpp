@@ -439,9 +439,9 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
                          "the stack (costs a register and a bit of performance)");
   // --keep-symbol-table
   subCmd->add_flag<bool>("--keep-symbol-table", cliOptions.keepSymbolTable,
-                         "Emit a table mapping every function to its address, so stack traces can resolve "
-                         "Spice function names without relying on the platform's own symbol resolution "
-                         "(costs some binary size)");
+                         "Keep the binary's own symbol table instead of stripping it, so stack traces can "
+                         "resolve Spice function names libbacktrace would otherwise not find - including ones "
+                         "the platform's own symbol resolution cannot see (costs some binary size)");
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");

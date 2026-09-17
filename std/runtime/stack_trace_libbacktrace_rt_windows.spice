@@ -1,0 +1,19 @@
+// Windows counterpart of stack_trace_libbacktrace_rt.spice - see that file for what the POSIX version does.
+//
+// DbgHelp's SymFromAddr(), used by resolveSymbol() in stack_trace_symbol_rt_windows.spice, already reads a
+// Windows binary's own symbol/PDB data directly, the same way libbacktrace does for ELF/Mach-O - so there is
+// nothing for this file to add. It exists only so stack_trace_rt.spice can call resolveFromLibbacktrace()
+// without OS-conditional logic of its own; the OS-suffixed import picks this file on Windows and always falls
+// through to resolveSymbol(). Deliberately does not link libbacktrace at all on this platform.
+
+import "std/runtime/stack_trace_symbol_rt";
+
+/**
+ * Always unresolved on Windows; resolveSymbol() (DbgHelp) is tried directly instead.
+ *
+ * @param address Address to resolve (unused)
+ * @return An unresolved result
+ */
+public f<SymbolLookup> resolveFromLibbacktrace(byte* address) {
+    return SymbolLookup{String(), 0l, false};
+}

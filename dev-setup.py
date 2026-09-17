@@ -70,8 +70,13 @@ log("[Step 4] Downloading third-party libraries ...")
 run(sys.executable, "setup-deps.py")
 log("done.")
 
-# Step 5: build Spice
-log("[Step 5] Building Spice ...")
+# Step 5: build libbacktrace for this host (used by '--keep-symbol-table', see build-libbacktrace.py)
+log("[Step 5] Building libbacktrace for this host ...")
+run(sys.executable, "build-libbacktrace.py")
+log("done.")
+
+# Step 6: build Spice
+log("[Step 6] Building Spice ...")
 run(sys.executable, "build.py")
 log("done.")
 

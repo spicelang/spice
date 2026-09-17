@@ -65,6 +65,7 @@ public:
   static ExternalBinaryFinderResult findArchiver();
   static const char *getOutputFileExtension(const CliOptions &cliOptions, OutputContainer outputContainer);
   static std::filesystem::path getStdDir();
+  static std::filesystem::path findLibbacktraceStaticLib(const CliOptions &cliOptions);
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
   static size_t getSystemPageSize();
