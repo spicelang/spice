@@ -26,17 +26,10 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
   }
 
-  // libbacktrace (see stack-trace-libbacktrace.c) is linked in for any build that actually links (an executable
-  // or a shared library) whenever a prebuilt archive is available for the target. The C shim that would call
-  // into it compiles and is added to the link whenever a program imports std/runtime/stack_trace_rt.spice,
-  // regardless of whether an archive exists; '-DSPICE_HAVE_LIBBACKTRACE=1' is what tells that shim an archive
-  // is actually on the link line, so it only
-  // references libbacktrace.h when linking against it will actually succeed - without it, the shim compiles as
-  // a permanent no-op instead (see its own comment). '-pthread' is needed for the shim's pthread_once() call:
-  // on Linux/macOS this is already a no-op (pthread symbols live in libc there), but MinGW's pthread
-  // implementation is a genuinely separate library that has to be linked explicitly. Nothing is added for a
-  // target with no prebuilt archive (see SystemUtil::findLibbacktraceStaticLib) - such a target's stack-trace
-  // support was already incomplete before this feature, and gains no new failure mode from it.
+  // libbacktrace (see stack-trace-libbacktrace.c) is linked in whenever a prebuilt archive is available for the
+  // target. '-DSPICE_HAVE_LIBBACKTRACE=1' tells the always-compiled C shim the archive is actually on the link
+  // line, so it can safely reference libbacktrace.h (it's a permanent no-op otherwise). '-pthread' is needed
+  // for the shim's pthread_once() call - a no-op on Linux/macOS, but MinGW's pthread is a separate library.
   const bool emitsLinkedBinary =
       cliOptions.outputContainer == OutputContainer::EXECUTABLE || cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
   if (emitsLinkedBinary) {
@@ -52,10 +45,8 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Symbols are never stripped: the platform's own ELF/Mach-O/PE-COFF symbol table stays in the binary so
-  // libbacktrace can read it back to resolve stack trace frames (backtrace_syminfo(), see
-  // stack-trace-libbacktrace.c). Verified for PE/COFF too: pecoff.c reads the same COFF symbol table '-Wl,-s'
-  // would otherwise strip.
+  // Symbols are never stripped, so libbacktrace can always read the binary's own symbol table back for stack
+  // traces (see stack-trace-libbacktrace.c).
 
   // Sanitizers
   switch (cliOptions.instrumentation.sanitizer) {

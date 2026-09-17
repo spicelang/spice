@@ -62,7 +62,7 @@ jobs:
       - name: Build libbacktrace for Windows
         run: |
           sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
-          python build-libbacktrace.py --target x86_64-windows
+          python build-libbacktrace.py --target windows-x86_64
 
       - name: Build compiler
         env:
@@ -102,14 +102,14 @@ jobs:
       - name: Upload libbacktrace artifact
         uses: actions/upload-artifact@v7
         with:
-          name: libbacktrace-x86_64-linux
-          path: ./std/runtime/lib/x86_64-linux/libbacktrace.a
+          name: libbacktrace-linux-x86_64
+          path: ./std/runtime/lib/linux-x86_64/libbacktrace.a
 
       - name: Upload libbacktrace artifact (Windows)
         uses: actions/upload-artifact@v7
         with:
-          name: libbacktrace-x86_64-windows
-          path: ./std/runtime/lib/x86_64-windows/libbacktrace.a
+          name: libbacktrace-windows-x86_64
+          path: ./std/runtime/lib/windows-x86_64/libbacktrace.a
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
@@ -197,8 +197,8 @@ jobs:
       - name: Upload libbacktrace artifact
         uses: actions/upload-artifact@v7
         with:
-          name: libbacktrace-aarch64-linux
-          path: ./std/runtime/lib/aarch64-linux/libbacktrace.a
+          name: libbacktrace-linux-aarch64
+          path: ./std/runtime/lib/linux-aarch64/libbacktrace.a
 
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
@@ -340,8 +340,8 @@ jobs:
       - name: Upload libbacktrace artifact
         uses: actions/upload-artifact@v7
         with:
-          name: libbacktrace-aarch64-macos
-          path: ./std/runtime/lib/aarch64-macos/libbacktrace.a
+          name: libbacktrace-macos-aarch64
+          path: ./std/runtime/lib/macos-aarch64/libbacktrace.a
 
   build-artifacts:
     name: Build artifacts

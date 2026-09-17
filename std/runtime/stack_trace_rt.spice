@@ -11,7 +11,6 @@
 // only the former applies OS-suffixing. Were this file suffixed, the two paths could load different copies and
 // collide at link time.
 
-import "std/runtime/stack_trace_symbol_rt";
 import "std/runtime/stack_trace_capture_rt";
 import "std/runtime/stack_trace_libbacktrace_rt";
 import "std/text/demangle";
@@ -105,16 +104,9 @@ public p StackTrace.capture(int skipFrames = 0) {
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
-        // libbacktrace resolves this program's own functions exactly, including ones the platform's own
-        // resolver cannot see - reading the symbol table directly out of the executable file
-        // (ELF/Mach-O/PE-COFF) rather than through dladdr()/.dynsym or a DbgHelp-read PDB; the binary's symbol
-        // table is never stripped, so it is always there for libbacktrace to read. Falls through to
-        // resolveSymbol() only when there is no prebuilt libbacktrace archive for this target (see
-        // stack_trace_libbacktrace_rt.spice).
+        // Resolved via libbacktrace alone (see stack_trace_libbacktrace_rt.spice); unresolved wherever this
+        // target has no prebuilt libbacktrace archive.
         SymbolLookup symbol = resolveFromLibbacktrace(addresses[i]);
-        if !symbol.resolved {
-            symbol = resolveSymbol(addresses[i]);
-        }
         String name = String();
         if symbol.resolved {
             name = demangle(symbol.name);
