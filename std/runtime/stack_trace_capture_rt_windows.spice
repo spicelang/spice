@@ -20,9 +20,9 @@ ext f<unsigned short> RtlCaptureStackBackTrace(unsigned int /*framesToSkip*/, un
  * @return Number of addresses written
  */
 public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFrames) {
-    // Both bounds are checked before the casts below, which are to unsigned: a negative skip count would
-    // otherwise turn into an enormous framesToSkip. This mirrors the guard the POSIX implementation applies.
-    if capacity <= 0 || skipFrames < 0 {
+    // Checked before the casts below, which are to unsigned: a negative skip count would otherwise turn into an
+    // enormous framesToSkip. A nil buffer is rejected here too, since the OS would write through it.
+    if addresses == nil<byte**> || capacity <= 0 || skipFrames < 0 {
         return 0;
     }
 

@@ -43,6 +43,14 @@ f<bool> levelC() {
         assert skipAll.isEmpty();
     }
 
+    // A negative skip is rejected rather than cancelling out the runtime's own frame count, which would start
+    // the trace inside the stack trace runtime. Capturing over an existing trace must clear it either way.
+    StackTrace reused;
+    reused.capture(0);
+    assert !reused.isEmpty();
+    reused.capture(-1);
+    assert reused.isEmpty();
+
     // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack
     const StackTrace fromRuntimeFct = sGetStacktrace();
     assert fromRuntimeFct.getSize() == noSkip.getSize();

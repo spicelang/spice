@@ -89,13 +89,19 @@ public inline f<StackTraceEntry&> operator[](StackTrace& trace, unsigned long in
  * @param skipFrames Frames to omit above the direct caller, for wrappers that capture on a caller's behalf
  */
 public p StackTrace.capture(int skipFrames = 0) {
+    this.entries.clear(); // cleared first, so an early return below cannot leave a previous trace behind
+
+    // A negative skip would cancel out RUNTIME_FRAMES and start the trace inside the stack trace runtime itself
+    if skipFrames < 0 {
+        return;
+    }
+
     byte*[STACK_TRACE_CAPACITY] addresses;
     int frameCount = 0;
     unsafe {
         frameCount = captureReturnAddresses(&addresses[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES + skipFrames);
     }
 
-    this.entries.clear();
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
         const SymbolLookup symbol = resolveSymbol(addresses[i]);

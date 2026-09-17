@@ -32,7 +32,7 @@ ext f<int> spiceCaptureReturnAddresses(byte** /*addresses*/, int /*capacity*/, i
  * @return Number of addresses written
  */
 public f<int> captureReturnAddresses(byte** addresses, int capacity, int skipFrames) {
-    if capacity <= 0 || skipFrames < 0 {
+    if addresses == nil<byte**> || capacity <= 0 || skipFrames < 0 {
         return 0;
     }
     unsafe {
