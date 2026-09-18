@@ -14,6 +14,7 @@ static constexpr auto ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
 static constexpr auto ATTR_CORE_DARWIN_LINKER_FLAG = "core.darwin.linker.flag";
 static constexpr auto ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
 static constexpr auto ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additionalSource";
+static constexpr auto ATTR_CORE_LINKER_PRESERVE_SYMBOLS = "core.linker.preserveSymbols";
 static constexpr auto ATTR_CORE_LINKER_DLL = "core.linker.dll";
 static constexpr auto ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 static constexpr auto ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
@@ -73,6 +74,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
         {
             .target = AttrNode::AttrTarget::TARGET_MODULE,
             .type = AttrNode::AttrType::TYPE_STRING,
+        },
+    },
+    {
+        ATTR_CORE_LINKER_PRESERVE_SYMBOLS,
+        {
+            .target = AttrNode::AttrTarget::TARGET_MODULE,
+            .type = AttrNode::AttrType::TYPE_BOOL,
         },
     },
     {

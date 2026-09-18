@@ -1,10 +1,14 @@
 // Exercises sDumpStacktrace() on every platform: the capture, the symbol resolution and the printed format.
 //
-// Two of the three columns a dump prints cannot be compared as they are: addresses move between runs under
-// ASLR, and offsets shift with every codegen change. The dump also goes to stderr, which the test runner
-// folds into the compared output. It is therefore pointed at a file first and printed back to stdout with
-// those two columns masked. What is left - which symbols resolve, and how they demangle - depends on what
-// the platform's resolver can see, so the expected output is pinned per platform in 'cout-<os>.out'.
+// Two of the columns a dump prints cannot be compared as they are: addresses move between runs under ASLR, and
+// offsets shift with every codegen change. The dump also goes to stderr, which the test runner folds into the
+// compared output. It is therefore pointed at a file first and printed back to stdout with those two columns
+// masked. What is left - which symbols resolve, and how they demangle - is the same on every platform, since
+// libbacktrace resolves against the executable's own symbol table everywhere, so one 'cout.out' covers all of
+// them.
+//
+// The 'at <file>:<line>' part of a frame line comes from debug info, which the test runner does not ask for, so
+// it never appears here and needs no masking.
 //
 // Only the frames this test owns are printed. Everything below main belongs to the C runtime, which adds a
 // different number of frames on every platform.

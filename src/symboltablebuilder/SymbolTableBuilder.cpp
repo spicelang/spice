@@ -698,6 +698,11 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
     sourceFile->sourceLinkerFlags.push_back(flag);
   }
 
+  // core.linker.preserveSymbols
+  if (attrs->hasAttr(ATTR_CORE_LINKER_PRESERVE_SYMBOLS) &&
+      attrs->getAttrValueByName(ATTR_CORE_LINKER_PRESERVE_SYMBOLS)->boolValue)
+    resourceManager.linker.requestSymbolPreservation();
+
   // core.linker.additionalSource
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
     const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);

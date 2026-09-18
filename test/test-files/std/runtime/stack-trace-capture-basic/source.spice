@@ -2,8 +2,8 @@
 //
 // Only properties that hold on every platform and at every optimization level are asserted. The exact frame
 // count is not one of them: it depends on how many frames the C runtime puts below main, and on whether the
-// optimizer inlined the helpers below. Neither is the presence of symbol names, which needs the program's
-// symbols to be visible to the platform's resolver.
+// optimizer inlined the helpers below. Neither is the presence of symbol names or source locations - the first
+// needs a symbol table, the second debug info, and the runner asks for neither.
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
@@ -16,6 +16,10 @@ f<bool> levelC() {
     for long i = 0l; i < noSkip.getSize(); i++ {
         const StackTraceEntry& entry = noSkip.getEntry(i);
         assert entry.address != nil<byte*>;
+        // An offset is only meaningful together with the name it counts from, and a line number only together
+        // with the file it points into - so neither may show up on its own
+        if entry.functionName.isEmpty() { assert entry.offset == 0l; }
+        if entry.fileName.isEmpty() { assert entry.lineNumber == 0; }
     }
 
     StackTrace skipOne;

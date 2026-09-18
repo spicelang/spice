@@ -1,18 +1,24 @@
-#![core.compiler.alwaysKeepOnNameCollision = true]
+#![
+    core.compiler.alwaysKeepOnNameCollision = true,
+    core.linker.preserveSymbols = true,
+    core.linker.flag = "-lbacktrace",
+    core.linker.additionalSource = "stack-trace-backtrace.c"
+]
 
 // Stack traces: capturing them, resolving each frame to a symbol, and printing them.
 //
-// The two halves that differ per platform - capturing the frames and resolving an address to a name - live in
-// their own OS-suffixed files, imported below. Spice requires a method to live in the same file as its struct,
-// so the methods here delegate to ordinary functions, which face no such restriction.
+// Both halves of the job are done by libbacktrace, through the C shim named above - see
+// stack-trace-backtrace.c for why a shim is needed and what the library does. It behaves the same on every
+// platform Spice targets, so unlike the hand-written unwinder and symbol resolver it replaced, this file has no
+// OS-suffixed siblings and must not gain any: sDumpStacktrace() and sGetStacktrace() are reachable both through
+// an explicit import and through auto-import by name (RuntimeModuleManager), and only the former applies
+// OS-suffixing. Were this file suffixed, the two paths could load different copies and collide at link time.
 //
-// This file itself has no OS-suffixed sibling, and must not gain one: sDumpStacktrace() and sGetStacktrace()
-// are reachable both through an explicit import and through auto-import by name (RuntimeModuleManager), and
-// only the former applies OS-suffixing. Were this file suffixed, the two paths could load different copies and
-// collide at link time.
+// 'core.linker.preserveSymbols' keeps the linker from stripping the symbol table of programs that pull this
+// runtime in. Without it there is nothing left for libbacktrace to resolve addresses against, and every frame
+// prints as '<unknown>'. File and line numbers need more than that - they come from debug info, so they only
+// show up in a build made with '-g'.
 
-import "std/runtime/stack_trace_symbol_rt";
-import "std/runtime/stack_trace_capture_rt";
 import "std/text/demangle";
 import "std/data/vector";
 
@@ -20,10 +26,25 @@ ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 // Frames captured per trace. Deeper ones are dropped, since the frames nearest the capture point matter most.
 public const int STACK_TRACE_CAPACITY = 64;
-// Frames of the stack trace runtime itself between the unwinder and the caller: captureReturnAddresses() and
-// capture(). Exact because Spice emits one object file per source file, so neither can be inlined into the
-// caller; '-lto' lifts that guarantee and can shift a trace outwards by a frame or two.
+// Frames of the stack trace runtime itself between libbacktrace and the caller: the C shim and capture().
+// Exact because Spice emits one object file per source file and the shim is a translation unit of its own, so
+// neither can be inlined into the caller; '-lto' lifts that guarantee and can shift a trace outwards by a frame.
 const int RUNTIME_FRAMES = 2;
+
+/**
+ * Mirrors 'SpiceStackFrame' in stack-trace-backtrace.c, field for field, so an array of these can be handed to
+ * the shim to fill. The two names are heap-allocated there and released again by capture() below.
+ */
+type NativeStackFrame struct {
+    byte* address
+    unsigned long offset
+    string functionName
+    string fileName
+    int lineNumber
+}
+
+ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipFrames*/);
+ext p spiceReleaseStackTrace(NativeStackFrame* /*frames*/, int /*count*/);
 
 /**
  * One frame of a stack trace.
@@ -32,11 +53,14 @@ public type StackTraceEntry struct {
     public byte* address          // return address within the function
     public unsigned long offset   // bytes from the start of that function, 0 if unresolved
     public String functionName    // demangled, empty if the symbol could not be resolved
+    public String fileName        // source file, empty unless the program carries debug info
+    public int lineNumber         // line within that file, 0 if unknown
 }
 
 /**
- * Prints this frame to stderr, as 'address  name + 0xoffset'. Frames whose symbol could not be resolved print
- * '<unknown>' in place of the name and carry no offset.
+ * Prints this frame to stderr, as 'address  name + 0xoffset at file:line'. The location is left out when the
+ * program carries no debug info; frames whose symbol could not be resolved print '<unknown>' in place of the
+ * name and carry no offset.
  *
  * @param includeAddress Whether to print the raw address. Pass false for deterministic output - addresses move
  *                        between runs under ASLR/PIE.
@@ -48,10 +72,14 @@ public p StackTraceEntry.dump(bool includeAddress = true) {
         fprintf(__stderr(), "  ");
     }
     if this.functionName.isEmpty() {
-        fprintf(__stderr(), "<unknown>\n");
+        fprintf(__stderr(), "<unknown>");
     } else {
-        fprintf(__stderr(), "%s + %#lx\n", this.functionName.getRaw(), this.offset);
+        fprintf(__stderr(), "%s + %#lx", this.functionName.getRaw(), this.offset);
     }
+    if !this.fileName.isEmpty() {
+        fprintf(__stderr(), " at %s:%d", this.fileName.getRaw(), this.lineNumber);
+    }
+    fprintf(__stderr(), "\n");
 }
 
 /**
@@ -84,7 +112,9 @@ public inline f<StackTraceEntry&> operator[](StackTrace& trace, unsigned long in
 }
 
 /**
- * Captures the stack of the calling function, resolving each frame as it goes.
+ * Captures the stack of the calling function, resolving each frame as it goes. In an optimized build a function
+ * that was inlined into another still gets a frame of its own, since libbacktrace recovers it from the debug
+ * info; its offset is then counted from the start of the function it was inlined into.
  *
  * @param skipFrames Frames to omit above the direct caller, for wrappers that capture on a caller's behalf
  */
@@ -96,20 +126,32 @@ public p StackTrace.capture(int skipFrames = 0) {
         return;
     }
 
-    byte*[STACK_TRACE_CAPACITY] addresses;
+    NativeStackFrame[STACK_TRACE_CAPACITY] frames;
     int frameCount = 0;
     unsafe {
-        frameCount = captureReturnAddresses(&addresses[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES + skipFrames);
+        frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES + skipFrames);
     }
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for int i = 0; i < frameCount; i++ {
-        const SymbolLookup symbol = resolveSymbol(addresses[i]);
-        String name = String();
-        if symbol.resolved {
-            name = demangle(symbol.name);
+        String functionName = String();
+        String fileName = String();
+        unsafe {
+            // Both names are plain C strings owned by the shim, so they are copied into Strings here and the
+            // originals handed back below
+            if cast<char*>(frames[i].functionName) != nil<char*> {
+                functionName = demangle(frames[i].functionName);
+            }
+            if cast<char*>(frames[i].fileName) != nil<char*> {
+                fileName = String(frames[i].fileName);
+            }
         }
-        this.entries.pushBack(StackTraceEntry{addresses[i], symbol.offset, name});
+        this.entries.pushBack(StackTraceEntry{frames[i].address, frames[i].offset, functionName, fileName,
+                                              frames[i].lineNumber});
+    }
+
+    unsafe {
+        spiceReleaseStackTrace(&frames[0], frameCount);
     }
 }
 
