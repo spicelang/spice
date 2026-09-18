@@ -19,12 +19,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h> /* for toSymbolTableAddress() below */
+#include <stdio.h>   /* for toSymbolTableAddress() below, which reads the module's own file */
+#include <windows.h>
 #endif
 
 /* ==================== libbacktrace API (mirrored from <backtrace.h>) ==================== */
@@ -65,18 +65,75 @@ typedef struct SpiceStackFrame {
 /* Moves an address into the coordinate space libbacktrace's PE symbol table uses, on the one platform where the
  * two differ.
  *
- * libbacktrace builds that table at the image base recorded in the executable's header - where the module asked
- * to be loaded - but Windows puts modules somewhere else whenever ASLR is on, which it is by default. Its DWARF
- * reader accounts for the difference; the symbol table reader is handed the unrelocated base and does not, so
- * every address in a running program sorts past the last entry in the table and each frame comes back named after
- * it. Until that is fixed upstream, the shift is undone here, by subtracting the distance the module carrying the
- * address was actually relocated by.
+ * libbacktrace builds that table at the image base recorded in the module's file on disk - the address the module
+ * asks to be loaded at - but Windows puts modules somewhere else whenever ASLR is on, which it is by default. Its
+ * DWARF reader accounts for the difference; the symbol table reader is handed the unrelocated base and does not,
+ * so every address in a running program sorts past the last entry in the table and each frame comes back named
+ * after it. Until that is fixed upstream, the shift is undone here, by subtracting the distance the module
+ * carrying the address was actually relocated by.
  *
  * Only the lookup sees the adjusted address - the frame keeps the real one. The name and symbol value that come
  * back are the right ones, and the offset is a difference of two addresses within the table's space, so the shift
- * cancels out of it. Returns the address unchanged if the module cannot be identified, leaving the frame to
- * resolve no worse than it would have. */
+ * cancels out of it. An address whose module cannot be read is left alone, resolving no worse than before. */
 #if defined(_WIN32)
+
+/* Reads a module's preferred base out of its file.
+ *
+ * It has to come from the file: when the loader relocates a module it rewrites OptionalHeader.ImageBase in the
+ * mapped copy to the address it actually used, so the header in memory reports the module as unmoved however far
+ * it travelled. libbacktrace parses the file, so the file is where the coordinate space of its symbol table comes
+ * from, and reading the mapped copy instead just yields a shift of zero. */
+static int readPreferredBase(HMODULE module, uintptr_t *preferredBase) {
+  char modulePath[MAX_PATH];
+  const DWORD length = GetModuleFileNameA(module, modulePath, (DWORD)sizeof(modulePath));
+  if (length == 0 || length >= (DWORD)sizeof(modulePath))
+    return 0;
+
+  FILE *moduleFile = fopen(modulePath, "rb");
+  if (moduleFile == NULL)
+    return 0;
+
+  IMAGE_DOS_HEADER dosHeader;
+  IMAGE_NT_HEADERS ntHeaders;
+  const int read = fread(&dosHeader, sizeof dosHeader, 1, moduleFile) == 1 &&
+                   dosHeader.e_magic == IMAGE_DOS_SIGNATURE && dosHeader.e_lfanew >= 0 &&
+                   fseek(moduleFile, dosHeader.e_lfanew, SEEK_SET) == 0 &&
+                   fread(&ntHeaders, sizeof ntHeaders, 1, moduleFile) == 1 &&
+                   ntHeaders.Signature == IMAGE_NT_SIGNATURE;
+  fclose(moduleFile);
+  if (!read)
+    return 0;
+
+  *preferredBase = (uintptr_t)ntHeaders.OptionalHeader.ImageBase;
+  return 1;
+}
+
+/* The executable's own shift, which nearly every frame of a trace needs, kept so that walking a stack does not
+ * reopen the same file once per frame. Published as two atomics rather than one pair, so a reader either sees a
+ * value that was fully written or decides it is not there yet; two threads racing here both compute the same
+ * number anyway. Frames in DLLs are rarer and read their module's file each time. */
+static uintptr_t executableShift = 0;
+static int executableShiftKnown = 0;
+
+static int shiftOfModule(HMODULE module, uintptr_t *shift) {
+  const int isExecutable = module == GetModuleHandleW(NULL);
+  if (isExecutable && __atomic_load_n(&executableShiftKnown, __ATOMIC_ACQUIRE)) {
+    *shift = __atomic_load_n(&executableShift, __ATOMIC_RELAXED);
+    return 1;
+  }
+
+  uintptr_t preferredBase;
+  if (!readPreferredBase(module, &preferredBase))
+    return 0;
+  *shift = (uintptr_t)module - preferredBase;
+
+  if (isExecutable) {
+    __atomic_store_n(&executableShift, *shift, __ATOMIC_RELAXED);
+    __atomic_store_n(&executableShiftKnown, 1, __ATOMIC_RELEASE);
+  }
+  return 1;
+}
+
 static uintptr_t toSymbolTableAddress(uintptr_t pc) {
   /* UNCHANGED_REFCOUNT, so the handle needs no release; FROM_ADDRESS takes the address cast to a string. */
   HMODULE module = NULL;
@@ -85,47 +142,11 @@ static uintptr_t toSymbolTableAddress(uintptr_t pc) {
       module == NULL)
     return pc;
 
-  /* A module handle is the address the module was loaded at, so its headers are readable straight from it. */
-  const IMAGE_DOS_HEADER *dosHeader = (const IMAGE_DOS_HEADER *)module;
-  if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+  uintptr_t shift;
+  if (!shiftOfModule(module, &shift))
     return pc;
-  const IMAGE_NT_HEADERS *ntHeaders = (const IMAGE_NT_HEADERS *)((const char *)module + dosHeader->e_lfanew);
-  if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
-    return pc;
-
-  return pc - (uintptr_t)module + (uintptr_t)ntHeaders->OptionalHeader.ImageBase;
+  return pc - shift;
 }
-
-/* ===== TEMPORARY DIAGNOSTIC - not for merge, removed once the Windows failure is understood =====
- * Goes to stdout so it lands in a reference test's diff, which CI prints in full, rather than into
- * stderr where the dump test redirects it to a file. Capped so a run cannot flood the log. */
-static int diagLines = 0;
-
-static void diagModuleOnce(void) {
-  static int done = 0;
-  if (done)
-    return;
-  done = 1;
-  HMODULE module = GetModuleHandleA(NULL);
-  const IMAGE_DOS_HEADER *dosHeader = (const IMAGE_DOS_HEADER *)module;
-  const IMAGE_NT_HEADERS *ntHeaders = (const IMAGE_NT_HEADERS *)((const char *)module + dosHeader->e_lfanew);
-  printf("DIAG module: actual=%p preferred=0x%llx sizeOfImage=0x%lx bias=0x%llx\n", (void *)module,
-         (unsigned long long)ntHeaders->OptionalHeader.ImageBase,
-         (unsigned long)ntHeaders->OptionalHeader.SizeOfImage,
-         (unsigned long long)((uintptr_t)module - (uintptr_t)ntHeaders->OptionalHeader.ImageBase));
-  fflush(stdout);
-}
-
-static void diagFrame(uintptr_t raw, uintptr_t adjusted, const SpiceStackFrame *frame) {
-  if (diagLines >= 6)
-    return;
-  diagLines++;
-  printf("DIAG frame: raw=0x%llx adj=0x%llx name=%s off=0x%llx\n", (unsigned long long)raw,
-         (unsigned long long)adjusted, frame->functionName == NULL ? "(null)" : frame->functionName,
-         (unsigned long long)frame->offset);
-  fflush(stdout);
-}
-#define SPICE_DIAG 1
 #else
 /* Everywhere else libbacktrace resolves symbols against correctly biased addresses already. */
 static uintptr_t toSymbolTableAddress(uintptr_t pc) { return pc; }
@@ -253,12 +274,7 @@ static int collectFullFrame(void *data, uintptr_t pc, const char *filename, int 
     frame->lineNumber = lineno;
   /* backtrace_full() reports the name but not where the function starts, so the offset takes a second lookup.
    * For a frame that was inlined into another, this is the offset into the function it was inlined into. */
-  const uintptr_t lookupPc = toSymbolTableAddress(pc);
-  backtrace_syminfo(capture->state, lookupPc, collectSymbol, ignoreError, frame);
-#ifdef SPICE_DIAG
-  diagModuleOnce();
-  diagFrame(pc, lookupPc, frame);
-#endif
+  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
 
   capture->count++;
   return 0;
@@ -275,12 +291,7 @@ static int collectSimpleFrame(void *data, uintptr_t pc) {
   SpiceStackFrame *frame = beginFrame(capture, pc);
   if (frame == NULL)
     return 1;
-  const uintptr_t lookupPc = toSymbolTableAddress(pc);
-  backtrace_syminfo(capture->state, lookupPc, collectSymbol, ignoreError, frame);
-#ifdef SPICE_DIAG
-  diagModuleOnce();
-  diagFrame(pc, lookupPc, frame);
-#endif
+  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
 
   capture->count++;
   return 0;
