@@ -337,6 +337,22 @@ TEST(DriverTest, DebugInfoLevelWithoutValueDoesNotSwallowSourceFile) {
   ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
 }
 
+TEST(DriverTest, CoverageRejectsExplicitlyDisabledDebugInfo) {
+  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=none", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  // DebugInfoLevel::NONE is also the default, so this must not be confused with 'no --debug-info given'
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    ASSERT_STREQ("[Error|CLI] Incompatible options: Code coverage instrumentation requires debug info", error.what());
+  }
+}
+
 TEST(DriverTest, CoverageRejectsLtoCombination) {
   const char *argv[] = {"spice", "build", "--coverage", "-lto", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);

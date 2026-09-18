@@ -39,7 +39,7 @@ You can apply following options to the `test` subcommand:
 | `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc. <br> Valid values: `full` (default when the flag is given without a value), `line-info` (DWARF line tables only) and `none`. <br> A level can only be attached to the long form (e.g. `--debug-info=line-info`); `-g` is an alias for `--debug-info=full`. |
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                                           |
 | -            | `--sanitize`              | Enable instrumentation for sanitizer. <br> Valid values: `none` (default), `address`, `thread`, `memory` and `type`. |
-| -            | `--coverage`              | Instrument code for coverage analysis (gcov-compatible `.gcno`/`.gcda` output). Implies `--debug-info` if no debug info level was requested explicitly and is incompatible with `-lto`. |
+| -            | `--coverage`              | Instrument code for coverage analysis (gcov-compatible `.gcno`/`.gcda` output). Implies `--debug-info` if no debug info level was requested explicitly, rejects an explicit `--debug-info=none`, and is incompatible with `-lto`. |
 | -            | `--disable-verifier`      | Disable LLVM module and function verification (only recommended for debugging the compiler)                          |
 | -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                                          |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                                                   |

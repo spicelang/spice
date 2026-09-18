@@ -172,8 +172,12 @@ void Driver::enrich() const {
 
   // Code coverage instrumentation needs debug info to map counters back to source locations
   if (cliOptions.instrumentation.codeCoverage) {
-    if (!cliOptions.instrumentation.emitsDebugInfo())
+    if (!cliOptions.instrumentation.emitsDebugInfo()) {
+      // Turning debug info off on purpose would leave the counters unmappable, so say so instead of overriding it
+      if (debugInfoLevelSetExplicitly)
+        throw CliError(INCOMPATIBLE_OPTIONS, "Code coverage instrumentation requires debug info");
       cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
+    }
     if (cliOptions.useLTO)
       throw CliError(INCOMPATIBLE_OPTIONS, "Code coverage instrumentation is not supported in combination with LTO");
   }
@@ -499,10 +503,12 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
       ->required();
 }
 
-void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
+void Driver::addInstrumentationOptions(CLI::App *subCmd) {
   const auto debugInfoCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);
+
+    debugInfoLevelSetExplicitly = true;
 
     // CLI11 reports a flag without an attached value as 'true', so a bare '-g' means full debug info
     if (inputString == "true" || inputString == DEBUG_INFO_FULL)
@@ -551,7 +557,12 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   // CLI11 only supports the '<option>=<value>' syntax for long option names, so '-g' cannot carry a level itself
   subCmd
       ->add_flag_callback(
-          "-g", [&] { cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL; }, "Alias for --debug-info=full")
+          "-g",
+          [&] {
+            cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
+            debugInfoLevelSetExplicitly = true;
+          },
+          "Alias for --debug-info=full")
       ->trigger_on_parse();
   // --sanitizer
   subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");

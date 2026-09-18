@@ -173,11 +173,14 @@ private:
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd) const;
-  void addInstrumentationOptions(CLI::App *subCmd) const;
+  void addInstrumentationOptions(CLI::App *subCmd);
   static void ensureNotDockerized();
 
   // Members
   CLI::App app = CLI::App("Spice Programming Language", "spice");
+  // Whether the user named a debug info level themselves. DebugInfoLevel::NONE is also the default, so without this
+  // an explicit '--debug-info=none' would be indistinguishable from not passing the option at all.
+  bool debugInfoLevelSetExplicitly = false;
 };
 
 } // namespace spice::compiler
