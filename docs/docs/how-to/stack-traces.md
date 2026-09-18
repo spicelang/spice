@@ -124,18 +124,28 @@ what ends up in the binary decides how much of a trace is readable:
   [`-g`](../cli/build.md).
 
 The work itself is done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), which the linker
-pulls in as `-lbacktrace`. GCC ships it as part of its own runtime, so it is present on a stock Linux or MinGW
-toolchain and Clang finds it there too.
+pulls in as `-lbacktrace`. GCC builds it as part of its own runtime, so where a program is linked through GCC -
+Linux, most of the time - it is already there and nothing needs doing. Elsewhere it may have to be pointed at,
+and linking a program that takes a stack trace otherwise fails with an undefined reference to
+`backtrace_create_state`.
 
-**macOS is the exception**: the Apple toolchain does not include libbacktrace, and Homebrew has no formula for
-it. Without one, linking a program that takes a stack trace fails with an undefined reference to
-`backtrace_create_state`. Either install the MacPorts port (`sudo port install libbacktrace`) or build it
-yourself:
+**Linux with Clang** resolves it too, since Clang searches GCC's directories.
+
+**Windows**: MinGW-w64's GCC has it, but Clang's GNU driver does not search GCC's internal library directory. Ask
+GCC where the archive is and add that directory to `LIBRARY_PATH`, which Clang reads for `-l` search dirs:
+
+```powershell
+$dir = Split-Path -Parent (gcc -print-file-name=libbacktrace.a)
+$env:LIBRARY_PATH = "$dir;$env:LIBRARY_PATH"
+```
+
+**macOS** has none at all: the Apple toolchain does not include libbacktrace, and Homebrew has no formula for it.
+Either install the MacPorts port (`sudo port install libbacktrace`) or build it yourself:
 
 ```sh
 git clone https://github.com/ianlancetaylor/libbacktrace.git
 cd libbacktrace && ./configure --prefix="$HOME/.local" --disable-shared && make && make install
-export LIBRARY_PATH="$HOME/.local/lib:$LIBRARY_PATH"   # clang reads this for '-l' search dirs
+export LIBRARY_PATH="$HOME/.local/lib:$LIBRARY_PATH"
 ```
 
 ## Limitations

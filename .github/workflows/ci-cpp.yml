@@ -218,6 +218,20 @@ jobs:
           echo "LIBRARY_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
           echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
+      # The stack trace runtime links '-lbacktrace'. GCC builds libbacktrace as part of its own runtime, and this
+      # job already has a MinGW GCC (it is what LLVM is built with), but clang's GNU driver does not search GCC's
+      # internal library directory - so ask GCC where the archive is and put that directory on LIBRARY_PATH.
+      # vcpkg is no help here: its libbacktrace port is marked '"supports": "!windows"'.
+      - name: Setup libbacktrace
+        run: |
+          $backtraceLib = & gcc -print-file-name=libbacktrace.a
+          if (-not (Test-Path $backtraceLib)) {
+            throw "The MinGW GCC on this runner has no libbacktrace.a (gcc reported '$backtraceLib')"
+          }
+          $backtraceDir = Split-Path -Parent (Resolve-Path $backtraceLib)
+          Write-Host "Found libbacktrace in $backtraceDir"
+          echo "LIBRARY_PATH=$backtraceDir;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
+
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:

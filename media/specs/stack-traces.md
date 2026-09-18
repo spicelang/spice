@@ -197,7 +197,7 @@ rejects an iterator whose struct carries no generic arguments, even though it th
 iterator's `get()`/`getIdx()` return type rather than from those arguments. `StackTrace` is std's first
 non-generic iterable and so the first type to run into this; `T` is always `StackTraceEntry`. Relaxing the check
 looks safe - `iteratorTemplateTypes` is used for nothing else - but
-`test-files/typechecker/foreach-loops/error-foreach-non-generic-iterator` pins the current behaviour, so it was
+`test-files/typechecker/foreach-loops/error-foreach-non-generic-iterator` pins the current behavior, so it was
 left alone.
 
 ## Work items
@@ -257,9 +257,17 @@ left alone.
   That is a real papercut for macOS users. Vendoring the library into `std/` would remove the dependency
   altogether at the cost of ~17k lines of third-party C in the tree and a second or two added to every link;
   worth revisiting if the manual step proves annoying.
-- **Windows availability is assumed, not measured.** The Windows job links through clang's MinGW driver, and
-  MinGW-w64's GCC ships `libbacktrace.a` the same way Linux GCC does, but that has not been confirmed on the
-  runner image. If it turns out to be missing, the macOS build-from-source step is the template for fixing it.
+- **Windows needs the archive pointed at.** Measured on CI: the first run failed with
+  `lld: error: unable to find library -lbacktrace`, only in the two stack trace cases (2/734). MinGW-w64's GCC
+  does have `libbacktrace.a` - it is what the job builds LLVM with - but clang's GNU driver does not search GCC's
+  internal library directory. The job now asks GCC for the path (`gcc -print-file-name=libbacktrace.a`, which
+  returns the bare name when GCC does not have it, so the step can fail loudly) and puts that directory on
+  `LIBRARY_PATH`. vcpkg is no help: its `libbacktrace` port is marked `"supports": "!windows"`, because the
+  library cannot be built with MSVC at all.
+- **`-lbacktrace` turned out to be out-of-the-box on one platform of three.** Linux resolves it with no help;
+  macOS has no package and needs a source build; Windows needs a `LIBRARY_PATH` entry. That is more friction than
+  this route looked like it carried when it was chosen over vendoring, and it lands on users, not just CI - which
+  makes the vendoring option above worth a second look.
 - **Static linking.** `spice build -static` still resolves the executable's own frames, since libbacktrace reads
   the on-disk symbol table rather than the loader's, but frames in code that would have come from a shared
   library are no longer attributable to one.
