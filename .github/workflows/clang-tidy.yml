@@ -3,6 +3,8 @@ name: Clang-Tidy
 
 on:
   push:
+    branches-ignore:
+      - 'main'
     paths-ignore:
       - 'docs/**'
       - 'media/**'
