@@ -21,6 +21,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h> /* for toSymbolTableAddress() below */
+#endif
+
 /* ==================== libbacktrace API (mirrored from <backtrace.h>) ==================== */
 
 struct backtrace_state;
@@ -55,6 +60,44 @@ typedef struct SpiceStackFrame {
 } SpiceStackFrame;
 
 /* ==================== Implementation ==================== */
+
+/* Moves an address into the coordinate space libbacktrace's PE symbol table uses, on the one platform where the
+ * two differ.
+ *
+ * libbacktrace builds that table at the image base recorded in the executable's header - where the module asked
+ * to be loaded - but Windows puts modules somewhere else whenever ASLR is on, which it is by default. Its DWARF
+ * reader accounts for the difference; the symbol table reader is handed the unrelocated base and does not, so
+ * every address in a running program sorts past the last entry in the table and each frame comes back named after
+ * it. Until that is fixed upstream, the shift is undone here, by subtracting the distance the module carrying the
+ * address was actually relocated by.
+ *
+ * Only the lookup sees the adjusted address - the frame keeps the real one. The name and symbol value that come
+ * back are the right ones, and the offset is a difference of two addresses within the table's space, so the shift
+ * cancels out of it. Returns the address unchanged if the module cannot be identified, leaving the frame to
+ * resolve no worse than it would have. */
+#if defined(_WIN32)
+static uintptr_t toSymbolTableAddress(uintptr_t pc) {
+  /* UNCHANGED_REFCOUNT, so the handle needs no release; FROM_ADDRESS takes the address cast to a string. */
+  HMODULE module = NULL;
+  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                          (LPCWSTR)pc, &module) ||
+      module == NULL)
+    return pc;
+
+  /* A module handle is the address the module was loaded at, so its headers are readable straight from it. */
+  const IMAGE_DOS_HEADER *dosHeader = (const IMAGE_DOS_HEADER *)module;
+  if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+    return pc;
+  const IMAGE_NT_HEADERS *ntHeaders = (const IMAGE_NT_HEADERS *)((const char *)module + dosHeader->e_lfanew);
+  if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+    return pc;
+
+  return pc - (uintptr_t)module + (uintptr_t)ntHeaders->OptionalHeader.ImageBase;
+}
+#else
+/* Everywhere else libbacktrace resolves symbols against correctly biased addresses already. */
+static uintptr_t toSymbolTableAddress(uintptr_t pc) { return pc; }
+#endif
 
 /* State passed through the libbacktrace callbacks of one capture. */
 struct SpiceCaptureState {
@@ -178,7 +221,7 @@ static int collectFullFrame(void *data, uintptr_t pc, const char *filename, int 
     frame->lineNumber = lineno;
   /* backtrace_full() reports the name but not where the function starts, so the offset takes a second lookup.
    * For a frame that was inlined into another, this is the offset into the function it was inlined into. */
-  backtrace_syminfo(capture->state, pc, collectSymbol, ignoreError, frame);
+  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
 
   capture->count++;
   return 0;
@@ -195,7 +238,7 @@ static int collectSimpleFrame(void *data, uintptr_t pc) {
   SpiceStackFrame *frame = beginFrame(capture, pc);
   if (frame == NULL)
     return 1;
-  backtrace_syminfo(capture->state, pc, collectSymbol, ignoreError, frame);
+  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
 
   capture->count++;
   return 0;
