@@ -1,4 +1,4 @@
-// TEST: -g=line-info
+// TEST: --debug-info=line-info
 
 type TestStruct struct {
     long lng

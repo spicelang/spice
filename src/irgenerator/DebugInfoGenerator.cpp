@@ -32,9 +32,9 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
   const bool fullDebugInfo = irGenerator->cliOptions.instrumentation.emitsFullDebugInfo();
   const auto emissionKind = fullDebugInfo ? llvm::DICompileUnit::FullDebug : llvm::DICompileUnit::LineTablesOnly;
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING,
-                                             irGenerator->cliOptions.optLevel > OptLevel::O0, "", 0, "", emissionKind, 0, false,
-                                             false, llvm::DICompileUnit::DebugNameTableKind::None);
+  const bool isOptimized = irGenerator->cliOptions.optLevel > OptLevel::O0;
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING, isOptimized, "", 0,
+                                             "", emissionKind, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", 5);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);

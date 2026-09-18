@@ -280,7 +280,7 @@ TEST(DriverTest, CoverageImpliesDebugInfo) {
 }
 
 TEST(DriverTest, CoverageKeepsExplicitDebugInfoLevel) {
-  const char *argv[] = {"spice", "build", "--coverage", "-g=line-info", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=line-info", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   CliOptions cliOptions;
   Driver driver(cliOptions, true);
@@ -302,16 +302,32 @@ TEST(DriverTest, DebugInfoLevels) {
     return cliOptions.instrumentation.debugInfoLevel;
   };
 
-  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g")); // Plain alias for --debug-info=full
   ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info"));
-  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g=full"));
-  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("-g=line-info"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=full"));
+  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("--debug-info=line-info"));
   ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("--debug-info=LINE-INFO"));
-  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("-g=none"));
+  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=none"));
+}
+
+TEST(DriverTest, DebugInfoLevelLastOccurrenceWins) {
+  const auto parseDebugInfoLevel = [](const char *firstArg, const char *secondArg) {
+    const char *argv[] = {"spice", "build", firstArg, secondArg, "../../media/test-project/test.spice"};
+    static constexpr int argc = std::size(argv);
+    CliOptions cliOptions;
+    Driver driver(cliOptions, true);
+    EXPECT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+    return cliOptions.instrumentation.debugInfoLevel;
+  };
+
+  // '-g' is a separate option from '--debug-info', so make sure the two are not resolved in registration order
+  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("-g", "--debug-info=line-info"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=line-info", "-g"));
+  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=full", "--debug-info=none"));
 }
 
 TEST(DriverTest, DebugInfoLevelWithoutValueDoesNotSwallowSourceFile) {
-  const char *argv[] = {"spice", "build", "-g", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "build", "--debug-info", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   CliOptions cliOptions;
   Driver driver(cliOptions, true);

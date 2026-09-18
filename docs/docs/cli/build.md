@@ -42,7 +42,7 @@ You can apply following options to the `build` subcommand:
 | `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz`                       |
 | `-m`         | `--build-mode`            | Controls the build mode. <br> Valid values: `debug` (default), `release` and `test`.                                 |
 | `-lto`       | -                         | Enable link-time-optimization                                                                                        |
-| `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc. <br> Valid values: `full` (default when the flag is given without a value), `line-info` (DWARF line tables only) and `none`. |
+| `-g`         | `--debug-info`            | Generate debug info to debug the executable in GDB, etc. <br> Valid values: `full` (default when the flag is given without a value), `line-info` (DWARF line tables only) and `none`. <br> A level can only be attached to the long form (e.g. `--debug-info=line-info`); `-g` is an alias for `--debug-info=full`. |
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                                           |
 | -            | `--sanitize`              | Enable instrumentation for sanitizer. <br> Valid values: `none` (default), `address`, `thread`, `memory` and `type`. |
 | -            | `--coverage`              | Instrument code for coverage analysis (gcov-compatible `.gcno`/`.gcda` output). Implies `--debug-info` if no debug info level was requested explicitly and is incompatible with `-lto`. |

@@ -2,8 +2,6 @@
 
 #include "Driver.h"
 
-#include <string_view>
-
 #include <exception/CliError.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
@@ -14,9 +12,6 @@
 #include <llvm/TargetParser/Triple.h>
 
 namespace spice::compiler {
-
-// Short form of the '--debug-info' option, including the separator of an attached value (e.g. '-g=line-info')
-constexpr std::string_view DEBUG_INFO_SHORT_OPTION_PREFIX = "-g=";
 
 Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignCliOptions), performDryRun(dryRun) {
   // Allow positional args
@@ -107,26 +102,8 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
  * @return Return code
  */
 int Driver::parse(int argc, const char *argv[]) {
-  // CLI11 only accepts the '<option>=<value>' syntax for long option names, so rewrite '-g=<level>' to its long form
-  // to make the short option accept a debug info level just like the long one does. Everything after a '--' separator
-  // is positional and therefore left untouched.
-  std::vector<std::string> args;
-  args.reserve(static_cast<size_t>(argc));
-  bool positionalsOnly = false;
-  for (int i = 0; i < argc; i++) {
-    std::string arg(argv[i]);
-    positionalsOnly |= arg == "--";
-    if (!positionalsOnly && arg.starts_with(DEBUG_INFO_SHORT_OPTION_PREFIX))
-      arg = "--debug-info=" + arg.substr(DEBUG_INFO_SHORT_OPTION_PREFIX.length());
-    args.push_back(std::move(arg));
-  }
-  std::vector<const char *> rewrittenArgv;
-  rewrittenArgv.reserve(args.size());
-  for (const std::string &arg : args)
-    rewrittenArgv.push_back(arg.c_str());
-
   try {
-    app.parse(static_cast<int>(rewrittenArgv.size()), rewrittenArgv.data());
+    app.parse(argc, argv);
     return EXIT_SUCCESS;
   } catch (const CLI::ParseError &parseError) {
     return app.exit(parseError);
@@ -561,12 +538,21 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   };
 
   // --debug-info
-  // Registered as an option with zero expected arguments, which makes CLI11 treat it like a flag. That way '-g' keeps
-  // working standalone, while the level can optionally be attached with '=' (e.g. '-g=line-info'). A flag never
-  // consumes the following argument, so the main source file cannot be swallowed by a bare '-g'.
-  subCmd->add_option("--debug-info,-g", debugInfoCallback, "Generate debug info: full (default), line-info, none")
+  // Registered as an option with zero expected arguments, which makes CLI11 treat it like a flag. That way a bare
+  // '--debug-info' keeps working, while the level can optionally be attached with '=' (e.g. '--debug-info=line-info').
+  // A flag never consumes the following argument, so the main source file cannot be swallowed by a bare '--debug-info'.
+  // CLI11 runs option callbacks in registration order, so both this option and its '-g' alias below are triggered on
+  // parse instead. That way the one that comes last on the command line wins, no matter which one it is.
+  subCmd->add_option("--debug-info", debugInfoCallback, "Generate debug info: full (default), line-info, none")
       ->expected(0)
-      ->multi_option_policy(CLI::MultiOptionPolicy::TakeLast);
+      ->multi_option_policy(CLI::MultiOptionPolicy::TakeLast)
+      ->trigger_on_parse();
+  // -g
+  // CLI11 only supports the '<option>=<value>' syntax for long option names, so '-g' cannot carry a level itself
+  subCmd
+      ->add_flag_callback(
+          "-g", [&] { cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL; }, "Alias for --debug-info=full")
+      ->trigger_on_parse();
   // --sanitizer
   subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
   // --coverage
