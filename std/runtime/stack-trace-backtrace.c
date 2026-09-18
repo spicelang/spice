@@ -91,7 +91,12 @@ static struct backtrace_state *obtainState(void) {
     return NULL;
 
   /* Two threads reaching this point together both get a valid state; the loser's is dropped rather than freed,
-   * which is all that can be done with a state - and it happens at most once per process. */
+   * which is all that can be done with a state - and it happens at most once per process.
+   *
+   * Claiming the right to create one first, so that only a single state is ever made, would be tidier but worse
+   * here: the threads that lost the claim would have to wait for the winner to publish, and a trace is often
+   * dumped from a crash path, where the thread that would publish may be the one that just died. A bounded,
+   * once-per-process memory cost in a rare race beats a stack trace that hangs instead of printing. */
   void *expected = NULL;
   if (!__atomic_compare_exchange_n(&backtraceState, &expected, (void *)created, 0, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
     return (struct backtrace_state *)expected;
