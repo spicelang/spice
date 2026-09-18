@@ -146,13 +146,20 @@ threaded flag so libbacktrace guards its own caches.
 
 ### Symbol availability
 
-`ExternalLinkerInterface::prepare()` adds `-Wl,-s` to every non-Darwin executable built without debug info, which
-strips `.symtab` and leaves a run-time symbolizer nothing to resolve against — measured: every frame of a
-stripped binary comes back `<unknown>`, including with libbacktrace. A new module attribute
-`core.linker.preserveSymbols` suppresses that flag, and `stack_trace_rt.spice` carries it, so only programs that
-actually pull the stack trace runtime in pay for the larger binary. This is what `-rdynamic` was considered for
-and is strictly better than it: the whole symbol table covers file-local functions too, and `.dynsym` does not
-grow, so `--gc-sections` is not inhibited.
+`ExternalLinkerInterface::prepare()` used to add `-Wl,-s` to every non-Darwin executable built without debug
+info, which strips `.symtab` and leaves a run-time symbolizer nothing to resolve against — measured: every frame
+of a stripped binary comes back `<unknown>`, including with libbacktrace. Stripping is now off by default and
+opt-in through a new `--strip-symbols` build flag, so an ordinary build carries its symbol table and prints
+readable traces, and only someone who asked for the smaller binary gives that up.
+
+This is what `-rdynamic` was considered for and is strictly better than it: the whole symbol table covers
+file-local functions too, and `.dynsym` does not grow, so `--gc-sections` is not inhibited. It also costs nothing
+at run time, and the executable cache key already covers it, since it is an ordinary linker flag.
+
+This flips the default for every executable Spice links, not only those that take a stack trace: an ordinary
+build is now larger by whatever its symbol table weighs (measured on the three-frame example below: 140 KB
+against 124 KB, so about 13%). That is the price of a readable trace from any program, and `--strip-symbols`
+buys it back. Darwin never had the flag applied (its linker has no equivalent of `-Wl,-s`) and is unaffected.
 
 ### Linker argument order
 
@@ -186,7 +193,8 @@ deterministic under ASLR/PIE.
 - [x] Emit the per-function `"frame-pointer"="all"` attribute, behind `--keep-frame-pointers` (default off).
       Independent of the rest: the unwinder route needs no frame pointer, but `__frame_address()` callers may.
 - [x] Correct the `__frame_address()` doc comments in `GenBuiltinFunctions.cpp` / `TypeCheckerBuiltinFunctions.cpp`.
-- [x] New module attribute `core.linker.preserveSymbols`, honoured by `ExternalLinkerInterface::prepare()`.
+- [x] Symbol stripping turned off by default and moved behind a `--strip-symbols` flag on `spice build`, next to
+      the other link-time options.
 - [x] Append linker flags behind the object files, so a `-l` naming a static archive resolves.
 
 **Standard library (`std/runtime/`)**
@@ -216,8 +224,9 @@ deterministic under ASLR/PIE.
 
 - [x] `docs/docs/language/casts.md` — pointer↔integer casts.
 - [x] `docs/docs/cli/*.md` — the `--keep-frame-pointers` flag.
-- [x] `docs/docs/language/attributes.md` — `core.linker.preserveSymbols`, and the two module attributes that
-      were missing from the list (`core.darwin.linker.flag`, `core.linker.additionalSource`).
+- [x] `docs/docs/cli/build.md` — the `--strip-symbols` flag.
+- [x] `docs/docs/language/attributes.md` — the two module attributes that were missing from the list
+      (`core.darwin.linker.flag`, `core.linker.additionalSource`).
 - [x] `docs/docs/how-to/stack-traces.md` — `sDumpStacktrace()`, the `StackTrace` API and the output format.
 
 ## Open questions / risks
@@ -246,8 +255,11 @@ tarball; apt.llvm.org is blocked by this environment's network policy):
   names in `test/test-files/**/*.ll` — from the earlier round of work, unchanged.
 - libbacktrace resolution measured directly from C in three link configurations before any Spice code was
   written: with `-g` (names, offsets, file and line), without `-g` (names and offsets from `.symtab`), and with
-  `-Wl,-s` (nothing resolves) — which is what `core.linker.preserveSymbols` exists for.
+  `-Wl,-s` (nothing resolves) — which is why stripping had to stop being the default.
 - The static-archive link-order failure reproduced with `gcc -lbacktrace main.c shim.c`, and the fix confirmed.
+- `--strip-symbols` in both directions: without it the executable keeps its `.symtab` and every Spice frame
+  resolves; with it the section is gone and every frame prints `<unknown>`. Passed together with `-g` it also
+  removes all eight `.debug_*` sections, which is what `gcc -g -s` does and what the flag's help text says.
 - The rewritten runtime run end-to-end at `-O0` through `-Oz`, and at `-O0 -g` and `-O2 -g`. Names and offsets
   resolve everywhere; file and line appear in the two `-g` builds; the three inlined frames of `-O2 -g` are
   recovered and share one physical address, and collapse to `main` alone from `-O1` upwards without debug info.

@@ -21,7 +21,6 @@ Spice offers the option to annotate single function or whole modules via attribu
 - `core.darwin.linker.flag: string (default: "")`: Append linker flag for macOS
 - `core.windows.linker.flag: string (default: "")`: Append linker flag for Windows
 - `core.linker.additionalSource: string (default: "")`: Compile and link an additional C/C++ source file, given relative to the annotated module
-- `core.linker.preserveSymbols: bool (default: false)`: Keep the symbol table of the linked executable. Without debug info the linker strips it, which leaves nothing for a run-time symbolizer such as the stack trace runtime to resolve addresses against
 - `core.compiler.alwaysKeepOnNameCollision: bool (default: false)`: Always keep the symbols of this source files when merging the name registries of multiple source files
 
 

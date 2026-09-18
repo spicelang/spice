@@ -29,7 +29,6 @@ public:
   void addLinkerFlag(const std::string &flag);
   void addAdditionalSourcePath(std::filesystem::path additionalSource);
   void requestLibMathLinkage();
-  void requestSymbolPreservation();
   [[nodiscard]] const std::vector<std::string> &getLinkerFlags() const { return linkerFlags; }
   [[nodiscard]] const std::vector<std::filesystem::path> &getLinkedFiles() const { return linkedFiles; }
 
@@ -45,9 +44,6 @@ private:
   const CliOptions &cliOptions;
   std::vector<std::filesystem::path> linkedFiles;
   std::vector<std::string> linkerFlags;
-  // Set from a 'core.linker.preserveSymbols' module attribute. Written from the single-threaded front end, like
-  // linkerFlags above, and read once in prepare().
-  bool preserveSymbols = false;
   // The IR generator requests libm linkage while emitting certain operators, so this flag is written from the back-end
   // worker threads. Everything else on this class is only touched from the single-threaded phases of the pipeline.
   std::atomic<bool> linkLibMath = false;

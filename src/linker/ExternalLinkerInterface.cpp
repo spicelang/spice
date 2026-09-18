@@ -30,10 +30,10 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Stripping symbols. Skipped when a module carries 'core.linker.preserveSymbols' (the stack trace runtime does):
-  // stripping leaves the run-time symbolizer nothing to resolve addresses against. Darwin is excluded anyway, since
-  // its dyld needs the symbol table.
-  if (!cliOptions.instrumentation.emitsDebugInfo() && !cliOptions.targetTriple.isOSDarwin() && !preserveSymbols)
+  // Stripping symbols, on request only: the symbol table is what a run-time symbolizer such as the stack trace
+  // runtime resolves addresses against, so a stripped executable prints nothing but addresses. Darwin is excluded
+  // because its linker has no equivalent of '-Wl,-s'.
+  if (cliOptions.stripSymbols && !cliOptions.targetTriple.isOSDarwin())
     addLinkerFlag("-Wl,-s");
 
   // Sanitizers
@@ -257,10 +257,5 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
  * Link against libmath a.k.a. -lm
  */
 void ExternalLinkerInterface::requestLibMathLinkage() { linkLibMath = true; }
-
-/**
- * Keep the symbol table of the linked executable, which is otherwise stripped for builds without debug info
- */
-void ExternalLinkerInterface::requestSymbolPreservation() { preserveSymbols = true; }
 
 } // namespace spice::compiler

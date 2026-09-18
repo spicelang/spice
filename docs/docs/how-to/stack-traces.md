@@ -98,9 +98,9 @@ p logWithTrace(string message) {
 Resolving an address to a name happens at run time, against the executable's own symbol table and debug info, so
 what ends up in the binary decides how much of a trace is readable:
 
-- **Names and offsets** come from the symbol table. Programs that use the stack trace runtime keep theirs: the
-  runtime carries the [`core.linker.preserveSymbols`](../language/attributes.md) attribute, which stops the
-  linker from stripping it. Nothing else is needed.
+- **Names and offsets** come from the symbol table, which every executable keeps unless you build it with
+  [`--strip-symbols`](../cli/build.md). Nothing else is needed. In a stripped executable every frame prints as
+  `<unknown>`, so strip only what you do not expect to read a stack trace from.
 - **File names and line numbers** come from debug info, so they only appear in a build made with
   [`-g`](../cli/build.md).
 

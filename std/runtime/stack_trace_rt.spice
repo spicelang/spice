@@ -1,6 +1,5 @@
 #![
     core.compiler.alwaysKeepOnNameCollision = true,
-    core.linker.preserveSymbols = true,
     core.linker.flag = "-lbacktrace",
     core.linker.additionalSource = "stack-trace-backtrace.c"
 ]
@@ -14,10 +13,9 @@
 // an explicit import and through auto-import by name (RuntimeModuleManager), and only the former applies
 // OS-suffixing. Were this file suffixed, the two paths could load different copies and collide at link time.
 //
-// 'core.linker.preserveSymbols' keeps the linker from stripping the symbol table of programs that pull this
-// runtime in. Without it there is nothing left for libbacktrace to resolve addresses against, and every frame
-// prints as '<unknown>'. File and line numbers need more than that - they come from debug info, so they only
-// show up in a build made with '-g'.
+// Resolving a frame to a name needs the executable's symbol table, which the linker keeps unless the build asked
+// for '--strip-symbols'; in a stripped executable every frame prints as '<unknown>'. File and line numbers need
+// more than that - they come from debug info, so they only show up in a build made with '-g'.
 
 import "std/text/demangle";
 import "std/data/vector";
