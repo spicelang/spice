@@ -62,6 +62,7 @@ struct SpiceCaptureState {
   SpiceStackFrame *frames;
   int capacity;
   int count;
+  int skipEntries;
 };
 
 /* Every error libbacktrace reports is a missing-information error ("no debug info", "no symbol table", ...), and
@@ -117,10 +118,12 @@ static void collectSymbol(void *data, uintptr_t pc, const char *symname, uintptr
   SpiceStackFrame *frame = (SpiceStackFrame *)data;
   if (symname == NULL) /* symbol table present, but this address is not in it */
     return;
-  if (symval != 0 && pc >= symval)
-    frame->offset = (uint64_t)(pc - symval);
   if (frame->functionName == NULL)
     frame->functionName = duplicateString(symname);
+  /* An offset only means anything next to the name it counts from, and the copy above can fail, so the two are
+   * filled in together or not at all - which is the invariant the capture test asserts. */
+  if (frame->functionName != NULL && symval != 0 && pc >= symval)
+    frame->offset = (uint64_t)(pc - symval);
 }
 
 /* Fills the next frame slot from an address, and returns it for the symbol lookup to complete. NULL once the
@@ -141,18 +144,33 @@ static SpiceStackFrame *beginFrame(struct SpiceCaptureState *capture, uintptr_t 
  * libbacktrace decrements to an all-ones address before handing it on; neither is a real frame. */
 static int isEndOfStack(uintptr_t pc) { return pc == 0 || pc == UINTPTR_MAX; }
 
+/* Takes one off the caller's skip budget, and says whether this entry is one of the ones being dropped.
+ *
+ * This is deliberately not folded into the 'skip' that backtrace_full() takes: that one counts physical frames
+ * and is applied before symbolization, so with debug info a single skipped frame can swallow several entries -
+ * one per function inlined into it. The caller counts in entries, the same units it gets back. */
+static int isSkippedEntry(struct SpiceCaptureState *capture) {
+  if (capture->skipEntries <= 0)
+    return 0;
+  capture->skipEntries--;
+  return 1;
+}
+
 /* Invoked once per frame by backtrace_full(), innermost first, and once more per function inlined into it. */
 static int collectFullFrame(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
   struct SpiceCaptureState *capture = (struct SpiceCaptureState *)data;
   if (isEndOfStack(pc))
     return 1;
+  if (isSkippedEntry(capture))
+    return 0;
 
   SpiceStackFrame *frame = beginFrame(capture, pc);
   if (frame == NULL)
     return 1; /* buffer full - stop rather than drop the frames nearest the capture point */
   frame->functionName = duplicateString(function);
   frame->fileName = duplicateString(filename);
-  frame->lineNumber = lineno;
+  if (frame->fileName != NULL) /* same as above: a line number without its file name says nothing */
+    frame->lineNumber = lineno;
   /* backtrace_full() reports the name but not where the function starts, so the offset takes a second lookup.
    * For a frame that was inlined into another, this is the offset into the function it was inlined into. */
   backtrace_syminfo(capture->state, pc, collectSymbol, ignoreError, frame);
@@ -166,6 +184,8 @@ static int collectSimpleFrame(void *data, uintptr_t pc) {
   struct SpiceCaptureState *capture = (struct SpiceCaptureState *)data;
   if (isEndOfStack(pc))
     return 1;
+  if (isSkippedEntry(capture))
+    return 0;
 
   SpiceStackFrame *frame = beginFrame(capture, pc);
   if (frame == NULL)
@@ -177,12 +197,18 @@ static int collectSimpleFrame(void *data, uintptr_t pc) {
 }
 
 /* Fills 'frames' with up to 'capacity' frames of the calling stack, most recent call first, and returns how many
- * were written. Frame 0 is this function, so a caller that wants its own frame hidden passes skipFrames >= 1.
+ * were written.
+ *
+ * The two skips count different things. 'skipNativeFrames' drops whole physical frames before anything is looked
+ * up, starting with this function's own, and is for the stack trace runtime's own frames, which are always
+ * physical. 'skipEntries' drops that many of the entries that would otherwise be written, and is for the caller,
+ * who counts in the entries it gets back - not the same thing once debug info turns one physical frame into
+ * several entries.
  *
  * Names and file names are heap-allocated; release them with spiceReleaseStackTrace() once they are copied out.
  */
-int spiceCaptureStackTrace(SpiceStackFrame *frames, int capacity, int skipFrames) {
-  if (frames == NULL || capacity <= 0 || skipFrames < 0)
+int spiceCaptureStackTrace(SpiceStackFrame *frames, int capacity, int skipNativeFrames, int skipEntries) {
+  if (frames == NULL || capacity <= 0 || skipNativeFrames < 0 || skipEntries < 0)
     return 0;
   struct backtrace_state *state = obtainState();
   if (state == NULL)
@@ -193,17 +219,21 @@ int spiceCaptureStackTrace(SpiceStackFrame *frames, int capacity, int skipFrames
   capture.frames = frames;
   capture.capacity = capacity;
   capture.count = 0;
+  capture.skipEntries = skipEntries;
 
   /* A skip of 0 makes backtrace_full() start at its own caller, which is this function - exactly the frame
-   * numbering documented above, so 'skipFrames' passes straight through. It resolves as much as the executable
-   * carries: function, file and line from debug info, function name alone from the symbol table, and the bare
-   * address when there is neither. */
-  backtrace_full(state, skipFrames, collectFullFrame, ignoreError, &capture);
+   * numbering documented above, so 'skipNativeFrames' passes straight through. It resolves as much as the
+   * executable carries: function, file and line from debug info, function name alone from the symbol table, and
+   * the bare address when there is neither. */
+  backtrace_full(state, skipNativeFrames, collectFullFrame, ignoreError, &capture);
 
   /* It gives up entirely, without reporting a single frame, when it cannot even open the executable. Unwinding
-   * itself still works in that case, so fall back to the addresses alone rather than to no trace at all. */
-  if (capture.count == 0)
-    backtrace_simple(state, skipFrames, collectSimpleFrame, ignoreError, &capture);
+   * itself still works in that case, so fall back to the addresses alone rather than to no trace at all. The
+   * skip budget is reset, since nothing was written and the callback would otherwise have nothing left to drop. */
+  if (capture.count == 0) {
+    capture.skipEntries = skipEntries;
+    backtrace_simple(state, skipNativeFrames, collectSimpleFrame, ignoreError, &capture);
+  }
 
   return capture.count;
 }

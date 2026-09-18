@@ -257,17 +257,21 @@ left alone.
   That is a real papercut for macOS users. Vendoring the library into `std/` would remove the dependency
   altogether at the cost of ~17k lines of third-party C in the tree and a second or two added to every link;
   worth revisiting if the manual step proves annoying.
-- **Windows needs the archive pointed at.** Measured on CI: the first run failed with
-  `lld: error: unable to find library -lbacktrace`, only in the two stack trace cases (2/734). MinGW-w64's GCC
-  does have `libbacktrace.a` - it is what the job builds LLVM with - but clang's GNU driver does not search GCC's
-  internal library directory. The job now asks GCC for the path (`gcc -print-file-name=libbacktrace.a`, which
-  returns the bare name when GCC does not have it, so the step can fail loudly) and puts that directory on
-  `LIBRARY_PATH`. vcpkg is no help: its `libbacktrace` port is marked `"supports": "!windows"`, because the
-  library cannot be built with MSVC at all.
+- **Windows has no libbacktrace either.** Measured on CI in two rounds: the first failed with
+  `lld: error: unable to find library -lbacktrace`, only in the two stack trace cases (2/734). The guess was that
+  MinGW-w64's GCC carries it the way Linux GCC does - it is what the job builds LLVM with - and that clang's GNU
+  driver simply does not search GCC's internal library directory. The second round disproved that:
+  `gcc -print-file-name=libbacktrace.a` finds nothing on the runner, so there is no copy to point at. vcpkg
+  cannot fill the gap either - its `libbacktrace` port is marked `"supports": "!windows"`, because the library
+  does not build with MSVC at all. The job now builds it from source with MSYS2's MinGW GCC, the same recipe and
+  the same pinned commit as the macOS job.
 - **`-lbacktrace` turned out to be out-of-the-box on one platform of three.** Linux resolves it with no help;
-  macOS has no package and needs a source build; Windows needs a `LIBRARY_PATH` entry. That is more friction than
-  this route looked like it carried when it was chosen over vendoring, and it lands on users, not just CI - which
-  makes the vendoring option above worth a second look.
+  macOS and Windows both need libbacktrace built from source, which CI now does for them. That is considerably
+  more friction than this route looked like it carried when it was chosen over vendoring, and CI is the easy
+  half - a user on macOS or Windows has to do the same build by hand, every machine, before a program that takes
+  a stack trace will link. Vendoring the sources into `std/` would make all three platforms work with nothing
+  installed and no CI plumbing, at the cost of ~17k lines of third-party C in the tree and a second or two added
+  to every link. On the evidence gathered since, that now looks like the better trade.
 - **Static linking.** `spice build -static` still resolves the executable's own frames, since libbacktrace reads
   the on-disk symbol table rather than the loader's, but frames in code that would have come from a shared
   library are no longer attributable to one.

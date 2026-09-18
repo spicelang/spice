@@ -53,7 +53,8 @@ type NativeStackFrame struct {
     int lineNumber
 }
 
-ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipFrames*/);
+ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipNativeFrames*/,
+                                  int /*skipEntries*/);
 ext p spiceReleaseStackTrace(NativeStackFrame* /*frames*/, int /*count*/);
 
 /**
@@ -132,7 +133,7 @@ public inline f<StackTraceEntry&> operator[](StackTrace& trace, unsigned long in
 public p StackTrace.capture(int skipFrames = 0) {
     this.entries.clear(); // cleared first, so an early return below cannot leave a previous trace behind
 
-    // A negative skip would cancel out RUNTIME_FRAMES and start the trace inside the stack trace runtime itself
+    // Rejected rather than passed on, so a negative skip cannot turn into an enormous one in the shim
     if skipFrames < 0 {
         return;
     }
@@ -140,7 +141,9 @@ public p StackTrace.capture(int skipFrames = 0) {
     NativeStackFrame[STACK_TRACE_CAPACITY] frames;
     int frameCount = 0;
     unsafe {
-        frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES + skipFrames);
+        // The runtime's own frames are physical and are dropped as such; the caller's skip counts the entries
+        // it would otherwise see, which is not the same number once debug info expands an inlined frame
+        frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES, skipFrames);
     }
 
     this.entries.reserve(cast<unsigned long>(frameCount));
