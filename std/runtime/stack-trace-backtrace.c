@@ -81,7 +81,7 @@ typedef struct SpiceStackFrame {
  *
  * It has to come from the file: when the loader relocates a module it rewrites OptionalHeader.ImageBase in the
  * mapped copy to the address it actually used, so the header in memory reports the module as unmoved however far
- * it travelled. libbacktrace parses the file, so the file is where the coordinate space of its symbol table comes
+ * it traveled. libbacktrace parses the file, so the file is where the coordinate space of its symbol table comes
  * from, and reading the mapped copy instead just yields a shift of zero. */
 static int readPreferredBase(HMODULE module, uintptr_t *preferredBase) {
   char modulePath[MAX_PATH];
