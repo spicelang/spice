@@ -51,6 +51,8 @@ std::string CliError::getMessagePrefix(CliErrorType errorType) {
     return "Invalid sanitizer";
   case INVALID_BACKEND:
     return "Invalid backend";
+  case INVALID_DEBUG_INFO_LEVEL:
+    return "Invalid debug info level";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE

@@ -31,7 +31,7 @@ void ExternalLinkerInterface::prepare() {
     return;
 
   // Stripping symbols
-  if (!cliOptions.instrumentation.generateDebugInfo && !cliOptions.targetTriple.isOSDarwin())
+  if (!cliOptions.instrumentation.emitsDebugInfo() && !cliOptions.targetTriple.isOSDarwin())
     addLinkerFlag("-Wl,-s");
 
   // Sanitizers

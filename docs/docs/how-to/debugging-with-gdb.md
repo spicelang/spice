@@ -6,6 +6,11 @@ Spice compiles to native machine code via LLVM and, when built with [`-g`](../cl
 debug info. This means you can debug a Spice executable with GDB just like a C or C++ program: set breakpoints,
 step through source lines, and inspect local variables.
 
+If you only need to map addresses back to source lines - e.g. for stack traces or a profiler - and do not care
+about inspecting variables, `-g=line-info` emits DWARF line tables only. This keeps the debug info considerably
+smaller, but breakpoints on source lines are the only thing GDB can do with it, so the rest of this page assumes
+a full `-g` build.
+
 By default, though, GDB shows a standard library container by its raw internal layout rather than its logical
 contents. For example, without any help, a `Vector<int>` holding `10, 20, 30` prints as:
 

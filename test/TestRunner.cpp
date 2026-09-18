@@ -130,7 +130,7 @@ static void execTestCase(const TestCase &testCase) {
       /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
       CliOptions::InstrumentationSettings{
-          /* generateDebugInfo= */ false,
+          /* debugInfoLevel= */ DebugInfoLevel::NONE,
           /* codeCoverage= */ testDriverCliOptions.enableCoverage,
           /* sanitizer= */ Sanitizer::NONE,
       },
@@ -278,7 +278,7 @@ static void execTestCase(const TestCase &testCase) {
             return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
-            if (cliOptions.instrumentation.generateDebugInfo) {
+            if (cliOptions.instrumentation.emitsDebugInfo()) {
               // Remove the lines, containing paths on the local file system
               TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
               TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");

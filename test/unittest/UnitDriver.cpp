@@ -64,13 +64,13 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_FALSE(cliOptions.generateTestMain);
   ASSERT_FALSE(cliOptions.testMode);
   ASSERT_FALSE(cliOptions.noEntryFct);
-  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo);           // -g
-  ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer); // --sanitizer=address
-  ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);  // --output-container=exec
-  ASSERT_TRUE(cliOptions.useLTO);                                      // -lto
-  ASSERT_TRUE(cliOptions.printDebugOutput);                            // -d
-  ASSERT_TRUE(cliOptions.dump.dumpIR);                                 // -ir
-  ASSERT_TRUE(cliOptions.useLifetimeMarkers);                          // implicitly due to enabled address sanitizer
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel); // -g
+  ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer);        // --sanitizer=address
+  ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);         // --output-container=exec
+  ASSERT_TRUE(cliOptions.useLTO);                                             // -lto
+  ASSERT_TRUE(cliOptions.printDebugOutput);                                   // -d
+  ASSERT_TRUE(cliOptions.dump.dumpIR);                                        // -ir
+  ASSERT_TRUE(cliOptions.useLifetimeMarkers);                                 // implicitly due to enabled address sanitizer
 }
 
 TEST(DriverTest, RunSubcommandMinimal) {
@@ -275,7 +275,50 @@ TEST(DriverTest, CoverageImpliesDebugInfo) {
   driver.enrich();
 
   ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
-  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo); // implicitly due to enabled code coverage
+  // Implicitly due to enabled code coverage
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
+}
+
+TEST(DriverTest, CoverageKeepsExplicitDebugInfoLevel) {
+  const char *argv[] = {"spice", "build", "--coverage", "-g=line-info", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
+  // Code coverage only raises the level if debug info is off, an explicit choice of the user is kept
+  ASSERT_EQ(DebugInfoLevel::LINE_INFO, cliOptions.instrumentation.debugInfoLevel);
+}
+
+TEST(DriverTest, DebugInfoLevels) {
+  const auto parseDebugInfoLevel = [](const char *debugInfoArg) {
+    const char *argv[] = {"spice", "build", debugInfoArg, "../../media/test-project/test.spice"};
+    static constexpr int argc = std::size(argv);
+    CliOptions cliOptions;
+    Driver driver(cliOptions, true);
+    EXPECT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+    return cliOptions.instrumentation.debugInfoLevel;
+  };
+
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g=full"));
+  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("-g=line-info"));
+  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("--debug-info=LINE-INFO"));
+  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("-g=none"));
+}
+
+TEST(DriverTest, DebugInfoLevelWithoutValueDoesNotSwallowSourceFile) {
+  const char *argv[] = {"spice", "build", "-g", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
 }
 
 TEST(DriverTest, CoverageRejectsLtoCombination) {
@@ -462,6 +505,10 @@ const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
     DriverInvalidEnumTestParam{
         "--backend=unknown",
         "[Error|CLI] Invalid backend: unknown",
+    },
+    DriverInvalidEnumTestParam{
+        "--debug-info=unknown",
+        "[Error|CLI] Invalid debug info level: unknown",
     });
 INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 

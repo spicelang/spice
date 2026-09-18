@@ -27,6 +27,15 @@ enum class OptLevel : uint8_t {
   Oz = 5, // Aggressively optimize for code size
 };
 
+enum class DebugInfoLevel : uint8_t {
+  NONE = 0,      // Do not emit any debug info
+  LINE_INFO = 1, // Only emit DWARF line tables, no type, variable or scope info
+  FULL = 2,      // Emit full debug info, incl. types, variables and lexical scopes
+};
+const char *const DEBUG_INFO_NONE = "none";
+const char *const DEBUG_INFO_LINE_INFO = "line-info";
+const char *const DEBUG_INFO_FULL = "full";
+
 enum class Sanitizer : uint8_t {
   NONE = 0,    // No sanitizer
   ADDRESS = 1, // Sanitize memory accesses
@@ -113,9 +122,12 @@ struct CliOptions {
   bool generateTestMain = false;
   bool staticLinking = false;
   struct InstrumentationSettings {
-    bool generateDebugInfo = false;
+    DebugInfoLevel debugInfoLevel = DebugInfoLevel::NONE;
     bool codeCoverage = false;
     Sanitizer sanitizer = Sanitizer::NONE;
+
+    [[nodiscard]] ALWAYS_INLINE bool emitsDebugInfo() const { return debugInfoLevel != DebugInfoLevel::NONE; }
+    [[nodiscard]] ALWAYS_INLINE bool emitsFullDebugInfo() const { return debugInfoLevel == DebugInfoLevel::FULL; }
   } instrumentation;
   bool disableVerifier = !SPICE_DEBUG;
   bool testMode = false;
