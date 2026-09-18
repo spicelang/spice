@@ -171,3 +171,8 @@ export LIBRARY_PATH="$HOME/.local/lib:$LIBRARY_PATH"
   info, inlined functions do not appear at all - only the physical frames do.
 - `spice build -static` leaves no dynamic symbol information behind for shared-library frames, so frames outside
   the executable itself resolve less well.
+- On Windows, a frame in a system DLL that carries no symbols of its own can come back named after a function in
+  a different module, with a nonsensical offset. libbacktrace searches each loaded module's symbol table in turn
+  and treats the last entry of one as covering every address above it, so a lookup that finds nothing where it
+  should can still match something where it should not. Frames in your own executable are unaffected; the ones
+  below `main` are the ones to distrust.
