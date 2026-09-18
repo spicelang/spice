@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #if defined(_WIN32)
@@ -94,6 +95,37 @@ static uintptr_t toSymbolTableAddress(uintptr_t pc) {
 
   return pc - (uintptr_t)module + (uintptr_t)ntHeaders->OptionalHeader.ImageBase;
 }
+
+/* ===== TEMPORARY DIAGNOSTIC - not for merge, removed once the Windows failure is understood =====
+ * Goes to stdout so it lands in a reference test's diff, which CI prints in full, rather than into
+ * stderr where the dump test redirects it to a file. Capped so a run cannot flood the log. */
+static int diagLines = 0;
+
+static void diagModuleOnce(void) {
+  static int done = 0;
+  if (done)
+    return;
+  done = 1;
+  HMODULE module = GetModuleHandleA(NULL);
+  const IMAGE_DOS_HEADER *dosHeader = (const IMAGE_DOS_HEADER *)module;
+  const IMAGE_NT_HEADERS *ntHeaders = (const IMAGE_NT_HEADERS *)((const char *)module + dosHeader->e_lfanew);
+  printf("DIAG module: actual=%p preferred=0x%llx sizeOfImage=0x%lx bias=0x%llx\n", (void *)module,
+         (unsigned long long)ntHeaders->OptionalHeader.ImageBase,
+         (unsigned long)ntHeaders->OptionalHeader.SizeOfImage,
+         (unsigned long long)((uintptr_t)module - (uintptr_t)ntHeaders->OptionalHeader.ImageBase));
+  fflush(stdout);
+}
+
+static void diagFrame(uintptr_t raw, uintptr_t adjusted, const SpiceStackFrame *frame) {
+  if (diagLines >= 6)
+    return;
+  diagLines++;
+  printf("DIAG frame: raw=0x%llx adj=0x%llx name=%s off=0x%llx\n", (unsigned long long)raw,
+         (unsigned long long)adjusted, frame->functionName == NULL ? "(null)" : frame->functionName,
+         (unsigned long long)frame->offset);
+  fflush(stdout);
+}
+#define SPICE_DIAG 1
 #else
 /* Everywhere else libbacktrace resolves symbols against correctly biased addresses already. */
 static uintptr_t toSymbolTableAddress(uintptr_t pc) { return pc; }
@@ -221,7 +253,12 @@ static int collectFullFrame(void *data, uintptr_t pc, const char *filename, int 
     frame->lineNumber = lineno;
   /* backtrace_full() reports the name but not where the function starts, so the offset takes a second lookup.
    * For a frame that was inlined into another, this is the offset into the function it was inlined into. */
-  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
+  const uintptr_t lookupPc = toSymbolTableAddress(pc);
+  backtrace_syminfo(capture->state, lookupPc, collectSymbol, ignoreError, frame);
+#ifdef SPICE_DIAG
+  diagModuleOnce();
+  diagFrame(pc, lookupPc, frame);
+#endif
 
   capture->count++;
   return 0;
@@ -238,7 +275,12 @@ static int collectSimpleFrame(void *data, uintptr_t pc) {
   SpiceStackFrame *frame = beginFrame(capture, pc);
   if (frame == NULL)
     return 1;
-  backtrace_syminfo(capture->state, toSymbolTableAddress(pc), collectSymbol, ignoreError, frame);
+  const uintptr_t lookupPc = toSymbolTableAddress(pc);
+  backtrace_syminfo(capture->state, lookupPc, collectSymbol, ignoreError, frame);
+#ifdef SPICE_DIAG
+  diagModuleOnce();
+  diagFrame(pc, lookupPc, frame);
+#endif
 
   capture->count++;
   return 0;
