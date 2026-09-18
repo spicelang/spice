@@ -10,22 +10,22 @@ Output, without debug info:
 
 ```
 Stack trace:
-  0x00005f2c1d4a12c3  levelC() + 0xd
-  0x00005f2c1d4a12d3  levelB() + 0xd
-  0x00005f2c1d4a12e3  main + 0xd
+  #0  0x00005f2c1d4a12c3  levelC() + 0xd
+  #1  0x00005f2c1d4a12d3  levelB() + 0xd
+  #2  0x00005f2c1d4a12e3  main + 0xd
 ```
 
 and with it, the same plus the source location each frame came from:
 
 ```
 Stack trace:
-  0x00005f2c1d4a12c3  levelC() + 0xd at /home/me/trace.spice:2
-  0x00005f2c1d4a12d3  levelB() + 0xd at /home/me/trace.spice:6
-  0x00005f2c1d4a12e3  main() + 0xd at /home/me/trace.spice:10
+  #0  0x00005f2c1d4a12c3  levelC() + 0xd at /home/me/trace.spice:2
+  #1  0x00005f2c1d4a12d3  levelB() + 0xd at /home/me/trace.spice:6
+  #2  0x00005f2c1d4a12e3  main() + 0xd at /home/me/trace.spice:10
 ```
 
-i.e. per frame: **frame address**, **demangled** function name, **hex offset from the symbol start**, and - when
-the program carries debug info - **file and line**. User-facing documentation lives in
+i.e. per frame: **frame number**, **frame address**, **demangled** function name, **hex offset from the symbol
+start**, and - when the program carries debug info - **file and line**. User-facing documentation lives in
 `docs/docs/how-to/stack-traces.md`.
 
 ## Background: what the hand-written implementation got wrong
@@ -177,12 +177,28 @@ not parse cleanly back unchanged. `capture()` demangles each resolved name befor
 ### Formatting
 
 ```
-  %p  %s + %#lx at %s:%d\n
+  #%-3lu%p  %s + %#lx at %s:%d\n
 ```
 
 with the `at ...` part left out when the frame has no file name, and `<unknown>` in place of the name and offset
 for a frame that did not resolve. `includeAddresses = false` suppresses the address column so tests stay
-deterministic under ASLR/PIE.
+deterministic under ASLR/PIE; the frame number is reproducible and always printed. Left-aligning it in a field of
+three keeps the columns behind it lined up for every index a trace can reach, since `STACK_TRACE_CAPACITY` caps
+it at `#63`.
+
+### Iteration
+
+`StackTrace` implements `IIterable<StackTraceEntry>` and hands out a `StackTraceIterator<StackTraceEntry>`, so a
+trace can be walked with a `foreach` loop, with or without the frame number. It deliberately does not expose the
+iterator of the `Vector` it currently stores its frames in, so that storage choice stays its own business.
+
+The item type is a generic argument only because the language requires it: `TypeChecker::visitForeachLoop()`
+rejects an iterator whose struct carries no generic arguments, even though it then takes the item type from the
+iterator's `get()`/`getIdx()` return type rather than from those arguments. `StackTrace` is std's first
+non-generic iterable and so the first type to run into this; `T` is always `StackTraceEntry`. Relaxing the check
+looks safe - `iteratorTemplateTypes` is used for nothing else - but
+`test-files/typechecker/foreach-loops/error-foreach-non-generic-iterator` pins the current behaviour, so it was
+left alone.
 
 ## Work items
 
@@ -201,8 +217,8 @@ deterministic under ASLR/PIE.
 
 - [x] `stack-trace-backtrace.c` — capture and symbolization through libbacktrace.
 - [x] `stack_trace_rt.spice` — the public API: `StackTraceEntry` (address, offset, demangled name, file, line)
-      with its own `dump()`, `StackTrace` wrapping a `Vector<StackTraceEntry>`, and the auto-imported
-      `sGetStacktrace()` / `sDumpStacktrace()`.
+      with its own `dump()`, `StackTrace` wrapping a `Vector<StackTraceEntry>`, `StackTraceIterator` for
+      `foreach`, and the auto-imported `sGetStacktrace()` / `sDumpStacktrace()`.
 - [x] Deleted with the rewrite: `stack_trace_capture_rt.spice`, `stack_trace_capture_rt_windows.spice`,
       `stack_trace_symbol_rt.spice`, `stack_trace_symbol_rt_windows.spice`, `stack-trace-unwind.c`.
 - [x] Demangling — shipped as `std/text/demangle`, wired into `StackTrace.capture()`.
@@ -231,12 +247,19 @@ deterministic under ASLR/PIE.
 
 ## Open questions / risks
 
-- **libbacktrace must be present at link time.** GCC ships `libbacktrace.a` inside its own lib directory, so
-  `-lbacktrace` resolves on a stock Linux or MinGW toolchain, and Clang finds it there too (measured with both
-  drivers on Ubuntu). It is *not* part of the Apple toolchain, so on macOS a program that takes a stack trace
-  needs a libbacktrace from Homebrew or MacPorts, or it fails to link with an undefined reference to
-  `backtrace_create_state`. Vendoring the library into `std/` would remove that dependency at the cost of ~17k
-  lines of third-party C in the tree and a second or two added to every link.
+- **libbacktrace must be present at link time, and macOS has no package for it.** GCC ships `libbacktrace.a`
+  inside its own lib directory, so `-lbacktrace` resolves on a stock Linux or MinGW toolchain, and Clang finds it
+  there too (measured with both drivers on Ubuntu; on Ubuntu the file belongs to `libgcc-13-dev`, i.e. it is
+  upstream GCC's own, not Debian packaging). It is *not* part of the Apple toolchain. MacPorts has
+  `devel/libbacktrace`, but **Homebrew has no formula** — checked against the full homebrew-core tree, 8602
+  formulae, no match — so the usual macOS install route does not exist. The CI job therefore builds it from a
+  pinned commit and caches it, and `docs/docs/how-to/stack-traces.md` tells users to use MacPorts or do the same.
+  That is a real papercut for macOS users. Vendoring the library into `std/` would remove the dependency
+  altogether at the cost of ~17k lines of third-party C in the tree and a second or two added to every link;
+  worth revisiting if the manual step proves annoying.
+- **Windows availability is assumed, not measured.** The Windows job links through clang's MinGW driver, and
+  MinGW-w64's GCC ships `libbacktrace.a` the same way Linux GCC does, but that has not been confirmed on the
+  runner image. If it turns out to be missing, the macOS build-from-source step is the template for fixing it.
 - **Static linking.** `spice build -static` still resolves the executable's own frames, since libbacktrace reads
   the on-disk symbol table rather than the loader's, but frames in code that would have come from a shared
   library are no longer attributable to one.
@@ -268,6 +291,10 @@ tarball; apt.llvm.org is blocked by this environment's network policy):
 - `valgrind --leak-check=full` on a program that takes two traces: *All heap blocks were freed - no leaks are
   possible*, 0 errors. The shim's `malloc`/`free` pairing is what this checks; libbacktrace's permanent state is
   `mmap`-backed and does not show up as heap at all.
+- The macOS CI recipe (`./configure --prefix=... --disable-shared && make && make install`) run here on Linux at
+  the pinned commit: it produces `lib/libbacktrace.a` and the headers, and `clang -###` confirms that a
+  `LIBRARY_PATH` entry is appended to the linker's `-L` list, which is how the Spice linker invocation will find
+  it. The platform differs, so this validates the recipe, not the macOS build itself.
 - `spicetest` in full, before and after the change. Both runs fail the same 58 tests, none of them related: the
   bootstrap-compiler suite (needs `SPICE_BOOTSTRAP_DIR`), the sanitizer cases (no compiler-rt in this container),
   the LLVM and libcurl bindings (no `LLVM_LIB_DIR`, no network), graphviz, and a set of `.ll` reference mismatches

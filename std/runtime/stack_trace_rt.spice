@@ -17,8 +17,17 @@
 // for '--strip-symbols'; in a stripped executable every frame prints as '<unknown>'. File and line numbers need
 // more than that - they come from debug info, so they only show up in a build made with '-g'.
 
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 import "std/text/demangle";
 import "std/data/vector";
+
+// Add generic type definitions. 'T' is always StackTraceEntry - a trace has exactly one kind of element - but
+// the language requires an iterator to carry its item type as a generic argument, so StackTraceIterator below
+// takes one rather than naming the type directly.
+type T dyn;
+type Numeric int|long|short;
 
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
@@ -30,8 +39,11 @@ public const int STACK_TRACE_CAPACITY = 64;
 const int RUNTIME_FRAMES = 2;
 
 /**
- * Mirrors 'SpiceStackFrame' in stack-trace-backtrace.c, field for field, so an array of these can be handed to
- * the shim to fill. The two names are heap-allocated there and released again by capture() below.
+ * Buffer the C shim fills, mirroring its 'SpiceStackFrame' field for field so an array of these can be handed
+ * over to be written into. It stays separate from StackTraceEntry below even though the two carry the same five
+ * values, because the two names are the whole difference: here they are raw pointers into memory the shim owns
+ * and hands back in capture(), and C cannot construct the owning String that an entry keeps. An entry's name is
+ * also the demangled one, which only exists once Spice has looked at it.
  */
 type NativeStackFrame struct {
     byte* address
@@ -56,18 +68,19 @@ public type StackTraceEntry struct {
 }
 
 /**
- * Prints this frame to stderr, as 'address  name + 0xoffset at file:line'. The location is left out when the
- * program carries no debug info; frames whose symbol could not be resolved print '<unknown>' in place of the
- * name and carry no offset.
+ * Prints this frame to stderr, as '#index  address  name + 0xoffset at file:line'. The location is left out
+ * when the program carries no debug info; frames whose symbol could not be resolved print '<unknown>' in place
+ * of the name and carry no offset.
  *
+ * @param frameIndex Position of this frame in its trace, counted from the most recent call
  * @param includeAddress Whether to print the raw address. Pass false for deterministic output - addresses move
  *                        between runs under ASLR/PIE.
  */
-public p StackTraceEntry.dump(bool includeAddress = true) {
+public p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = true) {
+    // Left-aligned in a field of three, so the columns behind it line up for every index a trace can reach
+    fprintf(__stderr(), "  #%-3lu", frameIndex);
     if includeAddress {
-        fprintf(__stderr(), "  %p  ", this.address);
-    } else {
-        fprintf(__stderr(), "  ");
+        fprintf(__stderr(), "%p  ", this.address);
     }
     if this.functionName.isEmpty() {
         fprintf(__stderr(), "<unknown>");
@@ -83,7 +96,7 @@ public p StackTraceEntry.dump(bool includeAddress = true) {
 /**
  * A captured stack trace: the frames of one call stack, most recent call first.
  */
-public type StackTrace struct {
+public type StackTrace struct : IIterable<StackTraceEntry> {
     Vector<StackTraceEntry> entries
 }
 
@@ -154,7 +167,8 @@ public p StackTrace.capture(int skipFrames = 0) {
 }
 
 /**
- * Prints the whole trace to stderr, one line per frame. A no-op when nothing was captured.
+ * Prints the whole trace to stderr, one line per frame, numbered from '#0' at the most recent call. A no-op when
+ * nothing was captured.
  *
  * @param includeAddresses Forwarded to StackTraceEntry.dump()
  */
@@ -162,9 +176,125 @@ public p StackTrace.dump(bool includeAddresses = true) {
     if this.isEmpty() { return; }
 
     fprintf(__stderr(), "Stack trace:\n");
-    foreach StackTraceEntry& entry : this.entries {
-        entry.dump(includeAddresses);
+    foreach unsigned long frameIndex, StackTraceEntry& entry : this.entries {
+        entry.dump(frameIndex, includeAddresses);
     }
+}
+
+/**
+ * Iterator over the frames of a stack trace, most recent call first.
+ *
+ * A trace hands this out rather than the iterator of the Vector it currently keeps its frames in, so that how a
+ * trace stores them stays its own business. 'T' is always StackTraceEntry - see the type definitions at the top
+ * of this file for why it is spelled as a generic argument at all.
+ */
+public type StackTraceIterator<T> struct : IIterator<T> {
+    StackTrace& trace
+    unsigned long cursor = 0l
+}
+
+/**
+ * Construct a stack trace iterator over the given trace
+ *
+ * @param trace Stack trace to iterate over
+ */
+public p StackTraceIterator.ctor<T>(StackTrace& trace) {
+    this.trace = trace;
+}
+
+/**
+ * Returns the current frame of the trace
+ *
+ * @return Reference to the current frame
+ */
+public inline f<T&> StackTraceIterator.get() {
+    return this.trace.getEntry(this.cursor);
+}
+
+/**
+ * Returns the current frame number and the current frame of the trace
+ *
+ * @return Pair of current frame number and reference to the current frame
+ */
+public inline f<Pair<unsigned long, T&>> StackTraceIterator.getIdx() {
+    T& entry = this.trace.getEntry(this.cursor);
+    return Pair<unsigned long, T&>(this.cursor, entry);
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> StackTraceIterator.isValid() {
+    return this.cursor < this.trace.getSize();
+}
+
+/**
+ * Moves the cursor to the next frame
+ */
+public inline p StackTraceIterator.next() {
+    if !this.isValid() {
+        panic(Error("Calling next() on invalid iterator"));
+    }
+    this.cursor++;
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it StackTraceIterator
+ */
+public inline p operator++<T>(StackTraceIterator<T>& it) {
+    if it.cursor >= it.trace.getSize() {
+        panic(Error("Iterator out of bounds"));
+    }
+    it.cursor++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it StackTraceIterator
+ */
+public inline p operator--<T>(StackTraceIterator<T>& it) {
+    if it.cursor <= 0l {
+        panic(Error("Iterator out of bounds"));
+    }
+    it.cursor--;
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it StackTraceIterator
+ * @param offset Offset
+ */
+public inline p operator+=<T, Numeric>(StackTraceIterator<T>& it, Numeric offset) {
+    if it.cursor + offset >= it.trace.getSize() || it.cursor + offset < 0l {
+        panic(Error("Iterator out of bounds"));
+    }
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it StackTraceIterator
+ * @param offset Offset
+ */
+public inline p operator-=<T, Numeric>(StackTraceIterator<T>& it, Numeric offset) {
+    if it.cursor - offset >= it.trace.getSize() || it.cursor - offset < 0l {
+        panic(Error("Iterator out of bounds"));
+    }
+    it.cursor -= offset;
+}
+
+/**
+ * Retrieve a forward iterator over the frames of this trace, so it can be walked with a foreach loop
+ */
+public f<StackTraceIterator<StackTraceEntry>> StackTrace.getIterator() {
+    return StackTraceIterator<StackTraceEntry>(*this);
 }
 
 /**

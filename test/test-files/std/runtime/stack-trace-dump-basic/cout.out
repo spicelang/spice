@@ -1,8 +1,8 @@
 Stack trace:
-  innerFrame(bool) + <offset>
-  middleFrame(bool) + <offset>
-  main + <offset>
+  #0  innerFrame(bool) + <offset>
+  #1  middleFrame(bool) + <offset>
+  #2  main + <offset>
 Stack trace:
-  <address>  innerFrame(bool) + <offset>
-  <address>  middleFrame(bool) + <offset>
-  <address>  main + <offset>
+  #0  <address>  innerFrame(bool) + <offset>
+  #1  <address>  middleFrame(bool) + <offset>
+  #2  <address>  main + <offset>

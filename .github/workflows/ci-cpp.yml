@@ -11,6 +11,8 @@ on:
 env:
   LLVM_VERSION: "llvmorg-23.1.1"
   GCC_VERSION: "16"
+  # Built from source for macOS only - see the 'Build libbacktrace' step in the macOS job
+  LIBBACKTRACE_VERSION: "0b9b49cf4a2c9229fc052d6716e1528b2f23e91a"
 
 jobs:
   build-linux-x86:
@@ -305,6 +307,31 @@ jobs:
           brew install ccache graphviz sqlite
           echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
+
+      # The stack trace runtime links '-lbacktrace'. GCC ships libbacktrace as part of its own runtime, so Linux
+      # and MinGW have it already, but the Apple toolchain does not and Homebrew has no formula for it - so it is
+      # built from source here. Static only: nothing then has to be found again at run time.
+      - name: Cache libbacktrace
+        id: cache-libbacktrace
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/libbacktrace-install
+          key: libbacktrace-${{ env.LIBBACKTRACE_VERSION }}-macos-aarch64
+
+      - name: Build libbacktrace
+        if: steps.cache-libbacktrace.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/ianlancetaylor/libbacktrace.git libbacktrace-src
+          cd libbacktrace-src
+          git checkout ${{ env.LIBBACKTRACE_VERSION }}
+          ./configure --prefix="${{ github.workspace }}/libbacktrace-install" --disable-shared
+          make -j$(sysctl -n hw.ncpu)
+          make install
+
+      - name: Setup libbacktrace
+        run: |
+          # clang reads LIBRARY_PATH for '-l' search dirs, which is how the Spice linker invocation finds it
+          echo "LIBRARY_PATH=${{ github.workspace }}/libbacktrace-install/lib:$LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Restore CCache
         uses: actions/cache/restore@v6
