@@ -131,12 +131,28 @@ and linking a program that takes a stack trace otherwise fails with an undefined
 
 **Linux with Clang** resolves it too, since Clang searches GCC's directories.
 
-**Windows**: MinGW-w64's GCC has it, but Clang's GNU driver does not search GCC's internal library directory. Ask
-GCC where the archive is and add that directory to `LIBRARY_PATH`, which Clang reads for `-l` search dirs:
+**Windows**: some MinGW-w64 distributions ship `libbacktrace.a` alongside GCC and some do not, and Clang's GNU
+driver does not search GCC's own library directory either way. Ask GCC whether it has one - it echoes the bare
+file name back when it does not - and put the directory on `LIBRARY_PATH`, which Clang reads for `-l` search
+dirs:
 
 ```powershell
-$dir = Split-Path -Parent (gcc -print-file-name=libbacktrace.a)
-$env:LIBRARY_PATH = "$dir;$env:LIBRARY_PATH"
+$lib = gcc -print-file-name=libbacktrace.a
+if (Test-Path $lib) { $env:LIBRARY_PATH = "$(Split-Path -Parent $lib);$env:LIBRARY_PATH" }
+```
+
+If that comes up empty - as it does on the GitHub Actions runner, which is why this repository's CI builds its
+own - build the library in an [MSYS2](https://www.msys2.org) MINGW64 shell and point `LIBRARY_PATH` at the
+result:
+
+```sh
+pacman -S --needed git make mingw-w64-x86_64-gcc
+git clone https://github.com/ianlancetaylor/libbacktrace.git
+cd libbacktrace && ./configure --prefix=/c/libbacktrace --disable-shared && make && make install
+```
+
+```powershell
+$env:LIBRARY_PATH = "C:\libbacktrace\lib;$env:LIBRARY_PATH"
 ```
 
 **macOS** has none at all: the Apple toolchain does not include libbacktrace, and Homebrew has no formula for it.
