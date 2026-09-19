@@ -23,7 +23,7 @@
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include <stdio.h>   /* for toSymbolTableAddress() below, which reads the module's own file */
+#include <stdio.h> /* for toSymbolTableAddress() below, which reads the module's own file */
 #include <windows.h>
 #endif
 
@@ -32,14 +32,12 @@
 struct backtrace_state;
 
 typedef void (*backtrace_error_callback)(void *data, const char *msg, int errnum);
-typedef int (*backtrace_full_callback)(void *data, uintptr_t pc, const char *filename, int lineno,
-                                       const char *function);
+typedef int (*backtrace_full_callback)(void *data, uintptr_t pc, const char *filename, int lineno, const char *function);
 typedef int (*backtrace_simple_callback)(void *data, uintptr_t pc);
-typedef void (*backtrace_syminfo_callback)(void *data, uintptr_t pc, const char *symname, uintptr_t symval,
-                                           uintptr_t symsize);
+typedef void (*backtrace_syminfo_callback)(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize);
 
-extern struct backtrace_state *backtrace_create_state(const char *filename, int threaded,
-                                                      backtrace_error_callback error_callback, void *data);
+extern struct backtrace_state *backtrace_create_state(const char *filename, int threaded, backtrace_error_callback error_callback,
+                                                      void *data);
 extern int backtrace_full(struct backtrace_state *state, int skip, backtrace_full_callback callback,
                           backtrace_error_callback error_callback, void *data);
 extern int backtrace_simple(struct backtrace_state *state, int skip, backtrace_simple_callback callback,
@@ -81,11 +79,9 @@ typedef struct SpiceStackFrame {
 static int readPreferredBaseFrom(FILE *moduleFile, uintptr_t *preferredBase) {
   IMAGE_DOS_HEADER dosHeader;
   IMAGE_NT_HEADERS ntHeaders;
-  const int read = fread(&dosHeader, sizeof dosHeader, 1, moduleFile) == 1 &&
-                   dosHeader.e_magic == IMAGE_DOS_SIGNATURE && dosHeader.e_lfanew >= 0 &&
-                   fseek(moduleFile, dosHeader.e_lfanew, SEEK_SET) == 0 &&
-                   fread(&ntHeaders, sizeof ntHeaders, 1, moduleFile) == 1 &&
-                   ntHeaders.Signature == IMAGE_NT_SIGNATURE;
+  const int read = fread(&dosHeader, sizeof dosHeader, 1, moduleFile) == 1 && dosHeader.e_magic == IMAGE_DOS_SIGNATURE &&
+                   dosHeader.e_lfanew >= 0 && fseek(moduleFile, dosHeader.e_lfanew, SEEK_SET) == 0 &&
+                   fread(&ntHeaders, sizeof ntHeaders, 1, moduleFile) == 1 && ntHeaders.Signature == IMAGE_NT_SIGNATURE;
   fclose(moduleFile);
   if (!read)
     return 0;
@@ -160,8 +156,8 @@ static int shiftOfModule(HMODULE module, uintptr_t *shift) {
 static uintptr_t toSymbolTableAddress(uintptr_t pc) {
   /* UNCHANGED_REFCOUNT, so the handle needs no release; FROM_ADDRESS takes the address cast to a string. */
   HMODULE module = NULL;
-  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (LPCWSTR)pc, &module) ||
+  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)pc,
+                          &module) ||
       module == NULL)
     return pc;
 
