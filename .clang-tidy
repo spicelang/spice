@@ -8,12 +8,20 @@
 # are intentionally left out: the codebase favors raw pointers owned by long-lived
 # containers (Scope*, ASTNode*, llvm::Value*) and arena-allocated AST nodes, which
 # those checks are not designed for.
+#
+# clang-analyzer-optin.core.EnumCastOutOfRange is disabled because LLVM's bitmask enums
+# (LLVM_MARK_AS_BITMASK_ENUM, e.g. llvm::DINode::DIFlags) are meant to hold ORed combinations of their
+# enumerators, which is exactly what the check reports as an out-of-range cast. It is an opt-in analyzer
+# check and yields nothing but false positives on the LLVM APIs used throughout the IR generator. It has to be disabled
+# here rather than via NOLINT: the diagnostics are reported inside LLVM's own operator| / operator|= (BitmaskEnum.h),
+# not at the call site in our sources, so a NOLINT next to our code does not suppress them.
 Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
   clang-analyzer-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
   performance-*,
   portability-*,
   misc-*,

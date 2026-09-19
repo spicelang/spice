@@ -41,7 +41,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   llvmTypes.lambdaFatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy(), builder.getInt64Ty()});
 
   // Initialize debug info generator
-  if (cliOptions.instrumentation.generateDebugInfo)
+  if (cliOptions.instrumentation.emitsDebugInfo())
     diGenerator.initialize(sourceFile->fileName, sourceFile->fileDir);
 }
 
@@ -740,7 +740,7 @@ llvm::GlobalVariable *IRGenerator::createGlobalStringConst(const std::string &ba
                                                            const CodeLoc &codeLoc) const {
   llvm::GlobalVariable *global = createGlobalStringConst(baseName, value);
   // Create debug info
-  if (cliOptions.instrumentation.generateDebugInfo)
+  if (cliOptions.instrumentation.emitsFullDebugInfo())
     diGenerator.generateGlobalStringDebugInfo(global, global->getName().str(), value.length(), codeLoc);
   return global;
 }

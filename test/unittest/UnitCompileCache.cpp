@@ -115,15 +115,21 @@ TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForSanitizer) {
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForDebugInfo) {
   const std::string source = "f<int> main() { return 0; }";
 
-  cliOptions.instrumentation.generateDebugInfo = false;
+  cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::NONE;
   const CacheManager cmNoDebug(cliOptions);
   const std::string keyNoDebug = cmNoDebug.computeCacheKey(source);
 
-  cliOptions.instrumentation.generateDebugInfo = true;
+  cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+  const CacheManager cmLineOnly(cliOptions);
+  const std::string keyLineOnly = cmLineOnly.computeCacheKey(source);
+
+  cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
   const CacheManager cmDebug(cliOptions);
   const std::string keyDebug = cmDebug.computeCacheKey(source);
 
+  ASSERT_NE(keyNoDebug, keyLineOnly);
   ASSERT_NE(keyNoDebug, keyDebug);
+  ASSERT_NE(keyLineOnly, keyDebug);
 }
 
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForLTO) {

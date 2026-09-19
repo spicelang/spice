@@ -26,7 +26,7 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   components << static_cast<uint8_t>(cliOptions.buildMode);
   components << static_cast<uint8_t>(cliOptions.optLevel);
   components << static_cast<uint8_t>(cliOptions.instrumentation.sanitizer);
-  components << cliOptions.instrumentation.generateDebugInfo;
+  components << static_cast<uint8_t>(cliOptions.instrumentation.debugInfoLevel);
   components << cliOptions.instrumentation.codeCoverage;
   components << cliOptions.targetTriple.str();
   components << cliOptions.useLTO;

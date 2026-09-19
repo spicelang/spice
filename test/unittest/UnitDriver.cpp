@@ -64,13 +64,13 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_FALSE(cliOptions.generateTestMain);
   ASSERT_FALSE(cliOptions.testMode);
   ASSERT_FALSE(cliOptions.noEntryFct);
-  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo);           // -g
-  ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer); // --sanitizer=address
-  ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);  // --output-container=exec
-  ASSERT_TRUE(cliOptions.useLTO);                                      // -lto
-  ASSERT_TRUE(cliOptions.printDebugOutput);                            // -d
-  ASSERT_TRUE(cliOptions.dump.dumpIR);                                 // -ir
-  ASSERT_TRUE(cliOptions.useLifetimeMarkers);                          // implicitly due to enabled address sanitizer
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel); // -g
+  ASSERT_EQ(Sanitizer::ADDRESS, cliOptions.instrumentation.sanitizer);        // --sanitizer=address
+  ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);         // --output-container=exec
+  ASSERT_TRUE(cliOptions.useLTO);                                             // -lto
+  ASSERT_TRUE(cliOptions.printDebugOutput);                                   // -d
+  ASSERT_TRUE(cliOptions.dump.dumpIR);                                        // -ir
+  ASSERT_TRUE(cliOptions.useLifetimeMarkers);                                 // implicitly due to enabled address sanitizer
 }
 
 TEST(DriverTest, RunSubcommandMinimal) {
@@ -275,7 +275,83 @@ TEST(DriverTest, CoverageImpliesDebugInfo) {
   driver.enrich();
 
   ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
-  ASSERT_TRUE(cliOptions.instrumentation.generateDebugInfo); // implicitly due to enabled code coverage
+  // Implicitly due to enabled code coverage. Line tables are all the gcov profiler needs, so it does not raise the
+  // level any further than that
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, cliOptions.instrumentation.debugInfoLevel);
+}
+
+TEST(DriverTest, CoverageKeepsExplicitDebugInfoLevel) {
+  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=full", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
+  ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
+  // Code coverage only raises the level if debug info is off, an explicit choice of the user is neither raised nor lowered
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
+}
+
+TEST(DriverTest, DebugInfoLevels) {
+  const auto parseDebugInfoLevel = [](const char *debugInfoArg) {
+    const char *argv[] = {"spice", "build", debugInfoArg, "../../media/test-project/test.spice"};
+    static constexpr int argc = std::size(argv);
+    CliOptions cliOptions;
+    Driver driver(cliOptions, true);
+    EXPECT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+    return cliOptions.instrumentation.debugInfoLevel;
+  };
+
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g")); // Plain alias for --debug-info=full
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=full"));
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("--debug-info=line-only"));
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("--debug-info=LINE-ONLY"));
+  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=none"));
+}
+
+TEST(DriverTest, DebugInfoLevelLastOccurrenceWins) {
+  const auto parseDebugInfoLevel = [](const char *firstArg, const char *secondArg) {
+    const char *argv[] = {"spice", "build", firstArg, secondArg, "../../media/test-project/test.spice"};
+    static constexpr int argc = std::size(argv);
+    CliOptions cliOptions;
+    Driver driver(cliOptions, true);
+    EXPECT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+    return cliOptions.instrumentation.debugInfoLevel;
+  };
+
+  // '-g' is a separate option from '--debug-info', so make sure the two are not resolved in registration order
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("-g", "--debug-info=line-only"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=line-only", "-g"));
+  ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=full", "--debug-info=none"));
+}
+
+TEST(DriverTest, DebugInfoLevelWithoutValueDoesNotSwallowSourceFile) {
+  const char *argv[] = {"spice", "build", "--debug-info", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
+  ASSERT_EQ("../../media/test-project/test.spice", cliOptions.mainSourceFile.relative_path().generic_string());
+}
+
+TEST(DriverTest, CoverageRejectsExplicitlyDisabledDebugInfo) {
+  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=none", "../../media/test-project/test.spice"};
+  static constexpr int argc = std::size(argv);
+  CliOptions cliOptions;
+  Driver driver(cliOptions, true);
+  ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+
+  // DebugInfoLevel::NONE is also the default, so this must not be confused with 'no --debug-info given'
+  try {
+    driver.enrich();
+    FAIL();
+  } catch (CliError &error) {
+    ASSERT_STREQ("[Error|CLI] Incompatible options: Code coverage instrumentation requires debug line info", error.what());
+  }
 }
 
 TEST(DriverTest, CoverageRejectsLtoCombination) {
@@ -462,6 +538,10 @@ const auto INVALID_ENUM_TEST_VALUES = ::testing::Values(
     DriverInvalidEnumTestParam{
         "--backend=unknown",
         "[Error|CLI] Invalid backend: unknown",
+    },
+    DriverInvalidEnumTestParam{
+        "--debug-info=unknown",
+        "[Error|CLI] Invalid debug info level: unknown",
     });
 INSTANTIATE_TEST_SUITE_P(DriverTest, DriverTest, INVALID_ENUM_TEST_VALUES);
 

@@ -66,7 +66,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   fct->addRetAttr(llvm::Attribute::NoUndef);
 
   // Add debug info
-  if (cliOptions.instrumentation.generateDebugInfo) {
+  if (cliOptions.instrumentation.emitsDebugInfo()) {
     const auto nonConstNode = const_cast<MainFctDefNode *>(node);
     const Function spiceFunc = FunctionManager::createMainFunction(node->entry, paramSymbolTypes, nonConstNode);
     diGenerator.generateFunctionDebugInfo(fct, &spiceFunc);

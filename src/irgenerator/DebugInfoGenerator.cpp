@@ -30,9 +30,11 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(
-      llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING, irGenerator->cliOptions.optLevel > OptLevel::O0, "", 0, "",
-      llvm::DICompileUnit::FullDebug, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
+  const bool fullDebugInfo = irGenerator->cliOptions.instrumentation.emitsFullDebugInfo();
+  const auto emissionKind = fullDebugInfo ? llvm::DICompileUnit::FullDebug : llvm::DICompileUnit::LineTablesOnly;
+  const bool isOptimized = irGenerator->cliOptions.optLevel > OptLevel::O0;
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus_14, cuDiFile, PRODUCER_STRING, isOptimized, "", 0,
+                                             "", emissionKind, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", 5);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
@@ -41,6 +43,10 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   diFile = diBuilder->createFile(sourceFileName, sourceFileDir.string());
 
   pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
+
+  // Line tables do not carry any type information, so there is no need to build the debug types at all
+  if (!fullDebugInfo)
+    return;
 
   // Initialize primitive debug types
   doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
@@ -83,7 +89,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
 }
 
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsDebugInfo())
     return;
 
   const ASTNode *node = spiceFunc->declNode;
@@ -110,22 +116,24 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
       spFlags |= llvm::DISubprogram::SPFlagVirtual;
   }
 
-  // Collect arguments
+  // Collect arguments. In line info only mode, the subroutine type stays empty, since no type info is emitted at all
   std::vector<llvm::Metadata *> argTypes;
-  if (spiceFunc->isProcedure())
-    argTypes.push_back(voidTy);
-  else
-    argTypes.push_back(getDITypeForQualType(node, spiceFunc->returnType)); // Add result type
-  if (spiceFunc->isMethod())
-    argTypes.push_back(getDITypeForQualType(node, spiceFunc->thisType)); // Add this type
-  if (isLambda) {
-    llvm::DICompositeType *captureStructType = generateCaptureStructDebugInfo(spiceFunc);
-    scope = captureStructType;
-    llvm::DIType *captureStructPtr = diBuilder->createPointerType(captureStructType, pointerWidth);
-    argTypes.push_back(captureStructPtr); // Add this type
+  if (irGenerator->cliOptions.instrumentation.emitsFullDebugInfo()) {
+    if (spiceFunc->isProcedure())
+      argTypes.push_back(voidTy);
+    else
+      argTypes.push_back(getDITypeForQualType(node, spiceFunc->returnType)); // Add result type
+    if (spiceFunc->isMethod())
+      argTypes.push_back(getDITypeForQualType(node, spiceFunc->thisType)); // Add this type
+    if (isLambda) {
+      llvm::DICompositeType *captureStructType = generateCaptureStructDebugInfo(spiceFunc);
+      scope = captureStructType;
+      llvm::DIType *captureStructPtr = diBuilder->createPointerType(captureStructType, pointerWidth);
+      argTypes.push_back(captureStructPtr); // Add this type
+    }
+    for (const QualType &argType : spiceFunc->getParamTypes()) // Add arg types
+      argTypes.push_back(getDITypeForQualType(node, argType));
   }
-  for (const QualType &argType : spiceFunc->getParamTypes()) // Add arg types
-    argTypes.push_back(getDITypeForQualType(node, argType));
 
   // Create function type
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
@@ -147,7 +155,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
 }
 
 void DebugInfoGenerator::concludeFunctionDebugInfo() {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsDebugInfo())
     return;
   // Functions generateFunctionDebugInfo skipped (no declNode, see there) never pushed a scope to conclude here.
   if (lexicalBlocks.empty())
@@ -157,7 +165,8 @@ void DebugInfoGenerator::concludeFunctionDebugInfo() {
 }
 
 void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  // Line tables do not carry scope info, so we attach all locations to the enclosing subprogram instead
+  if (!irGenerator->cliOptions.instrumentation.emitsFullDebugInfo())
     return;
 
   const uint32_t line = node->codeLoc.line;
@@ -167,7 +176,7 @@ void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
 }
 
 void DebugInfoGenerator::popLexicalBlock() {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsFullDebugInfo())
     return;
 
   assert(!lexicalBlocks.empty());
@@ -220,7 +229,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
 }
 
 void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsFullDebugInfo())
     return;
 
   const uint32_t lineNo = globalEntry->getDeclCodeLoc().line;
@@ -241,7 +250,7 @@ void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *glo
 }
 
 void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber) {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsFullDebugInfo())
     return;
 
   // Get symbol table entry
@@ -264,7 +273,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
 }
 
 void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
-  if (!irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (!irGenerator->cliOptions.instrumentation.emitsDebugInfo())
     return;
 
   assert(!lexicalBlocks.empty());
@@ -274,7 +283,7 @@ void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
 }
 
 void DebugInfoGenerator::finalize() const {
-  if (irGenerator->cliOptions.instrumentation.generateDebugInfo)
+  if (irGenerator->cliOptions.instrumentation.emitsDebugInfo())
     diBuilder->finalize();
 }
 

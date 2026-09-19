@@ -170,9 +170,14 @@ void Driver::enrich() const {
   if (sanitizer == Sanitizer::TYPE)
     cliOptions.useTBAAMetadata = true;
 
-  // Code coverage instrumentation needs debug info to map counters back to source locations
+  // Code coverage instrumentation needs debug line info to map counters back to source locations
   if (cliOptions.instrumentation.codeCoverage) {
-    cliOptions.instrumentation.generateDebugInfo = true;
+    if (!cliOptions.instrumentation.emitsDebugInfo()) {
+      // Turning debug info off on purpose would leave the counters unmappable, so say so instead of overriding it
+      if (debugInfoLevelSetExplicitly)
+        throw CliError(INCOMPATIBLE_OPTIONS, "Code coverage instrumentation requires debug line info");
+      cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+    }
     if (cliOptions.useLTO)
       throw CliError(INCOMPATIBLE_OPTIONS, "Code coverage instrumentation is not supported in combination with LTO");
   }
@@ -232,9 +237,7 @@ void Driver::addBuildSubcommand() {
   subCmd->alias("b");
   subCmd->allow_non_standard_option_names();
   subCmd->configurable();
-  subCmd->callback([&] {
-    shouldCompile = true;
-  });
+  subCmd->callback([&] { shouldCompile = true; });
 
   addCompileSubcommandOptions(subCmd);
   addInstrumentationOptions(subCmd);
@@ -294,9 +297,7 @@ void Driver::addRunSubcommand() {
   CLI::App *subCmd = app.add_subcommand("run", "Builds your Spice program and runs it immediately");
   subCmd->alias("r");
   subCmd->allow_non_standard_option_names();
-  subCmd->callback([&] {
-    shouldCompile = shouldExecute = true;
-  });
+  subCmd->callback([&] { shouldCompile = shouldExecute = true; });
 
   addCompileSubcommandOptions(subCmd);
   addInstrumentationOptions(subCmd);
@@ -498,7 +499,31 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
       ->required();
 }
 
-void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
+void Driver::addInstrumentationOptions(CLI::App *subCmd) {
+  const auto debugInfoCallback = [&](const CLI::results_t &results) {
+    std::string inputString = results.front();
+    std::ranges::transform(inputString, inputString.begin(), tolower);
+
+    debugInfoLevelSetExplicitly = true;
+
+    // CLI11 reports a flag without an attached value as 'true', so a bare '-g' means full debug info
+    if (inputString == "true" || inputString == DEBUG_INFO_FULL)
+      cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
+    else if (inputString == DEBUG_INFO_LINE_ONLY)
+      cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+    else if (inputString == "false" || inputString == DEBUG_INFO_NONE)
+      cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::NONE;
+    else
+      throw CliError(INVALID_DEBUG_INFO_LEVEL, inputString);
+
+    return true;
+  };
+
+  const auto debugInfoAliasCallback = [&] {
+    cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
+    debugInfoLevelSetExplicitly = true;
+  };
+
   const auto sanitizerCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::ranges::transform(inputString, inputString.begin(), tolower);
@@ -520,7 +545,18 @@ void Driver::addInstrumentationOptions(CLI::App *subCmd) const {
   };
 
   // --debug-info
-  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
+  // Registered as an option with zero expected arguments, which makes CLI11 treat it like a flag. That way a bare
+  // '--debug-info' keeps working, while the level can optionally be attached with '=' (e.g. '--debug-info=line-only').
+  // A flag never consumes the following argument, so the main source file cannot be swallowed by a bare '--debug-info'.
+  // CLI11 runs option callbacks in registration order, so both this option and its '-g' alias below are triggered on
+  // parse instead. That way the one that comes last on the command line wins, no matter which one it is.
+  subCmd->add_option("--debug-info", debugInfoCallback, "Generate debug info: full (default), line-only, none")
+      ->expected(0)
+      ->multi_option_policy(CLI::MultiOptionPolicy::TakeLast)
+      ->trigger_on_parse();
+  // -g
+  // CLI11 only supports the '<option>=<value>' syntax for long option names, so '-g' cannot carry a level itself
+  subCmd->add_flag_callback("-g", debugInfoAliasCallback, "Alias for --debug-info=full")->trigger_on_parse();
   // --sanitizer
   subCmd->add_option("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
   // --coverage
