@@ -16,6 +16,7 @@
 // sDumpStacktrace() is not imported: like the other 's'-prefixed runtime functions, it is pulled in by name.
 import "std/data/vector";
 import "std/io/file";
+import "std/os/os";
 
 ext f<byte*> freopen(string /*file path*/, string /*mode*/, byte* /*stream*/);
 ext f<int> fflush(byte* /*stream*/);
@@ -139,7 +140,9 @@ f<int> main() {
     printMaskedDump(lines, 1l, false);
     printMaskedDump(lines, secondHeaderIdx + 1l, true);
 
-    // The dump file is deliberately left behind: stderr is still attached to it, which Windows refuses to
-    // unlink, and it is what one looks at when this test goes red
+    // Detach stderr from the dump file first, because Windows refuses to unlink a file that is still open. Every
+    // assertion above has passed by now: a red run never gets here, so the file stays around to be looked at.
+    assert freopen(isWindows() ? "NUL" : "/dev/null", MODE_WRITE, __stderr()) != nil<byte*>;
+    assert deleteFile(DUMP_FILE_PATH);
     return 0;
 }
