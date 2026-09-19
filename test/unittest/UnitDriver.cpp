@@ -350,7 +350,7 @@ TEST(DriverTest, CoverageRejectsExplicitlyDisabledDebugInfo) {
     driver.enrich();
     FAIL();
   } catch (CliError &error) {
-    ASSERT_STREQ("[Error|CLI] Incompatible options: Code coverage instrumentation requires debug info", error.what());
+    ASSERT_STREQ("[Error|CLI] Incompatible options: Code coverage instrumentation requires debug line info", error.what());
   }
 }
 
