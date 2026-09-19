@@ -18,7 +18,9 @@ Spice offers the option to annotate single function or whole modules via attribu
 ### Available attributes
 - `core.linker.flag: string (default: "")`: Append linker flag
 - `core.linux.linker.flag: string (default: "")`: Append linker flag for Linux
+- `core.darwin.linker.flag: string (default: "")`: Append linker flag for macOS
 - `core.windows.linker.flag: string (default: "")`: Append linker flag for Windows
+- `core.linker.additionalSource: string (default: "")`: Compile and link an additional C/C++ source file, given relative to the annotated module
 - `core.compiler.alwaysKeepOnNameCollision: bool (default: false)`: Always keep the symbols of this source files when merging the name registries of multiple source files
 
 

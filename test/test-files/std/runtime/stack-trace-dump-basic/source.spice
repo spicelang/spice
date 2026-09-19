@@ -1,10 +1,14 @@
 // Exercises sDumpStacktrace() on every platform: the capture, the symbol resolution and the printed format.
 //
-// Two of the three columns a dump prints cannot be compared as they are: addresses move between runs under
-// ASLR, and offsets shift with every codegen change. The dump also goes to stderr, which the test runner
-// folds into the compared output. It is therefore pointed at a file first and printed back to stdout with
-// those two columns masked. What is left - which symbols resolve, and how they demangle - depends on what
-// the platform's resolver can see, so the expected output is pinned per platform in 'cout-<os>.out'.
+// Two of the columns a dump prints cannot be compared as they are: addresses move between runs under ASLR, and
+// offsets shift with every codegen change. The frame numbers in front of them are reproducible and are compared
+// as they are. The dump also goes to stderr, which the test runner folds into the compared output. It is
+// therefore pointed at a file first and printed back to stdout with those two columns masked. What is left - which symbols resolve, and how they demangle - is the same on every platform, since
+// libbacktrace resolves against the executable's own symbol table everywhere, so one 'cout.out' covers all of
+// them.
+//
+// The 'at <file>:<line>' part of a frame line comes from debug info, which the test runner does not ask for, so
+// it never appears here and needs no masking.
 //
 // Only the frames this test owns are printed. Everything below main belongs to the C runtime, which adds a
 // different number of frames on every platform.
@@ -12,6 +16,7 @@
 // sDumpStacktrace() is not imported: like the other 's'-prefixed runtime functions, it is pulled in by name.
 import "std/data/vector";
 import "std/io/file";
+import "std/os/os";
 
 ext f<byte*> freopen(string /*file path*/, string /*mode*/, byte* /*stream*/);
 ext f<int> fflush(byte* /*stream*/);
@@ -19,6 +24,10 @@ ext f<int> fflush(byte* /*stream*/);
 const string DUMP_FILE_PATH = "./stack-trace-dump.txt";
 const string HEADER_LINE = "Stack trace:";
 const string INDENT = "  ";
+const string FRAME_NUMBER_PREFIX = "  #";
+// Width of the '  #<n>' column that dump() prints in front of every frame: two spaces, '#', and the number
+// left-aligned in a field of three
+const long FRAME_NUMBER_WIDTH = 6l;
 // innerFrame, middleFrame and main - the frames below them are the C runtime's
 const long PRINTED_FRAMES = 3l;
 
@@ -51,16 +60,17 @@ f<Vector<String>> readDumpLines() {
 }
 
 /**
- * Masks the address and the offset of one frame line, leaving only what is reproducible.
+ * Masks the address and the offset of one frame line, leaving only what is reproducible - which includes the
+ * frame number, so it is carried over unchanged.
  *
  * @param line Frame line, as dump() printed it
  * @param hasAddress Whether the line was printed with the address column
  */
 f<String> normalizeFrameLine(String& line, bool hasAddress) {
-    assert line.startsWith(INDENT);
-    String rest = line.getSubstring(2l);
+    assert line.startsWith(FRAME_NUMBER_PREFIX);
+    String normalized = line.getSubstring(0l, FRAME_NUMBER_WIDTH);
+    String rest = line.getSubstring(FRAME_NUMBER_WIDTH);
 
-    String normalized = String(INDENT);
     if hasAddress {
         // '%p' leaves the address format to the platform. The column ends at the double space behind it.
         const long addressEnd = rest.find(INDENT);
@@ -130,7 +140,9 @@ f<int> main() {
     printMaskedDump(lines, 1l, false);
     printMaskedDump(lines, secondHeaderIdx + 1l, true);
 
-    // The dump file is deliberately left behind: stderr is still attached to it, which Windows refuses to
-    // unlink, and it is what one looks at when this test goes red
+    // Detach stderr from the dump file first, because Windows refuses to unlink a file that is still open. Every
+    // assertion above has passed by now: a red run never gets here, so the file stays around to be looked at.
+    assert freopen(isWindows() ? "NUL" : "/dev/null", MODE_WRITE, __stderr()) != nil<byte*>;
+    assert deleteFile(DUMP_FILE_PATH);
     return 0;
 }

@@ -30,8 +30,10 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
 
-  // Stripping symbols
-  if (!cliOptions.instrumentation.emitsDebugInfo() && !cliOptions.targetTriple.isOSDarwin())
+  // Stripping symbols, on request only: the symbol table is what a run-time symbolizer such as the stack trace
+  // runtime resolves addresses against, so a stripped executable prints nothing but addresses. Darwin is excluded
+  // because its linker has no equivalent of '-Wl,-s'.
+  if (cliOptions.stripSymbols && !cliOptions.targetTriple.isOSDarwin())
     addLinkerFlag("-Wl,-s");
 
   // Sanitizers
@@ -122,20 +124,21 @@ void ExternalLinkerInterface::link() const {
   // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
   if (!isGccInvoker)
     args.push_back("--target=" + cliOptions.targetTriple.str());
-  // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
-  // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
-  // expand into several argv entries.
-  for (const std::string &linkerFlag : linkerFlags)
-    for (std::string &expandedFlag : SystemUtil::expandLinkerFlag(linkerFlag))
-      args.push_back(std::move(expandedFlag));
-  if (linkLibMath)
-    args.emplace_back("-lm");
   // Append output path
   args.emplace_back("-o");
   args.push_back(outputPath.string());
   // Append object files
   for (const std::filesystem::path &objectFilePath : linkedFiles)
     args.push_back(objectFilePath.string());
+  // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
+  // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
+  // expand into several argv entries. They go behind the object files, because a '-l' naming a static archive is only
+  // searched for symbols that are still undefined at the point it appears - ahead of them it would resolve nothing.
+  for (const std::string &linkerFlag : linkerFlags)
+    for (std::string &expandedFlag : SystemUtil::expandLinkerFlag(linkerFlag))
+      args.push_back(std::move(expandedFlag));
+  if (linkLibMath)
+    args.emplace_back("-lm");
 
   // Print status message
   if (cliOptions.printDebugOutput) {

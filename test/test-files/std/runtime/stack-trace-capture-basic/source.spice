@@ -2,8 +2,8 @@
 //
 // Only properties that hold on every platform and at every optimization level are asserted. The exact frame
 // count is not one of them: it depends on how many frames the C runtime puts below main, and on whether the
-// optimizer inlined the helpers below. Neither is the presence of symbol names, which needs the program's
-// symbols to be visible to the platform's resolver.
+// optimizer inlined the helpers below. Neither is the presence of symbol names or source locations - the first
+// needs a symbol table, the second debug info, and the runner asks for neither.
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
@@ -16,6 +16,10 @@ f<bool> levelC() {
     for long i = 0l; i < noSkip.getSize(); i++ {
         const StackTraceEntry& entry = noSkip.getEntry(i);
         assert entry.address != nil<byte*>;
+        // An offset is only meaningful together with the name it counts from, and a line number only together
+        // with the file it points into - so neither may show up on its own
+        if entry.functionName.isEmpty() { assert entry.offset == 0l; }
+        if entry.fileName.isEmpty() { assert entry.lineNumber == 0; }
     }
 
     StackTrace skipOne;
@@ -54,6 +58,32 @@ f<bool> levelC() {
     // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack
     const StackTrace fromRuntimeFct = sGetStacktrace();
     assert fromRuntimeFct.getSize() == noSkip.getSize();
+
+    // A trace can be walked with a foreach loop, which visits every frame once, in order
+    long visited = 0l;
+    foreach StackTraceEntry& entry : noSkip {
+        assert entry.address == noSkip.getEntry(visited).address;
+        visited++;
+    }
+    assert visited == noSkip.getSize();
+
+    // The same loop with the frame number, which is the index the frame sits at
+    foreach unsigned long frameIndex, StackTraceEntry& entry : noSkip {
+        assert entry.address == noSkip.getEntry(frameIndex).address;
+    }
+
+    // The iterator behind that loop can also be driven by hand, forwards and backwards
+    StackTraceIterator<StackTraceEntry> it = noSkip.getIterator();
+    assert it.isValid();
+    assert it.get().address == noSkip.getEntry(0ul).address;
+    it++;
+    assert it.get().address == noSkip.getEntry(1ul).address;
+    it += 1;
+    assert it.get().address == noSkip.getEntry(2ul).address;
+    it--;
+    assert it.get().address == noSkip.getEntry(1ul).address;
+    it -= 1;
+    assert it.get().address == noSkip.getEntry(0ul).address;
 
     return true;
 }

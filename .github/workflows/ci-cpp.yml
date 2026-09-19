@@ -11,6 +11,8 @@ on:
 env:
   LLVM_VERSION: "llvmorg-23.1.1"
   GCC_VERSION: "16"
+  # Built from source for macOS only - see the 'Build libbacktrace' step in the macOS job
+  LIBBACKTRACE_VERSION: "0b9b49cf4a2c9229fc052d6716e1528b2f23e91a"
 
 jobs:
   build-linux-x86:
@@ -216,6 +218,42 @@ jobs:
           echo "LIBRARY_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
           echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
+      # The stack trace runtime links '-lbacktrace'. This runner has no libbacktrace to link against: the MinGW
+      # GCC here does not carry one ('gcc -print-file-name=libbacktrace.a' finds nothing), and vcpkg's port is
+      # marked '"supports": "!windows"' because the library cannot be built with MSVC at all. So it is built from
+      # source with MSYS2's MinGW GCC, which produces the same ABI clang targets with
+      # '--target=x86_64-w64-windows-gnu' - the same recipe the macOS job uses, for the same reason.
+      - name: Cache libbacktrace
+        id: cache-libbacktrace
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/libbacktrace-install
+          key: libbacktrace-${{ env.LIBBACKTRACE_VERSION }}-windows-x86_64
+
+      - name: Setup MSYS2
+        if: steps.cache-libbacktrace.outputs.cache-hit != 'true'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: git make mingw-w64-x86_64-gcc
+
+      - name: Build libbacktrace
+        if: steps.cache-libbacktrace.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          git clone https://github.com/ianlancetaylor/libbacktrace.git libbacktrace-src
+          cd libbacktrace-src
+          git checkout ${{ env.LIBBACKTRACE_VERSION }}
+          ./configure --prefix="$(cygpath -u '${{ github.workspace }}')/libbacktrace-install" --disable-shared
+          make -j$(nproc)
+          make install
+
+      - name: Setup libbacktrace
+        run: |
+          # clang reads LIBRARY_PATH for '-l' search dirs, same as the vcpkg entry above
+          echo "LIBRARY_PATH=${{ github.workspace }}\libbacktrace-install\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
+
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:
@@ -305,6 +343,31 @@ jobs:
           brew install ccache graphviz sqlite
           echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
+
+      # The stack trace runtime links '-lbacktrace'. GCC ships libbacktrace as part of its own runtime, so Linux
+      # and MinGW have it already, but the Apple toolchain does not and Homebrew has no formula for it - so it is
+      # built from source here. Static only: nothing then has to be found again at run time.
+      - name: Cache libbacktrace
+        id: cache-libbacktrace
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/libbacktrace-install
+          key: libbacktrace-${{ env.LIBBACKTRACE_VERSION }}-macos-aarch64
+
+      - name: Build libbacktrace
+        if: steps.cache-libbacktrace.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/ianlancetaylor/libbacktrace.git libbacktrace-src
+          cd libbacktrace-src
+          git checkout ${{ env.LIBBACKTRACE_VERSION }}
+          ./configure --prefix="${{ github.workspace }}/libbacktrace-install" --disable-shared
+          make -j$(sysctl -n hw.ncpu)
+          make install
+
+      - name: Setup libbacktrace
+        run: |
+          # clang reads LIBRARY_PATH for '-l' search dirs, which is how the Spice linker invocation finds it
+          echo "LIBRARY_PATH=${{ github.workspace }}/libbacktrace-install/lib:$LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Restore CCache
         uses: actions/cache/restore@v6

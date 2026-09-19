@@ -282,6 +282,10 @@ void Driver::addBuildSubcommand() {
   subCmd->add_flag<bool>("--no-entry", cliOptions.noEntryFct, "Do not generate main function");
   // --static
   subCmd->add_flag<bool>("--static", cliOptions.staticLinking, "Link statically");
+  // --strip-symbols
+  subCmd->add_flag<bool>("--strip-symbols", cliOptions.stripSymbols,
+                         "Strip the symbol table from the executable, making it smaller at the price of unreadable "
+                         "stack traces and, together with --debug-info, no debug info either");
   // --dump-to-files
   subCmd->add_flag<bool>("--dump-to-files", cliOptions.dump.dumpToFiles, "Redirect dumps to files instead of printing");
   // --abort-after-dump

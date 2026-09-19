@@ -134,13 +134,14 @@ Interacting with the underlying operating system: processes, threads, memory, en
 Internal package linked automatically into any Spice executable when required by the compiler. It backs core language
 features and is not normally imported directly.
 
-| Module      | Description                        |
-|-------------|------------------------------------|
-| `error_rt`  | Error handling runtime support.    |
-| `memory_rt` | Memory management runtime support. |
-| `result_rt` | `Result` type runtime support.     |
-| `rtti_rt`   | Runtime type information.          |
-| `string_rt` | String runtime support.            |
+| Module           | Description                          |
+|------------------|--------------------------------------|
+| `error_rt`       | Error handling runtime support.      |
+| `memory_rt`      | Memory management runtime support.   |
+| `result_rt`      | `Result` type runtime support.       |
+| `rtti_rt`        | Runtime type information.            |
+| `stack_trace_rt` | Capturing and printing stack traces. |
+| `string_rt`      | String runtime support.              |
 
 ### `std/test`
 Basic mechanisms for testing in Spice.
