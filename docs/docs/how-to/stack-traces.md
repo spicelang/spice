@@ -103,7 +103,7 @@ foreach unsigned long frameNumber, const StackTraceEntry& entry : trace {
 | `offset`       | `unsigned long` | Bytes from the start of that function, `0` if unresolved                   |
 | `functionName` | `String`        | Demangled name, empty if the symbol could not be resolved                  |
 | `fileName`     | `String`        | Source file, empty without debug info                                      |
-| `lineNumber`   | `int`           | Line within that file, `0` if unknown                                      |
+| `lineNumber`   | `unsigned int`  | Line within that file, `0` if unknown                                      |
 | `isSpice`      | `bool`          | Whether the frame is Spice code, as opposed to C, C++ or other native code |
 
 `isSpice` is decided from what the trace knows about the frame:
@@ -118,8 +118,9 @@ A function opted out of mangling with `#[core.compiler.mangle = false]` looks li
 is treated like one.
 
 `StackTrace` also offers `getSize()`, `isEmpty()`, indexing via `trace[i]` or `getEntry(i)`, and
-`dump(bool includeAddresses, bool hideNonSpiceFrames)` for the whole trace. A trace holds at most `STACK_TRACE_CAPACITY` (64) frames;
-anything deeper is dropped, since the frames nearest the capture point are the interesting ones.
+`dump(bool includeAddresses, bool hideNonSpiceFrames)` for the whole trace. A trace holds at most
+`STACK_TRACE_CAPACITY` (128) frames; anything deeper is dropped, since the frames nearest the capture point are the
+interesting ones.
 
 To capture the stack on behalf of a caller - from a logging helper, say, whose own frame should not show up -
 build a `StackTrace` yourself and tell `capture()` how many frames to skip:

@@ -61,12 +61,14 @@ f<bool> levelC() {
         assert skipAll.isEmpty();
     }
 
-    // A negative skip is rejected rather than canceling out the runtime's own frame count, which would start
-    // the trace inside the stack trace runtime. Capturing over an existing trace must clear it either way.
+    // The largest skip there is lands far below the bottom of the stack and yields nothing. It has to stay that way
+    // on the way to the C shim, where it is an int and the largest unsigned values are negative: read as "skip
+    // nothing", it would start the trace inside the stack trace runtime. Capturing over an existing trace must clear
+    // it either way.
     StackTrace reused;
     reused.capture(0);
     assert !reused.isEmpty();
-    reused.capture(-1);
+    reused.capture(4294967295u);
     assert reused.isEmpty();
 
     // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack
