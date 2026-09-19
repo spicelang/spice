@@ -191,7 +191,7 @@ public p StackTrace.dump(bool includeAddresses = true) {
  * trace stores them stays its own business. 'T' is always StackTraceEntry - see the type definitions at the top
  * of this file for why it is spelled as a generic argument at all.
  */
-public type StackTraceIterator<T> struct : IIterator<T> {
+public type StackTraceIterator<T> struct : IIterator<StackTraceEntry> {
     StackTrace& trace
     unsigned long cursor = 0l
 }
@@ -201,7 +201,7 @@ public type StackTraceIterator<T> struct : IIterator<T> {
  *
  * @param trace Stack trace to iterate over
  */
-public p StackTraceIterator.ctor<T>(StackTrace& trace) {
+public p StackTraceIterator.ctor(StackTrace& trace) {
     this.trace = trace;
 }
 
@@ -210,7 +210,7 @@ public p StackTraceIterator.ctor<T>(StackTrace& trace) {
  *
  * @return Reference to the current frame
  */
-public inline f<T&> StackTraceIterator.get() {
+public inline f<StackTraceEntry&> StackTraceIterator.get() {
     return this.trace.getEntry(this.cursor);
 }
 
@@ -219,9 +219,9 @@ public inline f<T&> StackTraceIterator.get() {
  *
  * @return Pair of current frame number and reference to the current frame
  */
-public inline f<Pair<unsigned long, T&>> StackTraceIterator.getIdx() {
-    T& entry = this.trace.getEntry(this.cursor);
-    return Pair<unsigned long, T&>(this.cursor, entry);
+public inline f<Pair<unsigned long, StackTraceEntry&>> StackTraceIterator.getIdx() {
+    StackTraceEntry& entry = this.trace.getEntry(this.cursor);
+    return Pair<unsigned long, StackTraceEntry&>(this.cursor, entry);
 }
 
 /**
