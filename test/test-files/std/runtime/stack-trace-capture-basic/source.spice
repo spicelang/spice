@@ -20,7 +20,15 @@ f<bool> levelC() {
         // with the file it points into - so neither may show up on its own
         if entry.functionName.isEmpty() { assert entry.offset == 0l; }
         if entry.fileName.isEmpty() { assert entry.lineNumber == 0; }
+        // Whenever debug info names the file, it also settles whether the frame is Spice code. Which frames carry a
+        // file depends on the platform - some C runtimes ship debug info of their own - so this holds for each of them.
+        if entry.fileName.endsWith(".spice") { assert entry.isSpice; }
+        else if !entry.fileName.isEmpty() { assert !entry.isSpice; }
     }
+
+    // The frame that captured is Spice code without any debug info, whichever of the test's functions it is - the
+    // optimizer may have inlined levelC into a caller, but never main, which is recognized by its name
+    assert noSkip.getEntry(0ul).isSpice;
 
     StackTrace skipOne;
     skipOne.capture(1);
@@ -47,12 +55,14 @@ f<bool> levelC() {
         assert skipAll.isEmpty();
     }
 
-    // A negative skip is rejected rather than canceling out the runtime's own frame count, which would start
-    // the trace inside the stack trace runtime. Capturing over an existing trace must clear it either way.
+    // The largest skip there is lands far below the bottom of the stack and yields nothing. It has to stay that way
+    // on the way to the C shim, where it is an int and the largest unsigned values are negative: read as "skip
+    // nothing", it would start the trace inside the stack trace runtime. Capturing over an existing trace must clear
+    // it either way.
     StackTrace reused;
     reused.capture(0);
     assert !reused.isEmpty();
-    reused.capture(-1);
+    reused.capture(4294967295u);
     assert reused.isEmpty();
 
     // sGetStacktrace() is the auto-imported entry point and hides its own frame, so it sees the same stack

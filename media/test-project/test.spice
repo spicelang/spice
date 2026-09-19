@@ -1,12 +1,15 @@
-type Data union {
-    int f1
-    int* f2
+p frameC() {
+    sDumpStacktrace(true, true);
 }
 
-// Wrapper for 'spice test' unit test
+p frameB() {
+    frameC();
+}
+
+p frameA() {
+    frameB();
+}
+
 f<int> main() {
-    Data data;
-    data.f1 = 123;
-    data.f2 = &123;
-    printf("%p", data.f2);
+    frameA();
 }

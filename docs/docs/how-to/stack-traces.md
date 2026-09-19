@@ -6,7 +6,8 @@ Spice can print the call stack of a running program, or hand it to you as data. 
 trace runtime do this; like the other `s`-prefixed runtime functions they are auto-imported, so no `import` is
 needed:
 
-- `sDumpStacktrace(bool includeAddresses = true)` prints the calling function's stack to stderr.
+- `sDumpStacktrace(bool includeAddresses = true, bool hideNonSpiceFrames = false)` prints the calling function's stack
+  to stderr.
 - `sGetStacktrace() -> StackTrace` returns it as a value you can walk yourself.
 
 ```spice
@@ -20,7 +21,6 @@ p levelB() {
 
 f<int> main() {
     levelB();
-    return 0;
 }
 ```
 
@@ -46,8 +46,8 @@ One line per frame, most recent call first, each with:
 Frames below `main` belong to the C runtime and differ per platform. A frame whose symbol could not be resolved
 prints as `<unknown>`; a frame in a program without debug info simply has no `at ...` part.
 
-Pass `false` to leave the address column out, which is what you want for output you intend to compare: addresses
-move between runs under ASLR.
+Pass `false` as the first argument to leave the address column out, which is what you want for output you intend to
+compare: addresses move between runs under ASLR.
 
 ```text
 Stack trace:
@@ -56,47 +56,71 @@ Stack trace:
   #2  main + 0xc at /home/me/trace.spice:10
 ```
 
+### Hiding frames that are not Spice code
+
+Not every frame belongs to your program: the C runtime below `main` shows up in every trace, and so does any C
+function that calls back into Spice, such as `qsort` calling your comparison function. Pass `true` as the second
+argument to leave those frames out:
+
+```spice
+sDumpStacktrace(true, true);
+```
+
+```text
+Stack trace:
+  #0  0x000055a3f1c012c3  levelC() + 0xd at /home/me/trace.spice:2
+  #1  0x000055a3f1c012d3  levelB() + 0xd at /home/me/trace.spice:6
+  #2  0x000055a3f1c012e3  main + 0xc at /home/me/trace.spice:10
+```
+
+The frames that remain keep the number they have in the full trace, so a gap in the numbering shows where frames were
+hidden, and each number still matches `trace[i]`.
+
+How a frame is recognized as Spice code is described under [`isSpice`](#working-with-a-trace-as-data) below.
+
 ## Working with a trace as data
 
 `sGetStacktrace()` returns a `StackTrace`, which can be looped over frame by frame:
 
 ```spice
 const StackTrace trace = sGetStacktrace();
-foreach StackTraceEntry& entry : trace {
-    printf("%s (%s:%d)\n", entry.functionName.getRaw(), entry.fileName.getRaw(), entry.lineNumber);
+foreach const StackTraceEntry& entry : trace {
+    printf("%s (%s:%d)\n", entry.functionName, entry.fileName, entry.lineNumber);
 }
 ```
 
 The frame number is available as the loop index, exactly as `dump()` prints it:
 
 ```spice
-foreach unsigned long frameNumber, StackTraceEntry& entry : trace {
-    printf("#%lu %s\n", frameNumber, entry.functionName.getRaw());
+foreach unsigned long frameNumber, const StackTraceEntry& entry : trace {
+    printf("#%lu %s\n", frameNumber, entry.functionName);
 }
 ```
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `address` | `byte*` | Return address within the function |
-| `offset` | `unsigned long` | Bytes from the start of that function, `0` if unresolved |
-| `functionName` | `String` | Demangled name, empty if the symbol could not be resolved |
-| `fileName` | `String` | Source file, empty without debug info |
-| `lineNumber` | `int` | Line within that file, `0` if unknown |
+| Field          | Type            | Meaning                                                                    |
+|----------------|-----------------|----------------------------------------------------------------------------|
+| `address`      | `byte*`         | Return address within the function                                         |
+| `offset`       | `unsigned long` | Bytes from the start of that function, `0` if unresolved                   |
+| `functionName` | `String`        | Demangled name, empty if the symbol could not be resolved                  |
+| `fileName`     | `String`        | Source file, empty without debug info                                      |
+| `lineNumber`   | `unsigned int`  | Line within that file, `0` if unknown                                      |
+| `isSpice`      | `bool`          | Whether the frame is Spice code, as opposed to C, C++ or other native code |
+
+`isSpice` is decided from what the trace knows about the frame:
+
+- With debug info, the source file decides: a frame is Spice code if and only if its file ends in `.spice`.
+- Without it, the symbol name does. Spice mangles the name of every function except `main`, and a name that reads as
+  a Spice mangling, or is `main`, counts as Spice. Plain C symbols, and the mangled names of other languages, do not.
+- A frame whose symbol could not be resolved - which is every frame of an executable built with
+  [`--strip-symbols`](../cli/build.md) - has nothing to go by and is not Spice.
+
+A function opted out of mangling with `#[core.compiler.mangle = false]` looks like a C function without debug info, and
+is treated like one.
 
 `StackTrace` also offers `getSize()`, `isEmpty()`, indexing via `trace[i]` or `getEntry(i)`, and
-`dump(bool includeAddresses)` for the whole trace. A trace holds at most `STACK_TRACE_CAPACITY` (64) frames;
-anything deeper is dropped, since the frames nearest the capture point are the interesting ones.
-
-The `foreach` loops above go through `getIterator()`, which hands out a `StackTraceIterator<StackTraceEntry>`.
-You can also drive it yourself, forwards or backwards:
-
-```spice
-StackTraceIterator<StackTraceEntry> it = trace.getIterator();
-while it.isValid() {
-    printf("%s\n", it.get().functionName.getRaw());
-    it++;
-}
-```
+`dump(bool includeAddresses, bool hideNonSpiceFrames)` for the whole trace. A trace holds at most
+`STACK_TRACE_CAPACITY` (128) frames; anything deeper is dropped, since the frames nearest the capture point are the
+interesting ones.
 
 To capture the stack on behalf of a caller - from a logging helper, say, whose own frame should not show up -
 build a `StackTrace` yourself and tell `capture()` how many frames to skip:
@@ -125,7 +149,7 @@ what ends up in the binary decides how much of a trace is readable:
 
 The work itself is done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), which the linker
 pulls in as `-lbacktrace`. GCC builds it as part of its own runtime, so where a program is linked through GCC -
-Linux, most of the time - it is already there and nothing needs doing. Elsewhere it may have to be pointed at,
+Linux, most of the time - it is already there and nothing needs doing. Elsewhere, it may have to be pointed at,
 and linking a program that takes a stack trace otherwise fails with an undefined reference to
 `backtrace_create_state`.
 
