@@ -1,10 +1,9 @@
 // Exercises StackTraceEntry.isSpice on a stack that leaves Spice and comes back: main calls the C library's qsort,
 // which calls a Spice function back.
 //
-// How many frames qsort's own implementation spends, and what they are called, differs between C runtimes, so none
-// of that is asserted. What holds everywhere is the shape: the frame that captured is Spice, and the stack then
-// changes from Spice code to native code twice - qsort below the callback, and the C runtime's startup code below
-// main - with Spice code again in between, where main sits.
+// How many frames qsort's own implementation spends, and what they are called, differs between C runtimes, and so
+// does what sits below main - some unwinders stop there - so none of that is asserted. What holds everywhere is the
+// shape: the frame that captured is Spice, the stack then leaves Spice code for qsort, and comes back to it in main.
 //
 // Skipped on Windows, where libbacktrace can put a Spice name on a frame in a system DLL, which would make the
 // native frames in between look like Spice ones (see the docs on stack traces).
@@ -18,17 +17,24 @@ f<int> compare(int* a, int* b) {
     assert !trace.isEmpty();
     assert trace.getEntry(0ul).isSpice;
 
-    // Every time the stack goes from Spice to native code, and the last frame of Spice code it passed through
-    long spiceToNative = 0l;
-    bool previousIsSpice = true;
+    // Whether the stack has left Spice code and then come back to it, and the last frame of Spice code it passed
+    // through
+    bool leftSpice = false;
+    bool returnedToSpice = false;
     String lastSpiceFrame = String();
     foreach StackTraceEntry& entry : trace {
-        if previousIsSpice && !entry.isSpice { spiceToNative++; }
-        if entry.isSpice { lastSpiceFrame = entry.functionName; }
-        previousIsSpice = entry.isSpice;
+        if !entry.isSpice {
+            leftSpice = true;
+        } else {
+            if leftSpice { returnedToSpice = true; }
+            lastSpiceFrame = entry.functionName;
+        }
     }
-    assert spiceToNative == 2l;
     // With debug info the name is spelled 'main()', without it 'main'
+    const bool isShapeAsExpected = returnedToSpice && lastSpiceFrame.startsWith("main");
+    // A shape that differs on a platform this was not written on is much easier to fix with the trace in front of you
+    if !isShapeAsExpected { trace.dump(); }
+    assert returnedToSpice;
     assert lastSpiceFrame.startsWith("main");
 
     return *a - *b;

@@ -140,11 +140,12 @@ third-party C in the tree and a little link time.
 ## Tests
 
 - `std/runtime/stack-trace-capture-basic`: invariants that hold on every platform and optimization level - skipping `n`
-  frames drops exactly `n`, offset and line number only appear with their name and file, `isSpice` on frame 0 and the
-  bottom of the stack. Frame counts are not asserted, as they depend on the C runtime and on inlining.
+  frames drops exactly `n`, offset and line number only appear with their name and file, `isSpice` agrees with the file
+  name and is set on frame 0. Frame counts are not asserted, as they depend on the C runtime and on inlining.
 - `std/runtime/stack-trace-dump-basic`: dumps with and without addresses and with native frames hidden, printed back
   with addresses and offsets masked. Only the three frames the test owns are compared, as everything below `main` is
   C runtime.
-- `std/runtime/stack-trace-native-frames`: `qsort` calling back into Spice, asserting the Spice, native, Spice, native
-  shape of the stack. Skipped on Windows because of the misattribution above.
+- `std/runtime/stack-trace-native-frames`: `qsort` calling back into Spice, asserting that the stack leaves Spice for
+  `qsort` and returns to Spice in `main`. What sits below `main` is not asserted, as some unwinders stop there. Skipped
+  on Windows because of the misattribution above.
 - `std/text/demangle`: demangler cases seeded from the mangled names in the `.ll` reference files.
