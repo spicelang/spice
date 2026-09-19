@@ -124,7 +124,7 @@ public p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = tr
         fprintf(stream, "%s + %#lx", this.functionName.getRaw(), this.offset);
     }
     if !this.fileName.isEmpty() {
-        fprintf(stream, " at %s:%d", this.fileName.getRaw(), this.lineNumber);
+        fprintf(stream, " at %s:%u", this.fileName.getRaw(), this.lineNumber);
     }
     fprintf(stream, "\n");
 }
