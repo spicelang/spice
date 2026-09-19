@@ -1,12 +1,20 @@
-type Data union {
-    int f1
-    int* f2
+p frameC() {
+    StackTrace st = sGetStacktrace();
+    foreach unsigned long i, StackTraceEntry& e : st {
+        if i % 2 == 0 {
+            e.dump(i);
+        }
+    }
 }
 
-// Wrapper for 'spice test' unit test
+p frameB() {
+    frameC();
+}
+
+p frameA() {
+    frameB();
+}
+
 f<int> main() {
-    Data data;
-    data.f1 = 123;
-    data.f2 = &123;
-    printf("%p", data.f2);
+    frameA();
 }

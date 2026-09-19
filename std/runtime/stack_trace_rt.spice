@@ -15,7 +15,8 @@
 //
 // Resolving a frame to a name needs the executable's symbol table, which the linker keeps unless the build asked
 // for '--strip-symbols'; in a stripped executable every frame prints as '<unknown>'. File and line numbers need
-// more than that - they come from debug info, so they only show up in a build made with '-g'.
+// more than that - they come from debug line info, so they only show up in a build made with '--debug-info=line-only'
+// or '--debug-info=full' / '-g'.
 
 import "std/iterator/iterable";
 import "std/iterator/iterator";
@@ -32,18 +33,22 @@ type Numeric int|long|short;
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 // Frames captured per trace. Deeper ones are dropped, since the frames nearest the capture point matter most.
-public const int STACK_TRACE_CAPACITY = 64;
+public const int STACK_TRACE_CAPACITY = 128;
 // Frames of the stack trace runtime itself between libbacktrace and the caller: the C shim and capture().
 // Exact because Spice emits one object file per source file and the shim is a translation unit of its own, so
 // neither can be inlined into the caller; '-lto' lifts that guarantee and can shift a trace outwards by a frame.
 const int RUNTIME_FRAMES = 2;
+// Extension of Spice source files, which is what tells a frame in Spice code apart when the program carries debug info
+const string SPICE_SOURCE_EXTENSION = ".spice";
+// The one Spice function whose symbol is never mangled, since the operating system calls it by that name
+const string ENTRY_POINT_NAME = "main";
 
 /**
  * Buffer the C shim fills, mirroring its 'SpiceStackFrame' field for field so an array of these can be handed
- * over to be written into. It stays separate from StackTraceEntry below even though the two carry the same five
- * values, because the two names are the whole difference: here they are raw pointers into memory the shim owns
- * and hands back in capture(), and C cannot construct the owning String that an entry keeps. An entry's name is
- * also the demangled one, which only exists once Spice has looked at it.
+ * over to be written into. It stays separate from StackTraceEntry below even though the two share five values,
+ * because the two names are the whole difference: here they are raw pointers into memory the shim owns and hands
+ * back in capture(), and C cannot construct the owning String that an entry keeps. An entry's name is also the
+ * demangled one, which only exists once Spice has looked at it, and its 'isSpice' flag is derived from them.
  */
 type NativeStackFrame struct {
     byte* address
@@ -53,45 +58,75 @@ type NativeStackFrame struct {
     int lineNumber
 }
 
-ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipNativeFrames*/,
-                                  int /*skipEntries*/);
+ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipFrames*/, int /*skipEntries*/);
 ext p spiceReleaseStackTrace(NativeStackFrame* /*frames*/, int /*count*/);
 
 /**
  * One frame of a stack trace.
  */
 public type StackTraceEntry struct {
-    public byte* address          // return address within the function
-    public unsigned long offset   // bytes from the start of that function, 0 if unresolved
-    public String functionName    // demangled, empty if the symbol could not be resolved
-    public String fileName        // source file, empty unless the program carries debug info
-    public int lineNumber         // line within that file, 0 if unknown
+    public byte* address           // return address within the function
+    public unsigned long offset    // bytes from the start of that function, 0 if unresolved
+    public String functionName     // demangled, empty if the symbol could not be resolved
+    public String fileName         // source file, empty unless the program carries debug info
+    public unsigned int lineNumber // line within that file, 0 if unknown
+    public bool isSpice            // Spice code, as opposed to C, C++ or other native code; false if it could not be told
 }
 
 /**
- * Prints this frame to stderr, as '#index  address  name + 0xoffset at file:line'. The location is left out
- * when the program carries no debug info; frames whose symbol could not be resolved print '<unknown>' in place
- * of the name and carry no offset.
+ * Decides whether a frame belongs to Spice code, as opposed to native code the program links against - the C
+ * runtime, C functions called from Spice, the C++ runtime and so on.
+ *
+ * Debug info is the more reliable witness, so it is asked first: a frame with a source file is Spice exactly when
+ * that file is a '.spice' one. This also settles frames of C libraries whose distribution ships debug info. Without
+ * it, the symbol name is all there is. Every Spice function is mangled, which the demangler can tell by whether
+ * it managed to read the name, except 'main', the one function Spice leaves as it is. Names the demangler does not
+ * understand, be they plain C symbols or the mangling of another language, count as native. So does a frame
+ * without any name at all, since there is nothing to go by - which includes every frame of an executable built
+ * with '--strip-symbols'. A Spice function opted out of mangling with #[core.compiler.mangle = false] cannot be
+ * told from a C one without debug info and counts as native there.
+ *
+ * @param symbolName Name of the function as found in the symbol table or debug info, still mangled
+ * @param demangledName The same name, run through demangle()
+ * @param fileName Source file of the frame, empty if the program carries no debug info
+ * @return Whether the frame is Spice code
+ */
+f<bool> isSpiceFrame(const String& symbolName, const String& demangledName, const String& fileName) {
+    if !fileName.isEmpty() {
+        return fileName.endsWith(SPICE_SOURCE_EXTENSION);
+    }
+    if symbolName.isEmpty() {
+        return false;
+    }
+    return demangledName != symbolName || symbolName == ENTRY_POINT_NAME;
+}
+
+/**
+ * Prints this frame to stderr, as '#<index>  <address>  <name> + 0x<offset> at <file>:<line>'. The location is left out
+ * when the program carries no debug info; frames whose symbol could not be resolved print '<unknown>' in place of the
+ * name and carry no offset.
  *
  * @param frameIndex Position of this frame in its trace, counted from the most recent call
  * @param includeAddress Whether to print the raw address. Pass false for deterministic output - addresses move
- *                        between runs under ASLR/PIE.
+ *                       between runs under ASLR/PIE.
  */
 public p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = true) {
+    const byte* stream = __stderr();
+
     // Left-aligned in a field of three, so the columns behind it line up for every index a trace can reach
-    fprintf(__stderr(), "  #%-3lu", frameIndex);
+    fprintf(stream, "  #%-3lu", frameIndex);
     if includeAddress {
-        fprintf(__stderr(), "%p  ", this.address);
+        fprintf(stream, "%p  ", this.address);
     }
     if this.functionName.isEmpty() {
-        fprintf(__stderr(), "<unknown>");
+        fprintf(stream, "<unknown>");
     } else {
-        fprintf(__stderr(), "%s + %#lx", this.functionName.getRaw(), this.offset);
+        fprintf(stream, "%s + %#lx", this.functionName.getRaw(), this.offset);
     }
     if !this.fileName.isEmpty() {
-        fprintf(__stderr(), " at %s:%d", this.fileName.getRaw(), this.lineNumber);
+        fprintf(stream, " at %s:%d", this.fileName.getRaw(), this.lineNumber);
     }
-    fprintf(__stderr(), "\n");
+    fprintf(stream, "\n");
 }
 
 /**
@@ -102,23 +137,37 @@ public type StackTrace struct : IIterable<StackTraceEntry> {
 }
 
 /**
- * Number of frames in this trace.
+ * Retrieve number of frames in this trace.
+ *
+ * @return Number of frames
  */
 public inline f<long> StackTrace.getSize() {
     return this.entries.getSize();
 }
 
+/**
+ * Check if this trace is empty.
+ *
+ * @return Empty or not
+ */
 public inline f<bool> StackTrace.isEmpty() {
     return this.entries.isEmpty();
 }
 
 /**
- * Frame at the given index, counted from the most recent call.
+ * Retrieve frame at the given index, counted from the most recent call.
+ *
+ * @return Frame at the given index
  */
 public inline f<StackTraceEntry&> StackTrace.getEntry(unsigned long index) {
     return this.entries.get(index);
 }
 
+/**
+ * Retrieve frame at the given index, counted from the most recent call.
+ *
+ * @return Frame at the given index
+ */
 public inline f<StackTraceEntry&> operator[](StackTrace& trace, unsigned long index) {
     return trace.getEntry(index);
 }
@@ -130,43 +179,30 @@ public inline f<StackTraceEntry&> operator[](StackTrace& trace, unsigned long in
  *
  * @param skipFrames Frames to omit above the direct caller, for wrappers that capture on a caller's behalf
  */
-public p StackTrace.capture(int skipFrames = 0) {
+public p StackTrace.capture(unsigned int skipFrames = 0u) {
     this.entries.clear(); // cleared first, so an early return below cannot leave a previous trace behind
 
-    // Rejected rather than passed on, so a negative skip cannot turn into an enormous one in the shim
-    if skipFrames < 0 {
-        return;
-    }
-
     NativeStackFrame[STACK_TRACE_CAPACITY] frames;
-    int frameCount = 0;
-    unsafe {
-        // The runtime's own frames are physical and are dropped as such; the caller's skip counts the entries
-        // it would otherwise see, which is not the same number once debug info expands an inlined frame
-        frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES, skipFrames);
-    }
+
+    // The runtime's own frames are physical and are dropped as such; the caller's skip counts the entries
+    // it would otherwise see, which is not the same number once debug info expands an inlined frame
+    unsigned int frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES, skipFrames);
 
     this.entries.reserve(cast<unsigned long>(frameCount));
-    for int i = 0; i < frameCount; i++ {
-        String functionName = String();
-        String fileName = String();
-        unsafe {
-            // Both names are plain C strings owned by the shim, so they are copied into Strings here and the
-            // originals handed back below
-            if cast<char*>(frames[i].functionName) != nil<char*> {
-                functionName = demangle(frames[i].functionName);
-            }
-            if cast<char*>(frames[i].fileName) != nil<char*> {
-                fileName = String(frames[i].fileName);
-            }
-        }
-        this.entries.pushBack(StackTraceEntry{frames[i].address, frames[i].offset, functionName, fileName,
-                                              frames[i].lineNumber});
+    for unsigned int i = 0u; i < frameCount; i++ {
+        const byte* address = frames[i].address;
+        const unsigned long offset = frames[i].offset;
+        // Both names are plain C strings owned by the shim, so they are copied here and the originals handed back below
+        const String symbolName = String(frames[i].functionName != nil<string> ? frames[i].functionName : "");
+        const String functionName = demangle(symbolName);
+        const String fileName = String(frames[i].fileName != nil<string> ? frames[i].fileName : "");
+        const unsigned int lineNumber = frames[i].lineNumber;
+        const bool isSpice = isSpiceFrame(symbolName, functionName, fileName);
+        this.entries.pushBack(StackTraceEntry{address, offset, functionName, fileName, lineNumber, isSpice});
     }
 
-    unsafe {
-        spiceReleaseStackTrace(&frames[0], frameCount);
-    }
+    // Release the original strings, owned by the shim
+    spiceReleaseStackTrace(&frames[0], frameCount);
 }
 
 /**
@@ -174,12 +210,17 @@ public p StackTrace.capture(int skipFrames = 0) {
  * nothing was captured.
  *
  * @param includeAddresses Forwarded to StackTraceEntry.dump()
+ * @param hideNonSpiceFrames Leave out the frames that are not Spice code (see StackTraceEntry.isSpice), such as the
+ *                           C runtime below main. The frames that remain keep the number they have in the trace, so
+ *                           a gap in the numbering marks where frames were hidden, and every number still matches
+ *                           getEntry().
  */
-public p StackTrace.dump(bool includeAddresses = true) {
+public p StackTrace.dump(bool includeAddresses = true, bool hideNonSpiceFrames = false) {
     if this.isEmpty() { return; }
 
     fprintf(__stderr(), "Stack trace:\n");
-    foreach unsigned long frameIndex, StackTraceEntry& entry : this.entries {
+    foreach unsigned long frameIndex, const StackTraceEntry& entry : this.entries {
+        if hideNonSpiceFrames && !entry.isSpice { continue; }
         entry.dump(frameIndex, includeAddresses);
     }
 }
@@ -314,9 +355,10 @@ public f<StackTrace> sGetStacktrace() {
  * Captures and immediately dumps the calling function's stack trace to stderr.
  *
  * @param includeAddresses Forwarded to StackTrace.dump()
+ * @param hideNonSpiceFrames Forwarded to StackTrace.dump()
  */
-public p sDumpStacktrace(bool includeAddresses = true) {
+public p sDumpStacktrace(bool includeAddresses = true, bool hideNonSpiceFrames = false) {
     StackTrace trace;
     trace.capture(1); // hide this function's own frame
-    trace.dump(includeAddresses);
+    trace.dump(includeAddresses, hideNonSpiceFrames);
 }

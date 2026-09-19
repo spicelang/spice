@@ -13,6 +13,10 @@
 // Only the frames this test owns are printed. Everything below main belongs to the C runtime, which adds a
 // different number of frames on every platform.
 //
+// A third dump is taken with the frames that are not Spice code hidden. Those are the C runtime frames just
+// mentioned, so what it prints is the three frames the test owns and nothing else, on every platform but Windows,
+// where libbacktrace can put a Spice name on a frame in a system DLL (see the docs on stack traces).
+//
 // sDumpStacktrace() is not imported: like the other 's'-prefixed runtime functions, it is pulled in by name.
 import "std/data/vector";
 import "std/io/file";
@@ -30,14 +34,16 @@ const string FRAME_NUMBER_PREFIX = "  #";
 const long FRAME_NUMBER_WIDTH = 6l;
 // innerFrame, middleFrame and main - the frames below them are the C runtime's
 const long PRINTED_FRAMES = 3l;
+// Dumps taken: without addresses, with them, and without addresses and without the frames that are not Spice code
+const long DUMP_COUNT = 3l;
 
-p innerFrame(bool includeAddresses) {
-    // Both dumps are taken here, from the same call site, so they see the same frames
-    sDumpStacktrace(includeAddresses);
+p innerFrame(bool includeAddresses, bool hideNonSpiceFrames) {
+    // All dumps are taken here, from the same call site, so they see the same frames
+    sDumpStacktrace(includeAddresses, hideNonSpiceFrames);
 }
 
-p middleFrame(bool includeAddresses) {
-    innerFrame(includeAddresses);
+p middleFrame(bool includeAddresses, bool hideNonSpiceFrames) {
+    innerFrame(includeAddresses, hideNonSpiceFrames);
 }
 
 /**
@@ -106,39 +112,87 @@ p printMaskedDump(Vector<String>& lines, long firstFrameIdx, bool hasAddresses) 
     }
 }
 
+/**
+ * Number of frame lines in the dump whose header sits at the given position, i.e. the lines up to the next header or
+ * the end of the file.
+ *
+ * @param lines All lines of the dump file
+ * @param headerIdxs Positions of the header lines, one per dump
+ * @param dumpIdx Which dump to count the frames of
+ */
+f<long> countFrames(Vector<String>& lines, Vector<long>& headerIdxs, long dumpIdx) {
+    const long end = dumpIdx + 1l < headerIdxs.getSize() ? headerIdxs.get(dumpIdx + 1l) : lines.getSize();
+    return end - headerIdxs.get(dumpIdx) - 1l;
+}
+
+/**
+ * Whether the given frame line, once masked, is one of the frame lines of the dump whose first frame is at the given
+ * position, also masked. The offsets have to be masked on both sides: main calls middleFrame from a different place
+ * for every dump, so its offset differs between them even though it is the same frame.
+ *
+ * @param lines All lines of the dump file
+ * @param firstFrameIdx Index of the dump's first frame line
+ * @param frameCount Number of frame lines in that dump
+ * @param line Line to look for, printed without the address column like the dump it is compared with
+ */
+f<bool> containsFrameLine(Vector<String>& lines, long firstFrameIdx, long frameCount, String& line) {
+    String normalizedLine = normalizeFrameLine(line, false);
+    for long i = firstFrameIdx; i < firstFrameIdx + frameCount; i++ {
+        if normalizeFrameLine(lines.get(i), false) == normalizedLine { return true; }
+    }
+    return false;
+}
+
 f<int> main() {
     // Point stderr at a file, so the dump does not reach the compared output unmasked
     assert freopen(DUMP_FILE_PATH, MODE_WRITE, __stderr()) != nil<byte*>;
 
-    middleFrame(false);
-    middleFrame(true);
+    middleFrame(false, false);
+    middleFrame(true, false);
+    middleFrame(false, true);
     assert fflush(__stderr()) == 0;
 
     Vector<String> lines = readDumpLines();
 
-    // The file holds the trace without addresses first, then the same trace with them. Each opens with its
-    // own header line.
+    // The file holds the trace without addresses first, then the same trace with them, then the same trace without
+    // addresses and without the frames that are not Spice code. Each opens with its own header line.
     assert !lines.isEmpty();
     assert lines.get(0l) == HEADER_LINE;
-    long secondHeaderIdx = -1l;
-    for long i = 1l; i < lines.getSize(); i++ {
+    Vector<long> headerIdxs;
+    for long i = 0l; i < lines.getSize(); i++ {
         if lines.get(i) == HEADER_LINE {
-            secondHeaderIdx = i;
-            break;
+            headerIdxs.pushBack(i);
         }
     }
-    assert secondHeaderIdx != -1l;
+    assert headerIdxs.getSize() == DUMP_COUNT;
 
-    const long plainFrameCount = secondHeaderIdx - 1l;
-    const long addressFrameCount = lines.getSize() - secondHeaderIdx - 1l;
+    const long plainFrameCount = countFrames(lines, headerIdxs, 0l);
+    const long addressFrameCount = countFrames(lines, headerIdxs, 1l);
+    const long spiceFrameCount = countFrames(lines, headerIdxs, 2l);
+    const long plainFirstIdx = headerIdxs.get(0l) + 1l;
+    const long addressFirstIdx = headerIdxs.get(1l) + 1l;
+    const long spiceFirstIdx = headerIdxs.get(2l) + 1l;
 
     // innerFrame, middleFrame and main are always on the stack, and at O0 none of them can be inlined away
     assert plainFrameCount >= PRINTED_FRAMES;
     // Both dumps walk the same call chain, so they see the same frames
     assert addressFrameCount == plainFrameCount;
+    // Hiding can only take frames away, and the three that are Spice code stay on every platform
+    assert spiceFrameCount >= PRINTED_FRAMES;
+    assert spiceFrameCount <= plainFrameCount;
+    // What is left are frames the unfiltered dump printed as well, number included: hiding a frame does not renumber
+    // the ones behind it
+    for long i = 0l; i < spiceFrameCount; i++ {
+        assert containsFrameLine(lines, plainFirstIdx, plainFrameCount, lines.get(spiceFirstIdx + i));
+    }
+    // Everything below main is the C runtime, so nothing but the three frames the test owns is left
+    if !isWindows() {
+        assert spiceFrameCount == PRINTED_FRAMES;
+    }
 
-    printMaskedDump(lines, 1l, false);
-    printMaskedDump(lines, secondHeaderIdx + 1l, true);
+    printMaskedDump(lines, plainFirstIdx, false);
+    printMaskedDump(lines, addressFirstIdx, true);
+    printMaskedDump(lines, spiceFirstIdx, false);
 
     // Detach stderr from the dump file first, because Windows refuses to unlink a file that is still open. Every
     // assertion above has passed by now: a red run never gets here, so the file stays around to be looked at.

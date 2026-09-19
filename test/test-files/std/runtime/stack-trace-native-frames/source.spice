@@ -1,0 +1,47 @@
+// Exercises StackTraceEntry.isSpice on a stack that leaves Spice and comes back: main calls the C library's qsort,
+// which calls a Spice function back.
+//
+// How many frames qsort's own implementation spends, and what they are called, differs between C runtimes, so none
+// of that is asserted. What holds everywhere is the shape: the frame that captured is Spice, and the stack then
+// changes from Spice code to native code twice - qsort below the callback, and the C runtime's startup code below
+// main - with Spice code again in between, where main sits.
+//
+// Skipped on Windows, where libbacktrace can put a Spice name on a frame in a system DLL, which would make the
+// native frames in between look like Spice ones (see the docs on stack traces).
+//
+// sGetStacktrace() and the types it returns are not imported: like the other 's'-prefixed runtime functions, they
+// are pulled in by name.
+ext p qsort(int* /*base*/, unsigned long /*count*/, unsigned long /*size*/, f<int>(int*, int*) /*compare*/);
+
+f<int> compare(int* a, int* b) {
+    const StackTrace trace = sGetStacktrace();
+    assert !trace.isEmpty();
+    assert trace.getEntry(0ul).isSpice;
+
+    // Every time the stack goes from Spice to native code, and the last frame of Spice code it passed through
+    long spiceToNative = 0l;
+    bool previousIsSpice = true;
+    String lastSpiceFrame = String();
+    foreach StackTraceEntry& entry : trace {
+        if previousIsSpice && !entry.isSpice { spiceToNative++; }
+        if entry.isSpice { lastSpiceFrame = entry.functionName; }
+        previousIsSpice = entry.isSpice;
+    }
+    assert spiceToNative == 2l;
+    // With debug info the name is spelled 'main()', without it 'main'
+    assert lastSpiceFrame.startsWith("main");
+
+    return *a - *b;
+}
+
+f<int> main() {
+    int[2] values = [2, 1];
+    qsort(&values[0], 2ul, 4ul, compare);
+
+    // qsort has to compare two elements to order them, so the callback ran - and its assertions with it
+    assert values[0] == 1;
+    assert values[1] == 2;
+
+    printf("All assertions passed!\n");
+    return 0;
+}

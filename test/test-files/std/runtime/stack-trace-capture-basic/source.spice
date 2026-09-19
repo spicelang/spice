@@ -4,6 +4,7 @@
 // count is not one of them: it depends on how many frames the C runtime puts below main, and on whether the
 // optimizer inlined the helpers below. Neither is the presence of symbol names or source locations - the first
 // needs a symbol table, the second debug info, and the runner asks for neither.
+import "std/os/os";
 import "std/runtime/stack_trace_rt";
 
 f<bool> levelC() {
@@ -20,6 +21,19 @@ f<bool> levelC() {
         // with the file it points into - so neither may show up on its own
         if entry.functionName.isEmpty() { assert entry.offset == 0l; }
         if entry.fileName.isEmpty() { assert entry.lineNumber == 0; }
+        // Whenever debug info names the file, it also settles whether the frame is Spice code. Which frames carry a
+        // file depends on the platform - some C runtimes ship debug info of their own - so this holds for each of them.
+        if entry.fileName.endsWith(".spice") { assert entry.isSpice; }
+        else if !entry.fileName.isEmpty() { assert !entry.isSpice; }
+    }
+
+    // The frame that captured is Spice code without any debug info, whichever of the test's functions it is - the
+    // optimizer may have inlined levelC into a caller, but never main, which is recognized by its name
+    assert noSkip.getEntry(0ul).isSpice;
+    // The stack ends in the startup code of the C runtime, which is not Spice. Left out on Windows, where a frame in
+    // a system DLL can come back with the name of a function from another module - see the docs on stack traces.
+    if !isWindows() && noSkip.getSize() < cast<long>(STACK_TRACE_CAPACITY) {
+        assert !noSkip.getEntry(noSkip.getSize() - 1l).isSpice;
     }
 
     StackTrace skipOne;
