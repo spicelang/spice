@@ -119,17 +119,17 @@ TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForDebugInfo) {
   const CacheManager cmNoDebug(cliOptions);
   const std::string keyNoDebug = cmNoDebug.computeCacheKey(source);
 
-  cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_INFO;
-  const CacheManager cmLineInfo(cliOptions);
-  const std::string keyLineInfo = cmLineInfo.computeCacheKey(source);
+  cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+  const CacheManager cmLineOnly(cliOptions);
+  const std::string keyLineOnly = cmLineOnly.computeCacheKey(source);
 
   cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
   const CacheManager cmDebug(cliOptions);
   const std::string keyDebug = cmDebug.computeCacheKey(source);
 
-  ASSERT_NE(keyNoDebug, keyLineInfo);
+  ASSERT_NE(keyNoDebug, keyLineOnly);
   ASSERT_NE(keyNoDebug, keyDebug);
-  ASSERT_NE(keyLineInfo, keyDebug);
+  ASSERT_NE(keyLineOnly, keyDebug);
 }
 
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForLTO) {

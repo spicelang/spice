@@ -275,12 +275,13 @@ TEST(DriverTest, CoverageImpliesDebugInfo) {
   driver.enrich();
 
   ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
-  // Implicitly due to enabled code coverage
-  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
+  // Implicitly due to enabled code coverage. Line tables are all the gcov profiler needs, so it does not raise the
+  // level any further than that
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, cliOptions.instrumentation.debugInfoLevel);
 }
 
 TEST(DriverTest, CoverageKeepsExplicitDebugInfoLevel) {
-  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=line-info", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "build", "--coverage", "--debug-info=full", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   CliOptions cliOptions;
   Driver driver(cliOptions, true);
@@ -288,8 +289,8 @@ TEST(DriverTest, CoverageKeepsExplicitDebugInfoLevel) {
   driver.enrich();
 
   ASSERT_TRUE(cliOptions.instrumentation.codeCoverage);
-  // Code coverage only raises the level if debug info is off, an explicit choice of the user is kept
-  ASSERT_EQ(DebugInfoLevel::LINE_INFO, cliOptions.instrumentation.debugInfoLevel);
+  // Code coverage only raises the level if debug info is off, an explicit choice of the user is neither raised nor lowered
+  ASSERT_EQ(DebugInfoLevel::FULL, cliOptions.instrumentation.debugInfoLevel);
 }
 
 TEST(DriverTest, DebugInfoLevels) {
@@ -305,8 +306,8 @@ TEST(DriverTest, DebugInfoLevels) {
   ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("-g")); // Plain alias for --debug-info=full
   ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info"));
   ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=full"));
-  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("--debug-info=line-info"));
-  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("--debug-info=LINE-INFO"));
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("--debug-info=line-only"));
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("--debug-info=LINE-ONLY"));
   ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=none"));
 }
 
@@ -321,8 +322,8 @@ TEST(DriverTest, DebugInfoLevelLastOccurrenceWins) {
   };
 
   // '-g' is a separate option from '--debug-info', so make sure the two are not resolved in registration order
-  ASSERT_EQ(DebugInfoLevel::LINE_INFO, parseDebugInfoLevel("-g", "--debug-info=line-info"));
-  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=line-info", "-g"));
+  ASSERT_EQ(DebugInfoLevel::LINE_ONLY, parseDebugInfoLevel("-g", "--debug-info=line-only"));
+  ASSERT_EQ(DebugInfoLevel::FULL, parseDebugInfoLevel("--debug-info=line-only", "-g"));
   ASSERT_EQ(DebugInfoLevel::NONE, parseDebugInfoLevel("--debug-info=full", "--debug-info=none"));
 }
 

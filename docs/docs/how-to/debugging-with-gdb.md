@@ -7,7 +7,7 @@ debug info. This means you can debug a Spice executable with GDB just like a C o
 step through source lines, and inspect local variables.
 
 If you only need to map addresses back to source lines - e.g. for stack traces or a profiler - and do not care
-about inspecting variables, `--debug-info=line-info` emits DWARF line tables only. This keeps the debug info
+about inspecting variables, `--debug-info=line-only` emits DWARF line tables only. This keeps the debug info
 considerably smaller, and GDB can still place breakpoints on source lines, step through them and show source
 locations in backtraces. What it omits is the variable, type and lexical scope information, so `print`, `info
 locals` and the pretty printers below have nothing to work with. The rest of this page therefore assumes a full

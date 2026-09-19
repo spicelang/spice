@@ -29,11 +29,11 @@ enum class OptLevel : uint8_t {
 
 enum class DebugInfoLevel : uint8_t {
   NONE = 0,      // Do not emit any debug info
-  LINE_INFO = 1, // Only emit DWARF line tables, no type, variable or scope info
+  LINE_ONLY = 1, // Only emit DWARF line tables, no type, variable or scope info
   FULL = 2,      // Emit full debug info, incl. types, variables and lexical scopes
 };
 const char *const DEBUG_INFO_NONE = "none";
-const char *const DEBUG_INFO_LINE_INFO = "line-info";
+const char *const DEBUG_INFO_LINE_ONLY = "line-only";
 const char *const DEBUG_INFO_FULL = "full";
 
 enum class Sanitizer : uint8_t {
