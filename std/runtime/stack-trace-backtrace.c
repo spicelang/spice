@@ -77,22 +77,8 @@ typedef struct SpiceStackFrame {
  * cancels out of it. An address whose module cannot be read is left alone, resolving no worse than before. */
 #if defined(_WIN32)
 
-/* Reads a module's preferred base out of its file.
- *
- * It has to come from the file: when the loader relocates a module it rewrites OptionalHeader.ImageBase in the
- * mapped copy to the address it actually used, so the header in memory reports the module as unmoved however far
- * it traveled. libbacktrace parses the file, so the file is where the coordinate space of its symbol table comes
- * from, and reading the mapped copy instead just yields a shift of zero. */
-static int readPreferredBase(HMODULE module, uintptr_t *preferredBase) {
-  char modulePath[MAX_PATH];
-  const DWORD length = GetModuleFileNameA(module, modulePath, (DWORD)sizeof(modulePath));
-  if (length == 0 || length >= (DWORD)sizeof(modulePath))
-    return 0;
-
-  FILE *moduleFile = fopen(modulePath, "rb");
-  if (moduleFile == NULL)
-    return 0;
-
+/* Parses the PE headers of an already-open module file, and closes it. */
+static int readPreferredBaseFrom(FILE *moduleFile, uintptr_t *preferredBase) {
   IMAGE_DOS_HEADER dosHeader;
   IMAGE_NT_HEADERS ntHeaders;
   const int read = fread(&dosHeader, sizeof dosHeader, 1, moduleFile) == 1 &&
@@ -106,6 +92,43 @@ static int readPreferredBase(HMODULE module, uintptr_t *preferredBase) {
 
   *preferredBase = (uintptr_t)ntHeaders.OptionalHeader.ImageBase;
   return 1;
+}
+
+/* Reads a module's preferred base out of its file.
+ *
+ * It has to come from the file: when the loader relocates a module it rewrites OptionalHeader.ImageBase in the
+ * mapped copy to the address it actually used, so the header in memory reports the module as unmoved however far
+ * it traveled. libbacktrace parses the file, so the file is where the coordinate space of its symbol table comes
+ * from, and reading the mapped copy instead just yields a shift of zero. */
+static int readPreferredBase(HMODULE module, uintptr_t *preferredBase) {
+  /* A module path is not bounded by MAX_PATH, and GetModuleFileName does not report a name it could not fit -
+   * it truncates and reports the buffer size - so a too-small buffer would silently yield the wrong file, or
+   * none. The buffer grows until the name fits inside it, up to the longest path Windows itself allows. */
+  DWORD capacity = MAX_PATH;
+  wchar_t *modulePath = NULL;
+  for (;;) {
+    wchar_t *grown = (wchar_t *)realloc(modulePath, capacity * sizeof(wchar_t));
+    if (grown == NULL)
+      break;
+    modulePath = grown;
+
+    const DWORD length = GetModuleFileNameW(module, modulePath, capacity);
+    if (length == 0)
+      break;
+    if (length < capacity) {
+      FILE *found = _wfopen(modulePath, L"rb");
+      free(modulePath);
+      modulePath = NULL;
+      if (found == NULL)
+        return 0;
+      return readPreferredBaseFrom(found, preferredBase);
+    }
+    if (capacity >= 0x8000) /* longer than any path Windows accepts */
+      break;
+    capacity *= 2;
+  }
+  free(modulePath);
+  return 0;
 }
 
 /* The executable's own shift, which nearly every frame of a trace needs, kept so that walking a stack does not
