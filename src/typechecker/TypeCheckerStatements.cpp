@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -211,6 +212,11 @@ std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
     SOFT_ERROR_ER(node->assignExpr, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
+
+  // A failed assertion prints the stack trace, so the runtime that does that has to be loaded. Assertions are not
+  // generated in release builds, so nothing needs to be loaded for them there
+  if (cliOptions.printsStackTraceOnAbort() && cliOptions.buildMode != BuildMode::RELEASE && !sourceFile->isRT(STACK_TRACE_RT))
+    sourceFile->requestRuntimeModule(STACK_TRACE_RT);
 
   return nullptr;
 }

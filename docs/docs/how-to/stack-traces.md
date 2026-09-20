@@ -78,6 +78,38 @@ hidden, and each number still matches `trace[i]`.
 
 How a frame is recognized as Spice code is described under [`isSpice`](#working-with-a-trace-as-data) below.
 
+## Panics and failed assertions
+
+A [`panic`](../language/builtins.md#the-panic-builtin), a failed `assert` and a read of an inactive
+[union](../language/unions.md) field print the stack trace of the failing call to stderr right before the program exits,
+so there is no need to call `sDumpStacktrace()` for them:
+
+```text
+Program panicked at ./trace.spice:2:5: something went wrong
+2  panic(Error("something went wrong"));
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Stack trace:
+  #0  0x000055a3f1c012c3  inner() + 0x3d
+  #1  0x000055a3f1c012d3  middle() + 0x5
+  #2  0x000055a3f1c012e3  main + 0x13
+  #3  0x00007f2c9ba2a1c9  __libc_start_call_main + 0x79
+  #4  0x00007f2c9ba2a28a  __libc_start_main_impl + 0x8a
+  #5  0x000055a3f1c011b4  _start + 0x24
+```
+
+Both the message and the trace go to stderr, the message first. The first frame is the function that contains the panic
+or the assertion. The trace depends on symbols and debug info in the same way as the ones above, so `-g` adds the file
+and line of every frame and `--strip-symbols` leaves the names out. If error return tracing was enabled with
+`#![core.compiler.errorReturnTracing = true]`, the recorded error return trace is printed before the stack trace.
+
+A few cases print no trace:
+
+- **Release builds** compile assertions out altogether, so there is nothing to print. A `panic` still prints its trace.
+- **Cross-compiled programs** print none. The trace needs the `libbacktrace` that ships with the std, which is built for
+  the machine the std is installed on, so it is left out when the target is a different one.
+- **A panic raised while a trace is being printed**, such as running out of memory for one of its strings, ends the
+  program without a second trace.
+
 ## Working with a trace as data
 
 `sGetStacktrace()` returns a `StackTrace`, which can be looped over frame by frame:

@@ -138,6 +138,13 @@ struct CliOptions {
   bool lintOnly = false;
   bool keepFramePointers = false;
   bool stripSymbols = false;
+
+  /**
+   * Whether a panic or failed assertion prints the stack trace of the failing call. It needs the std's libbacktrace, which is
+   * built for the host only, so cross-compiling leaves it out rather than fail to link. Comparable output leaves it out too,
+   * as the frames and their offsets differ between platforms and compilers.
+   */
+  [[nodiscard]] bool printsStackTraceOnAbort() const { return isNativeTarget && !comparableOutput; }
 };
 
 /**

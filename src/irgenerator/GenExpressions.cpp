@@ -776,7 +776,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     // runtime tag read-guard/write-update around the payload access.
     if (lhsSTy.is(TY_UNION)) {
       Scope *unionScope = lhsSTy.getBodyScope();
-      SymbolTableEntry *fieldEntry = unionScope->symbolTable.lookupStrict(fieldName);
+      const SymbolTableEntry *fieldEntry = unionScope->symbolTable.lookupStrict(fieldName);
       assert(fieldEntry != nullptr);
       const QualType fieldSymbolType = fieldEntry->getQualType();
       // Tag 0 is reserved for the "unset" state, so a field's tag is its order index shifted up by one. This makes
@@ -818,6 +818,8 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
         if (cliOptions.comparableOutput)
           globalString->setAlignment(llvm::Align(4));
         builder.CreateCall(stdFunctionManager.getFPrintfFct(), {stdErrValue, globalString});
+        if (cliOptions.printsStackTraceOnAbort())
+          builder.CreateCall(stdFunctionManager.getDumpStacktraceFct(), {builder.getTrue(), builder.getFalse()});
         builder.CreateCall(stdFunctionManager.getExitFct(), builder.getInt32(EXIT_FAILURE));
         builder.CreateUnreachable();
 

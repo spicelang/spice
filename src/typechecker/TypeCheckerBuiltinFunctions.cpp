@@ -352,6 +352,10 @@ std::any TypeChecker::visitBuiltinPanicCall(FctCallNode *node) const {
   if (!argType.isErrorObj())
     SOFT_ERROR_ER(assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
+  // The panic prints the stack trace, so the runtime that does that has to be loaded
+  if (cliOptions.printsStackTraceOnAbort() && !sourceFile->isRT(STACK_TRACE_RT))
+    sourceFile->requestRuntimeModule(STACK_TRACE_RT);
+
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 

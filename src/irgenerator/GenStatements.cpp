@@ -201,6 +201,9 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
     // Print the error message to stderr, like panic does
     llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
     builder.CreateCall(fprintfFct, {getStdErrValue(), globalString});
+    // Print the stack trace of the failed assertion
+    if (cliOptions.printsStackTraceOnAbort())
+      builder.CreateCall(stdFunctionManager.getDumpStacktraceFct(), {builder.getTrue(), builder.getFalse()});
     // Generate call to exit()
     llvm::Function *exitFct = stdFunctionManager.getExitFct();
     builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));

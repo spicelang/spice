@@ -3,6 +3,7 @@
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
+#include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -617,6 +618,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
       // Set field to used
       memberEntry->used = true;
+
+      // A read of an inactive field panics, which prints the stack trace, so the runtime that does that has to be loaded
+      if (cliOptions.printsStackTraceOnAbort() && !sourceFile->isRT(STACK_TRACE_RT))
+        sourceFile->requestRuntimeModule(STACK_TRACE_RT);
 
       // Overwrite type and entry of left side with member type and entry
       operandType = memberType;

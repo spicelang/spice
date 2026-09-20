@@ -41,6 +41,9 @@ const string SPICE_SOURCE_EXTENSION = ".spice";
 // The one Spice function whose symbol is never mangled, since the operating system calls it by that name
 const string ENTRY_POINT_NAME = "main";
 
+// Whether a stack trace is being printed right now, see sDumpStacktrace()
+bool DUMPING_STACKTRACE = false;
+
 /**
  * One frame of a stack trace.
  */
@@ -330,13 +333,24 @@ public f<StackTrace> sGetStacktrace() {
 }
 
 /**
- * Captures and immediately dumps the calling function's stack trace to stderr.
+ * Captures and immediately dumps the calling function's stack trace to stderr. The compiler calls it, with the default
+ * arguments, at every panic and failed assertion, right before the program exits.
+ *
+ * Capturing and printing a trace use the std, and a panic raised in there (say, running out of memory for a String)
+ * would come back here and start over, until the stack is used up. A call made while a dump is under way therefore
+ * prints nothing, which lets that panic end the program as it would without stack traces. The flag is not atomic, so
+ * two threads dumping at the same time may cost one of them its trace, or let a nested panic through.
  *
  * @param includeAddresses Forwarded to StackTrace.dump()
  * @param hideNonSpiceFrames Forwarded to StackTrace.dump()
  */
 public p sDumpStacktrace(bool includeAddresses = true, bool hideNonSpiceFrames = false) {
+    if DUMPING_STACKTRACE { return; }
+    DUMPING_STACKTRACE = true;
+
     StackTrace trace;
     trace.capture(1); // hide this function's own frame
     trace.dump(includeAddresses, hideNonSpiceFrames);
+
+    DUMPING_STACKTRACE = false;
 }
