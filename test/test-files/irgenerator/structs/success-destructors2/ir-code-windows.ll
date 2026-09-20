@@ -7,7 +7,6 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 4
 @anon.string.1 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'this.field1 == true' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.2 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @anon.string.3 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 4
 
@@ -42,7 +41,7 @@ define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferencea
   br i1 %6, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
 assert.then.L13:                                  ; preds = %1
-  %7 = load ptr, ptr @stderr, align 8
+  %7 = call ptr @__acrt_iob_func(i32 2)
   %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
@@ -55,7 +54,7 @@ assert.exit.L13:                                  ; preds = %1
   br i1 %11, label %assert.exit.L14, label %assert.then.L14, !prof !5
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
-  %12 = load ptr, ptr @stderr, align 8
+  %12 = call ptr @__acrt_iob_func(i32 2)
   %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
@@ -69,6 +68,9 @@ declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef rea
 
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #4
+
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #3
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #5

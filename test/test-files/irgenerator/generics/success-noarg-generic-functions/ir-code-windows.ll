@@ -2,7 +2,6 @@
 source_filename = "source.spice"
 
 @anon.string.0 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'isSame<int, int>()' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [74 x i8] c"Assertion failed: Condition '!isSame<int, string>()' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [80 x i8] c"Assertion failed: Condition 'isSame<double*&, double*&>()' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
@@ -12,7 +11,7 @@ define dso_local noundef i32 @main() #0 {
   br i1 true, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %0
-  %1 = load ptr, ptr @stderr, align 8
+  %1 = call ptr @__acrt_iob_func(i32 2)
   %2 = call i32 (ptr, ptr, ...) @fprintf(ptr %1, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -22,7 +21,7 @@ assert.exit.L9:                                   ; preds = %0
   br i1 %3, label %assert.exit.L10, label %assert.then.L10, !prof !5
 
 assert.then.L10:                                  ; preds = %assert.exit.L9
-  %4 = load ptr, ptr @stderr, align 8
+  %4 = call ptr @__acrt_iob_func(i32 2)
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %4, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
@@ -31,7 +30,7 @@ assert.exit.L10:                                  ; preds = %assert.exit.L9
   br i1 true, label %assert.exit.L11, label %assert.then.L11, !prof !5
 
 assert.then.L11:                                  ; preds = %assert.exit.L10
-  %6 = load ptr, ptr @stderr, align 8
+  %6 = call ptr @__acrt_iob_func(i32 2)
   %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
@@ -44,16 +43,20 @@ assert.exit.L11:                                  ; preds = %assert.exit.L10
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #2
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 attributes #0 = { noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { nofree nounwind }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

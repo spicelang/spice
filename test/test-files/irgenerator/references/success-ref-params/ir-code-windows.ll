@@ -6,7 +6,6 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [20 x i8] c"From procedure: %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [19 x i8] c"From function: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 'i == -4309' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
@@ -66,7 +65,7 @@ define dso_local noundef i32 @main() #2 {
   br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !5
 
 assert.then.L20:                                  ; preds = %0
-  %6 = load ptr, ptr @stderr, align 8
+  %6 = call ptr @__acrt_iob_func(i32 2)
   %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -83,7 +82,7 @@ assert.exit.L20:                                  ; preds = %0
   br i1 %11, label %assert.exit.L24, label %assert.then.L24, !prof !5
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
-  %12 = load ptr, ptr @stderr, align 8
+  %12 = call ptr @__acrt_iob_func(i32 2)
   %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
@@ -97,14 +96,18 @@ assert.exit.L24:                                  ; preds = %assert.exit.L20
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #4
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #4
+declare void @exit(i32) #5
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #3 = { nofree }
-attributes #4 = { cold noreturn nounwind }
+attributes #4 = { nounwind }
+attributes #5 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

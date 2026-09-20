@@ -5,6 +5,7 @@
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <util/CommonUtil.h>
 
 #include <llvm/IR/Module.h>
 
@@ -188,15 +189,18 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
     return nullptr;
 
   const auto generateBody = [&] {
-    // Create constant for error message
-    const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.\n";
+    // Create constant for error message. It is the format string of the fprintf call below, so the condition's source text
+    // must not be mistaken for conversion specifiers
+    std::string expressionString = node->expressionString;
+    CommonUtil::replaceAll(expressionString, "%", "%%");
+    const std::string errorMsg = "Assertion failed: Condition '" + expressionString + "' evaluated to false.\n";
     llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
     // If the output should be comparable, fix alignment to 4 bytes
     if (cliOptions.comparableOutput)
       globalString->setAlignment(llvm::Align(4));
-    // Print the error message
-    llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
-    builder.CreateCall(printfFct, globalString);
+    // Print the error message to stderr, like panic does
+    llvm::Function *fprintfFct = stdFunctionManager.getFPrintfFct();
+    builder.CreateCall(fprintfFct, {getStdErrValue(), globalString});
     // Generate call to exit()
     llvm::Function *exitFct = stdFunctionManager.getExitFct();
     builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));

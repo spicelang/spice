@@ -2,7 +2,6 @@
 source_filename = "source.spice"
 
 @anon.string.0 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition '&test == &testRef' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 135' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 124' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 123' evaluated to false.\0A\00", align 4
@@ -21,7 +20,7 @@ define dso_local noundef i32 @main() #0 {
   br i1 %2, label %assert.exit.L5, label %assert.then.L5, !prof !5
 
 assert.then.L5:                                   ; preds = %0
-  %3 = load ptr, ptr @stderr, align 8
+  %3 = call ptr @__acrt_iob_func(i32 2)
   %4 = call i32 (ptr, ptr, ...) @fprintf(ptr %3, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -36,7 +35,7 @@ assert.exit.L5:                                   ; preds = %0
   br i1 %9, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %assert.exit.L5
-  %10 = load ptr, ptr @stderr, align 8
+  %10 = call ptr @__acrt_iob_func(i32 2)
   %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
@@ -51,7 +50,7 @@ assert.exit.L9:                                   ; preds = %assert.exit.L5
   br i1 %16, label %assert.exit.L11, label %assert.then.L11, !prof !5
 
 assert.then.L11:                                  ; preds = %assert.exit.L9
-  %17 = load ptr, ptr @stderr, align 8
+  %17 = call ptr @__acrt_iob_func(i32 2)
   %18 = call i32 (ptr, ptr, ...) @fprintf(ptr %17, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
@@ -64,7 +63,7 @@ assert.exit.L11:                                  ; preds = %assert.exit.L9
   br i1 %21, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
 assert.then.L13:                                  ; preds = %assert.exit.L11
-  %22 = load ptr, ptr @stderr, align 8
+  %22 = call ptr @__acrt_iob_func(i32 2)
   %23 = call i32 (ptr, ptr, ...) @fprintf(ptr %22, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
@@ -80,7 +79,7 @@ assert.exit.L13:                                  ; preds = %assert.exit.L11
   br i1 %29, label %assert.exit.L15, label %assert.then.L15, !prof !5
 
 assert.then.L15:                                  ; preds = %assert.exit.L13
-  %30 = load ptr, ptr @stderr, align 8
+  %30 = call ptr @__acrt_iob_func(i32 2)
   %31 = call i32 (ptr, ptr, ...) @fprintf(ptr %30, ptr @anon.string.4)
   call void @exit(i32 1)
   unreachable
@@ -96,7 +95,7 @@ assert.exit.L15:                                  ; preds = %assert.exit.L13
   br i1 %37, label %assert.exit.L17, label %assert.then.L17, !prof !5
 
 assert.then.L17:                                  ; preds = %assert.exit.L15
-  %38 = load ptr, ptr @stderr, align 8
+  %38 = call ptr @__acrt_iob_func(i32 2)
   %39 = call i32 (ptr, ptr, ...) @fprintf(ptr %38, ptr @anon.string.5)
   call void @exit(i32 1)
   unreachable
@@ -109,16 +108,20 @@ assert.exit.L17:                                  ; preds = %assert.exit.L15
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #2
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { nofree nounwind }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

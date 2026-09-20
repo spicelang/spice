@@ -4,7 +4,6 @@ source_filename = "source.spice"
 %struct.Test = type { i32 }
 
 @anon.string.0 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 1' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 2' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 3' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 4' evaluated to false.\0A\00", align 4
@@ -105,7 +104,7 @@ define dso_local noundef i32 @main() #1 {
   br i1 %4, label %assert.exit.L35, label %assert.then.L35, !prof !5
 
 assert.then.L35:                                  ; preds = %0
-  %5 = load ptr, ptr @stderr, align 8
+  %5 = call ptr @__acrt_iob_func(i32 2)
   %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -119,7 +118,7 @@ assert.exit.L35:                                  ; preds = %0
   br i1 %9, label %assert.exit.L38, label %assert.then.L38, !prof !5
 
 assert.then.L38:                                  ; preds = %assert.exit.L35
-  %10 = load ptr, ptr @stderr, align 8
+  %10 = call ptr @__acrt_iob_func(i32 2)
   %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
@@ -135,7 +134,7 @@ assert.exit.L38:                                  ; preds = %assert.exit.L35
   br i1 %15, label %assert.exit.L41, label %assert.then.L41, !prof !5
 
 assert.then.L41:                                  ; preds = %assert.exit.L38
-  %16 = load ptr, ptr @stderr, align 8
+  %16 = call ptr @__acrt_iob_func(i32 2)
   %17 = call i32 (ptr, ptr, ...) @fprintf(ptr %16, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
@@ -149,7 +148,7 @@ assert.exit.L41:                                  ; preds = %assert.exit.L38
   br i1 %20, label %assert.exit.L44, label %assert.then.L44, !prof !5
 
 assert.then.L44:                                  ; preds = %assert.exit.L41
-  %21 = load ptr, ptr @stderr, align 8
+  %21 = call ptr @__acrt_iob_func(i32 2)
   %22 = call i32 (ptr, ptr, ...) @fprintf(ptr %21, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
@@ -169,17 +168,21 @@ assert.exit.L44:                                  ; preds = %assert.exit.L41
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #3
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #5
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree }
-attributes #3 = { cold noreturn nounwind }
-attributes #4 = { nofree nounwind }
+attributes #3 = { nounwind }
+attributes #4 = { cold noreturn nounwind }
+attributes #5 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

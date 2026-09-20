@@ -16,7 +16,6 @@ source_filename = "source.spice"
 @printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 @printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -305,7 +304,7 @@ define dso_local noundef i32 @main() #1 {
   br i1 %50, label %assert.exit.L86, label %assert.then.L86, !prof !5
 
 assert.then.L86:                                  ; preds = %0
-  %51 = load ptr, ptr @stderr, align 8
+  %51 = call ptr @__acrt_iob_func(i32 2)
   %52 = call i32 (ptr, ptr, ...) @fprintf(ptr %51, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -322,14 +321,18 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #4
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #4
+declare void @exit(i32) #5
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { nofree }
-attributes #4 = { cold noreturn nounwind }
+attributes #4 = { nounwind }
+attributes #5 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

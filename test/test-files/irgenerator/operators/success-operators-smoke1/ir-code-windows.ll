@@ -2,7 +2,6 @@
 source_filename = "source.spice"
 
 @anon.string.0 = private unnamed_addr constant [60 x i8] c"Assertion failed: Condition 'val == 9' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
@@ -21,7 +20,7 @@ define dso_local noundef i32 @main() #0 {
   br i1 %6, label %assert.exit.L4, label %assert.then.L4, !prof !5
 
 assert.then.L4:                                   ; preds = %0
-  %7 = load ptr, ptr @stderr, align 8
+  %7 = call ptr @__acrt_iob_func(i32 2)
   %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
@@ -34,16 +33,20 @@ assert.exit.L4:                                   ; preds = %0
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #2
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { nofree nounwind }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

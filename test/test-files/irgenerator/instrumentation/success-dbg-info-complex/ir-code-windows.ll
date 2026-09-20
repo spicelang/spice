@@ -8,7 +8,6 @@ source_filename = "source.spice"
 %struct.Pair = type { i64, ptr }
 
 @anon.string.0 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'vi.getSize() == 3' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'it.isValid()' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 123' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 123' evaluated to false.\0A\00", align 4
@@ -74,7 +73,7 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   br i1 %14, label %assert.exit.L12, label %assert.then.L12, !dbg !40, !prof !41
 
 assert.then.L12:                                  ; preds = %2
-  %15 = load ptr, ptr @stderr, align 8, !dbg !40
+  %15 = call ptr @__acrt_iob_func(i32 2), !dbg !40
   %16 = call i32 (ptr, ptr, ...) @fprintf(ptr %15, ptr @anon.string.0), !dbg !40
   call void @exit(i32 1), !dbg !40
   unreachable, !dbg !40
@@ -87,7 +86,7 @@ assert.exit.L12:                                  ; preds = %2
   br i1 %18, label %assert.exit.L16, label %assert.then.L16, !dbg !49, !prof !41
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
-  %19 = load ptr, ptr @stderr, align 8, !dbg !49
+  %19 = call ptr @__acrt_iob_func(i32 2), !dbg !49
   %20 = call i32 (ptr, ptr, ...) @fprintf(ptr %19, ptr @anon.string.1), !dbg !49
   call void @exit(i32 1), !dbg !49
   unreachable, !dbg !49
@@ -99,7 +98,7 @@ assert.exit.L16:                                  ; preds = %assert.exit.L12
   br i1 %23, label %assert.exit.L17, label %assert.then.L17, !dbg !51, !prof !41
 
 assert.then.L17:                                  ; preds = %assert.exit.L16
-  %24 = load ptr, ptr @stderr, align 8, !dbg !51
+  %24 = call ptr @__acrt_iob_func(i32 2), !dbg !51
   %25 = call i32 (ptr, ptr, ...) @fprintf(ptr %24, ptr @anon.string.2), !dbg !51
   call void @exit(i32 1), !dbg !51
   unreachable, !dbg !51
@@ -111,7 +110,7 @@ assert.exit.L17:                                  ; preds = %assert.exit.L16
   br i1 %28, label %assert.exit.L18, label %assert.then.L18, !dbg !53, !prof !41
 
 assert.then.L18:                                  ; preds = %assert.exit.L17
-  %29 = load ptr, ptr @stderr, align 8, !dbg !53
+  %29 = call ptr @__acrt_iob_func(i32 2), !dbg !53
   %30 = call i32 (ptr, ptr, ...) @fprintf(ptr %29, ptr @anon.string.3), !dbg !53
   call void @exit(i32 1), !dbg !53
   unreachable, !dbg !53
@@ -124,7 +123,7 @@ assert.exit.L18:                                  ; preds = %assert.exit.L17
   br i1 %33, label %assert.exit.L20, label %assert.then.L20, !dbg !56, !prof !41
 
 assert.then.L20:                                  ; preds = %assert.exit.L18
-  %34 = load ptr, ptr @stderr, align 8, !dbg !56
+  %34 = call ptr @__acrt_iob_func(i32 2), !dbg !56
   %35 = call i32 (ptr, ptr, ...) @fprintf(ptr %34, ptr @anon.string.4), !dbg !56
   call void @exit(i32 1), !dbg !56
   unreachable, !dbg !56
@@ -134,7 +133,7 @@ assert.exit.L20:                                  ; preds = %assert.exit.L18
   br i1 %36, label %assert.exit.L21, label %assert.then.L21, !dbg !57, !prof !41
 
 assert.then.L21:                                  ; preds = %assert.exit.L20
-  %37 = load ptr, ptr @stderr, align 8, !dbg !57
+  %37 = call ptr @__acrt_iob_func(i32 2), !dbg !57
   %38 = call i32 (ptr, ptr, ...) @fprintf(ptr %37, ptr @anon.string.5), !dbg !57
   call void @exit(i32 1), !dbg !57
   unreachable, !dbg !57
@@ -150,7 +149,7 @@ assert.exit.L21:                                  ; preds = %assert.exit.L20
   br i1 %42, label %assert.exit.L24, label %assert.then.L24, !dbg !70, !prof !41
 
 assert.then.L24:                                  ; preds = %assert.exit.L21
-  %43 = load ptr, ptr @stderr, align 8, !dbg !70
+  %43 = call ptr @__acrt_iob_func(i32 2), !dbg !70
   %44 = call i32 (ptr, ptr, ...) @fprintf(ptr %43, ptr @anon.string.6), !dbg !70
   call void @exit(i32 1), !dbg !70
   unreachable, !dbg !70
@@ -162,7 +161,7 @@ assert.exit.L24:                                  ; preds = %assert.exit.L21
   br i1 %47, label %assert.exit.L25, label %assert.then.L25, !dbg !72, !prof !41
 
 assert.then.L25:                                  ; preds = %assert.exit.L24
-  %48 = load ptr, ptr @stderr, align 8, !dbg !72
+  %48 = call ptr @__acrt_iob_func(i32 2), !dbg !72
   %49 = call i32 (ptr, ptr, ...) @fprintf(ptr %48, ptr @anon.string.7), !dbg !72
   call void @exit(i32 1), !dbg !72
   unreachable, !dbg !72
@@ -174,7 +173,7 @@ assert.exit.L25:                                  ; preds = %assert.exit.L24
   br i1 %51, label %assert.exit.L27, label %assert.then.L27, !dbg !74, !prof !41
 
 assert.then.L27:                                  ; preds = %assert.exit.L25
-  %52 = load ptr, ptr @stderr, align 8, !dbg !74
+  %52 = call ptr @__acrt_iob_func(i32 2), !dbg !74
   %53 = call i32 (ptr, ptr, ...) @fprintf(ptr %52, ptr @anon.string.8), !dbg !74
   call void @exit(i32 1), !dbg !74
   unreachable, !dbg !74
@@ -188,7 +187,7 @@ assert.exit.L27:                                  ; preds = %assert.exit.L25
   br i1 %54, label %assert.exit.L32, label %assert.then.L32, !dbg !77, !prof !41
 
 assert.then.L32:                                  ; preds = %assert.exit.L27
-  %55 = load ptr, ptr @stderr, align 8, !dbg !77
+  %55 = call ptr @__acrt_iob_func(i32 2), !dbg !77
   %56 = call i32 (ptr, ptr, ...) @fprintf(ptr %55, ptr @anon.string.9), !dbg !77
   call void @exit(i32 1), !dbg !77
   unreachable, !dbg !77
@@ -201,7 +200,7 @@ assert.exit.L32:                                  ; preds = %assert.exit.L27
   br i1 %59, label %assert.exit.L36, label %assert.then.L36, !dbg !80, !prof !41
 
 assert.then.L36:                                  ; preds = %assert.exit.L32
-  %60 = load ptr, ptr @stderr, align 8, !dbg !80
+  %60 = call ptr @__acrt_iob_func(i32 2), !dbg !80
   %61 = call i32 (ptr, ptr, ...) @fprintf(ptr %60, ptr @anon.string.10), !dbg !80
   call void @exit(i32 1), !dbg !80
   unreachable, !dbg !80
@@ -211,7 +210,7 @@ assert.exit.L36:                                  ; preds = %assert.exit.L32
   br i1 %62, label %assert.exit.L37, label %assert.then.L37, !dbg !81, !prof !41
 
 assert.then.L37:                                  ; preds = %assert.exit.L36
-  %63 = load ptr, ptr @stderr, align 8, !dbg !81
+  %63 = call ptr @__acrt_iob_func(i32 2), !dbg !81
   %64 = call i32 (ptr, ptr, ...) @fprintf(ptr %63, ptr @anon.string.11), !dbg !81
   call void @exit(i32 1), !dbg !81
   unreachable, !dbg !81
@@ -225,7 +224,7 @@ assert.exit.L37:                                  ; preds = %assert.exit.L36
   br i1 %68, label %assert.exit.L39, label %assert.then.L39, !dbg !84, !prof !41
 
 assert.then.L39:                                  ; preds = %assert.exit.L37
-  %69 = load ptr, ptr @stderr, align 8, !dbg !84
+  %69 = call ptr @__acrt_iob_func(i32 2), !dbg !84
   %70 = call i32 (ptr, ptr, ...) @fprintf(ptr %69, ptr @anon.string.12), !dbg !84
   call void @exit(i32 1), !dbg !84
   unreachable, !dbg !84
@@ -239,7 +238,7 @@ assert.exit.L39:                                  ; preds = %assert.exit.L37
   br i1 %74, label %assert.exit.L41, label %assert.then.L41, !dbg !87, !prof !41
 
 assert.then.L41:                                  ; preds = %assert.exit.L39
-  %75 = load ptr, ptr @stderr, align 8, !dbg !87
+  %75 = call ptr @__acrt_iob_func(i32 2), !dbg !87
   %76 = call i32 (ptr, ptr, ...) @fprintf(ptr %75, ptr @anon.string.13), !dbg !87
   call void @exit(i32 1), !dbg !87
   unreachable, !dbg !87
@@ -252,7 +251,7 @@ assert.exit.L41:                                  ; preds = %assert.exit.L39
   br i1 %79, label %assert.exit.L43, label %assert.then.L43, !dbg !90, !prof !41
 
 assert.then.L43:                                  ; preds = %assert.exit.L41
-  %80 = load ptr, ptr @stderr, align 8, !dbg !90
+  %80 = call ptr @__acrt_iob_func(i32 2), !dbg !90
   %81 = call i32 (ptr, ptr, ...) @fprintf(ptr %80, ptr @anon.string.14), !dbg !90
   call void @exit(i32 1), !dbg !90
   unreachable, !dbg !90
@@ -264,7 +263,7 @@ assert.exit.L43:                                  ; preds = %assert.exit.L41
   br i1 %83, label %assert.exit.L45, label %assert.then.L45, !dbg !92, !prof !41
 
 assert.then.L45:                                  ; preds = %assert.exit.L43
-  %84 = load ptr, ptr @stderr, align 8, !dbg !92
+  %84 = call ptr @__acrt_iob_func(i32 2), !dbg !92
   %85 = call i32 (ptr, ptr, ...) @fprintf(ptr %84, ptr @anon.string.15), !dbg !92
   call void @exit(i32 1), !dbg !92
   unreachable, !dbg !92
@@ -299,7 +298,7 @@ foreach.exit.L48:                                 ; preds = %foreach.head.L48
   br i1 %94, label %assert.exit.L51, label %assert.then.L51, !dbg !100, !prof !41
 
 assert.then.L51:                                  ; preds = %foreach.exit.L48
-  %95 = load ptr, ptr @stderr, align 8, !dbg !100
+  %95 = call ptr @__acrt_iob_func(i32 2), !dbg !100
   %96 = call i32 (ptr, ptr, ...) @fprintf(ptr %95, ptr @anon.string.16), !dbg !100
   call void @exit(i32 1), !dbg !100
   unreachable, !dbg !100
@@ -311,7 +310,7 @@ assert.exit.L51:                                  ; preds = %foreach.exit.L48
   br i1 %99, label %assert.exit.L52, label %assert.then.L52, !dbg !102, !prof !41
 
 assert.then.L52:                                  ; preds = %assert.exit.L51
-  %100 = load ptr, ptr @stderr, align 8, !dbg !102
+  %100 = call ptr @__acrt_iob_func(i32 2), !dbg !102
   %101 = call i32 (ptr, ptr, ...) @fprintf(ptr %100, ptr @anon.string.17), !dbg !102
   call void @exit(i32 1), !dbg !102
   unreachable, !dbg !102
@@ -323,7 +322,7 @@ assert.exit.L52:                                  ; preds = %assert.exit.L51
   br i1 %104, label %assert.exit.L53, label %assert.then.L53, !dbg !104, !prof !41
 
 assert.then.L53:                                  ; preds = %assert.exit.L52
-  %105 = load ptr, ptr @stderr, align 8, !dbg !104
+  %105 = call ptr @__acrt_iob_func(i32 2), !dbg !104
   %106 = call i32 (ptr, ptr, ...) @fprintf(ptr %105, ptr @anon.string.18), !dbg !104
   call void @exit(i32 1), !dbg !104
   unreachable, !dbg !104
@@ -359,7 +358,7 @@ foreach.exit.L56:                                 ; preds = %foreach.head.L56
   br i1 %115, label %assert.exit.L59, label %assert.then.L59, !dbg !112, !prof !41
 
 assert.then.L59:                                  ; preds = %foreach.exit.L56
-  %116 = load ptr, ptr @stderr, align 8, !dbg !112
+  %116 = call ptr @__acrt_iob_func(i32 2), !dbg !112
   %117 = call i32 (ptr, ptr, ...) @fprintf(ptr %116, ptr @anon.string.19), !dbg !112
   call void @exit(i32 1), !dbg !112
   unreachable, !dbg !112
@@ -371,7 +370,7 @@ assert.exit.L59:                                  ; preds = %foreach.exit.L56
   br i1 %120, label %assert.exit.L60, label %assert.then.L60, !dbg !114, !prof !41
 
 assert.then.L60:                                  ; preds = %assert.exit.L59
-  %121 = load ptr, ptr @stderr, align 8, !dbg !114
+  %121 = call ptr @__acrt_iob_func(i32 2), !dbg !114
   %122 = call i32 (ptr, ptr, ...) @fprintf(ptr %121, ptr @anon.string.20), !dbg !114
   call void @exit(i32 1), !dbg !114
   unreachable, !dbg !114
@@ -383,7 +382,7 @@ assert.exit.L60:                                  ; preds = %assert.exit.L59
   br i1 %125, label %assert.exit.L61, label %assert.then.L61, !dbg !116, !prof !41
 
 assert.then.L61:                                  ; preds = %assert.exit.L60
-  %126 = load ptr, ptr @stderr, align 8, !dbg !116
+  %126 = call ptr @__acrt_iob_func(i32 2), !dbg !116
   %127 = call i32 (ptr, ptr, ...) @fprintf(ptr %126, ptr @anon.string.21), !dbg !116
   call void @exit(i32 1), !dbg !116
   unreachable, !dbg !116
@@ -428,7 +427,7 @@ foreach.exit.L63:                                 ; preds = %foreach.head.L63
   br i1 %139, label %assert.exit.L66, label %assert.then.L66, !dbg !126, !prof !41
 
 assert.then.L66:                                  ; preds = %foreach.exit.L63
-  %140 = load ptr, ptr @stderr, align 8, !dbg !126
+  %140 = call ptr @__acrt_iob_func(i32 2), !dbg !126
   %141 = call i32 (ptr, ptr, ...) @fprintf(ptr %140, ptr @anon.string.22), !dbg !126
   call void @exit(i32 1), !dbg !126
   unreachable, !dbg !126
@@ -440,7 +439,7 @@ assert.exit.L66:                                  ; preds = %foreach.exit.L63
   br i1 %144, label %assert.exit.L67, label %assert.then.L67, !dbg !128, !prof !41
 
 assert.then.L67:                                  ; preds = %assert.exit.L66
-  %145 = load ptr, ptr @stderr, align 8, !dbg !128
+  %145 = call ptr @__acrt_iob_func(i32 2), !dbg !128
   %146 = call i32 (ptr, ptr, ...) @fprintf(ptr %145, ptr @anon.string.23), !dbg !128
   call void @exit(i32 1), !dbg !128
   unreachable, !dbg !128
@@ -452,7 +451,7 @@ assert.exit.L67:                                  ; preds = %assert.exit.L66
   br i1 %149, label %assert.exit.L68, label %assert.then.L68, !dbg !130, !prof !41
 
 assert.then.L68:                                  ; preds = %assert.exit.L67
-  %150 = load ptr, ptr @stderr, align 8, !dbg !130
+  %150 = call ptr @__acrt_iob_func(i32 2), !dbg !130
   %151 = call i32 (ptr, ptr, ...) @fprintf(ptr %150, ptr @anon.string.24), !dbg !130
   call void @exit(i32 1), !dbg !130
   unreachable, !dbg !130
@@ -472,8 +471,11 @@ declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #2
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr)
 
@@ -500,14 +502,15 @@ declare void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 declare void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32))
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree }
-attributes #2 = { cold noreturn nounwind }
-attributes #3 = { nofree nounwind }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!7, !8, !9, !10, !11, !12}
 !llvm.ident = !{!13}

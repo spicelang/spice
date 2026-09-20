@@ -5,7 +5,6 @@ source_filename = "source.spice"
 @anon.string.1 = private unnamed_addr constant [6 x i8] c"World\00", align 4
 @anon.array.0 = private unnamed_addr constant [2 x ptr] [ptr @anon.string.0, ptr @anon.string.1]
 @anon.string.2 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition '*iPtr == 13' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
@@ -28,7 +27,7 @@ define dso_local noundef i32 @main() #0 {
   br i1 %4, label %assert.exit.L12, label %assert.then.L12, !prof !5
 
 assert.then.L12:                                  ; preds = %0
-  %5 = load ptr, ptr @stderr, align 8
+  %5 = call ptr @__acrt_iob_func(i32 2)
   %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
@@ -53,13 +52,17 @@ declare ptr @_Z7getAIncIiEPiPi(ptr)
 ; Function Attrs: nofree
 declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #3
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nofree }
-attributes #3 = { cold noreturn nounwind }
+attributes #3 = { nounwind }
+attributes #4 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
