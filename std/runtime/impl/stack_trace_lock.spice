@@ -1,0 +1,12 @@
+// Serializes captures, for stack_trace_native.spice. Only Windows needs that, and has its own
+// stack_trace_lock_windows.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+/**
+ * Takes the lock that serializes captures. Nothing to do here.
+ */
+public p acquireCaptureLock() {}
+
+/**
+ * Releases the lock that serializes captures. Nothing to do here.
+ */
+public p releaseCaptureLock() {}

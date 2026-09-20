@@ -17,6 +17,7 @@
 // the other or the caller: RUNTIME_FRAMES there counts on it.
 
 import "std/runtime/impl/stack_trace_address";
+import "std/runtime/impl/stack_trace_lock";
 
 ext f<string> strdup(string /*text*/);
 ext p free(string /*ptr*/);
@@ -70,7 +71,7 @@ p ignoreError(byte* _data, string _message, int _errorNumber) {}
  * Spice has no atomics, so the state is published with a plain store, unlike the C implementation, which used a
  * compare-exchange. Threads capturing for the first time together each create a state and the last store wins, which
  * only wastes memory. On a weakly ordered CPU (AArch64) a thread could in theory also see the pointer before the state
- * behind it is initialized. ThreadSanitizer reports the race.
+ * behind it is initialized. ThreadSanitizer reports the race. On Windows the capture lock rules all of this out.
  */
 f<unsigned long> obtainState() {
     if BACKTRACE_STATE == 0ul {
@@ -178,8 +179,15 @@ f<int> collectSimpleFrame(byte* data, unsigned long address) {
  * @return Number of frames written
  */
 public f<unsigned int> captureNativeFrames(NativeStackFrame* frames, unsigned int capacity, unsigned int skipNativeFrames, unsigned int skipEntries) {
+    if frames == nil<NativeStackFrame*> {
+        return 0u;
+    }
+
+    // Held from the creation of the state to the end of the walk, so that on Windows only one thread ever initializes it
+    acquireCaptureLock();
     const unsigned long state = obtainState();
-    if frames == nil<NativeStackFrame*> || state == 0ul {
+    if state == 0ul {
+        releaseCaptureLock();
         return 0u;
     }
 
@@ -203,6 +211,8 @@ public f<unsigned int> captureNativeFrames(NativeStackFrame* frames, unsigned in
             backtrace_simple(state, skipNativeFrames, cast<byte*>(collectSimpleFrame), cast<byte*>(ignoreError), cast<byte*>(&capture));
         }
     }
+
+    releaseCaptureLock();
     return capture.count;
 }
 

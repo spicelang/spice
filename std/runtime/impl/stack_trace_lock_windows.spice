@@ -1,0 +1,27 @@
+// Windows version of stack_trace_lock.spice, picked by the OS suffix. The two files must offer the same symbols.
+//
+// Threads that take their first stack trace at the same time crash the process on Windows, though a first trace on one
+// thread followed by concurrent ones is fine. Initializing libbacktrace there is elaborate - it reads every loaded
+// module and registers a DLL notification - and does not survive several threads doing it at once. Captures are
+// therefore serialized. That costs nothing that matters, as capturing a trace is slow anyway.
+
+ext p AcquireSRWLockExclusive(unsigned long* /*lock*/);
+ext p ReleaseSRWLockExclusive(unsigned long* /*lock*/);
+
+// An SRWLOCK is a single pointer that starts out as zero, which a global of primitive type can hold. That makes it
+// the one lock that can live in a global, as Spice does not support globals of struct type.
+unsigned long CAPTURE_LOCK = 0ul;
+
+/**
+ * Takes the lock that serializes captures.
+ */
+public p acquireCaptureLock() {
+    AcquireSRWLockExclusive(&CAPTURE_LOCK);
+}
+
+/**
+ * Releases the lock that serializes captures.
+ */
+public p releaseCaptureLock() {
+    ReleaseSRWLockExclusive(&CAPTURE_LOCK);
+}

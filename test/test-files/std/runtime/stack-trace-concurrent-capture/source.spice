@@ -1,51 +1,41 @@
-// TEMPORARY DIAGNOSTIC (Windows CI only, prints its findings there so the runner shows them as a mismatch): sixteen
-// threads race the very first capture of the process, like the real test, but report instead of asserting. Other
-// platforms only print the expected line.
-import "std/os/os";
+// Exercises the very first stack trace of a process being taken by several threads at once.
+//
+// The process-wide libbacktrace state is created lazily by whichever thread gets there first. On Windows, initializing
+// it from several threads at once used to crash the process. Every run of this test is a fresh process, so every run
+// races the first capture, which is the only one that can go wrong.
+//
+// Only what holds on every platform and optimization level is asserted: that each thread got a trace of its own, and
+// that some frame of it was resolved to a name. Which frame that is depends on what the optimizer inlined.
 import "std/os/thread";
-import "std/runtime/stack_trace_rt";
 
-ext f<int> fflush(byte* /*stream*/);
-
-p step(string text) {
-    if isWindows() {
-        printf("%s\n", text);
-        fflush(nil<byte*>);
-    }
-}
+const int THREAD_COUNT = 16;
 
 p worker() {
-    StackTrace trace = sGetStacktrace();
-    if isWindows() {
-        int named = 0;
-        foreach StackTraceEntry& entry : trace {
-            if !entry.functionName.isEmpty() { named++; }
-        }
-        printf("  worker: size=%d named=%d\n", cast<int>(trace.getSize()), named);
-        if named == 0 {
-            foreach unsigned long index, StackTraceEntry& entry : trace {
-                printf("    #%lu addr=%p off=%lu spice=%d\n", index, entry.address, entry.offset, cast<int>(entry.isSpice));
-            }
-        }
-        fflush(nil<byte*>);
+    const StackTrace trace = sGetStacktrace();
+    assert trace.getSize() >= 1l;
+
+    int namedFrames = 0;
+    foreach StackTraceEntry& entry : trace {
+        assert entry.address != nil<byte*>;
+        if !entry.functionName.isEmpty() { namedFrames++; }
     }
+    assert namedFrames >= 1;
 }
 
 f<int> main() {
-    step("16 workers race the first capture");
-    Thread[16] threads;
-    for int i = 0; i < 16; i++ {
+    Thread[THREAD_COUNT] threads;
+    for int i = 0; i < THREAD_COUNT; i++ {
         threads[i] = Thread(worker);
     }
-    for int i = 0; i < 16; i++ {
+    for int i = 0; i < THREAD_COUNT; i++ {
         Thread& thread = threads[i];
         thread.run();
     }
-    for int i = 0; i < 16; i++ {
+    for int i = 0; i < THREAD_COUNT; i++ {
         Thread& thread = threads[i];
         thread.join();
     }
-    step("done");
-    if !isWindows() { printf("All assertions passed!\n"); }
+
+    printf("All assertions passed!\n");
     return 0;
 }

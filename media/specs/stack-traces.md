@@ -10,6 +10,8 @@ shared runtime with no per-platform variants. User-facing documentation: `docs/d
 | `std/runtime/impl/stack_trace_native.spice`          | Capture and symbol resolution, calling libbacktrace directly         |
 | `std/runtime/impl/stack_trace_address.spice`         | Address translation for symbol lookups: the identity                 |
 | `std/runtime/impl/stack_trace_address_windows.spice` | The same for Windows, undoing the loader's relocation of a module    |
+| `std/runtime/impl/stack_trace_lock.spice`            | Serializes captures: nothing to do                                   |
+| `std/runtime/impl/stack_trace_lock_windows.spice`    | The same for Windows, which needs it, see below                      |
 | `std/text/demangle.spice`                            | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
 | `deps/libbacktrace`                                  | Vendored libbacktrace, as a git submodule                            |
 | `setup-deps.py`                                      | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
@@ -100,6 +102,12 @@ trailing argument since #1396, which a C caller does not pass and the thunk igno
   and offsets resolve. The frame keeps its real address. The distance is kept in the capture's own state for the module
   of the last frame, so that consecutive frames in one module do not reread its file. Other platforms get
   `impl/stack_trace_address.spice`, which returns the address as is.
+- **Windows, locking:** captures are serialized there by an `SRWLOCK` (`impl/stack_trace_lock_windows.spice`), which is
+  held from creating the state to the end of the walk. Several threads taking their first stack trace at the same time
+  crash the process on Windows, while a first trace on one thread followed by concurrent ones does not, as shown by
+  `stack-trace-concurrent-capture` on CI. libbacktrace's initialization there reads every loaded module and registers a
+  DLL notification, but what exactly fails was not tracked down. An `SRWLOCK` is one pointer that starts as zero, so it
+  fits in a global of primitive type, which a `Mutex` does not. Other platforms take no lock.
 - **Demangling:** `capture()` runs each name through `demangle()`. It reads exactly what the compiler emits, including
   function types (`PF...E`), `.fatthunk` suffixes and RTTI symbols, and returns anything else unchanged.
 
@@ -134,7 +142,7 @@ stack trace is taken by several threads at once:
   threads under `--sanitizer=thread` hung in 11 of 12 runs, against none with the C implementation. Taking one stack
   trace before starting the threads avoids it.
 
-Neither a `Mutex` nor `pthread_once` can stand in: a global cannot be a struct, and the storage a `pthread_once_t` needs
+On Windows the capture lock above rules both out. Elsewhere, neither a `Mutex` nor `pthread_once` can stand in: a global cannot be a struct, and the storage a `pthread_once_t` needs
 differs per platform. Closing the gap needs atomic loads and stores in the language, at which point `obtainState()` is
 the only place to change.
 
