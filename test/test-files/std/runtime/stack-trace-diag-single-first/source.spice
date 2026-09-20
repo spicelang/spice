@@ -1,0 +1,37 @@
+// TEMPORARY DIAGNOSTIC (Windows CI only, prints its findings there so the runner shows them as a mismatch): one worker
+// thread takes the very first stack trace of the process. Other platforms only print the expected line.
+import "std/os/os";
+import "std/os/thread";
+import "std/runtime/stack_trace_rt";
+
+ext f<int> fflush(byte* /*stream*/);
+
+p step(string text) {
+    if isWindows() {
+        printf("%s\n", text);
+        fflush(nil<byte*>);
+    }
+}
+
+p worker() {
+    step("  worker: capturing");
+    StackTrace trace = sGetStacktrace();
+    if isWindows() {
+        printf("  worker: size=%d\n", cast<int>(trace.getSize()));
+        foreach unsigned long index, StackTraceEntry& entry : trace {
+            printf("    #%lu addr=%p off=%lu spice=%d file=%s name=%s\n", index, entry.address, entry.offset,
+                   cast<int>(entry.isSpice), entry.fileName.getRaw(), entry.functionName.getRaw());
+        }
+        fflush(nil<byte*>);
+    }
+}
+
+f<int> main() {
+    step("single worker takes the first capture");
+    Thread thread = Thread(worker);
+    thread.run();
+    thread.join();
+    step("done");
+    if !isWindows() { printf("All assertions passed!\n"); }
+    return 0;
+}

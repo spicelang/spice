@@ -1,27 +1,11 @@
-// TEMPORARY DIAGNOSTIC - replaces the real test to find out why it fails on Windows CI. On other platforms it only
-// prints the expected line. On Windows it prints its findings instead, so that the runner shows them as a mismatch.
+// TEMPORARY DIAGNOSTIC (Windows CI only, prints its findings there so the runner shows them as a mismatch): sixteen
+// threads race the very first capture of the process, like the real test, but report instead of asserting. Other
+// platforms only print the expected line.
 import "std/os/os";
 import "std/os/thread";
 import "std/runtime/stack_trace_rt";
 
 ext f<int> fflush(byte* /*stream*/);
-
-p report(string label, StackTrace& trace) {
-    int named = 0;
-    foreach StackTraceEntry& entry : trace {
-        if !entry.functionName.isEmpty() { named++; }
-    }
-    printf("%s: size=%d named=%d\n", label, cast<int>(trace.getSize()), named);
-    fflush(nil<byte*>);
-}
-
-p dumpEntries(StackTrace& trace) {
-    foreach unsigned long index, StackTraceEntry& entry : trace {
-        printf("    #%lu addr=%p off=%lu spice=%d file=%s name=%s\n", index, entry.address, entry.offset, cast<int>(entry.isSpice),
-               entry.fileName.getRaw(), entry.functionName.getRaw());
-    }
-    fflush(nil<byte*>);
-}
 
 p step(string text) {
     if isWindows() {
@@ -30,37 +14,28 @@ p step(string text) {
     }
 }
 
-p singleWorker() {
-    step("  worker started");
+p worker() {
     StackTrace trace = sGetStacktrace();
     if isWindows() {
-        report("  single worker", trace);
-        dumpEntries(trace);
+        int named = 0;
+        foreach StackTraceEntry& entry : trace {
+            if !entry.functionName.isEmpty() { named++; }
+        }
+        printf("  worker: size=%d named=%d\n", cast<int>(trace.getSize()), named);
+        if named == 0 {
+            foreach unsigned long index, StackTraceEntry& entry : trace {
+                printf("    #%lu addr=%p off=%lu spice=%d\n", index, entry.address, entry.offset, cast<int>(entry.isSpice));
+            }
+        }
+        fflush(nil<byte*>);
     }
-}
-
-p manyWorker() {
-    StackTrace trace = sGetStacktrace();
-    if isWindows() { report("  many worker", trace); }
 }
 
 f<int> main() {
-    step("step A: main thread");
-    StackTrace mainTrace = sGetStacktrace();
-    if isWindows() {
-        report("  main", mainTrace);
-        dumpEntries(mainTrace);
-    }
-
-    step("step B: one worker thread");
-    Thread single = Thread(singleWorker);
-    single.run();
-    single.join();
-
-    step("step C: 16 concurrent workers");
+    step("16 workers race the first capture");
     Thread[16] threads;
     for int i = 0; i < 16; i++ {
-        threads[i] = Thread(manyWorker);
+        threads[i] = Thread(worker);
     }
     for int i = 0; i < 16; i++ {
         Thread& thread = threads[i];
@@ -70,8 +45,7 @@ f<int> main() {
         Thread& thread = threads[i];
         thread.join();
     }
-
-    step("step D: done");
+    step("done");
     if !isWindows() { printf("All assertions passed!\n"); }
     return 0;
 }
