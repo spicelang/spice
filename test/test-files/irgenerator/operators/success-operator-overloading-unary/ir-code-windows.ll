@@ -1,0 +1,137 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+%struct.TestStruct = type { i64 }
+
+@anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 125l' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 125l' evaluated to false.\0A\00", align 4
+@anon.string.2 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'ts.test == 123l' evaluated to false.\0A\00", align 4
+@anon.string.3 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'output.test == 123l' evaluated to false.\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
+
+; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef ptr @_Z16op.plusplus.postR10TestStruct(ptr noundef %0) #0 {
+  %ts = alloca ptr, align 8
+  store ptr %0, ptr %ts, align 8
+  %2 = load ptr, ptr %ts, align 8
+  %test.addr = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 0
+  %3 = load i64, ptr %test.addr, align 8
+  %4 = add nsw i64 %3, 1
+  store i64 %4, ptr %test.addr, align 8
+  %5 = load ptr, ptr %ts, align 8
+  ret ptr %5
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef ptr @_Z18op.minusminus.postR10TestStruct(ptr noundef %0) #0 {
+  %ts = alloca ptr, align 8
+  store ptr %0, ptr %ts, align 8
+  %2 = load ptr, ptr %ts, align 8
+  %test.addr = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 0
+  %3 = load i64, ptr %test.addr, align 8
+  %4 = sub nsw i64 %3, 1
+  store i64 %4, ptr %test.addr, align 8
+  %5 = load ptr, ptr %ts, align 8
+  ret ptr %5
+}
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #1 {
+  %ts = alloca %struct.TestStruct, align 8
+  %output = alloca ptr, align 8
+  store %struct.TestStruct { i64 123 }, ptr %ts, align 8
+  %1 = load %struct.TestStruct, ptr %ts, align 8
+  %2 = call ptr @_Z16op.plusplus.postR10TestStruct(ptr %ts)
+  store ptr %2, ptr %output, align 8
+  %test.addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
+  %3 = load i64, ptr %test.addr, align 8
+  %4 = add nsw i64 %3, 1
+  store i64 %4, ptr %test.addr, align 8
+  %5 = load ptr, ptr %output, align 8
+  %test.addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i64 0, i32 0
+  %6 = load i64, ptr %test.addr1, align 8
+  %7 = icmp eq i64 %6, 125
+  br i1 %7, label %assert.exit.L19, label %assert.then.L19, !prof !5
+
+assert.then.L19:                                  ; preds = %0
+  %8 = call ptr @__acrt_iob_func(i32 2)
+  %9 = call i32 (ptr, ptr, ...) @fprintf(ptr %8, ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L19:                                  ; preds = %0
+  %test.addr2 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
+  %10 = load i64, ptr %test.addr2, align 8
+  %11 = icmp eq i64 %10, 125
+  br i1 %11, label %assert.exit.L20, label %assert.then.L20, !prof !5
+
+assert.then.L20:                                  ; preds = %assert.exit.L19
+  %12 = call ptr @__acrt_iob_func(i32 2)
+  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.1)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L20:                                  ; preds = %assert.exit.L19
+  %test.addr3 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
+  %14 = load i64, ptr %test.addr3, align 8
+  %15 = sub nsw i64 %14, 1
+  store i64 %15, ptr %test.addr3, align 8
+  %16 = load %struct.TestStruct, ptr %ts, align 8
+  %17 = call ptr @_Z18op.minusminus.postR10TestStruct(ptr %ts)
+  %test.addr4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
+  %18 = load i64, ptr %test.addr4, align 8
+  %19 = icmp eq i64 %18, 123
+  br i1 %19, label %assert.exit.L23, label %assert.then.L23, !prof !5
+
+assert.then.L23:                                  ; preds = %assert.exit.L20
+  %20 = call ptr @__acrt_iob_func(i32 2)
+  %21 = call i32 (ptr, ptr, ...) @fprintf(ptr %20, ptr @anon.string.2)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L23:                                  ; preds = %assert.exit.L20
+  %22 = load ptr, ptr %output, align 8
+  %test.addr5 = getelementptr inbounds %struct.TestStruct, ptr %22, i64 0, i32 0
+  %23 = load i64, ptr %test.addr5, align 8
+  %24 = icmp eq i64 %23, 123
+  br i1 %24, label %assert.exit.L24, label %assert.then.L24, !prof !5
+
+assert.then.L24:                                  ; preds = %assert.exit.L23
+  %25 = call ptr @__acrt_iob_func(i32 2)
+  %26 = call i32 (ptr, ptr, ...) @fprintf(ptr %25, ptr @anon.string.3)
+  call void @exit(i32 1)
+  unreachable
+
+assert.exit.L24:                                  ; preds = %assert.exit.L23
+  %27 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  ret i32 0
+}
+
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #3
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #4
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #5
+
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree }
+attributes #3 = { nounwind }
+attributes #4 = { cold noreturn nounwind }
+attributes #5 = { nofree nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!5 = !{!"branch_weights", i32 1048575, i32 1}

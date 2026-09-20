@@ -1,0 +1,71 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+@anon.string.0 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'false' evaluated to false.\0A\00", align 4
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"false\00", align 4
+@printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %s\00", align 4
+
+; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef zeroext i1 @_Z7condFctv() #0 {
+  ret i1 false
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef ptr @_Z7trueFctv() #0 {
+  %1 = call ptr @__acrt_iob_func(i32 2)
+  %2 = call i32 (ptr, ptr, ...) @fprintf(ptr %1, ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+}
+
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #2
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #3
+
+; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef ptr @_Z8falseFctv() #0 {
+  ret ptr @anon.string.1
+}
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #4 {
+  %1 = call noundef zeroext i1 @_Z7condFctv()
+  br i1 %1, label %cond.true.L15C26, label %cond.false.L15C26
+
+cond.true.L15C26:                                 ; preds = %0
+  %2 = call noundef ptr @_Z7trueFctv()
+  br label %cond.exit.L15C26
+
+cond.false.L15C26:                                ; preds = %0
+  %3 = call noundef ptr @_Z8falseFctv()
+  br label %cond.exit.L15C26
+
+cond.exit.L15C26:                                 ; preds = %cond.false.L15C26, %cond.true.L15C26
+  %cond.result = phi ptr [ %2, %cond.true.L15C26 ], [ %3, %cond.false.L15C26 ]
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %cond.result)
+  ret i32 0
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #5
+
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree }
+attributes #2 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #5 = { nofree nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}

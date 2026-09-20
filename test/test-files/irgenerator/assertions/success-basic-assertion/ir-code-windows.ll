@@ -1,0 +1,41 @@
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
+
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 4
+@anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 4
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define dso_local noundef i32 @main() #0 {
+  %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %2 = call ptr @__acrt_iob_func(i32 2)
+  %3 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0)
+  call void @exit(i32 1)
+  unreachable
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+
+; Function Attrs: nounwind
+declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #3
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #4
+
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { nofree }
+attributes #3 = { nounwind }
+attributes #4 = { cold noreturn nounwind }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+!llvm.ident = !{!4}
+
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 2}
+!3 = !{i32 7, !"frame-pointer", i32 0}
+!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
