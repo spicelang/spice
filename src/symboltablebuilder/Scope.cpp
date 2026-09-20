@@ -346,6 +346,48 @@ std::vector<Union *> Scope::getAllUnionManifestationsInDeclarationOrder() {
 } // LCOV_EXCL_LINE - false positive
 
 /**
+ * Describe which function, struct and interface manifestations of this scope tree the IR generator will emit into the
+ * object file of the owning source file. Generic manifestations are emitted into the module that defines the generic, but
+ * are requested by its importers, so this is the part of an object file's content that the module's own source cannot tell.
+ * The result is only meaningful once type checking has converged, because the manifestation set is still growing before.
+ *
+ * @return Fingerprint of the emitted manifestations
+ */
+std::string Scope::getManifestationFingerprint() const {
+  std::string fingerprint;
+  collectManifestationFingerprint(fingerprint);
+  return fingerprint;
+}
+
+void Scope::collectManifestationFingerprint(std::string &fingerprint) const { // NOLINT(misc-no-recursion)
+  // Mirror the emission conditions of IRGenerator::visitFctDef/visitProcDef/visitStructDef/visitInterfaceDef: manifestations
+  // that are not fully substantiated are skipped there, and the 'used' flag decides for the non-public ones. The registries
+  // are ordered maps, so the traversal order is deterministic.
+  const auto append = [&](char kind, const std::string &mangledName, bool used) {
+    fingerprint += kind;
+    fingerprint += mangledName;
+    fingerprint += used ? '+' : '-';
+    fingerprint += '\n';
+  };
+  for (const FunctionManifestationList &manifestations : functions | std::views::values)
+    for (const auto &[mangledName, manifestation] : manifestations)
+      if (manifestation.isFullySubstantiated())
+        append('F', mangledName, manifestation.used);
+  for (const StructManifestationList &manifestations : structs | std::views::values)
+    for (const auto &[mangledName, manifestation] : manifestations)
+      if (manifestation.isFullySubstantiated())
+        append('S', mangledName, manifestation.used);
+  for (const InterfaceManifestationList &manifestations : interfaces | std::views::values)
+    for (const auto &[mangledName, manifestation] : manifestations)
+      if (manifestation.isFullySubstantiated())
+        append('I', mangledName, manifestation.used);
+
+  // Manifestations of methods live in the scopes of their structs, so the whole tree has to be covered
+  for (const std::shared_ptr<Scope> &child : children | std::views::values)
+    child->collectManifestationFingerprint(fingerprint);
+}
+
+/**
  * Get the current number of nested loops
  *
  * @return Number of loops

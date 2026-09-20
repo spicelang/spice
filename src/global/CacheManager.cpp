@@ -45,6 +45,23 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   return std::to_string(std::hash<std::string>{}(components.str()));
 }
 
+/**
+ * Derive the key of a module's object file from its source-derived key and the generic manifestations that end up in it.
+ *
+ * Generic instantiations are emitted into the object file of the module that defines the generic, yet which of them exist
+ * is decided by the importers. So the source-derived key from computeCacheKey() alone cannot tell two objects apart that
+ * were built from the same source for different importers, and reusing one for the other leaves the importer with
+ * undefined symbols. The manifestation set is only known once type checking has converged, which is why this is a
+ * separate step that runs after the source-derived key was already used to fold dependencies into their dependants.
+ *
+ * @param sourceCacheKey Key from computeCacheKey(), covering source, options and dependencies
+ * @param manifestationFingerprint Scope::getManifestationFingerprint() of the module
+ * @return Cache key of the module's object file
+ */
+std::string CacheManager::foldManifestations(const std::string &sourceCacheKey, const std::string &manifestationFingerprint) {
+  return std::to_string(std::hash<std::string>{}(sourceCacheKey + '\0' + manifestationFingerprint));
+}
+
 bool CacheManager::lookupSourceFile(SourceFile *sourceFile) const {
   const char *objectFileExtension = SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
   const std::filesystem::path metadataFilePath = cacheDir / (sourceFile->cacheKey + ".json");

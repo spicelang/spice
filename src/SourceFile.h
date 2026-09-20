@@ -230,6 +230,7 @@ private:
 
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;
+  void lookupCache();
   [[nodiscard]] bool dependsOn(const SourceFile *other) const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void mergeNameRegistriesRecursive();

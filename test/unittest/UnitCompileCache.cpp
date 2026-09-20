@@ -180,6 +180,31 @@ TEST_F(CompileCacheTest, ComputeCacheKeyIsOrderIndependentInDeps) {
   ASSERT_EQ(manager.computeCacheKey(source, {"a", "b", "c"}), manager.computeCacheKey(source, {"c", "a", "b"}));
 }
 
+TEST_F(CompileCacheTest, FoldManifestationsIsDeterministic) {
+  const std::string sourceKey = CacheManager(cliOptions).computeCacheKey("f<int> main() { return 0; }");
+  ASSERT_EQ(CacheManager::foldManifestations(sourceKey, "Fidentity<int>+\n"),
+            CacheManager::foldManifestations(sourceKey, "Fidentity<int>+\n"));
+}
+
+TEST_F(CompileCacheTest, FoldManifestationsDiffersForDifferentManifestations) {
+  const std::string sourceKey = CacheManager(cliOptions).computeCacheKey("f<int> main() { return 0; }");
+  const std::string none = CacheManager::foldManifestations(sourceKey, "");
+  const std::string one = CacheManager::foldManifestations(sourceKey, "Fidentity<int>+\n");
+  const std::string other = CacheManager::foldManifestations(sourceKey, "Fidentity<long>+\n");
+  // A manifestation that exists but is not used (private ones are only emitted if used) is not the same as a used one
+  const std::string unused = CacheManager::foldManifestations(sourceKey, "Fidentity<int>-\n");
+  ASSERT_NE(none, one);
+  ASSERT_NE(one, other);
+  ASSERT_NE(one, unused);
+}
+
+TEST_F(CompileCacheTest, FoldManifestationsDiffersForDifferentSourceKeys) {
+  const CacheManager manager(cliOptions);
+  const std::string keyA = manager.computeCacheKey("f<int> main() { return 0; }");
+  const std::string keyB = manager.computeCacheKey("f<int> main() { return 1; }");
+  ASSERT_NE(CacheManager::foldManifestations(keyA, "Fidentity<int>+\n"), CacheManager::foldManifestations(keyB, "Fidentity<int>+\n"));
+}
+
 TEST_F(CompileCacheTest, LookupExecutableMissReturnsFalse) {
   const CacheManager manager(cliOptions);
   std::filesystem::path resolved;
@@ -468,18 +493,67 @@ TEST_F(CompileCacheTest, CacheHitDependencyStillExposesSymbolsToChangedDependent
     SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, mainPath, false);
     mainFile->runFrontEnd();
 
+    // This is the crux of the bug: the symbols of a file that ends up cache-restored must be exposed regardless.
     SourceFile *mathFile = mainFile->dependencies.at("math");
-    ASSERT_TRUE(mathFile->restoredFromCache);
-    // This is the crux of the bug: a cache-restored file must still expose its symbols.
     ASSERT_NE(nullptr, mathFile->getNameRegistryEntry("add"));
 
     mainFile->runMiddleEnd();
     ASSERT_TRUE(resourceManager.errorManager.softErrors.empty());
 
+    // Whether a file can be restored depends on the generic manifestations of the program, so it is decided in the back end
     for (SourceFile *dependency : mainFile->dependencies | std::views::values)
       dependency->runBackEnd();
     mainFile->runBackEnd();
+    ASSERT_TRUE(mathFile->restoredFromCache);
+    ASSERT_FALSE(mainFile->restoredFromCache);
   }
+}
+
+// Provokes the bug from issue #1393: generic instantiations are emitted into the object of the module defining the generic,
+// but requested by its importers. Before the manifestations were folded into the cache key, an object cached for a program
+// that did not need a given instantiation was reused for one that did, which then failed to link with an undefined symbol.
+TEST_F(CompileCacheTest, CachedModuleObjectIsNotReusedForImporterNeedingOtherInstantiations) {
+  cliOptions.targetTriple = llvm::Triple(llvm::Triple::normalize(llvm::sys::getProcessTriple()));
+  cliOptions.isNativeTarget = true;
+
+  // A module that offers a generic function, and two programs importing it: only the second one instantiates it
+  writeDummyFile(outputDir / "lib.spice", "type T dyn;\n\npublic f<T> identity<T>(T value) {\n    return value;\n}\n");
+  writeDummyFile(outputDir / "a.spice", "import \"lib\";\n\nf<int> main() {\n    return 0;\n}\n");
+  writeDummyFile(outputDir / "b.spice", "import \"lib\";\n\nf<int> main() {\n    return identity(0);\n}\n");
+
+  struct Outcome {
+    bool libRestored;
+    std::string libCacheKey;
+  };
+  // Compile a program with the cache enabled in a fresh GlobalResourceManager, which stands in for a new compiler process
+  const auto compile = [&](const char *programFileName) {
+    GlobalResourceManager resourceManager(cliOptions);
+    SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, outputDir / programFileName, false);
+    mainFile->runFrontEnd();
+    mainFile->runMiddleEnd();
+    EXPECT_TRUE(resourceManager.errorManager.softErrors.empty());
+    mainFile->runBackEnd();
+    const SourceFile *libFile = mainFile->dependencies.at("lib");
+    return Outcome{libFile->restoredFromCache, libFile->cacheKey};
+  };
+
+  // Populate the cache with program A, which needs no instantiation of 'identity'
+  const Outcome firstA = compile("a.spice");
+  ASSERT_FALSE(firstA.libRestored);
+
+  // Program B needs 'identity<int>', which the object cached for A does not contain. It must not be reused.
+  const Outcome firstB = compile("b.spice");
+  ASSERT_FALSE(firstB.libRestored);
+  ASSERT_NE(firstA.libCacheKey, firstB.libCacheKey);
+
+  // Both objects live next to each other in the cache now, so neither program invalidates the other. The order in which the
+  // programs were compiled must not matter either.
+  const Outcome secondA = compile("a.spice");
+  ASSERT_TRUE(secondA.libRestored);
+  ASSERT_EQ(firstA.libCacheKey, secondA.libCacheKey);
+  const Outcome secondB = compile("b.spice");
+  ASSERT_TRUE(secondB.libRestored);
+  ASSERT_EQ(firstB.libCacheKey, secondB.libCacheKey);
 }
 
 } // namespace spice::testing
