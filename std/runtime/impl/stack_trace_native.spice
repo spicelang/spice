@@ -16,7 +16,7 @@
 // This file must remain a translation unit of its own, so that neither it nor stack_trace_rt.spice can be inlined into
 // the other or the caller: RUNTIME_FRAMES there counts on it.
 
-import "std/runtime/stack_trace_address_rt";
+import "std/runtime/impl/stack_trace_address";
 
 ext f<string> strdup(string /*text*/);
 ext p free(string /*ptr*/);

@@ -10,7 +10,7 @@ from pathlib import Path
 ANTLR_VERSION = "4.13.2"
 
 # libbacktrace is vendored as a submodule and built here, before CMake runs. Spice programs link it as
-# '-lbacktrace' (see std/runtime/stack_trace_native_rt.spice), and the compiler looks for it in the std tree, so the
+# '-lbacktrace' (see std/runtime/impl/stack_trace_native.spice), and the compiler looks for it in the std tree, so the
 # archive is written to std/runtime/lib - where it is packaged and installed along with the rest of the std.
 LIBBACKTRACE_SRC = Path("deps/libbacktrace")
 LIBBACKTRACE_BUILD = Path("deps/libbacktrace-build")

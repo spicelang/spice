@@ -4,15 +4,17 @@ Spice programs can capture their call stack as data (`sGetStacktrace()`) or prin
 Capture and symbol resolution are done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), behind one
 shared runtime with no per-platform variants. User-facing documentation: `docs/docs/how-to/stack-traces.md`.
 
-| File                                                | Role                                                                 |
-|-----------------------------------------------------|----------------------------------------------------------------------|
-| `std/runtime/stack_trace_rt.spice`                  | Public API, frame classification, printing                           |
-| `std/runtime/stack_trace_native_rt.spice`           | Capture and symbol resolution, calling libbacktrace directly         |
-| `std/runtime/stack_trace_address_rt.spice`          | Address translation for symbol lookups: the identity                 |
-| `std/runtime/stack_trace_address_rt_windows.spice`  | The same for Windows, undoing the loader's relocation of a module    |
-| `std/text/demangle.spice`                           | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
-| `deps/libbacktrace`                                 | Vendored libbacktrace, as a git submodule                            |
-| `setup-deps.py`                                     | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
+| File                                                 | Role                                                                 |
+|------------------------------------------------------|----------------------------------------------------------------------|
+| `std/runtime/stack_trace_rt.spice`                   | Public API, frame classification, printing                           |
+| `std/runtime/impl/stack_trace_native.spice`          | Capture and symbol resolution, calling libbacktrace directly         |
+| `std/runtime/impl/stack_trace_address.spice`         | Address translation for symbol lookups: the identity                 |
+| `std/runtime/impl/stack_trace_address_windows.spice` | The same for Windows, undoing the loader's relocation of a module    |
+| `std/text/demangle.spice`                            | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
+| `deps/libbacktrace`                                  | Vendored libbacktrace, as a git submodule                            |
+| `setup-deps.py`                                      | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
+
+Everything under `std/runtime/impl/` is internal to `stack_trace_rt.spice` and not meant to be imported directly.
 
 `sGetStacktrace()` and `sDumpStacktrace()` are auto-imported by name (`RuntimeModuleManager`) and can also be imported
 explicitly. Only the explicit path applies OS-suffixing to module names, so an OS-suffixed variant of
@@ -60,7 +62,7 @@ deeper frames are dropped. It offers `getSize()`, `isEmpty()`, `getEntry(i)`, `t
 
 ## Capture and symbolization
 
-`stack_trace_native_rt.spice` exports two functions and the frame type they fill:
+`impl/stack_trace_native.spice` exports two functions and the frame type they fill:
 
 ```spice
 public f<unsigned int> captureNativeFrames(NativeStackFrame* frames, unsigned int capacity, unsigned int skipNativeFrames, unsigned int skipEntries)
@@ -86,18 +88,18 @@ trailing argument since #1396, which a C caller does not pass and the thunk igno
 - **Skipping:** the runtime's own frames are dropped as physical frames (`skipNativeFrames`, always `RUNTIME_FRAMES` = 2:
   `captureNativeFrames()` and `capture()`). The caller's `skipFrames` counts entries (`skipEntries`), since debug info can expand one
   physical frame into several entries. `sGetStacktrace()` and `sDumpStacktrace()` skip one to hide themselves.
-  `RUNTIME_FRAMES` is exact because `stack_trace_native_rt.spice` and `capture()` sit in separate object files and cannot
+  `RUNTIME_FRAMES` is exact because `impl/stack_trace_native.spice` and `capture()` sit in separate object files and cannot
   be inlined into the caller; `-lto` lifts that guarantee. This is why the native code is a file of its own.
 - **State:** one process-wide `backtrace_state`, created on first use with the threaded flag and never freed.
   libbacktrace's errors are dropped, as they only mean missing information, which already shows as an unresolved frame.
   It is published with a plain load and store - see [What Spice cannot express](#what-spice-cannot-express) for what
   that costs.
 - **Windows:** libbacktrace builds the PE symbol table at the image base recorded in the module's file, but the loader
-  relocates the module under ASLR. `stack_trace_address_rt_windows.spice`, which the compiler picks there by its OS
+  relocates the module under ASLR. `impl/stack_trace_address_windows.spice`, which the compiler picks there by its OS
   suffix, subtracts the module's relocation distance from the address before the `backtrace_syminfo()` lookup, so names
   and offsets resolve. The frame keeps its real address. The distance is kept in the capture's own state for the module
   of the last frame, so that consecutive frames in one module do not reread its file. Other platforms get
-  `stack_trace_address_rt.spice`, which returns the address as is.
+  `impl/stack_trace_address.spice`, which returns the address as is.
 - **Demangling:** `capture()` runs each name through `demangle()`. It reads exactly what the compiler emits, including
   function types (`PF...E`), `.fatthunk` suffixes and RTTI symbols, and returns anything else unchanged.
 

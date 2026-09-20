@@ -2,7 +2,7 @@
 
 // Stack traces: capturing them, resolving each frame to a symbol, and printing them.
 //
-// Both halves of the job are done by libbacktrace, through stack_trace_native_rt.spice - see there for what the
+// Both halves of the job are done by libbacktrace, through impl/stack_trace_native.spice - see there for what the
 // library does. It behaves the same on every platform Spice targets, so unlike the hand-written unwinder and symbol
 // resolver it replaced, this file has no OS-suffixed siblings and must not gain any: sDumpStacktrace() and
 // sGetStacktrace() are reachable both through an explicit import and through auto-import by name
@@ -19,7 +19,7 @@ import "std/iterator/iterator";
 import "std/data/pair";
 import "std/text/demangle";
 import "std/data/vector";
-import "std/runtime/stack_trace_native_rt";
+import "std/runtime/impl/stack_trace_native";
 
 // Add generic type definitions. 'T' is always StackTraceEntry - a trace has exactly one kind of element - but
 // the language requires an iterator to carry its item type as a generic argument, so StackTraceIterator below
@@ -32,7 +32,7 @@ ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 // Frames captured per trace. Deeper ones are dropped, since the frames nearest the capture point matter most.
 public const int STACK_TRACE_CAPACITY = 128;
 // Frames of the stack trace runtime itself between libbacktrace and the caller: captureNativeFrames() and capture().
-// Exact because Spice emits one object file per source file and stack_trace_native_rt.spice is a translation unit
+// Exact because Spice emits one object file per source file and impl/stack_trace_native.spice is a translation unit
 // of its own, so neither can be inlined into the caller; '-lto' lifts that guarantee and can shift a trace outwards
 // by a frame.
 const int RUNTIME_FRAMES = 2;

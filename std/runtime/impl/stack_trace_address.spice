@@ -1,5 +1,5 @@
-// Translates program counters into the address space of libbacktrace's symbol table, for stack_trace_native_rt.spice.
-// Only Windows needs that, and has its own stack_trace_address_rt_windows.spice, picked by the OS suffix. The two files
+// Translates program counters into the address space of libbacktrace's symbol table, for stack_trace_native.spice.
+// Only Windows needs that, and has its own stack_trace_address_windows.spice, picked by the OS suffix. The two files
 // must offer the same symbols.
 
 /**

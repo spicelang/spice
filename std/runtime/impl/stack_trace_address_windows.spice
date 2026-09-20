@@ -1,4 +1,4 @@
-// Windows version of stack_trace_address_rt.spice, picked by the OS suffix. The two files must offer the same symbols.
+// Windows version of stack_trace_address.spice, picked by the OS suffix. The two files must offer the same symbols.
 //
 // libbacktrace builds its PE symbol table at the image base recorded in the module's file, but the loader relocates
 // modules under ASLR. Its DWARF reader accounts for that and its symbol table reader does not, so every lookup falls
