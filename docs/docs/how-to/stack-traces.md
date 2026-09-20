@@ -148,17 +148,19 @@ what ends up in the binary decides how much of a trace is readable:
   [`-g`](../cli/build.md).
 
 The work itself is done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), which the linker
-pulls in as `-lbacktrace`. The library is vendored with Spice: building the compiler from source also builds it,
-into `std/runtime/lib/libbacktrace.a` next to the standard library, and the compiler puts that directory on the
-linker's search path of every program it links. So on a compiler you built yourself there is nothing to install,
-on any platform - a checkout whose submodules have not been fetched fails to configure and tells you to run
-`python setup-deps.py`.
+pulls in as `-lbacktrace`. The library ships with Spice: it is installed as `std/runtime/lib/libbacktrace.a`,
+inside the standard library, and the compiler puts that directory on the linker's search path of every program it
+builds. There is nothing to install and nothing to configure, on any platform - every release archive, package and
+container image carries the copy built for that platform.
 
-If `-lbacktrace` cannot be resolved, linking a program that takes a stack trace fails with an undefined reference
-to `backtrace_create_state`. The search path then falls back to the toolchain's own, which on Linux is usually
-enough: GCC builds libbacktrace as part of its runtime, and Clang searches GCC's directories too. The Apple
-toolchain ships none, and MinGW-w64 distributions vary; on those, point `LIBRARY_PATH` at a copy of the library -
-both Clang and GCC read it for `-l` search dirs - or use a compiler built from this repository.
+The same holds for a compiler you build yourself: libbacktrace is a git submodule, and the `spice` target builds it
+into the std tree along with the compiler. A checkout whose submodules have not been fetched fails to configure and
+tells you to run `python setup-deps.py`.
+
+If the archive is missing - a hand-assembled std, say - the linker falls back to its own search path, and linking a
+program that takes a stack trace fails with an undefined reference to `backtrace_create_state` wherever the
+toolchain has no libbacktrace of its own. Pointing `LIBRARY_PATH` at a copy of the library gets you going again;
+both Clang and GCC read it for `-l` search dirs.
 
 ## Limitations
 

@@ -5,8 +5,9 @@
 # libbacktrace has no distro packages worth the name (GCC builds it as an internal support library and installs
 # neither the archive nor <backtrace.h>), so the library is vendored as a submodule and built here. The result is
 # written into the std tree, at std/runtime/lib/libbacktrace.a, next to the runtime sources that need it - that dir
-# is what ExternalLinkerInterface adds to the linker's search path. Note that the release pipeline does not carry
-# the archive into its packages yet; see 'Linking libbacktrace' in media/specs/stack-traces.md.
+# is what ExternalLinkerInterface adds to the linker's search path. Because it is a host binary, the release
+# pipeline ships each platform's own copy rather than one built centrally; see 'Linking libbacktrace' in
+# media/specs/stack-traces.md.
 #
 # Upstream builds with autotools. We do not run its ./configure, because that would need a POSIX shell on every
 # platform Spice is built on and would sit outside the CMake dependency graph. Instead this file mirrors the

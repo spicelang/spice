@@ -119,20 +119,29 @@ symbol the demangler happens to accept reads as Spice.
 ## Linking libbacktrace
 
 libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by `deps/libbacktrace-cmake` as part of
-the compiler, into `std/runtime/lib/libbacktrace.a` - inside the std tree, so it is packaged and installed with the
-std and needs no separate handling by goreleaser, nfpm or the Dockerfile.
+the compiler, into `std/runtime/lib/libbacktrace.a` - inside the std tree, next to the runtime sources that need it.
 
 `stack_trace_rt.spice` links it with `core.linker.flag = "-lbacktrace"`. Linker flags are appended behind the object
 files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface::link()` puts `std/runtime/lib` on the
 linker's search path ahead of those flags, so `-lbacktrace` finds the bundled archive; search directories are tried in
 the order given, which keeps the std's own copy ahead of any directory a binding's `-L` flag adds.
 
-Not yet wired up: the release pipeline. Each `publish.yml` build job now produces a `libbacktrace.a` for its own
-platform, but uploads only the compiler binary, and `build-artifacts` packages `std/` from a plain checkout - so
-released archives, packages and images carry no `libbacktrace.a` and fall back to the toolchain's search path, as
-before. Shipping it means uploading the archive from each build job and placing the matching one into each
-platform's output (goreleaser `archives`/`dockers_v2`, nfpm and wix); a host-built archive must never be packaged
-for another platform.
+### Releasing it
+
+The archive is a host binary, so the release pipeline cannot build one copy centrally: `build-artifacts` packages
+`std/` from a plain checkout and has no compiler of its own. Each `publish.yml` build job therefore uploads the
+`libbacktrace.a` it built next to its own compiler binary, and the packaging step places the matching one - never
+another platform's - into each output:
+
+| Output                        | How it gets there                                                                    |
+|-------------------------------|--------------------------------------------------------------------------------------|
+| Archives (tar.gz / zip)       | goreleaser `archives.files`, `src: bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a`     |
+| deb / rpm / apk / archlinux   | nfpm `contents`, `src: bin/spice-linux-{{ .Arch }}/libbacktrace.a`, mode `0644`        |
+| Container image               | `docker-libs/<os>/<arch>/` staged by the workflow, picked by `$TARGETPLATFORM`          |
+| Windows MSI, Homebrew cask    | Nothing to do - both are built from the archive above                                  |
+
+`build-artifacts` also deletes `std/runtime/lib` before packaging: on a clean runner there is none, but a stale one
+would be copied into every platform's output by the `std` entry, alongside the matching copy.
 
 Vendoring replaced the previous arrangement, under which each platform had to supply the library: Linux got it from
 GCC's own runtime directory, while macOS (no system copy, no Homebrew formula) and Windows (MinGW-w64 may or may not

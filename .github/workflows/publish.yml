@@ -80,6 +80,10 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
+          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
+          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
+          # packages std/ from a plain checkout and cannot produce it.
+          cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
 
       - name: Run Checksec
         working-directory: build
@@ -89,7 +93,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: spice-linux-x64
-          path: ./build/spice**
+          path: |
+            ./build/spice**
+            ./build/libbacktrace.a
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
@@ -160,6 +166,10 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
+          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
+          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
+          # packages std/ from a plain checkout and cannot produce it.
+          cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
 
       - name: Run Checksec
         working-directory: build
@@ -169,7 +179,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: spice-linux-arm64
-          path: ./build/spice**
+          path: |
+            ./build/spice**
+            ./build/libbacktrace.a
 
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
@@ -230,13 +242,20 @@ jobs:
 
       - name: Process build output
         working-directory: build
-        run: mv ./src/spice.exe spice.exe
+        run: |
+          mv ./src/spice.exe spice.exe
+          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
+          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
+          # packages std/ from a plain checkout and cannot produce it.
+          cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: spice-windows-static-x64
-          path: ./build/spice**
+          path: |
+            ./build/spice**
+            ./build/libbacktrace.a
 
   build-compiler-macos-aarch64:
     name: Build compiler - MacOS/AArch64
@@ -298,12 +317,18 @@ jobs:
         run: |
           mv ./src/spice spice
           chmod +x spice
+          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
+          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
+          # packages std/ from a plain checkout and cannot produce it.
+          cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: spice-macos-arm64
-          path: ./build/spice**
+          path: |
+            ./build/spice**
+            ./build/libbacktrace.a
 
   build-artifacts:
     name: Build artifacts
@@ -365,6 +390,19 @@ jobs:
           mv spice-linux-x64 spice-linux-amd64
           mv spice-macos-arm64 spice-darwin-arm64
           chmod -R +x ./
+
+      # Each compiler job uploaded the libbacktrace.a it built for its own platform, next to its binary. The
+      # archives and the Linux packages pick theirs straight out of bin/ via a template, but the container image is
+      # built for both Linux architectures in one go, so its two have to be laid out for $TARGETPLATFORM the way
+      # the Dockerfile already selects the compiler binary.
+      - name: Stage libbacktrace for the container build context
+        run: |
+          mkdir -p docker-libs/linux/amd64 docker-libs/linux/arm64
+          cp bin/spice-linux-amd64/libbacktrace.a docker-libs/linux/amd64/libbacktrace.a
+          cp bin/spice-linux-arm64/libbacktrace.a docker-libs/linux/arm64/libbacktrace.a
+          # A stale archive in the checkout would be packaged for every platform by the 'std' entry, next to the
+          # platform-matched one. There is none on a clean runner; make sure of it.
+          rm -rf std/runtime/lib
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
