@@ -56,12 +56,13 @@ type NtHeaders struct {
 }
 
 /**
- * The shift of the module that the last translated address was in. Frames of a trace nearly all share a module, so this
- * saves reading its file once per frame. It lives for one capture, as sharing it between threads would need atomics.
+ * The shift of the module that the last translated address was in, which starts out as none. Frames of a trace nearly all
+ * share a module, so this saves reading its file once per frame. It lives for one capture, as sharing it between threads
+ * would need atomics.
  */
 public type ModuleShiftCache struct {
-    unsigned long module
-    unsigned long shift
+    unsigned long module = 0ul
+    unsigned long shift = 0ul
 }
 
 /**
