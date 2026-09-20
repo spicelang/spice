@@ -47,6 +47,7 @@ dockers_v2:
     extra_files:
       - std
       - tools/gdb
+      - docker-libs
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
@@ -54,6 +55,12 @@ archives:
       - LICENSE
       - std
       - tools/gdb
+      # The vendored libbacktrace the compiler job built for this very platform, put where the std expects it:
+      # Spice programs link it as '-lbacktrace', and the compiler searches <std>/runtime/lib for it. It is a host
+      # archive, so each output gets the one matching its own os/arch and never another's.
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a"
+        dst: std/runtime/lib
+        strip_parent: true
     format_overrides:
       - goos: windows
         formats: [ "zip" ]
@@ -83,6 +90,12 @@ nfpms:
     contents:
       - src: std
         dst: /usr/lib/spice/std
+      - src: "bin/spice-linux-{{ .Arch }}/libbacktrace.a"
+        dst: /usr/lib/spice/std/runtime/lib/libbacktrace.a
+        # The release job marks everything under bin/ executable so the compiler binaries can run; an archive is
+        # data, and should land in the std with the same mode as the rest of it.
+        file_info:
+          mode: 0644
       - src: tools/gdb/spice_printers.py
         dst: /usr/lib/spice/gdb/spice_printers.py
       - src: tools/gdb/spice.gdb

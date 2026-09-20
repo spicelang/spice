@@ -11,9 +11,11 @@
  * pointer is not a bare function pointer: it becomes a '.fatthunk' carrying an extra leading capture-struct
  * pointer, which shifts every argument (spicelang/spice#1392). A C callback has no such problem.
  *
- * libbacktrace's own <backtrace.h> is not installed by the toolchains that ship the library (GCC builds it as an
- * internal support library), so the handful of declarations this file needs are mirrored below instead. They are
- * the stable public API and have not changed since the library was first released.
+ * libbacktrace is vendored in deps/libbacktrace and built into std/runtime/lib/libbacktrace.a, which the compiler
+ * puts on the linker's search path. Its <backtrace.h> is not reachable from here, though: this file is compiled by
+ * the C compiler the linker invokes, which is given no include path into the compiler's own source tree - and a std
+ * installed from a package has no deps/ beside it at all. So the handful of declarations this file needs are
+ * mirrored below instead. They are the stable public API and have not changed since the library was first released.
  */
 
 #include <stddef.h>

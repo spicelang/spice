@@ -9,6 +9,8 @@ shared runtime with no per-platform variants. User-facing documentation: `docs/d
 | `std/runtime/stack_trace_rt.spice`    | Public API, frame classification, printing                           |
 | `std/runtime/stack-trace-backtrace.c` | C shim over libbacktrace, linked via `core.linker.additionalSource`  |
 | `std/text/demangle.spice`             | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
+| `deps/libbacktrace`                   | Vendored libbacktrace, as a git submodule                            |
+| `setup-deps.py`                       | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
 
 `sGetStacktrace()` and `sDumpStacktrace()` are auto-imported by name (`RuntimeModuleManager`) and can also be imported
 explicitly. Only the explicit path applies OS-suffixing to module names, so an OS-suffixed variant of
@@ -116,17 +118,60 @@ symbol the demangler happens to accept reads as Spice.
 
 ## Linking libbacktrace
 
+libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by `setup-deps.py`, into
+`std/runtime/lib/libbacktrace.a` - inside the std tree, next to the runtime sources that need it.
+
 `stack_trace_rt.spice` links it with `core.linker.flag = "-lbacktrace"`. Linker flags are appended behind the object
-files, so a `-l` naming a static archive resolves.
+files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface::link()` puts `std/runtime/lib` on the
+linker's search path ahead of those flags, so `-lbacktrace` finds the bundled archive; search directories are tried in
+the order given, which keeps the std's own copy ahead of any directory a binding's `-L` flag adds.
 
-- **Linux:** GCC ships `libbacktrace.a` inside its own library directory, and Clang finds it there too.
-- **macOS:** the Apple toolchain has none and Homebrew has no formula. Use MacPorts or build it from source.
-- **Windows:** MinGW-w64 GCC may or may not ship one, and Clang does not search GCC's library directory either way.
-  Point `LIBRARY_PATH` at a copy, or build it in MSYS2.
-- **CI** builds it from the pinned commit `LIBBACKTRACE_VERSION` on macOS and Windows and caches it.
+### Releasing it
 
-Vendoring the sources into `std/` would remove this requirement on all platforms, at the cost of about 17k lines of
-third-party C in the tree and a little link time.
+The archive is a host binary, so the release pipeline cannot build one copy centrally: `build-artifacts` packages
+`std/` from a plain checkout and has no compiler of its own. Each `publish.yml` build job therefore uploads the
+`libbacktrace.a` it built next to its own compiler binary, and the packaging step places the matching one - never
+another platform's - into each output:
+
+| Output                        | How it gets there                                                                    |
+|-------------------------------|--------------------------------------------------------------------------------------|
+| Archives (tar.gz / zip)       | goreleaser `archives.files`, `src: bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a`     |
+| deb / rpm / apk / archlinux   | nfpm `contents`, `src: bin/spice-linux-{{ .Arch }}/libbacktrace.a`, mode `0644`        |
+| Container image               | `docker-libs/<os>/<arch>/` staged by the workflow, picked by `$TARGETPLATFORM`          |
+| Windows MSI, Homebrew cask    | Nothing to do - both are built from the archive above                                  |
+
+`build-artifacts` also deletes `std/runtime/lib` before packaging: on a clean runner there is none, but a stale one
+would be copied into every platform's output by the `std` entry, alongside the matching copy.
+
+Vendoring replaced the previous arrangement, under which each platform had to supply the library: Linux got it from
+GCC's own runtime directory, while macOS (no system copy, no Homebrew formula) and Windows (MinGW-w64 may or may not
+ship one, and it cannot be built with MSVC at all) needed a source build that CI cached. The cost is about 17k lines
+of third-party C in the tree; the gain is that every platform links the same known-good library.
+
+The archive is built for the host, so it is only offered when `cliOptions.isNativeTarget` says the target is that
+same host. Cross-compiling a Spice program that takes a stack trace therefore still needs a libbacktrace built for
+the target, reachable through the toolchain's own search path - as it did before vendoring. Offering the host copy
+regardless would not help and would actively hurt: lld rejects every member of a mismatched archive
+(`is incompatible with aarch64linux`) rather than passing over it the way GNU ld does.
+
+Upstream builds with autotools, and `setup-deps.py` runs that build rather than reimplementing it: `./configure`
+alone decides which object-format reader to compile (`elf.c`, `macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`),
+whether `mmap` backs the file reader and allocator, and what goes into `config.h` and `backtrace-supported.h`. A
+submodule bump therefore needs no work on our side. It is built out of tree, into `deps/libbacktrace-build`, so the
+submodule checkout stays pristine, and from scratch each time, so a bump re-runs configure instead of reusing the
+previous commit's cached answers. A stamp file next to the build records the commit it came from, so a repeat run of
+`setup-deps.py` is a no-op.
+
+Two configure flags are not optional:
+
+- `--with-pic`, because the archive is linked into Spice programs, which may themselves be shared libraries
+  (`--output-container=shared`); without it the link fails outright with a `R_X86_64_PC32` relocation error.
+- `CFLAGS=-O2`, which drops the `-g` half of autotools' default `-g -O2`. libbacktrace's own debug info is dead
+  weight in every Spice program that links it - about 300 KB each.
+
+The cost of using upstream's build is a POSIX shell and `make`. Every platform but Windows has both; there,
+`setup-deps.py` looks for MSYS2 (preferring the shell next to `make`, since Git for Windows supplies an `sh` but no
+`make`), and the Windows CI jobs install it before running the script.
 
 ## Limitations
 
