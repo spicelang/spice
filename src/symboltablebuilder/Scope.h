@@ -4,6 +4,7 @@
 
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -102,6 +103,7 @@ public:
   [[nodiscard]] std::vector<const Function *> getVirtualMethods();
   [[nodiscard]] std::vector<Struct *> getAllStructManifestationsInDeclarationOrder();
   [[nodiscard]] std::vector<Union *> getAllUnionManifestationsInDeclarationOrder();
+  void collectManifestationFingerprint(std::stringstream &fingerprint) const;
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] bool isInCaseBranch() const;

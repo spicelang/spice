@@ -346,6 +346,30 @@ std::vector<Union *> Scope::getAllUnionManifestationsInDeclarationOrder() {
 } // LCOV_EXCL_LINE - false positive
 
 /**
+ * Append a fingerprint of the manifestations the IR generator emits into the object file of the owning source file.
+ * Only final once type checking has converged.
+ *
+ * @param fingerprint Stream to append to
+ */
+void Scope::collectManifestationFingerprint(std::stringstream &fingerprint) const { // NOLINT(misc-no-recursion)
+  // Mirrors the emission conditions of the IR generator. The tag encodes the registry, lowercase if the manifestation is unused.
+  const auto append = [&](const auto &registry, char usedTag, char unusedTag) {
+    for (const auto &manifestations : registry | std::views::values)
+      for (const auto &[mangledName, manifestation] : manifestations)
+        if (manifestation.isFullySubstantiated())
+          fingerprint << (manifestation.used ? usedTag : unusedTag) << mangledName << '\n';
+  };
+  append(functions, 'F', 'f');
+  append(structs, 'S', 's');
+  append(interfaces, 'I', 'i');
+
+  // Definitions cannot be nested into function bodies, so only struct and interface scopes hold further manifestations
+  for (const std::shared_ptr<Scope> &child : children | std::views::values)
+    if (child->type == ScopeType::STRUCT || child->type == ScopeType::INTERFACE)
+      child->collectManifestationFingerprint(fingerprint);
+}
+
+/**
  * Get the current number of nested loops
  *
  * @return Number of loops

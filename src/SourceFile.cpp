@@ -10,6 +10,7 @@
 #include <driver/Driver.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
+#include <global/CacheManager.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <importcollector/ImportCollector.h>
@@ -99,7 +100,7 @@ void SourceFile::runLexer() {
   antlrCtx.tokenStream = std::make_unique<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
   // Pre-compute a local cache key so the field is populated for cycle-aware fallbacks.
-  // The final key (which folds in transitive dependency cache keys) is computed at the end
+  // The source key (which folds in transitive dependency cache keys) is computed at the end
   // of runImportCollector, once every dependency's cache key has been finalized.
   cacheKey = resourceManager.cacheManager.computeCacheKey(antlrCtx.tokenStream->getText());
 
@@ -245,10 +246,6 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
       worklist.push(transitive);
   }
   cacheKey = resourceManager.cacheManager.computeCacheKey(antlrCtx.tokenStream->getText(), transitiveDepCacheKeys);
-
-  // Try to load from the cache. Deferred from runLexer so that dep cache keys can participate.
-  if (!cliOptions.ignoreCache)
-    restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
   timer.stop();
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
@@ -703,6 +700,16 @@ void SourceFile::runMiddleEnd() {
   CHECK_ABORT_FLAG_V()
 }
 
+void SourceFile::lookupCache() {
+  // Generic instantiations end up in the object of the defining module but are requested by its importers, so the key has
+  // to cover them. They are only final after the middle end, which is why the lookup is not done in runImportCollector.
+  assert(previousStage >= TYPE_CHECKER_POST);
+  std::stringstream manifestations;
+  globalScope->collectManifestationFingerprint(manifestations);
+  cacheKey = CacheManager::foldManifestations(cacheKey, manifestations);
+  restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
+}
+
 void SourceFile::collectBackEndSourceFiles(std::vector<SourceFile *> &backEndSourceFiles) { // NOLINT(misc-no-recursion)
   // Guard against collecting a file that already went through the back end. Circular imports form a cycle in the
   // dependency graph, so the deps-first recursion below would otherwise loop forever.
@@ -743,6 +750,11 @@ void SourceFile::runBackEnd() {
   // Nothing to do if this file and all of its dependencies already went through the back end
   if (backEndSourceFiles.empty())
     return;
+
+  // Look up all files before compiling any: a key is only final after its lookup and cache entries of dependants refer to it
+  if (!cliOptions.ignoreCache)
+    for (SourceFile *sourceFile : backEndSourceFiles)
+      sourceFile->lookupCache();
 
   // Unlike the front end and the middle end, the back end has no cross-file data dependencies: every source file owns
   // its own LLVMContext, IRBuilder, TargetMachine and llvm::Module, and references to symbols of other files are emitted

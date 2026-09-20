@@ -45,6 +45,22 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   return std::to_string(std::hash<std::string>{}(components.str()));
 }
 
+/**
+ * Derive the cache key of a module's object file from its source key and the generic manifestations emitted into it.
+ * Importers decide which instantiations exist, so the source key alone cannot tell such objects apart.
+ *
+ * @param sourceCacheKey Key from computeCacheKey()
+ * @param manifestations Fingerprint from Scope::collectManifestationFingerprint()
+ * @return Cache key of the object file
+ */
+std::string CacheManager::foldManifestations(const std::string &sourceCacheKey, const std::stringstream &manifestations) {
+  // Combine both hashes instead of hashing a concatenation, which would copy the (potentially large) fingerprint again
+  constexpr std::hash<std::string> hasher;
+  size_t seed = hasher(sourceCacheKey);
+  seed ^= hasher(manifestations.str()) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+  return std::to_string(seed);
+}
+
 bool CacheManager::lookupSourceFile(SourceFile *sourceFile) const {
   const char *objectFileExtension = SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
   const std::filesystem::path metadataFilePath = cacheDir / (sourceFile->cacheKey + ".json");
