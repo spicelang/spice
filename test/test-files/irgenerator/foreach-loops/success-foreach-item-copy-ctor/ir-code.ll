@@ -18,6 +18,7 @@ source_filename = "source.spice"
 @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, align 8
 @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = private unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, align 8
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'ct.copied' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
@@ -146,14 +147,15 @@ foreach.body.L46:                                 ; preds = %foreach.head.L46
   br i1 %5, label %assert.exit.L47, label %assert.then.L47, !prof !5
 
 assert.then.L47:                                  ; preds = %foreach.body.L46
-  %6 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %6 = load ptr, ptr @stderr, align 8
+  %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L47:                                  ; preds = %foreach.body.L46
-  %7 = load i32, ptr %i, align 4
-  %8 = add nsw i32 %7, 1
-  store i32 %8, ptr %i, align 4
+  %8 = load i32, ptr %i, align 4
+  %9 = add nsw i32 %8, 1
+  store i32 %9, ptr %i, align 4
   br label %foreach.tail.L46
 
 foreach.tail.L46:                                 ; preds = %assert.exit.L47
@@ -161,31 +163,36 @@ foreach.tail.L46:                                 ; preds = %assert.exit.L47
   br label %foreach.head.L46
 
 foreach.exit.L46:                                 ; preds = %foreach.head.L46
-  %9 = load i32, ptr %i, align 4
-  %10 = icmp eq i32 %9, 1
-  br i1 %10, label %assert.exit.L50, label %assert.then.L50, !prof !5
+  %10 = load i32, ptr %i, align 4
+  %11 = icmp eq i32 %10, 1
+  br i1 %11, label %assert.exit.L50, label %assert.then.L50, !prof !5
 
 assert.then.L50:                                  ; preds = %foreach.exit.L46
-  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %12 = load ptr, ptr @stderr, align 8
+  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L50:                                  ; preds = %foreach.exit.L46
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 0
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #4
 
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #5
+
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline nounwind optnone uwtable }
 attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #3 = { nofree nounwind }
+attributes #3 = { nofree }
 attributes #4 = { cold noreturn nounwind }
+attributes #5 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

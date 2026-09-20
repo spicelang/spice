@@ -4,6 +4,7 @@ source_filename = "source.spice"
 %struct.Test = type { i32 }
 
 @anon.string.0 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 1' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 2' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 3' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [65 x i8] c"Assertion failed: Condition 't.copies == 4' evaluated to false.\0A\00", align 4
@@ -104,53 +105,57 @@ define dso_local noundef i32 @main() #1 {
   br i1 %4, label %assert.exit.L35, label %assert.then.L35, !prof !5
 
 assert.then.L35:                                  ; preds = %0
-  %5 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %5 = load ptr, ptr @stderr, align 8
+  %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L35:                                  ; preds = %0
-  %6 = call noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %t)
-  store %struct.Test %6, ptr %t2, align 4
+  %7 = call noundef %struct.Test @_Z8testRVO2RK4Test(ptr noundef %t)
+  store %struct.Test %7, ptr %t2, align 4
   %copies.addr1 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
-  %7 = load i32, ptr %copies.addr1, align 4
-  %8 = icmp eq i32 %7, 2
-  br i1 %8, label %assert.exit.L38, label %assert.then.L38, !prof !5
+  %8 = load i32, ptr %copies.addr1, align 4
+  %9 = icmp eq i32 %8, 2
+  br i1 %9, label %assert.exit.L38, label %assert.then.L38, !prof !5
 
 assert.then.L38:                                  ; preds = %assert.exit.L35
-  %9 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %10 = load ptr, ptr @stderr, align 8
+  %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L38:                                  ; preds = %assert.exit.L35
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy2, ptr %t)
-  %10 = load %struct.Test, ptr %arg.copy2, align 4
-  %11 = call noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %10)
-  store %struct.Test %11, ptr %t3, align 4
+  %12 = load %struct.Test, ptr %arg.copy2, align 4
+  %13 = call noundef %struct.Test @_Z8testRVO34Test(%struct.Test noundef %12)
+  store %struct.Test %13, ptr %t3, align 4
   %copies.addr3 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
-  %12 = load i32, ptr %copies.addr3, align 4
-  %13 = icmp eq i32 %12, 3
-  br i1 %13, label %assert.exit.L41, label %assert.then.L41, !prof !5
+  %14 = load i32, ptr %copies.addr3, align 4
+  %15 = icmp eq i32 %14, 3
+  br i1 %15, label %assert.exit.L41, label %assert.then.L41, !prof !5
 
 assert.then.L41:                                  ; preds = %assert.exit.L38
-  %14 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %16 = load ptr, ptr @stderr, align 8
+  %17 = call i32 (ptr, ptr, ...) @fprintf(ptr %16, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L41:                                  ; preds = %assert.exit.L38
-  %15 = call noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %t)
-  store %struct.Test %15, ptr %t4, align 4
+  %18 = call noundef %struct.Test @_Z8testRVO4RK4Test(ptr noundef %t)
+  store %struct.Test %18, ptr %t4, align 4
   %copies.addr4 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
-  %16 = load i32, ptr %copies.addr4, align 4
-  %17 = icmp eq i32 %16, 4
-  br i1 %17, label %assert.exit.L44, label %assert.then.L44, !prof !5
+  %19 = load i32, ptr %copies.addr4, align 4
+  %20 = icmp eq i32 %19, 4
+  br i1 %20, label %assert.exit.L44, label %assert.then.L44, !prof !5
 
 assert.then.L44:                                  ; preds = %assert.exit.L41
-  %18 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
+  %21 = load ptr, ptr @stderr, align 8
+  %22 = call i32 (ptr, ptr, ...) @fprintf(ptr %21, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L44:                                  ; preds = %assert.exit.L41
-  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %23 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t4)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy2)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t3)
@@ -161,16 +166,20 @@ assert.exit.L44:                                  ; preds = %assert.exit.L41
   ret i32 0
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
+
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #2 = { nofree }
 attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -1,7 +1,7 @@
 ; ModuleID = 'lto-module'
 source_filename = "lto-module"
 
-@str.1 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1, !guid !0
+@str = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1, !guid !0
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
 define dso_local noundef i32 @_Z17functionInModuleBii(i32 noundef %0, i32 noundef %1) local_unnamed_addr #0 !guid !6 {
@@ -12,7 +12,7 @@ define dso_local noundef i32 @_Z17functionInModuleBii(i32 noundef %0, i32 nounde
 ; Function Attrs: mustprogress nofree noinline norecurse nounwind uwtable
 define dso_local noundef i32 @main() local_unnamed_addr #1 !guid !7 {
 assert.exit.L6:
-  %puts1 = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
   ret i32 0
 }
 
@@ -26,7 +26,7 @@ attributes #2 = { nofree nounwind }
 !llvm.ident = !{!1}
 !llvm.module.flags = !{!2, !3, !4, !5}
 
-!0 = !{i64 7093348567730294648}
+!0 = !{i64 -3005221672275489307}
 !1 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !2 = !{i32 8, !"PIC Level", i32 2}
 !3 = !{i32 7, !"PIE Level", i32 2}

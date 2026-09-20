@@ -6,6 +6,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [20 x i8] c"From procedure: %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [19 x i8] c"From function: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 'i == -4309' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'd == -107.64' evaluated to false.\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
@@ -65,39 +66,45 @@ define dso_local noundef i32 @main() #2 {
   br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !5
 
 assert.then.L20:                                  ; preds = %0
-  %6 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %6 = load ptr, ptr @stderr, align 8
+  %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L20:                                  ; preds = %0
   store double 6.900000e+01, ptr %d, align 8
   store ptr %i, ptr %2, align 8
-  %7 = getelementptr inbounds nuw %struct.Struct, ptr %2, i32 0, i32 1
-  store i1 false, ptr %7, align 1
-  %8 = call noundef i32 @_Z4funcRdRK6Struct(ptr noundef %d, ptr noundef %2)
-  store i32 %8, ptr %result, align 4
-  %9 = load double, ptr %d, align 8
-  %10 = fcmp oeq double %9, -1.076400e+02
-  br i1 %10, label %assert.exit.L24, label %assert.then.L24, !prof !5
+  %8 = getelementptr inbounds nuw %struct.Struct, ptr %2, i32 0, i32 1
+  store i1 false, ptr %8, align 1
+  %9 = call noundef i32 @_Z4funcRdRK6Struct(ptr noundef %d, ptr noundef %2)
+  store i32 %9, ptr %result, align 4
+  %10 = load double, ptr %d, align 8
+  %11 = fcmp oeq double %10, -1.076400e+02
+  br i1 %11, label %assert.exit.L24, label %assert.then.L24, !prof !5
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
-  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %12 = load ptr, ptr @stderr, align 8
+  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
-  %13 = load i32, ptr %result, align 4
-  ret i32 %13
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
 
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #3 = { cold noreturn nounwind }
+attributes #3 = { nofree }
+attributes #4 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

@@ -2,6 +2,7 @@
 source_filename = "source.spice"
 
 @anon.string.0 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition '&test == &testRef' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 135' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 124' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'test == 123' evaluated to false.\0A\00", align 4
@@ -20,94 +21,104 @@ define dso_local noundef i32 @main() #0 {
   br i1 %2, label %assert.exit.L5, label %assert.then.L5, !prof !5
 
 assert.then.L5:                                   ; preds = %0
-  %3 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %3 = load ptr, ptr @stderr, align 8
+  %4 = call i32 (ptr, ptr, ...) @fprintf(ptr %3, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L5:                                   ; preds = %0
-  %4 = load ptr, ptr %testRef, align 8
-  %5 = load i32, ptr %4, align 4
-  %6 = add nsw i32 %5, 12
-  store i32 %6, ptr %4, align 4
-  %7 = load i32, ptr %test, align 4
-  %8 = icmp eq i32 %7, 135
-  br i1 %8, label %assert.exit.L9, label %assert.then.L9, !prof !5
+  %5 = load ptr, ptr %testRef, align 8
+  %6 = load i32, ptr %5, align 4
+  %7 = add nsw i32 %6, 12
+  store i32 %7, ptr %5, align 4
+  %8 = load i32, ptr %test, align 4
+  %9 = icmp eq i32 %8, 135
+  br i1 %9, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %assert.exit.L5
-  %9 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %10 = load ptr, ptr @stderr, align 8
+  %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L9:                                   ; preds = %assert.exit.L5
-  %10 = load ptr, ptr %testRef, align 8
-  %11 = load i32, ptr %10, align 4
-  %12 = sub nsw i32 %11, 11
-  store i32 %12, ptr %10, align 4
-  %13 = load i32, ptr %test, align 4
-  %14 = icmp eq i32 %13, 124
-  br i1 %14, label %assert.exit.L11, label %assert.then.L11, !prof !5
+  %12 = load ptr, ptr %testRef, align 8
+  %13 = load i32, ptr %12, align 4
+  %14 = sub nsw i32 %13, 11
+  store i32 %14, ptr %12, align 4
+  %15 = load i32, ptr %test, align 4
+  %16 = icmp eq i32 %15, 124
+  br i1 %16, label %assert.exit.L11, label %assert.then.L11, !prof !5
 
 assert.then.L11:                                  ; preds = %assert.exit.L9
-  %15 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %17 = load ptr, ptr @stderr, align 8
+  %18 = call i32 (ptr, ptr, ...) @fprintf(ptr %17, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L11:                                  ; preds = %assert.exit.L9
-  %16 = load ptr, ptr %testRef, align 8
-  store i32 123, ptr %16, align 4
-  %17 = load i32, ptr %test, align 4
-  %18 = icmp eq i32 %17, 123
-  br i1 %18, label %assert.exit.L13, label %assert.then.L13, !prof !5
+  %19 = load ptr, ptr %testRef, align 8
+  store i32 123, ptr %19, align 4
+  %20 = load i32, ptr %test, align 4
+  %21 = icmp eq i32 %20, 123
+  br i1 %21, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
 assert.then.L13:                                  ; preds = %assert.exit.L11
-  %19 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
+  %22 = load ptr, ptr @stderr, align 8
+  %23 = call i32 (ptr, ptr, ...) @fprintf(ptr %22, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L13:                                  ; preds = %assert.exit.L11
-  %20 = load ptr, ptr %testRef, align 8
-  %21 = load i32, ptr %20, align 4
-  %22 = add nsw i32 %21, 4
-  %23 = load ptr, ptr %testRef, align 8
-  store i32 %22, ptr %23, align 4
-  %24 = load i32, ptr %test, align 4
-  %25 = icmp eq i32 %24, 127
-  br i1 %25, label %assert.exit.L15, label %assert.then.L15, !prof !5
+  %24 = load ptr, ptr %testRef, align 8
+  %25 = load i32, ptr %24, align 4
+  %26 = add nsw i32 %25, 4
+  %27 = load ptr, ptr %testRef, align 8
+  store i32 %26, ptr %27, align 4
+  %28 = load i32, ptr %test, align 4
+  %29 = icmp eq i32 %28, 127
+  br i1 %29, label %assert.exit.L15, label %assert.then.L15, !prof !5
 
 assert.then.L15:                                  ; preds = %assert.exit.L13
-  %26 = call i32 (ptr, ...) @printf(ptr @anon.string.4)
+  %30 = load ptr, ptr @stderr, align 8
+  %31 = call i32 (ptr, ptr, ...) @fprintf(ptr %30, ptr @anon.string.4)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L13
-  %27 = load ptr, ptr %testRef, align 8
-  %28 = load i32, ptr %27, align 4
-  %29 = sub nsw i32 %28, 4
-  %30 = load ptr, ptr %testRef, align 8
-  store i32 %29, ptr %30, align 4
-  %31 = load i32, ptr %test, align 4
-  %32 = icmp eq i32 %31, 123
-  br i1 %32, label %assert.exit.L17, label %assert.then.L17, !prof !5
+  %32 = load ptr, ptr %testRef, align 8
+  %33 = load i32, ptr %32, align 4
+  %34 = sub nsw i32 %33, 4
+  %35 = load ptr, ptr %testRef, align 8
+  store i32 %34, ptr %35, align 4
+  %36 = load i32, ptr %test, align 4
+  %37 = icmp eq i32 %36, 123
+  br i1 %37, label %assert.exit.L17, label %assert.then.L17, !prof !5
 
 assert.then.L17:                                  ; preds = %assert.exit.L15
-  %33 = call i32 (ptr, ...) @printf(ptr @anon.string.5)
+  %38 = load ptr, ptr @stderr, align 8
+  %39 = call i32 (ptr, ptr, ...) @fprintf(ptr %38, ptr @anon.string.5)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L17:                                  ; preds = %assert.exit.L15
-  %34 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %40 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 0
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
 
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #1 = { nofree }
 attributes #2 = { cold noreturn nounwind }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

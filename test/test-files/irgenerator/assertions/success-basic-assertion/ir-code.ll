@@ -3,11 +3,13 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #0 {
   %1 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %2 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %2 = load ptr, ptr @stderr, align 8
+  %3 = call i32 (ptr, ptr, ...) @fprintf(ptr %2, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 }
@@ -15,12 +17,16 @@ define dso_local noundef i32 @main() #0 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #2 = { nofree }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

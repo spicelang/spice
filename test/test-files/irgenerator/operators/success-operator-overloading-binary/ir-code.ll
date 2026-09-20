@@ -16,6 +16,7 @@ source_filename = "source.spice"
 @printf.str.10 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 @printf.str.11 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 @anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'res == 14' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @printf.str.12 = private unnamed_addr constant [20 x i8] c"Counter8 value: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -304,26 +305,31 @@ define dso_local noundef i32 @main() #1 {
   br i1 %50, label %assert.exit.L86, label %assert.then.L86, !prof !5
 
 assert.then.L86:                                  ; preds = %0
-  %51 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %51 = load ptr, ptr @stderr, align 8
+  %52 = call i32 (ptr, ptr, ...) @fprintf(ptr %51, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L86:                                  ; preds = %0
-  %52 = call noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
-  %53 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 noundef %52)
+  %53 = call noundef i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %counter8)
+  %54 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 noundef %53)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { cold noreturn nounwind }
+attributes #3 = { nofree }
+attributes #4 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

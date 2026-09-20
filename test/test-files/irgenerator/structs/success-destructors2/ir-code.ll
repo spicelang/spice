@@ -7,6 +7,7 @@ source_filename = "source.spice"
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 4
 @anon.string.1 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'this.field1 == true' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.2 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @anon.string.3 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 4
 
@@ -41,19 +42,21 @@ define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferencea
   br i1 %6, label %assert.exit.L13, label %assert.then.L13, !prof !5
 
 assert.then.L13:                                  ; preds = %1
-  %7 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %7 = load ptr, ptr @stderr, align 8
+  %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L13:                                  ; preds = %1
-  %8 = load ptr, ptr %this, align 8
-  %field2.addr = getelementptr inbounds %struct.Vector, ptr %8, i64 0, i32 1
-  %9 = load ptr, ptr %field2.addr, align 8
-  %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.2)
-  br i1 %10, label %assert.exit.L14, label %assert.then.L14, !prof !5
+  %9 = load ptr, ptr %this, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %9, i64 0, i32 1
+  %10 = load ptr, ptr %field2.addr, align 8
+  %11 = call i1 @_Z10isRawEqualPKcPKc(ptr %10, ptr @anon.string.2)
+  br i1 %11, label %assert.exit.L14, label %assert.then.L14, !prof !5
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
-  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
+  %12 = load ptr, ptr @stderr, align 8
+  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
 
@@ -64,8 +67,11 @@ assert.exit.L14:                                  ; preds = %assert.exit.L13
 ; Function Attrs: nounwind
 declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef readonly captures(none), i64 noundef) #3
 
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #4
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #4
+declare void @exit(i32) #5
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
@@ -73,7 +79,8 @@ attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { noinline nounwind optnone uwtable }
 attributes #3 = { nounwind }
-attributes #4 = { cold noreturn nounwind }
+attributes #4 = { nofree }
+attributes #5 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

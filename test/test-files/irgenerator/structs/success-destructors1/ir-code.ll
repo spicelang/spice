@@ -5,6 +5,7 @@ source_filename = "source.spice"
 
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 4
 @anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 'this.field1 == true' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
 @anon.string.2 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 4
@@ -24,19 +25,21 @@ define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferencea
   br i1 %6, label %assert.exit.L8, label %assert.then.L8, !prof !5
 
 assert.then.L8:                                   ; preds = %1
-  %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %7 = load ptr, ptr @stderr, align 8
+  %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L8:                                   ; preds = %1
-  %8 = load ptr, ptr %this, align 8
-  %field2.addr = getelementptr inbounds %struct.Vector, ptr %8, i64 0, i32 1
-  %9 = load ptr, ptr %field2.addr, align 8
-  %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.1)
-  br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !5
+  %9 = load ptr, ptr %this, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %9, i64 0, i32 1
+  %10 = load ptr, ptr %field2.addr, align 8
+  %11 = call i1 @_Z10isRawEqualPKcPKc(ptr %10, ptr @anon.string.1)
+  br i1 %11, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %assert.exit.L8
-  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %12 = load ptr, ptr @stderr, align 8
+  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
@@ -50,13 +53,16 @@ declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unna
 ; Function Attrs: nounwind
 declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef readonly captures(none), i64 noundef) #2
 
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #4 {
+define dso_local noundef i32 @main() #5 {
   %vec = alloca %struct.Vector, align 8
   store %struct.Vector { i1 true, ptr @anon.string.3 }, ptr %vec, align 8
   %field1.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
@@ -72,8 +78,9 @@ define dso_local noundef i32 @main() #4 {
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
-attributes #3 = { cold noreturn nounwind }
-attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #3 = { nofree }
+attributes #4 = { cold noreturn nounwind }
+attributes #5 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}

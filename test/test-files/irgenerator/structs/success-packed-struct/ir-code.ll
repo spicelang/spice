@@ -5,6 +5,7 @@ source_filename = "source.spice"
 %struct.TestPacked = type <{ i32, i64 }>
 
 @anon.string.0 = private unnamed_addr constant [71 x i8] c"Assertion failed: Condition 't.f1 == -2147483647' evaluated to false.\0A\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
 @anon.string.1 = private unnamed_addr constant [80 x i8] c"Assertion failed: Condition 't.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 4
 @anon.string.2 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'tp.f1 == -2147483647' evaluated to false.\0A\00", align 4
 @anon.string.3 = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition 'tp.f2 == 9223372036854775807l' evaluated to false.\0A\00", align 4
@@ -25,18 +26,20 @@ define dso_local noundef i32 @main() #0 {
   br i1 %2, label %assert.exit.L18, label %assert.then.L18, !prof !5
 
 assert.then.L18:                                  ; preds = %0
-  %3 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %3 = load ptr, ptr @stderr, align 8
+  %4 = call i32 (ptr, ptr, ...) @fprintf(ptr %3, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L18:                                  ; preds = %0
   %f2.addr2 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 1
-  %4 = load i64, ptr %f2.addr2, align 8
-  %5 = icmp eq i64 %4, 9223372036854775807
-  br i1 %5, label %assert.exit.L19, label %assert.then.L19, !prof !5
+  %5 = load i64, ptr %f2.addr2, align 8
+  %6 = icmp eq i64 %5, 9223372036854775807
+  br i1 %6, label %assert.exit.L19, label %assert.then.L19, !prof !5
 
 assert.then.L19:                                  ; preds = %assert.exit.L18
-  %6 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %7 = load ptr, ptr @stderr, align 8
+  %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
@@ -47,40 +50,46 @@ assert.exit.L19:                                  ; preds = %assert.exit.L18
   %f2.addr4 = getelementptr inbounds %struct.TestPacked, ptr %tp, i64 0, i32 1
   store i64 9223372036854775807, ptr %f2.addr4, align 8
   %f1.addr5 = getelementptr inbounds %struct.TestPacked, ptr %tp, i64 0, i32 0
-  %7 = load i32, ptr %f1.addr5, align 4
-  %8 = icmp eq i32 %7, -2147483647
-  br i1 %8, label %assert.exit.L27, label %assert.then.L27, !prof !5
+  %9 = load i32, ptr %f1.addr5, align 4
+  %10 = icmp eq i32 %9, -2147483647
+  br i1 %10, label %assert.exit.L27, label %assert.then.L27, !prof !5
 
 assert.then.L27:                                  ; preds = %assert.exit.L19
-  %9 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %11 = load ptr, ptr @stderr, align 8
+  %12 = call i32 (ptr, ptr, ...) @fprintf(ptr %11, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L27:                                  ; preds = %assert.exit.L19
   %f2.addr6 = getelementptr inbounds %struct.TestPacked, ptr %tp, i64 0, i32 1
-  %10 = load i64, ptr %f2.addr6, align 8
-  %11 = icmp eq i64 %10, 9223372036854775807
-  br i1 %11, label %assert.exit.L28, label %assert.then.L28, !prof !5
+  %13 = load i64, ptr %f2.addr6, align 8
+  %14 = icmp eq i64 %13, 9223372036854775807
+  br i1 %14, label %assert.exit.L28, label %assert.then.L28, !prof !5
 
 assert.then.L28:                                  ; preds = %assert.exit.L27
-  %12 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
+  %15 = load ptr, ptr @stderr, align 8
+  %16 = call i32 (ptr, ptr, ...) @fprintf(ptr %15, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L28:                                  ; preds = %assert.exit.L27
-  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %17 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 0
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
 
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
+attributes #1 = { nofree }
 attributes #2 = { cold noreturn nounwind }
+attributes #3 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
