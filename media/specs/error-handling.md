@@ -104,7 +104,8 @@ are silently dropped, keeping the origin and earliest hops rather than the most 
 **Consumption.** `Error.dumpTrace()`/`Result.dumpTrace()` print every recorded frame to stderr via
 `fprintf(__stderr(), ...)` — `__stderr()` is a niladic builtin exposing the real libc `stderr` `FILE*`, since
 Spice has no syntax for declaring an external variable. `panic()` calls the same dump automatically right after
-its own message. Both are safe no-ops when nothing was ever recorded.
+its own message. Both are safe no-ops when nothing was ever recorded. After it, `panic()` prints the stack trace too
+(see `media/specs/stack-traces.md`).
 
 **Known trade-offs:**
 

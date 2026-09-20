@@ -45,6 +45,7 @@ public:
   [[nodiscard]] llvm::Function *getErrTraceResetFct() const;
   [[nodiscard]] llvm::Function *getErrTracePushFct() const;
   [[nodiscard]] llvm::Function *getErrTraceDumpFct() const;
+  [[nodiscard]] llvm::Function *getDumpStacktraceFct() const;
   [[nodiscard]] llvm::Function *getAcrtIOFuncFct() const;
 
 private:

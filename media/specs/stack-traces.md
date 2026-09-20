@@ -62,6 +62,39 @@ deeper frames are dropped. It offers `getSize()`, `isEmpty()`, `getEntry(i)`, `t
   That is the deterministic output, since addresses move under ASLR/PIE.
 - An unresolved frame prints `<unknown>` without an offset. `at <file>:<line>` is left out without a file name.
 
+## Panics and failed assertions
+
+The compiler calls `sDumpStacktrace()` (`stack_trace_rt.spice`) with its default arguments - addresses on, no frames
+hidden - right before the `exit()` of a `panic`, of a failed `assert` and of a read of an inactive union field. Like
+`sErrTraceDump()`, it is reached through `StdFunctionManager::getDumpStacktraceFct()`, which rebuilds its mangled name.
+In a `panic` the call comes after the error return trace and before the scope cleanup, so the trace shows the panicking
+function rather than the cleanup.
+
+- **When:** `CliOptions::printsStackTraceOnAbort()`, i.e. for a native target and not for `comparableOutput`. The first
+  is because `libbacktrace.a` is offered to the linker for a native target only (see
+  [Linking libbacktrace](#linking-libbacktrace)); with a cross target the call is not emitted, so nothing is pulled in
+  that could not be linked. The second is the test runner, whose outputs are compared across platforms and whose
+  reference IR would otherwise change in every one of the 100+ tests using `assert`. A trace holds addresses and offsets
+  that differ per platform, and everything below `main` is the C runtime. The runner therefore never observes the
+  calls, and the wiring is checked by hand, with `spice run`.
+- **Loading the runtime:** the type checker requests `STACK_TRACE_RT` for a file at every `panic`, assert statement (not
+  in release builds, which do not generate assertions) and union member access, as it does for other runtime modules.
+  `assert` needs this: `panic` only got `error_trace_rt` because `Error` pulls it in. The runtime needs `String`,
+  `Vector` and the iterators, which use `panic` and `assert` themselves, so the requests form an import cycle. The
+  compiler handles circular imports, and a panic in `Vector.get()` prints its trace like any other.
+- **Re-entrancy:** capturing and printing use the std, and a panic raised there (`String` running out of memory, say)
+  would call `sDumpStacktrace()` again, and again until the stack is gone. A global flag, set while a dump is under way
+  and cleared when it ends, makes a call it causes return, so the panic only ends the program, as it did before traces.
+  It has to be cleared, unlike a one-shot flag, because `sDumpStacktrace()` is also called by programs, repeatedly. The
+  flag is a plain `bool` since there are no atomics (see [What Spice cannot express](#what-spice-cannot-express)), so
+  two threads dumping at the same time may cost one of them its trace, or let a nested panic through. No test can reach
+  it: a nested call only comes from a panic inside the trace machinery.
+- **Output order:** a `panic` and a failed `assert` both print their message and then the trace to stderr, in that order.
+  The assert message used to go to stdout (`printf`), which put the trace ahead of it whenever stdout was redirected.
+  The message is the format string of an `fprintf`, so `%` in the source text of the condition is escaped to `%%`
+  (`assert x %d == 0` is valid Spice). What the program wrote to stdout before is still block-buffered when stdout is
+  redirected, so a stream that merges both shows it after the failure, as it does for a `panic`.
+
 ## Capture and symbolization
 
 `impl/stack_trace_native.spice` exports two functions and the frame type they fill:

@@ -137,8 +137,9 @@ len(stringArray); // 5
 ```
 
 ## The `panic` builtin
-Panic is used to terminate the program with an error message. The error message will be printed to standard error (stderr)
-and the program will terminate with exit code `1`.
+Panic is used to terminate the program with an error message. The error message will be printed to standard error (stderr),
+followed by the [stack trace](../how-to/stack-traces.md#panics-and-failed-assertions) of the panic, and the program will
+terminate with exit code `1`.
 
 ### Signature
 `void panic(const Error& error)`

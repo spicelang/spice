@@ -460,6 +460,20 @@ TEST(DriverTest, BackendTpdeRejectsCoverageCombination) {
 #endif
 }
 
+TEST(DriverTest, PrintsStackTraceOnAbortOnlyForNativeNonComparableOutput) {
+  CliOptions cliOptions;
+  ASSERT_TRUE(cliOptions.printsStackTraceOnAbort());
+
+  // Cross-compiling has no libbacktrace to link against
+  cliOptions.isNativeTarget = false;
+  ASSERT_FALSE(cliOptions.printsStackTraceOnAbort());
+
+  // Comparable output must not contain frames and offsets, which differ between platforms
+  cliOptions.isNativeTarget = true;
+  cliOptions.comparableOutput = true;
+  ASSERT_FALSE(cliOptions.printsStackTraceOnAbort());
+}
+
 TEST(DriverTest, BackendTpdeRejectsNonElfTarget) {
 #ifndef SPICE_ENABLE_TPDE
   GTEST_SKIP() << "TPDE backend is disabled in this build; target guard is not exercised.";

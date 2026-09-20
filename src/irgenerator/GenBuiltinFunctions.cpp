@@ -131,6 +131,10 @@ std::any IRGenerator::visitBuiltinPanicCall(const FctCallNode *node) {
   // along the propagation chain that produced this error - see error_trace_rt.spice.
   builder.CreateCall(stdFunctionManager.getErrTraceDumpFct());
 
+  // Print the stack trace of the panic. Emitted ahead of the scope cleanup, which is not part of what led to the panic.
+  if (cliOptions.printsStackTraceOnAbort())
+    builder.CreateCall(stdFunctionManager.getDumpStacktraceFct(), {builder.getTrue(), builder.getFalse()});
+
   // Cleanup the scope before calling exit()
   // Unreachable below counts as terminator
   terminateBlock(node->getNextOuterStmtLst());

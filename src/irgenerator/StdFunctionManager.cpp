@@ -203,6 +203,14 @@ llvm::Function *StdFunctionManager::getErrTraceDumpFct() const {
   return getProcedure(mangledName.c_str(), {});
 }
 
+llvm::Function *StdFunctionManager::getDumpStacktraceFct() const {
+  // Defaults are resolved by the time a function is mangled, so the params are not optional
+  const ParamList paramLst = {{QualType(TY_BOOL), false}, {QualType(TY_BOOL), false}};
+  const Function function("sDumpStacktrace", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(), {builder.getInt1Ty(), builder.getInt1Ty()});
+}
+
 llvm::Function *StdFunctionManager::getAcrtIOFuncFct() const {
   llvm::Function *stdErrPFct = getFunction("__acrt_iob_func", builder.getPtrTy(), builder.getInt32Ty());
   stdErrPFct->setDSOLocal(true);
