@@ -4,6 +4,7 @@
 
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -102,7 +103,7 @@ public:
   [[nodiscard]] std::vector<const Function *> getVirtualMethods();
   [[nodiscard]] std::vector<Struct *> getAllStructManifestationsInDeclarationOrder();
   [[nodiscard]] std::vector<Union *> getAllUnionManifestationsInDeclarationOrder();
-  [[nodiscard]] std::string getManifestationFingerprint() const;
+  void collectManifestationFingerprint(std::stringstream &fingerprint) const;
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] bool isInCaseBranch() const;
@@ -135,9 +136,6 @@ public:
   bool isDtorScope = false;
 
 private:
-  // Private methods
-  void collectManifestationFingerprint(std::string &fingerprint) const;
-
   // Private members
   FunctionRegistry functions;
   StructRegistry structs;

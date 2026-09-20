@@ -3,6 +3,7 @@
 #pragma once
 
 #include <filesystem>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -25,7 +26,7 @@ public:
 
   // Public methods
   std::string computeCacheKey(const std::string &sourceCode, const std::vector<std::string> &depCacheKeys = {}) const;
-  static std::string foldManifestations(const std::string &sourceCacheKey, const std::string &manifestationFingerprint);
+  static std::string foldManifestations(const std::string &sourceCacheKey, const std::stringstream &manifestations);
   bool lookupSourceFile(SourceFile *sourceFile) const;
   void cacheSourceFile(const SourceFile *sourceFile) const;
   bool lookupExecutable(const std::vector<std::string> &objectFileCacheKeys, const std::vector<std::string> &linkerFlags,

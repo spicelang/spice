@@ -100,9 +100,8 @@ void SourceFile::runLexer() {
   antlrCtx.tokenStream = std::make_unique<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
   // Pre-compute a local cache key so the field is populated for cycle-aware fallbacks.
-  // The source-derived key (which folds in transitive dependency cache keys) is computed at the end
-  // of runImportCollector, once every dependency's cache key has been finalized. The key of the
-  // object file additionally covers the generic manifestations, see lookupCache.
+  // The source key (which folds in transitive dependency cache keys) is computed at the end
+  // of runImportCollector, once every dependency's cache key has been finalized.
   cacheKey = resourceManager.cacheManager.computeCacheKey(antlrCtx.tokenStream->getText());
 
   previousStage = LEXER;
@@ -702,14 +701,12 @@ void SourceFile::runMiddleEnd() {
 }
 
 void SourceFile::lookupCache() {
-  // Generic instantiations are emitted into the object file of the module defining the generic, but they are requested by
-  // its importers. Two builds of the very same source can therefore need different objects, and a cached one that lacks an
-  // instantiation the current program needs would fail to link. The set of instantiations is only final once the middle
-  // end has converged, which is why the lookup cannot happen any earlier (e.g. in runImportCollector) and why the
-  // source-derived key gets the manifestations folded in here. The keys of the dependants stay untouched: they only
-  // reference the symbols and never contain instantiations of this file.
+  // Generic instantiations end up in the object of the defining module but are requested by its importers, so the key has
+  // to cover them. They are only final after the middle end, which is why the lookup is not done in runImportCollector.
   assert(previousStage >= TYPE_CHECKER_POST);
-  cacheKey = CacheManager::foldManifestations(cacheKey, globalScope->getManifestationFingerprint());
+  std::stringstream manifestations;
+  globalScope->collectManifestationFingerprint(manifestations);
+  cacheKey = CacheManager::foldManifestations(cacheKey, manifestations);
   restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 }
 
@@ -754,9 +751,7 @@ void SourceFile::runBackEnd() {
   if (backEndSourceFiles.empty())
     return;
 
-  // Try to restore the files from the cache. This has to happen for all of them before the first one gets compiled, because
-  // the cache key of a file is only final after this and the cache entries of its dependants refer to it. Each file is
-  // collected only once, so its key is folded only once, too.
+  // Look up all files before compiling any: a key is only final after its lookup and cache entries of dependants refer to it
   if (!cliOptions.ignoreCache)
     for (SourceFile *sourceFile : backEndSourceFiles)
       sourceFile->lookupCache();

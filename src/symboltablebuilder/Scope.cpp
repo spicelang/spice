@@ -346,45 +346,27 @@ std::vector<Union *> Scope::getAllUnionManifestationsInDeclarationOrder() {
 } // LCOV_EXCL_LINE - false positive
 
 /**
- * Describe which function, struct and interface manifestations of this scope tree the IR generator will emit into the
- * object file of the owning source file. Generic manifestations are emitted into the module that defines the generic, but
- * are requested by its importers, so this is the part of an object file's content that the module's own source cannot tell.
- * The result is only meaningful once type checking has converged, because the manifestation set is still growing before.
+ * Append a fingerprint of the manifestations the IR generator emits into the object file of the owning source file.
+ * Only final once type checking has converged.
  *
- * @return Fingerprint of the emitted manifestations
+ * @param fingerprint Stream to append to
  */
-std::string Scope::getManifestationFingerprint() const {
-  std::string fingerprint;
-  collectManifestationFingerprint(fingerprint);
-  return fingerprint;
-}
-
-void Scope::collectManifestationFingerprint(std::string &fingerprint) const { // NOLINT(misc-no-recursion)
-  // Mirror the emission conditions of IRGenerator::visitFctDef/visitProcDef/visitStructDef/visitInterfaceDef: manifestations
-  // that are not fully substantiated are skipped there, and the 'used' flag decides for the non-public ones. The registries
-  // are ordered maps, so the traversal order is deterministic.
-  const auto append = [&](char kind, const std::string &mangledName, bool used) {
-    fingerprint += kind;
-    fingerprint += mangledName;
-    fingerprint += used ? '+' : '-';
-    fingerprint += '\n';
+void Scope::collectManifestationFingerprint(std::stringstream &fingerprint) const { // NOLINT(misc-no-recursion)
+  // Mirrors the emission conditions of the IR generator. The tag encodes the registry, lowercase if the manifestation is unused.
+  const auto append = [&](const auto &registry, char usedTag, char unusedTag) {
+    for (const auto &manifestations : registry | std::views::values)
+      for (const auto &[mangledName, manifestation] : manifestations)
+        if (manifestation.isFullySubstantiated())
+          fingerprint << (manifestation.used ? usedTag : unusedTag) << mangledName << '\n';
   };
-  for (const FunctionManifestationList &manifestations : functions | std::views::values)
-    for (const auto &[mangledName, manifestation] : manifestations)
-      if (manifestation.isFullySubstantiated())
-        append('F', mangledName, manifestation.used);
-  for (const StructManifestationList &manifestations : structs | std::views::values)
-    for (const auto &[mangledName, manifestation] : manifestations)
-      if (manifestation.isFullySubstantiated())
-        append('S', mangledName, manifestation.used);
-  for (const InterfaceManifestationList &manifestations : interfaces | std::views::values)
-    for (const auto &[mangledName, manifestation] : manifestations)
-      if (manifestation.isFullySubstantiated())
-        append('I', mangledName, manifestation.used);
+  append(functions, 'F', 'f');
+  append(structs, 'S', 's');
+  append(interfaces, 'I', 'i');
 
-  // Manifestations of methods live in the scopes of their structs, so the whole tree has to be covered
+  // Definitions cannot be nested into function bodies, so only struct and interface scopes hold further manifestations
   for (const std::shared_ptr<Scope> &child : children | std::views::values)
-    child->collectManifestationFingerprint(fingerprint);
+    if (child->type == ScopeType::STRUCT || child->type == ScopeType::INTERFACE)
+      child->collectManifestationFingerprint(fingerprint);
 }
 
 /**

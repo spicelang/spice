@@ -46,20 +46,19 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
 }
 
 /**
- * Derive the key of a module's object file from its source-derived key and the generic manifestations that end up in it.
+ * Derive the cache key of a module's object file from its source key and the generic manifestations emitted into it.
+ * Importers decide which instantiations exist, so the source key alone cannot tell such objects apart.
  *
- * Generic instantiations are emitted into the object file of the module that defines the generic, yet which of them exist
- * is decided by the importers. So the source-derived key from computeCacheKey() alone cannot tell two objects apart that
- * were built from the same source for different importers, and reusing one for the other leaves the importer with
- * undefined symbols. The manifestation set is only known once type checking has converged, which is why this is a
- * separate step that runs after the source-derived key was already used to fold dependencies into their dependants.
- *
- * @param sourceCacheKey Key from computeCacheKey(), covering source, options and dependencies
- * @param manifestationFingerprint Scope::getManifestationFingerprint() of the module
- * @return Cache key of the module's object file
+ * @param sourceCacheKey Key from computeCacheKey()
+ * @param manifestations Fingerprint from Scope::collectManifestationFingerprint()
+ * @return Cache key of the object file
  */
-std::string CacheManager::foldManifestations(const std::string &sourceCacheKey, const std::string &manifestationFingerprint) {
-  return std::to_string(std::hash<std::string>{}(sourceCacheKey + '\0' + manifestationFingerprint));
+std::string CacheManager::foldManifestations(const std::string &sourceCacheKey, const std::stringstream &manifestations) {
+  // Combine both hashes instead of hashing a concatenation, which would copy the (potentially large) fingerprint again
+  constexpr std::hash<std::string> hasher;
+  size_t seed = hasher(sourceCacheKey);
+  seed ^= hasher(manifestations.str()) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+  return std::to_string(seed);
 }
 
 bool CacheManager::lookupSourceFile(SourceFile *sourceFile) const {
