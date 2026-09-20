@@ -11,9 +11,7 @@ RUN apk update && apk add --repository=https://dl-cdn.alpinelinux.org/alpine/edg
 RUN ln -sf /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 
 COPY std/ /usr/lib/spice/std/
-# The vendored libbacktrace, which Spice programs link as '-lbacktrace'. Staged per architecture by the release
-# workflow, and selected here the same way the compiler binary below is.
-COPY docker-libs/$TARGETPLATFORM/libbacktrace.a /usr/lib/spice/std/runtime/lib/
+COPY docker-libs/$TARGETPLATFORM/ /usr/lib/spice/std/runtime/lib/
 COPY $TARGETPLATFORM/spice /usr/bin
 
 ENTRYPOINT [ "spice" ]
