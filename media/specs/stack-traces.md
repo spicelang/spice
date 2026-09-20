@@ -143,6 +143,13 @@ another platform's - into each output:
 `build-artifacts` also deletes `std/runtime/lib` before packaging: on a clean runner there is none, but a stale one
 would be copied into every platform's output by the `std` entry, alongside the matching copy.
 
+libbacktrace is BSD-3-Clause licensed, which requires its copyright notice and license text to accompany binary
+redistributions. Its `LICENSE` is therefore shipped as `std/runtime/lib/LICENSE`, right next to the archive, through
+the same four routes. Unlike the archive it is identical on every platform, so it is not uploaded by the build jobs:
+`build-artifacts` initializes just the `deps/libbacktrace` submodule (the only one it needs) and the archives and
+packages take `deps/libbacktrace/LICENSE` from there, while the container build gets a copy staged into each
+`docker-libs/<os>/<arch>/` directory, which the Dockerfile copies over as a whole.
+
 Vendoring replaced the previous arrangement, under which each platform had to supply the library: Linux got it from
 GCC's own runtime directory, while macOS (no system copy, no Homebrew formula) and Windows (MinGW-w64 may or may not
 ship one, and it cannot be built with MSVC at all) needed a source build that CI cached. The cost is about 17k lines

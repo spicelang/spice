@@ -151,7 +151,8 @@ The work itself is done by [libbacktrace](https://github.com/ianlancetaylor/libb
 pulls in as `-lbacktrace`. The library ships with Spice: it is installed as `std/runtime/lib/libbacktrace.a`,
 inside the standard library, and the compiler puts that directory on the linker's search path of every program it
 builds. There is nothing to install and nothing to configure, on any platform - every release archive, package and
-container image carries the copy built for that platform.
+container image carries the copy built for that platform, together with libbacktrace's license
+(`std/runtime/lib/LICENSE`).
 
 The same holds for a compiler you build yourself: libbacktrace is a git submodule, and `python setup-deps.py`
 builds it into the std tree along with the rest of the dependency setup, before CMake ever runs. It builds with

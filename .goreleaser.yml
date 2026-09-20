@@ -61,6 +61,10 @@ archives:
       - src: "bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a"
         dst: std/runtime/lib
         strip_parent: true
+      # Its license must accompany the archive. It is the same for every platform, so it comes from the checkout.
+      - src: deps/libbacktrace/LICENSE
+        dst: std/runtime/lib
+        strip_parent: true
     format_overrides:
       - goos: windows
         formats: [ "zip" ]
@@ -96,6 +100,8 @@ nfpms:
         # data, and should land in the std with the same mode as the rest of it.
         file_info:
           mode: 0644
+      - src: deps/libbacktrace/LICENSE
+        dst: /usr/lib/spice/std/runtime/lib/LICENSE
       - src: tools/gdb/spice_printers.py
         dst: /usr/lib/spice/gdb/spice_printers.py
       - src: tools/gdb/spice.gdb
