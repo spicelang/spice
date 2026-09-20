@@ -1,0 +1,144 @@
+// Windows version of stack_trace_address_rt.spice, picked by the OS suffix. The two files must offer the same symbols.
+//
+// libbacktrace builds its PE symbol table at the image base recorded in the module's file, but the loader relocates
+// modules under ASLR. Its DWARF reader accounts for that and its symbol table reader does not, so every lookup falls
+// past the last entry of the table and each frame is named after it. Until that is fixed upstream, lookups use the
+// address minus how far its module moved. Frames keep their real address, and offsets are unaffected, being the
+// difference of two addresses in the same space.
+
+ext f<byte*> malloc(unsigned long /*size*/);
+ext p free(byte* /*ptr*/);
+
+// Handles are declared as 'unsigned long', which passes exactly like a pointer
+ext f<int> GetModuleHandleExW(unsigned int /*flags*/, unsigned long /*address*/, unsigned long* /*module*/);
+ext f<unsigned int> GetModuleFileNameW(unsigned long /*module*/, byte* /*buffer*/, unsigned int /*capacity*/);
+ext f<unsigned long> CreateFileW(byte* /*fileName*/, unsigned int /*access*/, unsigned int /*shareMode*/, byte* /*security*/, unsigned int /*disposition*/, unsigned int /*flags*/, unsigned long /*template*/);
+ext f<unsigned int> SetFilePointer(unsigned long /*file*/, int /*distance*/, int* /*distanceHigh*/, unsigned int /*method*/);
+ext f<int> ReadFile(unsigned long /*file*/, byte* /*buffer*/, unsigned int /*toRead*/, unsigned int* /*read*/, byte* /*overlapped*/);
+ext f<int> CloseHandle(unsigned long /*handle*/);
+
+// GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, so the handle needs no release
+const unsigned int MODULE_FROM_ADDRESS = 6u;
+// The longest path Windows accepts, in UTF-16 code units
+const unsigned int PATH_CAPACITY = 32768u;
+const unsigned int GENERIC_READ = 2147483648u;
+// FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE
+const unsigned int FILE_SHARE_ALL = 7u;
+const unsigned int OPEN_EXISTING = 3u;
+const unsigned int FILE_BEGIN = 0u;
+const unsigned long INVALID_HANDLE_VALUE = 18446744073709551615ul;
+const unsigned int INVALID_SET_FILE_POINTER = 4294967295u;
+const unsigned short DOS_SIGNATURE = 23117us;  // 'MZ'
+const unsigned int NT_SIGNATURE = 17744u;      // 'PE\0\0'
+const unsigned short PE32_PLUS_MAGIC = 523us;  // The optional header of a 64 bit image
+
+/**
+ * The start of a PE file. Only the offset of the NT headers is of interest; the rest is padding.
+ */
+#[core.compiler.packed]
+type DosHeader struct {
+    unsigned short signature
+    byte[58] reserved
+    int ntHeadersOffset
+}
+
+/**
+ * The NT headers of a 64 bit PE file up to their image base. The byte arrays skip IMAGE_FILE_HEADER and the fields of
+ * IMAGE_OPTIONAL_HEADER64 between its magic and its image base.
+ */
+#[core.compiler.packed]
+type NtHeaders struct {
+    unsigned int signature
+    byte[20] fileHeader
+    unsigned short optionalHeaderMagic
+    byte[22] optionalHeaderFields
+    unsigned long imageBase
+}
+
+/**
+ * The shift of the module that the last translated address was in. Frames of a trace nearly all share a module, so this
+ * saves reading its file once per frame. It lives for one capture, as sharing it between threads would need atomics.
+ */
+public type ModuleShiftCache struct {
+    unsigned long module
+    unsigned long shift
+}
+
+/**
+ * Reads exactly 'size' bytes at 'offset' of a file.
+ */
+f<bool> readAt(unsigned long file, int offset, byte* buffer, unsigned long size) {
+    unsigned int bytesRead = 0u;
+    return SetFilePointer(file, offset, nil<int*>, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&
+           ReadFile(file, buffer, cast<unsigned int>(size), &bytesRead, nil<byte*>) != 0 && bytesRead == size;
+}
+
+/**
+ * Reads the image base out of the headers of an open PE file.
+ */
+f<bool> readImageBase(unsigned long file, unsigned long& imageBase) {
+    DosHeader dosHeader;
+    NtHeaders ntHeaders;
+    byte* dosBytes;
+    byte* ntBytes;
+    unsafe {
+        dosBytes = cast<byte*>(&dosHeader);
+        ntBytes = cast<byte*>(&ntHeaders);
+    }
+
+    const bool isValid = readAt(file, 0, dosBytes, sizeof<DosHeader>()) && dosHeader.signature == DOS_SIGNATURE &&
+                         readAt(file, dosHeader.ntHeadersOffset, ntBytes, sizeof<NtHeaders>()) &&
+                         ntHeaders.signature == NT_SIGNATURE && ntHeaders.optionalHeaderMagic == PE32_PLUS_MAGIC;
+    if isValid {
+        imageBase = ntHeaders.imageBase;
+    }
+    return isValid;
+}
+
+/**
+ * Reads the image base a module's file asks to be loaded at.
+ *
+ * It has to come from the file, as libbacktrace does: the loader rewrites ImageBase in the mapped copy to where it put
+ * the module, so that always reports a shift of zero.
+ */
+f<bool> readPreferredBase(unsigned long module, unsigned long& preferredBase) {
+    byte* path = malloc(cast<unsigned long>(PATH_CAPACITY) * 2ul); // two bytes per UTF-16 unit
+    if path == nil<byte*> {
+        return false;
+    }
+
+    unsigned long file = INVALID_HANDLE_VALUE;
+    const unsigned int length = GetModuleFileNameW(module, path, PATH_CAPACITY);
+    if length > 0u && length < PATH_CAPACITY { // a name that does not fit is truncated, and reported as filling the buffer
+        file = CreateFileW(path, GENERIC_READ, FILE_SHARE_ALL, nil<byte*>, OPEN_EXISTING, 0u, 0ul);
+    }
+    free(path);
+    if file == INVALID_HANDLE_VALUE {
+        return false;
+    }
+
+    const bool isRead = readImageBase(file, preferredBase);
+    CloseHandle(file);
+    return isRead;
+}
+
+/**
+ * Returns the address to look the symbol of a frame up by: the address in the space of its module's file rather than
+ * of the memory the loader put it in. That is the address itself if its module cannot be told.
+ */
+public f<unsigned long> toSymbolTableAddress(ModuleShiftCache& cache, unsigned long address) {
+    unsigned long module = 0ul;
+    if GetModuleHandleExW(MODULE_FROM_ADDRESS, address, &module) == 0 || module == 0ul {
+        return address;
+    }
+
+    if module != cache.module {
+        unsigned long preferredBase;
+        if !readPreferredBase(module, preferredBase) {
+            return address;
+        }
+        cache.module = module;
+        cache.shift = cast<unsigned long>(module - preferredBase);
+    }
+    return cast<unsigned long>(address - cache.shift);
+}

@@ -4,13 +4,15 @@ Spice programs can capture their call stack as data (`sGetStacktrace()`) or prin
 Capture and symbol resolution are done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), behind one
 shared runtime with no per-platform variants. User-facing documentation: `docs/docs/how-to/stack-traces.md`.
 
-| File                                  | Role                                                                 |
-|---------------------------------------|----------------------------------------------------------------------|
-| `std/runtime/stack_trace_rt.spice`    | Public API, frame classification, printing                           |
-| `std/runtime/stack-trace-backtrace.c` | C shim over libbacktrace, linked via `core.linker.additionalSource`  |
-| `std/text/demangle.spice`             | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
-| `deps/libbacktrace`                   | Vendored libbacktrace, as a git submodule                            |
-| `setup-deps.py`                       | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
+| File                                                | Role                                                                 |
+|-----------------------------------------------------|----------------------------------------------------------------------|
+| `std/runtime/stack_trace_rt.spice`                  | Public API, frame classification, printing                           |
+| `std/runtime/stack_trace_native_rt.spice`           | Capture and symbol resolution, calling libbacktrace directly         |
+| `std/runtime/stack_trace_address_rt.spice`          | Address translation for symbol lookups: the identity                 |
+| `std/runtime/stack_trace_address_rt_windows.spice`  | The same for Windows, undoing the loader's relocation of a module    |
+| `std/text/demangle.spice`                           | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
+| `deps/libbacktrace`                                 | Vendored libbacktrace, as a git submodule                            |
+| `setup-deps.py`                                     | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
 
 `sGetStacktrace()` and `sDumpStacktrace()` are auto-imported by name (`RuntimeModuleManager`) and can also be imported
 explicitly. Only the explicit path applies OS-suffixing to module names, so an OS-suffixed variant of
@@ -58,19 +60,22 @@ deeper frames are dropped. It offers `getSize()`, `isEmpty()`, `getEntry(i)`, `t
 
 ## Capture and symbolization
 
-The shim exports two functions:
+`stack_trace_native_rt.spice` exports two functions and the frame type they fill:
 
-```c
-int  spiceCaptureStackTrace(SpiceStackFrame *frames, int capacity, int skipNativeFrames, int skipEntries);
-void spiceReleaseStackTrace(SpiceStackFrame *frames, int count);
+```spice
+public f<unsigned int> captureNativeFrames(NativeStackFrame* frames, unsigned int capacity, unsigned int skipNativeFrames, unsigned int skipEntries)
+public p releaseNativeFrame(NativeStackFrame& frame)
 ```
 
-A shim is needed because every libbacktrace entry point takes a callback, and a Spice function converted to a raw
-pointer becomes a `.fatthunk` with an extra capture argument, which C callers do not pass (spicelang/spice#1392).
+It is written in Spice and calls libbacktrace directly; it used to be a C file linked through
+`core.linker.additionalSource`, because a Spice function converted to a raw pointer became a `.fatthunk` with a
+*leading* capture argument, which shifted the arguments of a C caller (spicelang/spice#1392). The capture pointer is a
+trailing argument since #1396, which a C caller does not pass and the thunk ignores, so Spice callbacks work. See
+[Calling libbacktrace from Spice](#calling-libbacktrace-from-spice) for how they have to be declared.
 
-- `SpiceStackFrame` mirrors `NativeStackFrame` in `stack_trace_rt.spice` field for field. Its name pointers are heap
-  copies, because libbacktrace's strings may be invalid after the callback returns. `capture()` copies them into
-  `String`s and hands the originals back through `spiceReleaseStackTrace()`.
+- `NativeStackFrame` holds the raw values of one frame. Its name pointers are heap copies, because libbacktrace's
+  strings may be invalid after the callback returns. `capture()` copies them into `String`s and hands the originals
+  back through `releaseNativeFrame()`, one frame at a time.
 - **Unwinding** uses the unwind tables that `IRGenerator` emits for every function (`uwtable`), so no frame pointers
   are needed and every optimization level works.
 - **Resolution:** `backtrace_full()` yields function, file and line, plus one entry per function inlined into the
@@ -79,18 +84,57 @@ pointer becomes a `.fatthunk` with an extra capture argument, which C callers do
   into. If `backtrace_full()` reports nothing, because it cannot open the executable, a `backtrace_simple()` fallback
   keeps the bare addresses.
 - **Skipping:** the runtime's own frames are dropped as physical frames (`skipNativeFrames`, always `RUNTIME_FRAMES` = 2:
-  the shim and `capture()`). The caller's `skipFrames` counts entries (`skipEntries`), since debug info can expand one
+  `captureNativeFrames()` and `capture()`). The caller's `skipFrames` counts entries (`skipEntries`), since debug info can expand one
   physical frame into several entries. `sGetStacktrace()` and `sDumpStacktrace()` skip one to hide themselves.
-  `RUNTIME_FRAMES` is exact because the shim and `capture()` sit in separate object files and cannot be inlined into the
-  caller; `-lto` lifts that guarantee.
-- **State:** one process-wide `backtrace_state`, created on first use with the threaded flag, published by
-  compare-exchange and never freed. libbacktrace's errors are dropped, as they only mean missing information, which
-  already shows as an unresolved frame.
+  `RUNTIME_FRAMES` is exact because `stack_trace_native_rt.spice` and `capture()` sit in separate object files and cannot
+  be inlined into the caller; `-lto` lifts that guarantee. This is why the native code is a file of its own.
+- **State:** one process-wide `backtrace_state`, created on first use with the threaded flag and never freed.
+  libbacktrace's errors are dropped, as they only mean missing information, which already shows as an unresolved frame.
+  It is published with a plain load and store - see [What Spice cannot express](#what-spice-cannot-express) for what
+  that costs.
 - **Windows:** libbacktrace builds the PE symbol table at the image base recorded in the module's file, but the loader
-  relocates the module under ASLR. The shim subtracts the module's relocation distance from the address before the
-  `backtrace_syminfo()` lookup, so names and offsets resolve. The frame keeps its real address.
+  relocates the module under ASLR. `stack_trace_address_rt_windows.spice`, which the compiler picks there by its OS
+  suffix, subtracts the module's relocation distance from the address before the `backtrace_syminfo()` lookup, so names
+  and offsets resolve. The frame keeps its real address. The distance is kept in the capture's own state for the module
+  of the last frame, so that consecutive frames in one module do not reread its file. Other platforms get
+  `stack_trace_address_rt.spice`, which returns the address as is.
 - **Demangling:** `capture()` runs each name through `demangle()`. It reads exactly what the compiler emits, including
   function types (`PF...E`), `.fatthunk` suffixes and RTTI symbols, and returns anything else unchanged.
+
+## Calling libbacktrace from Spice
+
+- **Callbacks are declared `byte*`.** A parameter of function type is a fat pointer (`{ptr, ptr, i64}`) and reaches a C
+  function as three separate arguments, shifting every argument behind it. Every libbacktrace entry point takes its
+  callbacks in the middle of its parameter list, so each is declared as `byte*` and given `cast<byte*>(function)`, which
+  yields the function's `.fatthunk`. (`qsort` in `stack-trace-native-frames` gets away with a function-typed parameter
+  only because the callback is its last one, so the surplus words land in registers it never reads.)
+- **Callback data is a `byte*`** that the callback casts back to its state struct.
+- **Opaque handles are `unsigned long`.** They pass exactly like pointers, which saves a cast at every use: the
+  `backtrace_state` here, and the `HMODULE` and `HANDLE`s of the Windows module. The state also has to be an integer
+  because Spice only supports global variables of primitive type.
+- **`unsafe` is kept to single statements:** the pointer casts of the callback data and callbacks, and the subscript of
+  the frame buffer. `strdup` and `free` are declared with `string`, which needs no cast.
+- **`unsigned long - unsigned long` is `long`,** so the Windows module casts differences back to `unsigned long`.
+
+## What Spice cannot express
+
+Spice has no atomic operations: no atomic load, store or compare-exchange, and `std/os/atomic.spice` is a mutex around
+a plain value. The C implementation published the `backtrace_state` with a compare-exchange and read it with an acquire
+load. The Spice one is a plain load and store of `BACKTRACE_STATE`, which changes two things for a program whose first
+stack trace is taken by several threads at once:
+
+- On a weakly ordered CPU such as AArch64, the pointer can in theory be seen before the writes that initialized the
+  state behind it. On x86-64 stores are not reordered like that, and a race of 16 threads over 600 runs found nothing.
+  Both threads creating a state is harmless, since one is simply dropped.
+- ThreadSanitizer sees the race, which it could not see in the uninstrumented C. A race report raised while another
+  thread is inside libbacktrace's first-use initialization can deadlock inside ThreadSanitizer itself, between its
+  symbolizer and libbacktrace's `dl_iterate_phdr` call: a multi-threaded program taking its first stack trace on several
+  threads under `--sanitizer=thread` hung in 11 of 12 runs, against none with the C implementation. Taking one stack
+  trace before starting the threads avoids it.
+
+Neither a `Mutex` nor `pthread_once` can stand in: a global cannot be a struct, and the storage a `pthread_once_t` needs
+differs per platform. Closing the gap needs atomic loads and stores in the language, at which point `obtainState()` is
+the only place to change.
 
 ## Spice frames vs native frames
 
@@ -133,12 +177,12 @@ The archive is a host binary, so the release pipeline cannot build one copy cent
 `libbacktrace.a` it built next to its own compiler binary, and the packaging step places the matching one - never
 another platform's - into each output:
 
-| Output                        | How it gets there                                                                    |
-|-------------------------------|--------------------------------------------------------------------------------------|
-| Archives (tar.gz / zip)       | goreleaser `archives.files`, `src: bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a`     |
-| deb / rpm / apk / archlinux   | nfpm `contents`, `src: bin/spice-linux-{{ .Arch }}/libbacktrace.a`, mode `0644`        |
-| Container image               | `docker-libs/<os>/<arch>/` staged by the workflow, picked by `$TARGETPLATFORM`          |
-| Windows MSI, Homebrew cask    | Nothing to do - both are built from the archive above                                  |
+| Output                      | How it gets there                                                                  |
+|-----------------------------|------------------------------------------------------------------------------------|
+| Archives (tar.gz / zip)     | goreleaser `archives.files`, `src: bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a` |
+| deb / rpm / apk / archlinux | nfpm `contents`, `src: bin/spice-linux-{{ .Arch }}/libbacktrace.a`, mode `0644`    |
+| Container image             | `docker-libs/<os>/<arch>/` staged by the workflow, picked by `$TARGETPLATFORM`     |
+| Windows MSI, Homebrew cask  | Nothing to do - both are built from the archive above                              |
 
 `build-artifacts` also deletes `std/runtime/lib` before packaging: on a clean runner there is none, but a stale one
 would be copied into every platform's output by the `std` entry, alongside the matching copy.
@@ -197,6 +241,9 @@ The cost of using upstream's build is a POSIX shell and `make`. Every platform b
 - `std/runtime/stack-trace-dump-basic`: dumps with and without addresses and with native frames hidden, printed back
   with addresses and offsets masked. Only the three frames the test owns are compared, as everything below `main` is
   C runtime.
+- `std/runtime/stack-trace-concurrent-capture`: sixteen threads taking the first stack trace of the process at once, each
+  asserting it got a trace with at least one resolved name. Every run is a fresh process, so every run races the state's
+  creation.
 - `std/runtime/stack-trace-native-frames`: `qsort` calling back into Spice, asserting that the stack leaves Spice for
   `qsort` and returns to Spice in `main`. What sits below `main` is not asserted, as some unwinders stop there. Skipped
   on Windows because of the misattribution above.

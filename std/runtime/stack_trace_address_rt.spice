@@ -1,0 +1,15 @@
+// Translates program counters into the address space of libbacktrace's symbol table, for stack_trace_native_rt.spice.
+// Only Windows needs that, and has its own stack_trace_address_rt_windows.spice, picked by the OS suffix. The two files
+// must offer the same symbols.
+
+/**
+ * What a capture remembers between translations. Nothing here.
+ */
+public type ModuleShiftCache struct {}
+
+/**
+ * Returns the address to look the symbol of a frame up by, which is the address itself here.
+ */
+public f<unsigned long> toSymbolTableAddress(ModuleShiftCache& _cache, unsigned long address) {
+    return address;
+}
