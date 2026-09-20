@@ -1,0 +1,225 @@
+#![core.linker.flag = "-lbacktrace"]
+
+// Stack trace capture and symbol resolution for stack_trace_rt.spice, on top of libbacktrace.
+//
+// libbacktrace unwinds through the unwind tables that every Spice function carries and resolves each address against
+// the executable's debug info and symbol table, the same way on every platform. It is vendored in deps/libbacktrace
+// and built into std/runtime/lib/libbacktrace.a. Its <backtrace.h> is out of reach for the std, so the entry points
+// needed are declared here.
+//
+// Callbacks are passed as 'byte*' via 'cast<byte*>(function)', not as Spice function types: a function-typed parameter
+// is a fat pointer, which reaches a C function as three arguments and shifts all that follow. The cast yields the
+// function's '.fatthunk', which ignores the trailing capture pointer a C caller does not pass.
+//
+// The state and other opaque handles are declared as 'unsigned long', which passes exactly like a pointer.
+//
+// This file must remain a translation unit of its own, so that neither it nor stack_trace_rt.spice can be inlined into
+// the other or the caller: RUNTIME_FRAMES there counts on it.
+
+import "std/runtime/impl/stack_trace_address";
+import "std/runtime/impl/stack_trace_lock";
+
+ext f<string> strdup(string /*text*/);
+ext p free(string /*ptr*/);
+
+ext f<unsigned long> backtrace_create_state(string /*filename*/, int /*threaded*/, byte* /*errorCallback*/, byte* /*data*/);
+ext f<int> backtrace_full(unsigned long /*state*/, int /*skip*/, byte* /*callback*/, byte* /*errorCallback*/, byte* /*data*/);
+ext f<int> backtrace_simple(unsigned long /*state*/, int /*skip*/, byte* /*callback*/, byte* /*errorCallback*/, byte* /*data*/);
+ext f<int> backtrace_syminfo(unsigned long /*state*/, unsigned long /*address*/, byte* /*callback*/, byte* /*errorCallback*/, byte* /*data*/);
+
+// Reported after the zero address at the bottom of the stack, once libbacktrace has decremented it
+const unsigned long ADDRESS_BELOW_STACK = 18446744073709551615ul;
+
+/**
+ * One captured frame. The names are heap copies, since libbacktrace's strings may become invalid after the callback
+ * returns; release them with releaseNativeFrame().
+ */
+public type NativeStackFrame struct {
+    public byte* address
+    public unsigned long offset
+    public string functionName
+    public string fileName
+    public int lineNumber
+}
+
+/**
+ * State of one capture, handed through the libbacktrace callbacks.
+ */
+type CaptureState struct {
+    unsigned long state
+    NativeStackFrame* frames
+    unsigned int capacity
+    unsigned int count
+    unsigned int skipEntries
+    ModuleShiftCache shiftCache
+}
+
+/**
+ * The process-wide libbacktrace state, which may be created only once and is never freed. An integer, since Spice
+ * only supports global variables of primitive type.
+ */
+unsigned long BACKTRACE_STATE = 0ul;
+
+/**
+ * Every libbacktrace error means missing information, which already shows as an unresolved frame, so they are dropped.
+ */
+p ignoreError(byte* _data, string _message, int _errorNumber) {}
+
+/**
+ * Returns the process-wide state, created on first use, or 0 if that failed.
+ *
+ * Spice has no atomics, so the state is published with a plain store, unlike the C implementation, which used a
+ * compare-exchange. Threads capturing for the first time together each create a state and the last store wins, which
+ * only wastes memory. On a weakly ordered CPU (AArch64) a thread could in theory also see the pointer before the state
+ * behind it is initialized. ThreadSanitizer reports the race. On Windows the capture lock rules all of this out.
+ */
+f<unsigned long> obtainState() {
+    if BACKTRACE_STATE == 0ul {
+        // Threaded, so that libbacktrace guards its caches; no file name, so that it finds the executable itself
+        unsafe {
+            BACKTRACE_STATE = backtrace_create_state(nil<string>, 1, cast<byte*>(ignoreError), nil<byte*>);
+        }
+    }
+    return BACKTRACE_STATE;
+}
+
+/**
+ * Copies a string from libbacktrace, or returns nil for nil. Also nil on allocation failure, which leaves an unresolved
+ * frame rather than failing the trace.
+ */
+inline f<string> duplicateString(string text) {
+    return text != nil<string> ? strdup(text) : nil<string>;
+}
+
+/**
+ * Receives the symbol table entry of a frame: the offset into its function, and its name if debug info gave none.
+ *
+ * @param data The frame, as a byte pointer
+ */
+p collectSymbol(byte* data, unsigned long address, string symbolName, unsigned long symbolValue, unsigned long _symbolSize) {
+    NativeStackFrame* frame;
+    unsafe { frame = cast<NativeStackFrame*>(data); }
+
+    if symbolName == nil<string> { // the address is not in the symbol table
+        return;
+    }
+    if frame.functionName == nil<string> {
+        frame.functionName = duplicateString(symbolName);
+    }
+    // An offset only means something next to its name, so both are set or neither
+    if frame.functionName != nil<string> && symbolValue != 0ul && address >= symbolValue {
+        frame.offset = address - symbolValue;
+    }
+}
+
+/**
+ * Receives each frame from backtrace_full(), innermost first, and once more for every function inlined into it.
+ *
+ * @param data The CaptureState, as a byte pointer
+ * @return 1 to stop the walk, 0 to continue
+ */
+f<int> collectFrame(byte* data, unsigned long address, string fileName, int lineNumber, string functionName) {
+    CaptureState* capture;
+    unsafe { capture = cast<CaptureState*>(data); }
+
+    if address == 0ul || address == ADDRESS_BELOW_STACK {
+        return 1;
+    }
+    // Counted in entries, not physical frames like the skip of backtrace_full(): with debug info a single frame can
+    // yield several entries, and the caller counts in the entries it gets back
+    if capture.skipEntries > 0u {
+        capture.skipEntries--;
+        return 0;
+    }
+    if capture.count >= capture.capacity { // stop rather than drop the frames nearest the capture point
+        return 1;
+    }
+
+    NativeStackFrame* frame;
+    unsafe {
+        frame = &capture.frames[capture.count];
+        frame.address = cast<byte*>(address);
+    }
+    frame.offset = 0ul;
+    frame.functionName = duplicateString(functionName);
+    frame.fileName = duplicateString(fileName);
+    frame.lineNumber = frame.fileName != nil<string> ? lineNumber : 0; // a line means nothing without its file
+
+    // The offset takes a second lookup, since backtrace_full() does not say where the function starts. For an inlined
+    // frame it is the offset into the function it was inlined into.
+    const unsigned long lookupAddress = toSymbolTableAddress(capture.shiftCache, address);
+    unsafe {
+        backtrace_syminfo(capture.state, lookupAddress, cast<byte*>(collectSymbol), cast<byte*>(ignoreError), cast<byte*>(frame));
+    }
+
+    capture.count++;
+    return 0;
+}
+
+/**
+ * Receives each frame from backtrace_simple(), which reports no names.
+ *
+ * @param data The CaptureState, as a byte pointer
+ * @return 1 to stop the walk, 0 to continue
+ */
+f<int> collectSimpleFrame(byte* data, unsigned long address) {
+    return collectFrame(data, address, nil<string>, 0, nil<string>);
+}
+
+/**
+ * Fills 'frames' with up to 'capacity' frames of the calling stack, most recent call first.
+ *
+ * 'skipNativeFrames' drops physical frames, starting with this function's own; it is for the stack trace runtime's own
+ * frames. 'skipEntries' drops entries and is for the caller.
+ *
+ * @param frames Buffer for the frames, which is expected to be zeroed
+ * @param capacity Number of frames the buffer has room for
+ * @param skipNativeFrames Physical frames to drop
+ * @param skipEntries Entries to drop behind those
+ * @return Number of frames written
+ */
+public f<unsigned int> captureNativeFrames(NativeStackFrame* frames, unsigned int capacity, unsigned int skipNativeFrames, unsigned int skipEntries) {
+    if frames == nil<NativeStackFrame*> {
+        return 0u;
+    }
+
+    // Held from the creation of the state to the end of the walk, so that on Windows only one thread ever initializes it
+    acquireCaptureLock();
+    const unsigned long state = obtainState();
+    if state == 0ul {
+        releaseCaptureLock();
+        return 0u;
+    }
+
+    CaptureState capture;
+    capture.state = state;
+    capture.frames = frames;
+    capture.capacity = capacity;
+    capture.count = 0u;
+    capture.skipEntries = skipEntries;
+
+    // Skip 0 starts at the caller of backtrace_full(), which is this function
+    unsafe {
+        backtrace_full(state, skipNativeFrames, cast<byte*>(collectFrame), cast<byte*>(ignoreError), cast<byte*>(&capture));
+    }
+
+    // It reports nothing at all if it cannot open the executable, though unwinding still works. Fall back to bare
+    // addresses then, with the skip budget restored since nothing was written.
+    if capture.count == 0u {
+        capture.skipEntries = skipEntries;
+        unsafe {
+            backtrace_simple(state, skipNativeFrames, cast<byte*>(collectSimpleFrame), cast<byte*>(ignoreError), cast<byte*>(&capture));
+        }
+    }
+
+    releaseCaptureLock();
+    return capture.count;
+}
+
+/**
+ * Frees the names of a frame filled by captureNativeFrames().
+ */
+public p releaseNativeFrame(NativeStackFrame& frame) {
+    free(frame.functionName);
+    free(frame.fileName);
+}

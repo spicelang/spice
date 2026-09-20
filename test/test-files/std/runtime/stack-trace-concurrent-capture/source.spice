@@ -1,0 +1,41 @@
+// Exercises the very first stack trace of a process being taken by several threads at once.
+//
+// The process-wide libbacktrace state is created lazily by whichever thread gets there first. On Windows, initializing
+// it from several threads at once used to crash the process. Every run of this test is a fresh process, so every run
+// races the first capture, which is the only one that can go wrong.
+//
+// Only what holds on every platform and optimization level is asserted: that each thread got a trace of its own, and
+// that some frame of it was resolved to a name. Which frame that is depends on what the optimizer inlined.
+import "std/os/thread";
+
+const int THREAD_COUNT = 16;
+
+p worker() {
+    const StackTrace trace = sGetStacktrace();
+    assert trace.getSize() >= 1l;
+
+    int namedFrames = 0;
+    foreach StackTraceEntry& entry : trace {
+        assert entry.address != nil<byte*>;
+        if !entry.functionName.isEmpty() { namedFrames++; }
+    }
+    assert namedFrames >= 1;
+}
+
+f<int> main() {
+    Thread[THREAD_COUNT] threads;
+    for int i = 0; i < THREAD_COUNT; i++ {
+        threads[i] = Thread(worker);
+    }
+    for int i = 0; i < THREAD_COUNT; i++ {
+        Thread& thread = threads[i];
+        thread.run();
+    }
+    for int i = 0; i < THREAD_COUNT; i++ {
+        Thread& thread = threads[i];
+        thread.join();
+    }
+
+    printf("All assertions passed!\n");
+    return 0;
+}

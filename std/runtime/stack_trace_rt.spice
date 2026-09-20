@@ -1,17 +1,13 @@
-#![
-    core.compiler.alwaysKeepOnNameCollision = true,
-    core.linker.flag = "-lbacktrace",
-    core.linker.additionalSource = "stack-trace-backtrace.c"
-]
+#![core.compiler.alwaysKeepOnNameCollision = true]
 
 // Stack traces: capturing them, resolving each frame to a symbol, and printing them.
 //
-// Both halves of the job are done by libbacktrace, through the C shim named above - see
-// stack-trace-backtrace.c for why a shim is needed and what the library does. It behaves the same on every
-// platform Spice targets, so unlike the hand-written unwinder and symbol resolver it replaced, this file has no
-// OS-suffixed siblings and must not gain any: sDumpStacktrace() and sGetStacktrace() are reachable both through
-// an explicit import and through auto-import by name (RuntimeModuleManager), and only the former applies
-// OS-suffixing. Were this file suffixed, the two paths could load different copies and collide at link time.
+// Both halves of the job are done by libbacktrace, through impl/stack_trace_native.spice - see there for what the
+// library does. It behaves the same on every platform Spice targets, so unlike the hand-written unwinder and symbol
+// resolver it replaced, this file has no OS-suffixed siblings and must not gain any: sDumpStacktrace() and
+// sGetStacktrace() are reachable both through an explicit import and through auto-import by name
+// (RuntimeModuleManager), and only the former applies OS-suffixing. Were this file suffixed, the two paths could
+// load different copies and collide at link time.
 //
 // Resolving a frame to a name needs the executable's symbol table, which the linker keeps unless the build asked
 // for '--strip-symbols'; in a stripped executable every frame prints as '<unknown>'. File and line numbers need
@@ -23,6 +19,7 @@ import "std/iterator/iterator";
 import "std/data/pair";
 import "std/text/demangle";
 import "std/data/vector";
+import "std/runtime/impl/stack_trace_native";
 
 // Add generic type definitions. 'T' is always StackTraceEntry - a trace has exactly one kind of element - but
 // the language requires an iterator to carry its item type as a generic argument, so StackTraceIterator below
@@ -34,32 +31,15 @@ ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
 // Frames captured per trace. Deeper ones are dropped, since the frames nearest the capture point matter most.
 public const int STACK_TRACE_CAPACITY = 128;
-// Frames of the stack trace runtime itself between libbacktrace and the caller: the C shim and capture().
-// Exact because Spice emits one object file per source file and the shim is a translation unit of its own, so
-// neither can be inlined into the caller; '-lto' lifts that guarantee and can shift a trace outwards by a frame.
+// Frames of the stack trace runtime itself between libbacktrace and the caller: captureNativeFrames() and capture().
+// Exact because Spice emits one object file per source file and impl/stack_trace_native.spice is a translation unit
+// of its own, so neither can be inlined into the caller; '-lto' lifts that guarantee and can shift a trace outwards
+// by a frame.
 const int RUNTIME_FRAMES = 2;
 // Extension of Spice source files, which is what tells a frame in Spice code apart when the program carries debug info
 const string SPICE_SOURCE_EXTENSION = ".spice";
 // The one Spice function whose symbol is never mangled, since the operating system calls it by that name
 const string ENTRY_POINT_NAME = "main";
-
-/**
- * Buffer the C shim fills, mirroring its 'SpiceStackFrame' field for field so an array of these can be handed
- * over to be written into. It stays separate from StackTraceEntry below even though the two share five values,
- * because the two names are the whole difference: here they are raw pointers into memory the shim owns and hands
- * back in capture(), and C cannot construct the owning String that an entry keeps. An entry's name is also the
- * demangled one, which only exists once Spice has looked at it, and its 'isSpice' flag is derived from them.
- */
-type NativeStackFrame struct {
-    byte* address
-    unsigned long offset
-    string functionName
-    string fileName
-    int lineNumber
-}
-
-ext f<int> spiceCaptureStackTrace(NativeStackFrame* /*frames*/, int /*capacity*/, int /*skipFrames*/, int /*skipEntries*/);
-ext p spiceReleaseStackTrace(NativeStackFrame* /*frames*/, int /*count*/);
 
 /**
  * One frame of a stack trace.
@@ -186,23 +166,21 @@ public p StackTrace.capture(unsigned int skipFrames = 0u) {
 
     // The runtime's own frames are physical and are dropped as such; the caller's skip counts the entries
     // it would otherwise see, which is not the same number once debug info expands an inlined frame
-    unsigned int frameCount = spiceCaptureStackTrace(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES, skipFrames);
+    unsigned int frameCount = captureNativeFrames(&frames[0], STACK_TRACE_CAPACITY, RUNTIME_FRAMES, skipFrames);
 
     this.entries.reserve(cast<unsigned long>(frameCount));
     for unsigned int i = 0u; i < frameCount; i++ {
         const byte* address = frames[i].address;
         const unsigned long offset = frames[i].offset;
-        // Both names are plain C strings owned by the shim, so they are copied here and the originals handed back below
+        // The names are heap-allocated C strings, which are copied and then released
         const String symbolName = String(frames[i].functionName != nil<string> ? frames[i].functionName : "");
         const String functionName = demangle(symbolName);
         const String fileName = String(frames[i].fileName != nil<string> ? frames[i].fileName : "");
         const unsigned int lineNumber = frames[i].lineNumber;
         const bool isSpice = isSpiceFrame(symbolName, functionName, fileName);
         this.entries.pushBack(StackTraceEntry{address, offset, functionName, fileName, lineNumber, isSpice});
+        releaseNativeFrame(frames[i]);
     }
-
-    // Release the original strings, owned by the shim
-    spiceReleaseStackTrace(&frames[0], frameCount);
 }
 
 /**
