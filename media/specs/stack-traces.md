@@ -148,9 +148,11 @@ GCC's own runtime directory, while macOS (no system copy, no Homebrew formula) a
 ship one, and it cannot be built with MSVC at all) needed a source build that CI cached. The cost is about 17k lines
 of third-party C in the tree; the gain is that every platform links the same known-good library.
 
-The archive is built for the host, so cross-compiling a Spice program that takes a stack trace
-(`spice build --target=...`) links an archive of the wrong architecture. That was no better before vendoring, when
-the toolchain's own copy was equally host-specific.
+The archive is built for the host, so it is only offered when `cliOptions.isNativeTarget` says the target is that
+same host. Cross-compiling a Spice program that takes a stack trace therefore still needs a libbacktrace built for
+the target, reachable through the toolchain's own search path - as it did before vendoring. Offering the host copy
+regardless would not help and would actively hurt: lld rejects every member of a mismatched archive
+(`is incompatible with aarch64linux`) rather than passing over it the way GNU ld does.
 
 Upstream builds with autotools, and `setup-deps.py` runs that build rather than reimplementing it: `./configure`
 alone decides which object-format reader to compile (`elf.c`, `macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`),

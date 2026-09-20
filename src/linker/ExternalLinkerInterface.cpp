@@ -136,8 +136,13 @@ void ExternalLinkerInterface::link() const {
   // order given, so the std links against its own archive rather than a same-named one in a directory that a
   // binding's '-L' flag happens to add. Passed verbatim rather than through addLinkerFlag(), so that a std path
   // containing '$' or a backtick is not mistaken for a variable reference or a command substitution.
-  if (const std::filesystem::path stdRuntimeLibDir = SystemUtil::getStdRuntimeLibDir(); !stdRuntimeLibDir.empty())
-    args.push_back("-L" + stdRuntimeLibDir.string());
+  // Only for a native build: those archives are built for the host the std was installed on, so offering them while
+  // linking for another target can only ever produce a mismatch - lld rejects every member outright
+  // ("is incompatible with aarch64linux"). Cross-compiling a program that takes a stack trace needs a libbacktrace
+  // built for the target, which has to come from the toolchain's own search path.
+  if (cliOptions.isNativeTarget)
+    if (const std::filesystem::path stdRuntimeLibDir = SystemUtil::getStdRuntimeLibDir(); !stdRuntimeLibDir.empty())
+      args.push_back("-L" + stdRuntimeLibDir.string());
   // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
   // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
   // expand into several argv entries. They go behind the object files, because a '-l' naming a static archive is only
