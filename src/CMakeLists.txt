@@ -195,6 +195,11 @@ set_source_files_properties(iroptimizer/CoverageWorkingDirFileSystem.cpp PROPERT
 add_executable(spice main.cpp)
 # Link with spicecore, antlr and llvm
 target_link_libraries(spice PRIVATE spicecore ${LLVM_LIBS})
+# The vendored libbacktrace is not linked into the compiler - it is built into the std tree, as
+# std/runtime/lib/libbacktrace.a, for the programs the compiler emits (std/runtime/stack_trace_rt.spice links
+# against it). Attaching it as a dependency means a plain `cmake --build . --target spice` produces it too, so a
+# freshly built compiler can always link a program that captures a stack trace.
+add_dependencies(spice backtrace)
 if (SPICE_ENABLE_TPDE)
     target_link_libraries(spice PRIVATE spice_tpde)
 endif ()

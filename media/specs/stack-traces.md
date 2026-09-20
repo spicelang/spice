@@ -9,6 +9,8 @@ shared runtime with no per-platform variants. User-facing documentation: `docs/d
 | `std/runtime/stack_trace_rt.spice`    | Public API, frame classification, printing                           |
 | `std/runtime/stack-trace-backtrace.c` | C shim over libbacktrace, linked via `core.linker.additionalSource`  |
 | `std/text/demangle.spice`             | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
+| `deps/libbacktrace`                   | Vendored libbacktrace, as a git submodule                            |
+| `deps/libbacktrace-cmake`             | CMake build for it, emitting `std/runtime/lib/libbacktrace.a`        |
 
 `sGetStacktrace()` and `sDumpStacktrace()` are auto-imported by name (`RuntimeModuleManager`) and can also be imported
 explicitly. Only the explicit path applies OS-suffixing to module names, so an OS-suffixed variant of
@@ -116,17 +118,38 @@ symbol the demangler happens to accept reads as Spice.
 
 ## Linking libbacktrace
 
+libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by `deps/libbacktrace-cmake` as part of
+the compiler, into `std/runtime/lib/libbacktrace.a` - inside the std tree, so it is packaged and installed with the
+std and needs no separate handling by goreleaser, nfpm or the Dockerfile.
+
 `stack_trace_rt.spice` links it with `core.linker.flag = "-lbacktrace"`. Linker flags are appended behind the object
-files, so a `-l` naming a static archive resolves.
+files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface::link()` puts `std/runtime/lib` on the
+linker's search path ahead of those flags, so `-lbacktrace` finds the bundled archive; search directories are tried in
+the order given, which keeps the std's own copy ahead of any directory a binding's `-L` flag adds.
 
-- **Linux:** GCC ships `libbacktrace.a` inside its own library directory, and Clang finds it there too.
-- **macOS:** the Apple toolchain has none and Homebrew has no formula. Use MacPorts or build it from source.
-- **Windows:** MinGW-w64 GCC may or may not ship one, and Clang does not search GCC's library directory either way.
-  Point `LIBRARY_PATH` at a copy, or build it in MSYS2.
-- **CI** builds it from the pinned commit `LIBBACKTRACE_VERSION` on macOS and Windows and caches it.
+Not yet wired up: the release pipeline. Each `publish.yml` build job now produces a `libbacktrace.a` for its own
+platform, but uploads only the compiler binary, and `build-artifacts` packages `std/` from a plain checkout - so
+released archives, packages and images carry no `libbacktrace.a` and fall back to the toolchain's search path, as
+before. Shipping it means uploading the archive from each build job and placing the matching one into each
+platform's output (goreleaser `archives`/`dockers_v2`, nfpm and wix); a host-built archive must never be packaged
+for another platform.
 
-Vendoring the sources into `std/` would remove this requirement on all platforms, at the cost of about 17k lines of
-third-party C in the tree and a little link time.
+Vendoring replaced the previous arrangement, under which each platform had to supply the library: Linux got it from
+GCC's own runtime directory, while macOS (no system copy, no Homebrew formula) and Windows (MinGW-w64 may or may not
+ship one, and it cannot be built with MSVC at all) needed a source build that CI cached. The cost is about 17k lines
+of third-party C in the tree; the gain is that every platform links the same known-good library.
+
+The archive is built for the host, so cross-compiling a Spice program that takes a stack trace
+(`spice build --target=...`) links an archive of the wrong architecture. That was no better before vendoring, when
+the toolchain's own copy was equally host-specific.
+
+Upstream builds with autotools. Spice does not run its `./configure` - that would need a POSIX shell wherever the
+compiler is built, and would sit outside the CMake dependency graph. `deps/libbacktrace-cmake/CMakeLists.txt` instead
+mirrors the decisions configure makes, using CMake's own probes: which object-format reader to compile (`elf.c`,
+`macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`), whether `mmap` is available for the file reader and allocator, and
+the contents of `config.h` and `backtrace-supported.h`. When the submodule is bumped, check that no newly added
+source reads a macro `config.h.in` does not define - a missing one silently disables a code path rather than failing
+the build.
 
 ## Limitations
 

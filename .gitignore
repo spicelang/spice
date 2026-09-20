@@ -22,6 +22,9 @@ spice
 # LLVM
 /llvm
 
+# Vendored libbacktrace, built into the std tree by deps/libbacktrace-cmake
+/std/runtime/lib
+
 # FASTBuild
 *.fdb
 

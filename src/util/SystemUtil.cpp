@@ -369,21 +369,52 @@ const char *SystemUtil::getOutputFileExtension(const CliOptions &cliOptions, Out
 }
 
 /**
- * Retrieve the dir, where the standard library lives.
- * Returns an empty string if the std was not found.
+ * Retrieve the dir, where the standard library lives, without failing if it is not installed.
  *
- * @return Std directory
+ * @return Std directory, or an empty path if the std was not found
  */
-std::filesystem::path SystemUtil::getStdDir() {
+std::filesystem::path SystemUtil::findStdDir() {
 #if OS_UNIX
   if (exists(std::filesystem::path("/usr/lib/spice/std/")))
     return "/usr/lib/spice/std/";
 #endif
-  if (std::getenv("SPICE_STD_DIR"))
-    if (const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR")); exists(stdPath))
+  if (const char *const stdDirEnv = std::getenv("SPICE_STD_DIR"))
+    if (const std::filesystem::path stdPath(stdDirEnv); exists(stdPath))
       return stdPath;
+  return {};
+}
+
+/**
+ * Retrieve the dir, where the standard library lives.
+ *
+ * @return Std directory
+ */
+std::filesystem::path SystemUtil::getStdDir() {
+  if (std::filesystem::path stdPath = findStdDir(); !stdPath.empty())
+    return stdPath;
   constexpr auto msg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // GCOV_EXCL_LINE
   throw CompilerError(STD_NOT_FOUND, msg);                                                               // GCOV_EXCL_LINE
+}
+
+/**
+ * Retrieve the dir, where the std ships the static support libraries that Spice programs link against - currently
+ * only the vendored libbacktrace, built there by deps/libbacktrace-cmake.
+ *
+ * Missing rather than found is a perfectly normal outcome: the compiler may run without a std at all, and a std
+ * that was installed without the archive simply falls back to whatever the system-wide library search path offers.
+ * Hence an empty path instead of an exception.
+ *
+ * @return Std runtime library directory, or an empty path if there is none
+ */
+std::filesystem::path SystemUtil::getStdRuntimeLibDir() {
+  const std::filesystem::path stdPath = findStdDir();
+  if (stdPath.empty())
+    return {};
+  std::filesystem::path runtimeLibPath = stdPath / "runtime" / "lib";
+  if (!exists(runtimeLibPath))
+    return {};
+  runtimeLibPath.make_preferred();
+  return runtimeLibPath;
 }
 
 /**

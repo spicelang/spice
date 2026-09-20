@@ -17,3 +17,6 @@
 [submodule "deps/tpde"]
 	path = deps/tpde
 	url = https://github.com/marcauberer/tpde.git
+[submodule "deps/libbacktrace"]
+	path = deps/libbacktrace
+	url = https://github.com/ianlancetaylor/libbacktrace.git

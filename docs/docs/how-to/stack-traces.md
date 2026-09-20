@@ -148,45 +148,17 @@ what ends up in the binary decides how much of a trace is readable:
   [`-g`](../cli/build.md).
 
 The work itself is done by [libbacktrace](https://github.com/ianlancetaylor/libbacktrace), which the linker
-pulls in as `-lbacktrace`. GCC builds it as part of its own runtime, so where a program is linked through GCC -
-Linux, most of the time - it is already there and nothing needs doing. Elsewhere, it may have to be pointed at,
-and linking a program that takes a stack trace otherwise fails with an undefined reference to
-`backtrace_create_state`.
+pulls in as `-lbacktrace`. The library is vendored with Spice: building the compiler from source also builds it,
+into `std/runtime/lib/libbacktrace.a` next to the standard library, and the compiler puts that directory on the
+linker's search path of every program it links. So on a compiler you built yourself there is nothing to install,
+on any platform - a checkout whose submodules have not been fetched fails to configure and tells you to run
+`python setup-deps.py`.
 
-**Linux with Clang** resolves it too, since Clang searches GCC's directories.
-
-**Windows**: some MinGW-w64 distributions ship `libbacktrace.a` alongside GCC and some do not, and Clang's GNU
-driver does not search GCC's own library directory either way. Ask GCC whether it has one - it echoes the bare
-file name back when it does not - and put the directory on `LIBRARY_PATH`, which Clang reads for `-l` search
-dirs:
-
-```powershell
-$lib = gcc -print-file-name=libbacktrace.a
-if (Test-Path $lib) { $env:LIBRARY_PATH = "$(Split-Path -Parent $lib);$env:LIBRARY_PATH" }
-```
-
-If that comes up empty - as it does on the GitHub Actions runner, which is why this repository's CI builds its
-own - build the library in an [MSYS2](https://www.msys2.org) MINGW64 shell and point `LIBRARY_PATH` at the
-result:
-
-```sh
-pacman -S --needed git make mingw-w64-x86_64-gcc
-git clone https://github.com/ianlancetaylor/libbacktrace.git
-cd libbacktrace && ./configure --prefix=/c/libbacktrace --disable-shared && make && make install
-```
-
-```powershell
-$env:LIBRARY_PATH = "C:\libbacktrace\lib;$env:LIBRARY_PATH"
-```
-
-**macOS** has none at all: the Apple toolchain does not include libbacktrace, and Homebrew has no formula for it.
-Either install the MacPorts port (`sudo port install libbacktrace`) or build it yourself:
-
-```sh
-git clone https://github.com/ianlancetaylor/libbacktrace.git
-cd libbacktrace && ./configure --prefix="$HOME/.local" --disable-shared && make && make install
-export LIBRARY_PATH="$HOME/.local/lib:$LIBRARY_PATH"
-```
+If `-lbacktrace` cannot be resolved, linking a program that takes a stack trace fails with an undefined reference
+to `backtrace_create_state`. The search path then falls back to the toolchain's own, which on Linux is usually
+enough: GCC builds libbacktrace as part of its runtime, and Clang searches GCC's directories too. The Apple
+toolchain ships none, and MinGW-w64 distributions vary; on those, point `LIBRARY_PATH` at a copy of the library -
+both Clang and GCC read it for `-l` search dirs - or use a compiler built from this repository.
 
 ## Limitations
 

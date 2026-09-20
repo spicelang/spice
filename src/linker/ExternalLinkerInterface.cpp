@@ -130,6 +130,14 @@ void ExternalLinkerInterface::link() const {
   // Append object files
   for (const std::filesystem::path &objectFilePath : linkedFiles)
     args.push_back(objectFilePath.string());
+  // Append the std's own library search path, so the runtime modules can link against the static support libraries
+  // that ship with the std (currently std/runtime/lib/libbacktrace.a, which std/runtime/stack_trace_rt.spice pulls
+  // in with '-lbacktrace'). It goes ahead of the linker flags below because search directories are tried in the
+  // order given, so the std links against its own archive rather than a same-named one in a directory that a
+  // binding's '-L' flag happens to add. Passed verbatim rather than through addLinkerFlag(), so that a std path
+  // containing '$' or a backtick is not mistaken for a variable reference or a command substitution.
+  if (const std::filesystem::path stdRuntimeLibDir = SystemUtil::getStdRuntimeLibDir(); !stdRuntimeLibDir.empty())
+    args.push_back("-L" + stdRuntimeLibDir.string());
   // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
   // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
   // expand into several argv entries. They go behind the object files, because a '-l' naming a static archive is only
