@@ -254,6 +254,21 @@ jobs:
             ../llvm
           cmake --build .
 
+      # libbacktrace (deps/libbacktrace) builds with autotools, so setup-deps.py below needs a POSIX shell and
+      # make. MSYS2 supplies both; 'path-type: inherit' keeps the runner's own PATH, so configure picks up the very
+      # gcc the compiler is built with and the archive matches its ABI. Windows only - every other runner has them.
+      - name: Setup MSYS2
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: make
+          path-type: inherit
+
+      - name: Put MSYS2 on PATH
+        run: echo "${{ steps.msys2.outputs.msys2-location }}\usr\bin" >> $env:GITHUB_PATH
+
       - name: Download Libs
         run: python setup-deps.py
 

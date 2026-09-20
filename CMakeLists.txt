@@ -36,10 +36,6 @@ include(LLVMOptions.cmake)
 add_subdirectory(deps/json EXCLUDE_FROM_ALL)
 add_subdirectory(deps/cli11 EXCLUDE_FROM_ALL)
 
-# Vendored libbacktrace (git submodule in deps/). Not linked into the compiler itself: it is built into the std
-# tree, as std/runtime/lib/libbacktrace.a, for the Spice programs the compiler emits to link against.
-add_subdirectory(deps/libbacktrace-cmake)
-
 # Experimental TPDE backend (opt-in via SPICE_ENABLE_TPDE)
 if (SPICE_ENABLE_TPDE)
     # Skip TPDE's own test suite (requires `lit`) and force LLVM support ON.

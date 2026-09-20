@@ -10,7 +10,7 @@ shared runtime with no per-platform variants. User-facing documentation: `docs/d
 | `std/runtime/stack-trace-backtrace.c` | C shim over libbacktrace, linked via `core.linker.additionalSource`  |
 | `std/text/demangle.spice`             | Demangler for Spice's name mangling (`media/specs/name-mangling.md`) |
 | `deps/libbacktrace`                   | Vendored libbacktrace, as a git submodule                            |
-| `deps/libbacktrace-cmake`             | CMake build for it, emitting `std/runtime/lib/libbacktrace.a`        |
+| `setup-deps.py`                       | Builds it, emitting `std/runtime/lib/libbacktrace.a`                 |
 
 `sGetStacktrace()` and `sDumpStacktrace()` are auto-imported by name (`RuntimeModuleManager`) and can also be imported
 explicitly. Only the explicit path applies OS-suffixing to module names, so an OS-suffixed variant of
@@ -118,8 +118,8 @@ symbol the demangler happens to accept reads as Spice.
 
 ## Linking libbacktrace
 
-libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by `deps/libbacktrace-cmake` as part of
-the compiler, into `std/runtime/lib/libbacktrace.a` - inside the std tree, next to the runtime sources that need it.
+libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by `setup-deps.py`, into
+`std/runtime/lib/libbacktrace.a` - inside the std tree, next to the runtime sources that need it.
 
 `stack_trace_rt.spice` links it with `core.linker.flag = "-lbacktrace"`. Linker flags are appended behind the object
 files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface::link()` puts `std/runtime/lib` on the
@@ -152,13 +152,24 @@ The archive is built for the host, so cross-compiling a Spice program that takes
 (`spice build --target=...`) links an archive of the wrong architecture. That was no better before vendoring, when
 the toolchain's own copy was equally host-specific.
 
-Upstream builds with autotools. Spice does not run its `./configure` - that would need a POSIX shell wherever the
-compiler is built, and would sit outside the CMake dependency graph. `deps/libbacktrace-cmake/CMakeLists.txt` instead
-mirrors the decisions configure makes, using CMake's own probes: which object-format reader to compile (`elf.c`,
-`macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`), whether `mmap` is available for the file reader and allocator, and
-the contents of `config.h` and `backtrace-supported.h`. When the submodule is bumped, check that no newly added
-source reads a macro `config.h.in` does not define - a missing one silently disables a code path rather than failing
-the build.
+Upstream builds with autotools, and `setup-deps.py` runs that build rather than reimplementing it: `./configure`
+alone decides which object-format reader to compile (`elf.c`, `macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`),
+whether `mmap` backs the file reader and allocator, and what goes into `config.h` and `backtrace-supported.h`. A
+submodule bump therefore needs no work on our side. It is built out of tree, into `deps/libbacktrace-build`, so the
+submodule checkout stays pristine, and from scratch each time, so a bump re-runs configure instead of reusing the
+previous commit's cached answers. A stamp file next to the build records the commit it came from, so a repeat run of
+`setup-deps.py` is a no-op.
+
+Two configure flags are not optional:
+
+- `--with-pic`, because the archive is linked into Spice programs, which may themselves be shared libraries
+  (`--output-container=shared`); without it the link fails outright with a `R_X86_64_PC32` relocation error.
+- `CFLAGS=-O2`, which drops the `-g` half of autotools' default `-g -O2`. libbacktrace's own debug info is dead
+  weight in every Spice program that links it - about 300 KB each.
+
+The cost of using upstream's build is a POSIX shell and `make`. Every platform but Windows has both; there,
+`setup-deps.py` looks for MSYS2 (preferring the shell next to `make`, since Git for Windows supplies an `sh` but no
+`make`), and the Windows CI jobs install it before running the script.
 
 ## Limitations
 

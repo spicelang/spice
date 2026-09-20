@@ -27,10 +27,6 @@ if (SPICE_ENABLE_TPDE)
 endif ()
 # Enable pedantic warnings
 target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})
-# The reference tests compile and run Spice programs, so they need the vendored libbacktrace in the std tree just
-# as the compiler does - see the same dependency on the 'spice' target. spicetest drives the pipeline through
-# spicecore rather than through the 'spice' binary, so it does not inherit it.
-add_dependencies(spicetest backtrace)
 # Add test for IDEs
 add_test(NAME spicetest COMMAND spicetest)
 

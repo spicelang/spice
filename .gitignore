@@ -22,7 +22,8 @@ spice
 # LLVM
 /llvm
 
-# Vendored libbacktrace, built into the std tree by deps/libbacktrace-cmake
+# Vendored libbacktrace: its out-of-tree build dir, and the archive setup-deps.py puts in the std tree
+/deps/libbacktrace-build
 /std/runtime/lib
 
 # FASTBuild

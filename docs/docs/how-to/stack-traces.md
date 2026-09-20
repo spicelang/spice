@@ -153,9 +153,10 @@ inside the standard library, and the compiler puts that directory on the linker'
 builds. There is nothing to install and nothing to configure, on any platform - every release archive, package and
 container image carries the copy built for that platform.
 
-The same holds for a compiler you build yourself: libbacktrace is a git submodule, and the `spice` target builds it
-into the std tree along with the compiler. A checkout whose submodules have not been fetched fails to configure and
-tells you to run `python setup-deps.py`.
+The same holds for a compiler you build yourself: libbacktrace is a git submodule, and `python setup-deps.py`
+builds it into the std tree along with the rest of the dependency setup, before CMake ever runs. On Windows that
+step needs [MSYS2](https://www.msys2.org) on `PATH`, since libbacktrace builds with autotools; every other platform
+already has what it needs.
 
 If the archive is missing - a hand-assembled std, say - the linker falls back to its own search path, and linking a
 program that takes a stack trace fails with an undefined reference to `backtrace_create_state` wherever the
