@@ -6,7 +6,14 @@
       "children": [
         {
           "captures": [],
-          "children": [],
+          "children": [
+            {
+              "captures": [],
+              "children": [],
+              "name": "expr:L4C8",
+              "symbols": []
+            }
+          ],
           "name": "if:L4C5",
           "symbols": []
         }
@@ -39,6 +46,12 @@
         {
           "captures": [],
           "children": [
+            {
+              "captures": [],
+              "children": [],
+              "name": "expr:L11C29",
+              "symbols": []
+            },
             {
               "captures": [],
               "children": [],
@@ -80,7 +93,14 @@
         },
         {
           "captures": [],
-          "children": [],
+          "children": [
+            {
+              "captures": [],
+              "children": [],
+              "name": "expr:L20C29",
+              "symbols": []
+            }
+          ],
           "name": "for:L20C5",
           "symbols": [
             {

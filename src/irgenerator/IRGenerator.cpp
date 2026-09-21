@@ -6,6 +6,7 @@
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <model/Function.h>
+#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 
@@ -157,6 +158,21 @@ llvm::Value *IRGenerator::resolveValue(const ExprNode *node) {
   // Visit the given AST node
   auto exprResult = any_cast<LLVMExprResult>(visit(node));
   return resolveValue(node, exprResult);
+}
+
+/**
+ * Resolve the value of an expression in its expression scope, if it has one, and destruct the temporaries of the expression right
+ * afterwards. The value is already loaded at that point, so it does not depend on the temporaries anymore.
+ *
+ * @param expr Expression to resolve the value of
+ * @return Value of the expression
+ */
+llvm::Value *IRGenerator::resolveValueInExprScope(const ExprNode *expr) {
+  const ExprScopeHandle exprScopeHandle(this, expr);
+  llvm::Value *value = resolveValue(expr);
+  if (const Scope *exprScope = exprScopeHandle.getExprScope())
+    generateTemporariesCleanup(exprScope, expr);
+  return value;
 }
 
 llvm::Value *IRGenerator::resolveValue(const ExprNode *node, LLVMExprResult &exprResult) {

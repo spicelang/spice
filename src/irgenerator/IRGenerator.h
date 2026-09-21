@@ -142,6 +142,7 @@ public:
                                  const std::string &varName = "") const;
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, const std::string &varName = "") const;
   llvm::Value *resolveValue(const ExprNode *node);
+  llvm::Value *resolveValueInExprScope(const ExprNode *expr);
   llvm::Value *resolveValue(const ExprNode *node, LLVMExprResult &exprResult);
   llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult);
   llvm::Value *resolveAddress(const ASTNode *node);
@@ -217,6 +218,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node);
+  void generateTemporariesCleanup(const Scope *exprScope, const ASTNode *node);
   void generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;

@@ -138,6 +138,20 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
 }
 
 /**
+ * Generate the dtor calls for the temporaries of an expression scope. Those were determined by the type checker.
+ *
+ * @param exprScope Expression scope to generate the dtor calls for
+ * @param node Expression the scope belongs to
+ */
+void IRGenerator::generateTemporariesCleanup(const Scope *exprScope, const ASTNode *node) {
+  if (exprScope->temporaryDtorsToCall.empty())
+    return;
+  diGenerator.setSourceLocation(node);
+  for (const auto &[entry, dtor] : exprScope->temporaryDtorsToCall)
+    generateCtorOrDtorCall(entry, dtor, {});
+}
+
+/**
  * Generate cleanup code (dtor calls, deallocations) for every scope between the given node (exclusive) and the given
  * target scope (inclusive). This is required for jumps that leave more than one scope at once (e.g. break/continue/return),
  * since those skip the normal fall-through cleanup that visitStmtLst() generates for each of the enclosing scopes.

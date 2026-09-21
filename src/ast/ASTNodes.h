@@ -278,6 +278,10 @@ public:
     return expr->getEvaluatedSymbolType(idx);
   }
 
+  // Id of the expression scope, that holds the temporaries of this expression. Only some expressions have such a scope, see
+  // ExprScopeHandle.
+  [[nodiscard]] std::string getExprScopeId() const { return "expr:" + codeLoc.toString(); }
+
 private:
   // Private members
   QualTypeList symbolTypes;

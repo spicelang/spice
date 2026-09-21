@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
+#include <symboltablebuilder/ScopeHandle.h>
 
 #include <llvm/IR/Module.h>
 
@@ -123,6 +124,11 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     const QualType &resultType = node->getEvaluatedSymbolType(manIdx);
     llvm::Value *trueValue = nullptr;
     llvm::Value *truePtr = nullptr;
+    // The true branch has an expression scope for its temporaries, except for shortened ternaries (the condition is the branch)
+    std::optional<ExprScopeHandle> trueScopeHandle;
+    if (!node->isShortened)
+      trueScopeHandle.emplace(static_cast<CompilerPass *>(this), trueNode);
+    const Scope *trueScope = trueScopeHandle ? trueScopeHandle->getExprScope() : nullptr;
     if (node->falseSideCallsCopyCtor || resultType.isRef()) { // both sides or only the false side needs copy ctor call
       truePtr = resolveAddress(trueNode);
     } else if (node->trueSideCallsCopyCtor) { // only true side needs copy ctor call
@@ -135,6 +141,7 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     } else { // neither true nor false side need copy ctor call
       trueValue = resolveValue(trueNode);
     }
+    trueScopeHandle.reset();
     // Set the true block to the current insert point, since it could have changed in the meantime
     condTrue = builder.GetInsertBlock();
     insertJump(condExit);
@@ -143,6 +150,10 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     switchToBlock(condFalse);
     llvm::Value *falseValue = nullptr;
     llvm::Value *falsePtr = nullptr;
+    // The false branch has an expression scope for its temporaries
+    std::optional<ExprScopeHandle> falseScopeHandle;
+    falseScopeHandle.emplace(static_cast<CompilerPass *>(this), falseNode);
+    const Scope *falseScope = falseScopeHandle->getExprScope();
     if (node->trueSideCallsCopyCtor || resultType.isRef()) { // both sides or only the true side needs copy ctor call
       falsePtr = resolveAddress(falseNode);
     } else if (node->falseSideCallsCopyCtor) { // only false side needs copy ctor call
@@ -154,6 +165,7 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     } else { // neither true nor false side need copy ctor call
       falseValue = resolveValue(falseNode);
     }
+    falseScopeHandle.reset();
     // Set the true block to the current insert point, since it could have changed in the meantime
     condFalse = builder.GetInsertBlock();
     insertJump(condExit);
@@ -186,6 +198,29 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
         insertStore(resultValue, resultPtr);
       }
       updateAddress(anonymousSymbol, resultPtr);
+    }
+
+    // Destruct the temporaries of the branch that was evaluated. This must happen here, after the result was copied out of the
+    // branch and only for the branch that was taken, since the temporaries of the other one were never constructed.
+    const bool trueNeedsCleanup = trueScope != nullptr && !trueScope->temporaryDtorsToCall.empty();
+    const bool falseNeedsCleanup = falseScope != nullptr && !falseScope->temporaryDtorsToCall.empty();
+    if (trueNeedsCleanup || falseNeedsCleanup) {
+      llvm::BasicBlock *bCleanTrue = createBlock("cond.cleanup.true." + codeLoc);
+      llvm::BasicBlock *bCleanFalse = createBlock("cond.cleanup.false." + codeLoc);
+      llvm::BasicBlock *bCleanExit = createBlock("cond.cleanup.exit." + codeLoc);
+      insertCondJump(condValue, bCleanTrue, bCleanFalse);
+
+      switchToBlock(bCleanTrue);
+      if (trueNeedsCleanup)
+        generateTemporariesCleanup(trueScope, trueNode);
+      insertJump(bCleanExit);
+
+      switchToBlock(bCleanFalse);
+      if (falseNeedsCleanup)
+        generateTemporariesCleanup(falseScope, falseNode);
+      insertJump(bCleanExit);
+
+      switchToBlock(bCleanExit);
     }
   }
 
@@ -222,8 +257,9 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Switch to the next block
     switchToBlock(shortCircuitBlocks.at(i).first);
-    // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks.at(i).second = resolveValue(node->operands[i]);
+    // Evaluate operand and save the result in the mapping. The temporaries of the operand are destructed within its block, since
+    // they only exist if the operand was evaluated
+    shortCircuitBlocks.at(i).second = resolveValueInExprScope(node->operands[i]);
     // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
     shortCircuitBlocks.at(i).first = builder.GetInsertBlock();
     // Check if there are more blocks to process
@@ -276,8 +312,9 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Switch to the next block
     switchToBlock(shortCircuitBlocks.at(i).first);
-    // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks.at(i).second = resolveValue(node->operands[i]);
+    // Evaluate operand and save the result in the mapping. The temporaries of the operand are destructed within its block, since
+    // they only exist if the operand was evaluated
+    shortCircuitBlocks.at(i).second = resolveValueInExprScope(node->operands[i]);
     // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
     shortCircuitBlocks.at(i).first = builder.GetInsertBlock();
     // Check if there are more blocks to process

@@ -1,0 +1,213 @@
+// The temporaries a condition creates (here: the value returned by make()) must be destructed once the condition was
+// evaluated, no matter which way it turned out. The cleanup of the body only runs when the body is entered, so it is not
+// enough for that, and a do-while loop type-checks its body before its condition, so it does not know about the
+// temporaries at all.
+//
+// Every Tracked counts itself in LIVE, which is why the number of live instances has to be back at 1 (the one main keeps)
+// after every call, whether it leaked a temporary (more) or destructed one twice (less).
+
+public int LIVE = 0;
+
+type Tracked struct {
+    int id
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    LIVE++;
+}
+
+p Tracked.dtor() {
+    LIVE--;
+}
+
+public f<bool> operator==(const Tracked& lhs, const Tracked& rhs) {
+    return lhs.id == rhs.id;
+}
+
+f<Tracked> make(int id) {
+    Tracked t = Tracked(id);
+    return t;
+}
+
+p report(string name, int result) {
+    printf("%s: result=%d live=%d\n", name, result, LIVE);
+}
+
+p report(string name, bool result) {
+    report(name, result ? 1 : 0);
+}
+
+// The condition is false: the body, which would clean up after the condition, is never entered
+f<bool> ifFalse(Tracked& local) {
+    if make(99) == local { return true; }
+    return false;
+}
+
+f<bool> ifFalseWithElse(Tracked& local) {
+    if make(99) == local {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+f<bool> elseIfBothFalse(Tracked& local) {
+    if make(98) == local {
+        return true;
+    } else if make(99) == local {
+        return true;
+    }
+    return false;
+}
+
+// The condition is true: the body is entered, and returning from it must not destruct the temporary a second time
+f<bool> ifTrueAndReturn(Tracked& local) {
+    if make(1) == local { return true; }
+    return false;
+}
+
+f<int> whileFalseAfterTwoRounds(Tracked& local) {
+    int rounds = 0;
+    while make(rounds < 2 ? 1 : 99) == local {
+        rounds++;
+    }
+    return rounds;
+}
+
+f<int> whileWithBreakAndContinue(Tracked& local) {
+    int rounds = 0;
+    while make(1) == local {
+        rounds++;
+        if rounds == 2 { continue; }
+        if rounds == 4 { break; }
+    }
+    return rounds;
+}
+
+f<int> doWhileTwoRounds(Tracked& local) {
+    int rounds = 0;
+    do {
+        rounds++;
+    } while make(rounds < 2 ? 1 : 99) == local;
+    return rounds;
+}
+
+f<int> forFalseAfterThreeRounds(Tracked& local) {
+    int rounds = 0;
+    for int i = 0; make(i < 3 ? 1 : 99) == local; i++ {
+        rounds++;
+    }
+    return rounds;
+}
+
+// The following cases are about temporaries that are not always constructed: the ones on the right of '&&'/'||' and in the
+// branches of a ternary. They only exist if the evaluation gets to them, so they must be destructed right after their own
+// operand, and only then. Destructing one that was never constructed would corrupt the counter (or crash, for a String).
+
+// The temporary is on the left of the short-circuiting operator, so it exists no matter what the right side is
+f<bool> temporaryOnTheLeftOfAnd(Tracked& local, bool right) {
+    if make(1) == local && right { return true; }
+    return false;
+}
+
+// The temporary is on the right of the short-circuiting operator and the right side is not evaluated, so there is no
+// temporary to destruct
+f<bool> temporaryOnTheRightOfAndSkipped(Tracked& local) {
+    bool left = false;
+    if left && make(1) == local { return true; }
+    return false;
+}
+
+// The temporary is on the right of '||' and that side is not evaluated. The body is entered, but there is no temporary to
+// destruct, since it was never constructed
+f<bool> temporaryOnTheRightOfOrSkipped(Tracked& local) {
+    bool left = true;
+    if left || make(1) == local { return true; }
+    return false;
+}
+
+// The right side is evaluated, so its temporary must be destructed right after, no matter how the condition turned out
+f<bool> temporaryOnTheRightOfAndEvaluated(Tracked& local, bool right) {
+    bool left = true;
+    if left && make(right ? 1 : 99) == local { return true; }
+    return false;
+}
+
+f<bool> temporaryOnTheRightOfOrEvaluated(Tracked& local, bool right) {
+    bool left = false;
+    if left || make(right ? 1 : 99) == local { return true; }
+    return false;
+}
+
+// Operands nested into each other: the inner temporary only exists if both operands before it let the evaluation continue
+f<bool> temporaryInNestedOperands(Tracked& local, bool a, bool b) {
+    if a && (b || make(1) == local) { return true; }
+    return false;
+}
+
+// The temporary of the 'else if' condition only exists if the first condition was false
+f<bool> temporaryOfElseIfSkipped(Tracked& local, bool first) {
+    if first {
+        return true;
+    } else if make(99) == local {
+        return true;
+    }
+    return false;
+}
+
+// The temporary is in a branch of a ternary. It only exists if that branch is taken
+f<bool> temporaryInTernaryBranch(Tracked& local, bool takeTrue) {
+    if takeTrue ? make(1) == local : false { return true; }
+    return false;
+}
+
+f<bool> temporaryInFalseTernaryBranch(Tracked& local, bool takeTrue) {
+    if takeTrue ? false : make(99) == local { return true; }
+    return false;
+}
+
+// The operand is evaluated in every round but the last one, where the left side already ends the loop
+f<int> whileWithTemporaryInOperand(Tracked& local) {
+    int rounds = 0;
+    while rounds < 3 && make(1) == local {
+        rounds++;
+    }
+    return rounds;
+}
+
+f<int> main() {
+    Tracked local = make(1);
+    report("start", 0);
+
+    report("ifFalse", ifFalse(local));
+    report("ifFalseWithElse", ifFalseWithElse(local));
+    report("elseIfBothFalse", elseIfBothFalse(local));
+    report("ifTrueAndReturn", ifTrueAndReturn(local));
+
+    report("whileFalseAfterTwoRounds", whileFalseAfterTwoRounds(local));
+    report("whileWithBreakAndContinue", whileWithBreakAndContinue(local));
+    report("doWhileTwoRounds", doWhileTwoRounds(local));
+    report("forFalseAfterThreeRounds", forFalseAfterThreeRounds(local));
+
+    report("temporaryOnTheLeftOfAnd(false)", temporaryOnTheLeftOfAnd(local, false));
+    report("temporaryOnTheLeftOfAnd(true)", temporaryOnTheLeftOfAnd(local, true));
+    report("temporaryOnTheRightOfAndSkipped", temporaryOnTheRightOfAndSkipped(local));
+
+    report("temporaryOnTheRightOfOrSkipped", temporaryOnTheRightOfOrSkipped(local));
+    report("temporaryOnTheRightOfAndEvaluated(false)", temporaryOnTheRightOfAndEvaluated(local, false));
+    report("temporaryOnTheRightOfAndEvaluated(true)", temporaryOnTheRightOfAndEvaluated(local, true));
+    report("temporaryOnTheRightOfOrEvaluated(false)", temporaryOnTheRightOfOrEvaluated(local, false));
+    report("temporaryOnTheRightOfOrEvaluated(true)", temporaryOnTheRightOfOrEvaluated(local, true));
+    report("temporaryInNestedOperands(false, false)", temporaryInNestedOperands(local, false, false));
+    report("temporaryInNestedOperands(true, true)", temporaryInNestedOperands(local, true, true));
+    report("temporaryInNestedOperands(true, false)", temporaryInNestedOperands(local, true, false));
+    report("temporaryOfElseIfSkipped(true)", temporaryOfElseIfSkipped(local, true));
+    report("temporaryOfElseIfSkipped(false)", temporaryOfElseIfSkipped(local, false));
+    report("temporaryInTernaryBranch(true)", temporaryInTernaryBranch(local, true));
+    report("temporaryInTernaryBranch(false)", temporaryInTernaryBranch(local, false));
+    report("temporaryInFalseTernaryBranch(true)", temporaryInFalseTernaryBranch(local, true));
+    report("temporaryInFalseTernaryBranch(false)", temporaryInFalseTernaryBranch(local, false));
+    report("whileWithTemporaryInOperand", whileWithTemporaryInOperand(local));
+    return 0;
+}
