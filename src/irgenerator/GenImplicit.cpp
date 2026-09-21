@@ -152,17 +152,56 @@ void IRGenerator::generateTemporariesCleanup(const Scope *exprScope, const ASTNo
 }
 
 /**
+ * Check if the given node is part of the header of an if, while, do-while, for or foreach statement, e.g. of its condition.
+ *
+ * The IR for a header is generated within the scope of its statement, but the header is not part of the body of the statement.
+ * Hence, the nearest statement list of a node in the header is the one around the statement, and not the one of that scope.
+ *
+ * @param node Node to check
+ * @return Part of a header or not
+ */
+static bool isInStatementHeader(const ASTNode *node) {
+  for (const ASTNode *ancestor = node->parent; ancestor != nullptr; ancestor = ancestor->parent) {
+    if (ancestor->isStmtLst())
+      return false; // The node is part of a body
+    if (dynamic_cast<const IfStmtNode *>(ancestor) || dynamic_cast<const WhileLoopNode *>(ancestor) ||
+        dynamic_cast<const DoWhileLoopNode *>(ancestor) || dynamic_cast<const ForLoopNode *>(ancestor) ||
+        dynamic_cast<const ForeachLoopNode *>(ancestor))
+      return true;
+  }
+  return false;
+}
+
+/**
  * Generate cleanup code (dtor calls, deallocations) for every scope between the given node (exclusive) and the given
  * target scope (inclusive). This is required for jumps that leave more than one scope at once (e.g. break/continue/return),
  * since those skip the normal fall-through cleanup that visitStmtLst() generates for each of the enclosing scopes.
+ *
+ * The jump can also originate from the middle of an expression (the error propagation operator), which is evaluated in scopes
+ * that have no statement list to pair with the scope. These are handled first, so that the scopes and statement lists match up
+ * for the rest of the way.
  *
  * @param node Node the jump originates from
  * @param targetScope Outermost scope that is left by the jump; cleanup is generated for this scope as well
  */
 void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope) {
   assert(targetScope != nullptr);
-  const StmtLstNode *scope = node->getNextOuterStmtLst();
   const Scope *scopeLevel = currentScope;
+
+  // Leave the expression scopes, which hold the temporaries of the expression that is evaluated. Only the ones that were already
+  // constructed are destructed here, since the others do not have an address yet
+  while (scopeLevel->type == ScopeType::EXPR_BODY) {
+    generateTemporariesCleanup(scopeLevel, node);
+    scopeLevel = scopeLevel->parent;
+  }
+
+  // Leave the scope of the statement, if the jump originates from its header. The body was not entered yet, or it was already
+  // left, so there is nothing of it to clean up. A variable that the header declares itself (the one of a for loop) is not
+  // destructed on this path.
+  if (scopeLevel != targetScope && isInStatementHeader(node))
+    scopeLevel = scopeLevel->parent;
+
+  const StmtLstNode *scope = node->getNextOuterStmtLst();
   while (true) {
     generateScopeCleanup(scope);
     if (scopeLevel == targetScope)

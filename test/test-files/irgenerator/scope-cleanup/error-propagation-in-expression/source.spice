@@ -1,0 +1,185 @@
+// The error propagation operator '!' returns from the enclosing function in the middle of an expression. To do so, it has to
+// clean up all scopes it leaves, and that includes the scopes that only hold the temporaries of an expression (a condition, the
+// right side of '&&' and '||', a branch of a ternary). Those have no statement list, unlike all the other scopes, and a
+// condition (or the head of a for loop) is evaluated in the scope of its statement, but is not part of the statement's body.
+//
+// Every Tracked counts itself in LIVE, which is why the number of live instances has to be back at 1 (the one main keeps)
+// after every call, whether it leaked an object (more) or destructed one that was never constructed (less).
+
+public int LIVE = 0;
+
+type Tracked struct {
+    int id
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    LIVE++;
+}
+
+p Tracked.dtor() {
+    LIVE--;
+}
+
+public f<bool> operator==(const Tracked& lhs, const Tracked& rhs) {
+    return lhs.id == rhs.id;
+}
+
+f<Tracked> make(int id) {
+    Tracked t = Tracked(id);
+    return t;
+}
+
+f<Result<int>> mightFail(bool doFail) {
+    if doFail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+p report(string name, Result<int>& result) {
+    if result.isErr() {
+        printf("%s: error code=%d live=%d\n", name, result.getErr().code, LIVE);
+    } else {
+        printf("%s: ok value=%d live=%d\n", name, result.unwrap(), LIVE);
+    }
+}
+
+// The '!' is in a scope that only holds the temporaries of an expression
+f<Result<int>> onTheRightOfAnd(bool doFail) {
+    bool good = true && mightFail(doFail)! == 7;
+    return ok<int>(good ? 1 : 0);
+}
+
+f<Result<int>> onTheRightOfOr(bool doFail) {
+    bool good = false || mightFail(doFail)! == 7;
+    return ok<int>(good ? 1 : 0);
+}
+
+f<Result<int>> inNestedOperands(bool doFail) {
+    bool good = true && (false || mightFail(doFail)! == 7);
+    return ok<int>(good ? 1 : 0);
+}
+
+f<Result<int>> inTernaryBranch(bool doFail) {
+    bool flag = true;
+    int value = flag ? mightFail(doFail)! : 0;
+    return ok<int>(value);
+}
+
+// The '!' is in the condition, which is evaluated in the scope of its statement, but is not part of the body of the statement
+f<Result<int>> inIfCondition(bool doFail) {
+    if mightFail(doFail)! == 7 {
+        return ok<int>(1);
+    }
+    return ok<int>(0);
+}
+
+f<Result<int>> inElseIfCondition(bool doFail) {
+    if false {
+        return ok<int>(1);
+    } else if mightFail(doFail)! == 7 {
+        return ok<int>(2);
+    }
+    return ok<int>(0);
+}
+
+f<Result<int>> inWhileCondition(bool doFail) {
+    int rounds = 0;
+    while mightFail(doFail)! == 7 && rounds < 2 {
+        rounds++;
+    }
+    return ok<int>(rounds);
+}
+
+f<Result<int>> inDoWhileCondition(bool doFail) {
+    int rounds = 0;
+    do {
+        rounds++;
+    } while mightFail(doFail)! == 7 && rounds < 2;
+    return ok<int>(rounds);
+}
+
+f<Result<int>> inForCondition(bool doFail) {
+    int rounds = 0;
+    for int i = 0; mightFail(doFail)! == 7 && i < 2; i++ {
+        rounds++;
+    }
+    return ok<int>(rounds);
+}
+
+// Temporaries that are constructed before the '!' are still alive when it is evaluated and have to be destructed
+f<Result<int>> afterTemporaryInStatement(Tracked& local, bool doFail) {
+    bool good = make(1) == local && mightFail(doFail)! == 7;
+    return ok<int>(good ? 1 : 0);
+}
+
+f<Result<int>> afterTemporaryInCondition(Tracked& local, bool doFail) {
+    if make(1) == local && mightFail(doFail)! == 7 {
+        return ok<int>(1);
+    }
+    return ok<int>(0);
+}
+
+f<Result<int>> afterTemporaryInTernaryBranch(bool doFail) {
+    bool flag = true;
+    int value = flag ? make(1).id + mightFail(doFail)! : 0;
+    return ok<int>(value);
+}
+
+f<int> main() {
+    Tracked local = make(1);
+    Result<int> outcome = ok<int>(0);
+
+    outcome = onTheRightOfAnd(false);
+    report("onTheRightOfAnd(false)", outcome);
+    outcome = onTheRightOfAnd(true);
+    report("onTheRightOfAnd(true)", outcome);
+    outcome = onTheRightOfOr(false);
+    report("onTheRightOfOr(false)", outcome);
+    outcome = onTheRightOfOr(true);
+    report("onTheRightOfOr(true)", outcome);
+    outcome = inNestedOperands(false);
+    report("inNestedOperands(false)", outcome);
+    outcome = inNestedOperands(true);
+    report("inNestedOperands(true)", outcome);
+    outcome = inTernaryBranch(false);
+    report("inTernaryBranch(false)", outcome);
+    outcome = inTernaryBranch(true);
+    report("inTernaryBranch(true)", outcome);
+
+    outcome = inIfCondition(false);
+    report("inIfCondition(false)", outcome);
+    outcome = inIfCondition(true);
+    report("inIfCondition(true)", outcome);
+    outcome = inElseIfCondition(false);
+    report("inElseIfCondition(false)", outcome);
+    outcome = inElseIfCondition(true);
+    report("inElseIfCondition(true)", outcome);
+    outcome = inWhileCondition(false);
+    report("inWhileCondition(false)", outcome);
+    outcome = inWhileCondition(true);
+    report("inWhileCondition(true)", outcome);
+    outcome = inDoWhileCondition(false);
+    report("inDoWhileCondition(false)", outcome);
+    outcome = inDoWhileCondition(true);
+    report("inDoWhileCondition(true)", outcome);
+    outcome = inForCondition(false);
+    report("inForCondition(false)", outcome);
+    outcome = inForCondition(true);
+    report("inForCondition(true)", outcome);
+
+    outcome = afterTemporaryInStatement(local, false);
+    report("afterTemporaryInStatement(false)", outcome);
+    outcome = afterTemporaryInStatement(local, true);
+    report("afterTemporaryInStatement(true)", outcome);
+    outcome = afterTemporaryInCondition(local, false);
+    report("afterTemporaryInCondition(false)", outcome);
+    outcome = afterTemporaryInCondition(local, true);
+    report("afterTemporaryInCondition(true)", outcome);
+    outcome = afterTemporaryInTernaryBranch(false);
+    report("afterTemporaryInTernaryBranch(false)", outcome);
+    outcome = afterTemporaryInTernaryBranch(true);
+    report("afterTemporaryInTernaryBranch(true)", outcome);
+    return 0;
+}
