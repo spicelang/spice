@@ -69,11 +69,16 @@ public f<unsigned long> SymbolTable.getFieldCount() {
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-public p SymbolTable.insert(const String& name, const ASTNode* declNode) {
+public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode* declNode) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
     const unsigned long orderIndex = cast<unsigned long>(this.symbols.getSize());
-    // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
-    // ToDo: Implement
+    // Insert into symbols map. The type is left as an unresolved 'dyn' QualType, because concrete types are
+    // determined by the type checker later on (matches how Function.thisType/returnType default before
+    // being resolved).
+    const QualType qualType = QualType(SuperType::TY_DYN);
+    SymbolTableEntry entry = SymbolTableEntry(name, qualType, this.scope, cast<ASTNode*>(declNode), orderIndex, isGlobal);
+    this.symbols.upsert(name, entry);
+    return &this.symbols.get(name);
 }
 
 /**

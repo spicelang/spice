@@ -4,6 +4,7 @@ import "std/data/vector";
 import "std/data/pair";
 
 // Own imports
+import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
@@ -101,6 +102,27 @@ public f<ScopeType> Scope.getScopeType() {
 public f<unsigned long> Scope.getFieldCount() {
     assert this.scopeType == ScopeType::STRUCT;
     return this.symbolTable.getFieldCount();
+}
+
+/**
+ * Insert a new symbol into the current scope
+ *
+ * @param name Name of the symbol
+ * @param declNode AST node where the symbol is declared
+ * @return Inserted entry
+ */
+public f<SymbolTableEntry*> Scope.insert(const String& name, const ASTNode* declNode) {
+    return this.symbolTable.insert(name, declNode);
+}
+
+/**
+ * Check if a symbol exists in the current scope only (does not walk up to parent scopes)
+ *
+ * @param name Name of the symbol
+ * @return Entry, or nil if not found
+ */
+public f<SymbolTableEntry*> Scope.lookupStrict(const String& name) {
+    return this.symbolTable.lookupStrict(name);
 }
 
 /**
