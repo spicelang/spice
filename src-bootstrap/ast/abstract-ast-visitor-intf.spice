@@ -21,6 +21,7 @@ public type IAbstractAstVisitor interface {
     public f<Any> visitFctName(ASTFctNameNode*);
     public f<Any> visitStructDef(ASTStructDefNode*);
     public f<Any> visitInterfaceDef(ASTInterfaceDefNode*);
+    public f<Any> visitUnionDef(ASTUnionDefNode*);
     public f<Any> visitEnumDef(ASTEnumDefNode*);
     public f<Any> visitGenericTypeDef(ASTGenericTypeDefNode*);
     public f<Any> visitAliasDef(ASTAliasDefNode*);

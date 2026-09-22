@@ -8,6 +8,9 @@ import "bootstrap/model/function-intf";
 import "bootstrap/model/struct-intf";
 import "bootstrap/model/interface-intf";
 import "bootstrap/reader/code-loc";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope";
 //import "bootstrap/symboltablebuilder/qual-type";
 //import "bootstrap/model/function";
 
@@ -258,6 +261,30 @@ public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
 }
 public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitInterfaceDef(this);
+}
+
+
+// ========================================================== UnionDefNode =======================================================
+
+// Note: fields deliberately deferred (attrs/fields/qualifierLst reference node types declared
+// later in this file; Spice requires same-file struct/interface types to be defined before use,
+// so populating these needs the file reordered first — see PR discussion).
+public type ASTUnionDefNode struct : IVisitable {
+    compose public ASTTopLevelDefNode node
+
+    String unionName
+    bool hasTemplateTypes = false
+    TypeQualifiers qualifiers
+    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    unsigned long typeId
+    Scope* unionScope = nil<Scope*>
+}
+
+public p ASTUnionDefNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTTopLevelDefNode(codeLoc);
+}
+public f<Any> ASTUnionDefNode.accept(IAbstractAstVisitor* visitor) {
+    return visitor.visitUnionDef(this);
 }
 
 
