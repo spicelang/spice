@@ -1496,14 +1496,15 @@ f<ASTTernaryExprNode*> Parser.parseTernaryExpr() {
     dyn ternaryExprNode = this.createNode<ASTTernaryExprNode>();
 
     // Parse lhs
-    this.parseLogicalOrExpr();
+    ternaryExprNode.condition = this.parseLogicalOrExpr();
 
-    // Parse both rhs branches
+    // Parse both rhs branches. Note: the shortened/Elvis form (COND ?: FALSE_EXPR, with the middle
+    // operand omitted) is not currently accepted by this grammar, so isShortened is never set here.
     if this.currentTokenIs(TokenType::QUESTION_MARK) {
         this.expect(TokenType::QUESTION_MARK);
-        this.parseLogicalOrExpr();
+        ternaryExprNode.trueExpr = this.parseLogicalOrExpr();
         this.expect(TokenType::COLON);
-        this.parseLogicalOrExpr();
+        ternaryExprNode.falseExpr = this.parseLogicalOrExpr();
     }
 
     return this.concludeNode(ternaryExprNode);
@@ -1513,12 +1514,12 @@ f<ASTLogicalOrExprNode*> Parser.parseLogicalOrExpr() {
     dyn logicalOrExprNode = this.createNode<ASTLogicalOrExprNode>();
 
     // Parse lhs
-    this.parseLogicalAndExpr();
+    logicalOrExprNode.operands.pushBack(cast<IVisitable*>(this.parseLogicalAndExpr()));
 
     // Parse rhs
     while this.currentTokenIs(TokenType::LOGICAL_OR) {
         this.expect(TokenType::LOGICAL_OR);
-        this.parseLogicalAndExpr();
+        logicalOrExprNode.operands.pushBack(cast<IVisitable*>(this.parseLogicalAndExpr()));
     }
 
     return this.concludeNode(logicalOrExprNode);
@@ -1528,12 +1529,12 @@ f<ASTLogicalAndExprNode*> Parser.parseLogicalAndExpr() {
     dyn logicalAndExprNode = this.createNode<ASTLogicalAndExprNode>();
 
     // Parse lhs
-    this.parseBitwiseOrExpr();
+    logicalAndExprNode.operands.pushBack(cast<IVisitable*>(this.parseBitwiseOrExpr()));
 
     // Parse rhs
     while this.currentTokenIs(TokenType::LOGICAL_AND) {
         this.expect(TokenType::LOGICAL_AND);
-        this.parseBitwiseOrExpr();
+        logicalAndExprNode.operands.pushBack(cast<IVisitable*>(this.parseBitwiseOrExpr()));
     }
 
     return this.concludeNode(logicalAndExprNode);
@@ -1911,16 +1912,17 @@ f<ASTLambdaFuncNode*> Parser.parseLambdaFunc() {
     this.consumeGenericClose();
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaFuncNode.hasParams = true;
+        lambdaFuncNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
-        this.parseLambdaAttr();
+        lambdaFuncNode.lambdaAttr = this.parseLambdaAttr();
     }
 
-    this.parseStmtLst();
+    lambdaFuncNode.body = this.parseStmtLst();
 
     return this.concludeNode(lambdaFuncNode);
 }
@@ -1933,17 +1935,18 @@ f<ASTLambdaProcNode*> Parser.parseLambdaProc() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaProcNode.hasParams = true;
+        lambdaProcNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
-        this.parseLambdaAttr();
+        lambdaProcNode.lambdaAttr = this.parseLambdaAttr();
     }
 
     // Parse
-    this.parseStmtLst();
+    lambdaProcNode.body = this.parseStmtLst();
 
     return this.concludeNode(lambdaProcNode);
 }
@@ -1954,12 +1957,13 @@ f<ASTLambdaExprNode*> Parser.parseLambdaExpr() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaExprNode.hasParams = true;
+        lambdaExprNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     this.expect(TokenType::ARROW);
-    this.parseAssignExpr();
+    lambdaExprNode.lambdaExpr = this.parseAssignExpr();
 
     return this.concludeNode(lambdaExprNode);
 }
