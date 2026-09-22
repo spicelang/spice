@@ -11,7 +11,9 @@ public type CliErrorType enum {
     FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
     INVALID_BUILD_MODE,
     INVALID_OUTPUT_CONTAINER,
-    INVALID_SANITIZER
+    INVALID_SANITIZER,
+    INVALID_BACKEND,
+    INVALID_DEBUG_INFO_LEVEL
 }
 
 /**
@@ -58,6 +60,8 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::INVALID_BUILD_MODE: { return "Invalid build mode"; }
         case CliErrorType::INVALID_OUTPUT_CONTAINER: { return "Invalid output container"; }
         case CliErrorType::INVALID_SANITIZER: { return "Invalid sanitizer"; }
+        case CliErrorType::INVALID_BACKEND: { return "Invalid backend"; }
+        case CliErrorType::INVALID_DEBUG_INFO_LEVEL: { return "Invalid debug info level"; }
         default: { panic(Error("Unknown error")); }
     }
 }
