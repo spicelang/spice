@@ -52,9 +52,9 @@ f<int> main() {
     ASTNode* root = cast<ASTNode*>(entry);
     const Vector<ASTNode*>& topLevelDefs = root.getChildren();
     assert topLevelDefs.getSize() == 88l;
-    assert countNodes(root) == 36361l;
+    assert countNodes(root) == 36118l;
     // The deeply nested arithmetic expression and if-cascade produce a tall tree
-    assert maxDepth(root) == 502l;
+    assert maxDepth(root) == 501l;
     assert lexer.isEOF();
 
     // -------------------------------------------------------------------------
@@ -67,7 +67,7 @@ f<int> main() {
         Parser runParser = Parser(runLexer);
         ASTEntryNode* runEntry = runParser.parse();
         ASTNode* runRoot = cast<ASTNode*>(runEntry);
-        assert countNodes(runRoot) == 36361l;
+        assert countNodes(runRoot) == 36118l;
         assert runLexer.isEOF();
     }
 

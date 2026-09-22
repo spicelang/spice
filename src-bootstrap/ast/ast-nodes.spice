@@ -10,7 +10,7 @@ import "bootstrap/model/interface-intf";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/ast/attributes";
 //import "bootstrap/symboltablebuilder/qual-type";
 //import "bootstrap/model/function";
@@ -377,7 +377,7 @@ public type ASTMainFctDefNode struct : IVisitable {
     public IVisitable* body = nil<IVisitable*>
     public bool takesArgs = false
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
@@ -426,8 +426,8 @@ public type ASTFctDefBaseNode struct/*: IVisitable*/ {
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    public Scope* structScope = nil<Scope*>
-    public Scope* scope = nil<Scope*>
+    public IScope* structScope = nil<IScope*>
+    public IScope* scope = nil<IScope*>
 }
 
 public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
@@ -488,7 +488,7 @@ public type ASTStructDefNode struct : IVisitable {
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public unsigned long typeId
-    public Scope* structScope = nil<Scope*>
+    public IScope* structScope = nil<IScope*>
 }
 
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
@@ -511,7 +511,7 @@ public type ASTInterfaceDefNode struct : IVisitable {
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public unsigned long typeId
-    public Scope* interfaceScope = nil<Scope*>
+    public IScope* interfaceScope = nil<IScope*>
 }
 
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
@@ -535,7 +535,7 @@ public type ASTUnionDefNode struct : IVisitable {
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public unsigned long typeId
-    public Scope* unionScope = nil<Scope*>
+    public IScope* unionScope = nil<IScope*>
 }
 
 public p ASTUnionDefNode.ctor(CodeLoc codeLoc) {
@@ -557,7 +557,7 @@ public type ASTEnumDefNode struct : IVisitable {
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public unsigned long typeId
-    public Scope* enumScope = nil<Scope*>
+    public IScope* enumScope = nil<IScope*>
 }
 
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
@@ -670,7 +670,7 @@ public type ASTUnsafeBlockNode struct : IVisitable {
     compose public ASTStmtNode node
 
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
@@ -693,7 +693,7 @@ public type ASTForLoopNode struct : IVisitable {
     public IVisitable* initDecl = nil<IVisitable*>
     public IVisitable* condAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
@@ -716,7 +716,7 @@ public type ASTForeachLoopNode struct : IVisitable {
     public IVisitable* idxVarDecl = nil<IVisitable*>
     public IVisitable* itemVarDecl = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
@@ -738,7 +738,7 @@ public type ASTWhileLoopNode struct : IVisitable {
 
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
@@ -760,7 +760,7 @@ public type ASTDoWhileLoopNode struct : IVisitable {
 
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
@@ -782,7 +782,7 @@ public type ASTIfStmtNode struct : IVisitable {
 
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* thenBody = nil<IVisitable*>
-    public Scope* thenBodyScope = nil<Scope*>
+    public IScope* thenBodyScope = nil<IScope*>
     public IVisitable* elseStmt = nil<IVisitable*>
 }
 
@@ -806,7 +806,7 @@ public type ASTElseStmtNode struct : IVisitable {
     public bool isElseIf = false
     public IVisitable* ifStmt = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* elseBodyScope = nil<Scope*>
+    public IScope* elseBodyScope = nil<IScope*>
 }
 
 public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
@@ -842,7 +842,7 @@ public type ASTCaseBranchNode struct : IVisitable {
     compose public ASTNode node
 
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTCaseBranchNode.ctor(CodeLoc codeLoc) {
@@ -863,7 +863,7 @@ public type ASTDefaultBranchNode struct : IVisitable {
     compose public ASTNode node
 
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
@@ -884,7 +884,7 @@ public type ASTAnonymousBlockStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
@@ -1546,7 +1546,7 @@ public type ASTLambdaFuncNode struct : IVisitable {
     public bool hasParams = false
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
@@ -1570,7 +1570,7 @@ public type ASTLambdaProcNode struct : IVisitable {
     public bool hasParams = false
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
@@ -1593,7 +1593,7 @@ public type ASTLambdaExprNode struct : IVisitable {
     public bool hasParams = false
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* lambdaExpr = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
+    public IScope* bodyScope = nil<IScope*>
 }
 
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
