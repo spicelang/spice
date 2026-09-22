@@ -877,23 +877,24 @@ f<ASTForLoopNode*> Parser.parseForLoop() {
     // Parse head
     if this.currentTokenIs(TokenType::LPAREN) {
         this.expect(TokenType::LPAREN);
-        this.parseForHead();
+        this.parseForHead(forLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
-        this.parseForHead();
+        this.parseForHead(forLoopNode);
     }
 
     // Parse stmtLst
-    this.parseStmtLst();
+    forLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(forLoopNode);
 }
 
-p Parser.parseForHead() {
-    this.parseDeclStmt();
+p Parser.parseForHead(ASTForLoopNode* forLoopNode) {
+    forLoopNode.initDecl = this.parseDeclStmt();
     this.expect(TokenType::SEMICOLON);
-    this.parseAssignExpr();
+    forLoopNode.condAssign = this.parseAssignExpr();
     this.expect(TokenType::SEMICOLON);
+    // incAssign is not captured into a field: neither ImportCollector nor SymbolTableBuilder read it.
     this.parseAssignExpr();
 }
 
@@ -905,23 +906,27 @@ f<ASTForeachLoopNode*> Parser.parseForeachLoop() {
     // Parse head
     if this.currentTokenIs(TokenType::LPAREN) {
         this.expect(TokenType::LPAREN);
-        this.parseForeachHead();
+        this.parseForeachHead(foreachLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
-        this.parseForeachHead();
+        this.parseForeachHead(foreachLoopNode);
     }
 
     // Parse stmtLst
-    this.parseStmtLst();
+    foreachLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(foreachLoopNode);
 }
 
-p Parser.parseForeachHead() {
-    this.parseDeclStmt();
+p Parser.parseForeachHead(ASTForeachLoopNode* foreachLoopNode) {
+    ASTDeclStmtNode* firstDecl = this.parseDeclStmt();
     if this.currentTokenIs(TokenType::COMMA) {
+        // Two declarations given: the first is the index, the second is the item
+        foreachLoopNode.idxVarDecl = firstDecl;
         this.expect(TokenType::COMMA);
-        this.parseDeclStmt();
+        foreachLoopNode.itemVarDecl = this.parseDeclStmt();
+    } else {
+        foreachLoopNode.itemVarDecl = firstDecl;
     }
     this.expect(TokenType::COLON);
     this.parseAssignExpr();
@@ -933,10 +938,10 @@ f<ASTWhileLoopNode*> Parser.parseWhileLoop() {
     this.expect(TokenType::WHILE);
 
     // Parse head
-    this.parseAssignExpr();
+    whileLoopNode.condition = this.parseAssignExpr();
 
     // Parse stmtLst
-    this.parseStmtLst();
+    whileLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(whileLoopNode);
 }
@@ -947,11 +952,11 @@ f<ASTDoWhileLoopNode*> Parser.parseDoWhileLoop() {
     this.expect(TokenType::DO);
 
     // Parse stmtLst
-    this.parseStmtLst();
+    doWhileLoopNode.body = this.parseStmtLst();
 
     // Parse foot
     this.expect(TokenType::WHILE);
-    this.parseAssignExpr();
+    doWhileLoopNode.condition = this.parseAssignExpr();
     this.expect(TokenType::SEMICOLON);
 
     return this.concludeNode(doWhileLoopNode);
@@ -963,14 +968,14 @@ f<ASTIfStmtNode*> Parser.parseIfStmt() {
     this.expect(TokenType::IF);
 
     // Parse head
-    this.parseAssignExpr();
+    ifStmtNode.condition = this.parseAssignExpr();
 
     // Parse stmtLst
-    this.parseStmtLst();
+    ifStmtNode.thenBody = this.parseStmtLst();
 
     // Parse else
     if this.currentTokenIs(TokenType::ELSE) {
-        this.parseElseStmt();
+        ifStmtNode.elseStmt = this.parseElseStmt();
     }
 
     return this.concludeNode(ifStmtNode);
@@ -982,9 +987,10 @@ f<ASTElseStmtNode*> Parser.parseElseStmt() {
     this.expect(TokenType::ELSE);
 
     if this.currentTokenIs(TokenType::IF) { // Else if
-        this.parseIfStmt();
+        elseStmtNode.isElseIf = true;
+        elseStmtNode.ifStmt = this.parseIfStmt();
     } else { // Else
-        this.parseStmtLst();
+        elseStmtNode.body = this.parseStmtLst();
     }
 
     return this.concludeNode(elseStmtNode);
@@ -1017,7 +1023,7 @@ f<ASTCaseBranchNode*> Parser.parseCaseBranch() {
         this.parseCaseConstant();
     }
     this.expect(TokenType::COLON);
-    this.parseStmtLst();
+    caseBranchNode.body = this.parseStmtLst();
 
     return this.concludeNode(caseBranchNode);
 }
@@ -1027,7 +1033,7 @@ f<ASTDefaultBranchNode*> Parser.parseDefaultBranch() {
 
     this.expect(TokenType::DEFAULT);
     this.expect(TokenType::COLON);
-    this.parseStmtLst();
+    defaultBranchNode.body = this.parseStmtLst();
 
     return this.concludeNode(defaultBranchNode);
 }
