@@ -944,11 +944,33 @@ public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 
+// ========================================================== DeclStmtNode =======================================================
+// Declared before ParamLstNode (which composes a Vector<ASTDeclStmtNode*> below) since parseParamLst
+// back-annotates each param's 'isFctParam' field directly (not via dispatch), so the list needs to stay
+// concretely typed, which in turn needs DeclStmtNode defined first (same-file ordering rule).
+
+public type ASTDeclStmtNode struct : IVisitable {
+    compose public ASTStmtNode node
+
+    public String varName
+    public bool hasAssignment = false
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public bool isFctParam = false
+}
+
+public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTStmtNode(codeLoc);
+}
+public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
+    return visitor.visitDeclStmt(this);
+}
+
+
 // ========================================================== ParamLstNode =======================================================
 
 public type ASTParamLstNode struct : IVisitable {
     compose public ASTNode node
-    public Vector<IVisitable*> params
+    public Vector<ASTDeclStmtNode*> params
 }
 
 public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
@@ -1048,28 +1070,12 @@ public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== DeclStmtNode =======================================================
 
-public type ASTDeclStmtNode struct : IVisitable {
-    compose public ASTStmtNode node
-
-    public String varName
-    public bool hasAssignment = false
-    public IVisitable* assignExpr = nil<IVisitable*>
-    public bool isFctParam = false
-}
-
-public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTStmtNode(codeLoc);
-}
-public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
-    return visitor.visitDeclStmt(this);
-}
-
-
 // ========================================================== ExprStmtNode =======================================================
 
 public type ASTExprStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public IVisitable* expr = nil<IVisitable*>
 }
 
 public p ASTExprStmtNode.ctor(CodeLoc codeLoc) {

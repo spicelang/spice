@@ -863,7 +863,8 @@ f<ASTUnsafeBlockNode*> Parser.parseUnsafeBlock() {
     dyn unsafeBlockNode = this.createNode<ASTUnsafeBlockNode>();
 
     this.expect(TokenType::UNSAFE);
-    this.parseStmtLst();
+    ASTStmtLstNode* body = this.parseStmtLst();
+    unsafeBlockNode.body = body;
 
     return this.concludeNode(unsafeBlockNode);
 }
@@ -1034,7 +1035,7 @@ f<ASTDefaultBranchNode*> Parser.parseDefaultBranch() {
 f<ASTAnonymousBlockStmtNode*> Parser.parseAnonymousBlockStmt() {
     dyn anonymousBlockStmtNode = this.createNode<ASTAnonymousBlockStmtNode>();
 
-    this.parseStmtLst();
+    anonymousBlockStmtNode.body = this.parseStmtLst();
 
     return this.concludeNode(anonymousBlockStmtNode);
 }
@@ -1047,25 +1048,25 @@ f<ASTStmtLstNode*> Parser.parseStmtLst() {
     this.expect(TokenType::LBRACE);
     while !this.currentTokenIs(TokenType::RBRACE) && !this.currentTokenIs(TokenType::EOF) {
         if this.currentTokenIs(TokenType::FOR) {
-            this.parseForLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseForLoop()));
         } else if this.currentTokenIs(TokenType::FOREACH) {
-            this.parseForeachLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseForeachLoop()));
         } else if this.currentTokenIs(TokenType::WHILE) {
-            this.parseWhileLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseWhileLoop()));
         } else if this.currentTokenIs(TokenType::DO) {
-            this.parseDoWhileLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseDoWhileLoop()));
         } else if this.currentTokenIs(TokenType::IF) {
-            this.parseIfStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseIfStmt()));
         } else if this.currentTokenIs(TokenType::SWITCH) {
-            this.parseSwitchStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseSwitchStmt()));
         } else if this.currentTokenIs(TokenType::ASSERT) {
-            this.parseAssertStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseAssertStmt()));
         } else if this.currentTokenIs(TokenType::UNSAFE) {
-            this.parseUnsafeBlock();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseUnsafeBlock()));
         } else if this.currentTokenIs(TokenType::LBRACE) {
-            this.parseAnonymousBlockStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseAnonymousBlockStmt()));
         } else {
-            this.parseStmt();
+            stmtLstNode.stmts.pushBack(this.parseStmt());
         }
     }
     this.expect(TokenType::RBRACE);
@@ -1100,10 +1101,15 @@ f<ASTTypeAltsLstNode*> Parser.parseTypeAltsLst() {
 f<ASTParamLstNode*> Parser.parseParamLst() {
     dyn paramLstNode = this.createNode<ASTParamLstNode>();
 
-    this.parseDeclStmt();
+    paramLstNode.params.pushBack(this.parseDeclStmt());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseDeclStmt();
+        paramLstNode.params.pushBack(this.parseDeclStmt());
+    }
+
+    // Mark each declaration as a function parameter (matches host semantics)
+    foreach ASTDeclStmtNode* param : paramLstNode.params {
+        param.isFctParam = true;
     }
 
     return this.concludeNode(paramLstNode);
@@ -1206,26 +1212,30 @@ f<ASTSignatureNode*> Parser.parseSignature() {
 }
 
 // stmt: (declStmt | exprStmt | returnStmt | breakStmt | continueStmt | fallthroughStmt) SEMICOLON;
-f<ASTStmtNode*> Parser.parseStmt() {
-    dyn stmtNode = this.createNode<ASTStmtNode>();
+// Returns the actual matched node (as IVisitable*), not a generic wrapper, matching host's
+// ASTBuilder::visitStmt (which upcasts whichever alternative matched to the common StmtNode* type).
+f<IVisitable*> Parser.parseStmt() {
+    IVisitable* stmtNode = nil<IVisitable*>;
 
     if this.currentTokenIs(TokenType::RETURN) {
-        this.parseReturnStmt();
+        stmtNode = this.parseReturnStmt();
     } else if this.currentTokenIs(TokenType::BREAK) {
-        this.parseBreakStmt();
+        stmtNode = this.parseBreakStmt();
     } else if this.currentTokenIs(TokenType::CONTINUE) {
-        this.parseContinueStmt();
+        stmtNode = this.parseContinueStmt();
     } else if this.currentTokenIs(TokenType::FALLTHROUGH) {
-        this.parseFallthroughStmt();
+        stmtNode = this.parseFallthroughStmt();
     } else if this.isDeclStmtAhead() {
-        this.parseDeclStmt();
+        stmtNode = this.parseDeclStmt();
     } else {
         // exprStmt
-        this.parseAssignExpr();
+        dyn exprStmtNode = this.createNode<ASTExprStmtNode>();
+        exprStmtNode.expr = this.parseAssignExpr();
+        stmtNode = this.concludeNode(exprStmtNode);
     }
     this.expect(TokenType::SEMICOLON);
 
-    return this.concludeNode(stmtNode);
+    return stmtNode;
 }
 
 f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
@@ -1234,12 +1244,14 @@ f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
     // Parse dataType
     this.parseDataType();
 
+    declStmtNode.varName = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
 
     // Parse initializer
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
-        this.parseAssignExpr();
+        declStmtNode.hasAssignment = true;
+        declStmtNode.assignExpr = this.parseAssignExpr();
     }
 
     return this.concludeNode(declStmtNode);
