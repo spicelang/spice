@@ -18,7 +18,8 @@ public type ScopeType enum {
     CASE_BODY,
     DEFAULT_BODY,
     UNSAFE_BODY,
-    ANONYMOUS_BLOCK_BODY
+    ANONYMOUS_BLOCK_BODY,
+    EXPR_BODY
 }
 
 public type IScope interface {

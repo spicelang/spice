@@ -55,6 +55,7 @@ public type SemanticErrorType enum {
     PRINTF_ARG_COUNT_ERROR,
     DUPLICATE_IMPORT_NAME,
     IMPORTED_FILE_NOT_EXISTING,
+    INVALID_IMPORT_PATH,
     CIRCULAR_DEPENDENCY,
     ACCESS_TO_NON_EXISTING_MEMBER,
     INVALID_MEMBER_ACCESS,
@@ -180,6 +181,7 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::PRINTF_ARG_COUNT_ERROR: { return "Printf arg number not matching template string"; }
         case SemanticErrorType::DUPLICATE_IMPORT_NAME: { return "Duplicate import name"; }
         case SemanticErrorType::IMPORTED_FILE_NOT_EXISTING: { return "Imported source file not existing"; }
+        case SemanticErrorType::INVALID_IMPORT_PATH: { return "Invalid import path"; }
         case SemanticErrorType::CIRCULAR_DEPENDENCY: { return "Circular import detected"; }
         case SemanticErrorType::ACCESS_TO_NON_EXISTING_MEMBER: { return "Access to non-existing member"; }
         case SemanticErrorType::INVALID_MEMBER_ACCESS: { return "Member access is only allowed on structs and Strings"; }

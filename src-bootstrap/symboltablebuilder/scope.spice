@@ -36,6 +36,7 @@ import "bootstrap/util/memory";
  * - while loops
  * - if statements
  * - anonymous scopes
+ * - conditions, and expressions that are only evaluated conditionally (e.g. the right side of '&&' and '||')
  */
 public type Scope struct : IScope {
     // Public members

@@ -12,13 +12,15 @@ const string RESULT_RT_IMPORT_NAME = "__rt_result";
 const string ERROR_RT_IMPORT_NAME = "__rt_error";
 const string MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const string RTTI_RT_IMPORT_NAME = "__rt_rtti";
+const string STACK_TRACE_RT_IMPORT_NAME = "__rt_stack_trace";
 
 public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
     ERROR_RT  = 4,
     MEMORY_RT = 8,
-    RTTI_RT   = 16
+    RTTI_RT   = 16,
+    STACK_TRACE_RT = 32
 }
 
 type ModuleNamePair struct {
@@ -97,6 +99,9 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
         }
         case RuntimeModule::RTTI_RT: {
             return ModuleNamePair{RTTI_RT_IMPORT_NAME, "rtti_rt"};
+        }
+        case RuntimeModule::STACK_TRACE_RT: {
+            return ModuleNamePair{STACK_TRACE_RT_IMPORT_NAME, "stack_trace_rt"};
         }
         default: {
             panic(Error("Requested unknown runtime module"));
