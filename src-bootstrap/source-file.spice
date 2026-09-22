@@ -94,6 +94,10 @@ public type SourceFile struct : ISourceFile {
     public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
+    public bool explicitErrorHandling = false
+    public bool errorReturnTracing = false
+    public Vector<String> sourceLinkerFlags
+    public Vector<FilePath> sourceAdditionalSourcePaths
     public bool restoredFromCache = false
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
