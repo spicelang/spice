@@ -10,7 +10,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-LLVM_VERSION="llvmorg-23.1.1"
+LLVM_VERSION="llvmorg-23.1.2"
 LLVM_MAJOR="${LLVM_VERSION#llvmorg-}"
 LLVM_MAJOR="${LLVM_MAJOR%%.*}"
 GCC_VERSION="16"
