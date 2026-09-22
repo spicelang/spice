@@ -6,6 +6,7 @@ import "std/data/stack";
 import "bootstrap/lexer/lexer";
 import "bootstrap/lexer/token";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/attributes";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
@@ -724,11 +725,17 @@ f<ASTImportDefNode*> Parser.parseImportDef() {
     dyn importDefNode = this.createNode<ASTImportDefNode>();
 
     this.expect(TokenType::IMPORT);
+    // The lexer already strips the surrounding quotes for STRING_LIT tokens, so .text is the raw path.
+    importDefNode.importPath = this.lexer.getToken().text;
     this.expect(TokenType::STRING_LIT);
 
     if this.currentTokenIs(TokenType::AS) {
         this.expect(TokenType::AS);
+        importDefNode.importName = this.lexer.getToken().text;
         this.expect(TokenType::IDENTIFIER);
+    } else {
+        // If no name is given, use the path as the name (matches host semantics)
+        importDefNode.importName = importDefNode.importPath;
     }
     this.expect(TokenType::SEMICOLON);
 
@@ -1120,7 +1127,7 @@ f<ASTQualifierLstNode*> Parser.parseQualifierLst() {
 
     const dyn qualifierSelect = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
     do {
-        this.parseQualifier();
+        qualifierLstNode.qualifiers.pushBack(this.parseQualifier());
     } while this.currentTokenIsOneOf(qualifierSelect, len(qualifierSelect));
 
     return this.concludeNode(qualifierLstNode);
@@ -1162,8 +1169,13 @@ f<ASTModAttrNode*> Parser.parseModAttr() {
 
     this.expect(TokenType::MOD_ATTR_PREAMBLE);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    modAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
+
+    // Tell the attributes that they are module attributes (matches host semantics)
+    foreach ASTAttrNode* attr : modAttrNode.attrLst.attributes {
+        attr.target = AttrTarget::TARGET_MODULE;
+    }
 
     return this.concludeNode(modAttrNode);
 }
@@ -1173,8 +1185,12 @@ f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
 
     this.expect(TokenType::FCT_ATTR_PREAMBLE);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    topLevelDefAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
+
+    // Note: the concrete target (TARGET_FCT_PROC / TARGET_STRUCT / TARGET_INTERFACE / TARGET_UNION /
+    // TARGET_EXT_DECL) depends on which construct this attribute list is attached to, so it is set by
+    // the caller (parseFctDef, parseStructDef, ...), matching host's per-construct target propagation.
 
     return this.concludeNode(topLevelDefAttrNode);
 }
@@ -1184,9 +1200,14 @@ f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
 
     this.expect(TokenType::LBRACKET);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    lambdaAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
     this.expect(TokenType::RBRACKET);
+
+    // Tell the attributes that they are lambda attributes (matches host semantics)
+    foreach ASTAttrNode* attr : lambdaAttrNode.attrLst.attributes {
+        attr.target = AttrTarget::TARGET_LAMBDA;
+    }
 
     return this.concludeNode(lambdaAttrNode);
 }
@@ -1194,10 +1215,10 @@ f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
 f<ASTAttrLstNode*> Parser.parseAttrLst() {
     dyn attrLstNode = this.createNode<ASTAttrLstNode>();
 
-    this.parseAttr();
+    attrLstNode.attributes.pushBack(this.parseAttr());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseAttr();
+        attrLstNode.attributes.pushBack(this.parseAttr());
     }
 
     return this.concludeNode(attrLstNode);
@@ -1207,16 +1228,33 @@ f<ASTAttrNode*> Parser.parseAttr() {
     dyn attrNode = this.createNode<ASTAttrNode>();
 
     // Parse attribute name
+    String key = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
     while this.currentTokenIs(TokenType::DOT) {
         this.expect(TokenType::DOT);
+        key += ".";
+        key += this.lexer.getToken().text;
         this.expect(TokenType::IDENTIFIER);
     }
+    attrNode.key = key;
 
     // Parse attribute value
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
-        this.parseConstant();
+        // Classify the value's type from the upcoming literal token, matching host semantics
+        // (values other than string/int/bool are rejected by later stages, not enforced here).
+        const TokenType valueTok = this.lexer.getToken().tokenType;
+        if valueTok == TokenType::STRING_LIT {
+            attrNode.attrType = AttrType::TYPE_STRING;
+        } else if valueTok == TokenType::INT_LIT {
+            attrNode.attrType = AttrType::TYPE_INT;
+        } else if valueTok == TokenType::TRUE || valueTok == TokenType::FALSE {
+            attrNode.attrType = AttrType::TYPE_BOOL;
+        }
+        attrNode.value = this.parseConstant();
+    } else {
+        // If no value is given, use the bool type (matches host semantics)
+        attrNode.attrType = AttrType::TYPE_BOOL;
     }
 
     return this.concludeNode(attrNode);
@@ -1624,14 +1662,22 @@ f<ASTConstantNode*> Parser.parseConstant() {
     } else if this.currentTokenIs(TokenType::CHAR_LIT) {
         this.expect(TokenType::CHAR_LIT);
     } else if this.currentTokenIs(TokenType::STRING_LIT) {
+        // Note: stringValueOffset is not populated here. It indexes into
+        // GlobalResourceManager.compileTimeStringValues, which the parser has no access to yet (it does
+        // not carry a CompilerPass/resourceManager reference today, see the ToDo on the Parser struct).
         this.expect(TokenType::STRING_LIT);
     } else if this.currentTokenIs(TokenType::TRUE) {
         this.expect(TokenType::TRUE);
+        constantNode.compileTimeValue.boolValue = true;
     } else if this.currentTokenIs(TokenType::FALSE) {
         this.expect(TokenType::FALSE);
+        constantNode.compileTimeValue.boolValue = false;
     } else {
         panic(Error("Expected a constant literal"));
     }
+    // Note: numeric literal (double/int/short/long/char) values are not parsed into compileTimeValue
+    // here since neither ImportCollector nor SymbolTableBuilder need them; only bool/string attribute
+    // values are read by those two passes.
 
     return this.concludeNode(constantNode);
 }

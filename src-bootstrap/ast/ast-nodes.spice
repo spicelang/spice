@@ -42,14 +42,14 @@ public const string OP_FCT_ASSIGN = "op.assign";
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
 public type CompileTimeValue union {
-    double doubleValue
-    int intValue
-    short shortValue
-    long longValue
-    byte byteValue
-    char charValue
-    unsigned long stringValueOffset // Offset into vector of strings in GlobalResourceManager
-    bool boolValue
+    public double doubleValue
+    public int intValue
+    public short shortValue
+    public long longValue
+    public byte byteValue
+    public char charValue
+    public unsigned long stringValueOffset // Offset into vector of strings in GlobalResourceManager
+    public bool boolValue
 }
 
 public type IASTNode interface {
@@ -79,9 +79,9 @@ public type IVisitable interface {
 // =========================================================== ASTNode ===========================================================
 
 public type ASTNode struct/*: IVisitable*/ {
-    ASTNode* parent = nil<ASTNode*>
-    Vector<ASTNode*> children
-    CodeLoc codeLoc
+    public ASTNode* parent = nil<ASTNode*>
+    public Vector<ASTNode*> children
+    public CodeLoc codeLoc
 }
 
 public p ASTNode.ctor(const CodeLoc& codeLoc) {
@@ -124,9 +124,9 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
 public type ASTEntryNode struct {
     compose public ASTNode node
 
-    Vector<IVisitable*> modAttrs
-    Vector<IVisitable*> importDefs
-    Vector<IVisitable*> topLevelDefs
+    public Vector<IVisitable*> modAttrs
+    public Vector<IVisitable*> importDefs
+    public Vector<IVisitable*> topLevelDefs
 }
 
 public p ASTEntryNode.ctor(CodeLoc codeLoc) {
@@ -150,7 +150,7 @@ public p ASTTopLevelDefNode.ctor(CodeLoc codeLoc) {
 
 public type ASTStmtNode struct/*: IVisitable*/ {
     compose public ASTNode node
-    bool unreachable = false
+    public bool unreachable = false
 }
 
 public p ASTStmtNode.ctor(CodeLoc codeLoc) {
@@ -177,7 +177,7 @@ public p ASTExprNode.ctor(CodeLoc codeLoc) {
 
 public type ASTConstantNode struct : IVisitable {
     compose public ASTExprNode node
-    CompileTimeValue compileTimeValue
+    public CompileTimeValue compileTimeValue
 }
 
 public p ASTConstantNode.ctor(CodeLoc codeLoc) {
@@ -191,13 +191,13 @@ public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTAttrNode struct {
     compose public ASTNode node
-    String key
+    public String key
     // Defaults to TARGET_INVALID / ATTR_TYPE_INVALID (both enum ordinal 0) without naming the enum value
     // here: attributes.spice imports this file, so resolving AttrTarget::TARGET_INVALID as a field default
     // can hit a 'used before declared' error depending on which file is the compile entry point.
-    AttrTarget target
-    AttrType attrType
-    ASTConstantNode* value = nil<ASTConstantNode*>
+    public AttrTarget target
+    public AttrType attrType
+    public ASTConstantNode* value = nil<ASTConstantNode*>
 }
 
 public p ASTAttrNode.ctor(CodeLoc codeLoc) {
@@ -220,7 +220,7 @@ public f<const CompileTimeValue*> ASTAttrNode.getValue() {
 
 public type ASTAttrLstNode struct {
     compose public ASTNode node
-    Vector<ASTAttrNode*> attributes
+    public Vector<ASTAttrNode*> attributes
 }
 
 public p ASTAttrLstNode.ctor(CodeLoc codeLoc) {
@@ -297,7 +297,7 @@ public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTQualifierLstNode struct {
     compose public ASTNode node
-    Vector<ASTQualifierNode*> qualifiers
+    public Vector<ASTQualifierNode*> qualifiers
 }
 
 public p ASTQualifierLstNode.ctor(CodeLoc codeLoc) {
@@ -311,7 +311,7 @@ public f<Any> ASTQualifierLstNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTCustomDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
-    Vector<String> typeNameFragments
+    public Vector<String> typeNameFragments
 }
 
 public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
@@ -325,7 +325,7 @@ public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTBaseDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
-    ASTCustomDataTypeNode* customDataType = nil<ASTCustomDataTypeNode*>
+    public ASTCustomDataTypeNode* customDataType = nil<ASTCustomDataTypeNode*>
 }
 
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
@@ -339,7 +339,7 @@ public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
-    ASTBaseDataTypeNode* baseDataType = nil<ASTBaseDataTypeNode*>
+    public ASTBaseDataTypeNode* baseDataType = nil<ASTBaseDataTypeNode*>
 }
 
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
@@ -353,7 +353,7 @@ public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTTypeLstNode struct {
     compose public ASTNode node
-    Vector<ASTDataTypeNode*> dataTypes
+    public Vector<ASTDataTypeNode*> dataTypes
 }
 
 public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {
@@ -368,12 +368,12 @@ public f<Any> ASTTypeLstNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTMainFctDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    IVisitable* paramLst = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    bool takesArgs = false
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public IVisitable* paramLst = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public bool takesArgs = false
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
@@ -393,10 +393,10 @@ public f<String> ASTMainFctDefNode.getScopeId() {
 public type ASTFctNameNode struct {
     compose public ASTNode node
 
-    String name
-    String structName
-    String fqName
-    Vector<String> nameFragments
+    public String name
+    public String structName
+    public String fqName
+    public Vector<String> nameFragments
 }
 
 public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
@@ -412,18 +412,18 @@ public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTFctDefBaseNode struct/*: IVisitable*/ {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    ASTFctNameNode* name = nil<ASTFctNameNode*>
-    bool isMethod = false
-    bool hasTemplateTypes = false
-    bool hasParams = false
-    TypeQualifiers qualifiers
-    IVisitable* paramLst = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    Scope* structScope = nil<Scope*>
-    Scope* scope = nil<Scope*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public ASTFctNameNode* name = nil<ASTFctNameNode*>
+    public bool isMethod = false
+    public bool hasTemplateTypes = false
+    public bool hasParams = false
+    public TypeQualifiers qualifiers
+    public IVisitable* paramLst = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public Scope* structScope = nil<Scope*>
+    public Scope* scope = nil<Scope*>
 }
 
 public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
@@ -454,7 +454,7 @@ public f<String> ASTFctDefNode.getScopeId() {
 public type ASTProcDefNode struct : IVisitable {
     compose public ASTFctDefBaseNode node
 
-    bool isCtor = false
+    public bool isCtor = false
 }
 
 public p ASTProcDefNode.ctor(CodeLoc codeLoc) {
@@ -474,17 +474,17 @@ public f<String> ASTProcDefNode.getScopeId() {
 public type ASTStructDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    String structName
-    bool hasTemplateTypes = false
-    bool hasInterfaces = false
-    ASTTypeLstNode* interfaceTypeLst = nil<ASTTypeLstNode*>
-    Vector<IVisitable*> fields
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers qualifiers
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    unsigned long typeId
-    Scope* structScope = nil<Scope*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public String structName
+    public bool hasTemplateTypes = false
+    public bool hasInterfaces = false
+    public ASTTypeLstNode* interfaceTypeLst = nil<ASTTypeLstNode*>
+    public Vector<IVisitable*> fields
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers qualifiers
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public unsigned long typeId
+    public Scope* structScope = nil<Scope*>
 }
 
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
@@ -500,14 +500,14 @@ public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTInterfaceDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    String interfaceName
-    Vector<IVisitable*> signatures
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers qualifiers
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    unsigned long typeId
-    Scope* interfaceScope = nil<Scope*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public String interfaceName
+    public Vector<IVisitable*> signatures
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers qualifiers
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public unsigned long typeId
+    public Scope* interfaceScope = nil<Scope*>
 }
 
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
@@ -523,15 +523,15 @@ public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTUnionDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    String unionName
-    bool hasTemplateTypes = false
-    Vector<IVisitable*> fields
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers qualifiers
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    unsigned long typeId
-    Scope* unionScope = nil<Scope*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public String unionName
+    public bool hasTemplateTypes = false
+    public Vector<IVisitable*> fields
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers qualifiers
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public unsigned long typeId
+    public Scope* unionScope = nil<Scope*>
 }
 
 public p ASTUnionDefNode.ctor(CodeLoc codeLoc) {
@@ -547,13 +547,13 @@ public f<Any> ASTUnionDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTEnumDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    String enumName
-    IVisitable* itemLst = nil<IVisitable*>
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers qualifiers
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    unsigned long typeId
-    Scope* enumScope = nil<Scope*>
+    public String enumName
+    public IVisitable* itemLst = nil<IVisitable*>
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers qualifiers
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public unsigned long typeId
+    public Scope* enumScope = nil<Scope*>
 }
 
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
@@ -569,8 +569,8 @@ public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTGenericTypeDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    String typeName
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public String typeName
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
@@ -586,12 +586,12 @@ public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTAliasDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers qualifiers
-    String aliasName
-    unsigned long typeId
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    SymbolTableEntry* aliasedTypeContainerEntry = nil<SymbolTableEntry*>
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers qualifiers
+    public String aliasName
+    public unsigned long typeId
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public SymbolTableEntry* aliasedTypeContainerEntry = nil<SymbolTableEntry*>
 }
 
 public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
@@ -607,8 +607,8 @@ public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTGlobalVarDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    String varName
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public String varName
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
@@ -624,10 +624,10 @@ public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTExtDeclNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
-    IVisitable* attrs = nil<IVisitable*>
-    String extFunctionName
-    bool hasReturnType = false
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public IVisitable* attrs = nil<IVisitable*>
+    public String extFunctionName
+    public bool hasReturnType = false
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTExtDeclNode.ctor(CodeLoc codeLoc) {
@@ -647,9 +647,9 @@ public f<String> ASTExtDeclNode.getScopeId() {
 public type ASTImportDefNode struct {
     compose public ASTTopLevelDefNode node
 
-    String importPath
-    String importName
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public String importPath
+    public String importName
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
@@ -665,8 +665,8 @@ public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTUnsafeBlockNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
@@ -686,10 +686,10 @@ public f<String> ASTUnsafeBlockNode.getScopeId() {
 public type ASTForLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* initDecl = nil<IVisitable*>
-    IVisitable* condAssign = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* initDecl = nil<IVisitable*>
+    public IVisitable* condAssign = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
@@ -709,10 +709,10 @@ public f<String> ASTForLoopNode.getScopeId() {
 public type ASTForeachLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* idxVarDecl = nil<IVisitable*>
-    IVisitable* itemVarDecl = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* idxVarDecl = nil<IVisitable*>
+    public IVisitable* itemVarDecl = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
@@ -732,9 +732,9 @@ public f<String> ASTForeachLoopNode.getScopeId() {
 public type ASTWhileLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* condition = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* condition = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
@@ -754,9 +754,9 @@ public f<String> ASTWhileLoopNode.getScopeId() {
 public type ASTDoWhileLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* condition = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* condition = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
@@ -776,10 +776,10 @@ public f<String> ASTDoWhileLoopNode.getScopeId() {
 public type ASTIfStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* condition = nil<IVisitable*>
-    IVisitable* thenBody = nil<IVisitable*>
-    Scope* thenBodyScope = nil<Scope*>
-    IVisitable* elseStmt = nil<IVisitable*>
+    public IVisitable* condition = nil<IVisitable*>
+    public IVisitable* thenBody = nil<IVisitable*>
+    public Scope* thenBodyScope = nil<Scope*>
+    public IVisitable* elseStmt = nil<IVisitable*>
 }
 
 public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
@@ -799,10 +799,10 @@ public f<String> ASTIfStmtNode.getScopeId() {
 public type ASTElseStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    bool isElseIf = false
-    IVisitable* ifStmt = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* elseBodyScope = nil<Scope*>
+    public bool isElseIf = false
+    public IVisitable* ifStmt = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* elseBodyScope = nil<Scope*>
 }
 
 public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
@@ -837,8 +837,8 @@ public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTCaseBranchNode struct : IVisitable {
     compose public ASTNode node
 
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTCaseBranchNode.ctor(CodeLoc codeLoc) {
@@ -858,8 +858,8 @@ public f<String> ASTCaseBranchNode.getScopeId() {
 public type ASTDefaultBranchNode struct : IVisitable {
     compose public ASTNode node
 
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
@@ -879,8 +879,8 @@ public f<String> ASTDefaultBranchNode.getScopeId() {
 public type ASTAnonymousBlockStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
@@ -899,7 +899,7 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 public type ASTStmtLstNode struct {
     compose public ASTNode node
-    Vector<IVisitable*> stmts
+    public Vector<IVisitable*> stmts
 }
 
 public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
@@ -944,7 +944,7 @@ public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTParamLstNode struct {
     compose public ASTNode node
-    Vector<IVisitable*> params
+    public Vector<IVisitable*> params
 }
 
 public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
@@ -974,7 +974,7 @@ public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTEnumItemLstNode struct {
     compose public ASTNode node
-    Vector<IVisitable*> items
+    public Vector<IVisitable*> items
 }
 
 public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
@@ -990,11 +990,11 @@ public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTEnumItemNode struct {
     compose public ASTNode node
 
-    String itemName
-    bool hasValue = false
-    unsigned int itemValue
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    ASTEnumDefNode* enumDef = nil<ASTEnumDefNode*>
+    public String itemName
+    public bool hasValue = false
+    public unsigned int itemValue
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public ASTEnumDefNode* enumDef = nil<ASTEnumDefNode*>
 }
 
 public p ASTEnumItemNode.ctor(CodeLoc codeLoc) {
@@ -1009,7 +1009,7 @@ public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTFieldNode struct {
     compose public ASTNode node
-    String fieldName
+    public String fieldName
 }
 
 public p ASTFieldNode.ctor(CodeLoc codeLoc) {
@@ -1025,10 +1025,10 @@ public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTSignatureNode struct {
     compose public ASTNode node
 
-    ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
-    TypeQualifiers signatureQualifiers
-    String methodName
-    SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public TypeQualifiers signatureQualifiers
+    public String methodName
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
@@ -1044,10 +1044,10 @@ public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTDeclStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
-    String varName
-    bool hasAssignment = false
-    IVisitable* assignExpr = nil<IVisitable*>
-    bool isFctParam = false
+    public String varName
+    public bool hasAssignment = false
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public bool isFctParam = false
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
@@ -1077,7 +1077,7 @@ public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTModAttrNode struct {
     compose public ASTNode node
-    ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
+    public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
 
 public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
@@ -1092,7 +1092,7 @@ public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTTopLevelDefAttrNode struct {
     compose public ASTNode node
-    ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
+    public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
 
 public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
@@ -1107,7 +1107,7 @@ public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTLambdaAttrNode struct {
     compose public ASTNode node
-    ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
+    public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
 
 public p ASTLambdaAttrNode.ctor(CodeLoc codeLoc) {
@@ -1228,10 +1228,10 @@ public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTTernaryExprNode struct : IVisitable {
     compose public ASTExprNode node
 
-    IVisitable* condition = nil<IVisitable*>
-    IVisitable* trueExpr = nil<IVisitable*>
-    IVisitable* falseExpr = nil<IVisitable*>
-    bool isShortened = false
+    public IVisitable* condition = nil<IVisitable*>
+    public IVisitable* trueExpr = nil<IVisitable*>
+    public IVisitable* falseExpr = nil<IVisitable*>
+    public bool isShortened = false
 }
 
 public p ASTTernaryExprNode.ctor(CodeLoc codeLoc) {
@@ -1247,7 +1247,7 @@ public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTLogicalOrExprNode struct : IVisitable {
     compose public ASTExprNode node
 
-    Vector<IVisitable*> operands
+    public Vector<IVisitable*> operands
 }
 
 public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
@@ -1263,7 +1263,7 @@ public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTLogicalAndExprNode struct : IVisitable {
     compose public ASTExprNode node
 
-    Vector<IVisitable*> operands
+    public Vector<IVisitable*> operands
 }
 
 public p ASTLogicalAndExprNode.ctor(CodeLoc codeLoc) {
@@ -1529,11 +1529,11 @@ public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
 public type ASTLambdaFuncNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
-    ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
-    bool hasParams = false
-    IVisitable* paramLst = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
+    public bool hasParams = false
+    public IVisitable* paramLst = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
@@ -1553,11 +1553,11 @@ public f<String> ASTLambdaFuncNode.getScopeId() {
 public type ASTLambdaProcNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
-    ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
-    bool hasParams = false
-    IVisitable* paramLst = nil<IVisitable*>
-    IVisitable* body = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
+    public bool hasParams = false
+    public IVisitable* paramLst = nil<IVisitable*>
+    public IVisitable* body = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
@@ -1577,10 +1577,10 @@ public f<String> ASTLambdaProcNode.getScopeId() {
 public type ASTLambdaExprNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
-    bool hasParams = false
-    IVisitable* paramLst = nil<IVisitable*>
-    IVisitable* lambdaExpr = nil<IVisitable*>
-    Scope* bodyScope = nil<Scope*>
+    public bool hasParams = false
+    public IVisitable* paramLst = nil<IVisitable*>
+    public IVisitable* lambdaExpr = nil<IVisitable*>
+    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
