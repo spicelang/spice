@@ -30,7 +30,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   visit(node->initDecl);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign)).type;
+  const QualType conditionType = visitInExprScope(node->condAssign).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -163,7 +163,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
+  const QualType conditionType = visitInExprScope(node->condition).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -183,7 +183,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   visit(node->body);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
+  const QualType conditionType = visitInExprScope(node->condition).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -197,7 +197,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
-  const QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
+  const QualType conditionType = visitInExprScope(node->condition).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))

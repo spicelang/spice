@@ -1,0 +1,27 @@
+start: result=0 live=1
+ifFalse: result=0 live=1
+ifFalseWithElse: result=0 live=1
+elseIfBothFalse: result=0 live=1
+ifTrueAndReturn: result=1 live=1
+whileFalseAfterTwoRounds: result=2 live=1
+whileWithBreakAndContinue: result=4 live=1
+doWhileTwoRounds: result=2 live=1
+forFalseAfterThreeRounds: result=3 live=1
+temporaryOnTheLeftOfAnd(false): result=0 live=1
+temporaryOnTheLeftOfAnd(true): result=1 live=1
+temporaryOnTheRightOfAndSkipped: result=0 live=1
+temporaryOnTheRightOfOrSkipped: result=1 live=1
+temporaryOnTheRightOfAndEvaluated(false): result=0 live=1
+temporaryOnTheRightOfAndEvaluated(true): result=1 live=1
+temporaryOnTheRightOfOrEvaluated(false): result=0 live=1
+temporaryOnTheRightOfOrEvaluated(true): result=1 live=1
+temporaryInNestedOperands(false, false): result=0 live=1
+temporaryInNestedOperands(true, true): result=1 live=1
+temporaryInNestedOperands(true, false): result=1 live=1
+temporaryOfElseIfSkipped(true): result=1 live=1
+temporaryOfElseIfSkipped(false): result=0 live=1
+temporaryInTernaryBranch(true): result=1 live=1
+temporaryInTernaryBranch(false): result=0 live=1
+temporaryInFalseTernaryBranch(true): result=0 live=1
+temporaryInFalseTernaryBranch(false): result=0 live=1
+whileWithTemporaryInOperand: result=3 live=1

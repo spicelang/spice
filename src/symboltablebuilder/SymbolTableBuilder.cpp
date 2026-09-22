@@ -452,6 +452,9 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Visit loop variable declaration
   visit(node->initDecl);
 
+  // Visit condition
+  visitInExprScope(node->condAssign);
+
   // Visit body
   visit(node->body);
 
@@ -488,7 +491,7 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
       currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit condition
-  visit(node->condition);
+  visitInExprScope(node->condition);
 
   // Visit body
   visit(node->body);
@@ -505,7 +508,7 @@ std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
       currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit condition
-  visit(node->condition);
+  visitInExprScope(node->condition);
 
   // Visit body
   visit(node->body);
@@ -522,7 +525,7 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
       currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody->codeLoc);
 
   // Visit condition
-  visit(node->condition);
+  visitInExprScope(node->condition);
 
   // Visit then body (manifestations do not exist yet, so both branches are always visited here)
   if (node->doCompileThenBranch(manIdx))
@@ -794,6 +797,60 @@ std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
   currentScope = node->bodyScope->parent;
 
   return nullptr;
+}
+
+std::any SymbolTableBuilder::visitTernaryExpr(TernaryExprNode *node) {
+  // Visit condition, which is evaluated unconditionally
+  visit(node->condition);
+
+  // Visit the branches. Only one of them is evaluated, so each one gets its own scope for its temporaries.
+  // The true branch does not exist for shortened ternaries, as the condition takes its place.
+  if (node->trueExpr && !node->isShortened)
+    visitInExprScope(node->trueExpr);
+  if (node->falseExpr)
+    visitInExprScope(node->falseExpr);
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitLogicalOrExpr(LogicalOrExprNode *node) {
+  // Visit the first operand, which is evaluated unconditionally
+  visit(node->operands.front());
+
+  // All further operands are only evaluated if the ones before did not short-circuit
+  for (size_t i = 1; i < node->operands.size(); i++)
+    visitInExprScope(node->operands[i]);
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitLogicalAndExpr(LogicalAndExprNode *node) {
+  // Visit the first operand, which is evaluated unconditionally
+  visit(node->operands.front());
+
+  // All further operands are only evaluated if the ones before did not short-circuit
+  for (size_t i = 1; i < node->operands.size(); i++)
+    visitInExprScope(node->operands[i]);
+
+  return nullptr;
+}
+
+/**
+ * Visit an expression in a scope of its own. That scope holds the temporaries of the expression, which allows destructing them
+ * right after the expression was evaluated. This is required for conditions and for operands that are only evaluated
+ * conditionally, since a temporary of those must not be destructed if it never was constructed.
+ *
+ * @param expr Expression to visit
+ */
+void SymbolTableBuilder::visitInExprScope(ExprNode *expr) {
+  // Create scope for the expression
+  currentScope = currentScope->createChildScope(expr->getExprScopeId(), ScopeType::EXPR_BODY, &expr->codeLoc);
+
+  // Visit the expression
+  visit(expr);
+
+  // Leave expression scope
+  currentScope = currentScope->parent;
 }
 
 } // namespace spice::compiler

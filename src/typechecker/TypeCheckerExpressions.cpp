@@ -6,6 +6,7 @@
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
@@ -109,10 +110,17 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Visit condition
   const auto condition = std::any_cast<ExprResult>(visit(node->condition));
   HANDLE_UNRESOLVED_TYPE_ER(condition.type)
-  const auto trueExpr = node->isShortened ? condition : std::any_cast<ExprResult>(visit(node->trueExpr));
+  // Visit the branches. Only one of them is evaluated, so each one has a scope of its own for its temporaries. The dtor calls for
+  // those are considered further down, once it is clear which temporaries the result takes over.
+  const auto visitBranch = [&](ExprNode *branch) {
+    const ExprScopeHandle exprScopeHandle(this, branch);
+    return std::pair{std::any_cast<ExprResult>(visit(branch)), exprScopeHandle.getExprScope()};
+  };
+  const auto [trueExpr, trueScope] =
+      node->isShortened ? std::pair<ExprResult, Scope *>{condition, nullptr} : visitBranch(node->trueExpr);
   const auto [trueType, trueEntry] = trueExpr;
   HANDLE_UNRESOLVED_TYPE_ER(trueType)
-  const auto falseExpr = std::any_cast<ExprResult>(visit(node->falseExpr));
+  const auto [falseExpr, falseScope] = visitBranch(node->falseExpr);
   const auto [falseType, falseEntry] = falseExpr;
   HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
@@ -148,10 +156,12 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
   // If there is an anonymous symbol attached to left or right, remove it,
   // since the result takes over the ownership of any destructible object.
+  // The symbol lives in the scope of its branch, or in the current scope if the branch has no scope of its own.
   bool removedAnonymousSymbols = false;
   if (trueEntry) {
     if (trueEntry->anonymous) {
-      currentScope->symbolTable.deleteAnonymous(trueEntry->name);
+      Scope *anonymousSymbolScope = trueScope != nullptr ? trueScope : currentScope;
+      anonymousSymbolScope->symbolTable.deleteAnonymous(trueEntry->name);
       removedAnonymousSymbols = true;
     } else if (!resultType.isRef() && !trueTypeModified.isTriviallyCopyable(node)) {
       node->trueSideCallsCopyCtor = true;
@@ -159,7 +169,8 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   }
   if (falseEntry) {
     if (falseEntry->anonymous) {
-      currentScope->symbolTable.deleteAnonymous(falseEntry->name);
+      Scope *anonymousSymbolScope = falseScope != nullptr ? falseScope : currentScope;
+      anonymousSymbolScope->symbolTable.deleteAnonymous(falseEntry->name);
       removedAnonymousSymbols = true;
     } else if (!resultType.isRef() && !falseTypeModified.isTriviallyCopyable(node)) {
       node->falseSideCallsCopyCtor = true;
@@ -176,6 +187,21 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   if (node->trueSideCallsCopyCtor || node->falseSideCallsCopyCtor)
     node->calledCopyCtor = matchCopyCtor(trueTypeModified, node);
 
+  // Consider the dtor calls for the temporaries of the branches. A result of reference type may refer to a temporary of its
+  // branch, so those must not be destructed. Not destructing them is the safe choice here, as it only leaks the temporary.
+  const auto doBranchCleanup = [&](const ExprNode *branch, const Scope *branchScope) {
+    if (branchScope == nullptr)
+      return;
+    const ExprScopeHandle exprScopeHandle(this, branch);
+    if (resultType.isRef())
+      exprScopeHandle.getExprScope()->temporaryDtorsToCall.clear();
+    else
+      doExprScopeCleanup(branch);
+  };
+  if (!node->isShortened)
+    doBranchCleanup(node->trueExpr, trueScope);
+  doBranchCleanup(node->falseExpr, falseScope);
+
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), anonymousSymbol};
 }
 
@@ -190,7 +216,8 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
 
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
+    // The operand is only evaluated if the ones before did not short-circuit, so it gets its temporaries destructed on its own
+    auto rhsOperand = visitInExprScope(node->operands[i]);
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getLogicalOrResultType(node, currentOperand, rhsOperand)};
   }
@@ -210,7 +237,8 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
 
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands.size(); i++) {
-    auto rhsOperand = std::any_cast<ExprResult>(visit(node->operands[i]));
+    // The operand is only evaluated if the ones before did not short-circuit, so it gets its temporaries destructed on its own
+    auto rhsOperand = visitInExprScope(node->operands[i]);
     HANDLE_UNRESOLVED_TYPE_ER(rhsOperand.type)
     currentOperand = {OpRuleManager::getLogicalAndResultType(node, currentOperand, rhsOperand)};
   }

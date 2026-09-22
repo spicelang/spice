@@ -40,7 +40,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Condition evaluation
-  llvm::Value *condValue = resolveValue(node->condAssign);
+  llvm::Value *condValue = resolveValueInExprScope(node->condAssign);
   // Create conditional jump from head to body or exit block
   insertCondJump(condValue, bBody, bExit);
 
@@ -238,7 +238,7 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition);
+  llvm::Value *condValue = resolveValueInExprScope(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
@@ -288,7 +288,7 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Switch to head block
   switchToBlock(bFoot);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition);
+  llvm::Value *condValue = resolveValueInExprScope(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
@@ -327,7 +327,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
 
   // Retrieve condition value
-  llvm::Value *condValue = resolveValue(node->condition);
+  llvm::Value *condValue = resolveValueInExprScope(node->condition);
   // Check if condition is fulfilled
   insertCondJump(condValue, bThen, node->elseStmt ? bElse : bExit);
 

@@ -11,6 +11,7 @@
 #include <model/GenericType.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/TypeMatcher.h>
@@ -817,14 +818,11 @@ void TypeChecker::implicitlyCallDeallocate(const ASTNode *node) const {
 }
 
 /**
- * Consider calls to destructors for the given scope
+ * Sort the given variables by reverse declaration order, which is the order their dtors have to be called in
  *
- * @param node StmtLstNode for the current scope
+ * @param vars Variables to sort
  */
-void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
-  // Get all variables, that are approved for de-allocation
-  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  // Sort by reverse declaration order
+void TypeChecker::sortByReverseDeclarationOrder(std::vector<SymbolTableEntry *> &vars) const {
   const auto comp = [this](const SymbolTableEntry *a, const SymbolTableEntry *b) {
     const ASTNode *aDeclNode = a->declNode;
     const ASTNode *bDeclNode = b->declNode;
@@ -835,6 +833,18 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
     return resourceManager.nodeToNodeId[aDeclNode] > resourceManager.nodeToNodeId[bDeclNode];
   };
   std::ranges::stable_sort(vars, comp);
+}
+
+/**
+ * Consider calls to destructors for the given scope
+ *
+ * @param node StmtLstNode for the current scope
+ */
+void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
+  // Get all variables, that are approved for de-allocation
+  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
+  // Sort by reverse declaration order
+  sortByReverseDeclarationOrder(vars);
   // Call the dtor of each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
     // Check if we have a heap-allocated pointer
@@ -859,6 +869,49 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
     // Call dtor
     implicitlyCallStructDtor(var, node);
   }
+}
+
+/**
+ * Consider calls to destructors for the temporaries of the current expression scope
+ *
+ * The temporaries of an expression scope are destructed right after the expression was evaluated. The cleanup of a body scope
+ * can not do that job for conditions, because it only runs on the path into the body and a temporary of a condition must be
+ * destructed no matter which way the condition turned out. Operands that are only evaluated conditionally have a scope of their
+ * own, so that their temporaries are only destructed if they were constructed in the first place.
+ *
+ * @param node Expression the current scope belongs to
+ */
+void TypeChecker::doExprScopeCleanup(const ExprNode *node) const {
+  assert(currentScope->type == ScopeType::EXPR_BODY);
+
+  // Get all temporaries that go out of scope. This is executed again if the expression is type-checked again
+  std::vector<SymbolTableEntry *> temporaries = currentScope->getVarsGoingOutOfScope();
+  sortByReverseDeclarationOrder(temporaries);
+  currentScope->temporaryDtorsToCall.clear();
+
+  // Call the dtor of each temporary. We call the dtor in reverse declaration order
+  for (SymbolTableEntry *temporary : temporaries) {
+    // Only generate dtor call for initialized structs and if not omitted
+    if (!temporary->getQualType().is(TY_STRUCT) || temporary->omitDtorCall || !temporary->getLifecycle().isInitialized())
+      continue;
+    if (Function *dtor = implicitlyCallStructMethod(temporary, DTOR_FUNCTION_NAME, {}, node))
+      currentScope->temporaryDtorsToCall.emplace_back(temporary, dtor);
+  }
+}
+
+/**
+ * Visit an expression in its expression scope, if it has one, and consider calls to the destructors of its temporaries
+ *
+ * @param expr Expression to visit
+ * @return Result of the expression
+ */
+ExprResult TypeChecker::visitInExprScope(ExprNode *expr) {
+  const ExprScopeHandle exprScopeHandle(this, expr);
+  const auto result = std::any_cast<ExprResult>(visit(expr));
+  // If the expression is not resolved yet, it is visited again later on, which is when the temporaries are known
+  if (exprScopeHandle.getExprScope() != nullptr && !result.type.is(TY_UNRESOLVED))
+    doExprScopeCleanup(expr);
+  return result;
 }
 
 } // namespace spice::compiler

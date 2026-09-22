@@ -51,7 +51,8 @@ enum class ScopeType : uint8_t {
   CASE_BODY,
   DEFAULT_BODY,
   UNSAFE_BODY,
-  ANONYMOUS_BLOCK_BODY
+  ANONYMOUS_BLOCK_BODY,
+  EXPR_BODY
 };
 
 /**
@@ -71,6 +72,7 @@ enum class ScopeType : uint8_t {
  * - while loops
  * - if statements
  * - anonymous scopes
+ * - conditions, and expressions that are only evaluated conditionally (e.g. the right side of '&&' and '||')
  */
 class Scope {
 public:
@@ -134,6 +136,8 @@ public:
   bool isGenericScope = false;
   bool isAsyncScope = false;
   bool isDtorScope = false;
+  // Only for expression scopes: dtor calls for the temporaries of the expression, in the order they are to be generated
+  std::vector<std::pair<SymbolTableEntry *, Function *>> temporaryDtorsToCall;
 
 private:
   // Private members

@@ -9,6 +9,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class TopLevelDefNode;
+class ExprNode;
 class SymbolTableEntry;
 
 const char *const MAIN_FUNCTION_NAME = "main";
@@ -61,8 +62,14 @@ public:
   std::any visitLambdaFunc(LambdaFuncNode *node) override;
   std::any visitLambdaProc(LambdaProcNode *node) override;
   std::any visitLambdaExpr(LambdaExprNode *node) override;
+  std::any visitTernaryExpr(TernaryExprNode *node) override;
+  std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;
+  std::any visitLogicalAndExpr(LogicalAndExprNode *node) override;
 
 private:
+  // Private methods
+  void visitInExprScope(ExprNode *expr);
+
   // Private members
   Scope *rootScope;
   bool hasMainFunction = false;

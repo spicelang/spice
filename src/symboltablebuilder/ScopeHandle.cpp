@@ -3,6 +3,7 @@
 #include "ScopeHandle.h"
 
 #include <CompilerPass.h>
+#include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
 
@@ -28,5 +29,18 @@ ScopeHandle::ScopeHandle(IRGenerator *generator, Scope *childScope, const ScopeT
 
 ScopeHandle::ScopeHandle(IRGenerator *generator, const std::string &childScopeId, const ScopeType &scopeType, const ASTNode *node)
     : ScopeHandle(generator, generator->currentScope->getChildScope(childScopeId), scopeType, node) {}
+
+ExprScopeHandle::ExprScopeHandle(CompilerPass *pass, const ExprNode *expr)
+    : ExprScopeHandle(pass, pass->currentScope->getChildScope(expr->getExprScopeId())) {}
+
+ExprScopeHandle::ExprScopeHandle(CompilerPass *pass, Scope *exprScope)
+    : DeferredLogic([=] {
+        if (exprScope != nullptr)
+          pass->changeToParentScope(ScopeType::EXPR_BODY);
+      }),
+      exprScope(exprScope) {
+  if (exprScope != nullptr)
+    pass->changeToScope(exprScope, ScopeType::EXPR_BODY);
+}
 
 } // namespace spice::compiler
