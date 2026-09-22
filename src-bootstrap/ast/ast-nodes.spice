@@ -29,6 +29,10 @@ public const string OP_FCT_EQUAL = "op.equal";
 public const string OP_FCT_NOT_EQUAL = "op.notequal";
 public const string OP_FCT_SHL = "op.shl";
 public const string OP_FCT_SHR = "op.shr";
+public const string OP_FCT_BITWISE_AND = "op.bitwiseand";
+public const string OP_FCT_BITWISE_OR = "op.bitwiseor";
+public const string OP_FCT_BITWISE_XOR = "op.bitwisexor";
+public const string OP_FCT_BITWISE_NOT = "op.bitwisenot";
 public const string OP_FCT_PLUS_EQUAL = "op.plusequal";
 public const string OP_FCT_MINUS_EQUAL = "op.minusequal";
 public const string OP_FCT_MUL_EQUAL = "op.mulequal";
@@ -897,7 +901,7 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 // ========================================================== StmtLstNode ========================================================
 
-public type ASTStmtLstNode struct {
+public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<IVisitable*> stmts
 }
@@ -942,7 +946,7 @@ public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ParamLstNode =======================================================
 
-public type ASTParamLstNode struct {
+public type ASTParamLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<IVisitable*> params
 }
@@ -970,22 +974,10 @@ public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 
-// ======================================================== EnumItemLstNode ======================================================
-
-public type ASTEnumItemLstNode struct {
-    compose public ASTNode node
-    public Vector<IVisitable*> items
-}
-
-public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
-    this.node = ASTNode(codeLoc);
-}
-public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
-    return visitor.visitEnumItemLst(this);
-}
-
-
 // ========================================================== EnumItemNode =======================================================
+// Declared before EnumItemLstNode (which composes a Vector<ASTEnumItemNode*> below) since parseEnumDef
+// back-links each item's 'enumDef' field directly (not via dispatch), so the list needs to stay
+// concretely typed, which in turn needs EnumItemNode defined first (same-file ordering rule).
 
 public type ASTEnumItemNode struct {
     compose public ASTNode node
@@ -1005,9 +997,24 @@ public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 
+// ======================================================== EnumItemLstNode ======================================================
+
+public type ASTEnumItemLstNode struct : IVisitable {
+    compose public ASTNode node
+    public Vector<ASTEnumItemNode*> items
+}
+
+public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
+    this.node = ASTNode(codeLoc);
+}
+public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
+    return visitor.visitEnumItemLst(this);
+}
+
+
 // =========================================================== FieldNode =========================================================
 
-public type ASTFieldNode struct {
+public type ASTFieldNode struct : IVisitable {
     compose public ASTNode node
     public String fieldName
 }
@@ -1022,7 +1029,7 @@ public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= SignatureNode =======================================================
 
-public type ASTSignatureNode struct {
+public type ASTSignatureNode struct : IVisitable {
     compose public ASTNode node
 
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
@@ -1075,7 +1082,7 @@ public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== ModAttrNode ========================================================
 
-public type ASTModAttrNode struct {
+public type ASTModAttrNode struct : IVisitable {
     compose public ASTNode node
     public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
@@ -1090,7 +1097,7 @@ public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // =================================================== TopLevelDefAttrNode ================================================
 
-public type ASTTopLevelDefAttrNode struct {
+public type ASTTopLevelDefAttrNode struct : IVisitable {
     compose public ASTNode node
     public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
