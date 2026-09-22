@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -13,6 +14,7 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/global/type-registry";
+import "bootstrap/util/common-util";
 
 // Constants
 const string STRUCT_SCOPE_PREFIX = "struct:";
@@ -50,6 +52,29 @@ public f<String> Struct.getScopeName() {
  */
 public f<String> Struct.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
     return String(STRUCT_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+}
+
+/**
+ * Retrieve the name of the scope, where members and methods are placed, from just a name and concrete
+ * template types — usable without a live Struct instance (e.g. from a plain AST node, before any Struct
+ * model object exists, such as during symbol-table building). Mirrors StructBase.getSignature's 2-arg
+ * overload, which is a pure function of its params and does not read 'this'.
+ *
+ * @param name Struct name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the struct scope
+ */
+public f<String> getStructScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    StringStream templateTyStr;
+    if !concreteTemplateTypes.isEmpty() {
+        templateTyStr << "<";
+        foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
+            if i > 0ul { templateTyStr << ","; }
+            templateType.getName(templateTyStr, false, true);
+        }
+        templateTyStr << ">";
+    }
+    return String(STRUCT_SCOPE_PREFIX) + getLastFragment(name, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
 }
 
 /**
@@ -136,6 +161,11 @@ public f<bool> testStructSmoke() {
     // getScopeName from an explicit name and concrete template types
     QualTypeList boxTemplates = box.structBase.getTemplateTypes();
     assert box.getScopeName(String("Box"), boxTemplates) == String("struct:Box<int>");
+
+    // getStructScopeName (free function): usable without a live Struct instance, same result
+    assert getStructScopeName(String("Box"), boxTemplates) == String("struct:Box<int>");
+    QualTypeList emptyTemplates;
+    assert getStructScopeName(String("Plain"), emptyTemplates) == String("struct:Plain");
 
     // A struct with a reference field reports hasReferenceFields() == true
     QualTypeList refField;

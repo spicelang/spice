@@ -1,0 +1,114 @@
+// Std imports
+import "std/data/vector";
+import "std/text/stringstream";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/model/struct-base";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/global/type-registry";
+import "bootstrap/util/common-util";
+
+// Constants
+const string UNION_SCOPE_PREFIX = "union:";
+
+public type Union struct {
+    public compose StructBase structBase
+    public QualTypeList fieldTypes
+}
+
+public p Union.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+    this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
+    this.fieldTypes = fieldTypes;
+}
+
+/**
+ * Retrieve the name of the scope, where the union's fields are placed. This is used to navigate to the scope of the
+ * union from the parent scope.
+ *
+ * @return Name of the union scope
+ */
+public f<String> Union.getScopeName() {
+    const String& appendix = this.structBase.isGenericSubstantiation() ? this.structBase.getSignature() : this.name;
+    return String(UNION_SCOPE_PREFIX) + appendix;
+}
+
+/**
+ * Retrieve the name of the scope, where the union's fields are placed. This is used to navigate to the scope of the
+ * union from the parent scope.
+ *
+ * @param name Union name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the union scope
+ */
+public f<String> Union.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    return String(UNION_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+}
+
+/**
+ * Retrieve the name of the scope, where the union's fields are placed, from just a name and concrete
+ * template types — usable without a live Union instance. See getStructScopeName (struct.spice) for the
+ * same pattern; mirrors StructBase.getSignature's 2-arg overload, which does not read 'this'.
+ *
+ * @param name Union name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the union scope
+ */
+public f<String> getUnionScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    StringStream templateTyStr;
+    if !concreteTemplateTypes.isEmpty() {
+        templateTyStr << "<";
+        foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
+            if i > 0ul { templateTyStr << ","; }
+            templateType.getName(templateTyStr, false, true);
+        }
+        templateTyStr << ">";
+    }
+    return String(UNION_SCOPE_PREFIX) + getLastFragment(name, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
+}
+
+#[test, test.name="Union Smoke test"]
+public f<bool> testUnionSmoke() {
+    TypeRegistry reg = TypeRegistry();
+    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
+
+    Vector<GenericType> noTemplates;
+
+    // A plain union: no fields, no template types
+    QualTypeList noFields;
+    Union plain = Union(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noFields, noTemplates, nil<ASTNode*>);
+    assert plain.name == String("Plain");
+    assert plain.getScopeName() == String("union:Plain");
+    assert plain.structBase.getSignature() == String("Plain");
+    assert !plain.structBase.isGenericSubstantiation();
+    assert plain.fieldTypes.isEmpty();
+
+    // A union with one int field and a concrete template type
+    QualTypeList oneField;
+    oneField.pushBack(intQual);
+    Vector<GenericType> concreteTemplates;
+    GenericType gtInt = GenericType(intQual);
+    concreteTemplates.pushBack(gtInt);
+    Union setting = Union(String("Setting"), nil<SymbolTableEntry*>, nil<IScope*>, oneField, concreteTemplates, nil<ASTNode*>);
+    assert setting.structBase.getSignature() == String("Setting<int>");
+    assert setting.getScopeName() == String("union:Setting");
+    assert setting.fieldTypes.getSize() == 1l;
+
+    // getScopeName from an explicit name and concrete template types
+    QualTypeList settingTemplates = setting.structBase.getTemplateTypes();
+    assert setting.getScopeName(String("Setting"), settingTemplates) == String("union:Setting<int>");
+
+    // getUnionScopeName (free function): usable without a live Union instance, same result
+    assert getUnionScopeName(String("Setting"), settingTemplates) == String("union:Setting<int>");
+    QualTypeList emptyTemplates;
+    assert getUnionScopeName(String("Plain"), emptyTemplates) == String("union:Plain");
+
+    return true;
+}
