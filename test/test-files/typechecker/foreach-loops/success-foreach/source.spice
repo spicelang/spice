@@ -15,8 +15,8 @@ p ContainerIterator.ctor(Container<T>& container) {
     this.container = container;
 }
 
-f<ContainerIterator<T>> Container.getIterator() {
-    return ContainerIterator<T>(*this);
+f<heap ContainerIterator<T>*> Container.getIterator() {
+    return __new<ContainerIterator<T>>(*this);
 }
 
 f<int&> ContainerIterator.get() { return this.idx; }

@@ -299,6 +299,11 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
     // For optional parameter initializers we need this exception
     if (!structAddr)
       return;
+    // A heap-pointer entry's address is the address of the pointer's own storage slot (see updateAddress()), not the
+    // pointee struct's address - load the pointer value itself to get that (used when freeing a heap pointer to a
+    // non-trivially-destructible struct, whose dtor doScopeCleanup() schedules to run before deallocation).
+    if (entry->getQualType().isPtr())
+      structAddr = insertLoad(builder.getPtrTy(), structAddr);
   }
   assert(structAddr != nullptr);
   generateCtorOrDtorCall(structAddr, ctorOrDtor, args);

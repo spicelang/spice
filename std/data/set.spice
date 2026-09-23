@@ -90,7 +90,7 @@ public f<LinkedList<V>> Set.toLinkedList() {
  * Iterator to iterate over an set data structure
  */
 public type SetIterator<V> struct : IIterator<const V&> {
-    RedBlackTreeIterator<V, bool> rbtIterator
+    heap RedBlackTreeIterator<V, bool>* rbtIterator
 }
 
 /**
@@ -101,6 +101,14 @@ public type SetIterator<V> struct : IIterator<const V&> {
 public p SetIterator.ctor<V>(Set<V>& set) {
     this.rbtIterator = set.tree.getIterator();
 }
+
+/**
+ * Frees the wrapped red-black-tree iterator
+ */
+public p SetIterator.dtor<V>() {
+    sDelete(this.rbtIterator);
+}
+
 /**
  * Returns the current value of the set
  *
@@ -152,6 +160,6 @@ public inline p operator++<V>(SetIterator<V>& it) {
 /**
  * Retrieve a forward iterator for the set
  */
-public f<SetIterator<V>> Set.getIterator() {
-    return SetIterator<V>(*this);
+public f<heap SetIterator<V>*> Set.getIterator() {
+    return __new<SetIterator<V>>(*this);
 }

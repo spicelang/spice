@@ -237,9 +237,23 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
           continue;
         }
 
-        // Check return type
-        if (spiceFunction->returnType != returnType &&
-            !returnType.matchesInterfaceImplementedByStruct(spiceFunction->returnType)) {
+        // Check return type. A method returning a heap pointer to an interface (the only supported shape for an
+        // interface method returning another interface - see INTERFACE_METHOD_RETURNS_INTERFACE_BY_VALUE) is
+        // implemented by an override that returns a heap pointer to whichever concrete struct implements that
+        // interface; matchesInterfaceImplementedByStruct only compares bare struct/interface types, so unwrap the
+        // pointer on both sides first, mirroring how reference-typed interface matches are unwrapped elsewhere.
+        QualType expectedReturnType = returnType;
+        QualType actualReturnType = spiceFunction->returnType;
+        if (expectedReturnType.isPtr() && actualReturnType.isPtr()) {
+          expectedReturnType = expectedReturnType.getContained();
+          actualReturnType = actualReturnType.getContained();
+          // The heap qualifier describes how the pointee was allocated, not its type identity - a struct's own
+          // interfaceTypes list (checked below) never carries it, so strip it before comparing.
+          expectedReturnType.getQualifiers().isHeap = false;
+          actualReturnType.getQualifiers().isHeap = false;
+        }
+        if (actualReturnType != expectedReturnType &&
+            !expectedReturnType.matchesInterfaceImplementedByStruct(actualReturnType)) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
                         "'. The return type does not match.");

@@ -83,16 +83,16 @@ f<bool> levelC() {
     }
 
     // The iterator behind that loop can also be driven by hand, forwards and backwards
-    StackTraceIterator<StackTraceEntry> it = noSkip.getIterator();
+    heap StackTraceIterator<StackTraceEntry>* it = noSkip.getIterator();
     assert it.isValid();
     assert it.get().address == noSkip.getEntry(0ul).address;
-    it++;
+    (*it)++;
     assert it.get().address == noSkip.getEntry(1ul).address;
-    it += 1;
+    *it += 1;
     assert it.get().address == noSkip.getEntry(2ul).address;
-    it--;
+    (*it)--;
     assert it.get().address == noSkip.getEntry(1ul).address;
-    it -= 1;
+    *it -= 1;
     assert it.get().address == noSkip.getEntry(0ul).address;
 
     return true;

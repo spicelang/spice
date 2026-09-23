@@ -525,6 +525,6 @@ public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
 /**
  * Retrieve a forward iterator for the vector
  */
-public f<VectorIterator<T>> Vector.getIterator() {
-    return VectorIterator<T>(*this);
+public f<heap VectorIterator<T>*> Vector.getIterator() {
+    return __new<VectorIterator<T>>(*this);
 }

@@ -114,48 +114,49 @@ define internal void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(pt
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal noundef ptr @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
-  %2 = alloca %struct.ExampleTypeIterator, align 8
   store ptr %0, ptr %this, align 8
+  %2 = call ptr @_Z12sAllocUnsafem(i64 16)
   call void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
-  %3 = load %struct.ExampleTypeIterator, ptr %2, align 8
-  ret %struct.ExampleTypeIterator %3
+  ret ptr %2
 }
+
+declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
   %eit = alloca %struct.ExampleIterableType, align 8
   %i = alloca i32, align 4
-  %1 = alloca %struct.ExampleTypeIterator, align 8
+  %iterator.addr = alloca ptr, align 8
   %ct = alloca %struct.ExampleContainedType, align 8
   call void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %eit)
   store i32 0, ptr %i, align 4
-  %2 = call %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr %eit)
-  store %struct.ExampleTypeIterator %2, ptr %1, align 8
+  %1 = call ptr @_ZN19ExampleIterableType11getIteratorEv(ptr %eit)
+  store ptr %1, ptr %iterator.addr, align 8
   br label %foreach.head.L46
 
 foreach.head.L46:                                 ; preds = %foreach.tail.L46, %0
-  %3 = call i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr %1)
-  br i1 %3, label %foreach.body.L46, label %foreach.exit.L46
+  %2 = call i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr %1)
+  br i1 %2, label %foreach.body.L46, label %foreach.exit.L46
 
 foreach.body.L46:                                 ; preds = %foreach.head.L46
-  %4 = call ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr %1)
-  call void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %ct, ptr %4)
+  %3 = call ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr %1)
+  call void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %ct, ptr %3)
   %copied.addr = getelementptr inbounds %struct.ExampleContainedType, ptr %ct, i64 0, i32 0
-  %5 = load i1, ptr %copied.addr, align 1
-  br i1 %5, label %assert.exit.L47, label %assert.then.L47, !prof !5
+  %4 = load i1, ptr %copied.addr, align 1
+  br i1 %4, label %assert.exit.L47, label %assert.then.L47, !prof !5
 
 assert.then.L47:                                  ; preds = %foreach.body.L46
-  %6 = load ptr, ptr @stderr, align 8
-  %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.0)
+  %5 = load ptr, ptr @stderr, align 8
+  %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L47:                                  ; preds = %foreach.body.L46
-  %8 = load i32, ptr %i, align 4
-  %9 = add nsw i32 %8, 1
-  store i32 %9, ptr %i, align 4
+  %7 = load i32, ptr %i, align 4
+  %8 = add nsw i32 %7, 1
+  store i32 %8, ptr %i, align 4
   br label %foreach.tail.L46
 
 foreach.tail.L46:                                 ; preds = %assert.exit.L47
@@ -163,18 +164,19 @@ foreach.tail.L46:                                 ; preds = %assert.exit.L47
   br label %foreach.head.L46
 
 foreach.exit.L46:                                 ; preds = %foreach.head.L46
-  %10 = load i32, ptr %i, align 4
-  %11 = icmp eq i32 %10, 1
-  br i1 %11, label %assert.exit.L50, label %assert.then.L50, !prof !5
+  %9 = load i32, ptr %i, align 4
+  %10 = icmp eq i32 %9, 1
+  br i1 %10, label %assert.exit.L50, label %assert.then.L50, !prof !5
 
 assert.then.L50:                                  ; preds = %foreach.exit.L46
-  %12 = load ptr, ptr @stderr, align 8
-  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.1)
+  %11 = load ptr, ptr @stderr, align 8
+  %12 = call i32 (ptr, ptr, ...) @fprintf(ptr %11, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L50:                                  ; preds = %foreach.exit.L46
-  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  call void @_Z8sDeallocRPVh(ptr %iterator.addr)
   ret i32 0
 }
 
@@ -186,6 +188,8 @@ declare void @exit(i32) #4
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #5
+
+declare void @_Z8sDeallocRPVh(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { mustprogress noinline nounwind optnone uwtable }

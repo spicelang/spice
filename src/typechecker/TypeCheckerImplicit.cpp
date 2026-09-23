@@ -861,6 +861,21 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
       if (!var->getLifecycle().isInOwningState())
         continue;
 
+      // A plain deallocation only frees the pointer's own storage. For an anonymous temporary (e.g. the heap iterator
+      // a foreach loop over an IIterable<T> owns - see visitForeachLoop) that points to a struct with a non-trivial
+      // dtor (one that owns further heap-allocated resources, like a wrapper iterator owning a nested iterator), that
+      // dtor has to run first, mirroring what sDelete() does, or those nested resources would leak. This is
+      // deliberately narrowed to anonymous temporaries: a named heap-pointer variable or struct field may be one node
+      // in a larger structure whose owning container already tears it down its own, non-recursive way (e.g. a linked
+      // list's iterative dtor), so unconditionally cascading into a pointee's dtor here would double-destruct it.
+      if (var->anonymous && var->getQualType().is(TY_PTR)) {
+        const QualType pointeeType = var->getQualType().getContained();
+        if (pointeeType.is(TY_STRUCT) && !pointeeType.isTriviallyDestructible(node)) {
+          if (Function *pointeeDtor = implicitlyCallStructMethod(pointeeType, DTOR_FUNCTION_NAME, {}, node))
+            node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(var, pointeeDtor);
+        }
+      }
+
       implicitlyCallDeallocate(node); // Required to request the memory runtime
       node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
     }

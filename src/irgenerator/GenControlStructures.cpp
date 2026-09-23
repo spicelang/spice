@@ -104,15 +104,47 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
       iterator = builder.CreateCall(getIteratorFct, iterablePtr);
     }
 
-    // Resolve address of iterator
-    LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
-    iteratorPtr = resolveAddress(callResult);
+    // getIterator() returns a heap-allocated pointer directly usable as the iterator's address (see IIterable<T>);
+    // the plain array-iterate() path still returns the ArrayIterator by value and needs a landing-pad alloca.
+    if (node->getIteratorFct->returnType.isPtr()) {
+      iteratorPtr = iterator;
+    } else {
+      // Resolve address of iterator
+      LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
+      iteratorPtr = resolveAddress(callResult);
+    }
 
     // If an anonymous symbol exists, set its address
-    if (const SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode))
-      updateAddress(returnSymbol, iteratorPtr);
+    if (const SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode)) {
+      if (node->getIteratorFct->returnType.isPtr()) {
+        // The scope-cleanup dealloc call takes the address of the storage slot holding the pointer (it dereferences
+        // it to free the pointee and then nulls the slot out - see sDealloc()'s by-ref signature), not the pointer
+        // value itself, so the heap pointer returned by getIterator() needs a landing-pad alloca of its own here,
+        // distinct from 'iteratorPtr', which stays the raw pointer value used for the isValid()/get()/next() calls.
+        llvm::Value *iteratorPtrAddr = insertAlloca(node->getIteratorFct->returnType, "iterator.addr");
+        insertStore(iterator, iteratorPtrAddr);
+        updateAddress(returnSymbol, iteratorPtrAddr);
+      } else {
+        updateAddress(returnSymbol, iteratorPtr);
+      }
+    }
   } else { // The iteratorAssignExpr is of type Iterator
-    iteratorPtr = resolveAddress(iteratorAssignNode);
+    const QualType iteratorAssignType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+    if (iteratorAssignType.isPtr()) {
+      // The expression is already a pointer to the iterator struct (e.g. a 'heap T*' iterator variable, or a direct
+      // 'container.getIterator()' call) - isValid()/get()/next() need the pointer's own value, not its address.
+      iteratorPtr = resolveValue(iteratorAssignNode);
+
+      // If an anonymous symbol exists (an unnamed temporary that owns this heap iterator - see the type checker),
+      // give it a landing-pad alloca to be freed from, mirroring the Iterable branch above.
+      if (const SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode)) {
+        llvm::Value *iteratorPtrAddr = insertAlloca(iteratorAssignType, "iterator.addr");
+        insertStore(iteratorPtr, iteratorPtrAddr);
+        updateAddress(returnSymbol, iteratorPtrAddr);
+      }
+    } else {
+      iteratorPtr = resolveAddress(iteratorAssignNode);
+    }
   }
 
   // Check we have an idx

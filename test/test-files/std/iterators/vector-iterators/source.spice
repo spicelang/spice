@@ -40,14 +40,14 @@ f<int> main() {
     assert it.isValid();
 
     // Test overloaded operators
-    it -= 3;
+    *it -= 3;
     assert it.get() == 123;
     assert it.isValid();
-    it++;
+    (*it)++;
     assert it.get() == 4321;
-    it--;
+    (*it)--;
     assert it.get() == 123;
-    it += 4;
+    *it += 4;
     assert it.get() == -99;
     it.next();
     assert !it.isValid();

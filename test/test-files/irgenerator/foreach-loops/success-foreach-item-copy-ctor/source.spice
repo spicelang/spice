@@ -36,8 +36,8 @@ f<bool> ExampleTypeIterator.isValid() {
 
 p ExampleTypeIterator.next() {}
 
-f<ExampleTypeIterator<ExampleContainedType>> ExampleIterableType.getIterator() {
-    return ExampleTypeIterator<ExampleContainedType>();
+f<heap ExampleTypeIterator<ExampleContainedType>*> ExampleIterableType.getIterator() {
+    return __new<ExampleTypeIterator<ExampleContainedType>>();
 }
 
 f<int> main() {

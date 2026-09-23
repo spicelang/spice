@@ -110,7 +110,7 @@ public p Map.clear() {
  * Iterator to iterate over a map data structure
  */
 public type MapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
-    RedBlackTreeIterator<K, V> rbtIterator
+    heap RedBlackTreeIterator<K, V>* rbtIterator
 }
 
 /**
@@ -120,6 +120,13 @@ public type MapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
  */
 public p MapIterator.ctor<K, V>(Map<K, V>& map) {
     this.rbtIterator = map.tree.getIterator();
+}
+
+/**
+ * Frees the wrapped red-black-tree iterator
+ */
+public p MapIterator.dtor<K, V>() {
+    sDelete(this.rbtIterator);
 }
 
 /**
@@ -168,6 +175,6 @@ public inline p operator++<K, V>(MapIterator<K, V>& it) {
 /**
  * Retrieve a forward iterator for the map
  */
-public f<MapIterator<K, V>> Map.getIterator() {
-    return MapIterator<K, V>(*this);
+public f<heap MapIterator<K, V>*> Map.getIterator() {
+    return __new<MapIterator<K, V>>(*this);
 }

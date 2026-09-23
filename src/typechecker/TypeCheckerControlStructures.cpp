@@ -48,7 +48,8 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Visit iterator assignment
   ExprNode *iteratorNode = node->iteratorAssign;
-  QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
+  const ExprResult iteratorOrIterableResult = std::any_cast<ExprResult>(visit(iteratorNode));
+  QualType iteratorOrIterableType = iteratorOrIterableResult.type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
 
@@ -79,10 +80,24 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
 
     iteratorType = QualType(node->getIteratorFct->returnType);
-    // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
-    if (!iteratorType.isTriviallyDestructible(iteratorNode))
+    // Add anonymous symbol to keep track of dtor call, if non-trivially destructible, or of deallocation, if a heap
+    // pointer (isTriviallyDestructible only speaks to the former - see its own doc comment - and getIterator() now
+    // returns a heap pointer to the concrete iterator struct for every IIterable<T> implementation).
+    if (!iteratorType.isTriviallyDestructible(iteratorNode) || iteratorType.isHeap())
       currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
+  } else if (iteratorOrIterableType.isPtr() && iteratorOrIterableType.isHeap() && iteratorOrIterableResult.isTemporary()) {
+    // The iteratorAssignExpr is directly of type Iterator already (e.g. 'foreach item : container.getIterator()',
+    // bypassing the IIterable-driven branch above) and is an unnamed temporary owning heap memory (as opposed to a
+    // named variable, whose own declaring scope already frees it) - track it here so it gets freed, too.
+    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
+
+  // getIterator() returns a heap pointer to the concrete iterator struct (see IIterable<T>), and the direct-Iterator
+  // path above may equally be a heap pointer. Either way, the anonymous symbol (if any) tracks the pointer itself for
+  // scope-cleanup (dtor + deallocation), but every remaining lookup below (isIterator(), matching
+  // get()/getIdx()/isValid()/next()) expects the iterator's own struct type, so unwrap it here.
+  if (iteratorType.isPtr())
+    iteratorType = iteratorType.getContained();
 
   // Change to foreach body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);

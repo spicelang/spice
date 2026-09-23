@@ -410,6 +410,6 @@ public f<GraphBFSIterator<T>> Graph.bfs(Vertex<T>* startVertex = nil<Vertex<T>*>
 /**
  * Retrieve a depth-first iterator for the graph
  */
-public f<GraphDFSIterator<T>> Graph.getIterator() {
-    return this.dfs();
+public f<heap GraphDFSIterator<T>*> Graph.getIterator() {
+    return __new<GraphDFSIterator<T>>(*this, nil<Vertex<T>*>);
 }

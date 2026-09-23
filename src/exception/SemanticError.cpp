@@ -78,6 +78,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Multiple declarations of an interface with the same name";
   case INTERFACE_METHOD_NOT_IMPLEMENTED:
     return "Interface method not implemented";
+  case INTERFACE_METHOD_RETURNS_INTERFACE_BY_VALUE:
+    return "Interface method returns interface by value";
   case ENUM_DECLARED_TWICE:
     return "Multiple declarations of an enum with the same name";
   case INVALID_SYMBOL_ACCESS:
