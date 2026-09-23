@@ -14,6 +14,8 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 // so passes can be tested without the real SourceFile/GlobalResourceManager, which a pass must not depend on.
 
 public type MockSourceFile struct : ISourceFile {
+    public string fileName = "mock.spice"
+    public unsigned long lineCount = 0l
     public FilePath filePath
     public IScope* globalScopePtr = nil<IScope*>
     public bool isMain = true
@@ -30,8 +32,8 @@ public type MockSourceFile struct : ISourceFile {
     // Names the (imaginary) imported source files export, consulted by anyDependencyExports()
     public Vector<String> dependencyExportedNames
 }
-public f<unsigned long> MockSourceFile.getLineCount() { return 0l; }
-public f<string> MockSourceFile.getFileName() { return "mock.spice"; }
+public f<unsigned long> MockSourceFile.getLineCount() { return this.lineCount; }
+public f<string> MockSourceFile.getFileName() { return this.fileName; }
 public f<bool> MockSourceFile.isStdFile() { return false; }
 public f<IScope*> MockSourceFile.getGlobalScope() { return this.globalScopePtr; }
 public f<const FilePath&> MockSourceFile.getFilePath() { return this.filePath; }
