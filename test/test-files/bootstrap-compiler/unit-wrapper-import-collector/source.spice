@@ -1,0 +1,7 @@
+import "bootstrap/importcollector/import-collector";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testImportCollectorSmoke();
+    printf("All assertions passed!\n");
+}
