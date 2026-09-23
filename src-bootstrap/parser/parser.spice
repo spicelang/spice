@@ -55,6 +55,8 @@ f<T*> Parser.createNode<T>() {
     }
     // Upcast to the composed ASTNode base. This is what the parent/child book-keeping operates on.
     ASTNode* nodeBase = cast<ASTNode*>(node);
+    // Remember the node as IVisitable*, so generic child traversal can dispatch to its concrete type
+    nodeBase.visitable = cast<IVisitable*>(node);
 
     // If this is not the entry node, we need to add the new node to its parent
     if !isRootNode {

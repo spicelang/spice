@@ -78,6 +78,7 @@ public type IASTNode interface {
 
 public type IVisitable interface {
     public f<Any> accept(IAbstractAstVisitor*);
+    public f<const CodeLoc&> getCodeLoc();
 }
 
 // =========================================================== ASTNode ===========================================================
@@ -86,6 +87,9 @@ public type ASTNode struct/*: IVisitable*/ {
     public ASTNode* parent = nil<ASTNode*>
     public Vector<ASTNode*> children
     public CodeLoc codeLoc
+    // The node as an IVisitable*, set by the parser when it creates the node. A plain ASTNode* cannot be dispatched
+    // on (Spice has no virtual dispatch through a struct), so generic child traversal goes through this pointer.
+    public IVisitable* visitable = nil<IVisitable*>
 }
 
 public p ASTNode.ctor(const CodeLoc& codeLoc) {
@@ -123,9 +127,25 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
     // Do custom work (override in subclasses to add per-node behavior)
 }
 
+/**
+ * Dispatch to all registered children of a node, like the host's AbstractASTVisitor::visitChildren. Passes use this
+ * as the default behavior of every visit method they do not implement themselves.
+ *
+ * @param node Node whose children should be visited
+ * @param visitor Visitor to dispatch to
+ */
+public f<Any> visitChildrenOf(ASTNode* node, IAbstractAstVisitor* visitor) {
+    foreach ASTNode* child : node.children {
+        assert child != nil<ASTNode*>;
+        assert child.visitable != nil<IVisitable*>;
+        child.visitable.accept(visitor);
+    }
+    return Any();
+}
+
 // ========================================================== EntryNode ==========================================================
 
-public type ASTEntryNode struct {
+public type ASTEntryNode struct : IVisitable {
     compose public ASTNode node
 
     public Vector<IVisitable*> modAttrs
@@ -193,7 +213,7 @@ public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
 
 // ============================================================ AttrNode =========================================================
 
-public type ASTAttrNode struct {
+public type ASTAttrNode struct : IVisitable {
     compose public ASTNode node
     public String key
     // Defaults to TARGET_INVALID / ATTR_TYPE_INVALID (both enum ordinal 0) without naming the enum value
@@ -222,7 +242,7 @@ public f<const CompileTimeValue*> ASTAttrNode.getValue() {
 
 // ========================================================== AttrLstNode ========================================================
 
-public type ASTAttrLstNode struct {
+public type ASTAttrLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<ASTAttrNode*> attributes
 }
@@ -274,7 +294,7 @@ public f<CompileTimeValue> ASTAttrLstNode.getAttrValueByName(const String& key) 
 
 // ========================================================= QualifierNode =======================================================
 
-type QualifierType enum {
+public type QualifierType enum {
     NONE,
     CONST,
     SIGNED,
@@ -285,7 +305,7 @@ type QualifierType enum {
     COMPOSE
 }
 
-public type ASTQualifierNode struct {
+public type ASTQualifierNode struct : IVisitable {
     compose public ASTNode node
     public QualifierType qualifierType = QualifierType::NONE
 }
@@ -299,7 +319,7 @@ public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== QualifierLstNode =====================================================
 
-public type ASTQualifierLstNode struct {
+public type ASTQualifierLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<ASTQualifierNode*> qualifiers
 }
@@ -355,7 +375,7 @@ public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== TypeLstNode ========================================================
 
-public type ASTTypeLstNode struct {
+public type ASTTypeLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<ASTDataTypeNode*> dataTypes
 }
@@ -394,7 +414,7 @@ public f<String> ASTMainFctDefNode.getScopeId() {
 
 // ========================================================= FctNameNode =========================================================
 
-public type ASTFctNameNode struct {
+public type ASTFctNameNode struct : IVisitable {
     compose public ASTNode node
 
     public String name
@@ -916,7 +936,7 @@ public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // ==================================================== TypeLstWithEllipsisNode ==================================================
 
-public type ASTTypeLstWithEllipsisNode struct {
+public type ASTTypeLstWithEllipsisNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -931,7 +951,7 @@ public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== TypeAltsLstNode ======================================================
 
-public type ASTTypeAltsLstNode struct {
+public type ASTTypeAltsLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -983,7 +1003,7 @@ public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // =========================================================== ArgLstNode ========================================================
 
-public type ASTArgLstNode struct {
+public type ASTArgLstNode struct : IVisitable {
     compose public ASTNode node
 
 }
@@ -1001,7 +1021,7 @@ public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
 // back-links each item's 'enumDef' field directly (not via dispatch), so the list needs to stay
 // concretely typed, which in turn needs EnumItemNode defined first (same-file ordering rule).
 
-public type ASTEnumItemNode struct {
+public type ASTEnumItemNode struct : IVisitable {
     compose public ASTNode node
 
     public String itemName
@@ -1118,7 +1138,7 @@ public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== LambdaAttrNode =======================================================
 
-public type ASTLambdaAttrNode struct {
+public type ASTLambdaAttrNode struct : IVisitable {
     compose public ASTNode node
     public ASTAttrLstNode* attrLst = nil<ASTAttrLstNode*>
 }
@@ -1610,7 +1630,7 @@ public f<String> ASTLambdaExprNode.getScopeId() {
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
-public type ASTFunctionDataTypeNode struct {
+public type ASTFunctionDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 
 }
@@ -1671,4 +1691,99 @@ public f<bool> testASTNodesSmoke() {
     assert tlAttr.node.codeLoc.line == 3l;
 
     return true;
+}
+
+// ====================================================== IVisitable.getCodeLoc ==================================================
+
+// Every IVisitable node exposes its own code location. Passes use it to name the scope of an expression the same way the
+// host does ('expr:' + code location of the expression), so that later passes find the scope again from the node alone.
+
+public f<const CodeLoc&> ASTEntryNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTConstantNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAttrNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAttrLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTQualifierNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTQualifierLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTCustomDataTypeNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTBaseDataTypeNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTDataTypeNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTTypeLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTMainFctDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFctNameNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFctDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTProcDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTStructDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTInterfaceDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTUnionDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTEnumDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTGenericTypeDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAliasDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTGlobalVarDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTExtDeclNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTImportDefNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTUnsafeBlockNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTForLoopNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTForeachLoopNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTWhileLoopNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTDoWhileLoopNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTIfStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTElseStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTSwitchStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTCaseBranchNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTDefaultBranchNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAnonymousBlockStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTStmtLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTTypeLstWithEllipsisNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTTypeAltsLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTDeclStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTParamLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTArgLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTEnumItemNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTEnumItemLstNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFieldNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTSignatureNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTExprStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTModAttrNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTTopLevelDefAttrNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLambdaAttrNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTCaseConstantNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTReturnStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTBreakStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTContinueStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFallthroughStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAssertStmtNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAssignExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTTernaryExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLogicalOrExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLogicalAndExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTBitwiseOrExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTBitwiseXorExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTBitwiseAndExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTEqualityExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTRelationalExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTShiftExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAdditiveExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTMultiplicativeExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTCastExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTPrefixUnaryExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTPostfixUnaryExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTAtomicExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTValueNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFctCallNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTArrayInitializationNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTStructInstantiationNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLambdaFuncNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLambdaProcNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTLambdaExprNode.getCodeLoc() { return this.codeLoc; }
+public f<const CodeLoc&> ASTFunctionDataTypeNode.getCodeLoc() { return this.codeLoc; }
+
+/**
+ * Name of the scope that holds the temporaries of an expression. Equal to the host's ExprNode::getExprScopeId().
+ *
+ * @param expr Expression
+ * @return Scope id
+ */
+public f<String> getExprScopeId(IVisitable* expr) {
+    const CodeLoc& codeLoc = expr.getCodeLoc();
+    return String("expr:") + codeLoc.toString();
 }
