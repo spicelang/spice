@@ -359,11 +359,16 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void()
   // Get function linkage
   const bool isPublic = spiceFunc->entry->getQualType().isPublic();
 
-  // Create function
+  // Create function or implement a forward declaration that an earlier call site already inserted for this mangled
+  // name. Unconditionally calling llvm::Function::Create would not find that declaration - LLVM auto-renames the
+  // new, colliding GlobalValue instead of merging with it, leaving the original declaration (and every call to it)
+  // permanently undefined. See generateImplicitProcedure for the same fix on the procedure side.
   const std::string mangledName = spiceFunc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-  const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
-  llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
+  module->getOrInsertFunction(mangledName, fctType);
+  llvm::Function *fct = module->getFunction(mangledName);
+  assert(fct->empty());
+  fct->setLinkage(getSymbolLinkageType(isPublic));
   fct->addFnAttr(llvm::Attribute::MustProgress);
   addCommonFctAttrs(fct);
 
