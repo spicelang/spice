@@ -1,0 +1,33 @@
+// A struct literal field initialized directly from a reference-typed parameter (rather than a plain local
+// variable) must resolve and call the field type's copy ctor like any other non-temporary source, instead of
+// crashing the type checker: implicitlyCallStructCopyCtor(entry, ...) used to assert entry->getQualType().is(TY_STRUCT)
+// without first stripping the reference wrapper off the entry's type, so it always failed for a ref-typed entry.
+type Sock struct {
+    int fd
+}
+
+type Wrapper struct {
+    Sock sock
+}
+
+// Non-const reference parameter used directly as a struct literal field value.
+f<int> useSockRef(Sock& sock) {
+    Wrapper w = Wrapper{sock};
+    return w.sock.fd;
+}
+
+// Const reference parameter used directly as a struct literal field value (the shape originally hit by
+// TlsSocket{sock, ssl} with sock: Socket& in std/net/tls.spice, see PR #1380 / issue #1418).
+f<int> useSockConstRef(const Sock& sock) {
+    Wrapper w = Wrapper{sock};
+    return w.sock.fd;
+}
+
+f<int> main() {
+    Sock s = Sock{7};
+    int fd1 = useSockRef(s);
+    int fd2 = useSockConstRef(s);
+    printf("fd1: %d\n", fd1);
+    printf("fd2: %d\n", fd2);
+    return 0;
+}

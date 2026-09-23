@@ -747,8 +747,10 @@ Function *TypeChecker::implicitlyCallStructMethod(QualType thisType, const std::
  * @param node Current AST node
  */
 Function *TypeChecker::implicitlyCallStructCopyCtor(const SymbolTableEntry *entry, const ASTNode *node) const {
-  assert(entry != nullptr && entry->getQualType().is(TY_STRUCT));
-  return implicitlyCallStructCopyCtor(entry->getQualType(), node);
+  assert(entry != nullptr);
+  const QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
+  assert(thisType.is(TY_STRUCT));
+  return implicitlyCallStructCopyCtor(thisType, node);
 }
 
 /**
@@ -770,8 +772,10 @@ Function *TypeChecker::implicitlyCallStructCopyCtor(const QualType &thisType, co
  * @param node Current AST node
  */
 Function *TypeChecker::implicitlyCallStructMoveCtor(const SymbolTableEntry *entry, const ASTNode *node) const {
-  assert(entry != nullptr && entry->getQualType().is(TY_STRUCT));
-  return implicitlyCallStructMoveCtor(entry->getQualType(), node);
+  assert(entry != nullptr);
+  const QualType thisType = entry->getQualType().removeReferenceWrapper().toNonConst();
+  assert(thisType.is(TY_STRUCT));
+  return implicitlyCallStructMoveCtor(thisType, node);
 }
 
 /**
