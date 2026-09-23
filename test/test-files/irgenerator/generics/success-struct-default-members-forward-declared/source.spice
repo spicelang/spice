@@ -1,0 +1,50 @@
+// A plain struct's compiler-generated default ctor/copy-ctor/dtor used to go missing at link time (undefined
+// symbol), purely depending on whether a generic struct using it as a type argument is declared textually before
+// it in the same file, combined with an earlier coexisting instantiation of that generic with a different type.
+//
+// Root cause: IRGenerator::generateImplicitProcedure() unconditionally called llvm::Function::Create() for a
+// default member. If an earlier call site (here, Holder<Box>'s user-written ctor default-constructing its 'val'
+// field) had already inserted a forward declaration for that mangled name because Box's own struct-def hadn't
+// been visited yet, LLVM auto-renamed the new, colliding definition instead of attaching it to the existing
+// declaration - leaving the original declaration (and every call to it) permanently undefined at link time.
+type T dyn;
+
+// Declared before Box: Holder<T>'s ctor/dtor bodies get IR-generated before Box's own struct-def is reached,
+// so any call to Box's default ctor/dtor from within them forward-declares those symbols first.
+type Holder<T> struct {
+    T& ref
+    T val
+}
+
+p Holder.ctor<T>(T& ref) {
+    this.ref = ref;
+    this.val = ref;
+}
+
+p Holder.dtor<T>() {
+    this.ref = this.val;
+}
+
+type Box struct {
+    String label
+    int tag
+}
+
+f<int> main() {
+    // First instantiation, coexisting with the Box one below - needed to reproduce the original bug.
+    String s = String("hello");
+    {
+        Holder<String> hs = Holder<String>(s);
+        s = String("changed");
+    }
+
+    // Second, distinct instantiation: Holder<Box>, whose ctor/dtor call Box's default ctor/copy-ctor/dtor.
+    Box b = Box{String("x"), 1};
+    {
+        Holder<Box> hb = Holder<Box>(b);
+        b.tag = 2;
+    }
+
+    printf("s=%s label=%s tag=%d\n", s.getRaw(), b.label.getRaw(), b.tag);
+    return 0;
+}

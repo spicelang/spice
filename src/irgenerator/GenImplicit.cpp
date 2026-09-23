@@ -452,11 +452,17 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Get function linkage
   const bool isPublic = spiceProc->entry->getQualType().isPublic();
 
-  // Create function
+  // Create function or implement a forward declaration that an earlier call site already inserted for this mangled
+  // name (e.g. another struct's ctor preamble calling this default member before it got its own definition here).
+  // Unconditionally calling llvm::Function::Create would not find that declaration - LLVM auto-renames the new,
+  // colliding GlobalValue instead of merging with it, leaving the original declaration (and every call to it)
+  // permanently undefined.
   const std::string mangledName = spiceProc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
-  const llvm::GlobalObject::LinkageTypes linkage = getSymbolLinkageType(isPublic);
-  llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module);
+  module->getOrInsertFunction(mangledName, fctType);
+  llvm::Function *fct = module->getFunction(mangledName);
+  assert(fct->empty());
+  fct->setLinkage(getSymbolLinkageType(isPublic));
   fct->addFnAttr(llvm::Attribute::MustProgress);
   addCommonFctAttrs(fct);
 
