@@ -5,6 +5,10 @@
 spice.exe
 spice
 
+# Release workflow staging dirs (downloaded compiler binaries, Docker build context libs)
+/bin
+/docker-libs
+
 # Generated output from ANTLR
 /gen
 
