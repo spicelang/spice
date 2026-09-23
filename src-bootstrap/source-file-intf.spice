@@ -1,5 +1,18 @@
+// Std imports
+import "std/io/filepath";
+
+// Own imports
+import "bootstrap/symboltablebuilder/scope-intf";
+
 public type ISourceFile interface {
     public f<unsigned long> getLineCount();
     public f<string> getFileName();
     public f<bool> isStdFile();
+    public f<IScope*> getGlobalScope();
+    public f<const FilePath&> getFilePath();
+    public p addDependency(ISourceFile*, const String&);
+    public p setAlwaysKeepSymbolsOnNameCollision(bool);
+    public p setIgnoreWarnings(bool);
+    public p setExplicitErrorHandling(bool);
+    public p setErrorReturnTracing(bool);
 }

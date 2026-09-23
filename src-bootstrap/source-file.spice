@@ -552,6 +552,28 @@ public p SourceFile.addDependency(SourceFile* sourceFile, const ASTNode* declNod
     sourceFile.dependants.pushBack(this);
 }
 
+// ISourceFile entry points: passes only see source files as ISourceFile*, so forward to the concrete implementations.
+public f<IScope*> SourceFile.getGlobalScope() {
+    return this.globalScope;
+}
+
+public f<const FilePath&> SourceFile.getFilePath() {
+    return this.filePath;
+}
+
+public p SourceFile.addDependency(ISourceFile* dependency, const String& dependencyName) {
+    SourceFile* concreteDependency = nil<SourceFile*>;
+    unsafe {
+        concreteDependency = cast<SourceFile*>(dependency);
+    }
+    this.addDependency(concreteDependency, nil<ASTNode*>, dependencyName, String(concreteDependency.filePath.toGenericString()));
+}
+
+public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
+public p SourceFile.setIgnoreWarnings(bool value) { this.ignoreWarnings = value; }
+public p SourceFile.setExplicitErrorHandling(bool value) { this.explicitErrorHandling = value; }
+public p SourceFile.setErrorReturnTracing(bool value) { this.errorReturnTracing = value; }
+
 public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
     foreach dyn dependency : this.dependencies {
         if dependency.getSecond() == sourceFile {

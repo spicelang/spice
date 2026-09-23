@@ -18,6 +18,8 @@ public const string ATTR_CORE_COMPILER_FIXED_TYPE_ID = "core.compiler.fixedTypeI
 public const string ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
 public const string ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
 public const string ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
+public const string ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING = "core.compiler.explicitErrorHandling";
+public const string ATTR_CORE_COMPILER_ERROR_RETURN_TRACING = "core.compiler.errorReturnTracing";
 public const string ATTR_TEST = "test";
 public const string ATTR_TEST_NAME = "test.name";
 public const string ATTR_TEST_SKIP = "test.skip";
@@ -32,7 +34,8 @@ public type AttrTarget enum {
     TARGET_INTERFACE = 4,
     TARGET_FCT_PROC = 8,
     TARGET_EXT_DECL = 16,
-    TARGET_LAMBDA = 32
+    TARGET_LAMBDA = 32,
+    TARGET_UNION = 64
 }
 
 public type AttrType enum {

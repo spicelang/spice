@@ -1,23 +1,32 @@
 // Own imports
 import "bootstrap/global/global-resource-manager-intf";
 import "bootstrap/driver";
-import "bootstrap/source-file-intf";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/source-file-intf";
 
-type CompilerPass struct {
-    IGlobalResourceManager& resourceManager
-    CliOptions& cliOptions
-    ISourceFile* sourceFile
-    heap Scope* rootScope
-    unsigned long manIdx = 0l
-    Scope* currentScope
+public type CompilerPass struct {
+    public IGlobalResourceManager& resourceManager
+    public CliOptions& cliOptions
+    public ISourceFile* sourceFile
+    public Scope* rootScope
+    public unsigned long manIdx = 0l
+    public Scope* currentScope
 }
 
-p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile = nil<ISourceFile*>) {
+public p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile = nil<ISourceFile*>) {
     this.resourceManager = resourceManager;
-    this.cliOptions = resourceManager.cliOptions;
+    // Bind the reference field from a reference variable (assigning a call result would copy into an unbound reference)
+    CliOptions& cliOptionsRef = resourceManager.getCliOptions();
+    this.cliOptions = cliOptionsRef;
     this.sourceFile = sourceFile;
-    this.currentScope = this.rootScope = sourceFile != nil<ISourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
+    if sourceFile != nil<ISourceFile*> {
+        unsafe {
+            this.currentScope = this.rootScope = cast<Scope*>(sourceFile.getGlobalScope());
+        }
+    } else {
+        this.currentScope = this.rootScope = nil<Scope*>;
+    }
 }
 
 /**
@@ -28,7 +37,7 @@ p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* source
  * @param scope Scope to change to
  * @param scopeType Expected type of the given scope
  */
-p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
+public p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
     assert scope != nil<Scope*>;
     assert scope.scopeType == scopeType;
     assert !scope.isGenericScope;
@@ -45,7 +54,7 @@ p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
  * @param scopeName Name of the scope to change to
  * @param scopeType Expected type of the given scope
  */
-p CompilerPass.changeToScope(const String& scopeName, ScopeType scopeType) {
+public p CompilerPass.changeToScope(const String& scopeName, ScopeType scopeType) {
     assert !scopeName.isEmpty();
     this.changeToScope(this.currentScope.getChildScope(scopeName), scopeType);
 }
@@ -55,7 +64,7 @@ p CompilerPass.changeToScope(const String& scopeName, ScopeType scopeType) {
  *
  * @param oldScopeType Expected type of the scope to leave
  */
-p CompilerPass.changeToParentScope(ScopeType oldScopeType) {
+public p CompilerPass.changeToParentScope(ScopeType oldScopeType) {
     assert this.currentScope.scopeType == oldScopeType;
     assert this.currentScope.parent != nil<Scope*>;
     this.currentScope = this.currentScope.parent;
