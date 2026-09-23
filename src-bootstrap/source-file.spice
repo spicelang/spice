@@ -22,6 +22,8 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
+import "bootstrap/importcollector/import-collector";
+import "bootstrap/symboltablebuilder/symbol-table-builder";
 
 type CompileStageType enum {
     NONE,
