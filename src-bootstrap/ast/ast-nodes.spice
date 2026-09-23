@@ -77,7 +77,7 @@ public type IASTNode interface {
 }
 
 public type IVisitable interface {
-    f<Any> accept(IAbstractAstVisitor*);
+    public f<Any> accept(IAbstractAstVisitor*);
 }
 
 // =========================================================== ASTNode ===========================================================
@@ -648,7 +648,7 @@ public f<String> ASTExtDeclNode.getScopeId() {
 
 // ========================================================= ImportDefNode =======================================================
 
-public type ASTImportDefNode struct {
+public type ASTImportDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
     public String importPath

@@ -326,7 +326,7 @@ public f<ASTEntryNode*> Parser.parse() {
     dyn entryNode = this.createNode<ASTEntryNode>();
 
     while !this.currentTokenIs(TokenType::EOF) {
-        this.parseTopLevelDef();
+        this.parseTopLevelDef(entryNode);
     }
 
     return this.concludeNode(entryNode);
@@ -334,14 +334,14 @@ public f<ASTEntryNode*> Parser.parse() {
 
 // entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef
 //         | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
-p Parser.parseTopLevelDef() {
+p Parser.parseTopLevelDef(ASTEntryNode* entryNode) {
     // Constructs that are unambiguous from their first token
     if this.currentTokenIs(TokenType::MOD_ATTR_PREAMBLE) {
-        this.parseModAttr();
+        entryNode.modAttrs.pushBack(cast<IVisitable*>(this.parseModAttr()));
         return;
     }
     if this.currentTokenIs(TokenType::IMPORT) {
-        this.parseImportDef();
+        entryNode.importDefs.pushBack(cast<IVisitable*>(this.parseImportDef()));
         return;
     }
 
@@ -359,9 +359,9 @@ p Parser.parseTopLevelDef() {
     const TokenType disc = this.tokenAt(cast<unsigned long>(offset));
 
     if disc == TokenType::EXT {
-        this.parseExtDecl();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseExtDecl()));
     } else if disc == TokenType::P {
-        this.parseProcDef();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseProcDef()));
     } else if disc == TokenType::F {
         // mainFunctionDef: 'f' '<' 'int' '>' 'main' ...; everything else starting with 'f' is a functionDef
         const bool isMain = this.tokenAt(cast<unsigned long>(offset + 1l)) == TokenType::LESS
@@ -369,9 +369,9 @@ p Parser.parseTopLevelDef() {
             && this.tokenAt(cast<unsigned long>(offset + 3l)) == TokenType::GREATER
             && this.tokenAt(cast<unsigned long>(offset + 4l)) == TokenType::MAIN;
         if isMain {
-            this.parseMainFctDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseMainFctDef()));
         } else {
-            this.parseFctDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseFctDef()));
         }
     } else if disc == TokenType::TYPE {
         // structDef | interfaceDef | enumDef | genericTypeDef | aliasDef
@@ -384,18 +384,18 @@ p Parser.parseTopLevelDef() {
             after = keywordOffset < 0l ? TokenType::INVALID : this.tokenAt(cast<unsigned long>(keywordOffset));
         }
         if after == TokenType::ENUM {
-            this.parseEnumDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseEnumDef()));
         } else if after == TokenType::ALIAS {
-            this.parseAliasDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseAliasDef()));
         } else if after == TokenType::INTERFACE {
-            this.parseInterfaceDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseInterfaceDef()));
         } else if after == TokenType::STRUCT {
-            this.parseStructDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseStructDef()));
         } else {
-            this.parseGenericTypeDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseGenericTypeDef()));
         }
     } else {
-        this.parseGlobalVarDef();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseGlobalVarDef()));
     }
 }
 
