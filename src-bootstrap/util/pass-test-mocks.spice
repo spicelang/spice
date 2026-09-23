@@ -1,0 +1,91 @@
+// Std imports
+import "std/data/vector";
+import "std/io/filepath";
+
+// Own imports
+import "bootstrap/driver";
+import "bootstrap/exception/error-manager";
+import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/source-file-intf";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+// Minimal ISourceFile/IGlobalResourceManager implementations that record what a compiler pass does to them. They exist
+// so passes can be tested without the real SourceFile/GlobalResourceManager, which a pass must not depend on.
+
+public type MockSourceFile struct : ISourceFile {
+    public FilePath filePath
+    public IScope* globalScopePtr = nil<IScope*>
+    public bool isMain = true
+    public bool alwaysKeepSymbolsOnNameCollision = false
+    public bool ignoreWarnings = false
+    public bool explicitErrorHandling = false
+    public bool errorReturnTracing = false
+    public Vector<String> dependencyNames
+    public Vector<String> sourceLinkerFlags
+    public Vector<FilePath> sourceAdditionalSourcePaths
+    public Vector<String> registeredNames
+    public Vector<SymbolTableEntry*> registeredEntries
+    public Vector<unsigned long> registeredTypeIds
+    // Names the (imaginary) imported source files export, consulted by anyDependencyExports()
+    public Vector<String> dependencyExportedNames
+}
+public f<unsigned long> MockSourceFile.getLineCount() { return 0l; }
+public f<string> MockSourceFile.getFileName() { return "mock.spice"; }
+public f<bool> MockSourceFile.isStdFile() { return false; }
+public f<IScope*> MockSourceFile.getGlobalScope() { return this.globalScopePtr; }
+public f<const FilePath&> MockSourceFile.getFilePath() { return this.filePath; }
+public p MockSourceFile.addDependency(ISourceFile* dependency, const String& dependencyName) { this.dependencyNames.pushBack(dependencyName); }
+public p MockSourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
+public p MockSourceFile.setIgnoreWarnings(bool value) { this.ignoreWarnings = value; }
+public p MockSourceFile.setExplicitErrorHandling(bool value) { this.explicitErrorHandling = value; }
+public p MockSourceFile.setErrorReturnTracing(bool value) { this.errorReturnTracing = value; }
+public f<bool> MockSourceFile.isMainSourceFile() { return this.isMain; }
+public p MockSourceFile.addSourceLinkerFlag(const String& flag) { this.sourceLinkerFlags.pushBack(flag); }
+public p MockSourceFile.addSourceAdditionalSourcePath(const FilePath& path) { this.sourceAdditionalSourcePaths.pushBack(path); }
+public p MockSourceFile.addNameRegistryEntry(const String& symbolName, unsigned long typeId, SymbolTableEntry* entry, IScope* scope, bool keepNewOnCollision, SymbolTableEntry* importEntry) {
+    this.registeredNames.pushBack(symbolName);
+    this.registeredEntries.pushBack(entry);
+    this.registeredTypeIds.pushBack(typeId);
+}
+public f<bool> MockSourceFile.hasNameRegistryTarget(const String& symbolName, const SymbolTableEntry* target) {
+    for unsigned long i = 0l; i < this.registeredNames.getSize(); i++ {
+        if this.registeredNames.get(i) == symbolName && this.registeredEntries.get(i) == target {
+            return true;
+        }
+    }
+    return false;
+}
+public f<bool> MockSourceFile.anyDependencyExports(const String& symbolName) {
+    for unsigned long i = 0l; i < this.dependencyExportedNames.getSize(); i++ {
+        if this.dependencyExportedNames.get(i) == symbolName {
+            return true;
+        }
+    }
+    return false;
+}
+
+public type MockResourceManager struct : IGlobalResourceManager {
+    public CliOptions cliOptions
+    public ErrorManager errorManager
+    public MockSourceFile importedFile
+    public Vector<String> createdPaths
+    public Vector<String> compileTimeStrings
+    public Vector<String> linkerFlags
+    public Vector<FilePath> additionalSourcePaths
+}
+public f<CliOptions&> MockResourceManager.getCliOptions() { return this.cliOptions; }
+public f<ErrorManager&> MockResourceManager.getErrorManager() { return this.errorManager; }
+public f<const String&> MockResourceManager.getCompileTimeStringValue(unsigned long offset) { return this.compileTimeStrings.get(offset); }
+public p MockResourceManager.addLinkerFlag(const String& flag) { this.linkerFlags.pushBack(flag); }
+public p MockResourceManager.addAdditionalSourcePath(const FilePath& path) { this.additionalSourcePaths.pushBack(path); }
+public f<ISourceFile*> MockResourceManager.createSourceFile(ISourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
+    this.createdPaths.pushBack(String(path.toGenericString()));
+    return &this.importedFile;
+}
+
+// True if the message of the soft error at the given index contains the needle
+public f<bool> softErrorContains(ErrorManager& errorManager, unsigned long index, string needle) {
+    const SoftError& error = errorManager.softErrors.get(index);
+    return error.message.contains(needle);
+}

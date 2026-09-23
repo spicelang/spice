@@ -569,6 +569,42 @@ public p SourceFile.addDependency(ISourceFile* dependency, const String& depende
     this.addDependency(concreteDependency, nil<ASTNode*>, dependencyName, String(concreteDependency.filePath.toGenericString()));
 }
 
+public f<bool> SourceFile.isMainSourceFile() {
+    return this.isMainFile;
+}
+
+public p SourceFile.addSourceLinkerFlag(const String& flag) {
+    this.sourceLinkerFlags.pushBack(flag);
+}
+
+public p SourceFile.addSourceAdditionalSourcePath(const FilePath& path) {
+    this.sourceAdditionalSourcePaths.pushBack(path);
+}
+
+public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long typeId, SymbolTableEntry* entry, IScope* scope, bool keepNewOnCollision, SymbolTableEntry* importEntry) {
+    Scope* concreteScope = nil<Scope*>;
+    unsafe {
+        concreteScope = cast<Scope*>(scope);
+    }
+    this.addNameRegistryEntry(symbolName, typeId, entry, concreteScope, keepNewOnCollision, importEntry);
+}
+
+// True if the exported name registry already maps the name to the given symbol table entry
+public f<bool> SourceFile.hasNameRegistryTarget(const String& symbolName, const SymbolTableEntry* target) {
+    const NameRegistryEntry* existing = this.getNameRegistryEntry(symbolName);
+    return existing != nil<NameRegistryEntry*> && existing.targetEntry == target;
+}
+
+// True if any imported source file exports a symbol with the given name
+public f<bool> SourceFile.anyDependencyExports(const String& symbolName) {
+    foreach dyn dependency : this.dependencies {
+        if dependency.getSecond().exportedNameRegistry.contains(symbolName) {
+            return true;
+        }
+    }
+    return false;
+}
+
 public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
 public p SourceFile.setIgnoreWarnings(bool value) { this.ignoreWarnings = value; }
 public p SourceFile.setExplicitErrorHandling(bool value) { this.explicitErrorHandling = value; }

@@ -94,6 +94,18 @@ public f<CliOptions&> GlobalResourceManager.getCliOptions() {
     return this.cliOptions;
 }
 
+public f<const String&> GlobalResourceManager.getCompileTimeStringValue(unsigned long offset) {
+    return this.compileTimeStringValues.get(offset);
+}
+
+public p GlobalResourceManager.addLinkerFlag(const String& flag) {
+    this.linker.addLinkerFlag(flag);
+}
+
+public p GlobalResourceManager.addAdditionalSourcePath(const FilePath& path) {
+    this.linker.addAdditionalSourcePath(path);
+}
+
 public f<ErrorManager&> GlobalResourceManager.getErrorManager() {
     return this.errorManager;
 }

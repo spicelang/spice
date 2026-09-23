@@ -51,6 +51,61 @@ public type AttrConfigValue struct {
     public AttrType attrType
 }
 
+/**
+ * Look up the allowed targets and the value type of a known attribute. This is the equivalent of the host's ATTR_CONFIGS
+ * table (Spice globals must be primitives, so it is a function instead of a map).
+ *
+ * @param key Attribute key
+ * @param config Receives the configuration of the attribute if it is known
+ * @return True if the attribute is known
+ */
+public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
+    const unsigned byte targetModule = cast<unsigned byte>(AttrTarget::TARGET_MODULE);
+    const unsigned byte targetStruct = cast<unsigned byte>(AttrTarget::TARGET_STRUCT);
+    const unsigned byte targetInterface = cast<unsigned byte>(AttrTarget::TARGET_INTERFACE);
+    const unsigned byte targetFctProc = cast<unsigned byte>(AttrTarget::TARGET_FCT_PROC);
+    const unsigned byte targetExtDecl = cast<unsigned byte>(AttrTarget::TARGET_EXT_DECL);
+    const unsigned byte targetLambda = cast<unsigned byte>(AttrTarget::TARGET_LAMBDA);
+    const unsigned byte targetUnion = cast<unsigned byte>(AttrTarget::TARGET_UNION);
+
+    if key == ATTR_CORE_LINKER_FLAG || key == ATTR_CORE_LINUX_LINKER_FLAG || key == ATTR_CORE_DARWIN_LINKER_FLAG ||
+       key == ATTR_CORE_WINDOWS_LINKER_FLAG || key == ATTR_CORE_LINKER_ADDITIONAL_SOURCE {
+        config.target = targetModule;
+        config.attrType = AttrType::TYPE_STRING;
+    } else if key == ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION || key == ATTR_CORE_COMPILER_WARNINGS_IGNORE ||
+              key == ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING || key == ATTR_CORE_COMPILER_ERROR_RETURN_TRACING {
+        config.target = targetModule;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else if key == ATTR_CORE_COMPILER_FIXED_TYPE_ID {
+        config.target = targetStruct | targetInterface | targetUnion;
+        config.attrType = AttrType::TYPE_INT;
+    } else if key == ATTR_CORE_LINKER_DLL {
+        config.target = targetExtDecl;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else if key == ATTR_CORE_COMPILER_MANGLE {
+        config.target = targetFctProc | targetExtDecl;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else if key == ATTR_CORE_COMPILER_MANGLED_NAME {
+        config.target = targetFctProc | targetExtDecl;
+        config.attrType = AttrType::TYPE_STRING;
+    } else if key == ATTR_CORE_COMPILER_EMIT_VTABLE || key == ATTR_CORE_COMPILER_PACKED {
+        config.target = targetStruct;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else if key == ATTR_TEST || key == ATTR_TEST_SKIP {
+        config.target = targetFctProc;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else if key == ATTR_TEST_NAME {
+        config.target = targetFctProc;
+        config.attrType = AttrType::TYPE_STRING;
+    } else if key == ATTR_ASYNC || key == ATTR_IGNORE_UNUSED_RETURN_VALUE {
+        config.target = targetFctProc | targetLambda;
+        config.attrType = AttrType::TYPE_BOOL;
+    } else {
+        return false;
+    }
+    return true;
+}
+
 #[test, test.name="Attributes Smoke test"]
 public f<bool> testAttributesSmoke() {
     // Attribute name constants
@@ -72,6 +127,21 @@ public f<bool> testAttributesSmoke() {
     // Build a config value
     AttrConfigValue cfg = AttrConfigValue{cast<byte>(8), AttrType::TYPE_STRING};
     assert cfg.attrType == AttrType::TYPE_STRING;
+
+    // Known attributes resolve to the same targets/types as the host's ATTR_CONFIGS table
+    AttrConfigValue looked;
+    assert getAttrConfig(String(ATTR_CORE_LINKER_FLAG), looked);
+    assert looked.target == cast<unsigned byte>(AttrTarget::TARGET_MODULE);
+    assert looked.attrType == AttrType::TYPE_STRING;
+    assert getAttrConfig(String(ATTR_CORE_COMPILER_FIXED_TYPE_ID), looked);
+    assert looked.target == (cast<unsigned byte>(AttrTarget::TARGET_STRUCT) | cast<unsigned byte>(AttrTarget::TARGET_INTERFACE) | cast<unsigned byte>(AttrTarget::TARGET_UNION));
+    assert looked.attrType == AttrType::TYPE_INT;
+    assert getAttrConfig(String(ATTR_ASYNC), looked);
+    assert looked.target == (cast<unsigned byte>(AttrTarget::TARGET_FCT_PROC) | cast<unsigned byte>(AttrTarget::TARGET_LAMBDA));
+    assert looked.attrType == AttrType::TYPE_BOOL;
+    assert getAttrConfig(String(ATTR_TEST_NAME), looked);
+    assert looked.attrType == AttrType::TYPE_STRING;
+    assert !getAttrConfig(String("not.an.attribute"), looked);
 
     return true;
 }
