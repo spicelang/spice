@@ -1,0 +1,6 @@
+f<int> main() {
+    const int x = 1;
+    int y = 2;
+    bool cond = true;
+    int& ref = cond ? x : y;
+}

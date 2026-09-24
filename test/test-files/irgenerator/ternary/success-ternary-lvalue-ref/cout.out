@@ -1,0 +1,39 @@
+Struct lvalues bound to non-const ref:
+Ctor 1
+Ctor 2
+a=1 b=20
+Dtor 20
+Dtor 1
+Struct lvalues bound to const ref and discarded:
+Ctor 3
+Ctor 4
+ref=3
+Dtor 4
+Dtor 3
+Struct lvalues passed to non-const ref parameter:
+Ctor 5
+Ctor 6
+a=50 b=6
+Dtor 6
+Dtor 50
+Struct lvalues copied by value:
+Ctor 7
+Ctor 8
+Copy ctor 8
+b=8 copy=80
+Dtor 80
+Dtor 8
+Dtor 7
+Struct fields:
+ax by
+Primitives:
+x=1 y=42
+Nested ternary:
+x=1 y=2 z=42
+Ctor 9
+Ctor 10
+Ctor 11
+a=9 b=100 c=11
+Dtor 11
+Dtor 100
+Dtor 9

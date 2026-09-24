@@ -1,0 +1,5 @@
+f<int> main() {
+    int x = 1;
+    bool cond = true;
+    int& ref = cond ? x : 5;
+}
