@@ -1,14 +1,9 @@
 import "std/os/os";
 import "std/io/file";
+import "std/io/impl/filepath_native";
 
 const char PATH_SEPARATOR_UNIX = '/';
 const char PATH_SEPARATOR_WINDOWS = '\\';
-const int CANONICAL_PATH_BUFFER_SIZE = 4096; // PATH_MAX on Linux
-
-// realpath() resolves symlinks and '.'/'..' components against a caller-supplied buffer (no allocation
-// happens when the buffer is non-nil, so there is nothing to free here). Returns nil on failure (e.g. the
-// path does not exist).
-ext f<string> realpath(string /*path*/, string /*resolvedPathBuf*/);
 
 /**
  * Represents a path to a file or directory on the local file system
@@ -319,14 +314,7 @@ public f<bool> FilePath.hasParentDirComponent() {
  * @return The canonical path, or an empty FilePath if resolution failed (e.g. the path does not exist)
  */
 public f<FilePath> FilePath.canonical() {
-    char[CANONICAL_PATH_BUFFER_SIZE] resolvedBuf;
-    unsafe {
-        const string resolved = realpath(this.path.getRaw(), cast<string>(&resolvedBuf));
-        if resolved == nil<string> {
-            return FilePath();
-        }
-        return FilePath(String(resolved));
-    }
+    return FilePath(resolveCanonicalPath(this.path));
 }
 
 /**

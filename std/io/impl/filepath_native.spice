@@ -1,0 +1,24 @@
+// Canonical path resolution for filepath.spice. Windows has no realpath() and therefore has its own
+// filepath_native_windows.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+const int CANONICAL_PATH_BUFFER_SIZE = 4096; // PATH_MAX on Linux
+
+// realpath() resolves symlinks and '.'/'..' components against a caller-supplied buffer (no allocation
+// happens when the buffer is non-nil, so there is nothing to free here). Returns nil on failure (e.g. the
+// path does not exist).
+ext f<string> realpath(string /*path*/, string /*resolvedPathBuf*/);
+
+/**
+ * Resolves a path to an absolute, symlink-free, '.'/'..' -free canonical form.
+ *
+ * @param path Path to resolve
+ * @return The canonical path, or an empty string if resolution failed (e.g. the path does not exist)
+ */
+public f<String> resolveCanonicalPath(const String& path) {
+    char[CANONICAL_PATH_BUFFER_SIZE] resolvedBuf;
+    string resolved;
+    unsafe {
+        resolved = realpath(path.getRaw(), cast<string>(&resolvedBuf));
+    }
+    return resolved != nil<string> ? String(resolved) : String();
+}
