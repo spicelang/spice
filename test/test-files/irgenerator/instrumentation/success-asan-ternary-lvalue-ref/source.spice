@@ -1,0 +1,39 @@
+// TEST: --sanitizer=address
+
+type Obj struct {
+    int id
+}
+
+p Obj.ctor(int id) {
+    this.id = id;
+    printf("Ctor %d\n", this.id);
+}
+p Obj.dtor() {
+    printf("Dtor %d\n", this.id);
+}
+
+type Pair struct {
+    int first
+    int second
+}
+
+p Pair.set(bool cond, int value) {
+    // The ternary result refers to one of the fields. Address sanitizer requires lifetime markers, which must only be
+    // emitted for the allocas of local variables, but not for the reference result of a ternary.
+    int& target = cond ? this.first : this.second;
+    target = value;
+}
+
+f<int> main() {
+    Pair pair = Pair{1, 2};
+    pair.set(true, 10);
+    pair.set(false, 20);
+    printf("first=%d second=%d\n", pair.first, pair.second);
+
+    Obj a = Obj(1);
+    Obj b = Obj(2);
+    Obj c = Obj(3);
+    Obj& ref = pair.first == 10 ? (pair.second == 20 ? c : b) : a;
+    ref.id = 30;
+    printf("a=%d b=%d c=%d\n", a.id, b.id, c.id);
+}

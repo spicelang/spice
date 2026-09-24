@@ -131,7 +131,9 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
   if (cliOptions.useLifetimeMarkers) {
     for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
       llvm::Value *address = getAddress(var);
-      if (address != nullptr)
+      // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else. This excludes e.g. the phi
+      // of a ternary with a reference result, which refers to the storage of one of its operands.
+      if (address != nullptr && llvm::isa<llvm::AllocaInst>(address))
         builder.CreateLifetimeEnd(address);
     }
   }

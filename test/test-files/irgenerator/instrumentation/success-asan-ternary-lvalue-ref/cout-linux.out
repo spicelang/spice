@@ -1,0 +1,8 @@
+first=10 second=20
+Ctor 1
+Ctor 2
+Ctor 3
+a=1 b=2 c=30
+Dtor 30
+Dtor 2
+Dtor 1
