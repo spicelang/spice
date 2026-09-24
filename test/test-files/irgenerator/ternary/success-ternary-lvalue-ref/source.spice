@@ -1,0 +1,103 @@
+type Obj struct {
+    int id
+}
+
+p Obj.ctor(int id) {
+    this.id = id;
+    printf("Ctor %d\n", this.id);
+}
+p Obj.ctor(const Obj& other) {
+    this.id = other.id;
+    printf("Copy ctor %d\n", this.id);
+}
+p Obj.dtor() {
+    printf("Dtor %d\n", this.id);
+}
+
+type Pair struct {
+    String first
+    String second
+}
+
+p Pair.append(bool cond, const string& suffix) {
+    // Both operands are lvalues, so the result can be bound to a non-const reference
+    String& target = cond ? this.first : this.second;
+    target += suffix;
+}
+
+p setId(Obj& obj, int id) {
+    obj.id = id;
+}
+
+f<int> main() {
+    bool falseCond = false;
+    bool trueCond = true;
+
+    printf("Struct lvalues bound to non-const ref:\n");
+    {
+        Obj a = Obj(1);
+        Obj b = Obj(2);
+        Obj& ref = falseCond ? a : b; // No copy
+        ref.id = 20;
+        printf("a=%d b=%d\n", a.id, b.id);
+    }
+
+    printf("Struct lvalues bound to const ref and discarded:\n");
+    {
+        Obj a = Obj(3);
+        Obj b = Obj(4);
+        const Obj& ref = trueCond ? a : b; // No copy
+        trueCond ? a : b; // No copy
+        printf("ref=%d\n", ref.id);
+    }
+
+    printf("Struct lvalues passed to non-const ref parameter:\n");
+    {
+        Obj a = Obj(5);
+        Obj b = Obj(6);
+        setId(trueCond ? a : b, 50); // No copy
+        printf("a=%d b=%d\n", a.id, b.id);
+    }
+
+    printf("Struct lvalues copied by value:\n");
+    {
+        Obj a = Obj(7);
+        Obj b = Obj(8);
+        Obj copy = falseCond ? a : b; // One copy
+        copy.id = 80;
+        printf("b=%d copy=%d\n", b.id, copy.id);
+    }
+
+    printf("Struct fields:\n");
+    {
+        Pair pair = Pair{String("a"), String("b")};
+        pair.append(true, "x");
+        pair.append(false, "y");
+        printf("%s %s\n", pair.first.getRaw(), pair.second.getRaw());
+    }
+
+    printf("Primitives:\n");
+    {
+        int x = 1;
+        int y = 2;
+        int& ref = falseCond ? x : y;
+        ref = 42;
+        printf("x=%d y=%d\n", x, y);
+    }
+
+    printf("Nested ternary:\n");
+    {
+        int x = 1;
+        int y = 2;
+        int z = 3;
+        int& ref = falseCond ? x : (falseCond ? y : z);
+        ref = 42;
+        printf("x=%d y=%d z=%d\n", x, y, z);
+        Obj a = Obj(9);
+        Obj b = Obj(10);
+        Obj c = Obj(11);
+        Obj& objRef = trueCond ? (falseCond ? a : b) : c; // No copy
+        objRef.id = 100;
+        printf("a=%d b=%d c=%d\n", a.id, b.id, c.id);
+    }
+}

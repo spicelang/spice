@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:5:
+Wrong data type for operator: Cannot apply '=' operator on types int& and const int&
+
+5  int& ref = cond ? x : y;
+   ^^^^^^^^^^^^^^^^^^^^^^^

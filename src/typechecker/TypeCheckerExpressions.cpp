@@ -137,9 +137,13 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
                       falseType.getName(true))
 
   // An anonymous entry marks a temporary (e.g. a fresh struct instantiation or a non-trivial function-call
-  // result), whose storage does not outlive this expression.
-  const bool trueIsTemporary = trueEntry != nullptr && trueEntry->anonymous;
-  const bool falseIsTemporary = falseEntry != nullptr && falseEntry->anonymous;
+  // result), whose storage does not outlive this expression. The only exception is an anonymous entry of reference type. It
+  // belongs to a nested ternary with a reference result, which just refers to the storage of one of its operands.
+  const auto isTemporary = [](const SymbolTableEntry *entry) {
+    return entry != nullptr && entry->anonymous && !entry->getQualType().isRef();
+  };
+  const bool trueIsTemporary = isTemporary(trueEntry);
+  const bool falseIsTemporary = isTemporary(falseEntry);
 
   // The result type must be a reference if one of true/false branch is of reference type. Otherwise,
   // the copy ctor is not called correctly. This can only be done if neither branch is a temporary though:
@@ -147,8 +151,12 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // referencing it, or the copy ctor call for the temporary would end up being skipped further down,
   // leaking it.
   QualType resultType;
+  // If both branches are lvalues, the result is one as well, so it can be bound to a non-const reference.
+  const bool bothLvalues = trueEntry != nullptr && falseEntry != nullptr && !trueIsTemporary && !falseIsTemporary;
   if (!trueIsTemporary && !falseIsTemporary && (trueType.isRef() || falseType.isRef()))
     resultType = trueType.isRef() ? trueType : falseType;
+  else if (bothLvalues)
+    resultType = trueTypeModified.toRef(node);
   else
     resultType = trueTypeModified;
   // Infer the const-ness from the more restrictive operand
@@ -159,7 +167,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // The symbol lives in the scope of its branch, or in the current scope if the branch has no scope of its own.
   bool removedAnonymousSymbols = false;
   if (trueEntry) {
-    if (trueEntry->anonymous) {
+    if (trueIsTemporary) {
       Scope *anonymousSymbolScope = trueScope != nullptr ? trueScope : currentScope;
       anonymousSymbolScope->symbolTable.deleteAnonymous(trueEntry->name);
       removedAnonymousSymbols = true;
@@ -168,7 +176,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     }
   }
   if (falseEntry) {
-    if (falseEntry->anonymous) {
+    if (falseIsTemporary) {
       Scope *anonymousSymbolScope = falseScope != nullptr ? falseScope : currentScope;
       anonymousSymbolScope->symbolTable.deleteAnonymous(falseEntry->name);
       removedAnonymousSymbols = true;
@@ -755,7 +763,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const NameRegistryEntry *resultRegistryEntry = sourceFile->getNameRegistryEntry(RESULTOBJ_NAME);
     assert(resultRegistryEntry != nullptr);
     Scope *resultModuleScope = resultRegistryEntry->targetScope->parent;
-    const QualTypeList& enclosingTemplateTypes = enclosingReturnType.getTemplateTypes();
+    const QualTypeList &enclosingTemplateTypes = enclosingReturnType.getTemplateTypes();
     const ArgList errArgs = {{node->errPropGetErrFct->returnType, false}};
     node->errPropCtorFct =
         FunctionManager::match(resultModuleScope, "err", QualType(TY_DYN), errArgs, enclosingTemplateTypes, false, node);
