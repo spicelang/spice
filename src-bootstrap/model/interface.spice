@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -13,6 +14,7 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/global/type-registry";
+import "bootstrap/util/common-util";
 
 // Constants
 const string INTERFACE_SCOPE_PREFIX = "interface:";
@@ -50,6 +52,28 @@ public f<String> Interface.getScopeName(const String& name, const QualTypeList& 
     return String(INTERFACE_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
 }
 
+/**
+ * Retrieve the name of the scope, where signatures are placed, from just a name and concrete template
+ * types — usable without a live Interface instance. See getStructScopeName (struct.spice) for the same
+ * pattern; mirrors StructBase.getSignature's 2-arg overload, which does not read 'this'.
+ *
+ * @param name Interface name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Name of the interface scope
+ */
+public f<String> getInterfaceScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
+    StringStream templateTyStr;
+    if !concreteTemplateTypes.isEmpty() {
+        templateTyStr << "<";
+        foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
+            if i > 0ul { templateTyStr << ","; }
+            templateType.getName(templateTyStr, false, true);
+        }
+        templateTyStr << ">";
+    }
+    return String(INTERFACE_SCOPE_PREFIX) + getLastFragment(name, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
+}
+
 #[test, test.name="Interface Smoke test"]
 public f<bool> testInterfaceSmoke() {
     TypeRegistry reg = TypeRegistry();
@@ -78,6 +102,11 @@ public f<bool> testInterfaceSmoke() {
     // getScopeName from an explicit name and concrete template types
     QualTypeList comparableTemplates = comparable.structBase.getTemplateTypes();
     assert comparable.getScopeName(String("Comparable"), comparableTemplates) == String("interface:Comparable<int>");
+
+    // getInterfaceScopeName (free function): usable without a live Interface instance, same result
+    assert getInterfaceScopeName(String("Comparable"), comparableTemplates) == String("interface:Comparable<int>");
+    QualTypeList emptyTemplates;
+    assert getInterfaceScopeName(String("Plain"), emptyTemplates) == String("interface:Plain");
 
     return true;
 }

@@ -1,5 +1,6 @@
 import "std/os/os";
 import "std/io/file";
+import "std/io/impl/filepath_native";
 
 const char PATH_SEPARATOR_UNIX = '/';
 const char PATH_SEPARATOR_WINDOWS = '\\';
@@ -260,4 +261,124 @@ public inline f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
  */
 public inline f<bool> FilePath.exists() {
     return fileExists(this.path.getRaw());
+}
+
+/**
+ * Checks whether the path is absolute (starts with the UNIX path separator).
+ *
+ * @return True if the path is absolute
+ */
+public inline f<bool> FilePath.hasRootPath() {
+    return this.path.startsWith("/");
+}
+
+/**
+ * Checks whether the path is absolute. Alias for hasRootPath().
+ *
+ * @return True if the path is absolute
+ */
+public inline f<bool> FilePath.isAbsolute() {
+    return this.hasRootPath();
+}
+
+/**
+ * Checks whether any component of the path (before any symlink resolution) is exactly '..'. This is a
+ * cheap, purely lexical check meant to reject an obviously-escaping path before doing any filesystem
+ * work; it does not catch a symlink that resolves outside the intended root (use canonical()/equivalent()
+ * for that).
+ *
+ * @return True if the path has a '..' component
+ */
+public f<bool> FilePath.hasParentDirComponent() {
+    String normalized = this.path;
+    normalized.replaceAll(PATH_SEPARATOR_WINDOWS, PATH_SEPARATOR_UNIX);
+
+    long start = 0l;
+    while true {
+        const long sepIdx = normalized.find(PATH_SEPARATOR_UNIX, start);
+        const String segment = sepIdx < 0l ? normalized.getSubstring(start) : normalized.getSubstring(start, sepIdx - start);
+        if segment == ".." {
+            return true;
+        }
+        if sepIdx < 0l {
+            break;
+        }
+        start = sepIdx + 1l;
+    }
+    return false;
+}
+
+/**
+ * Resolves the path to an absolute, symlink-free, '.'/'..' -free canonical form.
+ *
+ * @return The canonical path, or an empty FilePath if resolution failed (e.g. the path does not exist)
+ */
+public f<FilePath> FilePath.canonical() {
+    return FilePath(resolveCanonicalPath(this.path));
+}
+
+/**
+ * Checks whether two paths refer to the same file after resolving symlinks and '.'/'..' components.
+ *
+ * @param other Other path to compare against
+ * @return True if both paths resolve to the same canonical path (and resolution succeeded for both)
+ */
+public f<bool> FilePath.equivalent(const FilePath& other) {
+    const FilePath a = this.canonical();
+    const FilePath b = other.canonical();
+    if a.isEmpty() || b.isEmpty() {
+        return false;
+    }
+    return a == b;
+}
+
+#[test, test.name="FilePath path-safety Smoke test"]
+public f<bool> testFilePathPathSafetySmoke() {
+    // hasRootPath / isAbsolute - purely lexical, no filesystem access
+    const FilePath absPath = FilePath("/home/user/file.txt");
+    assert absPath.hasRootPath();
+    assert absPath.isAbsolute();
+    const FilePath relPath = FilePath("relative/path.txt");
+    assert !relPath.hasRootPath();
+    assert !relPath.isAbsolute();
+    const FilePath emptyPath = FilePath("");
+    assert !emptyPath.hasRootPath();
+
+    // hasParentDirComponent - purely lexical, no filesystem access
+    const FilePath escaping1 = FilePath("../etc/passwd");
+    assert escaping1.hasParentDirComponent();
+    const FilePath escaping2 = FilePath("std/../../../etc/passwd");
+    assert escaping2.hasParentDirComponent();
+    const FilePath escaping3 = FilePath("a/b/..");
+    assert escaping3.hasParentDirComponent();
+    const FilePath safePath = FilePath("std/text/string.spice");
+    assert !safePath.hasParentDirComponent();
+    const FilePath lookalike1 = FilePath("..hidden/file.txt"); // ".." only matches as a whole component
+    assert !lookalike1.hasParentDirComponent();
+    const FilePath lookalike2 = FilePath("file..txt");
+    assert !lookalike2.hasParentDirComponent();
+
+    // canonical() / equivalent() - resolve against the real filesystem. Use "." (the current working
+    // directory), which always exists, to keep this portable across environments.
+    const FilePath cwd = FilePath(".");
+    const FilePath cwdCanonical = cwd.canonical();
+    assert !cwdCanonical.isEmpty();
+    assert cwdCanonical.hasRootPath(); // canonical paths are always absolute
+
+    // Canonicalizing the same input twice must yield the same result, and equivalent() must agree
+    assert cwdCanonical == cwd.canonical();
+    assert cwd.equivalent(cwd);
+
+    // "./." should resolve to the same place as "."
+    const FilePath cwdDotDot = FilePath("./.");
+    assert cwd.equivalent(cwdDotDot);
+
+    // A path that cannot possibly exist fails to resolve: canonical() is empty, equivalent() is false
+    const FilePath bogus = FilePath("/this/path/almost-certainly-does-not-exist-4b6f3f2e9c1a");
+    const FilePath bogusCanonical = bogus.canonical();
+    assert bogusCanonical.isEmpty();
+    assert !bogus.equivalent(cwd);
+    assert !cwd.equivalent(bogus);
+
+    return true;
 }

@@ -90,6 +90,35 @@ public p GlobalResourceManager.dtor() {
     llvm::llvm_shutdown();
 }
 
+public f<CliOptions&> GlobalResourceManager.getCliOptions() {
+    return this.cliOptions;
+}
+
+public f<const String&> GlobalResourceManager.getCompileTimeStringValue(unsigned long offset) {
+    return this.compileTimeStringValues.get(offset);
+}
+
+public p GlobalResourceManager.addLinkerFlag(const String& flag) {
+    this.linker.addLinkerFlag(flag);
+}
+
+public p GlobalResourceManager.addAdditionalSourcePath(const FilePath& path) {
+    this.linker.addAdditionalSourcePath(path);
+}
+
+public f<ErrorManager&> GlobalResourceManager.getErrorManager() {
+    return this.errorManager;
+}
+
+// IGlobalResourceManager entry point: passes only see their source files as ISourceFile*, so forward to the concrete overload.
+public f<ISourceFile*> GlobalResourceManager.createSourceFile(ISourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
+    SourceFile* concreteParent = nil<SourceFile*>;
+    unsafe {
+        concreteParent = cast<SourceFile*>(parent);
+    }
+    return this.createSourceFile(concreteParent, depName, path, isStdFile);
+}
+
 public f<heap SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
     // Check if the source file was already added (e.g. by another source file that imports it)
     const String filePathStr = String(path.toString());

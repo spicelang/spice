@@ -6,6 +6,7 @@ import "std/data/stack";
 import "bootstrap/lexer/lexer";
 import "bootstrap/lexer/token";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/attributes";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
@@ -54,6 +55,8 @@ f<T*> Parser.createNode<T>() {
     }
     // Upcast to the composed ASTNode base. This is what the parent/child book-keeping operates on.
     ASTNode* nodeBase = cast<ASTNode*>(node);
+    // Remember the node as IVisitable*, so generic child traversal can dispatch to its concrete type
+    nodeBase.visitable = cast<IVisitable*>(node);
 
     // If this is not the entry node, we need to add the new node to its parent
     if !isRootNode {
@@ -325,7 +328,7 @@ public f<ASTEntryNode*> Parser.parse() {
     dyn entryNode = this.createNode<ASTEntryNode>();
 
     while !this.currentTokenIs(TokenType::EOF) {
-        this.parseTopLevelDef();
+        this.parseTopLevelDef(entryNode);
     }
 
     return this.concludeNode(entryNode);
@@ -333,14 +336,14 @@ public f<ASTEntryNode*> Parser.parse() {
 
 // entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef
 //         | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)* EOF;
-p Parser.parseTopLevelDef() {
+p Parser.parseTopLevelDef(ASTEntryNode* entryNode) {
     // Constructs that are unambiguous from their first token
     if this.currentTokenIs(TokenType::MOD_ATTR_PREAMBLE) {
-        this.parseModAttr();
+        entryNode.modAttrs.pushBack(cast<IVisitable*>(this.parseModAttr()));
         return;
     }
     if this.currentTokenIs(TokenType::IMPORT) {
-        this.parseImportDef();
+        entryNode.importDefs.pushBack(cast<IVisitable*>(this.parseImportDef()));
         return;
     }
 
@@ -358,9 +361,9 @@ p Parser.parseTopLevelDef() {
     const TokenType disc = this.tokenAt(cast<unsigned long>(offset));
 
     if disc == TokenType::EXT {
-        this.parseExtDecl();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseExtDecl()));
     } else if disc == TokenType::P {
-        this.parseProcDef();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseProcDef()));
     } else if disc == TokenType::F {
         // mainFunctionDef: 'f' '<' 'int' '>' 'main' ...; everything else starting with 'f' is a functionDef
         const bool isMain = this.tokenAt(cast<unsigned long>(offset + 1l)) == TokenType::LESS
@@ -368,9 +371,9 @@ p Parser.parseTopLevelDef() {
             && this.tokenAt(cast<unsigned long>(offset + 3l)) == TokenType::GREATER
             && this.tokenAt(cast<unsigned long>(offset + 4l)) == TokenType::MAIN;
         if isMain {
-            this.parseMainFctDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseMainFctDef()));
         } else {
-            this.parseFctDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseFctDef()));
         }
     } else if disc == TokenType::TYPE {
         // structDef | interfaceDef | enumDef | genericTypeDef | aliasDef
@@ -383,18 +386,18 @@ p Parser.parseTopLevelDef() {
             after = keywordOffset < 0l ? TokenType::INVALID : this.tokenAt(cast<unsigned long>(keywordOffset));
         }
         if after == TokenType::ENUM {
-            this.parseEnumDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseEnumDef()));
         } else if after == TokenType::ALIAS {
-            this.parseAliasDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseAliasDef()));
         } else if after == TokenType::INTERFACE {
-            this.parseInterfaceDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseInterfaceDef()));
         } else if after == TokenType::STRUCT {
-            this.parseStructDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseStructDef()));
         } else {
-            this.parseGenericTypeDef();
+            entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseGenericTypeDef()));
         }
     } else {
-        this.parseGlobalVarDef();
+        entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseGlobalVarDef()));
     }
 }
 
@@ -403,7 +406,8 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        mainFctDefNode.attrs = attrs;
     }
 
     // Consume expected tokens 'f<int> main'
@@ -416,12 +420,15 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
     // Parse pramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        mainFctDefNode.takesArgs = true;
+        ASTParamLstNode* paramLst = this.parseParamLst();
+        mainFctDefNode.paramLst = paramLst;
     }
     this.expect(TokenType::RPAREN);
 
     // Parse stmtLst
-    this.parseStmtLst();
+    ASTStmtLstNode* body = this.parseStmtLst();
+    mainFctDefNode.body = body;
 
     return this.concludeNode(mainFctDefNode);
 }
@@ -431,22 +438,29 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        fctDefNode.attrs = attrs;
+        // Tell the attributes that they are function attributes (matches host semantics)
+        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
+            attr.target = AttrTarget::TARGET_FCT_PROC;
+        }
     }
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::F) {
-        this.parseQualifierLst();
+        fctDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::F);
     this.expect(TokenType::LESS);
     this.parseDataType();
     this.consumeGenericClose();
-    this.parseFctName();
+    fctDefNode.name = this.parseFctName();
+    fctDefNode.isMethod = fctDefNode.name.nameFragments.getSize() > 1l;
 
     // Parse typeLst (template type list)
     if this.currentTokenIs(TokenType::LESS) {
+        fctDefNode.hasTemplateTypes = true;
         this.expect(TokenType::LESS);
         this.parseTypeLst();
         this.consumeGenericClose();
@@ -455,12 +469,15 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        fctDefNode.hasParams = true;
+        ASTParamLstNode* paramLst = this.parseParamLst();
+        fctDefNode.paramLst = paramLst;
     }
     this.expect(TokenType::RPAREN);
 
     // Parse stmtLst
-    this.parseStmtLst();
+    ASTStmtLstNode* body = this.parseStmtLst();
+    fctDefNode.body = body;
 
     return this.concludeNode(fctDefNode);
 }
@@ -470,19 +487,28 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        procDefNode.attrs = attrs;
+        // Tell the attributes that they are function attributes (matches host semantics)
+        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
+            attr.target = AttrTarget::TARGET_FCT_PROC;
+        }
     }
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::P) {
-        this.parseQualifierLst();
+        procDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::P);
-    this.parseFctName();
+    procDefNode.name = this.parseFctName();
+    procDefNode.isMethod = procDefNode.name.nameFragments.getSize() > 1l;
+    // Note: isCtor is derived later, by SymbolTableBuilder (matches host: it is set from
+    // name->nameFragments.back() == CTOR_FUNCTION_NAME during symbol-table building, not parsing).
 
     // Parse typeLst (template type list)
     if this.currentTokenIs(TokenType::LESS) {
+        procDefNode.hasTemplateTypes = true;
         this.expect(TokenType::LESS);
         this.parseTypeLst();
         this.consumeGenericClose();
@@ -491,12 +517,15 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        procDefNode.hasParams = true;
+        ASTParamLstNode* paramLst = this.parseParamLst();
+        procDefNode.paramLst = paramLst;
     }
     this.expect(TokenType::RPAREN);
 
     // Parse stmtLst
-    this.parseStmtLst();
+    ASTStmtLstNode* body = this.parseStmtLst();
+    procDefNode.body = body;
 
     return this.concludeNode(procDefNode);
 }
@@ -506,13 +535,29 @@ f<ASTFctNameNode*> Parser.parseFctName() {
 
     if this.currentTokenIs(TokenType::OPERATOR) {
         this.expect(TokenType::OPERATOR);
-        this.parseOverloadableOp();
+        const String opName = this.parseOverloadableOp();
+        fctNameNode.name = opName;
+        fctNameNode.fqName = opName;
+        fctNameNode.nameFragments.pushBack(opName);
     } else {
         if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
+            const String structName = this.lexer.getToken().text;
+            fctNameNode.structName = structName;
+            fctNameNode.nameFragments.pushBack(structName);
             this.expect(TokenType::TYPE_IDENTIFIER);
             this.expect(TokenType::DOT);
         }
+        const String name = this.lexer.getToken().text;
+        fctNameNode.name = name;
+        fctNameNode.nameFragments.pushBack(name);
         this.expect(TokenType::IDENTIFIER);
+
+        // Build the fully-qualified name (matches host's MEMBER_ACCESS_TOKEN-joined fqName)
+        if !fctNameNode.structName.isEmpty() {
+            fctNameNode.fqName = fctNameNode.structName + MEMBER_ACCESS_TOKEN + name;
+        } else {
+            fctNameNode.fqName = name;
+        }
     }
 
     return this.concludeNode(fctNameNode);
@@ -521,15 +566,60 @@ f<ASTFctNameNode*> Parser.parseFctName() {
 // overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS LESS | GREATER GREATER | BITWISE_AND | BITWISE_OR
 //               | BITWISE_XOR | BITWISE_NOT | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS
 //               | LBRACKET RBRACKET | ASSIGN;
-// Note: the lexer merges '<<' and '>>' into single SHL / SHR tokens.
-p Parser.parseOverloadableOp() {
-    if this.currentTokenIs(TokenType::LBRACKET) { // Subscript operator '[]'
+// Note: the lexer merges '<<' and '>>' into single SHL / SHR tokens. Returns the mangled op.* function
+// name for the matched operator (matches host's ASTBuilder::visitOverloadableOp mapping).
+f<String> Parser.parseOverloadableOp() {
+    const TokenType tok = this.lexer.getToken().tokenType;
+    String name;
+    if tok == TokenType::PLUS {
+        name = String(OP_FCT_PLUS);
+    } else if tok == TokenType::MINUS {
+        name = String(OP_FCT_MINUS);
+    } else if tok == TokenType::MUL {
+        name = String(OP_FCT_MUL);
+    } else if tok == TokenType::DIV {
+        name = String(OP_FCT_DIV);
+    } else if tok == TokenType::EQUAL {
+        name = String(OP_FCT_EQUAL);
+    } else if tok == TokenType::NOT_EQUAL {
+        name = String(OP_FCT_NOT_EQUAL);
+    } else if tok == TokenType::SHL {
+        name = String(OP_FCT_SHL);
+    } else if tok == TokenType::SHR {
+        name = String(OP_FCT_SHR);
+    } else if tok == TokenType::BITWISE_AND {
+        name = String(OP_FCT_BITWISE_AND);
+    } else if tok == TokenType::BITWISE_OR {
+        name = String(OP_FCT_BITWISE_OR);
+    } else if tok == TokenType::BITWISE_XOR {
+        name = String(OP_FCT_BITWISE_XOR);
+    } else if tok == TokenType::BITWISE_NOT {
+        name = String(OP_FCT_BITWISE_NOT);
+    } else if tok == TokenType::PLUS_EQUAL {
+        name = String(OP_FCT_PLUS_EQUAL);
+    } else if tok == TokenType::MINUS_EQUAL {
+        name = String(OP_FCT_MINUS_EQUAL);
+    } else if tok == TokenType::MUL_EQUAL {
+        name = String(OP_FCT_MUL_EQUAL);
+    } else if tok == TokenType::DIV_EQUAL {
+        name = String(OP_FCT_DIV_EQUAL);
+    } else if tok == TokenType::PLUS_PLUS {
+        name = String(OP_FCT_POSTFIX_PLUS_PLUS);
+    } else if tok == TokenType::MINUS_MINUS {
+        name = String(OP_FCT_POSTFIX_MINUS_MINUS);
+    } else if tok == TokenType::ASSIGN {
+        name = String(OP_FCT_ASSIGN);
+    }
+
+    if tok == TokenType::LBRACKET { // Subscript operator '[]'
         this.expect(TokenType::LBRACKET);
         this.expect(TokenType::RBRACKET);
+        name = String(OP_FCT_SUBSCRIPT);
     } else {
         // All remaining overloadable operators are a single token
         this.advance();
     }
+    return name;
 }
 
 f<ASTStructDefNode*> Parser.parseStructDef() {
@@ -537,19 +627,26 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        structDefNode.attrs = attrs;
+        // Tell the attributes that they are struct attributes (matches host semantics)
+        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
+            attr.target = AttrTarget::TARGET_STRUCT;
+        }
     }
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseQualifierLst();
+        structDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::TYPE);
+    structDefNode.structName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
 
     // Parse typeLst (template type list)
     if this.currentTokenIs(TokenType::LESS) {
+        structDefNode.hasTemplateTypes = true;
         this.expect(TokenType::LESS);
         this.parseTypeLst();
         this.consumeGenericClose();
@@ -559,14 +656,15 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
 
     // Parse typeLst (implemented interfaces)
     if this.currentTokenIs(TokenType::COLON) {
+        structDefNode.hasInterfaces = true;
         this.expect(TokenType::COLON);
-        this.parseTypeLst();
+        structDefNode.interfaceTypeLst = this.parseTypeLst();
     }
 
     // Parse fieldLst
     this.expect(TokenType::LBRACE);
     while !this.currentTokenIs(TokenType::RBRACE) {
-        this.parseField();
+        structDefNode.fields.pushBack(cast<IVisitable*>(this.parseField()));
     }
     this.expect(TokenType::RBRACE);
 
@@ -578,15 +676,21 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        interfaceDefNode.attrs = attrs;
+        // Tell the attributes that they are interface attributes (matches host semantics)
+        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
+            attr.target = AttrTarget::TARGET_INTERFACE;
+        }
     }
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseQualifierLst();
+        interfaceDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::TYPE);
+    interfaceDefNode.interfaceName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
 
     // Parse typeLst (template type list)
@@ -601,7 +705,7 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     // Parse signatures
     this.expect(TokenType::LBRACE);
     while !this.currentTokenIs(TokenType::RBRACE) && !this.currentTokenIs(TokenType::EOF) {
-        this.parseSignature();
+        interfaceDefNode.signatures.pushBack(cast<IVisitable*>(this.parseSignature()));
     }
     this.expect(TokenType::RBRACE);
 
@@ -613,16 +717,22 @@ f<ASTEnumDefNode*> Parser.parseEnumDef() {
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseQualifierLst();
+        enumDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::TYPE);
+    enumDefNode.enumName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
     this.expect(TokenType::ENUM);
 
     // Parse enumItemLst
     this.expect(TokenType::LBRACE);
-    this.parseEnumItemLst();
+    ASTEnumItemLstNode* itemLst = this.parseEnumItemLst();
+    enumDefNode.itemLst = itemLst;
+    // Back-link every item to its enclosing enum def (matches host semantics)
+    foreach ASTEnumItemNode* item : itemLst.items {
+        item.enumDef = enumDefNode;
+    }
     this.expect(TokenType::RBRACE);
 
     return this.concludeNode(enumDefNode);
@@ -632,6 +742,7 @@ f<ASTGenericTypeDefNode*> Parser.parseGenericTypeDef() {
     dyn genericTypeDefNode = this.createNode<ASTGenericTypeDefNode>();
 
     this.expect(TokenType::TYPE);
+    genericTypeDefNode.typeName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
     this.parseTypeAltsLst();
     this.expect(TokenType::SEMICOLON);
@@ -644,10 +755,11 @@ f<ASTAliasDefNode*> Parser.parseAliasDef() {
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
-        this.parseQualifierLst();
+        aliasDefNode.qualifierLst = this.parseQualifierLst();
     }
 
     this.expect(TokenType::TYPE);
+    aliasDefNode.aliasName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
     this.expect(TokenType::ALIAS);
     this.parseDataType();
@@ -660,6 +772,7 @@ f<ASTGlobalVarDefNode*> Parser.parseGlobalVarDef() {
     dyn globalVarDefNode = this.createNode<ASTGlobalVarDefNode>();
 
     this.parseDataType();
+    globalVarDefNode.varName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
 
     // Parse initializer
@@ -678,13 +791,19 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        extDeclNode.attrs = attrs;
+        // Tell the attributes that they are ext-decl attributes (matches host semantics)
+        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
+            attr.target = AttrTarget::TARGET_EXT_DECL;
+        }
     }
 
     this.expect(TokenType::EXT);
 
     // Parse parse function prefix / procedure prefix
     if this.currentTokenIs(TokenType::F) {
+        extDeclNode.hasReturnType = true;
         this.expect(TokenType::F);
         this.expect(TokenType::LESS);
         this.parseDataType();
@@ -694,6 +813,7 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
     }
 
     // Parse external function name
+    extDeclNode.extFunctionName = this.lexer.getToken().text;
     if this.currentTokenIs(TokenType::IDENTIFIER) {
         this.expect(TokenType::IDENTIFIER);
     } else {
@@ -724,11 +844,17 @@ f<ASTImportDefNode*> Parser.parseImportDef() {
     dyn importDefNode = this.createNode<ASTImportDefNode>();
 
     this.expect(TokenType::IMPORT);
+    // The lexer already strips the surrounding quotes for STRING_LIT tokens, so .text is the raw path.
+    importDefNode.importPath = this.lexer.getToken().text;
     this.expect(TokenType::STRING_LIT);
 
     if this.currentTokenIs(TokenType::AS) {
         this.expect(TokenType::AS);
+        importDefNode.importName = this.lexer.getToken().text;
         this.expect(TokenType::IDENTIFIER);
+    } else {
+        // If no name is given, use the path as the name (matches host semantics)
+        importDefNode.importName = importDefNode.importPath;
     }
     this.expect(TokenType::SEMICOLON);
 
@@ -739,7 +865,8 @@ f<ASTUnsafeBlockNode*> Parser.parseUnsafeBlock() {
     dyn unsafeBlockNode = this.createNode<ASTUnsafeBlockNode>();
 
     this.expect(TokenType::UNSAFE);
-    this.parseStmtLst();
+    ASTStmtLstNode* body = this.parseStmtLst();
+    unsafeBlockNode.body = body;
 
     return this.concludeNode(unsafeBlockNode);
 }
@@ -752,23 +879,24 @@ f<ASTForLoopNode*> Parser.parseForLoop() {
     // Parse head
     if this.currentTokenIs(TokenType::LPAREN) {
         this.expect(TokenType::LPAREN);
-        this.parseForHead();
+        this.parseForHead(forLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
-        this.parseForHead();
+        this.parseForHead(forLoopNode);
     }
 
     // Parse stmtLst
-    this.parseStmtLst();
+    forLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(forLoopNode);
 }
 
-p Parser.parseForHead() {
-    this.parseDeclStmt();
+p Parser.parseForHead(ASTForLoopNode* forLoopNode) {
+    forLoopNode.initDecl = this.parseDeclStmt();
     this.expect(TokenType::SEMICOLON);
-    this.parseAssignExpr();
+    forLoopNode.condAssign = this.parseAssignExpr();
     this.expect(TokenType::SEMICOLON);
+    // incAssign is not captured into a field: neither ImportCollector nor SymbolTableBuilder read it.
     this.parseAssignExpr();
 }
 
@@ -780,23 +908,27 @@ f<ASTForeachLoopNode*> Parser.parseForeachLoop() {
     // Parse head
     if this.currentTokenIs(TokenType::LPAREN) {
         this.expect(TokenType::LPAREN);
-        this.parseForeachHead();
+        this.parseForeachHead(foreachLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
-        this.parseForeachHead();
+        this.parseForeachHead(foreachLoopNode);
     }
 
     // Parse stmtLst
-    this.parseStmtLst();
+    foreachLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(foreachLoopNode);
 }
 
-p Parser.parseForeachHead() {
-    this.parseDeclStmt();
+p Parser.parseForeachHead(ASTForeachLoopNode* foreachLoopNode) {
+    ASTDeclStmtNode* firstDecl = this.parseDeclStmt();
     if this.currentTokenIs(TokenType::COMMA) {
+        // Two declarations given: the first is the index, the second is the item
+        foreachLoopNode.idxVarDecl = firstDecl;
         this.expect(TokenType::COMMA);
-        this.parseDeclStmt();
+        foreachLoopNode.itemVarDecl = this.parseDeclStmt();
+    } else {
+        foreachLoopNode.itemVarDecl = firstDecl;
     }
     this.expect(TokenType::COLON);
     this.parseAssignExpr();
@@ -808,10 +940,10 @@ f<ASTWhileLoopNode*> Parser.parseWhileLoop() {
     this.expect(TokenType::WHILE);
 
     // Parse head
-    this.parseAssignExpr();
+    whileLoopNode.condition = this.parseAssignExpr();
 
     // Parse stmtLst
-    this.parseStmtLst();
+    whileLoopNode.body = this.parseStmtLst();
 
     return this.concludeNode(whileLoopNode);
 }
@@ -822,11 +954,11 @@ f<ASTDoWhileLoopNode*> Parser.parseDoWhileLoop() {
     this.expect(TokenType::DO);
 
     // Parse stmtLst
-    this.parseStmtLst();
+    doWhileLoopNode.body = this.parseStmtLst();
 
     // Parse foot
     this.expect(TokenType::WHILE);
-    this.parseAssignExpr();
+    doWhileLoopNode.condition = this.parseAssignExpr();
     this.expect(TokenType::SEMICOLON);
 
     return this.concludeNode(doWhileLoopNode);
@@ -838,14 +970,14 @@ f<ASTIfStmtNode*> Parser.parseIfStmt() {
     this.expect(TokenType::IF);
 
     // Parse head
-    this.parseAssignExpr();
+    ifStmtNode.condition = this.parseAssignExpr();
 
     // Parse stmtLst
-    this.parseStmtLst();
+    ifStmtNode.thenBody = this.parseStmtLst();
 
     // Parse else
     if this.currentTokenIs(TokenType::ELSE) {
-        this.parseElseStmt();
+        ifStmtNode.elseStmt = this.parseElseStmt();
     }
 
     return this.concludeNode(ifStmtNode);
@@ -857,9 +989,10 @@ f<ASTElseStmtNode*> Parser.parseElseStmt() {
     this.expect(TokenType::ELSE);
 
     if this.currentTokenIs(TokenType::IF) { // Else if
-        this.parseIfStmt();
+        elseStmtNode.isElseIf = true;
+        elseStmtNode.ifStmt = this.parseIfStmt();
     } else { // Else
-        this.parseStmtLst();
+        elseStmtNode.body = this.parseStmtLst();
     }
 
     return this.concludeNode(elseStmtNode);
@@ -892,7 +1025,7 @@ f<ASTCaseBranchNode*> Parser.parseCaseBranch() {
         this.parseCaseConstant();
     }
     this.expect(TokenType::COLON);
-    this.parseStmtLst();
+    caseBranchNode.body = this.parseStmtLst();
 
     return this.concludeNode(caseBranchNode);
 }
@@ -902,7 +1035,7 @@ f<ASTDefaultBranchNode*> Parser.parseDefaultBranch() {
 
     this.expect(TokenType::DEFAULT);
     this.expect(TokenType::COLON);
-    this.parseStmtLst();
+    defaultBranchNode.body = this.parseStmtLst();
 
     return this.concludeNode(defaultBranchNode);
 }
@@ -910,7 +1043,7 @@ f<ASTDefaultBranchNode*> Parser.parseDefaultBranch() {
 f<ASTAnonymousBlockStmtNode*> Parser.parseAnonymousBlockStmt() {
     dyn anonymousBlockStmtNode = this.createNode<ASTAnonymousBlockStmtNode>();
 
-    this.parseStmtLst();
+    anonymousBlockStmtNode.body = this.parseStmtLst();
 
     return this.concludeNode(anonymousBlockStmtNode);
 }
@@ -923,25 +1056,25 @@ f<ASTStmtLstNode*> Parser.parseStmtLst() {
     this.expect(TokenType::LBRACE);
     while !this.currentTokenIs(TokenType::RBRACE) && !this.currentTokenIs(TokenType::EOF) {
         if this.currentTokenIs(TokenType::FOR) {
-            this.parseForLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseForLoop()));
         } else if this.currentTokenIs(TokenType::FOREACH) {
-            this.parseForeachLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseForeachLoop()));
         } else if this.currentTokenIs(TokenType::WHILE) {
-            this.parseWhileLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseWhileLoop()));
         } else if this.currentTokenIs(TokenType::DO) {
-            this.parseDoWhileLoop();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseDoWhileLoop()));
         } else if this.currentTokenIs(TokenType::IF) {
-            this.parseIfStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseIfStmt()));
         } else if this.currentTokenIs(TokenType::SWITCH) {
-            this.parseSwitchStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseSwitchStmt()));
         } else if this.currentTokenIs(TokenType::ASSERT) {
-            this.parseAssertStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseAssertStmt()));
         } else if this.currentTokenIs(TokenType::UNSAFE) {
-            this.parseUnsafeBlock();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseUnsafeBlock()));
         } else if this.currentTokenIs(TokenType::LBRACE) {
-            this.parseAnonymousBlockStmt();
+            stmtLstNode.stmts.pushBack(cast<IVisitable*>(this.parseAnonymousBlockStmt()));
         } else {
-            this.parseStmt();
+            stmtLstNode.stmts.pushBack(this.parseStmt());
         }
     }
     this.expect(TokenType::RBRACE);
@@ -952,10 +1085,10 @@ f<ASTStmtLstNode*> Parser.parseStmtLst() {
 f<ASTTypeLstNode*> Parser.parseTypeLst() {
     dyn typeLstNode = this.createNode<ASTTypeLstNode>();
 
-    this.parseDataType();
+    typeLstNode.dataTypes.pushBack(this.parseDataType());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseDataType();
+        typeLstNode.dataTypes.pushBack(this.parseDataType());
     }
 
     return this.concludeNode(typeLstNode);
@@ -976,10 +1109,15 @@ f<ASTTypeAltsLstNode*> Parser.parseTypeAltsLst() {
 f<ASTParamLstNode*> Parser.parseParamLst() {
     dyn paramLstNode = this.createNode<ASTParamLstNode>();
 
-    this.parseDeclStmt();
+    paramLstNode.params.pushBack(this.parseDeclStmt());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseDeclStmt();
+        paramLstNode.params.pushBack(this.parseDeclStmt());
+    }
+
+    // Mark each declaration as a function parameter (matches host semantics)
+    foreach ASTDeclStmtNode* param : paramLstNode.params {
+        param.isFctParam = true;
     }
 
     return this.concludeNode(paramLstNode);
@@ -1000,10 +1138,10 @@ f<ASTArgLstNode*> Parser.parseArgLst() {
 f<ASTEnumItemLstNode*> Parser.parseEnumItemLst() {
     dyn enumItemLstNode = this.createNode<ASTEnumItemLstNode>();
 
-    this.parseEnumItem();
+    enumItemLstNode.items.pushBack(this.parseEnumItem());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseEnumItem();
+        enumItemLstNode.items.pushBack(this.parseEnumItem());
     }
 
     return this.concludeNode(enumItemLstNode);
@@ -1012,9 +1150,13 @@ f<ASTEnumItemLstNode*> Parser.parseEnumItemLst() {
 f<ASTEnumItemNode*> Parser.parseEnumItem() {
     dyn enumItemNode = this.createNode<ASTEnumItemNode>();
 
+    enumItemNode.itemName = this.lexer.getToken().text;
     this.expect(TokenType::TYPE_IDENTIFIER);
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
+        enumItemNode.hasValue = true;
+        // Note: itemValue is not parsed from the INT_LIT text here (no numeric-literal parsing utility
+        // wired yet); neither ImportCollector nor SymbolTableBuilder read it, only later stages do.
         this.expect(TokenType::INT_LIT);
     }
 
@@ -1025,6 +1167,7 @@ f<ASTFieldNode*> Parser.parseField() {
     dyn fieldNode = this.createNode<ASTFieldNode>();
 
     this.parseDataType();
+    fieldNode.fieldName = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
 
     if this.currentTokenIs(TokenType::ASSIGN) {
@@ -1041,7 +1184,7 @@ f<ASTSignatureNode*> Parser.parseSignature() {
     // Parse qualifierLst
     const dyn options = [TokenType::F, TokenType::P];
     if !this.currentTokenIsOneOf(options, len(options)) {
-        this.parseQualifierLst();
+        signatureNode.qualifierLst = this.parseQualifierLst();
     }
 
     if this.currentTokenIs(TokenType::F) {
@@ -1054,6 +1197,7 @@ f<ASTSignatureNode*> Parser.parseSignature() {
     }
 
     // Parse function name
+    signatureNode.methodName = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
 
     // Parse typeLst (template type list)
@@ -1076,26 +1220,30 @@ f<ASTSignatureNode*> Parser.parseSignature() {
 }
 
 // stmt: (declStmt | exprStmt | returnStmt | breakStmt | continueStmt | fallthroughStmt) SEMICOLON;
-f<ASTStmtNode*> Parser.parseStmt() {
-    dyn stmtNode = this.createNode<ASTStmtNode>();
+// Returns the actual matched node (as IVisitable*), not a generic wrapper, matching host's
+// ASTBuilder::visitStmt (which upcasts whichever alternative matched to the common StmtNode* type).
+f<IVisitable*> Parser.parseStmt() {
+    IVisitable* stmtNode = nil<IVisitable*>;
 
     if this.currentTokenIs(TokenType::RETURN) {
-        this.parseReturnStmt();
+        stmtNode = this.parseReturnStmt();
     } else if this.currentTokenIs(TokenType::BREAK) {
-        this.parseBreakStmt();
+        stmtNode = this.parseBreakStmt();
     } else if this.currentTokenIs(TokenType::CONTINUE) {
-        this.parseContinueStmt();
+        stmtNode = this.parseContinueStmt();
     } else if this.currentTokenIs(TokenType::FALLTHROUGH) {
-        this.parseFallthroughStmt();
+        stmtNode = this.parseFallthroughStmt();
     } else if this.isDeclStmtAhead() {
-        this.parseDeclStmt();
+        stmtNode = this.parseDeclStmt();
     } else {
         // exprStmt
-        this.parseAssignExpr();
+        dyn exprStmtNode = this.createNode<ASTExprStmtNode>();
+        exprStmtNode.expr = this.parseAssignExpr();
+        stmtNode = this.concludeNode(exprStmtNode);
     }
     this.expect(TokenType::SEMICOLON);
 
-    return this.concludeNode(stmtNode);
+    return stmtNode;
 }
 
 f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
@@ -1104,12 +1252,14 @@ f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
     // Parse dataType
     this.parseDataType();
 
+    declStmtNode.varName = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
 
     // Parse initializer
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
-        this.parseAssignExpr();
+        declStmtNode.hasAssignment = true;
+        declStmtNode.assignExpr = this.parseAssignExpr();
     }
 
     return this.concludeNode(declStmtNode);
@@ -1120,7 +1270,7 @@ f<ASTQualifierLstNode*> Parser.parseQualifierLst() {
 
     const dyn qualifierSelect = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
     do {
-        this.parseQualifier();
+        qualifierLstNode.qualifiers.pushBack(this.parseQualifier());
     } while this.currentTokenIsOneOf(qualifierSelect, len(qualifierSelect));
 
     return this.concludeNode(qualifierLstNode);
@@ -1162,8 +1312,13 @@ f<ASTModAttrNode*> Parser.parseModAttr() {
 
     this.expect(TokenType::MOD_ATTR_PREAMBLE);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    modAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
+
+    // Tell the attributes that they are module attributes (matches host semantics)
+    foreach ASTAttrNode* attr : modAttrNode.attrLst.attributes {
+        attr.target = AttrTarget::TARGET_MODULE;
+    }
 
     return this.concludeNode(modAttrNode);
 }
@@ -1173,8 +1328,12 @@ f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
 
     this.expect(TokenType::FCT_ATTR_PREAMBLE);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    topLevelDefAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
+
+    // Note: the concrete target (TARGET_FCT_PROC / TARGET_STRUCT / TARGET_INTERFACE / TARGET_UNION /
+    // TARGET_EXT_DECL) depends on which construct this attribute list is attached to, so it is set by
+    // the caller (parseFctDef, parseStructDef, ...), matching host's per-construct target propagation.
 
     return this.concludeNode(topLevelDefAttrNode);
 }
@@ -1184,9 +1343,14 @@ f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
 
     this.expect(TokenType::LBRACKET);
     this.expect(TokenType::LBRACKET);
-    this.parseAttrLst();
+    lambdaAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
     this.expect(TokenType::RBRACKET);
+
+    // Tell the attributes that they are lambda attributes (matches host semantics)
+    foreach ASTAttrNode* attr : lambdaAttrNode.attrLst.attributes {
+        attr.target = AttrTarget::TARGET_LAMBDA;
+    }
 
     return this.concludeNode(lambdaAttrNode);
 }
@@ -1194,10 +1358,10 @@ f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
 f<ASTAttrLstNode*> Parser.parseAttrLst() {
     dyn attrLstNode = this.createNode<ASTAttrLstNode>();
 
-    this.parseAttr();
+    attrLstNode.attributes.pushBack(this.parseAttr());
     while this.currentTokenIs(TokenType::COMMA) {
         this.expect(TokenType::COMMA);
-        this.parseAttr();
+        attrLstNode.attributes.pushBack(this.parseAttr());
     }
 
     return this.concludeNode(attrLstNode);
@@ -1207,16 +1371,33 @@ f<ASTAttrNode*> Parser.parseAttr() {
     dyn attrNode = this.createNode<ASTAttrNode>();
 
     // Parse attribute name
+    String key = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
     while this.currentTokenIs(TokenType::DOT) {
         this.expect(TokenType::DOT);
+        key += ".";
+        key += this.lexer.getToken().text;
         this.expect(TokenType::IDENTIFIER);
     }
+    attrNode.key = key;
 
     // Parse attribute value
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
-        this.parseConstant();
+        // Classify the value's type from the upcoming literal token, matching host semantics
+        // (values other than string/int/bool are rejected by later stages, not enforced here).
+        const TokenType valueTok = this.lexer.getToken().tokenType;
+        if valueTok == TokenType::STRING_LIT {
+            attrNode.attrType = AttrType::TYPE_STRING;
+        } else if valueTok == TokenType::INT_LIT {
+            attrNode.attrType = AttrType::TYPE_INT;
+        } else if valueTok == TokenType::TRUE || valueTok == TokenType::FALSE {
+            attrNode.attrType = AttrType::TYPE_BOOL;
+        }
+        attrNode.value = this.parseConstant();
+    } else {
+        // If no value is given, use the bool type (matches host semantics)
+        attrNode.attrType = AttrType::TYPE_BOOL;
     }
 
     return this.concludeNode(attrNode);
@@ -1317,14 +1498,15 @@ f<ASTTernaryExprNode*> Parser.parseTernaryExpr() {
     dyn ternaryExprNode = this.createNode<ASTTernaryExprNode>();
 
     // Parse lhs
-    this.parseLogicalOrExpr();
+    ternaryExprNode.condition = this.parseLogicalOrExpr();
 
-    // Parse both rhs branches
+    // Parse both rhs branches. Note: the shortened/Elvis form (COND ?: FALSE_EXPR, with the middle
+    // operand omitted) is not currently accepted by this grammar, so isShortened is never set here.
     if this.currentTokenIs(TokenType::QUESTION_MARK) {
         this.expect(TokenType::QUESTION_MARK);
-        this.parseLogicalOrExpr();
+        ternaryExprNode.trueExpr = this.parseLogicalOrExpr();
         this.expect(TokenType::COLON);
-        this.parseLogicalOrExpr();
+        ternaryExprNode.falseExpr = this.parseLogicalOrExpr();
     }
 
     return this.concludeNode(ternaryExprNode);
@@ -1334,12 +1516,12 @@ f<ASTLogicalOrExprNode*> Parser.parseLogicalOrExpr() {
     dyn logicalOrExprNode = this.createNode<ASTLogicalOrExprNode>();
 
     // Parse lhs
-    this.parseLogicalAndExpr();
+    logicalOrExprNode.operands.pushBack(cast<IVisitable*>(this.parseLogicalAndExpr()));
 
     // Parse rhs
     while this.currentTokenIs(TokenType::LOGICAL_OR) {
         this.expect(TokenType::LOGICAL_OR);
-        this.parseLogicalAndExpr();
+        logicalOrExprNode.operands.pushBack(cast<IVisitable*>(this.parseLogicalAndExpr()));
     }
 
     return this.concludeNode(logicalOrExprNode);
@@ -1349,12 +1531,12 @@ f<ASTLogicalAndExprNode*> Parser.parseLogicalAndExpr() {
     dyn logicalAndExprNode = this.createNode<ASTLogicalAndExprNode>();
 
     // Parse lhs
-    this.parseBitwiseOrExpr();
+    logicalAndExprNode.operands.pushBack(cast<IVisitable*>(this.parseBitwiseOrExpr()));
 
     // Parse rhs
     while this.currentTokenIs(TokenType::LOGICAL_AND) {
         this.expect(TokenType::LOGICAL_AND);
-        this.parseBitwiseOrExpr();
+        logicalAndExprNode.operands.pushBack(cast<IVisitable*>(this.parseBitwiseOrExpr()));
     }
 
     return this.concludeNode(logicalAndExprNode);
@@ -1624,14 +1806,22 @@ f<ASTConstantNode*> Parser.parseConstant() {
     } else if this.currentTokenIs(TokenType::CHAR_LIT) {
         this.expect(TokenType::CHAR_LIT);
     } else if this.currentTokenIs(TokenType::STRING_LIT) {
+        // Note: stringValueOffset is not populated here. It indexes into
+        // GlobalResourceManager.compileTimeStringValues, which the parser has no access to yet (it does
+        // not carry a CompilerPass/resourceManager reference today, see the ToDo on the Parser struct).
         this.expect(TokenType::STRING_LIT);
     } else if this.currentTokenIs(TokenType::TRUE) {
         this.expect(TokenType::TRUE);
+        constantNode.compileTimeValue.boolValue = true;
     } else if this.currentTokenIs(TokenType::FALSE) {
         this.expect(TokenType::FALSE);
+        constantNode.compileTimeValue.boolValue = false;
     } else {
         panic(Error("Expected a constant literal"));
     }
+    // Note: numeric literal (double/int/short/long/char) values are not parsed into compileTimeValue
+    // here since neither ImportCollector nor SymbolTableBuilder need them; only bool/string attribute
+    // values are read by those two passes.
 
     return this.concludeNode(constantNode);
 }
@@ -1724,16 +1914,17 @@ f<ASTLambdaFuncNode*> Parser.parseLambdaFunc() {
     this.consumeGenericClose();
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaFuncNode.hasParams = true;
+        lambdaFuncNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
-        this.parseLambdaAttr();
+        lambdaFuncNode.lambdaAttr = this.parseLambdaAttr();
     }
 
-    this.parseStmtLst();
+    lambdaFuncNode.body = this.parseStmtLst();
 
     return this.concludeNode(lambdaFuncNode);
 }
@@ -1746,17 +1937,18 @@ f<ASTLambdaProcNode*> Parser.parseLambdaProc() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaProcNode.hasParams = true;
+        lambdaProcNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
-        this.parseLambdaAttr();
+        lambdaProcNode.lambdaAttr = this.parseLambdaAttr();
     }
 
     // Parse
-    this.parseStmtLst();
+    lambdaProcNode.body = this.parseStmtLst();
 
     return this.concludeNode(lambdaProcNode);
 }
@@ -1767,12 +1959,13 @@ f<ASTLambdaExprNode*> Parser.parseLambdaExpr() {
     // Parse paramLst
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
-        this.parseParamLst();
+        lambdaExprNode.hasParams = true;
+        lambdaExprNode.paramLst = this.parseParamLst();
     }
     this.expect(TokenType::RPAREN);
 
     this.expect(TokenType::ARROW);
-    this.parseAssignExpr();
+    lambdaExprNode.lambdaExpr = this.parseAssignExpr();
 
     return this.concludeNode(lambdaExprNode);
 }
@@ -1784,7 +1977,7 @@ f<ASTDataTypeNode*> Parser.parseDataType() {
     if this.currentTokenIsOneOf(optionsQualifierLst, len(optionsQualifierLst)) {
         this.parseQualifierLst();
     }
-    this.parseBaseDataType();
+    dataTypeNode.baseDataType = this.parseBaseDataType();
 
     // Parse type modifiers: (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*
     while true {
@@ -1833,7 +2026,7 @@ f<ASTBaseDataTypeNode*> Parser.parseBaseDataType() {
     } else if this.currentTokenIsOneOf(optionsFctDataType, len(optionsFctDataType)) {
         this.parseFunctionDataType();
     } else {
-        this.parseCustomDataType();
+        baseDataTypeNode.customDataType = this.parseCustomDataType();
     }
 
     return this.concludeNode(baseDataTypeNode);
@@ -1844,9 +2037,11 @@ f<ASTCustomDataTypeNode*> Parser.parseCustomDataType() {
 
     // Parse type name: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER
     while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == TokenType::SCOPE_ACCESS {
+        customDataTypeNode.typeNameFragments.pushBack(this.lexer.getToken().text);
         this.expect(TokenType::IDENTIFIER);
         this.expect(TokenType::SCOPE_ACCESS);
     }
+    customDataTypeNode.typeNameFragments.pushBack(this.lexer.getToken().text);
     this.expect(TokenType::TYPE_IDENTIFIER);
 
     // Parse typeLst (template type list)

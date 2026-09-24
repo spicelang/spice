@@ -66,6 +66,7 @@ public f<Any> ASTVisualizer.visitProcDef(ASTProcDefNode* node) { return this.bui
 public f<Any> ASTVisualizer.visitFctName(ASTFctNameNode* node) { return this.buildNode(node); }
 public f<Any> ASTVisualizer.visitStructDef(ASTStructDefNode* node) { return this.buildNode(node); }
 public f<Any> ASTVisualizer.visitInterfaceDef(ASTInterfaceDefNode* node) { return this.buildNode(node); }
+public f<Any> ASTVisualizer.visitUnionDef(ASTUnionDefNode* node) { return this.buildNode(node); }
 public f<Any> ASTVisualizer.visitEnumDef(ASTEnumDefNode* node) { return this.buildNode(node); }
 public f<Any> ASTVisualizer.visitGenericTypeDef(ASTGenericTypeDefNode* node) { return this.buildNode(node); }
 public f<Any> ASTVisualizer.visitAliasDef(ASTAliasDefNode* node) { return this.buildNode(node); }

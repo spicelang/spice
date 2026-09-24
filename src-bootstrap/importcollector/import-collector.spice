@@ -1,0 +1,431 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/any";
+import "std/data/vector";
+import "std/io/filepath";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/attributes";
+import "bootstrap/ast/abstract-ast-visitor-intf";
+import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
+import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/reader/code-loc";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/source-file-intf";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/util/pass-test-mocks";
+import "bootstrap/util/system-util";
+
+/**
+ * Jobs:
+ * - Visit the import statements of a source file and register the imported files as dependencies to the current one
+ */
+public type ImportCollector struct : IAbstractAstVisitor {
+    compose public CompilerPass compilerPass
+}
+
+public p ImportCollector.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+}
+
+// ─── entry point ──────────────────────────────────────────────────────────────
+
+// Interface-required overload. In practice this is never actually reached: source-file.spice always calls
+// visit(ASTEntryNode*) (the concrete overload below), since Spice does not implicitly upcast a concrete
+// node to IASTNode* at a call site (no concrete AST node declares ': IASTNode' — see Phase A). Kept only
+// to satisfy IAbstractAstVisitor conformance, matching ASTVisualizer's identically-shaped stub.
+public f<Any> ImportCollector.visit(IASTNode* node) {
+    return node.accept(cast<IAbstractAstVisitor*>(this));
+}
+
+// The real entry point, called from SourceFile.runImportCollector() as importCollector.visit(this.ast).
+public f<Any> ImportCollector.visit(ASTEntryNode* node) {
+    return this.visitEntry(node);
+}
+
+// ─── real logic ───────────────────────────────────────────────────────────────
+
+public f<Any> ImportCollector.visitEntry(ASTEntryNode* node) {
+    // Visit all module attributes
+    foreach IVisitable* attr : node.modAttrs {
+        attr.accept(cast<IAbstractAstVisitor*>(this));
+    }
+
+    // Visit all import defs
+    foreach IVisitable* importDef : node.importDefs {
+        importDef.accept(cast<IAbstractAstVisitor*>(this));
+    }
+
+    return Any();
+}
+
+public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
+    // Validate the import path before resolving it against any base directory. Import paths must be relative and
+    // must not contain parent-directory ('..') components. Otherwise a malicious source file could escape the
+    // std/bootstrap/project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read
+    // arbitrary files, or worse, smuggle shell metacharacters into a filename that later ends up in a linker
+    // invocation.
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    const FilePath& ownFilePath = this.sourceFile.getFilePath();
+    const FilePath importPathRelative = FilePath(node.importPath);
+    if importPathRelative.hasRootPath() {
+        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must be relative, but '" + node.importPath + "' is not");
+        return Any();
+    }
+    if importPathRelative.hasParentDirComponent() {
+        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must not contain parent-directory ('..') components: '" + node.importPath + "'");
+        return Any();
+    }
+
+    const bool isStd = node.importPath.startsWith("std/");
+    const bool isBootstrap = node.importPath.startsWith("bootstrap/");
+
+    FilePath basePath;
+    if isStd { // Include source file from standard library
+        const FilePath stdPath = getStdDir();
+        basePath = stdPath / node.importPath.getSubstring(node.importPath.find("std/") + 4l);
+    } else if isBootstrap { // Include source file from bootstrap library
+        const FilePath bootstrapPath = getBootstrapCompilerDir();
+        basePath = bootstrapPath / node.importPath.getSubstring(node.importPath.find("bootstrap/") + 10l);
+    } else { // Include own source file
+        basePath = FilePath(ownFilePath.getParentDir()) / node.importPath;
+    }
+
+    const String osName = this.cliOptions.targetTriple.getOSName();
+    const String archName = this.cliOptions.targetTriple.getArchName();
+
+    // basePath never has a '.spice' extension yet at this point (import paths are given without one), so
+    // getFileName() (not getBaseName(), which assumes an extension is present) is the right way to get the
+    // bare stem to build the three candidate filenames from.
+    const String stem = basePath.getFileName();
+    const String parentDir = basePath.getParentDir();
+
+    // Format: /dir/to/path/file.spice
+    const FilePath defaultPath = FilePath(parentDir) / (stem + ".spice");
+    // Format: /dir/to/path/file_linux.spice
+    const FilePath osPath = FilePath(parentDir) / (stem + "_" + osName + ".spice");
+    // Format: /dir/to/path/file_linux_x86_64.spice
+    const FilePath osArchPath = FilePath(parentDir) / (stem + "_" + osName + "_" + archName + ".spice");
+
+    // Check which source file to import
+    FilePath importPath;
+    if osArchPath.exists() && !ownFilePath.equivalent(osArchPath) {
+        // file_os_arch.spice is first choice
+        importPath = osArchPath;
+    } else if osPath.exists() && !ownFilePath.equivalent(osPath) {
+        // file_os.spice is second choice
+        importPath = osPath;
+    } else if defaultPath.exists() {
+        // file.spice is third choice
+        importPath = defaultPath;
+    } else {
+        const bool obfuscate = this.cliOptions.comparableOutput;
+        const String osArchPathObfuscated = obfuscate ? osArchPath.getFileName() : String(osArchPath.toGenericString());
+        const String osPathObfuscated = obfuscate ? osPath.getFileName() : String(osPath.toGenericString());
+        const String defaultPathObfuscated = obfuscate ? defaultPath.getFileName() : String(defaultPath.toGenericString());
+
+        String errorMessage = "The source file '" + stem + ".spice' was not found\n\n";
+        errorMessage += "The following paths were checked with descending priority:\n";
+        errorMessage += "- " + osArchPathObfuscated + "\n";
+        errorMessage += "- " + osPathObfuscated + "\n";
+        errorMessage += "- " + defaultPathObfuscated;
+        errorManager.addSoftError(baseNode, SemanticErrorType::IMPORTED_FILE_NOT_EXISTING, errorMessage);
+        return Any();
+    }
+
+    // The lexical '..'-component check above only rejects traversal spelled out in the import path itself. A
+    // same-looking relative import can still resolve outside the intended std/bootstrap/project root if a
+    // directory along the way is a symlink. Canonicalize the resolved file and its intended base directory
+    // (this also resolves symlinks) and reject the import unless the former stays contained in the latter.
+    // A main source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir;
+    // treat that as the current directory, since that is what the empty path already means to every other
+    // join above.
+    String ownFileDir = ownFilePath.getParentDir();
+    if ownFileDir.isEmpty() {
+        ownFileDir = String(".");
+    }
+    FilePath intendedRoot;
+    if isStd {
+        intendedRoot = getStdDir();
+    } else if isBootstrap {
+        intendedRoot = getBootstrapCompilerDir();
+    } else {
+        intendedRoot = FilePath(ownFileDir);
+    }
+    const FilePath allowedRoot = intendedRoot.canonical();
+    const FilePath canonicalImportPath = importPath.canonical();
+    const String allowedRootPrefix = String(allowedRoot.toGenericString()) + "/";
+    const String canonicalImportPathStr = String(canonicalImportPath.toGenericString());
+    const bool isContained = allowedRoot == canonicalImportPath || canonicalImportPathStr.startsWith(allowedRootPrefix.getRaw());
+    if !isContained {
+        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import path '" + node.importPath + "' escapes the permitted directory tree");
+        return Any();
+    }
+
+    // Check if the import already exists
+    if this.rootScope.lookupStrict(node.importName) != nil<SymbolTableEntry*> {
+        errorManager.addSoftError(baseNode, SemanticErrorType::DUPLICATE_IMPORT_NAME, "Duplicate import '" + node.importName + "'");
+        return Any();
+    }
+
+    // Create symbol for import
+    node.entry = this.rootScope.insert(node.importName, baseNode);
+
+    // Create the imported source file
+    ISourceFile* importedSourceFile = this.resourceManager.createSourceFile(this.sourceFile, node.importName, importPath, isStd);
+    // Register it as a dependency to the current source file
+    this.sourceFile.addDependency(importedSourceFile, node.importName);
+
+    return Any();
+}
+
+public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
+    // !!! Only bool attributes allowed here, due to missing attribute value checks being executed in a later stage !!!
+
+    // core.compiler.keep-on-name-collision
+    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
+        const bool keepOnCollision = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)).boolValue;
+        this.sourceFile.setAlwaysKeepSymbolsOnNameCollision(keepOnCollision);
+    }
+
+    // core.compiler.warnings.ignore
+    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_WARNINGS_IGNORE)) {
+        const bool ignoreWarnings = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_WARNINGS_IGNORE)).boolValue;
+        this.sourceFile.setIgnoreWarnings(ignoreWarnings);
+    }
+
+    // core.compiler.explicitErrorHandling
+    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)) {
+        const bool explicitErrorHandling = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)).boolValue;
+        this.sourceFile.setExplicitErrorHandling(explicitErrorHandling);
+    }
+
+    // core.compiler.errorReturnTracing
+    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)) {
+        const bool errorReturnTracing = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)).boolValue;
+        this.sourceFile.setErrorReturnTracing(errorReturnTracing);
+    }
+
+    return Any();
+}
+
+// ─── stubs for the rest of IAbstractAstVisitor (not used by this pass) ────────
+
+public f<Any> ImportCollector.visitMainFctDef(ASTMainFctDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitFctDef(ASTFctDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitProcDef(ASTProcDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitFctName(ASTFctNameNode* node) { return Any(); }
+public f<Any> ImportCollector.visitStructDef(ASTStructDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitInterfaceDef(ASTInterfaceDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitUnionDef(ASTUnionDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitEnumDef(ASTEnumDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitGenericTypeDef(ASTGenericTypeDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAliasDef(ASTAliasDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitGlobalVarDef(ASTGlobalVarDefNode* node) { return Any(); }
+public f<Any> ImportCollector.visitExtDecl(ASTExtDeclNode* node) { return Any(); }
+public f<Any> ImportCollector.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return Any(); }
+public f<Any> ImportCollector.visitForLoop(ASTForLoopNode* node) { return Any(); }
+public f<Any> ImportCollector.visitForeachLoop(ASTForeachLoopNode* node) { return Any(); }
+public f<Any> ImportCollector.visitWhileLoop(ASTWhileLoopNode* node) { return Any(); }
+public f<Any> ImportCollector.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return Any(); }
+public f<Any> ImportCollector.visitIfStmt(ASTIfStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitElseStmt(ASTElseStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitSwitchStmt(ASTSwitchStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitCaseBranch(ASTCaseBranchNode* node) { return Any(); }
+public f<Any> ImportCollector.visitDefaultBranch(ASTDefaultBranchNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitStmtLst(ASTStmtLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitTypeLst(ASTTypeLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return Any(); }
+public f<Any> ImportCollector.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitParamLst(ASTParamLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitArgLst(ASTArgLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitEnumItemLst(ASTEnumItemLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitEnumItem(ASTEnumItemNode* node) { return Any(); }
+public f<Any> ImportCollector.visitField(ASTFieldNode* node) { return Any(); }
+public f<Any> ImportCollector.visitSignature(ASTSignatureNode* node) { return Any(); }
+public f<Any> ImportCollector.visitDeclStmt(ASTDeclStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitExprStmt(ASTExprStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitQualifierLst(ASTQualifierLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitQualifier(ASTQualifierNode* node) { return Any(); }
+public f<Any> ImportCollector.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLambdaAttr(ASTLambdaAttrNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAttrLst(ASTAttrLstNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAttr(ASTAttrNode* node) { return Any(); }
+public f<Any> ImportCollector.visitCaseConstant(ASTCaseConstantNode* node) { return Any(); }
+public f<Any> ImportCollector.visitReturnStmt(ASTReturnStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitBreakStmt(ASTBreakStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitContinueStmt(ASTContinueStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAssertStmt(ASTAssertStmtNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAssignExpr(ASTAssignExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitTernaryExpr(ASTTernaryExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLogicalOrExpr(ASTLogicalOrExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLogicalAndExpr(ASTLogicalAndExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitEqualityExpr(ASTEqualityExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitRelationalExpr(ASTRelationalExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitShiftExpr(ASTShiftExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAdditiveExpr(ASTAdditiveExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitCastExpr(ASTCastExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitAtomicExpr(ASTAtomicExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitValue(ASTValueNode* node) { return Any(); }
+public f<Any> ImportCollector.visitConstant(ASTConstantNode* node) { return Any(); }
+public f<Any> ImportCollector.visitFctCall(ASTFctCallNode* node) { return Any(); }
+public f<Any> ImportCollector.visitArrayInitialization(ASTArrayInitializationNode* node) { return Any(); }
+public f<Any> ImportCollector.visitStructInstantiation(ASTStructInstantiationNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLambdaFunc(ASTLambdaFuncNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLambdaProc(ASTLambdaProcNode* node) { return Any(); }
+public f<Any> ImportCollector.visitLambdaExpr(ASTLambdaExprNode* node) { return Any(); }
+public f<Any> ImportCollector.visitDataType(ASTDataTypeNode* node) { return Any(); }
+public f<Any> ImportCollector.visitBaseDataType(ASTBaseDataTypeNode* node) { return Any(); }
+public f<Any> ImportCollector.visitCustomDataType(ASTCustomDataTypeNode* node) { return Any(); }
+public f<Any> ImportCollector.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return Any(); }
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+f<bool> createdPathContains(MockResourceManager& resourceManager, unsigned long index, string needle) {
+    const String& createdPath = resourceManager.createdPaths.get(index);
+    return createdPath.contains(needle);
+}
+
+#[test, test.name="ImportCollector Smoke test"]
+public f<bool> testImportCollectorSmoke() {
+    // SPICE_BOOTSTRAP_DIR must point to src-bootstrap/ (same requirement as the other bootstrap tests)
+    const FilePath bootstrapDir = getBootstrapCompilerDir();
+    assert !bootstrapDir.isEmpty();
+
+    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile mockFile;
+    mockFile.filePath = FilePath("/tmp/mock-main.spice");
+    mockFile.globalScopePtr = &root;
+    MockResourceManager mockRm;
+    mockRm.cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
+    IGlobalResourceManager& resourceManager = mockRm;
+    ISourceFile* sourceFile = &mockFile;
+    ImportCollector collector = ImportCollector(resourceManager, sourceFile);
+
+    // CompilerPass picked up the root scope of the source file
+    assert collector.rootScope == &root;
+
+    // ---- visitModAttr: the four core.compiler.* bool attributes ----
+    ASTConstantNode trueValue = ASTConstantNode(CodeLoc(1l, 1l, "t.spice"));
+    trueValue.compileTimeValue.boolValue = true;
+    ASTConstantNode falseValue = ASTConstantNode(CodeLoc(1l, 2l, "t.spice"));
+    falseValue.compileTimeValue.boolValue = false;
+    ASTAttrNode attrIgnore = ASTAttrNode(CodeLoc(2l, 1l, "t.spice"));
+    attrIgnore.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
+    attrIgnore.value = &trueValue;
+    ASTAttrNode attrKeep = ASTAttrNode(CodeLoc(3l, 1l, "t.spice"));
+    attrKeep.key = String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION);
+    attrKeep.value = &trueValue;
+    ASTAttrNode attrTracing = ASTAttrNode(CodeLoc(4l, 1l, "t.spice"));
+    attrTracing.key = String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING);
+    attrTracing.value = &falseValue;
+    ASTAttrNode attrExplicit = ASTAttrNode(CodeLoc(5l, 1l, "t.spice")); // no value => defaults to true
+    attrExplicit.key = String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING);
+    ASTAttrLstNode attrLst = ASTAttrLstNode(CodeLoc(2l, 1l, "t.spice"));
+    attrLst.attributes.pushBack(&attrIgnore);
+    attrLst.attributes.pushBack(&attrKeep);
+    attrLst.attributes.pushBack(&attrTracing);
+    attrLst.attributes.pushBack(&attrExplicit);
+    ASTModAttrNode modAttr = ASTModAttrNode(CodeLoc(2l, 1l, "t.spice"));
+    modAttr.attrLst = &attrLst;
+
+    mockFile.errorReturnTracing = true; // must be overwritten with 'false'
+    collector.visitModAttr(&modAttr);
+    assert mockFile.ignoreWarnings;
+    assert mockFile.alwaysKeepSymbolsOnNameCollision;
+    assert !mockFile.errorReturnTracing;
+    assert mockFile.explicitErrorHandling;
+
+    // ---- visitImportDef: rejected import paths ----
+    ASTImportDefNode absImport = ASTImportDefNode(CodeLoc(10l, 1l, "t.spice"));
+    absImport.importPath = String("/etc/passwd");
+    absImport.importName = String("abs");
+    collector.visitImportDef(&absImport);
+    assert mockRm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(mockRm.errorManager, 0l, "must be relative");
+
+    ASTImportDefNode parentImport = ASTImportDefNode(CodeLoc(11l, 1l, "t.spice"));
+    parentImport.importPath = String("std/../../etc/passwd");
+    parentImport.importName = String("parent");
+    collector.visitImportDef(&parentImport);
+    assert mockRm.errorManager.softErrors.getSize() == 2l;
+    assert softErrorContains(mockRm.errorManager, 1l, "parent-directory");
+
+    ASTImportDefNode missingImport = ASTImportDefNode(CodeLoc(12l, 1l, "t.spice"));
+    missingImport.importPath = String("bootstrap/no-such-module");
+    missingImport.importName = String("missing");
+    collector.visitImportDef(&missingImport);
+    assert mockRm.errorManager.softErrors.getSize() == 3l;
+    assert softErrorContains(mockRm.errorManager, 2l, "The source file 'no-such-module.spice' was not found");
+
+    // None of the rejected imports registered a symbol, created a source file or added a dependency
+    assert root.lookupStrict(String("abs")) == nil<SymbolTableEntry*>;
+    assert root.lookupStrict(String("parent")) == nil<SymbolTableEntry*>;
+    assert root.lookupStrict(String("missing")) == nil<SymbolTableEntry*>;
+    assert mockRm.createdPaths.getSize() == 0l;
+    assert mockFile.dependencyNames.getSize() == 0l;
+
+    // ---- visitImportDef: successful import ----
+    ASTImportDefNode okImport = ASTImportDefNode(CodeLoc(13l, 1l, "t.spice"));
+    okImport.importPath = String("bootstrap/ast/attributes");
+    okImport.importName = String("attrs");
+    collector.visitImportDef(&okImport);
+    assert mockRm.errorManager.softErrors.getSize() == 3l;
+    assert mockRm.createdPaths.getSize() == 1l;
+    assert createdPathContains(mockRm, 0l, "ast/attributes.spice");
+    assert mockFile.dependencyNames.getSize() == 1l;
+    assert mockFile.dependencyNames.get(0l) == "attrs";
+    assert root.lookupStrict(String("attrs")) != nil<SymbolTableEntry*>;
+    assert okImport.entry == root.lookupStrict(String("attrs"));
+
+    // ---- visitImportDef: duplicate import name ----
+    ASTImportDefNode dupImport = ASTImportDefNode(CodeLoc(14l, 1l, "t.spice"));
+    dupImport.importPath = String("bootstrap/ast/attributes");
+    dupImport.importName = String("attrs");
+    collector.visitImportDef(&dupImport);
+    assert mockRm.errorManager.softErrors.getSize() == 4l;
+    assert softErrorContains(mockRm.errorManager, 3l, "Duplicate import 'attrs'");
+    assert mockRm.createdPaths.getSize() == 1l;
+    assert mockFile.dependencyNames.getSize() == 1l;
+
+    // ---- entry point: visit(ASTEntryNode*) dispatches module attributes and imports through IVisitable ----
+    ASTConstantNode resetValue = ASTConstantNode(CodeLoc(20l, 1l, "t.spice"));
+    resetValue.compileTimeValue.boolValue = false;
+    ASTAttrNode attrReset = ASTAttrNode(CodeLoc(21l, 1l, "t.spice"));
+    attrReset.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
+    attrReset.value = &resetValue;
+    ASTAttrLstNode attrLst2 = ASTAttrLstNode(CodeLoc(21l, 1l, "t.spice"));
+    attrLst2.attributes.pushBack(&attrReset);
+    ASTModAttrNode modAttr2 = ASTModAttrNode(CodeLoc(21l, 1l, "t.spice"));
+    modAttr2.attrLst = &attrLst2;
+    ASTImportDefNode entryImport = ASTImportDefNode(CodeLoc(22l, 1l, "t.spice"));
+    entryImport.importPath = String("bootstrap/ast/attributes");
+    entryImport.importName = String("attrs2");
+    ASTEntryNode entry = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
+    entry.modAttrs.pushBack(cast<IVisitable*>(&modAttr2));
+    entry.importDefs.pushBack(cast<IVisitable*>(&entryImport));
+
+    collector.visit(&entry);
+    assert !mockFile.ignoreWarnings; // module attribute visited via the entry point
+    assert mockFile.dependencyNames.getSize() == 2l; // import visited via the entry point
+    assert mockFile.dependencyNames.get(1l) == "attrs2";
+    assert root.lookupStrict(String("attrs2")) != nil<SymbolTableEntry*>;
+
+    return true;
+}

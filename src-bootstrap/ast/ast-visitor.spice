@@ -64,6 +64,10 @@ public f<Any> AstVisitor.visitInterfaceDef(ASTInterfaceDefNode* node) {
     return this.visitChildren(&node.node.node);
 }
 
+public f<Any> AstVisitor.visitUnionDef(ASTUnionDefNode* node) {
+    return this.visitChildren(&node.node.node);
+}
+
 public f<Any> AstVisitor.visitEnumDef(ASTEnumDefNode* node) {
     return this.visitChildren(&node.node.node);
 }

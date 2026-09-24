@@ -1,0 +1,1399 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/any";
+import "std/type/type-conversion";
+import "std/data/vector";
+import "std/io/filepath";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/ast/attributes";
+import "bootstrap/ast/abstract-ast-visitor-intf";
+import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
+import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/model/struct";
+import "bootstrap/model/interface";
+import "bootstrap/model/union";
+import "bootstrap/reader/code-loc";
+import "bootstrap/source-file-intf";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/util/pass-test-mocks";
+
+// Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in symbol-table-entry.spice)
+const string MAIN_FUNCTION_NAME = "main";
+const string ALIAS_CONTAINER_SUFFIX = ".container";
+const string ENUM_SCOPE_PREFIX = "enum:";
+
+/**
+ * Jobs:
+ * - Build symbol table
+ *
+ * Error handling: the host throws a SemanticError at the first problem. Spice has no exceptions, so this pass records a
+ * soft error and returns from the visit method of the offending node instead (SourceFile.checkForSoftErrors() aborts the
+ * compilation afterwards).
+ */
+public type SymbolTableBuilder struct : IAbstractAstVisitor {
+    compose public CompilerPass compilerPass
+    bool hasMainFunction = false
+}
+
+public p SymbolTableBuilder.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+}
+
+// ─── entry point ──────────────────────────────────────────────────────────────
+
+// Interface-required overload. Never reached in practice: Spice does not upcast a concrete node to IASTNode* at a call
+// site, so source-file.spice's symbolTableBuilder.visit(this.ast) resolves to the concrete overload below.
+public f<Any> SymbolTableBuilder.visit(IASTNode* node) {
+    return node.accept(cast<IAbstractAstVisitor*>(this));
+}
+
+public f<Any> SymbolTableBuilder.visit(ASTEntryNode* node) {
+    return this.visitEntry(node);
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
+f<Any> SymbolTableBuilder.visitChildren(ASTNode* node) {
+    return visitChildrenOf(node, cast<IAbstractAstVisitor*>(this));
+}
+
+p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorType, const String& message) {
+    ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    errorManager.addSoftError(node, errorType, message);
+}
+
+// Entry name of a function/procedure in its symbol table. Mirrors Function::getSymbolTableEntryName of the host, which
+// cannot be called here because the model's version is an instance method.
+f<String> getFctSymbolTableEntryName(const String& name, const CodeLoc& codeLoc) {
+    return name + ":" + codeLoc.toString();
+}
+
+/**
+ * Build the qualifiers of a definition. 'public' is always allowed, 'inline' and 'const' only if requested.
+ *
+ * @return True if all qualifiers were allowed. Otherwise, an error was reported
+ */
+f<bool> SymbolTableBuilder.buildQualifiers(ASTQualifierLstNode* qualifierLst, TypeQualifiers& qualifiers, bool allowInlineAndConst, const String& illegalMessage) {
+    if qualifierLst == nil<ASTQualifierLstNode*> {
+        return true;
+    }
+    foreach ASTQualifierNode* qualifier : qualifierLst.qualifiers {
+        if qualifier.qualifierType == QualifierType::PUBLIC {
+            qualifiers.isPublic = true;
+        } else if allowInlineAndConst && qualifier.qualifierType == QualifierType::INLINE {
+            qualifiers.isInline = true;
+        } else if allowInlineAndConst && qualifier.qualifierType == QualifierType::CONST {
+            qualifiers.isConst = true;
+        } else {
+            this.reportError(cast<ASTNode*>(qualifier), SemanticErrorType::QUALIFIER_AT_ILLEGAL_CONTEXT, illegalMessage);
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Visit an expression in a scope of its own. That scope holds the temporaries of the expression, which allows destructing
+ * them right after the expression was evaluated. This is required for conditions and for operands that are only evaluated
+ * conditionally, since a temporary of those must not be destructed if it never was constructed.
+ *
+ * @param expr Expression to visit
+ */
+p SymbolTableBuilder.visitInExprScope(IVisitable* expr) {
+    // Create scope for the expression
+    const CodeLoc& exprCodeLoc = expr.getCodeLoc();
+    Scope* exprScope = this.currentScope.createChildScope(getExprScopeId(expr), ScopeType::EXPR_BODY, &exprCodeLoc);
+    this.currentScope = exprScope;
+
+    // Visit the expression
+    expr.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave expression scope
+    this.currentScope = exprScope.parent;
+}
+
+// Shared implementation of visitFctDef and visitProcDef
+f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunction, const String& scopeId) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(visitor);
+    }
+
+    // Build function qualifiers
+    const String illegalMessage = isFunction ? String("Cannot use this qualifier on a function definition") : String("Cannot use this qualifier on a procedure definition");
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, true, illegalMessage) {
+        return Any();
+    }
+
+    // Change to struct scope if this function is a method
+    Scope* structScope = nil<Scope*>;
+    if node.isMethod {
+        const QualTypeList noTemplateTypes;
+        const String structScopeName = getStructScopeName(node.name.structName, noTemplateTypes);
+        structScope = this.currentScope.getChildScope(structScopeName);
+        if structScope == nil<Scope*> {
+            this.reportError(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_STRUCT, "Struct '" + node.name.structName + "' could not be found");
+            return Any();
+        }
+        node.structScope = structScope;
+        this.currentScope = structScope;
+    }
+
+    // Create scope for the function
+    Scope* fctScope = this.currentScope.createChildScope(scopeId, ScopeType::FUNC_PROC_BODY, &node.codeLoc);
+    node.scope = fctScope;
+    this.currentScope = fctScope;
+    fctScope.isGenericScope = node.hasTemplateTypes || (structScope != nil<Scope*> && structScope.isGenericScope);
+    if !isFunction {
+        fctScope.isDtorScope = node.isMethod && node.name.name == DTOR_FUNCTION_NAME;
+    }
+
+    // Create symbol for 'this' variable
+    if node.isMethod {
+        fctScope.insert(String(THIS_VARIABLE_NAME), baseNode);
+    }
+
+    // Create symbol for 'result' variable
+    if isFunction {
+        fctScope.insert(String(RETURN_VARIABLE_NAME), baseNode);
+    }
+
+    // Create symbols for the parameters
+    if node.hasParams {
+        node.paramLst.accept(visitor);
+    }
+
+    // Visit the function body
+    node.body.accept(visitor);
+
+    // Leave function body scope
+    this.currentScope = fctScope.parent;
+
+    // Insert symbol for function into the symbol table
+    node.entry = this.currentScope.insert(getFctSymbolTableEntryName(node.name.name, node.codeLoc), baseNode);
+
+    // Add to external name registry
+    // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
+    if !this.sourceFile.hasNameRegistryTarget(node.name.fqName, node.entry) {
+        const unsigned long typeId = isFunction ? cast<unsigned long>(SuperType::TY_FUNCTION) : cast<unsigned long>(SuperType::TY_PROCEDURE);
+        this.sourceFile.addNameRegistryEntry(node.name.fqName, typeId, node.entry, this.currentScope, true, nil<SymbolTableEntry*>);
+    }
+
+    // Leave the struct scope
+    if node.isMethod {
+        this.currentScope = structScope.parent;
+    }
+
+    return Any();
+}
+
+// ─── real logic ───────────────────────────────────────────────────────────────
+
+public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Initialize
+    this.currentScope = this.rootScope;
+
+    // Visit children: module attributes, imports (already handled by the import collector) and top level definitions
+    foreach IVisitable* modAttr : node.modAttrs {
+        modAttr.accept(visitor);
+    }
+    foreach IVisitable* importDef : node.importDefs {
+        importDef.accept(visitor);
+    }
+    foreach IVisitable* topLevelDef : node.topLevelDefs {
+        topLevelDef.accept(visitor);
+    }
+
+    // Check if the main function exists
+    const bool mainFctRequired = this.cliOptions.outputContainer == OutputContainer::EXECUTABLE && !this.cliOptions.noEntryFct;
+    if this.sourceFile.isMainSourceFile() && mainFctRequired && !this.hasMainFunction {
+        this.reportError(cast<ASTNode*>(node), SemanticErrorType::MISSING_MAIN_FUNCTION, String("No main function found"));
+    }
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitMainFctDef(ASTMainFctDefNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(visitor);
+    }
+
+    // Check if the function is already defined
+    if this.rootScope.lookupStrict(String(MAIN_FUNCTION_NAME)) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::FUNCTION_DECLARED_TWICE, String("Main function is declared twice"));
+        return Any();
+    }
+
+    // Insert symbol for main function
+    SymbolTableEntry* mainFctEntry = this.currentScope.insert(String(MAIN_FUNCTION_NAME), baseNode);
+    mainFctEntry.used = true;
+
+    // Create scope for main function body
+    Scope* bodyScope = this.rootScope.createChildScope(node.getScopeId(), ScopeType::FUNC_PROC_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+    bodyScope.isGenericScope = false;
+
+    // Declare variable for the return value in the function scope
+    SymbolTableEntry* resultVarEntry = bodyScope.insert(String(RETURN_VARIABLE_NAME), baseNode);
+    resultVarEntry.used = true;
+
+    // Visit arguments in new scope
+    if node.takesArgs {
+        node.paramLst.accept(visitor);
+    }
+
+    // Visit function body in new scope
+    node.body.accept(visitor);
+
+    // Return to root scope
+    this.currentScope = this.rootScope;
+
+    this.hasMainFunction = true;
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitFctDef(ASTFctDefNode* node) {
+    return this.visitFctOrProcDef(cast<ASTFctDefBaseNode*>(node), true, node.getScopeId());
+}
+
+public f<Any> SymbolTableBuilder.visitProcDef(ASTProcDefNode* node) {
+    dyn outcome = this.visitFctOrProcDef(cast<ASTFctDefBaseNode*>(node), false, node.getScopeId());
+
+    // Check if this is a constructor (the name is empty if visiting the definition failed early)
+    const Vector<String>& fragments = node.name.nameFragments;
+    if !fragments.isEmpty() {
+        node.isCtor = fragments.get(fragments.getSize() - 1l) == CTOR_FUNCTION_NAME;
+    }
+
+    return outcome;
+}
+
+public f<Any> SymbolTableBuilder.visitStructDef(ASTStructDefNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(visitor);
+    }
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.structName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.structName + "'");
+        return Any();
+    }
+
+    // Create scope for the struct
+    const QualTypeList noTemplateTypes;
+    Scope* structScope = this.rootScope.createChildScope(getStructScopeName(node.structName, noTemplateTypes), ScopeType::STRUCT, &node.codeLoc);
+    node.structScope = structScope;
+    this.currentScope = structScope;
+    structScope.isGenericScope = node.hasTemplateTypes;
+
+    // Insert implicit field for each interface type
+    if node.hasInterfaces {
+        foreach ASTDataTypeNode* interfaceNode : node.interfaceTypeLst.dataTypes {
+            const Vector<String>& fragments = interfaceNode.baseDataType.customDataType.typeNameFragments;
+            const String& interfaceName = fragments.get(fragments.getSize() - 1l);
+            SymbolTableEntry* interfaceFieldEntry = structScope.insert(String("this.") + interfaceName, cast<ASTNode*>(interfaceNode));
+            interfaceFieldEntry.used = true;
+            interfaceFieldEntry.isImplicitField = true;
+        }
+    }
+
+    // Visit fields
+    foreach IVisitable* field : node.fields {
+        field.accept(visitor);
+    }
+
+    // Leave the struct scope
+    this.currentScope = structScope.parent;
+
+    // Build struct qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, false, String("Cannot use this qualifier on a struct definition")) {
+        return Any();
+    }
+
+    // Add the struct to the symbol table
+    node.entry = this.rootScope.insert(node.structName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.structName, node.typeId, node.entry, structScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitInterfaceDef(ASTInterfaceDefNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(visitor);
+    }
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.interfaceName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.interfaceName + "'");
+        return Any();
+    }
+
+    // Create scope for the interface
+    const QualTypeList noTemplateTypes;
+    Scope* interfaceScope = this.rootScope.createChildScope(getInterfaceScopeName(node.interfaceName, noTemplateTypes), ScopeType::INTERFACE, &node.codeLoc);
+    node.interfaceScope = interfaceScope;
+    this.currentScope = interfaceScope;
+
+    // Visit signatures
+    foreach IVisitable* signature : node.signatures {
+        signature.accept(visitor);
+    }
+
+    // Leave the interface scope
+    this.currentScope = interfaceScope.parent;
+
+    // Build interface qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, false, String("Cannot use this qualifier on an interface definition")) {
+        return Any();
+    }
+
+    // Add the interface to the symbol table
+    node.entry = this.rootScope.insert(node.interfaceName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.interfaceName, node.typeId, node.entry, interfaceScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitUnionDef(ASTUnionDefNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(visitor);
+    }
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.unionName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.unionName + "'");
+        return Any();
+    }
+
+    // Create scope for the union
+    const QualTypeList noTemplateTypes;
+    Scope* unionScope = this.rootScope.createChildScope(getUnionScopeName(node.unionName, noTemplateTypes), ScopeType::UNION, &node.codeLoc);
+    node.unionScope = unionScope;
+    this.currentScope = unionScope;
+    unionScope.isGenericScope = node.hasTemplateTypes;
+
+    // Visit fields
+    foreach IVisitable* field : node.fields {
+        field.accept(visitor);
+    }
+
+    // Leave the union scope
+    this.currentScope = unionScope.parent;
+
+    // Build union qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, false, String("Cannot use this qualifier on a union definition")) {
+        return Any();
+    }
+
+    // Add the union to the symbol table
+    node.entry = this.rootScope.insert(node.unionName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.unionName, node.typeId, node.entry, unionScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitEnumDef(ASTEnumDefNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.enumName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.enumName + "'");
+        return Any();
+    }
+
+    // Create scope for the enum
+    Scope* enumScope = this.rootScope.createChildScope(String(ENUM_SCOPE_PREFIX) + node.enumName, ScopeType::ENUM, &node.codeLoc);
+    node.enumScope = enumScope;
+    this.currentScope = enumScope;
+
+    // Visit items
+    node.itemLst.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave the enum scope
+    this.currentScope = enumScope.parent;
+
+    // Build enum qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, false, String("Cannot use this qualifier on an enum definition")) {
+        return Any();
+    }
+
+    // Add the enum to the symbol table
+    node.entry = this.rootScope.insert(node.enumName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.enumName, node.typeId, node.entry, enumScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitGenericTypeDef(ASTGenericTypeDefNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.typeName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.typeName + "'");
+        return Any();
+    }
+
+    // Create the generic type to the symbol table
+    node.entry = this.rootScope.insert(node.typeName, baseNode);
+    node.entry.used = true; // Generic types are always used
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitAliasDef(ASTAliasDefNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.aliasName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.aliasName + "'");
+        return Any();
+    }
+
+    // Build alias qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.qualifiers, false, String("Cannot use this qualifier on an alias definition")) {
+        return Any();
+    }
+
+    // Add the alias to the symbol table
+    node.entry = this.rootScope.insert(node.aliasName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.aliasName, node.typeId, node.entry, this.rootScope, true, nil<SymbolTableEntry*>);
+
+    // Add another symbol for the aliased type container
+    node.aliasedTypeContainerEntry = this.rootScope.insert(node.aliasName + ALIAS_CONTAINER_SUFFIX, baseNode);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.varName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.varName + "'");
+        return Any();
+    }
+
+    // Check if global already exists in an imported source file
+    if this.sourceFile.anyDependencyExports(node.varName) {
+        this.reportError(baseNode, SemanticErrorType::GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node.varName + "' in other module");
+        return Any();
+    }
+
+    // Add the global to the symbol table
+    node.entry = this.rootScope.insert(node.varName, baseNode);
+    // Register the name in the exported name registry
+    this.sourceFile.addNameRegistryEntry(node.varName, cast<unsigned long>(SuperType::TY_INVALID), node.entry, this.currentScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitExtDecl(ASTExtDeclNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit attributes
+    if node.attrs != nil<IVisitable*> {
+        node.attrs.accept(cast<IAbstractAstVisitor*>(this));
+    }
+
+    // Check if this name already exists
+    if this.rootScope.lookupStrict(node.extFunctionName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::DUPLICATE_SYMBOL, "Duplicate symbol '" + node.extFunctionName + "'");
+        return Any();
+    }
+
+    // Create scope for the external function (this is required in case of forceSubstantiation in FunctionManager::matchFunction)
+    this.rootScope.createChildScope(node.getScopeId(), ScopeType::FUNC_PROC_BODY, &node.codeLoc);
+
+    // Add the external declaration to the symbol table
+    node.entry = this.rootScope.insert(node.extFunctionName, baseNode);
+    // Register the name in the exported name registry
+    const unsigned long typeId = node.hasReturnType ? cast<unsigned long>(SuperType::TY_FUNCTION) : cast<unsigned long>(SuperType::TY_PROCEDURE);
+    this.sourceFile.addNameRegistryEntry(node.extFunctionName, typeId, node.entry, this.rootScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
+    // Create scope for the unsafe block body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::UNSAFE_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit body
+    node.body.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave unsafe body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the loop body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit loop variable declaration
+    node.initDecl.accept(visitor);
+
+    // Visit condition
+    this.visitInExprScope(node.condAssign);
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave for body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the loop body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOREACH_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit index variable declaration
+    if node.idxVarDecl != nil<IVisitable*> {
+        node.idxVarDecl.accept(visitor);
+    }
+
+    // Visit item variable declaration
+    node.itemVarDecl.accept(visitor);
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave foreach body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the loop body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit condition
+    this.visitInExprScope(node.condition);
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave while body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the loop body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit condition
+    this.visitInExprScope(node.condition);
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave do-while body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitIfStmt(ASTIfStmtNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the then body
+    Scope* thenBodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::IF_ELSE_BODY, &node.codeLoc);
+    node.thenBodyScope = thenBodyScope;
+    this.currentScope = thenBodyScope;
+
+    // Visit condition
+    this.visitInExprScope(node.condition);
+
+    // Visit then body (manifestations do not exist yet, so both branches are always visited here)
+    node.thenBody.accept(visitor);
+
+    // Leave then body scope
+    this.currentScope = thenBodyScope.parent;
+
+    // Visit else stmt
+    if node.elseStmt != nil<IVisitable*> {
+        node.elseStmt.accept(visitor);
+    }
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitElseStmt(ASTElseStmtNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Visit if statement in the case of an else if branch
+    if node.isElseIf {
+        node.ifStmt.accept(visitor);
+        return Any();
+    }
+
+    // Create scope for the else body
+    Scope* elseBodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::IF_ELSE_BODY, &node.codeLoc);
+    node.elseBodyScope = elseBodyScope;
+    this.currentScope = elseBodyScope;
+
+    // Visit else body
+    node.body.accept(visitor);
+
+    // Leave else body scope
+    this.currentScope = elseBodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitCaseBranch(ASTCaseBranchNode* node) {
+    // Create scope for the case branch
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::CASE_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit case body
+    node.body.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave case body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitDefaultBranch(ASTDefaultBranchNode* node) {
+    // Create scope for the default branch
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::DEFAULT_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit default body
+    node.body.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave default body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) {
+    // Create scope for the anonymous block body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit body
+    node.body.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Leave anonymous block body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitEnumItem(ASTEnumItemNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if enum item already exists in the same scope.
+    if this.currentScope.lookupStrict(node.itemName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The enum item '" + node.itemName + "' was declared more than once");
+        return Any();
+    }
+
+    // Add enum item entry to symbol table
+    SymbolTableEntry* enumItemEntry = this.currentScope.insert(node.itemName, baseNode);
+
+    // Add external registry entry
+    assert node.enumDef != nil<ASTEnumDefNode*>;
+    const String name = node.enumDef.enumName + SCOPE_ACCESS_TOKEN + node.itemName;
+    this.sourceFile.addNameRegistryEntry(name, cast<unsigned long>(SuperType::TY_INT), enumItemEntry, this.currentScope, true, nil<SymbolTableEntry*>);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitField(ASTFieldNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if field already exists in the same scope.
+    if this.currentScope.lookupStrict(node.fieldName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The field '" + node.fieldName + "' was declared more than once");
+        return Any();
+    }
+
+    // Add field entry to symbol table
+    this.currentScope.insert(node.fieldName, baseNode);
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitSignature(ASTSignatureNode* node) {
+    // Build signature qualifiers
+    if !this.buildQualifiers(node.qualifierLst, node.signatureQualifiers, true, String("Cannot use this qualifier on a signature definition")) {
+        return Any();
+    }
+
+    // Add signature entry to symbol table. We append the code location to disambiguate overloaded signatures
+    // (e.g. an interface declaring `getName()` and `getName(bool)`).
+    node.entry = this.currentScope.insert(getFctSymbolTableEntryName(node.methodName, node.codeLoc), cast<ASTNode*>(node));
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if variable already exists in the same scope.
+    if this.currentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*> {
+        this.reportError(baseNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The variable '" + node.varName + "' was declared more than once");
+        return Any();
+    }
+
+    // Visit the right side
+    if node.hasAssignment {
+        node.assignExpr.accept(cast<IAbstractAstVisitor*>(this));
+    }
+
+    // Add variable entry to symbol table
+    SymbolTableEntry* varEntry = this.currentScope.insert(node.varName, baseNode);
+    varEntry.isParam = node.isFctParam;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
+    // Visit attributes
+    this.visitChildren(cast<ASTNode*>(node));
+
+    // Retrieve attributes
+    ASTAttrLstNode* attrs = node.attrLst;
+    IGlobalResourceManager& resourceManager = this.resourceManager;
+
+    // Determine the target OS from the triple of the compilation
+    String osName;
+    if !this.cliOptions.targetTriple.empty() {
+        osName = this.cliOptions.targetTriple.getOSName();
+    }
+    const bool isLinux = osName.startsWith("linux");
+    const bool isDarwin = osName.startsWith("darwin") || osName.startsWith("macos");
+    const bool isWindows = osName.startsWith("win") || osName.startsWith("mingw") || osName.startsWith("cygwin");
+
+    // Collect linker flags
+    Vector<CompileTimeValue> linkerFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_FLAG));
+    Vector<CompileTimeValue> osFlagValues;
+    if isLinux {
+        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINUX_LINKER_FLAG));
+    } else if isDarwin {
+        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_DARWIN_LINKER_FLAG));
+    } else if isWindows {
+        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_WINDOWS_LINKER_FLAG));
+    }
+    foreach CompileTimeValue osValue : osFlagValues {
+        linkerFlagValues.pushBack(osValue);
+    }
+    foreach CompileTimeValue value : linkerFlagValues {
+        const String& flag = resourceManager.getCompileTimeStringValue(value.stringValueOffset);
+        resourceManager.addLinkerFlag(flag);
+        this.sourceFile.addSourceLinkerFlag(flag);
+    }
+
+    // core.linker.additionalSource
+    const Vector<CompileTimeValue> additionalSourceValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_ADDITIONAL_SOURCE));
+    const FilePath& ownFilePath = this.sourceFile.getFilePath();
+    foreach CompileTimeValue additionalSourceValue : additionalSourceValues {
+        const String& stringValue = resourceManager.getCompileTimeStringValue(additionalSourceValue.stringValueOffset);
+        const FilePath additionalSourcePath = FilePath(ownFilePath.getParentDir()) / stringValue;
+        resourceManager.addAdditionalSourcePath(additionalSourcePath);
+        this.sourceFile.addSourceAdditionalSourcePath(additionalSourcePath);
+    }
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitAttr(ASTAttrNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if this attribute exists
+    AttrConfigValue config;
+    if !getAttrConfig(node.key, config) {
+        this.reportError(baseNode, SemanticErrorType::UNKNOWN_ATTR, "Unknown attribute '" + node.key + "'");
+        return Any();
+    }
+
+    // Check if the target is correct
+    if (cast<unsigned byte>(node.target) & config.target) == cast<unsigned byte>(0) {
+        this.reportError(baseNode, SemanticErrorType::INVALID_ATTR_TARGET, "Attribute '" + node.key + "' cannot be used on this target");
+        return Any();
+    }
+
+    // Check if a value is present
+    if node.value == nil<ASTConstantNode*> && config.attrType != AttrType::TYPE_BOOL {
+        this.reportError(baseNode, SemanticErrorType::MISSING_ATTR_VALUE, "Attribute '" + node.key + "' requires a value");
+        return Any();
+    }
+
+    return Any();
+}
+
+// Shared by the lambda visit methods: an 'async' lambda attribute marks the lambda scope as async
+p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyScope) {
+    if lambdaAttr != nil<ASTLambdaAttrNode*> && lambdaAttr.attrLst.hasAttr(String(ATTR_ASYNC)) {
+        bodyScope.isAsyncScope = lambdaAttr.attrLst.getAttrValueByName(String(ATTR_ASYNC)).boolValue;
+    }
+}
+
+public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the lambda body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+    // Requires capturing because the LLVM IR will end up in a separate function
+    bodyScope.symbolTable.setCapturingRequired();
+    // Set to async scope if this is an async lambda
+    this.applyLambdaAttr(node.lambdaAttr, bodyScope);
+
+    // Create symbol for 'result' variable
+    bodyScope.insert(String(RETURN_VARIABLE_NAME), cast<ASTNode*>(node));
+
+    // Create symbols for the parameters
+    if node.hasParams {
+        node.paramLst.accept(visitor);
+    }
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave lambda body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the lambda body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+    // Requires capturing because the LLVM IR will end up in a separate function
+    bodyScope.symbolTable.setCapturingRequired();
+    // Set to async scope if this is an async lambda
+    this.applyLambdaAttr(node.lambdaAttr, bodyScope);
+
+    // Create symbols for the parameters
+    if node.hasParams {
+        node.paramLst.accept(visitor);
+    }
+
+    // Visit body
+    node.body.accept(visitor);
+
+    // Leave lambda body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
+    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
+
+    // Create scope for the lambda body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+    // Requires capturing because the LLVM IR will end up in a separate function
+    bodyScope.symbolTable.setCapturingRequired();
+
+    // Create symbols for the parameters
+    if node.hasParams {
+        node.paramLst.accept(visitor);
+    }
+
+    // Visit lambda expression
+    node.lambdaExpr.accept(visitor);
+
+    // Leave lambda body scope
+    this.currentScope = bodyScope.parent;
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitTernaryExpr(ASTTernaryExprNode* node) {
+    // Visit condition, which is evaluated unconditionally
+    node.condition.accept(cast<IAbstractAstVisitor*>(this));
+
+    // Visit the branches. Only one of them is evaluated, so each one gets its own scope for its temporaries.
+    // The true branch does not exist for shortened ternaries, as the condition takes its place.
+    if node.trueExpr != nil<IVisitable*> && !node.isShortened {
+        this.visitInExprScope(node.trueExpr);
+    }
+    if node.falseExpr != nil<IVisitable*> {
+        this.visitInExprScope(node.falseExpr);
+    }
+
+    return Any();
+}
+
+// Shared by the logical operators
+f<Any> SymbolTableBuilder.visitOperands(const Vector<IVisitable*>& operands) {
+    if operands.isEmpty() {
+        return Any();
+    }
+
+    // Visit the first operand, which is evaluated unconditionally
+    IVisitable* first = operands.get(0l);
+    first.accept(cast<IAbstractAstVisitor*>(this));
+
+    // All further operands are only evaluated if the ones before did not short-circuit
+    for unsigned long i = 1l; i < operands.getSize(); i++ {
+        this.visitInExprScope(operands.get(i));
+    }
+
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitLogicalOrExpr(ASTLogicalOrExprNode* node) {
+    return this.visitOperands(node.operands);
+}
+
+public f<Any> SymbolTableBuilder.visitLogicalAndExpr(ASTLogicalAndExprNode* node) {
+    return this.visitOperands(node.operands);
+}
+
+public f<Any> SymbolTableBuilder.visitStmtLst(ASTStmtLstNode* node) {
+    foreach IVisitable* stmt : node.stmts {
+        stmt.accept(cast<IAbstractAstVisitor*>(this));
+    }
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitParamLst(ASTParamLstNode* node) {
+    foreach ASTDeclStmtNode* param : node.params {
+        this.visitDeclStmt(param);
+    }
+    return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitEnumItemLst(ASTEnumItemLstNode* node) {
+    foreach ASTEnumItemNode* item : node.items {
+        this.visitEnumItem(item);
+    }
+    return Any();
+}
+
+// ─── default traversal for everything the pass does not implement itself ─────────
+
+public f<Any> SymbolTableBuilder.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitCaseConstant(ASTCaseConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitReturnStmt(ASTReturnStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitBreakStmt(ASTBreakStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitContinueStmt(ASTContinueStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitAssertStmt(ASTAssertStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitAssignExpr(ASTAssignExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitEqualityExpr(ASTEqualityExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitRelationalExpr(ASTRelationalExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitShiftExpr(ASTShiftExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitCastExpr(ASTCastExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitAtomicExpr(ASTAtomicExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitValue(ASTValueNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitConstant(ASTConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitFctCall(ASTFctCallNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitStructInstantiation(ASTStructInstantiationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitDataType(ASTDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> SymbolTableBuilder.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Build the environment every scenario needs: a root scope, a source file and a resource manager (both mocks)
+// and the builder under test. The caller keeps ownership of all of them.
+p setupMocks(Scope& root, MockSourceFile& file, MockResourceManager& resourceManager) {
+    file.filePath = FilePath("/tmp/mock-main.spice");
+    file.globalScopePtr = &root;
+    resourceManager.cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
+}
+
+f<bool> testMainFunctionRules() {
+    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile file;
+    MockResourceManager rm;
+    setupMocks(root, file, rm);
+    IGlobalResourceManager& resourceManager = rm;
+    ISourceFile* sourceFile = &file;
+    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+
+    // An executable's main file without a main function is rejected
+    ASTEntryNode emptyEntry = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
+    builder.visit(&emptyEntry);
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "No main function found");
+
+    // A file that is not the compilation root does not need one
+    Scope root2 = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile file2;
+    MockResourceManager rm2;
+    setupMocks(root2, file2, rm2);
+    file2.isMain = false;
+    IGlobalResourceManager& resourceManager2 = rm2;
+    ISourceFile* sourceFile2 = &file2;
+    SymbolTableBuilder builder2 = SymbolTableBuilder(resourceManager2, sourceFile2);
+    ASTEntryNode emptyEntry2 = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
+    builder2.visit(&emptyEntry2);
+    assert rm2.errorManager.softErrors.getSize() == 0l;
+
+    // Declaring main creates its scope with the 'result' symbol, and declaring it twice is rejected
+    Scope root3 = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile file3;
+    MockResourceManager rm3;
+    setupMocks(root3, file3, rm3);
+    IGlobalResourceManager& resourceManager3 = rm3;
+    ISourceFile* sourceFile3 = &file3;
+    SymbolTableBuilder builder3 = SymbolTableBuilder(resourceManager3, sourceFile3);
+    ASTStmtLstNode body1 = ASTStmtLstNode(CodeLoc(2l, 1l, "t.spice"));
+    ASTMainFctDefNode main1 = ASTMainFctDefNode(CodeLoc(1l, 1l, "t.spice"));
+    main1.body = cast<IVisitable*>(&body1);
+    ASTStmtLstNode body2 = ASTStmtLstNode(CodeLoc(12l, 1l, "t.spice"));
+    ASTMainFctDefNode main2 = ASTMainFctDefNode(CodeLoc(11l, 1l, "t.spice"));
+    main2.body = cast<IVisitable*>(&body2);
+    ASTEntryNode entry3 = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
+    entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main1));
+    entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main2));
+    builder3.visit(&entry3);
+    assert rm3.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm3.errorManager, 0l, "Main function is declared twice");
+    assert root3.lookupStrict(String("main")) != nil<SymbolTableEntry*>;
+    assert root3.lookupStrict(String("main")).used;
+    Scope* mainScope = root3.getChildScope(String("fct:main"));
+    assert mainScope != nil<Scope*>;
+    assert mainScope.scopeType == ScopeType::FUNC_PROC_BODY;
+    assert mainScope.lookupStrict(String(RETURN_VARIABLE_NAME)) != nil<SymbolTableEntry*>;
+    assert main1.bodyScope == mainScope;
+    assert main2.bodyScope == nil<IScope*>; // the duplicate got no scope
+    return true;
+}
+
+f<bool> testDefinitionRules() {
+    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile file;
+    MockResourceManager rm;
+    setupMocks(root, file, rm);
+    file.isMain = false;
+    IGlobalResourceManager& resourceManager = rm;
+    ISourceFile* sourceFile = &file;
+    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+
+    // A struct gets a scope, an entry and an exported name registry entry. Its fields become symbols of that scope
+    ASTFieldNode widthField = ASTFieldNode(CodeLoc(2l, 5l, "t.spice"));
+    widthField.fieldName = String("width");
+    ASTFieldNode duplicateField = ASTFieldNode(CodeLoc(3l, 5l, "t.spice"));
+    duplicateField.fieldName = String("width");
+    ASTStructDefNode rect = ASTStructDefNode(CodeLoc(1l, 1l, "t.spice"));
+    rect.structName = String("Rectangle");
+    rect.typeId = 300l;
+    rect.fields.pushBack(cast<IVisitable*>(&widthField));
+    rect.fields.pushBack(cast<IVisitable*>(&duplicateField));
+    builder.visitStructDef(&rect);
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "The field 'width' was declared more than once");
+    assert rect.entry != nil<SymbolTableEntry*>;
+    assert rect.entry == root.lookupStrict(String("Rectangle"));
+    Scope* rectScope = root.getChildScope(String("struct:Rectangle"));
+    assert rectScope != nil<Scope*>;
+    assert rectScope.scopeType == ScopeType::STRUCT;
+    assert rect.structScope == rectScope;
+    assert rectScope.lookupStrict(String("width")) != nil<SymbolTableEntry*>;
+    assert file.hasNameRegistryTarget(String("Rectangle"), rect.entry);
+    assert file.registeredTypeIds.get(0l) == 300l;
+    assert builder.currentScope == &root; // back in the root scope
+
+    // Any other definition may not reuse the name
+    ASTStructDefNode duplicateStruct = ASTStructDefNode(CodeLoc(10l, 1l, "t.spice"));
+    duplicateStruct.structName = String("Rectangle");
+    builder.visitStructDef(&duplicateStruct);
+    assert rm.errorManager.softErrors.getSize() == 2l;
+    assert softErrorContains(rm.errorManager, 1l, "Duplicate symbol 'Rectangle'");
+    assert duplicateStruct.entry == nil<SymbolTableEntry*>;
+
+    ASTGenericTypeDefNode genericDef = ASTGenericTypeDefNode(CodeLoc(11l, 1l, "t.spice"));
+    genericDef.typeName = String("Rectangle");
+    builder.visitGenericTypeDef(&genericDef);
+    assert rm.errorManager.softErrors.getSize() == 3l;
+    ASTGenericTypeDefNode okGeneric = ASTGenericTypeDefNode(CodeLoc(12l, 1l, "t.spice"));
+    okGeneric.typeName = String("T");
+    builder.visitGenericTypeDef(&okGeneric);
+    assert okGeneric.entry != nil<SymbolTableEntry*>;
+    assert okGeneric.entry.used; // generic types are always used
+
+    // Only 'public' is a legal qualifier on a struct; the definition is not registered then
+    ASTQualifierNode inlineQualifier = ASTQualifierNode(CodeLoc(13l, 1l, "t.spice"));
+    inlineQualifier.qualifierType = QualifierType::INLINE;
+    ASTQualifierLstNode qualifiers = ASTQualifierLstNode(CodeLoc(13l, 1l, "t.spice"));
+    qualifiers.qualifiers.pushBack(&inlineQualifier);
+    ASTStructDefNode badStruct = ASTStructDefNode(CodeLoc(13l, 1l, "t.spice"));
+    badStruct.structName = String("Bad");
+    badStruct.qualifierLst = &qualifiers;
+    builder.visitStructDef(&badStruct);
+    assert rm.errorManager.softErrors.getSize() == 4l;
+    assert softErrorContains(rm.errorManager, 3l, "Cannot use this qualifier on a struct definition");
+    assert root.lookupStrict(String("Bad")) == nil<SymbolTableEntry*>;
+    ASTQualifierNode publicQualifier = ASTQualifierNode(CodeLoc(14l, 1l, "t.spice"));
+    publicQualifier.qualifierType = QualifierType::PUBLIC;
+    ASTQualifierLstNode publicQualifiers = ASTQualifierLstNode(CodeLoc(14l, 1l, "t.spice"));
+    publicQualifiers.qualifiers.pushBack(&publicQualifier);
+    ASTStructDefNode publicStruct = ASTStructDefNode(CodeLoc(14l, 1l, "t.spice"));
+    publicStruct.structName = String("Public");
+    publicStruct.qualifierLst = &publicQualifiers;
+    builder.visitStructDef(&publicStruct);
+    assert publicStruct.qualifiers.isPublic;
+    assert rm.errorManager.softErrors.getSize() == 4l;
+
+    // A method of a struct that does not exist
+    ASTFctNameNode missingName = ASTFctNameNode(CodeLoc(20l, 1l, "t.spice"));
+    missingName.name = String("run");
+    missingName.structName = String("Missing");
+    missingName.fqName = String("Missing.run");
+    ASTProcDefNode missingMethod = ASTProcDefNode(CodeLoc(20l, 1l, "t.spice"));
+    missingMethod.name = &missingName;
+    missingMethod.isMethod = true;
+    builder.visitProcDef(&missingMethod);
+    assert rm.errorManager.softErrors.getSize() == 5l;
+    assert softErrorContains(rm.errorManager, 4l, "Struct 'Missing' could not be found");
+    assert builder.currentScope == &root;
+
+    // Globals: duplicates within the file and across imported files are both rejected
+    ASTGlobalVarDefNode global1 = ASTGlobalVarDefNode(CodeLoc(30l, 1l, "t.spice"));
+    global1.varName = String("LIMIT");
+    builder.visitGlobalVarDef(&global1);
+    assert global1.entry != nil<SymbolTableEntry*>;
+    ASTGlobalVarDefNode global2 = ASTGlobalVarDefNode(CodeLoc(31l, 1l, "t.spice"));
+    global2.varName = String("LIMIT");
+    builder.visitGlobalVarDef(&global2);
+    assert rm.errorManager.softErrors.getSize() == 6l;
+    assert softErrorContains(rm.errorManager, 5l, "Duplicate symbol 'LIMIT'");
+    file.dependencyExportedNames.pushBack(String("SHARED"));
+    ASTGlobalVarDefNode global3 = ASTGlobalVarDefNode(CodeLoc(32l, 1l, "t.spice"));
+    global3.varName = String("SHARED");
+    builder.visitGlobalVarDef(&global3);
+    assert rm.errorManager.softErrors.getSize() == 7l;
+    assert softErrorContains(rm.errorManager, 6l, "Duplicate global variable 'SHARED' in other module");
+    assert global3.entry == nil<SymbolTableEntry*>;
+
+    // Enums: items live in the enum scope and are exported as 'Enum::ITEM'
+    ASTEnumDefNode colors = ASTEnumDefNode(CodeLoc(40l, 1l, "t.spice"));
+    colors.enumName = String("Color");
+    ASTEnumItemNode red = ASTEnumItemNode(CodeLoc(41l, 5l, "t.spice"));
+    red.itemName = String("RED");
+    red.enumDef = &colors;
+    ASTEnumItemNode redAgain = ASTEnumItemNode(CodeLoc(42l, 5l, "t.spice"));
+    redAgain.itemName = String("RED");
+    redAgain.enumDef = &colors;
+    ASTEnumItemLstNode items = ASTEnumItemLstNode(CodeLoc(41l, 1l, "t.spice"));
+    items.items.pushBack(&red);
+    items.items.pushBack(&redAgain);
+    colors.itemLst = cast<IVisitable*>(&items);
+    builder.visitEnumDef(&colors);
+    assert rm.errorManager.softErrors.getSize() == 8l;
+    assert softErrorContains(rm.errorManager, 7l, "The enum item 'RED' was declared more than once");
+    Scope* colorScope = root.getChildScope(String("enum:Color"));
+    assert colorScope != nil<Scope*>;
+    assert colorScope.lookupStrict(String("RED")) != nil<SymbolTableEntry*>;
+    assert file.hasNameRegistryTarget(String("Color::RED"), colorScope.lookupStrict(String("RED")));
+    assert root.lookupStrict(String("Color")) != nil<SymbolTableEntry*>;
+
+    // Aliases register a second symbol for the aliased type container
+    ASTAliasDefNode lengthAlias = ASTAliasDefNode(CodeLoc(50l, 1l, "t.spice"));
+    lengthAlias.aliasName = String("Length");
+    builder.visitAliasDef(&lengthAlias);
+    assert lengthAlias.entry != nil<SymbolTableEntry*>;
+    assert lengthAlias.aliasedTypeContainerEntry != nil<SymbolTableEntry*>;
+    assert root.lookupStrict(String("Length.container")) == lengthAlias.aliasedTypeContainerEntry;
+    return true;
+}
+
+f<bool> testAttributeRules() {
+    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    MockSourceFile file;
+    MockResourceManager rm;
+    setupMocks(root, file, rm);
+    IGlobalResourceManager& resourceManager = rm;
+    ISourceFile* sourceFile = &file;
+    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+
+    // Unknown attribute
+    ASTAttrNode unknownAttr = ASTAttrNode(CodeLoc(1l, 1l, "t.spice"));
+    unknownAttr.key = String("no.such.attribute");
+    unknownAttr.target = AttrTarget::TARGET_MODULE;
+    builder.visitAttr(&unknownAttr);
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "Unknown attribute 'no.such.attribute'");
+
+    // Attribute on a target it does not support (a module attribute on a struct)
+    ASTAttrNode wrongTarget = ASTAttrNode(CodeLoc(2l, 1l, "t.spice"));
+    wrongTarget.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
+    wrongTarget.target = AttrTarget::TARGET_STRUCT;
+    builder.visitAttr(&wrongTarget);
+    assert rm.errorManager.softErrors.getSize() == 2l;
+    assert softErrorContains(rm.errorManager, 1l, "cannot be used on this target");
+
+    // Non-bool attributes need a value
+    ASTAttrNode missingValue = ASTAttrNode(CodeLoc(3l, 1l, "t.spice"));
+    missingValue.key = String(ATTR_CORE_LINKER_FLAG);
+    missingValue.target = AttrTarget::TARGET_MODULE;
+    builder.visitAttr(&missingValue);
+    assert rm.errorManager.softErrors.getSize() == 3l;
+    assert softErrorContains(rm.errorManager, 2l, "requires a value");
+
+    // Bool attributes do not, and a fully valid attribute reports nothing
+    ASTAttrNode boolAttr = ASTAttrNode(CodeLoc(4l, 1l, "t.spice"));
+    boolAttr.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
+    boolAttr.target = AttrTarget::TARGET_MODULE;
+    builder.visitAttr(&boolAttr);
+    ASTAttrNode asyncOnLambda = ASTAttrNode(CodeLoc(5l, 1l, "t.spice"));
+    asyncOnLambda.key = String(ATTR_ASYNC);
+    asyncOnLambda.target = AttrTarget::TARGET_LAMBDA;
+    builder.visitAttr(&asyncOnLambda);
+    assert rm.errorManager.softErrors.getSize() == 3l;
+
+    // Module attributes: linker flags (incl. the ones for the current OS only) and additional sources
+    rm.compileTimeStrings.pushBack(String("-lm"));
+    rm.compileTimeStrings.pushBack(String("-ldl"));
+    rm.compileTimeStrings.pushBack(String("-framework Foo"));
+    rm.compileTimeStrings.pushBack(String("extra.c"));
+    ASTConstantNode flagValue = ASTConstantNode(CodeLoc(10l, 1l, "t.spice"));
+    flagValue.compileTimeValue.stringValueOffset = 0l;
+    ASTConstantNode linuxFlagValue = ASTConstantNode(CodeLoc(11l, 1l, "t.spice"));
+    linuxFlagValue.compileTimeValue.stringValueOffset = 1l;
+    ASTConstantNode darwinFlagValue = ASTConstantNode(CodeLoc(12l, 1l, "t.spice"));
+    darwinFlagValue.compileTimeValue.stringValueOffset = 2l;
+    ASTConstantNode sourceValue = ASTConstantNode(CodeLoc(13l, 1l, "t.spice"));
+    sourceValue.compileTimeValue.stringValueOffset = 3l;
+    ASTAttrNode flagAttr = ASTAttrNode(CodeLoc(10l, 1l, "t.spice"));
+    flagAttr.key = String(ATTR_CORE_LINKER_FLAG);
+    flagAttr.target = AttrTarget::TARGET_MODULE;
+    flagAttr.value = &flagValue;
+    ASTAttrNode linuxFlagAttr = ASTAttrNode(CodeLoc(11l, 1l, "t.spice"));
+    linuxFlagAttr.key = String(ATTR_CORE_LINUX_LINKER_FLAG);
+    linuxFlagAttr.target = AttrTarget::TARGET_MODULE;
+    linuxFlagAttr.value = &linuxFlagValue;
+    ASTAttrNode darwinFlagAttr = ASTAttrNode(CodeLoc(12l, 1l, "t.spice"));
+    darwinFlagAttr.key = String(ATTR_CORE_DARWIN_LINKER_FLAG);
+    darwinFlagAttr.target = AttrTarget::TARGET_MODULE;
+    darwinFlagAttr.value = &darwinFlagValue;
+    ASTAttrNode sourceAttr = ASTAttrNode(CodeLoc(13l, 1l, "t.spice"));
+    sourceAttr.key = String(ATTR_CORE_LINKER_ADDITIONAL_SOURCE);
+    sourceAttr.target = AttrTarget::TARGET_MODULE;
+    sourceAttr.value = &sourceValue;
+    ASTAttrLstNode attrLst = ASTAttrLstNode(CodeLoc(10l, 1l, "t.spice"));
+    attrLst.attributes.pushBack(&flagAttr);
+    attrLst.attributes.pushBack(&linuxFlagAttr);
+    attrLst.attributes.pushBack(&darwinFlagAttr);
+    attrLst.attributes.pushBack(&sourceAttr);
+    ASTModAttrNode modAttr = ASTModAttrNode(CodeLoc(10l, 1l, "t.spice"));
+    modAttr.attrLst = &attrLst;
+    // The attribute list is a child of the module attribute (as the parser builds it), so its attributes get validated too
+    modAttr.node.addChild(&attrLst.node);
+    attrLst.node.visitable = cast<IVisitable*>(&attrLst);
+    attrLst.node.addChild(&flagAttr.node);
+    flagAttr.node.visitable = cast<IVisitable*>(&flagAttr);
+    builder.visitModAttr(&modAttr);
+    assert rm.errorManager.softErrors.getSize() == 3l; // the visited attribute was valid
+    assert rm.linkerFlags.getSize() == 2l; // '-lm' (all OSes) and '-ldl' (linux only), but not the darwin flag
+    assert rm.linkerFlags.get(0l) == "-lm";
+    assert rm.linkerFlags.get(1l) == "-ldl";
+    assert file.sourceLinkerFlags.getSize() == 2l;
+    assert rm.additionalSourcePaths.getSize() == 1l;
+    const FilePath& extraSource = rm.additionalSourcePaths.get(0l);
+    assert String(extraSource.toGenericString()) == "/tmp/extra.c"; // relative to the source file
+    assert file.sourceAdditionalSourcePaths.getSize() == 1l;
+    return true;
+}
+
+#[test, test.name="SymbolTableBuilder Smoke test"]
+public f<bool> testSymbolTableBuilderSmoke() {
+    assert testMainFunctionRules();
+    assert testDefinitionRules();
+    assert testAttributeRules();
+    return true;
+}

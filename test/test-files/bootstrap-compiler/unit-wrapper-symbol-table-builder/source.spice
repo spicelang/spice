@@ -1,0 +1,7 @@
+import "bootstrap/symboltablebuilder/symbol-table-builder";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testSymbolTableBuilderSmoke();
+    printf("All assertions passed!\n");
+}

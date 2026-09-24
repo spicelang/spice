@@ -1,1 +1,16 @@
-public type IGlobalResourceManager interface {}
+// Std imports
+import "std/io/filepath";
+
+// Own imports
+import "bootstrap/driver";
+import "bootstrap/exception/error-manager";
+import "bootstrap/source-file-intf";
+
+public type IGlobalResourceManager interface {
+    public f<CliOptions&> getCliOptions();
+    public f<ErrorManager&> getErrorManager();
+    public f<const String&> getCompileTimeStringValue(unsigned long);
+    public p addLinkerFlag(const String&);
+    public p addAdditionalSourcePath(const FilePath&);
+    public f<ISourceFile*> createSourceFile(ISourceFile*, const String&, const FilePath&, bool);
+}

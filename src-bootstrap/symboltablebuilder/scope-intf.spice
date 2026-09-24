@@ -10,6 +10,7 @@ public type ScopeType enum {
     LAMBDA_BODY,
     STRUCT,
     INTERFACE,
+    UNION,
     ENUM,
     IF_ELSE_BODY,
     WHILE_BODY,
