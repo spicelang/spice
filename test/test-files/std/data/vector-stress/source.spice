@@ -89,5 +89,60 @@ f<int> main() {
     }
     assert idxSum == valSum;
 
+    // 10. popBack drains a large vector in reverse order and keeps its capacity
+    Vector<int> v10;
+    for int i = 0; i < 1000; i++ { v10.pushBack(i); }
+    const long capacityBefore = v10.getCapacity();
+    for int i = 999; i >= 0; i-- {
+        assert v10.back() == i;
+        v10.popBack();
+        assert v10.getSize() == cast<long>(i);
+    }
+    assert v10.isEmpty();
+    assert v10.getCapacity() == capacityBefore;
+
+    // 11. Interleaved pushBack/popBack, then refill after draining
+    Vector<int> v11;
+    for int round = 0; round < 100; round++ {
+        v11.pushBack(round);
+        v11.pushBack(round + 1000);
+        assert v11.back() == round + 1000;
+        v11.popBack();
+        assert v11.back() == round;
+    }
+    assert v11.getSize() == 100;
+    assert v11.front() == 0;
+    assert v11.back() == 99;
+    for int i = 0; i < 100; i++ { v11.popBack(); }
+    assert v11.isEmpty();
+    for int i = 0; i < 50; i++ { v11.pushBack(i * 2); }
+    assert v11.getSize() == 50;
+    assert v11.front() == 0;
+    assert v11.back() == 98;
+
+    // 12. popBack does not affect an independent copy
+    Vector<int> v12 = Vector<int>(v11);
+    for int i = 0; i < 25; i++ { v11.popBack(); }
+    assert v11.getSize() == 25;
+    assert v12.getSize() == 50;
+    assert v12.back() == 98;
+    assert v11.back() == 48;
+
+    // 13. popBack destructs non-trivial elements (leak/double-free check under sanitizers)
+    Vector<String> v13;
+    for int i = 0; i < 200; i++ {
+        v13.pushBack(i % 2 == 0 ? String("even") : String("odd"));
+    }
+    assert v13.getSize() == 200;
+    for int i = 199; i >= 100; i-- {
+        assert v13.back() == (i % 2 == 0 ? String("even") : String("odd"));
+        v13.popBack();
+    }
+    assert v13.getSize() == 100;
+    v13.pushBack(String("tail"));
+    assert v13.back() == String("tail");
+    v13.popBack();
+    assert v13.back() == String("odd");
+
     printf("Vector stress tests passed!\n");
 }

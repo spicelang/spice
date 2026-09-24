@@ -182,6 +182,17 @@ public p Vector.pushBack<T>(const T& item) {
 }
 
 /**
+ * Remove the last item of the vector, destructing it. Use back() beforehand to read its value.
+ */
+public p Vector.popBack() {
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    // Destroy the last element and decrement the size
+    unsafe {
+        sDestruct(this.contents[--this.size]);
+    }
+}
+
+/**
  * Get an item at a certain index
  *
  * @return item at index
