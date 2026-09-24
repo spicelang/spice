@@ -47,6 +47,32 @@ f<int> main() {
     assert v.front() == 5;
     assert v.back() == 40;
 
+    // popBack removes the last item
+    v.popBack();
+    assert v.getSize() == 4;
+    assert v.back() == 30;
+    v.popBack();
+    v.popBack();
+    assert v.getSize() == 2;
+    assert v.front() == 5;
+    assert v.back() == 10;
+
+    // popBack down to empty, then the vector is reusable
+    v.popBack();
+    v.popBack();
+    assert v.isEmpty();
+    v.pushBack(7);
+    assert v.getSize() == 1;
+    assert v.back() == 7;
+
+    // popBack destructs non-trivial elements
+    Vector<String> names;
+    names.pushBack(String("alpha"));
+    names.pushBack(String("beta"));
+    names.popBack();
+    assert names.getSize() == 1;
+    assert names.back() == String("alpha");
+
     // clear
     v.clear();
     assert v.isEmpty();
