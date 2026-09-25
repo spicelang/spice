@@ -1,6 +1,14 @@
 import "std/data/map";
 import "std/data/set";
 
+// Builds the string "a", followed by a null byte and the given char
+f<String> keyWithNull(char suffix) {
+    String key = String("a");
+    key += '\0';
+    key += suffix;
+    return key;
+}
+
 f<int> main() {
     // Map with String keys, which are ordered lexicographically
     Map<String, int> map;
@@ -47,6 +55,23 @@ f<int> main() {
     assert set.getSize() == 3;
     assert set.contains(String("a"));
     assert !set.contains(String("d"));
+
+    // Keys that only differ after an embedded null byte are different keys and all of them can be found again
+    const String prefix = String("a");
+    assert prefix != keyWithNull('b');
+    Map<String, int> nullMap;
+    nullMap.insert(prefix, 0);
+    nullMap.insert(keyWithNull('b'), 1);
+    nullMap.insert(keyWithNull('c'), 2);
+    nullMap.insert(keyWithNull('d'), 3);
+    nullMap.insert(keyWithNull('e'), 4);
+    assert nullMap.getSize() == 5;
+    assert nullMap.get(prefix) == 0;
+    assert nullMap.get(keyWithNull('b')) == 1;
+    assert nullMap.get(keyWithNull('c')) == 2;
+    assert nullMap.get(keyWithNull('d')) == 3;
+    assert nullMap.get(keyWithNull('e')) == 4;
+    assert !nullMap.contains(keyWithNull('f'));
 
     // The ordering of primitive keys did not change
     Map<int, int> intMap;

@@ -10,7 +10,7 @@ type V dyn;
 type NodeColor enum { RED, BLACK }
 
 // Link external functions
-ext f<int> strcmp(string, string);
+ext f<int> memcmp(string, string, unsigned long);
 
 /**
  * Checks if the first key sorts before the second one. The tree orders its keys with this function, because the '<' operator
@@ -25,14 +25,24 @@ inline f<bool> isKeyLess<K>(const K& lhs, const K& rhs) {
 }
 
 /**
- * Checks if the first string sorts lexicographically before the second one
+ * Checks if the first string sorts lexicographically before the second one. Like the equality of strings, this compares the
+ * whole content including embedded null bytes, so that strings, which are not equal, never count as equivalent keys.
  *
  * @param lhs First string
  * @param rhs Second string
  * @return Sorts before or not
  */
 f<bool> isKeyLess(const String& lhs, const String& rhs) {
-    return strcmp(lhs.getRaw(), rhs.getRaw()) < 0;
+    const unsigned long lhsLength = lhs.getLength();
+    const unsigned long rhsLength = rhs.getLength();
+    const unsigned long commonLength = lhsLength < rhsLength ? lhsLength : rhsLength;
+    if commonLength > 0l {
+        const int comparison = memcmp(lhs.getRaw(), rhs.getRaw(), commonLength);
+        if comparison != 0 {
+            return comparison < 0;
+        }
+    }
+    return lhsLength < rhsLength;
 }
 
 /**
