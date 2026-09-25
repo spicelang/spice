@@ -206,6 +206,23 @@ public f<FilePath> getBootstrapCompilerDir() {
 }
 
 /**
+ * Check if the given target triple has a Darwin based OS. Mirrors llvm::Triple::isOSDarwin(): macOS, iOS (incl. tvOS),
+ * watchOS, DriverKit, visionOS, bridgeOS and Apple firmware.
+ *
+ * @param triple Target triple
+ * @return Darwin based or not
+ */
+f<bool> isDarwinTriple(const String& triple) {
+    const string[9] darwinOsNames = ["darwin", "macos", "ios", "tvos", "watchos", "driverkit", "xros", "visionos", "bridgeos"];
+    for unsigned int i = 0; i < len(darwinOsNames); i++ {
+        if triple.contains(darwinOsNames[i]) {
+            return true;
+        }
+    }
+    return triple.contains("apple") && triple.contains("firmware");
+}
+
+/**
  * Retrieve the file extension of the output file for a certain output container. It depends on the target, which is derived
  * from the target triple. As long as there is none yet, e.g. because the cli options are not enriched yet, the host is assumed.
  *
@@ -234,7 +251,7 @@ public f<string> getOutputFileExtension(const CliOptions& cliOptions, OutputCont
     if triple.startsWith("wasm") {
         return extensionsWasm[container];
     }
-    if triple.contains("darwin") || triple.contains("macos") {
+    if isDarwinTriple(triple) {
         return extensionsMacos[container];
     }
     if triple.contains("windows") || triple.contains("win32") || triple.contains("mingw") || triple.contains("cygwin") {

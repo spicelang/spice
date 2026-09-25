@@ -1047,6 +1047,17 @@ f<bool> testOutputFileExtensions() {
     cliOptions.targetTriple = llvm::Triple(String("arm64"), String("apple"), String("darwin"));
     assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "";
     assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    // All Apple OSes are Darwin based, like in llvm::Triple::isOSDarwin()
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("ios17.0"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("tvos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("arm64"), String("apple"), String("watchos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("visionos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("driverkit"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
     cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("pc"), String("windows"));
     assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "exe";
     assert getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE) == "obj";

@@ -170,14 +170,18 @@ public inline f<String> FilePath.getExtension() {
  * @param newExtension New file extension, with or without leading dot
  */
 public inline p FilePath.replaceExtension(string newExtension) {
-    // Remove the old extension including its dot. A dot at the beginning of the file name belongs to the name
+    // Remove the old extension including its dot. A dot at the beginning of the file name belongs to the name and the file
+    // name '..' has no extension at all
     const long dotIdx = this.path.rfind('.');
     long separatorIdx = this.path.rfind(PATH_SEPARATOR_UNIX);
     const long windowsSeparatorIdx = this.path.rfind(PATH_SEPARATOR_WINDOWS);
     if windowsSeparatorIdx > separatorIdx {
         separatorIdx = windowsSeparatorIdx;
     }
-    if dotIdx > separatorIdx + 1 {
+    const long fileNameStart = separatorIdx + 1l;
+    const bool isParentDirName = dotIdx == fileNameStart + 1l && dotIdx == cast<long>(this.path.getLength()) - 1l &&
+                                 this.path[fileNameStart] == '.';
+    if dotIdx > fileNameStart && !isParentDirName {
         this.path = this.path.getSubstring(0, dotIdx);
     }
 

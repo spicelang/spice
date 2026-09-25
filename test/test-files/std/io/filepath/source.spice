@@ -43,6 +43,17 @@ f<int> main() {
     FilePath hidden = FilePath(".gitignore");
     hidden.replaceExtension("bak");
     assert hidden.toGenericString() == ".gitignore.bak"; // A leading dot belongs to the file name
+    FilePath parentDir = FilePath("..");
+    parentDir.replaceExtension("");
+    assert parentDir.toGenericString() == ".."; // '..' has no extension, so it must not be shortened to '.'
+    parentDir.replaceExtension("bak");
+    assert parentDir.toGenericString() == "...bak";
+    FilePath nestedParentDir = FilePath("a/..");
+    nestedParentDir.replaceExtension("");
+    assert nestedParentDir.toGenericString() == "a/..";
+    FilePath dotDotPrefix = FilePath("dir/..x");
+    dotDotPrefix.replaceExtension("");
+    assert dotDotPrefix.toGenericString() == "dir/."; // Only the exact file name '..' is exempt
 
     printf("All assertions passed!\n");
 }
