@@ -688,6 +688,10 @@ public p Triple.ctor() {
     this.value = nil<string>;
 }
 
+public p Triple.ctor(string triple) {
+    this.value = LLVMCreateMessage(triple);
+}
+
 public p Triple.ctor(const String& archStr, const String& vendorStr, const String& osStr) {
     const String newString = archStr + '-' + vendorStr + '-' + osStr;
     this.value = LLVMCreateMessage(newString.getRaw());

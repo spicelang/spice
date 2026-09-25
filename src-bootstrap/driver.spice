@@ -1,12 +1,15 @@
 // Std imports
 import "std/data/map";
 import "std/text/print";
-import "std/os/cmd";
+import "std/text/format";
 import "std/os/env";
 import "std/os/os";
+import "std/os/filesystem";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
+import "std/io/dir";
+import "std/io/file";
 import "std/io/filepath";
 import "std/text/string-ext";
 import "std/time/time";
@@ -15,6 +18,9 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "util/common-util";
+import "bootstrap/exception/cli-error";
+import "bootstrap/util/compiler-warning";
+import "bootstrap/util/system-util";
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
@@ -30,6 +36,15 @@ public type OptLevel enum {
     Os = 4, // Optimize for code size
     Oz = 5  // Aggressively optimize for code size
 }
+
+public type DebugInfoLevel enum {
+    NONE = 0,      // Do not emit any debug info
+    LINE_ONLY = 1, // Only emit DWARF line tables, no type, variable or scope info
+    FULL = 2       // Emit full debug info, incl. types, variables and lexical scopes
+}
+const string DEBUG_INFO_NONE = "none";
+const string DEBUG_INFO_LINE_ONLY = "line-only";
+const string DEBUG_INFO_FULL = "full";
 
 public type Sanitizer enum {
     NONE = 0,    // No sanitizer
@@ -57,13 +72,20 @@ public type OutputContainer enum {
     EXECUTABLE = 0,     // On Linux and macOS no extension, on Windows .exe files
     OBJECT_FILE = 1,    // On Linux and macOS .o files and on Windows .obj files
     STATIC_LIBRARY = 2, // On Linux and macOS .a files and on Windows .lib files
-    SHARED_LIBRARY = 3, // On Linux .so, on Windows .dll and on macOS .dylib files
+    SHARED_LIBRARY = 3, // On Linux .so, on macOS .dylib and on Windows .dll files
     MAX
 }
 const string OUTPUT_CONTAINER_EXECUTABLE = "exec";
 const string OUTPUT_CONTAINER_OBJECT_FILE = "obj";
 const string OUTPUT_CONTAINER_STATIC_LIBRARY = "lib";
 const string OUTPUT_CONTAINER_SHARED_LIBRARY = "dylib";
+
+public type Backend enum {
+    LLVM = 0, // Standard LLVM CodeGen backend (default)
+    TPDE = 1  // Experimental TPDE backend - fast, -O0-quality codegen
+}
+const string BACKEND_LLVM = "llvm";
+const string BACKEND_TPDE = "tpde";
 
 public type DumpSettings struct {
     public bool dumpCST = false
@@ -80,8 +102,17 @@ public type DumpSettings struct {
 }
 
 public type InstrumentationSettings struct {
-    public bool generateDebugInfo = false
+    public DebugInfoLevel debugInfoLevel = DebugInfoLevel::NONE
+    public bool codeCoverage = false
     public Sanitizer sanitizer = Sanitizer::NONE
+}
+
+public const f<bool> InstrumentationSettings.emitsDebugInfo() {
+    return this.debugInfoLevel != DebugInfoLevel::NONE;
+}
+
+public const f<bool> InstrumentationSettings.emitsFullDebugInfo() {
+    return this.debugInfoLevel == DebugInfoLevel::FULL;
 }
 
 /**
@@ -90,18 +121,18 @@ public type InstrumentationSettings struct {
 public type CliOptions struct {
     public FilePath mainSourceFile // e.g. main.spice
     public llvm::Triple targetTriple // In format: <arch><sub>-<vendor>-<sys>-<abi>
-    public String targetArch = String(TARGET_UNKNOWN)
-    public String targetVendor = String(TARGET_UNKNOWN)
-    public String targetOs = String(TARGET_UNKNOWN)
+    public String targetArch // TARGET_UNKNOWN per default, see the constructor
+    public String targetVendor // TARGET_UNKNOWN per default, see the constructor
+    public String targetOs // TARGET_UNKNOWN per default, see the constructor
     public bool isNativeTarget = true
     public bool useCPUFeatures = true
     public bool execute = false
     public FilePath cacheDir // Where the cache files go. Should always be a temp directory
-    public FilePath outputDir = FilePath("./") // Where the object files go. Should always be a temp directory
+    public FilePath outputDir // Where the object files go. Should always be a temp directory. "./" per default, see the constructor
     public FilePath outputPath // Where the output binary goes.
     public BuildMode buildMode = BuildMode::DEBUG // Default build mode is debug
-    public OutputContainer outputContainer = OutputContainer::EXECUTABLE
-    public unsigned int compileJobCount = 0 // O for auto
+    public OutputContainer outputContainer = OutputContainer::EXECUTABLE // Default output container is executable
+    public unsigned int compileJobCount = 0 // 0 for auto
     public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
@@ -109,8 +140,9 @@ public type CliOptions struct {
     public bool namesForIRValues = false
     public bool useLifetimeMarkers = false
     public bool useTBAAMetadata = false
-    public OptLevel optLevel = OptLevel::O0 // Default optimization level for debug build mode is O0
+    public OptLevel optLevel = OptLevel::O0 // The default optimization level for debug build mode is O0
     public bool useLTO = false
+    public Backend backend = Backend::LLVM // Codegen backend selection (TPDE is experimental)
     public bool noEntryFct = false
     public bool generateTestMain = false
     public bool staticLinking = false
@@ -119,6 +151,55 @@ public type CliOptions struct {
     public bool testMode = false
     public bool comparableOutput = false
     public Map<String, String> buildVars
+    public bool lintOnly = false
+    public bool keepFramePointers = false
+    public bool stripSymbols = false
+}
+
+/**
+ * The compiler does not apply field defaults, which call a constructor, e.g. 'String(TARGET_UNKNOWN)'. So they are set here.
+ */
+public p CliOptions.ctor() {
+    this.targetArch = String(TARGET_UNKNOWN);
+    this.targetVendor = String(TARGET_UNKNOWN);
+    this.targetOs = String(TARGET_UNKNOWN);
+    this.outputDir = FilePath("./");
+}
+
+/**
+ * Set a build variable. An already existing value of the build variable is overwritten.
+ *
+ * @param key Name of the build variable
+ * @param value New value of the build variable
+ */
+public p CliOptions.setBuildVar(const String& key, const String& value) {
+    if this.buildVars.contains(key) {
+        this.buildVars.remove(key);
+    }
+    this.buildVars.insert(key, value);
+}
+
+/**
+ * Whether a panic or failed assertion prints the stack trace of the failing call. It needs the std's libbacktrace, which is
+ * built for the host only, so cross-compiling leaves it out rather than fail to link. Comparable output leaves it out too,
+ * as the frames and their offsets differ between platforms and compilers.
+ *
+ * @return Prints a stack trace or not
+ */
+public const f<bool> CliOptions.printsStackTraceOnAbort() {
+    return this.isNativeTarget && !this.comparableOutput;
+}
+
+/**
+ * Abort with a cli error. The bootstrap compiler has no exceptions, so the error is reported via a panic.
+ *
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+p raiseCliError(const CliErrorType errorType, const string message) {
+    const CliError cliError = CliError(errorType, message);
+    const String& errorMessage = cliError.getMessage();
+    panic(Error(errorMessage.getRaw()));
 }
 
 /**
@@ -132,6 +213,9 @@ public type Driver struct {
     public bool shouldExecute = false
     public bool dryRun = false // For unit testing purposes
     CliParser cliParser
+    // Whether the user named a debug info level themselves. DebugInfoLevel::NONE is also the default, so without this
+    // an explicit '--debug-info=none' would be indistinguishable from not passing the option at all.
+    bool debugInfoLevelSetExplicitly = false
 }
 
 public p Driver.ctor() {
@@ -145,74 +229,9 @@ public p Driver.ctor() {
     this.addBuildSubcommand();
     this.addRunSubcommand();
     this.addTestSubcommand();
+    this.addLintSubcommand();
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
-
-    // ToDo: Here we have a problem with passing the captures. Curently the capture struct is stack-allocated. This stack
-    // allocation goes out of scope at the end of the function, but used afterwards.
-    /*this.cliParser.setRootCallback(p() {
-        if this.shouldInstall || this.shouldUninstall {
-            // Prepare the installation path
-            FilePath installPath = getSpiceBinDir();
-            installPath /= this.cliOptions.mainSourceFile.getBaseName();
-            if !this.dryRun {
-                // ToDo
-            }
-
-            // If the binary should be installed, set the output path to the Spice bin directory
-            if this.shouldInstall {
-                this.cliOptions.outputPath = installPath;
-            }
-
-            // If the binary should be uninstalled, check if the executable exists and uninstall it
-            if this.shouldUninstall && !this.dryRun {
-                if installPath.exists() && deleteFile(installPath.toString()) {
-                    println("Successfully uninstalled");
-                } else {
-                    CompilerWarning warning = CompilerWarning(CompilerWarningType::UNINSTALL_FAILED, "The executable was not found at the expected location");
-                    warning.print();
-                }
-            }
-        }
-
-        // Abort here if we do not need to compile
-        if !this.shouldCompile {
-            return;
-        }
-
-        // Set output path and dir
-        if this.shouldExecute {
-            this.cliOptions.execute = true;
-            const long millis = getCurrentMillis();
-            this.cliOptions.outputDir = FilePath(getTempDir()) / "spice" / "output" / toString(millis);
-            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
-        } else if this.cliOptions.outputPath.isEmpty() {
-            if this.cliOptions.outputPath.isEmpty() {
-                this.cliOptions.outputDir = this.cliOptions.outputPath;
-                this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
-            } else {
-                this.cliOptions.outputDir = FilePath(this.cliOptions.outputPath.getParentDir());
-            }
-        } else {
-            this.cliOptions.outputDir = FilePath("./");
-            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
-        }
-
-        // Set output file extension
-        if this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64 {
-            this.cliOptions.outputPath.replaceExtension("wasm");
-        } else if isWindows() {
-            this.cliOptions.outputPath.replaceExtension("exe");
-        } else {
-            this.cliOptions.outputPath.replaceExtension("");
-        }
-
-        // Set cache dir
-        this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
-
-        // Create directories in case they not exist yet
-        // ToDo
-    });*/
 }
 
 /**
@@ -223,7 +242,19 @@ public p Driver.ctor() {
  * @return Return code
  */
 public f<int> Driver.parse(int argc, string[] argv) {
-    return this.cliParser.parse(argc, argv);
+    const int exitCode = this.cliParser.parse(argc, argv);
+    if exitCode != EXIT_CODE_SUCCESS {
+        return exitCode;
+    }
+
+    // The main source file has to exist
+    if (this.shouldCompile || this.shouldUninstall) && !this.cliOptions.mainSourceFile.exists() {
+        printf("<main-source-file>: File does not exist: %s\n", this.cliOptions.mainSourceFile.toString());
+        return EXIT_CODE_ERROR;
+    }
+
+    this.finalizeOptions();
+    return EXIT_CODE_SUCCESS;
 }
 
 /**
@@ -275,6 +306,68 @@ public p Driver.enrich() {
         this.cliOptions.noEntryFct = true;
         this.cliOptions.generateTestMain = true;
     }
+
+    const Sanitizer sanitizer = this.cliOptions.instrumentation.sanitizer;
+    // Memory sanitizer is only supported on Linux
+    if !this.isTargetLinux() && sanitizer == Sanitizer::MEMORY {
+        raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets");
+    }
+    // Some sanitizers need lifetime markers to work properly
+    if sanitizer == Sanitizer::ADDRESS || sanitizer == Sanitizer::MEMORY {
+        this.cliOptions.useLifetimeMarkers = true;
+    }
+    // Type sanitizer needs TBAA metadata to work properly
+    if sanitizer == Sanitizer::TYPE {
+        this.cliOptions.useTBAAMetadata = true;
+    }
+
+    // Code coverage instrumentation needs debug line info to map counters back to source locations
+    if this.cliOptions.instrumentation.codeCoverage {
+        if !this.cliOptions.instrumentation.emitsDebugInfo() {
+            // Turning debug info off on purpose would leave the counters unmappable, so say so instead of overriding it
+            if this.debugInfoLevelSetExplicitly {
+                raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Code coverage instrumentation requires debug line info");
+            }
+            this.cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+        }
+        if this.cliOptions.useLTO {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Code coverage instrumentation is not supported in combination with LTO");
+        }
+    }
+
+    // Infer build vars from other options
+    this.cliOptions.setBuildVar(String("spice.is_debug"), String(toString(this.cliOptions.buildMode == BuildMode::DEBUG)));
+    this.cliOptions.setBuildVar(String("spice.is_release"), String(toString(this.cliOptions.buildMode == BuildMode::RELEASE)));
+    this.cliOptions.setBuildVar(String("spice.is_test"), String(toString(this.cliOptions.buildMode == BuildMode::TEST)));
+    this.cliOptions.setBuildVar(String("spice.link_static"), String(toString(this.cliOptions.staticLinking)));
+    this.cliOptions.setBuildVar(String("spice.is_native_target"), String(toString(this.cliOptions.isNativeTarget)));
+    this.cliOptions.setBuildVar(String("spice.target_triple"), String(this.cliOptions.targetTriple.value));
+    this.cliOptions.setBuildVar(String("spice.backend"), String(this.cliOptions.backend == Backend::TPDE ? BACKEND_TPDE : BACKEND_LLVM));
+
+    // Prevent incompatible option combinations
+    if this.cliOptions.staticLinking && this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
+        raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library");
+    }
+
+    // Guards for the experimental TPDE backend - ELF only, x86_64/aarch64 only, no LTO
+    if this.cliOptions.backend == Backend::TPDE {
+        if this.cliOptions.useLTO {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support LTO");
+        }
+        if this.cliOptions.instrumentation.codeCoverage {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support code coverage instrumentation");
+        }
+        if !this.isTargetLinux() {
+            raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports ELF targets (Linux)");
+        }
+        const String archName = this.cliOptions.targetTriple.getArchName();
+        if archName != "x86_64" && archName != "aarch64" {
+            raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports x86_64 and aarch64");
+        }
+        if this.cliOptions.optLevel != OptLevel::O0 {
+            print("\033[33mWarning: the TPDE backend does not optimize; -O flag will be ignored\033[0m\n");
+        }
+    }
 }
 
 /**
@@ -286,13 +379,83 @@ public p Driver.runBinary() {
         print("Running executable ...\n\n");
     }
 
-    // Run executable
+    // Run executable, inheriting our standard streams so its output goes straight to the terminal
     FilePath executablePath = this.cliOptions.outputPath;
     executablePath.makeNative();
-    const int exitCode = execCmd(executablePath.toString());
-    if exitCode != EXIT_CODE_SUCCESS {
-        panic(Error("Your Spice executable exited with non-zero exit code"));
+    const ExecResult execResult = exec(executablePath.toString());
+    if execResult.exitCode != EXIT_CODE_SUCCESS {
+        const String message = "Your Spice executable exited with non-zero exit code " + toString(execResult.exitCode);
+        raiseCliError(CliErrorType::NON_ZERO_EXIT_CODE, message.getRaw());
     }
+}
+
+/**
+ * Complete the cli options, once all arguments were parsed. Here, the paths are derived and the install and uninstall
+ * requests are handled.
+ */
+p Driver.finalizeOptions() {
+    if this.shouldInstall || this.shouldUninstall {
+        // Prepare the installation path
+        const FilePath binDir = getSpiceBinDir();
+        FilePath installPath = binDir;
+        installPath /= this.cliOptions.mainSourceFile.getBaseName();
+        if !this.dryRun {
+            mkDirs(binDir.toString(), MODE_ALL_RWX);
+        }
+        assert this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+        installPath.replaceExtension(getOutputFileExtension(this.cliOptions, OutputContainer::EXECUTABLE));
+
+        // If the binary should be installed, set the output path to the Spice bin directory
+        if this.shouldInstall {
+            this.cliOptions.outputPath = installPath;
+        }
+
+        // If the binary should be uninstalled, check if the executable exists and uninstall it
+        if this.shouldUninstall && !this.dryRun {
+            if installPath.exists() && deleteFile(installPath.toString()) {
+                println("Successfully uninstalled.");
+            } else {
+                CompilerWarning warning = CompilerWarning(CompilerWarningType::UNINSTALL_FAILED, "The executable was not found at the expected location");
+                warning.print();
+            }
+        }
+    }
+
+    // Abort here if we do not need to compile
+    if !this.shouldCompile {
+        return;
+    }
+
+    // Set output path and dir
+    if this.shouldExecute {
+        this.cliOptions.execute = true;
+        const long millis = getCurrentMillis();
+        this.cliOptions.outputDir = FilePath(getTempDir()) / "spice" / "output" / toString(millis);
+        this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+    } else if !this.cliOptions.outputPath.isEmpty() {
+        if dirExists(this.cliOptions.outputPath.toString()) {
+            this.cliOptions.outputDir = this.cliOptions.outputPath;
+            this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+        } else {
+            const String parentDir = this.cliOptions.outputPath.getParentDir();
+            if !parentDir.isEmpty() {
+                this.cliOptions.outputDir = FilePath(parentDir);
+            }
+        }
+    } else {
+        this.cliOptions.outputDir = FilePath("./");
+        this.cliOptions.outputPath = this.cliOptions.outputDir / this.cliOptions.mainSourceFile.getFileName();
+    }
+
+    // Set output file extension
+    this.cliOptions.outputPath.replaceExtension(getOutputFileExtension(this.cliOptions, this.cliOptions.outputContainer));
+
+    // Set cache dir
+    this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
+
+    // Create directories in case they not exist yet
+    mkDirs(this.cliOptions.cacheDir.toString(), MODE_ALL_RWX);
+    mkDirs(this.cliOptions.outputDir.toString(), MODE_ALL_RWX);
 }
 
 /**
@@ -310,23 +473,28 @@ p Driver.addBuildSubcommand() {
     this.addInstrumentationOptions(subCmd);
 
     const p(const string&) outputContainerCallback = p(const string& outputContainer) {
-        if outputContainer == OUTPUT_CONTAINER_EXECUTABLE {
+        const String inputString = toLower(String(outputContainer));
+        if inputString == OUTPUT_CONTAINER_EXECUTABLE {
             this.cliOptions.outputContainer = OutputContainer::EXECUTABLE;
-        } else if outputContainer == OUTPUT_CONTAINER_OBJECT_FILE {
+        } else if inputString == OUTPUT_CONTAINER_OBJECT_FILE {
             this.cliOptions.outputContainer = OutputContainer::OBJECT_FILE;
-        } else if outputContainer == OUTPUT_CONTAINER_STATIC_LIBRARY {
-            this.cliOptions.buildMode = OutputContainer::STATIC_LIBRARY;
-        } else if outputContainer == OUTPUT_CONTAINER_SHARED_LIBRARY {
-            this.cliOptions.buildMode = OutputContainer::SHARED_LIBRARY;
+        } else if inputString == OUTPUT_CONTAINER_STATIC_LIBRARY {
+            this.cliOptions.outputContainer = OutputContainer::STATIC_LIBRARY;
+        } else if inputString == OUTPUT_CONTAINER_SHARED_LIBRARY {
+            this.cliOptions.outputContainer = OutputContainer::SHARED_LIBRARY;
         } else {
-            panic(Error("Invalid output container"));
+            raiseCliError(CliErrorType::INVALID_OUTPUT_CONTAINER, inputString.getRaw());
         }
     };
 
     // --output-container
-    CliOption<string>& outputContainerOption = subCmd.addOption("--output-container", outputContainerCallback, "Output container for the emitted code: exec (default), obj, lib, dylib");
+    subCmd.addOption("--output-container", outputContainerCallback, "Format of the compilation output container: exec (default), obj, lib, dylib)");
     // --target-triple
-    CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple.value, "Target triple for the emitted executable (for cross-compiling)");
+    // A callback creates the triple, because a triple owns its message, which must not be a pointer into the arguments
+    const p(const string&) targetCallback = p(const string& target) {
+        this.cliOptions.targetTriple = llvm::Triple(target);
+    };
+    CliOption<string>& targetOption = subCmd.addOption("--target", targetCallback, "Target triple for the emitted executable (for cross-compiling)");
     targetOption.addAlias("--target-triple");
     targetOption.addAlias("-t");
     // --target-arch
@@ -334,7 +502,7 @@ p Driver.addBuildSubcommand() {
     // --target-vendor
     subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
     // --target-os
-    subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
+    subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target os for emitted executable (for cross-compiling)");
     // --output
     CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
@@ -344,6 +512,8 @@ p Driver.addBuildSubcommand() {
     subCmd.addFlag("--no-entry", this.cliOptions.noEntryFct, "Do not generate main function");
     // --static
     subCmd.addFlag("--static", this.cliOptions.staticLinking, "Link statically");
+    // --strip-symbols
+    subCmd.addFlag("--strip-symbols", this.cliOptions.stripSymbols, "Strip the symbol table from the executable, making it smaller at the price of unreadable stack traces and, together with --debug-info, no debug info either");
     // --dump-to-files
     subCmd.addFlag("--dump-to-files", this.cliOptions.dump.dumpToFiles, "Redirect dumps to files instead of printing");
     // --abort-after-dump
@@ -382,7 +552,6 @@ p Driver.addTestSubcommand() {
         this.cliOptions.buildMode = BuildMode::TEST;
         this.cliOptions.generateTestMain = true; // An alternative entry function is generated
         this.cliOptions.noEntryFct = true;       // To not have two main functions, disable normal main
-        this.ensureNotDockerized();
     });
 
     this.addCompileSubcommandOptions(subCmd);
@@ -393,11 +562,26 @@ p Driver.addTestSubcommand() {
 }
 
 /**
+ * Add lint subcommand to cli interface
+ */
+p Driver.addLintSubcommand() {
+    // Create sub-command itself
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("lint", "Checks your Spice program for style and best-practice issues");
+    subCmd.addAlias("l");
+    subCmd.setCallback(p() {
+        this.shouldCompile = true;
+        this.cliOptions.lintOnly = true;
+    });
+
+    this.addCompileSubcommandOptions(subCmd);
+}
+
+/**
  * Add install subcommand to cli interface
  */
 p Driver.addInstallSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH");
     subCmd.addAlias("i");
     subCmd.setCallback(p() {
         this.shouldCompile = true;
@@ -419,22 +603,26 @@ p Driver.addUninstallSubcommand() {
         this.shouldUninstall = true;
         this.ensureNotDockerized();
     });
+
+    // Source file
+    subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     const p(const string&) buildModeCallback = p(const string& buildMode) {
-        if buildMode == BUILD_MODE_DEBUG {
+        const String inputString = toLower(String(buildMode));
+        if inputString == BUILD_MODE_DEBUG {
             this.cliOptions.buildMode = BuildMode::DEBUG;
-        } else if buildMode == BUILD_MODE_RELEASE {
+        } else if inputString == BUILD_MODE_RELEASE {
             this.cliOptions.buildMode = BuildMode::RELEASE;
-        } else if buildMode == BUILD_MODE_TEST {
+        } else if inputString == BUILD_MODE_TEST {
             this.cliOptions.buildMode = BuildMode::TEST;
         } else {
-            panic(Error("Invalid build mode"));
+            raiseCliError(CliErrorType::INVALID_BUILD_MODE, inputString.getRaw());
         }
     };
     const p(const string&) buildVarCallback = p(const string& buildVar) {
-        String input = String(buildVar);
+        const String input = String(buildVar);
 
         // Skip empty inputs
         if input.isEmpty() {
@@ -446,9 +634,9 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         if splitPos != -1 {
             const String key = input.getSubstring(0, splitPos);
             const String value = input.getSubstring(splitPos + 1);
-            //this.cliOptions.buildVars.insert(key, value);
+            this.cliOptions.setBuildVar(key, value);
         } else {
-            //this.cliOptions.buildVars.insert(input, "true");
+            this.cliOptions.setBuildVar(input, String("true"));
         }
     };
 
@@ -459,7 +647,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<String>& llvmArgsOption = subCmd.addOption("--llvm-args", this.cliOptions.llvmArgs, "Additional arguments for LLVM");
     llvmArgsOption.addAlias("-llvm");
     // --jobs
-    CliOption<int>& jobsOption = subCmd.addOption("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+    CliOption<int>& jobsOption = subCmd.addOption("--jobs", this.cliOptions.compileJobCount, "Number of source files to compile in parallel in the back end (0 = auto)");
     jobsOption.addAlias("-j");
     // --build-var
     CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
@@ -470,24 +658,40 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
     // --use-tbaa-metadata
     subCmd.addFlag("--use-tbaa-metadata", this.cliOptions.useTBAAMetadata, "Generate metadata for type-based alias analysis to enhance optimizations");
+    // --keep-frame-pointers
+    subCmd.addFlag("--keep-frame-pointers", this.cliOptions.keepFramePointers, "Set up a frame pointer in every function, so external profilers and debuggers can walk the stack (costs a register and a bit of performance)");
 
     // Opt levels
-    subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-    subCmd.addFlag("-O1", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is applied.");
-    subCmd.addFlag("-O2", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
-    subCmd.addFlag("-O3", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    subCmd.addFlag("-Os", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
-    subCmd.addFlag("-Oz", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
+    subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
+    subCmd.addFlag("-O1", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is applied.");
+    subCmd.addFlag("-O2", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
+    subCmd.addFlag("-O3", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
+    subCmd.addFlag("-Os", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
+    subCmd.addFlag("-Oz", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
     subCmd.addFlag("-lto", this.cliOptions.useLTO, "Enable link time optimization (LTO)");
+
+    // --backend
+    const p(const string&) backendCallback = p(const string& backend) {
+        const String inputString = toLower(String(backend));
+        if inputString == BACKEND_LLVM {
+            this.cliOptions.backend = Backend::LLVM;
+        } else if inputString == BACKEND_TPDE {
+            // ToDo: Enable as soon as the bootstrap compiler has a TPDE backend (SPICE_ENABLE_TPDE in the host)
+            raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend is not available in the bootstrap compiler yet");
+        } else {
+            raiseCliError(CliErrorType::INVALID_BACKEND, inputString.getRaw());
+        }
+    };
+    subCmd.addOption("--backend", backendCallback, "Codegen backend: llvm (default), tpde (experimental — fast, unoptimized; requires opt-in build)");
 
     // --debug-output
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
     // --dump-cst
-    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dump.dumpCST, "Dump CSTs as serialized string and SVG image");
+    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dump.dumpCST, "Dump CST as serialized string and SVG image");
     dumpCstFlag.addAlias("-cst");
     // --dump-ast
-    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump ASTs as serialized string and SVG image");
+    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
     subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
@@ -507,33 +711,60 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --dump-dependency-graph
     subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
-    CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
-    //fileOption.setRequired();
-    //fileOption.check(CliOption::EXISTING_FILE);
+    // Source file. The parser requires positional options, and the existence of the file is checked after parsing
+    subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
 }
 
 p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
     const p(const string&) sanitizerCallback = p(const string& sanitizer) {
-        if sanitizer == SANITIZER_NONE {
+        const String inputString = toLower(String(sanitizer));
+        if inputString == SANITIZER_NONE {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::NONE;
-        } else if sanitizer == SANITIZER_ADDRESS {
+        } else if inputString == SANITIZER_ADDRESS {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
-        } else if sanitizer == SANITIZER_THREAD {
+        } else if inputString == SANITIZER_THREAD {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::THREAD;
-        } else if sanitizer == SANITIZER_MEMORY {
+        } else if inputString == SANITIZER_MEMORY {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::MEMORY;
-        } else if sanitizer == SANITIZER_TYPE {
+        } else if inputString == SANITIZER_TYPE {
             this.cliOptions.instrumentation.sanitizer = Sanitizer::TYPE;
         } else {
-            panic(Error("Invalid sanitizer"));
+            raiseCliError(CliErrorType::INVALID_SANITIZER, inputString.getRaw());
         }
     };
 
     // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.instrumentation.generateDebugInfo, "Generate debug info");
-    debugInfoOption.addAlias("-g");
+    // The cli parser has no options with an optional value. Therefore, the levels are flags of their own, which also keeps a
+    // bare '--debug-info' from swallowing the main source file. The one that comes last on the command line wins.
+    subCmd.addFlag("--debug-info", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Generate debug info: full (default), line-only, none");
+    subCmd.addFlag("--debug-info=full", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Alias for --debug-info");
+    subCmd.addFlag("--debug-info=line-only", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::LINE_ONLY); }, "Only emit DWARF line tables");
+    subCmd.addFlag("--debug-info=none", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::NONE); }, "Do not emit any debug info");
+    // -g
+    subCmd.addFlag("-g", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Alias for --debug-info=full");
     // --sanitizer
     subCmd.addOption("--sanitizer", sanitizerCallback, "Enable sanitizer: none (default), address, thread, memory, type");
+    // --coverage
+    subCmd.addFlag("--coverage", this.cliOptions.instrumentation.codeCoverage, "Instrument code for coverage analysis (gcov-compatible .gcno/.gcda output)");
+}
+
+/**
+ * Set the debug info level, which was named explicitly by the user
+ *
+ * @param level Debug info level
+ */
+p Driver.setDebugInfoLevel(const DebugInfoLevel level) {
+    this.cliOptions.instrumentation.debugInfoLevel = level;
+    this.debugInfoLevelSetExplicitly = true;
+}
+
+/**
+ * Check if the target of the compilation is a Linux target
+ *
+ * @return Linux target or not
+ */
+f<bool> Driver.isTargetLinux() {
+    return this.cliOptions.targetOs.startsWith("linux");
 }
 
 /**
@@ -542,6 +773,334 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
 const p Driver.ensureNotDockerized() {
     const Result<string> envValue = getEnv(ENV_VAR_DOCKERIZED);
     if envValue.isOk() && envValue.unwrap() == "true" {
-        panic(Error("This feature is not supported in a containerized environment. Please use the standalone version of Spice."));
+        raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, "This feature is not supported in a containerized environment. Please use the standalone version of Spice.");
     }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Parse the given arguments and enrich the cli options of the given driver. The driver has to be created by the caller
+// and must not be moved afterwards, because the callbacks of the cli parser refer to it.
+f<bool> parseAndEnrich(Driver& driver, int argc, string[] argv) {
+    driver.dryRun = true;
+    if driver.parse(argc, argv) != EXIT_CODE_SUCCESS {
+        return false;
+    }
+    driver.enrich();
+    return true;
+}
+
+// Parse the given arguments of the given driver without enriching the cli options. The driver has to be created by the caller
+f<int> parseOnly(Driver& driver, int argc, string[] argv) {
+    driver.dryRun = true;
+    return driver.parse(argc, argv);
+}
+
+f<bool> testBuildAndRunSubcommands(const string mainFile) {
+    // Build: minimal
+    Driver buildMinimal;
+    string[3] buildMinimalArgs = ["spice", "build", mainFile];
+    assert parseAndEnrich(buildMinimal, 3, buildMinimalArgs);
+    assert buildMinimal.shouldCompile;
+    assert !buildMinimal.shouldInstall;
+    assert !buildMinimal.shouldUninstall;
+    assert !buildMinimal.shouldExecute;
+    assert !buildMinimal.cliOptions.execute;
+    assert buildMinimal.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    assert buildMinimal.cliOptions.optLevel == OptLevel::O0;
+    assert buildMinimal.cliOptions.buildMode == BuildMode::DEBUG;
+    assert buildMinimal.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+    assert buildMinimal.cliOptions.backend == Backend::LLVM;
+    assert !buildMinimal.cliOptions.generateTestMain;
+    assert !buildMinimal.cliOptions.testMode;
+    assert !buildMinimal.cliOptions.noEntryFct;
+    assert !buildMinimal.cliOptions.lintOnly;
+    assert !buildMinimal.cliOptions.keepFramePointers;
+    assert !buildMinimal.cliOptions.stripSymbols;
+    assert !buildMinimal.cliOptions.instrumentation.emitsDebugInfo();
+    // The executable lands in the current dir and is named like the source file, with the extension of the target
+    assert buildMinimal.cliOptions.outputDir.toGenericString() == "./";
+    FilePath expectedOutputPath = FilePath("./main");
+    expectedOutputPath.replaceExtension(getOutputFileExtension(buildMinimal.cliOptions, OutputContainer::EXECUTABLE));
+    assert buildMinimal.cliOptions.outputPath.toGenericString() == expectedOutputPath.toGenericString();
+
+    // Build: complex
+    Driver buildComplex;
+    string[14] buildComplexArgs = ["spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "--sanitizer", "address", "--output-container", "exec", mainFile];
+    assert parseAndEnrich(buildComplex, 14, buildComplexArgs);
+    assert buildComplex.shouldCompile;
+    assert !buildComplex.shouldExecute;
+    assert buildComplex.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    assert buildComplex.cliOptions.optLevel == OptLevel::Os;
+    assert buildComplex.cliOptions.buildMode == BuildMode::RELEASE;
+    assert buildComplex.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
+    assert buildComplex.cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS;
+    assert buildComplex.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+    assert buildComplex.cliOptions.useLTO;
+    assert buildComplex.cliOptions.printDebugOutput;
+    assert buildComplex.cliOptions.dump.dumpIR;
+    assert buildComplex.cliOptions.namesForIRValues; // implicitly due to dumping the IR
+    assert buildComplex.cliOptions.useLifetimeMarkers; // implicitly due to the enabled address sanitizer
+
+    // Build: option values, which need the parser to consume the following argument
+    Driver buildOptions;
+    string[17] buildOptionsWithFile = ["spice", "build", "--strip-symbols", "--keep-frame-pointers", "--no-entry", "--static", "--backend", "llvm", "-b", "key=value", "--build-var", "flag", "-j", "8", "--output-container", "lib", mainFile];
+    assert parseAndEnrich(buildOptions, 17, buildOptionsWithFile);
+    assert buildOptions.cliOptions.stripSymbols;
+    assert buildOptions.cliOptions.keepFramePointers;
+    assert buildOptions.cliOptions.noEntryFct;
+    assert buildOptions.cliOptions.staticLinking;
+    assert buildOptions.cliOptions.compileJobCount == 8;
+    assert buildOptions.cliOptions.outputContainer == OutputContainer::STATIC_LIBRARY;
+    assert buildOptions.cliOptions.buildVars.get(String("key")) == "value";
+    assert buildOptions.cliOptions.buildVars.get(String("flag")) == "true"; // a build var without a value is 'true'
+    assert buildOptions.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
+
+    // Run: minimal
+    Driver runMinimal;
+    string[3] runMinimalArgs = ["spice", "run", mainFile];
+    assert parseAndEnrich(runMinimal, 3, runMinimalArgs);
+    assert runMinimal.shouldCompile;
+    assert !runMinimal.shouldInstall;
+    assert !runMinimal.shouldUninstall;
+    assert runMinimal.shouldExecute;
+    assert runMinimal.cliOptions.execute;
+    assert runMinimal.cliOptions.optLevel == OptLevel::O0;
+    assert !runMinimal.cliOptions.generateTestMain;
+    // The executable is built into a temporary directory
+    const String runOutputDir = String(runMinimal.cliOptions.outputDir.toGenericString());
+    assert runOutputDir.contains("spice/output/");
+
+    // Run: complex
+    Driver runComplex;
+    string[7] runComplexArgs = ["spice", "r", "-O2", "-j", "8", "-ast", mainFile];
+    assert parseAndEnrich(runComplex, 7, runComplexArgs);
+    assert runComplex.shouldExecute;
+    assert runComplex.cliOptions.execute;
+    assert runComplex.cliOptions.optLevel == OptLevel::O2;
+    assert runComplex.cliOptions.compileJobCount == 8;
+    assert runComplex.cliOptions.dump.dumpAST;
+    return true;
+}
+
+f<bool> testTestLintInstallSubcommands(const string mainFile) {
+    // Test: minimal
+    Driver testMinimal;
+    string[3] testMinimalArgs = ["spice", "test", mainFile];
+    assert parseAndEnrich(testMinimal, 3, testMinimalArgs);
+    assert testMinimal.shouldCompile;
+    assert testMinimal.shouldExecute;
+    assert testMinimal.cliOptions.execute;
+    assert testMinimal.cliOptions.buildMode == BuildMode::TEST;
+    assert testMinimal.cliOptions.generateTestMain;
+    assert testMinimal.cliOptions.noEntryFct;
+    assert !testMinimal.cliOptions.testMode;
+
+    // Test: complex
+    Driver testComplex;
+    string[8] testComplexArgs = ["spice", "t", "-s", "-cst", "--sanitizer", "thread", "--disable-verifier", mainFile];
+    assert parseAndEnrich(testComplex, 8, testComplexArgs);
+    assert testComplex.cliOptions.dump.dumpCST;
+    assert testComplex.cliOptions.dump.dumpAssembly;
+    assert testComplex.cliOptions.instrumentation.sanitizer == Sanitizer::THREAD;
+    assert testComplex.cliOptions.disableVerifier;
+
+    // Lint
+    Driver lintMinimal;
+    string[3] lintMinimalArgs = ["spice", "lint", mainFile];
+    assert parseAndEnrich(lintMinimal, 3, lintMinimalArgs);
+    assert lintMinimal.shouldCompile;
+    assert !lintMinimal.shouldExecute;
+    assert lintMinimal.cliOptions.lintOnly;
+    assert lintMinimal.cliOptions.buildMode == BuildMode::DEBUG;
+
+    Driver lintComplex;
+    string[8] lintComplexArgs = ["spice", "l", "-d", "-ast", "-Os", "-m", "release", mainFile];
+    assert parseAndEnrich(lintComplex, 8, lintComplexArgs);
+    assert lintComplex.cliOptions.lintOnly;
+    assert lintComplex.cliOptions.optLevel == OptLevel::Os;
+    assert lintComplex.cliOptions.buildMode == BuildMode::RELEASE;
+    assert lintComplex.cliOptions.printDebugOutput;
+    assert lintComplex.cliOptions.dump.dumpAST;
+
+    // Install: the executable is built into the bin directory of Spice
+    Driver install;
+    string[3] installArgs = ["spice", "install", mainFile];
+    assert parseAndEnrich(install, 3, installArgs);
+    assert install.shouldCompile;
+    assert install.shouldInstall;
+    assert !install.shouldUninstall;
+    assert !install.shouldExecute;
+    // Compare generic strings, because the separators of a FilePath depend on which of its helpers touched it last
+    FilePath binDir = getSpiceBinDir();
+    const String installedPath = String(install.cliOptions.outputPath.toGenericString());
+    assert installedPath.startsWith(binDir.toGenericString());
+
+    // Uninstall: only the source file is required and nothing gets compiled
+    Driver uninstall;
+    string[3] uninstallArgs = ["spice", "uninstall", mainFile];
+    assert parseAndEnrich(uninstall, 3, uninstallArgs);
+    assert !uninstall.shouldCompile;
+    assert !uninstall.shouldInstall;
+    assert uninstall.shouldUninstall;
+    assert !uninstall.shouldExecute;
+    assert uninstall.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    return true;
+}
+
+f<DebugInfoLevel> parseDebugInfoLevel(const string firstArg, const string secondArg, const string mainFile) {
+    Driver driver;
+    string[5] args = ["spice", "build", firstArg, secondArg, mainFile];
+    assert parseAndEnrich(driver, 5, args);
+    return driver.cliOptions.instrumentation.debugInfoLevel;
+}
+
+f<bool> testInstrumentation(const string mainFile) {
+    // All debug info levels. A level without a value must not swallow the source file
+    assert parseDebugInfoLevel("-g", "-d", mainFile) == DebugInfoLevel::FULL; // Plain alias for --debug-info=full
+    assert parseDebugInfoLevel("--debug-info", "-d", mainFile) == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=full", "-d", mainFile) == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=line-only", "-d", mainFile) == DebugInfoLevel::LINE_ONLY;
+    assert parseDebugInfoLevel("--debug-info=none", "-d", mainFile) == DebugInfoLevel::NONE;
+
+    // The last occurrence wins, no matter if '-g' or '--debug-info' comes last
+    assert parseDebugInfoLevel("-g", "--debug-info=line-only", mainFile) == DebugInfoLevel::LINE_ONLY;
+    assert parseDebugInfoLevel("--debug-info=line-only", "-g", mainFile) == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=full", "--debug-info=none", mainFile) == DebugInfoLevel::NONE;
+
+    // Code coverage implies debug line info, but keeps an explicitly chosen level
+    Driver coverage;
+    string[4] coverageArgs = ["spice", "build", "--coverage", mainFile];
+    assert parseAndEnrich(coverage, 4, coverageArgs);
+    assert coverage.cliOptions.instrumentation.codeCoverage;
+    assert coverage.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::LINE_ONLY;
+    assert coverage.cliOptions.instrumentation.emitsDebugInfo();
+    assert !coverage.cliOptions.instrumentation.emitsFullDebugInfo();
+    Driver coverageFull;
+    string[5] coverageFullArgs = ["spice", "build", "--coverage", "--debug-info=full", mainFile];
+    assert parseAndEnrich(coverageFull, 5, coverageFullArgs);
+    assert coverageFull.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
+    assert coverageFull.cliOptions.instrumentation.emitsFullDebugInfo();
+
+    // Sanitizers imply other options
+    Driver typeSanitizer;
+    string[5] typeSanitizerArgs = ["spice", "build", "--sanitizer", "type", mainFile];
+    assert parseAndEnrich(typeSanitizer, 5, typeSanitizerArgs);
+    assert typeSanitizer.cliOptions.instrumentation.sanitizer == Sanitizer::TYPE;
+    assert typeSanitizer.cliOptions.useTBAAMetadata;
+    if isLinux() { // The memory sanitizer is only supported for Linux targets
+        Driver memorySanitizer;
+        string[5] memorySanitizerArgs = ["spice", "build", "--sanitizer", "memory", mainFile];
+        assert parseAndEnrich(memorySanitizer, 5, memorySanitizerArgs);
+        assert memorySanitizer.cliOptions.instrumentation.sanitizer == Sanitizer::MEMORY;
+        assert memorySanitizer.cliOptions.useLifetimeMarkers;
+    }
+    return true;
+}
+
+f<bool> testBuildVarsAndTarget(const string mainFile) {
+    // Build vars, which are inferred from other options
+    Driver release;
+    string[6] releaseArgs = ["spice", "build", "-m", "release", "--static", mainFile];
+    assert parseAndEnrich(release, 6, releaseArgs);
+    assert release.cliOptions.buildVars.get(String("spice.is_debug")) == "false";
+    assert release.cliOptions.buildVars.get(String("spice.is_release")) == "true";
+    assert release.cliOptions.buildVars.get(String("spice.is_test")) == "false";
+    assert release.cliOptions.buildVars.get(String("spice.link_static")) == "true";
+    assert release.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
+    assert release.cliOptions.buildVars.contains(String("spice.is_native_target"));
+    assert release.cliOptions.buildVars.contains(String("spice.target_triple"));
+
+    // A build var given on the command line is overwritten by the inferred one
+    Driver overwritten;
+    string[7] overwrittenArgsWithFile = ["spice", "build", "-b", "spice.is_debug=maybe", "-b", "a=b", mainFile];
+    assert parseAndEnrich(overwritten, 7, overwrittenArgsWithFile);
+    assert overwritten.cliOptions.buildVars.get(String("spice.is_debug")) == "true";
+    assert overwritten.cliOptions.buildVars.get(String("a")) == "b";
+
+    // The target is derived from the triple
+    Driver target;
+    string[5] targetArgs = ["spice", "build", "--target", "aarch64-unknown-linux-gnu", mainFile];
+    assert parseAndEnrich(target, 5, targetArgs);
+    assert target.cliOptions.targetArch == "aarch64";
+    assert target.cliOptions.targetOs == "linux";
+    assert target.cliOptions.buildVars.get(String("spice.target_triple")) == "aarch64-unknown-linux-gnu";
+
+    // Stack traces are only printed for native targets and if the output is not meant to be comparable
+    CliOptions cliOptions;
+    assert cliOptions.printsStackTraceOnAbort();
+    cliOptions.isNativeTarget = false; // Cross-compiling has no libbacktrace to link against
+    assert !cliOptions.printsStackTraceOnAbort();
+    cliOptions.isNativeTarget = true;
+    cliOptions.comparableOutput = true; // Frames and offsets differ between platforms
+    assert !cliOptions.printsStackTraceOnAbort();
+    return true;
+}
+
+f<bool> testOutputFileExtensions() {
+    CliOptions cliOptions;
+    cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "";
+    assert getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE) == "o";
+    assert getOutputFileExtension(cliOptions, OutputContainer::STATIC_LIBRARY) == "a";
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "so";
+    cliOptions.targetTriple = llvm::Triple(String("arm64"), String("apple"), String("darwin"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "";
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    // All Apple OSes are Darwin based, like in llvm::Triple::isOSDarwin()
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("ios17.0"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("tvos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("arm64"), String("apple"), String("watchos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("visionos"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("aarch64"), String("apple"), String("driverkit"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dylib";
+    cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("pc"), String("windows"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "exe";
+    assert getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE) == "obj";
+    assert getOutputFileExtension(cliOptions, OutputContainer::STATIC_LIBRARY) == "lib";
+    assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dll";
+    cliOptions.targetTriple = llvm::Triple(String("wasm32"), String("unknown"), String("unknown"));
+    assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "wasm";
+    return true;
+}
+
+f<bool> testRejectedArguments() {
+    // The source file has to exist
+    Driver missingFile;
+    string[3] missingFileArgs = ["spice", "build", "does-not-exist.spice"];
+    assert parseOnly(missingFile, 3, missingFileArgs) != EXIT_CODE_SUCCESS;
+
+    // The source file is required
+    Driver noFile;
+    string[2] noFileArgs = ["spice", "build"];
+    assert parseOnly(noFile, 2, noFileArgs) != EXIT_CODE_SUCCESS;
+
+    // Unknown arguments are rejected. Nothing is compiled then
+    Driver unknownOption;
+    string[4] unknownOptionArgs = ["spice", "build", "--unknown-option", "x.spice"];
+    assert parseOnly(unknownOption, 4, unknownOptionArgs) != EXIT_CODE_SUCCESS;
+    assert !unknownOption.shouldCompile;
+    return true;
+}
+
+#[test, test.name="Driver Smoke test"]
+public f<bool> testDriverSmoke() {
+    // SPICE_BOOTSTRAP_DIR must point to src-bootstrap/ (same requirement as the other bootstrap tests). Its main.spice is a
+    // source file, that surely exists
+    const FilePath bootstrapDir = getBootstrapCompilerDir();
+    assert !bootstrapDir.isEmpty();
+    const FilePath mainSourceFile = bootstrapDir / "main.spice";
+    const string mainFile = mainSourceFile.toGenericString();
+
+    assert testBuildAndRunSubcommands(mainFile);
+    assert testTestLintInstallSubcommands(mainFile);
+    assert testInstrumentation(mainFile);
+    assert testBuildVarsAndTarget(mainFile);
+    assert testOutputFileExtensions();
+    assert testRejectedArguments();
+    return true;
 }

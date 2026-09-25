@@ -7,5 +7,9 @@ f<int> main() {
     if isLinux() {
         assert tempDir == "/tmp";
     }
+    // The returned string has to point to valid memory on every OS. Building a String from it reads the whole string
+    assert tempDir != nil<string>;
+    const String tempDirStr = String(tempDir);
+    assert !tempDirStr.isEmpty();
     printf("All assertions passed!\n");
 }

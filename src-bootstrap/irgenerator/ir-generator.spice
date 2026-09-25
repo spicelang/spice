@@ -44,7 +44,7 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     this.module.setDataLayout(resourceManager.targetMachine.createDataLayout());
 
     // Initialiize debug info generator
-    if this.cliOptions.generateDebugInfo {
+    if this.cliOptions.instrumentation.emitsDebugInfo() {
         this.diGenerator.initialize(sourceFile.fileName, sourceFile.fileDir);
     }
 }

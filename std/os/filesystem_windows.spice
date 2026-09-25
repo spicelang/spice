@@ -1,13 +1,29 @@
-const int MAX_PATH = 260; // Maximum path length on Windows
+import "std/os/env";
 
-ext f<string> GetTempPathA(int, char[]);
+// Windows directory, which is used if none of the environment variables below is set
+const string FALLBACK_TEMP_DIR = "C:\\Windows";
 
 /**
  * Retrieve the path to the system's temporary directory
  *
+ * GetTempPath() fills a buffer of the caller and returns the length of the path, so its result cannot be handed out as
+ * string. Therefore, this function looks the path up in the same order as GetTempPath() does: TMP, TEMP, USERPROFILE
+ * and finally the Windows directory.
+ *
  * @return Path to the temporary directory
  */
 public f<string> getTempDir() {
-    char[MAX_PATH] path;
-    return GetTempPathA(MAX_PATH, path);
+    Result<string> tmp = getEnv("TMP");
+    if tmp.isOk() {
+        return tmp.unwrap();
+    }
+    Result<string> temp = getEnv("TEMP");
+    if temp.isOk() {
+        return temp.unwrap();
+    }
+    Result<string> userProfile = getEnv("USERPROFILE");
+    if userProfile.isOk() {
+        return userProfile.unwrap();
+    }
+    return FALLBACK_TEMP_DIR;
 }
