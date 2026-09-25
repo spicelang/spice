@@ -370,16 +370,20 @@ public type LLVMRelocMode enum {
     Default = 0,
     Static = 1,
     PIC = 2,
-    DynamicNoPic = 3
+    DynamicNoPic = 3,
+    ROPI = 4,
+    RWPI = 5,
+    ROPI_RWPI = 6
 }
 
 public type LLVMCodeModel enum {
     Default = 0,
     JITDefault = 1,
-    Small = 2,
-    Kernel = 3,
-    Medium = 4,
-    Large = 5
+    Tiny = 2,
+    Small = 3,
+    Kernel = 4,
+    Medium = 5,
+    Large = 6
 }
 
 public type LLVMCodeGenFileType enum {
@@ -689,6 +693,28 @@ public p Triple.ctor(const String& archStr, const String& vendorStr, const Strin
     this.value = LLVMCreateMessage(newString.getRaw());
 }
 
+// A triple owns its message, so copies have to allocate their own one. Otherwise, they would share the message and it would be
+// disposed as soon as the first of the copies goes out of scope
+public p Triple.ctor(const Triple& other) {
+    this.value = nil<string>;
+    if other.value != nil<string> {
+        this.value = LLVMCreateMessage(other.value);
+    }
+}
+
+public p operator=(Triple& this, const Triple& other) {
+    if this.value == other.value {
+        return;
+    }
+    if this.value != nil<string> {
+        LLVMDisposeMessage(this.value);
+    }
+    this.value = nil<string>;
+    if other.value != nil<string> {
+        this.value = LLVMCreateMessage(other.value);
+    }
+}
+
 public p Triple.dtor() {
     LLVMDisposeMessage(this.value);
 }
@@ -730,7 +756,11 @@ public f<bool> operator!=(const Triple& a, const Triple& b) {
 
 // ===== LLVMModule =====
 public type Module struct {
-    LLVMModuleRef self
+    LLVMModuleRef self = nil<LLVMModuleRef>
+}
+
+public p Module.ctor() {
+    this.self = nil<LLVMModuleRef>;
 }
 
 public p Module.ctor(string name, const LLVMContext& ctx) {
@@ -813,8 +843,13 @@ public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
 
 // ===== LLVMBuilder =====
 public type IRBuilder struct {
-    LLVMBuilderRef self
-    LLVMContextRef ctx
+    LLVMBuilderRef self = nil<LLVMBuilderRef>
+    LLVMContextRef ctx = nil<LLVMContextRef>
+}
+
+public p IRBuilder.ctor() {
+    this.self = nil<LLVMBuilderRef>;
+    this.ctx = nil<LLVMContextRef>;
 }
 
 public p IRBuilder.ctor(const LLVMContext& parentCtx) {

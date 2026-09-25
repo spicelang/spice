@@ -1,10 +1,6 @@
 // Std imports
-import "std/data/vector";
 import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
-
-// Own imports
-import "bootstrap/source-file-intf";
 
 /**
  * Split the given haystack by the needle and return the last fragment
@@ -16,28 +12,6 @@ import "bootstrap/source-file-intf";
 public f<String> getLastFragment(const String &haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
     return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
-}
-
-/**
- * Generate a circular import message from the given source files
- *
- * @param sourceFiles Source files building the circular dependency chain
- * @return Error message
- */
-public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sourceFiles) {
-    StringStream message;
-    message << "*-----*" << endl();
-    message << "|     |" << endl();
-    for unsigned long i = 0l; i < sourceFiles.getSize(); i++ {
-        const ISourceFile* sourceFile = sourceFiles.get(i);
-        if i != 0 { message << "|     |" << endl(); }
-        message << "|  ";
-        message << sourceFile.getFileName();
-        message << endl();
-    }
-    message << "|     |" << endl();
-    message << "*-----*" << endl();
-    return message.str();
 }
 
 /**

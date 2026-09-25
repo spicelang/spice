@@ -8,12 +8,11 @@
 // stable-pointer identity, parent/type wiring and recursive nesting.
 
 import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/scope-intf";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/reader/code-loc";
 
 f<int> main() {
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
+    Scope root = Scope(nil<Scope*>, nil<SourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
 
     Scope* fnScope = root.createChildScope(String("fn:main"), ScopeType::FUNC_PROC_BODY, nil<CodeLoc*>);
     Scope* ifScope = root.createChildScope(String("if:0"), ScopeType::IF_ELSE_BODY, nil<CodeLoc*>);

@@ -8,10 +8,10 @@ import "bootstrap/model/struct-base";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/global/type-registry";
 import "bootstrap/util/common-util";
 
@@ -23,7 +23,7 @@ public type Union struct {
     public QualTypeList fieldTypes
 }
 
-public p Union.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+public p Union.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
     this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
     this.fieldTypes = fieldTypes;
 }
@@ -76,14 +76,14 @@ public f<String> getUnionScopeName(const String& name, const QualTypeList& concr
 #[test, test.name="Union Smoke test"]
 public f<bool> testUnionSmoke() {
     TypeRegistry reg = TypeRegistry();
-    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const Type* intType = reg.getOrInsert(SuperType::TY_INT);
     const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
 
     Vector<GenericType> noTemplates;
 
     // A plain union: no fields, no template types
     QualTypeList noFields;
-    Union plain = Union(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noFields, noTemplates, nil<ASTNode*>);
+    Union plain = Union(String("Plain"), nil<SymbolTableEntry*>, nil<Scope*>, noFields, noTemplates, nil<ASTNode*>);
     assert plain.name == String("Plain");
     assert plain.getScopeName() == String("union:Plain");
     assert plain.structBase.getSignature() == String("Plain");
@@ -96,7 +96,7 @@ public f<bool> testUnionSmoke() {
     Vector<GenericType> concreteTemplates;
     GenericType gtInt = GenericType(intQual);
     concreteTemplates.pushBack(gtInt);
-    Union setting = Union(String("Setting"), nil<SymbolTableEntry*>, nil<IScope*>, oneField, concreteTemplates, nil<ASTNode*>);
+    Union setting = Union(String("Setting"), nil<SymbolTableEntry*>, nil<Scope*>, oneField, concreteTemplates, nil<ASTNode*>);
     assert setting.structBase.getSignature() == String("Setting<int>");
     assert setting.getScopeName() == String("union:Setting");
     assert setting.fieldTypes.getSize() == 1l;

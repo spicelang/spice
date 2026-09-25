@@ -1,0 +1,47 @@
+// Std imports
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/driver";
+import "bootstrap/exception/error-manager";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/reader/code-loc";
+import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/scope";
+
+// Helpers to test compiler passes against a real GlobalResourceManager and a real SourceFile. The tests own all of these
+// objects, so the resource manager and the source files have to be created in the test itself.
+
+/**
+ * Prepare the cli options for a pass test. The tests compile for x86_64 linux, independent of the host.
+ *
+ * @param cliOptions Cli options to set up. They have to outlive the resource manager created from them
+ */
+public p setupPassTestOptions(CliOptions& cliOptions) {
+    cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
+    cliOptions.isNativeTarget = false; // Registers all LLVM targets, not only the one of the host
+}
+
+/**
+ * Create the global scope of the given source file, like SourceFile.runParser does after parsing the source file
+ *
+ * @param file Source file to create the global scope for. It owns the scope
+ * @return Global scope of the source file
+ */
+public f<Scope*> createTestGlobalScope(SourceFile& file) {
+    file.globalScope = __new<Scope>(nil<Scope*>, &file, ScopeType::GLOBAL, nil<CodeLoc*>);
+    return file.getGlobalScope();
+}
+
+/**
+ * Check if the message of the soft error at the given index contains the needle
+ *
+ * @param errorManager Error manager to look into
+ * @param index Index of the soft error
+ * @param needle Text to search in the message
+ * @return Contained or not
+ */
+public f<bool> softErrorContains(ErrorManager& errorManager, unsigned long index, string needle) {
+    const SoftError& error = errorManager.softErrors.get(index);
+    return error.message.contains(needle);
+}

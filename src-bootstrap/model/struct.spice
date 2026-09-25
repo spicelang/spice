@@ -8,10 +8,10 @@ import "bootstrap/model/struct-base";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/global/type-registry";
 import "bootstrap/util/common-util";
@@ -25,7 +25,7 @@ public type Struct struct {
     public QualTypeList interfaceTypes
 }
 
-public p Struct.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, const QualTypeList& interfaceTypes, ASTNode* declNode) {
+public p Struct.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, const QualTypeList& interfaceTypes, ASTNode* declNode) {
     this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
     this.fieldTypes = fieldTypes;
     this.interfaceTypes = interfaceTypes;
@@ -99,7 +99,7 @@ public f<bool> Struct.hasReferenceFields() {
  * @return nullptr if all fields are in this state, otherwise the first mismatched field symbol
  */
 public f<SymbolTableEntry*> Struct.areAllFieldsInState(const LifecycleState state) {
-    // ToDo: Iterate the fields via scope.lookupField(i) once IScope exposes it. For now, assume all fields are in state.
+    // ToDo: Iterate the fields via scope.lookupField(i) once Scope exposes it. For now, assume all fields are in state.
     return nil<SymbolTableEntry*>;
 }
 
@@ -118,15 +118,15 @@ public f<SymbolTableEntry*> Struct.areAllFieldsInitialized() {
  * @param node AST node to associate with the update
  */
 public p Struct.resetFieldSymbolsToDeclared(const ASTNode* node) {
-    // ToDo: Reset field symbols via scope.lookupField(i).updateState(DECLARED, node) once IScope exposes lookupField.
+    // ToDo: Reset field symbols via scope.lookupField(i).updateState(DECLARED, node) once Scope exposes lookupField.
 }
 
 #[test, test.name="Struct Smoke test"]
 public f<bool> testStructSmoke() {
     TypeRegistry reg = TypeRegistry();
-    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const Type* intType = reg.getOrInsert(SuperType::TY_INT);
     const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
-    const IType* intfType = reg.getOrInsertSub(SuperType::TY_INTERFACE, String("Comparable"));
+    const Type* intfType = reg.getOrInsertSub(SuperType::TY_INTERFACE, String("Comparable"));
     const QualType intfQual = QualType(intfType, getTypeQualifiersOf(SuperType::TY_INTERFACE));
 
     Vector<GenericType> noTemplates;
@@ -134,7 +134,7 @@ public f<bool> testStructSmoke() {
     // A plain struct: no fields, no template types, no interfaces
     QualTypeList noFields;
     QualTypeList noInterfaces;
-    Struct plain = Struct(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noFields, noTemplates, noInterfaces, nil<ASTNode*>);
+    Struct plain = Struct(String("Plain"), nil<SymbolTableEntry*>, nil<Scope*>, noFields, noTemplates, noInterfaces, nil<ASTNode*>);
     assert plain.name == String("Plain");
     assert plain.getScopeName() == String("struct:Plain");
     assert plain.structBase.getSignature() == String("Plain");
@@ -151,7 +151,7 @@ public f<bool> testStructSmoke() {
     Vector<GenericType> concreteTemplates;
     GenericType gtInt = GenericType(intQual);
     concreteTemplates.pushBack(gtInt);
-    Struct box = Struct(String("Box"), nil<SymbolTableEntry*>, nil<IScope*>, oneField, concreteTemplates, oneInterface, nil<ASTNode*>);
+    Struct box = Struct(String("Box"), nil<SymbolTableEntry*>, nil<Scope*>, oneField, concreteTemplates, oneInterface, nil<ASTNode*>);
     assert box.structBase.getSignature() == String("Box<int>");
     assert box.getScopeName() == String("struct:Box");
     assert !box.hasReferenceFields();
@@ -169,8 +169,8 @@ public f<bool> testStructSmoke() {
 
     // A struct with a reference field reports hasReferenceFields() == true
     QualTypeList refField;
-    refField.pushBack(intQual.toRef(nil<IASTNode*>));
-    Struct refStruct = Struct(String("RefHolder"), nil<SymbolTableEntry*>, nil<IScope*>, refField, noTemplates, noInterfaces, nil<ASTNode*>);
+    refField.pushBack(intQual.toRef(nil<ASTNode*>));
+    Struct refStruct = Struct(String("RefHolder"), nil<SymbolTableEntry*>, nil<Scope*>, refField, noTemplates, noInterfaces, nil<ASTNode*>);
     assert refStruct.hasReferenceFields();
 
     return true;

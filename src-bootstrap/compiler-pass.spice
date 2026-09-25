@@ -1,29 +1,26 @@
 // Own imports
-import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/global-resource-manager";
 import "bootstrap/driver";
 import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/scope-intf";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 
 public type CompilerPass struct {
-    public IGlobalResourceManager& resourceManager
+    public GlobalResourceManager& resourceManager
     public CliOptions& cliOptions
-    public ISourceFile* sourceFile
+    public SourceFile* sourceFile
     public Scope* rootScope
     public unsigned long manIdx = 0l
     public Scope* currentScope
 }
 
-public p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile = nil<ISourceFile*>) {
+public p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile = nil<SourceFile*>) {
     this.resourceManager = resourceManager;
     // Bind the reference field from a reference variable (assigning a call result would copy into an unbound reference)
     CliOptions& cliOptionsRef = resourceManager.getCliOptions();
     this.cliOptions = cliOptionsRef;
     this.sourceFile = sourceFile;
-    if sourceFile != nil<ISourceFile*> {
-        unsafe {
-            this.currentScope = this.rootScope = cast<Scope*>(sourceFile.getGlobalScope());
-        }
+    if sourceFile != nil<SourceFile*> {
+        this.currentScope = this.rootScope = sourceFile.getGlobalScope();
     } else {
         this.currentScope = this.rootScope = nil<Scope*>;
     }

@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/vector";
+import "std/data/unordered-map"; // Needed by the TypeMapping alias (generic-type.spice), which is resolved in this file
 import "std/text/stringstream";
 
 // Own imports
@@ -7,11 +8,11 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/model/generic-type";
 
 // Helper structs
@@ -32,14 +33,14 @@ public type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
     public String name
-    public QualType thisType = QualType(SuperType::TY_DYN)
-    public QualType returnType = QualType(SuperType::TY_DYN)
+    public QualType thisType
+    public QualType returnType
     public ParamList paramList
     public Vector<GenericType> templateTypes
     public TypeMapping typeMapping
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public ASTNode* declNode = nil<ASTNode*>
-    public IScope* bodyScope = nil<IScope*>
+    public Scope* bodyScope = nil<Scope*>
     public String predefinedMangledName
     public String mangleSuffix
     public Function* genericPreset = nil<Function*>
@@ -391,9 +392,9 @@ public f<bool> Function.isVirtualMethod() {
 #[test, test.name="Function Smoke test"]
 public f<bool> testFunctionSmoke() {
     TypeRegistry reg = TypeRegistry();
-    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
-    const IType* dynType = reg.getOrInsert(SuperType::TY_DYN);
-    const IType* structType = reg.getOrInsertSub(SuperType::TY_STRUCT, String("MyStruct"));
+    const Type* intType = reg.getOrInsert(SuperType::TY_INT);
+    const Type* dynType = reg.getOrInsert(SuperType::TY_DYN);
+    const Type* structType = reg.getOrInsertSub(SuperType::TY_STRUCT, String("MyStruct"));
     const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
     const QualType dynQual = QualType(dynType, getTypeQualifiersOf(SuperType::TY_DYN));
     const QualType structQual = QualType(structType, getTypeQualifiersOf(SuperType::TY_STRUCT));

@@ -6,16 +6,15 @@ import "std/type/type-conversion";
 // Own imports
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 
 // Constants
 public const unsigned long ARRAY_SIZE_UNKNOWN = 0ul;
 
 public type TypeChainElementData struct {
-    public unsigned int arraySize = 0       // TY_ARRAY
-    public IScope* bodyScope = nil<IScope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
-    public bool hasCaptures = false         // TY_FUNCTION, TY_PROCEDURE (lambdas)
+    public unsigned int arraySize = 0     // TY_ARRAY
+    public Scope* bodyScope = nil<Scope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    public bool hasCaptures = false       // TY_FUNCTION, TY_PROCEDURE (lambdas)
 }
 
 public type TypeChainElement struct {
@@ -73,14 +72,14 @@ public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& r
             return lhs.data.arraySize == rhs.data.arraySize;
         }
         case SuperType::TY_STRUCT: {
-            assert lhs.data.bodyScope != nil<IScope*> && rhs.data.bodyScope != nil<IScope*>;
+            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
             return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
         }
         case SuperType::TY_INTERFACE: {
             return lhs.typeId == rhs.typeId;
         }
         case SuperType::TY_ENUM: {
-            assert lhs.data.bodyScope != nil<IScope*> && rhs.data.bodyScope != nil<IScope*>;
+            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
             return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
         }
         case SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {

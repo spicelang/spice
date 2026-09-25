@@ -1,0 +1,51 @@
+import "std/bindings/llvm/llvm" as llvm;
+
+// Takes the triple by value, like llvm::getTargetFromTriple
+f<bool> isLinux(llvm::Triple triple) {
+    return triple.getOSName() == "linux";
+}
+
+f<int> main() {
+    llvm::Triple original = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
+    assert !original.empty();
+
+    // Copies own their message and stay valid after the original went out of scope
+    llvm::Triple copy = original;
+    assert copy == original;
+    assert copy.getArchName() == "x86_64";
+    llvm::Triple survivor;
+    {
+        llvm::Triple scoped = llvm::Triple(String("riscv64"), String("unknown"), String("linux"));
+        llvm::Triple scopedCopy = scoped; // Copy constructor
+        survivor = scopedCopy; // Assignment
+    }
+    assert survivor.getArchName() == "riscv64";
+    assert survivor.getOSName() == "linux";
+
+    // A by-value parameter is a copy, so the original stays valid after the call
+    assert isLinux(original);
+    assert isLinux(original);
+    assert original.getVendorName() == "unknown";
+
+    // Assigning a temporary keeps the assigned value alive after the temporary was destroyed
+    llvm::Triple assigned;
+    assert assigned.empty();
+    assigned = llvm::Triple(String("aarch64"), String("apple"), String("darwin"));
+    assert !assigned.empty();
+    assert assigned.getArchName() == "aarch64";
+    assert assigned.getOSName() == "darwin";
+
+    // Re-assigning replaces the previous message
+    assigned = original;
+    assert assigned == original;
+    assert assigned.getOSName() == "linux";
+    assigned = assigned; // Self assignment
+    assert assigned.getOSName() == "linux";
+
+    // Copying an empty triple stays empty
+    llvm::Triple empty;
+    llvm::Triple emptyCopy = empty;
+    assert emptyCopy.empty();
+
+    printf("All assertions passed!\n");
+}

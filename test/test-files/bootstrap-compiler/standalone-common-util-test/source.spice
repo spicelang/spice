@@ -1,10 +1,6 @@
 // TEST: -b SPICE_VERSION=0.25.0 -b SPICE_TARGET_OS=linux -b SPICE_TARGET_ARCH=amd64 -b SPICE_GIT_HASH=69b759385b4a84d1fd8d8a8ed38c8e9def98b9f8 -b SPICE_BUILT_BY=ghactions
 
-import "std/data/vector";
-
 import "bootstrap/util/common-util";
-import "bootstrap/source-file-intf";
-import "bootstrap/util/pass-test-mocks";
 
 f<int> main() {
     // getLastFragment
@@ -14,28 +10,6 @@ f<int> main() {
     assert lastFragment == "";
     lastFragment = getLastFragment(String("x-y-z-"), "-");
     assert lastFragment == "";
-    // getCircularImportMessage
-    MockSourceFile msf1;
-    msf1.fileName = "file1.spice";
-    msf1.lineCount = 1l;
-    MockSourceFile msf2;
-    msf2.fileName = "file2.spice";
-    msf2.lineCount = 12l;
-    MockSourceFile msf3;
-    msf3.fileName = "file3.spice";
-    msf3.lineCount = 123l;
-    MockSourceFile msf4;
-    msf4.fileName = "file4.spice";
-    msf4.lineCount = 1234l;
-    Vector<const ISourceFile*> sourceFiles;
-    unsafe {
-        sourceFiles.pushBack(cast<const ISourceFile*>(&msf1));
-        sourceFiles.pushBack(cast<const ISourceFile*>(&msf2));
-        sourceFiles.pushBack(cast<const ISourceFile*>(&msf3));
-        sourceFiles.pushBack(cast<const ISourceFile*>(&msf4));
-    }
-    const String cim = getCircularImportMessage(sourceFiles);
-    printf("Circular error message:\n%s\n", cim);
     // buildVersionInfo
     const String versionInfo = buildVersionInfo();
     printf("Version info:\n%s\n", versionInfo);

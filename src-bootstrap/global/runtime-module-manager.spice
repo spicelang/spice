@@ -2,9 +2,9 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/util/system-util";
-import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/global-resource-manager";
 
 // Constants
 const string STRING_RT_IMPORT_NAME = "__rt_string";
@@ -29,24 +29,24 @@ type ModuleNamePair struct {
 }
 
 public type RuntimeModuleManager struct {
-    IGlobalResourceManager &resourceManager
-    UnorderedMap<RuntimeModule, ISourceFile *> modules
+    GlobalResourceManager &resourceManager
+    UnorderedMap<RuntimeModule, SourceFile *> modules
 }
 
-public p RuntimeModuleManager.ctor(IGlobalResourceManager &resourceManager) {
+public p RuntimeModuleManager.ctor(GlobalResourceManager &resourceManager) {
     this.resourceManager = resourceManager;
 }
 
-public f<ISourceFile *> RuntimeModuleManager.requestModule(ISourceFile* parentSourceFile, RuntimeModule requestedModule) {
+public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const String importName = String(this.resolveNamePair(requestedModule).importName);
 
     // Check if the requested module is available already, if not load it
     dyn rtFile = this.isModuleAvailable(requestedModule) ? this.getModule(requestedModule) : this.loadModule(parentSourceFile, requestedModule);
 
     // Add the dependency to the parent source file
-    parentSourceFile.addDependency(rtFile, parentSourceFile.ast, importName, rtFile.filePath.toString());
+    parentSourceFile.addDependency(rtFile, importName);
     assert parentSourceFile.dependencies.contains(importName);
-    ISourceFile* runtimeFile = parentSourceFile.dependencies.get(importName);
+    SourceFile* runtimeFile = parentSourceFile.dependencies.get(importName);
     this.modules.upsert(requestedModule, runtimeFile);
 
     // Merge the module name registry with the one of the source file
@@ -58,7 +58,7 @@ public f<ISourceFile *> RuntimeModuleManager.requestModule(ISourceFile* parentSo
     return runtimeFile;
 }
 
-public f<ISourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
+public f<SourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
     assert this.modules.contains(requestedModule);
     return this.modules.get(requestedModule);
 }
@@ -67,13 +67,13 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
     return this.modules.contains(requestedModule);
 }
 
-public f<ISourceFile *> RuntimeModuleManager.loadModule(ISourceFile* parentSourceFile, RuntimeModule requestedModule) {
+public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
     const FilePath filePath = getStdDir() / "runtime" / namePair.fileName / ".spice";
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file
-    SourceFile* moduleSourceFile = this.resourceManager.createSourceFile(parentSourceFile, namePair.importName, filePath, true);
+    SourceFile* moduleSourceFile = this.resourceManager.createSourceFile(parentSourceFile, String(namePair.importName), filePath, true);
     moduleSourceFile.isMainFile = false;
 
     // Run frontend and first type checker run for the loaded source file

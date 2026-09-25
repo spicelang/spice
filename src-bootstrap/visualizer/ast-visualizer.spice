@@ -24,8 +24,8 @@ public type ASTVisualizer struct : IAbstractAstVisitor {
 }
 
 // Typed double-dispatch entry point.
-// Calls accept() on the IASTNode interface pointer, which dispatches to the correct visitXxx override.
-public f<Any> ASTVisualizer.visit(IASTNode* node) {
+// Calls accept() on the IVisitable interface pointer, which dispatches to the correct visitXxx override.
+public f<Any> ASTVisualizer.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
