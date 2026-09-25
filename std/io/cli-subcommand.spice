@@ -87,10 +87,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             printf("Missing required positional argument(s).\n");
             return EXIT_CODE_ERROR;
         }
-        if !this.callback.isEmpty() {
-            p() rc = this.callback.get();
-            rc();
-        } else {
+        if this.callback.isEmpty() {
             this.printHelp(argv, layer);
             return EXIT_CODE_SUCCESS;
         }
@@ -209,6 +206,12 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     if positionalConsumed < cast<unsigned int>(this.positionalTypeTags.getSize()) {
         printf("Missing required positional argument(s).\n");
         return EXIT_CODE_ERROR;
+    }
+
+    // Parsing was successful, so this is the selected subcommand. Invoke its callback now that all options are set
+    if !this.callback.isEmpty() {
+        p() rc = this.callback.get();
+        rc();
     }
 
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code

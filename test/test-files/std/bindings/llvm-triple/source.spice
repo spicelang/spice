@@ -42,6 +42,17 @@ f<int> main() {
     assigned = assigned; // Self assignment
     assert assigned.getOSName() == "linux";
 
+    // A triple can be created from its whole string. The message is copied, so the string does not have to outlive the triple
+    llvm::Triple fromString;
+    {
+        String tripleString = String("aarch64-unknown-linux-gnu");
+        fromString = llvm::Triple(tripleString.getRaw());
+    }
+    assert !fromString.empty();
+    assert fromString.getArchName() == "aarch64";
+    assert fromString.getVendorName() == "unknown";
+    assert fromString.getOSName() == "linux";
+
     // Copying an empty triple stays empty
     llvm::Triple empty;
     llvm::Triple emptyCopy = empty;

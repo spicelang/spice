@@ -15,13 +15,13 @@ f<bool> hasFlag(ExternalLinkerInterface& linker, string flag) {
 }
 
 f<int> main() {
-    // Case 1: Default executable without debug info -> strip symbols
+    // Case 1: Default executable -> symbols are kept
     CliOptions options1;
     options1.targetArch = String("x86_64");
     options1.targetOs = String("linux");
     ExternalLinkerInterface linker1 = ExternalLinkerInterface(options1);
     linker1.prepare();
-    assert hasFlag(linker1, "-Wl,-s");
+    assert !hasFlag(linker1, "-Wl,-s");
     assert !hasFlag(linker1, "-static");
     assert !hasFlag(linker1, "-shared");
     printf("Case 1 passed\n");
@@ -56,18 +56,19 @@ f<int> main() {
     assert linker4.linkerFlags.isEmpty();
     printf("Case 4 passed\n");
 
-    // Case 5: Debug info enabled -> no symbol stripping
+    // Case 5: Symbol stripping requested -> symbols are stripped
     CliOptions options5;
     options5.targetOs = String("linux");
-    options5.instrumentation.generateDebugInfo = true;
+    options5.stripSymbols = true;
     ExternalLinkerInterface linker5 = ExternalLinkerInterface(options5);
     linker5.prepare();
-    assert !hasFlag(linker5, "-Wl,-s");
+    assert hasFlag(linker5, "-Wl,-s");
     printf("Case 5 passed\n");
 
-    // Case 6: Darwin target -> no symbol stripping even without debug info
+    // Case 6: Darwin target -> no symbol stripping, even if requested
     CliOptions options6;
     options6.targetOs = String("darwin");
+    options6.stripSymbols = true;
     ExternalLinkerInterface linker6 = ExternalLinkerInterface(options6);
     linker6.prepare();
     assert !hasFlag(linker6, "-Wl,-s");

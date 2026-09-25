@@ -1,0 +1,69 @@
+import "std/os/os";
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+
+// State the callbacks write to. The callbacks capture a pointer to it
+type State struct {
+    int rootCalls = 0
+    int buildCalls = 0
+    int infoCalls = 0
+    bool optimize = false
+    string file = ""
+    bool optimizeSeenByBuildCallback = false
+    string fileSeenByBuildCallback = ""
+}
+
+f<int> main() {
+    State state;
+    State* s = &state;
+
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setRootCallback(p() {
+        s.rootCalls++;
+    });
+    CliSubcommand& build = parser.addSubcommand("build", "Build something");
+    build.addFlag("-O2", state.optimize, "Optimize");
+    build.addOption("<file>", state.file, "File to build");
+    build.setCallback(p() {
+        s.buildCalls++;
+        // The callback runs after all arguments were parsed
+        s.optimizeSeenByBuildCallback = s.optimize;
+        s.fileSeenByBuildCallback = s.file;
+    });
+    CliSubcommand& info = parser.addSubcommand("info", "Print some info");
+    info.setCallback(p() {
+        s.infoCalls++;
+    });
+
+    // The callback of the selected subcommand is called, after its options and positionals were parsed
+    string[4] buildArgs = ["prog", "build", "-O2", "main.spice"];
+    assert parser.parse(4u, buildArgs) == EXIT_CODE_SUCCESS;
+    assert state.buildCalls == 1;
+    assert state.optimizeSeenByBuildCallback;
+    assert state.fileSeenByBuildCallback == "main.spice";
+    assert state.infoCalls == 0;
+    assert state.rootCalls == 0; // The root callback is only for the case that no subcommand was given
+
+    // A subcommand without any further argument gets its callback called, too
+    string[2] infoArgs = ["prog", "info"];
+    assert parser.parse(2u, infoArgs) == EXIT_CODE_SUCCESS;
+    assert state.infoCalls == 1;
+    assert state.buildCalls == 1;
+    assert state.rootCalls == 0;
+
+    // The root callback is called if no subcommand was given
+    string[2] rootArgs = ["prog", ""]; // Arrays need at least two items, but only the program name counts
+    assert parser.parse(1u, rootArgs) == EXIT_CODE_SUCCESS;
+    assert state.rootCalls == 1;
+    assert state.buildCalls == 1;
+    assert state.infoCalls == 1;
+
+    // No callback is called if parsing failed
+    string[4] unknownArgs = ["prog", "build", "--unknown", "main.spice"];
+    assert parser.parse(4u, unknownArgs) != EXIT_CODE_SUCCESS;
+    string[2] missingArgs = ["prog", "build"];
+    assert parser.parse(2u, missingArgs) != EXIT_CODE_SUCCESS;
+    assert state.buildCalls == 1;
+
+    printf("All assertions passed!\n");
+}

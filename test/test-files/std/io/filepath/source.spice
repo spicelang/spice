@@ -15,5 +15,34 @@ f<int> main() {
     assert path.getExtension() == "txt";
     assert path.getBaseName() == "test";
 
+    // Joining does not double an existing separator, also not for an empty right-hand side
+    FilePath joined1 = FilePath("./") / "main.spice";
+    assert joined1.toGenericString() == "./main.spice";
+    FilePath joined2 = FilePath("dir/") / "main.spice";
+    assert joined2.toGenericString() == "dir/main.spice";
+    FilePath joined3 = FilePath("dir") / "main.spice";
+    assert joined3.toGenericString() == "dir/main.spice";
+    FilePath joined4 = FilePath("") / "main.spice";
+    assert joined4.toGenericString() == "main.spice";
+    FilePath joined5 = FilePath("dir") / "";
+    assert joined5.toGenericString() == "dir/";
+
+    // Replacing the extension mirrors std::filesystem::path::replace_extension
+    FilePath source = FilePath("dir/main.spice");
+    source.replaceExtension("exe");
+    assert source.toGenericString() == "dir/main.exe";
+    source.replaceExtension(".o");
+    assert source.toGenericString() == "dir/main.o";
+    source.replaceExtension("");
+    assert source.toGenericString() == "dir/main"; // An empty extension removes the old one including the dot
+    source.replaceExtension("bin");
+    assert source.toGenericString() == "dir/main.bin"; // The extension is appended if there was none
+    FilePath dottedDir = FilePath("my.dir/main");
+    dottedDir.replaceExtension("o");
+    assert dottedDir.toGenericString() == "my.dir/main.o"; // A dot in a directory name is not an extension
+    FilePath hidden = FilePath(".gitignore");
+    hidden.replaceExtension("bak");
+    assert hidden.toGenericString() == ".gitignore.bak"; // A leading dot belongs to the file name
+
     printf("All assertions passed!\n");
 }

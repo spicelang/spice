@@ -1,0 +1,4 @@
+<main-source-file>: File does not exist: does-not-exist.spice
+Missing required positional argument(s).
+Unknown argument: x.spice
+All assertions passed!

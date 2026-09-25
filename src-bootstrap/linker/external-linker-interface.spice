@@ -40,8 +40,10 @@ public p ExternalLinkerInterface.prepare() {
         return;
     }
 
-    // Stripping symbols
-    if !this.cliOptions.instrumentation.generateDebugInfo && !this.isTargetDarwin() {
+    // Stripping symbols, on request only: the symbol table is what a run-time symbolizer such as the stack trace runtime
+    // resolves addresses against, so a stripped executable prints nothing but addresses. Darwin is excluded, because its
+    // linker has no equivalent of '-Wl,-s'.
+    if this.cliOptions.stripSymbols && !this.isTargetDarwin() {
         this.addLinkerFlag("-Wl,-s");
     }
 

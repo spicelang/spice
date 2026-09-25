@@ -6,6 +6,9 @@ import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
 
+// Own imports
+import "bootstrap/driver";
+
 public type ExecResult struct {
     public String output
     public int exitCode
@@ -200,6 +203,44 @@ public f<FilePath> getBootstrapCompilerDir() {
         if result.exists() { return; }
     }
     return FilePath();
+}
+
+/**
+ * Retrieve the file extension of the output file for a certain output container. It depends on the target, which is derived
+ * from the target triple. As long as there is none yet, e.g. because the cli options are not enriched yet, the host is assumed.
+ *
+ * @param cliOptions Cli options
+ * @param outputContainer Output container
+ * @return File extension without the leading dot
+ */
+public f<string> getOutputFileExtension(const CliOptions& cliOptions, OutputContainer outputContainer) {
+    // Extensions per output container: executable, object file, static library and shared library
+    const string[4] extensionsWasm = ["wasm", "o", "a", "so"];
+    const string[4] extensionsMacos = ["", "o", "a", "dylib"];
+    const string[4] extensionsWindows = ["exe", "obj", "lib", "dll"];
+    const string[4] extensionsLinux = ["", "o", "a", "so"];
+
+    const int container = cast<int>(outputContainer);
+    const String triple = String(cliOptions.targetTriple.value);
+    if triple.isEmpty() {
+        if isWindows() {
+            return extensionsWindows[container];
+        } else if isMacOS() {
+            return extensionsMacos[container];
+        }
+        return extensionsLinux[container];
+    }
+
+    if triple.startsWith("wasm") {
+        return extensionsWasm[container];
+    }
+    if triple.contains("darwin") || triple.contains("macos") {
+        return extensionsMacos[container];
+    }
+    if triple.contains("windows") || triple.contains("win32") || triple.contains("mingw") || triple.contains("cygwin") {
+        return extensionsWindows[container];
+    }
+    return extensionsLinux[container];
 }
 
 /**

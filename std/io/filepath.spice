@@ -160,18 +160,34 @@ public inline f<String> FilePath.getExtension() {
 }
 
 /**
- * Replaces the current file extension with the given new one
+ * Replaces the current file extension with the given new one. If the file has no extension, the new one is appended. An empty
+ * new extension removes the current one.
  *
  * Example:
  * In:  /home/user/file.txt
  * Out: /home/user/file.spice
  *
- * @param newExtension New file extension
+ * @param newExtension New file extension, with or without leading dot
  */
 public inline p FilePath.replaceExtension(string newExtension) {
-    String oldExtension = this.getExtension();
-    const unsigned long startIdx = this.path.getLength() - oldExtension.getLength();
-    this.path.replace(oldExtension.getRaw(), newExtension, startIdx);
+    // Remove the old extension including its dot. A dot at the beginning of the file name belongs to the name
+    const long dotIdx = this.path.rfind('.');
+    long separatorIdx = this.path.rfind(PATH_SEPARATOR_UNIX);
+    const long windowsSeparatorIdx = this.path.rfind(PATH_SEPARATOR_WINDOWS);
+    if windowsSeparatorIdx > separatorIdx {
+        separatorIdx = windowsSeparatorIdx;
+    }
+    if dotIdx > separatorIdx + 1 {
+        this.path = this.path.getSubstring(0, dotIdx);
+    }
+
+    // Append the new extension. An empty one only removes the old extension
+    if len(newExtension) > 0 {
+        if newExtension[0] != '.' {
+            this.path += '.';
+        }
+        this.path += newExtension;
+    }
 }
 
 /**
@@ -198,12 +214,14 @@ public inline f<bool> operator!=(const FilePath& lhs, const FilePath& rhs) {
  * @param rhs Path component to append
  */
 public p operator/=(FilePath& lhs, string rhs) {
-    if lhs.path.isEmpty() || rhs[len(rhs) - 1] == PATH_SEPARATOR {
-        lhs.path += rhs;
-    } else {
-        lhs.path += PATH_SEPARATOR;
-        lhs.path += rhs;
+    // Insert a separator, unless the path is empty or already ends with one
+    if !lhs.path.isEmpty() {
+        const char lastChar = lhs.path[lhs.path.getLength() - 1l];
+        if lastChar != PATH_SEPARATOR && lastChar != PATH_SEPARATOR_UNIX {
+            lhs.path += PATH_SEPARATOR;
+        }
     }
+    lhs.path += rhs;
 }
 
 /**
