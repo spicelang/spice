@@ -1,7 +1,8 @@
 import "std/io/file";
 
 f<int> main() {
-    string filename = "./test-file.txt";
+    // Own file name, because the tests run in parallel in the same working dir and 'file-write-read' uses './test-file.txt'
+    string filename = "./test-file-create-delete.txt";
     bool _ = deleteFile(filename); // Ensure that the file is not present in the beginning
 
     assert !fileExists(filename);

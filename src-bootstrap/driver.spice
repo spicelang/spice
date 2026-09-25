@@ -931,9 +931,10 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
     assert install.shouldInstall;
     assert !install.shouldUninstall;
     assert !install.shouldExecute;
-    const FilePath binDir = getSpiceBinDir();
-    const String installedPath = String(install.cliOptions.outputPath.toString());
-    assert installedPath.startsWith(binDir.toString());
+    // Compare generic strings, because the separators of a FilePath depend on which of its helpers touched it last
+    FilePath binDir = getSpiceBinDir();
+    const String installedPath = String(install.cliOptions.outputPath.toGenericString());
+    assert installedPath.startsWith(binDir.toGenericString());
 
     // Uninstall: only the source file is required and nothing gets compiled
     Driver uninstall;
