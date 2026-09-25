@@ -1,5 +1,6 @@
 import "std/os/os";
 import "std/os/filesystem";
+import "std/io/dir";
 
 f<int> main() {
     // getTempDir()
@@ -7,5 +8,10 @@ f<int> main() {
     if isLinux() {
         assert tempDir == "/tmp";
     }
+    // The returned string has to point to valid memory on every OS and to an existing directory
+    assert tempDir != nil<string>;
+    const String tempDirStr = String(tempDir);
+    assert !tempDirStr.isEmpty();
+    assert dirExists(tempDir);
     printf("All assertions passed!\n");
 }
