@@ -535,6 +535,24 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
       m->vtableIndex = vtableIndex;
       m->thisType = interfaceType;
 
+      // Every override of a virtual method must share one call signature, but a by-value interface return type has
+      // no such fixed signature: its size depends on whichever concrete struct actually implements it, and that
+      // struct's own method returns its own, differently-sized concrete type. A call through an interface reference
+      // only ever knows the abstract interface type, so it builds the call for the interface's own (uniform) layout
+      // while the actual override returns its own (larger) concrete layout - a call-site/callee ABI mismatch that
+      // silently corrupts the result instead of failing loudly. Mirrors why C++ only allows covariant virtual
+      // returns for pointers/references, never for by-value types. Require a reference (or pointer) return instead.
+      if (m->returnType.is(TY_INTERFACE)) {
+        const std::string &methodName = m->name;
+        throw SemanticError(m->declNode, INTERFACE_METHOD_RETURNS_INTERFACE_BY_VALUE,
+                            "Interface method '" + methodName + "' returns an interface type by value. This is not supported, "
+                            "since the concrete size of the result depends on whichever struct implements the interface, which "
+                            "a call through an interface reference cannot know. A plain reference does not work either, since "
+                            "an override typically has to construct and hand back a fresh instance, which cannot be referenced "
+                            "once the call returns. Return a heap-allocated pointer instead (e.g. '" + methodName + "() -> heap " +
+                            m->returnType.getName(false, true) + "*').");
+      }
+
       // Merge the enclosing interface's own template types into the method's template types, mirroring how struct
       // methods inherit the struct's generic params in visitFctDefPrepare. Without this, a method that does not
       // redeclare its own template list (e.g. isValid() inside IIterator<T>) ends up with an empty templateTypes

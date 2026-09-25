@@ -122,7 +122,7 @@ public p UnorderedMap.clear() {
  * Iterator to iterate over an unordered map data structure
  */
 public type UnorderedMapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
-    HashTableIterator<K, V> htIterator
+    heap HashTableIterator<K, V>* htIterator
 }
 
 /**
@@ -133,6 +133,14 @@ public type UnorderedMapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
 public p UnorderedMapIterator.ctor<K, V>(UnorderedMap<K, V>& unorderedMap) {
     this.htIterator = unorderedMap.hashTable.getIterator();
 }
+
+/**
+ * Frees the wrapped hash-table iterator
+ */
+public p UnorderedMapIterator.dtor<K, V>() {
+    sDelete(this.htIterator);
+}
+
 /**
  * Returns the current key-value pair of the unordered map
  *
@@ -179,6 +187,6 @@ public inline p operator++<K, V>(UnorderedMapIterator<K, V>& it) {
 /**
  * Retrieve a forward iterator for the unordered map
  */
-public f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
-    return UnorderedMapIterator<K, V>(*this);
+public f<heap UnorderedMapIterator<K, V>*> UnorderedMap.getIterator() {
+    return __new<UnorderedMapIterator<K, V>>(*this);
 }

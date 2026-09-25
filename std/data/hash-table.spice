@@ -521,6 +521,6 @@ public inline p HashTableIterator.next() {
 /**
  * Retrieve a forward iterator for the hash table
  */
-public f<HashTableIterator<K, V>> HashTable.getIterator() {
-    return HashTableIterator<K, V>(*this);
+public f<heap HashTableIterator<K, V>*> HashTable.getIterator() {
+    return __new<HashTableIterator<K, V>>(*this);
 }

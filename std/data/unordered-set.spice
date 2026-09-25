@@ -100,7 +100,7 @@ public f<LinkedList<V>> UnorderedSet.toLinkedList() {
  * Iterator to iterate over an unordered set data structure
  */
 public type UnorderedSetIterator<V> struct : IIterator<const V&> {
-    HashTableIterator<V, bool> htIterator
+    heap HashTableIterator<V, bool>* htIterator
 }
 
 /**
@@ -111,6 +111,14 @@ public type UnorderedSetIterator<V> struct : IIterator<const V&> {
 public p UnorderedSetIterator.ctor<V>(UnorderedSet<V>& unorderedSet) {
     this.htIterator = unorderedSet.hashTable.getIterator();
 }
+
+/**
+ * Frees the wrapped hash-table iterator
+ */
+public p UnorderedSetIterator.dtor<V>() {
+    sDelete(this.htIterator);
+}
+
 /**
  * Returns the current value of the unordered set
  *
@@ -162,6 +170,6 @@ public inline p operator++<V>(UnorderedSetIterator<V>& it) {
 /**
  * Retrieve a forward iterator for the unordered set
  */
-public f<UnorderedSetIterator<V>> UnorderedSet.getIterator() {
-    return UnorderedSetIterator<V>(*this);
+public f<heap UnorderedSetIterator<V>*> UnorderedSet.getIterator() {
+    return __new<UnorderedSetIterator<V>>(*this);
 }

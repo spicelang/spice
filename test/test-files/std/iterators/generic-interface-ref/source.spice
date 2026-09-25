@@ -9,7 +9,7 @@ type T dyn;
 // concrete container type. Exercises IIterable<T>.getIterator<T>() being substantiated for a concrete T on the
 // interface's own (bodyless) scope, and calling it through an interface reference cross-file.
 p exerciseGetIterator<T>(IIterable<T>& iterable) {
-    const IIterator<T>& _it = iterable.getIterator();
+    heap IIterator<T>* _it = iterable.getIterator();
 }
 
 f<int> main() {

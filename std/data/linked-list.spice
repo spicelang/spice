@@ -467,6 +467,6 @@ public inline p operator-=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset
 /**
  * Retrieve a forward iterator for the linked list
  */
-public f<LinkedListIterator<T>> LinkedList.getIterator() {
-    return LinkedListIterator<T>(*this);
+public f<heap LinkedListIterator<T>*> LinkedList.getIterator() {
+    return __new<LinkedListIterator<T>>(*this);
 }

@@ -318,8 +318,8 @@ public inline p operator-=<T, Numeric>(StackTraceIterator<T>& it, Numeric offset
 /**
  * Retrieve a forward iterator over the frames of this trace, so it can be walked with a foreach loop
  */
-public f<StackTraceIterator<StackTraceEntry>> StackTrace.getIterator() {
-    return StackTraceIterator<StackTraceEntry>(*this);
+public f<heap StackTraceIterator<StackTraceEntry>*> StackTrace.getIterator() {
+    return __new<StackTraceIterator<StackTraceEntry>>(*this);
 }
 
 /**

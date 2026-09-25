@@ -112,14 +112,15 @@ define internal void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(pt
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.ExampleTypeIterator @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal noundef ptr @_ZN19ExampleIterableType11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
-  %2 = alloca %struct.ExampleTypeIterator, align 8
   store ptr %0, ptr %this, align 8
+  %2 = call ptr @_Z12sAllocUnsafem(i64 16)
   call void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %2)
-  %3 = load %struct.ExampleTypeIterator, ptr %2, align 8
-  ret %struct.ExampleTypeIterator %3
+  ret ptr %2
 }
+
+declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #3 {

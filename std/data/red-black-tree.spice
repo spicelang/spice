@@ -625,6 +625,6 @@ public inline p RedBlackTreeIterator.next() {
 /**
  * Retrieve a forward iterator for the red black tree
  */
-public f<RedBlackTreeIterator<K, V>> RedBlackTree.getIterator() {
-    return RedBlackTreeIterator<K, V>(*this);
+public f<heap RedBlackTreeIterator<K, V>*> RedBlackTree.getIterator() {
+    return __new<RedBlackTreeIterator<K, V>>(*this);
 }

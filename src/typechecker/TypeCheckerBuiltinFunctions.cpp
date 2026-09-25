@@ -508,6 +508,11 @@ std::any TypeChecker::visitBuiltinIsHeap(FctCallNode *node) const {
 std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
   assert(node->fqFunctionName == BUILTIN_FCT_NAME_NEW);
 
+  // __new() always allocates through sAllocUnsafe() at codegen time, regardless of whether the resulting heap pointer
+  // ever gets locally deallocated in this source file (e.g. when it is immediately returned, transferring ownership to
+  // the caller) - request the memory runtime unconditionally so it is compiled and linked in either way.
+  sourceFile->requestRuntimeModule(MEMORY_RT);
+
   FctCallNode::FctCallData &data = node->data.at(manIdx);
   const QualType templateType = node->templateTypeLst->dataTypes.front()->getEvaluatedSymbolType(manIdx);
 
