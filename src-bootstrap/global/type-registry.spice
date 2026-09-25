@@ -9,11 +9,9 @@ import "bootstrap/util/memory";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-chain";
-import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/type";
-import "bootstrap/global/type-registry-intf";
 
-// The TypeRegistry interns every Type and hands back stable `const IType*` pointers, so that type identity can be
+// The TypeRegistry interns every Type and hands back stable `const Type*` pointers, so that type identity can be
 // compared by pointer. It replaces the host's static-singleton unordered_map (which cannot be ported, since Spice
 // has no usable mutable globals): instead it is a normal struct owned by the GlobalResourceManager and threaded
 // into each Type it creates (Type.registry), so the Type derivation methods (toPtr, getBase, ...) can re-enter it.
@@ -21,7 +19,7 @@ import "bootstrap/global/type-registry-intf";
 // bucket map for deduplication. Buckets (Vector<Type*>) are used instead of a single value per hash so that hash
 // collisions (and same-named structs from different scopes, whose scope pointers cannot be hashed in Spice) are
 // resolved exactly via structural equality.
-public type TypeRegistry struct : ITypeRegistry {
+public type TypeRegistry struct {
     // The memory manager is declared before the allocator so that it outlives it (the allocator keeps a reference).
     DefaultMemoryManager memoryManager
     BlockAllocator<Type> alloc
@@ -37,7 +35,7 @@ public p TypeRegistry.ctor() {
 /**
  * Get or insert a type built from a single super type
  */
-public f<const IType*> TypeRegistry.getOrInsert(SuperType superType) {
+public f<const Type*> TypeRegistry.getOrInsert(SuperType superType) {
     Type tmpType = Type(superType);
     return this.getOrInsertType(tmpType);
 }
@@ -45,7 +43,7 @@ public f<const IType*> TypeRegistry.getOrInsert(SuperType superType) {
 /**
  * Get or insert a type built from a super type and a sub type
  */
-public f<const IType*> TypeRegistry.getOrInsertSub(SuperType superType, const String& subType) {
+public f<const Type*> TypeRegistry.getOrInsertSub(SuperType superType, const String& subType) {
     Type tmpType = Type(superType, subType);
     return this.getOrInsertType(tmpType);
 }
@@ -53,7 +51,7 @@ public f<const IType*> TypeRegistry.getOrInsertSub(SuperType superType, const St
 /**
  * Get or insert a type built from a full type chain
  */
-public f<const IType*> TypeRegistry.getOrInsertChain(const TypeChain& typeChain) {
+public f<const Type*> TypeRegistry.getOrInsertChain(const TypeChain& typeChain) {
     Type tmpType = Type(typeChain);
     return this.getOrInsertType(tmpType);
 }
@@ -69,23 +67,23 @@ public f<unsigned long> TypeRegistry.getTypeCount() {
  * Core interning routine: hash the candidate type, return the matching cached instance, otherwise allocate a
  * stable copy in the pool, wire its registry back-reference and remember it in the matching hash bucket.
  */
-f<const IType*> TypeRegistry.getOrInsertType(const Type& candidate) {
+f<const Type*> TypeRegistry.getOrInsertType(const Type& candidate) {
     const Hash h = this.getTypeHash(candidate);
-    const IType* candidatePtr = &candidate;
+    const Type* candidatePtr = &candidate;
 
     if this.types.contains(h) {
         // Search the bucket for a structurally equal type
         Vector<Type*>& bucket = this.types.get(h);
         foreach Type* existing : bucket {
             if existing.matches(candidatePtr, false) {
-                const IType* hit = existing;
+                const Type* hit = existing;
                 return hit;
             }
         }
         // Hash collision with a different type: allocate it and append to the existing bucket
         Type* collisionType = this.allocateType(candidate);
         bucket.pushBack(collisionType);
-        const IType* appended = collisionType;
+        const Type* appended = collisionType;
         return appended;
     }
 
@@ -94,7 +92,7 @@ f<const IType*> TypeRegistry.getOrInsertType(const Type& candidate) {
     Vector<Type*> bucket;
     bucket.pushBack(newType);
     this.types.upsert(h, bucket);
-    const IType* newResult = newType;
+    const Type* newResult = newType;
     return newResult;
 }
 
@@ -158,9 +156,8 @@ f<Hash> TypeRegistry.hashQualType(const QualType& qt) {
     Hash h = 0ul;
 
     // Recurse into the (interned) raw type, if present
-    if qt.rawType != nil<const IType*> {
-        const Type* rawType;
-        unsafe { rawType = cast<const Type*>(qt.rawType); }
+    if qt.rawType != nil<const Type*> {
+        const Type* rawType = qt.rawType;
         h = this.getTypeHash(*rawType);
     }
 

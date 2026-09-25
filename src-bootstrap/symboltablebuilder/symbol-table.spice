@@ -9,7 +9,7 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/capture";
@@ -30,13 +30,13 @@ public type SymbolMap alias UnorderedMap</*name=*/String, /*entry*/SymbolTableEn
  */
 public type SymbolTable struct {
     SymbolTable* parent
-    IScope* scope
+    Scope* scope
     SymbolMap symbols
     CaptureMap captures
     bool capturingRequired = false
 }
 
-public p SymbolTable.ctor(SymbolTable* parent, IScope* scope) {
+public p SymbolTable.ctor(SymbolTable* parent, Scope* scope) {
     this.parent = parent;
     this.scope = scope;
 }
@@ -133,7 +133,7 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
         const dyn captureSkip = [SuperType::TY_IMPORT, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
         if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) {
             // ToDo: Make the symbol volatile if it is captured across an async-scope boundary. This needs the
-            // async-scope query exposed on IScope; skipped for now.
+            // async-scope query exposed on Scope; skipped for now.
             // Add the capture to the current scope
             this.captures.upsert(name, Capture(entry));
         }

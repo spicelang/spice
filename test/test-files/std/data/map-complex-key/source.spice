@@ -1,0 +1,63 @@
+import "std/data/map";
+import "std/data/set";
+
+f<int> main() {
+    // Map with String keys, which are ordered lexicographically
+    Map<String, int> map;
+    assert map.getSize() == 0;
+    assert map.isEmpty();
+    map.insert(String("banana"), 2);
+    map.insert(String("apple"), 1);
+    map.insert(String("cherry"), 3);
+    map.insert(String("apricot"), 4);
+    map.insert(String("app"), 5);
+    assert map.getSize() == 5;
+    assert !map.isEmpty();
+    assert map.contains(String("banana"));
+    assert map.contains(String("app"));
+    assert !map.contains(String("durian"));
+    assert !map.contains(String(""));
+    assert map.get(String("apple")) == 1;
+    assert map[String("banana")] == 2;
+    assert map.get(String("cherry")) == 3;
+    assert map.get(String("apricot")) == 4;
+    assert map.get(String("app")) == 5;
+    const Result<int> item = map.getSafe(String("durian"));
+    assert item.isErr();
+
+    // The iteration order is the lexicographical order of the keys
+    String order;
+    foreach dyn entry : map {
+        order += entry.getFirst() + ",";
+    }
+    assert order == "app,apple,apricot,banana,cherry,";
+
+    map.remove(String("apple"));
+    assert !map.contains(String("apple"));
+    assert map.getSize() == 4;
+    assert map.get(String("apricot")) == 4;
+    map.clear();
+    assert map.isEmpty();
+
+    // Set with String values
+    Set<String> set;
+    set.insert(String("b"));
+    set.insert(String("a"));
+    set.insert(String("c"));
+    assert set.getSize() == 3;
+    assert set.contains(String("a"));
+    assert !set.contains(String("d"));
+
+    // The ordering of primitive keys did not change
+    Map<int, int> intMap;
+    intMap.insert(3, 30);
+    intMap.insert(1, 10);
+    intMap.insert(2, 20);
+    long digits = 0l;
+    foreach dyn entry : intMap {
+        digits = digits * 10l + entry.getSecond() / 10;
+    }
+    assert digits == 123l;
+
+    printf("All assertions passed!\n");
+}

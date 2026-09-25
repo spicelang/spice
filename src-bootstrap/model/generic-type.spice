@@ -4,7 +4,7 @@ import "std/data/unordered-map";
 // Own imports
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/global/type-registry";
 
@@ -87,9 +87,9 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
 #[test, test.name="GenericType Smoke test"]
 public f<bool> testGenericTypeSmoke() {
     TypeRegistry reg = TypeRegistry();
-    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
-    const IType* boolType = reg.getOrInsert(SuperType::TY_BOOL);
-    const IType* dynType = reg.getOrInsert(SuperType::TY_DYN);
+    const Type* intType = reg.getOrInsert(SuperType::TY_INT);
+    const Type* boolType = reg.getOrInsert(SuperType::TY_BOOL);
+    const Type* dynType = reg.getOrInsert(SuperType::TY_DYN);
     const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
     const QualType boolQual = QualType(boolType, getTypeQualifiersOf(SuperType::TY_BOOL));
     const QualType dynQual = QualType(dynType, getTypeQualifiersOf(SuperType::TY_DYN));

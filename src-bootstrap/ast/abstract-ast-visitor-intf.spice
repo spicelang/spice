@@ -13,7 +13,7 @@ import "bootstrap/ast/ast-nodes";
  * ast-nodes.spice. The compiler handles the cycle natively.
  */
 public type IAbstractAstVisitor interface {
-    public f<Any> visit(IASTNode*);
+    public f<Any> visit(IVisitable*);
     public f<Any> visitEntry(ASTEntryNode*);
     public f<Any> visitMainFctDef(ASTMainFctDefNode*);
     public f<Any> visitFctDef(ASTFctDefNode*);

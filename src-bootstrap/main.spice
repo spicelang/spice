@@ -4,7 +4,7 @@ import "std/os/os";
 // Own imports
 //import "bootstrap/source-file";
 import "bootstrap/driver";
-//import "bootstrap/global/global-resource-manager";
+import "bootstrap/global/global-resource-manager";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.

@@ -8,7 +8,6 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/global/global-resource-manager-intf";
 import "bootstrap/global/cache-manager";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/global/type-registry";
@@ -29,7 +28,7 @@ public const string LTO_FILE_NAME = "lto-module";
  * This component owns all SourceFile instances and AST nodes and therefore is the resource root of the compiler.
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
-public type GlobalResourceManager struct : IGlobalResourceManager {
+public type GlobalResourceManager struct {
     public String cpuName
     public String cpuFeatures
     public llvm::LLVMContext ltoContext
@@ -37,12 +36,15 @@ public type GlobalResourceManager struct : IGlobalResourceManager {
     public DefaultMemoryManager memoryManager
     public Vector<String> compileTimeStringValues
     public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
-    public UnorderedMap<String, heap SourceFile*> sourceFiles // The GlobalResourceManager owns all source files
+    // The GlobalResourceManager owns all source files. They live in this pool (like the scopes in their parent scope), because
+    // a map of owning 'heap' pointers cannot be instantiated: its iterator needs a reference to a heap pointer as field type
+    BlockAllocator<SourceFile> sourceFileAlloc
+    public UnorderedMap<String, SourceFile*> sourceFiles // Maps the file paths to the source files owned by the pool above
     public CliOptions& cliOptions
     public ExternalLinkerInterface linker
     public CacheManager cacheManager
     public RuntimeModuleManager runtimeModuleManager
-    public TypeRegistry typeRegistry // Interns all types and hands out stable `const IType*` handles
+    public TypeRegistry typeRegistry // Interns all types and hands out stable `const Type*` handles
     public Timer totalTimer
     public ErrorManager errorManager
     public bool abortCompilation = false
@@ -55,7 +57,7 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.cacheManager = CacheManager(cliOptions.cacheDir);
     this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
-    this.typeRegistry = TypeRegistry();
+    this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {
@@ -63,6 +65,7 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
         llvm::initializeNativeAsmPrinter();
         llvm::initializeNativeAsmParser();
     } else {
+        llvm::initializeAllTargetInfos(); // Unlike the C++ variant, the C variant of initializeAllTargets does not do this
         llvm::initializeAllTargets();
         llvm::initializeAllTargetMCs();
         llvm::initializeAllAsmPrinters();
@@ -110,23 +113,18 @@ public f<ErrorManager&> GlobalResourceManager.getErrorManager() {
     return this.errorManager;
 }
 
-// IGlobalResourceManager entry point: passes only see their source files as ISourceFile*, so forward to the concrete overload.
-public f<ISourceFile*> GlobalResourceManager.createSourceFile(ISourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
-    SourceFile* concreteParent = nil<SourceFile*>;
-    unsafe {
-        concreteParent = cast<SourceFile*>(parent);
-    }
-    return this.createSourceFile(concreteParent, depName, path, isStdFile);
-}
-
-public f<heap SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
+public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
     // Check if the source file was already added (e.g. by another source file that imports it)
     const String filePathStr = String(path.toString());
 
     // Create the new source file if it does not exist yet
     if !this.sourceFiles.contains(filePathStr) {
-        //heap SourceFile* newSourceFile = new SourceFile(*this, parent, depName, path, isStdFile);
-        //this.sourceFiles.insert(filePathStr, newSourceFile);
+        // Reserve stable storage for the source file in the pool and construct it in place
+        SourceFile* newSourceFile = this.sourceFileAlloc.reserve<SourceFile>();
+        unsafe {
+            __placement_new<SourceFile>(newSourceFile, *this, parent, depName, path, isStdFile);
+        }
+        this.sourceFiles.upsert(filePathStr, newSourceFile);
     }
 
     return this.sourceFiles.get(filePathStr);

@@ -2,17 +2,17 @@ import "std/os/env";
 import "std/io/filepath";
 import "std/data/vector";
 import "std/bindings/llvm/llvm" as llvm;
+import "bootstrap/driver";
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/global-resource-manager";
 import "bootstrap/reader/code-loc";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/symbol-table-builder";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/util/pass-test-mocks";
+import "bootstrap/util/pass-test-util";
 
 f<FilePath> getFixturePath() {
     Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
@@ -20,13 +20,8 @@ f<FilePath> getFixturePath() {
     return FilePath(filePathString);
 }
 
-f<bool> registered(MockSourceFile& file, string name) {
-    for unsigned long i = 0l; i < file.registeredNames.getSize(); i++ {
-        if file.registeredNames.get(i) == name {
-            return true;
-        }
-    }
-    return false;
+f<bool> registered(SourceFile& file, string name) {
+    return file.exportedNameRegistry.contains(String(name));
 }
 
 // Scope of the given definition scope id below 'parent'. Fails the test if it does not exist
@@ -106,15 +101,12 @@ f<int> main() {
     // -------------------------------------------------------------------------------------------------------------
     // Build the symbol table.
     // -------------------------------------------------------------------------------------------------------------
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file;
-    file.filePath = FilePath("/tmp/mock-main.spice");
-    file.globalScopePtr = &root;
-    MockResourceManager rm;
-    rm.cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
-    IGlobalResourceManager& resourceManager = rm;
-    ISourceFile* sourceFile = &file;
-    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
+    Scope* root = createTestGlobalScope(file);
+    SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
     builder.visit(entry);
 
     // Everything was accepted, including the main function every executable needs
@@ -154,12 +146,12 @@ f<int> main() {
     assert root.children.getSize() == 7l;
 
     // Interface: one symbol per signature (keyed with the code location to allow overloading)
-    Scope* shapeScope = childScope(&root, String("interface:Shape"), ScopeType::INTERFACE);
+    Scope* shapeScope = childScope(root, String("interface:Shape"), ScopeType::INTERFACE);
     assert shape.interfaceScope == shapeScope;
     assert shapeScope.symbolTable.symbols.getSize() == 2l;
 
     // Struct: fields, the implicit field for the implemented interface and one child scope per method
-    Scope* rectScope = childScope(&root, String("struct:Rectangle"), ScopeType::STRUCT);
+    Scope* rectScope = childScope(root, String("struct:Rectangle"), ScopeType::STRUCT);
     assert rect.structScope == rectScope;
     assert rectScope.lookupStrict(String("width")) != nil<SymbolTableEntry*>;
     assert rectScope.lookupStrict(String("height")) != nil<SymbolTableEntry*>;
@@ -186,14 +178,14 @@ f<int> main() {
     assert rectScope.lookupStrict(String("area:") + area.codeLoc.toString()) == area.entry;
 
     // Enum: one symbol per item in the enum scope
-    Scope* colorScope = childScope(&root, String("enum:Color"), ScopeType::ENUM);
+    Scope* colorScope = childScope(root, String("enum:Color"), ScopeType::ENUM);
     assert colorScope.lookupStrict(String("RED")) != nil<SymbolTableEntry*>;
     assert colorScope.lookupStrict(String("GREEN")) != nil<SymbolTableEntry*>;
     assert colorScope.lookupStrict(String("BLUE")) != nil<SymbolTableEntry*>;
 
     // if / else if / else: three branch scopes below the function scope. Each condition and the ternary of the else
     // branch get expression scopes of their own
-    Scope* classifyScope = childScope(&root, classify.getScopeId(), ScopeType::FUNC_PROC_BODY);
+    Scope* classifyScope = childScope(root, classify.getScopeId(), ScopeType::FUNC_PROC_BODY);
     assert classifyScope.lookupStrict(String("n")).isParam;
     assert classifyScope.lookupStrict(String("result")) != nil<SymbolTableEntry*>;
     assert classifyScope.children.getSize() == 3l;
@@ -223,7 +215,7 @@ f<int> main() {
     assert elseIfScope.children.getSize() == 1l; // condition
 
     // for / while / do-while: a body scope each, with an expression scope for the condition
-    Scope* loopsScope = childScope(&root, loops.getScopeId(), ScopeType::FUNC_PROC_BODY);
+    Scope* loopsScope = childScope(root, loops.getScopeId(), ScopeType::FUNC_PROC_BODY);
     assert loopsScope.lookupStrict(String("acc")) != nil<SymbolTableEntry*>;
     assert loopsScope.children.getSize() == 3l;
     long forScopes = 0l;
@@ -244,7 +236,7 @@ f<int> main() {
 
     // main: 'result' is declared and used implicitly. The unsafe block gets a scope, and so do the operands of the
     // short-circuiting '&&' and '||' that are not evaluated unconditionally
-    Scope* mainScope = childScope(&root, String("fct:main"), ScopeType::FUNC_PROC_BODY);
+    Scope* mainScope = childScope(root, String("fct:main"), ScopeType::FUNC_PROC_BODY);
     assert mainFct.bodyScope == mainScope;
     assert mainScope.lookupStrict(String("result")).used;
     assert mainScope.lookupStrict(String("rect")) != nil<SymbolTableEntry*>;
@@ -266,7 +258,7 @@ f<int> main() {
     assert exprScopes == 2l;
 
     // Every scope was left again
-    assert builder.currentScope == &root;
+    assert builder.currentScope == root;
 
     printf("All assertions passed!\n");
 }

@@ -9,16 +9,32 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/model/generic-type";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
-// ScopeType is defined in scope-intf.spice (imported above) so it can be used through the IScope interface.
+public type ScopeType enum {
+    GLOBAL,
+    FUNC_PROC_BODY,
+    LAMBDA_BODY,
+    STRUCT,
+    INTERFACE,
+    UNION,
+    ENUM,
+    IF_ELSE_BODY,
+    WHILE_BODY,
+    FOR_BODY,
+    FOREACH_BODY,
+    CASE_BODY,
+    DEFAULT_BODY,
+    UNSAFE_BODY,
+    ANONYMOUS_BLOCK_BODY,
+    EXPR_BODY
+}
 
 /**
  * Represents an enclosed group of instructions, which are semantically separated from other scopes.
@@ -39,10 +55,10 @@ import "bootstrap/util/memory";
  * - anonymous scopes
  * - conditions, and expressions that are only evaluated conditionally (e.g. the right side of '&&' and '||')
  */
-public type Scope struct : IScope {
+public type Scope struct {
     // Public members
     public Scope* parent
-    public ISourceFile* sourceFile
+    public SourceFile* sourceFile
     // Child scopes are owned by their parent (mirroring the host's `map<string, shared_ptr<Scope>>`). They are
     // stored as stable pointers into 'childAllocator' rather than by value, so that adding a child never has to
     // copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
@@ -64,7 +80,7 @@ public type Scope struct : IScope {
     BlockAllocator<Scope> childAllocator
 }
 
-public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
+public p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
     this.parent = parent;
     this.sourceFile = sourceFile;
     this.scopeType = scopeType;
@@ -73,19 +89,19 @@ public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType,
     this.childAllocator = BlockAllocator<Scope>(this.memoryManager);
 }
 
-// ===================================================== IScope interface =====================================================
+// ======================================================== Accessors =========================================================
 
 /**
  * Get the source file this scope belongs to
  */
-public f<ISourceFile*> Scope.getSourceFile() {
+public f<SourceFile*> Scope.getSourceFile() {
     return this.sourceFile;
 }
 
 /**
  * Get the parent scope (nil for the global scope)
  */
-public f<IScope*> Scope.getParent() {
+public f<Scope*> Scope.getParent() {
     return this.parent;
 }
 

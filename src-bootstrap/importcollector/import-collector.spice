@@ -14,13 +14,12 @@ import "bootstrap/ast/attributes";
 import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/exception/error-manager";
 import "bootstrap/exception/semantic-error";
-import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/global-resource-manager";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/scope-intf";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/util/pass-test-mocks";
+import "bootstrap/util/pass-test-util";
 import "bootstrap/util/system-util";
 
 /**
@@ -31,17 +30,15 @@ public type ImportCollector struct : IAbstractAstVisitor {
     compose public CompilerPass compilerPass
 }
 
-public p ImportCollector.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile) {
+public p ImportCollector.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
 }
 
 // ─── entry point ──────────────────────────────────────────────────────────────
 
-// Interface-required overload. In practice this is never actually reached: source-file.spice always calls
-// visit(ASTEntryNode*) (the concrete overload below), since Spice does not implicitly upcast a concrete
-// node to IASTNode* at a call site (no concrete AST node declares ': IASTNode' — see Phase A). Kept only
-// to satisfy IAbstractAstVisitor conformance, matching ASTVisualizer's identically-shaped stub.
-public f<Any> ImportCollector.visit(IASTNode* node) {
+// Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
+// visit(ASTEntryNode*) overload below.
+public f<Any> ImportCollector.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
@@ -180,7 +177,7 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     node.entry = this.rootScope.insert(node.importName, baseNode);
 
     // Create the imported source file
-    ISourceFile* importedSourceFile = this.resourceManager.createSourceFile(this.sourceFile, node.importName, importPath, isStd);
+    SourceFile* importedSourceFile = this.resourceManager.createSourceFile(this.sourceFile, node.importName, importPath, isStd);
     // Register it as a dependency to the current source file
     this.sourceFile.addDependency(importedSourceFile, node.importName);
 
@@ -297,29 +294,21 @@ public f<Any> ImportCollector.visitFunctionDataType(ASTFunctionDataTypeNode* nod
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
-f<bool> createdPathContains(MockResourceManager& resourceManager, unsigned long index, string needle) {
-    const String& createdPath = resourceManager.createdPaths.get(index);
-    return createdPath.contains(needle);
-}
-
 #[test, test.name="ImportCollector Smoke test"]
 public f<bool> testImportCollectorSmoke() {
     // SPICE_BOOTSTRAP_DIR must point to src-bootstrap/ (same requirement as the other bootstrap tests)
     const FilePath bootstrapDir = getBootstrapCompilerDir();
     assert !bootstrapDir.isEmpty();
 
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile mockFile;
-    mockFile.filePath = FilePath("/tmp/mock-main.spice");
-    mockFile.globalScopePtr = &root;
-    MockResourceManager mockRm;
-    mockRm.cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
-    IGlobalResourceManager& resourceManager = mockRm;
-    ISourceFile* sourceFile = &mockFile;
-    ImportCollector collector = ImportCollector(resourceManager, sourceFile);
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+    SourceFile sourceFile = SourceFile(resourceManager, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
+    Scope* root = createTestGlobalScope(sourceFile);
+    ImportCollector collector = ImportCollector(resourceManager, &sourceFile);
 
     // CompilerPass picked up the root scope of the source file
-    assert collector.rootScope == &root;
+    assert collector.rootScope == root;
 
     // ---- visitModAttr: the four core.compiler.* bool attributes ----
     ASTConstantNode trueValue = ASTConstantNode(CodeLoc(1l, 1l, "t.spice"));
@@ -345,52 +334,56 @@ public f<bool> testImportCollectorSmoke() {
     ASTModAttrNode modAttr = ASTModAttrNode(CodeLoc(2l, 1l, "t.spice"));
     modAttr.attrLst = &attrLst;
 
-    mockFile.errorReturnTracing = true; // must be overwritten with 'false'
+    sourceFile.errorReturnTracing = true; // must be overwritten with 'false'
     collector.visitModAttr(&modAttr);
-    assert mockFile.ignoreWarnings;
-    assert mockFile.alwaysKeepSymbolsOnNameCollision;
-    assert !mockFile.errorReturnTracing;
-    assert mockFile.explicitErrorHandling;
+    assert sourceFile.ignoreWarnings;
+    assert sourceFile.alwaysKeepSymbolsOnNameCollision;
+    assert !sourceFile.errorReturnTracing;
+    assert sourceFile.explicitErrorHandling;
 
     // ---- visitImportDef: rejected import paths ----
     ASTImportDefNode absImport = ASTImportDefNode(CodeLoc(10l, 1l, "t.spice"));
     absImport.importPath = String("/etc/passwd");
     absImport.importName = String("abs");
     collector.visitImportDef(&absImport);
-    assert mockRm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(mockRm.errorManager, 0l, "must be relative");
+    assert resourceManager.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(resourceManager.errorManager, 0l, "must be relative");
 
     ASTImportDefNode parentImport = ASTImportDefNode(CodeLoc(11l, 1l, "t.spice"));
     parentImport.importPath = String("std/../../etc/passwd");
     parentImport.importName = String("parent");
     collector.visitImportDef(&parentImport);
-    assert mockRm.errorManager.softErrors.getSize() == 2l;
-    assert softErrorContains(mockRm.errorManager, 1l, "parent-directory");
+    assert resourceManager.errorManager.softErrors.getSize() == 2l;
+    assert softErrorContains(resourceManager.errorManager, 1l, "parent-directory");
 
     ASTImportDefNode missingImport = ASTImportDefNode(CodeLoc(12l, 1l, "t.spice"));
     missingImport.importPath = String("bootstrap/no-such-module");
     missingImport.importName = String("missing");
     collector.visitImportDef(&missingImport);
-    assert mockRm.errorManager.softErrors.getSize() == 3l;
-    assert softErrorContains(mockRm.errorManager, 2l, "The source file 'no-such-module.spice' was not found");
+    assert resourceManager.errorManager.softErrors.getSize() == 3l;
+    assert softErrorContains(resourceManager.errorManager, 2l, "The source file 'no-such-module.spice' was not found");
 
     // None of the rejected imports registered a symbol, created a source file or added a dependency
     assert root.lookupStrict(String("abs")) == nil<SymbolTableEntry*>;
     assert root.lookupStrict(String("parent")) == nil<SymbolTableEntry*>;
     assert root.lookupStrict(String("missing")) == nil<SymbolTableEntry*>;
-    assert mockRm.createdPaths.getSize() == 0l;
-    assert mockFile.dependencyNames.getSize() == 0l;
+    assert resourceManager.sourceFiles.getSize() == 0l;
+    assert sourceFile.dependencies.getSize() == 0l;
 
     // ---- visitImportDef: successful import ----
     ASTImportDefNode okImport = ASTImportDefNode(CodeLoc(13l, 1l, "t.spice"));
     okImport.importPath = String("bootstrap/ast/attributes");
     okImport.importName = String("attrs");
     collector.visitImportDef(&okImport);
-    assert mockRm.errorManager.softErrors.getSize() == 3l;
-    assert mockRm.createdPaths.getSize() == 1l;
-    assert createdPathContains(mockRm, 0l, "ast/attributes.spice");
-    assert mockFile.dependencyNames.getSize() == 1l;
-    assert mockFile.dependencyNames.get(0l) == "attrs";
+    assert resourceManager.errorManager.softErrors.getSize() == 3l;
+    assert resourceManager.sourceFiles.getSize() == 1l;
+    assert sourceFile.dependencies.getSize() == 1l;
+    assert sourceFile.dependencies.contains(String("attrs"));
+    SourceFile* attrsFile = sourceFile.dependencies.get(String("attrs"));
+    const String attrsPath = String(attrsFile.filePath.toGenericString());
+    assert attrsPath.contains("ast/attributes.spice");
+    assert attrsFile.parent == &sourceFile;
+    assert !attrsFile.isMainFile; // an imported file is not the compilation root
     assert root.lookupStrict(String("attrs")) != nil<SymbolTableEntry*>;
     assert okImport.entry == root.lookupStrict(String("attrs"));
 
@@ -399,10 +392,10 @@ public f<bool> testImportCollectorSmoke() {
     dupImport.importPath = String("bootstrap/ast/attributes");
     dupImport.importName = String("attrs");
     collector.visitImportDef(&dupImport);
-    assert mockRm.errorManager.softErrors.getSize() == 4l;
-    assert softErrorContains(mockRm.errorManager, 3l, "Duplicate import 'attrs'");
-    assert mockRm.createdPaths.getSize() == 1l;
-    assert mockFile.dependencyNames.getSize() == 1l;
+    assert resourceManager.errorManager.softErrors.getSize() == 4l;
+    assert softErrorContains(resourceManager.errorManager, 3l, "Duplicate import 'attrs'");
+    assert resourceManager.sourceFiles.getSize() == 1l;
+    assert sourceFile.dependencies.getSize() == 1l;
 
     // ---- entry point: visit(ASTEntryNode*) dispatches module attributes and imports through IVisitable ----
     ASTConstantNode resetValue = ASTConstantNode(CodeLoc(20l, 1l, "t.spice"));
@@ -422,9 +415,9 @@ public f<bool> testImportCollectorSmoke() {
     entry.importDefs.pushBack(cast<IVisitable*>(&entryImport));
 
     collector.visit(&entry);
-    assert !mockFile.ignoreWarnings; // module attribute visited via the entry point
-    assert mockFile.dependencyNames.getSize() == 2l; // import visited via the entry point
-    assert mockFile.dependencyNames.get(1l) == "attrs2";
+    assert !sourceFile.ignoreWarnings; // module attribute visited via the entry point
+    assert sourceFile.dependencies.getSize() == 2l; // import visited via the entry point
+    assert sourceFile.dependencies.contains(String("attrs2"));
     assert root.lookupStrict(String("attrs2")) != nil<SymbolTableEntry*>;
 
     return true;

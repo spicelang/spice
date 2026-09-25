@@ -10,11 +10,10 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-intf";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/util/common-util";
 
 public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*/QualType>;
@@ -32,7 +31,7 @@ public type StructBase struct {
     public Vector<GenericType> templateTypes
     public TypeMapping typeMapping
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    public IScope* scope = nil<IScope*>
+    public Scope* scope = nil<Scope*>
     public ASTNode* declNode
     public unsigned long manifestationIndex = 0ul
     public StructBase* genericPreset = nil<StructBase*>
@@ -41,7 +40,7 @@ public type StructBase struct {
     public bool isNewlyInserted = false
 }
 
-public p StructBase.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+public p StructBase.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
     this.name = name;
     this.entry = entry;
     this.scope = scope;
@@ -153,14 +152,14 @@ public f<bool> StructBase.isGenericSubstantiation() {
 #[test, test.name="StructBase Smoke test"]
 public f<bool> testStructBaseSmoke() {
     TypeRegistry reg = TypeRegistry();
-    const IType* intType = reg.getOrInsert(SuperType::TY_INT);
+    const dyn intType = reg.getOrInsert(SuperType::TY_INT);
     const QualType intQual = QualType(intType, getTypeQualifiersOf(SuperType::TY_INT));
-    const IType* genType = reg.getOrInsertSub(SuperType::TY_GENERIC, String("T"));
+    const dyn genType = reg.getOrInsertSub(SuperType::TY_GENERIC, String("T"));
     const QualType genQual = QualType(genType, getTypeQualifiersOf(SuperType::TY_GENERIC));
 
     // A struct without template types
     Vector<GenericType> noTemplates;
-    StructBase plain = StructBase(String("Plain"), nil<SymbolTableEntry*>, nil<IScope*>, noTemplates, nil<ASTNode*>);
+    StructBase plain = StructBase(String("Plain"), nil<SymbolTableEntry*>, nil<Scope*>, noTemplates, nil<ASTNode*>);
     assert plain.name == String("Plain");
     assert !plain.used;
     assert plain.getSignature() == String("Plain");
@@ -174,7 +173,7 @@ public f<bool> testStructBaseSmoke() {
     Vector<GenericType> concreteTemplates;
     GenericType gtInt = GenericType(intQual);
     concreteTemplates.pushBack(gtInt);
-    StructBase box = StructBase(String("Box"), nil<SymbolTableEntry*>, nil<IScope*>, concreteTemplates, nil<ASTNode*>);
+    StructBase box = StructBase(String("Box"), nil<SymbolTableEntry*>, nil<Scope*>, concreteTemplates, nil<ASTNode*>);
     assert box.getSignature() == String("Box<int>");
     assert box.hasSubstantiatedGenerics();
     assert box.isFullySubstantiated();
@@ -187,7 +186,7 @@ public f<bool> testStructBaseSmoke() {
     Vector<GenericType> genericTemplates;
     GenericType gtGeneric = GenericType(genQual);
     genericTemplates.pushBack(gtGeneric);
-    StructBase wrapper = StructBase(String("Wrapper"), nil<SymbolTableEntry*>, nil<IScope*>, genericTemplates, nil<ASTNode*>);
+    StructBase wrapper = StructBase(String("Wrapper"), nil<SymbolTableEntry*>, nil<Scope*>, genericTemplates, nil<ASTNode*>);
     assert !wrapper.hasSubstantiatedGenerics();
     assert !wrapper.isFullySubstantiated();
 

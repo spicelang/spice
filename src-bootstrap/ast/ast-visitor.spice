@@ -18,9 +18,7 @@ public p AstVisitor.ctor() {}
 
 // Typed double-dispatch entry point.  The runtime type of node determines which
 // accept() override fires, which in turn calls the appropriate visit method.
-// Note: vtable dispatch through IASTNode* requires all concrete nodes to implement IASTNode.
-// Until then, concrete passes call typed visitXxx methods directly.
-public f<Any> AstVisitor.visit(IASTNode* node) {
+public f<Any> AstVisitor.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 

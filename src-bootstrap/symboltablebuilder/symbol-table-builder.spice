@@ -15,19 +15,19 @@ import "bootstrap/ast/attributes";
 import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/exception/error-manager";
 import "bootstrap/exception/semantic-error";
-import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/global-resource-manager";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
 import "bootstrap/reader/code-loc";
-import "bootstrap/source-file-intf";
+import "bootstrap/source-file";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/scope-intf";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/util/pass-test-mocks";
+import "bootstrap/util/pass-test-util";
+import "bootstrap/util/system-util";
 
 // Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in symbol-table-entry.spice)
 const string MAIN_FUNCTION_NAME = "main";
@@ -47,15 +47,15 @@ public type SymbolTableBuilder struct : IAbstractAstVisitor {
     bool hasMainFunction = false
 }
 
-public p SymbolTableBuilder.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile) {
+public p SymbolTableBuilder.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
 }
 
 // ─── entry point ──────────────────────────────────────────────────────────────
 
-// Interface-required overload. Never reached in practice: Spice does not upcast a concrete node to IASTNode* at a call
-// site, so source-file.spice's symbolTableBuilder.visit(this.ast) resolves to the concrete overload below.
-public f<Any> SymbolTableBuilder.visit(IASTNode* node) {
+// Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
+// visit(ASTEntryNode*) overload below.
+public f<Any> SymbolTableBuilder.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
@@ -824,7 +824,7 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
 
     // Retrieve attributes
     ASTAttrLstNode* attrs = node.attrLst;
-    IGlobalResourceManager& resourceManager = this.resourceManager;
+    GlobalResourceManager& resourceManager = this.resourceManager;
 
     // Determine the target OS from the triple of the compilation
     String osName;
@@ -1087,22 +1087,14 @@ public f<Any> SymbolTableBuilder.visitImportDef(ASTImportDefNode* node) { return
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
-// Build the environment every scenario needs: a root scope, a source file and a resource manager (both mocks)
-// and the builder under test. The caller keeps ownership of all of them.
-p setupMocks(Scope& root, MockSourceFile& file, MockResourceManager& resourceManager) {
-    file.filePath = FilePath("/tmp/mock-main.spice");
-    file.globalScopePtr = &root;
-    resourceManager.cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
-}
+// Every scenario gets its own source file with a global scope and its own builder, but all of them share the resource
+// manager of the test. Its recorded state is reset at the start of each scenario.
 
-f<bool> testMainFunctionRules() {
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file;
-    MockResourceManager rm;
-    setupMocks(root, file, rm);
-    IGlobalResourceManager& resourceManager = rm;
-    ISourceFile* sourceFile = &file;
-    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+f<bool> testMainFunctionRules(GlobalResourceManager& rm) {
+    rm.errorManager.softErrors.clear();
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
+    Scope* root = createTestGlobalScope(file);
+    SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
 
     // An executable's main file without a main function is rejected
     ASTEntryNode emptyEntry = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
@@ -1111,26 +1103,20 @@ f<bool> testMainFunctionRules() {
     assert softErrorContains(rm.errorManager, 0l, "No main function found");
 
     // A file that is not the compilation root does not need one
-    Scope root2 = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file2;
-    MockResourceManager rm2;
-    setupMocks(root2, file2, rm2);
-    file2.isMain = false;
-    IGlobalResourceManager& resourceManager2 = rm2;
-    ISourceFile* sourceFile2 = &file2;
-    SymbolTableBuilder builder2 = SymbolTableBuilder(resourceManager2, sourceFile2);
+    rm.errorManager.softErrors.clear();
+    SourceFile file2 = SourceFile(rm, nil<SourceFile*>, String("root2"), FilePath("/tmp/mock-main2.spice"), false);
+    Scope* root2 = createTestGlobalScope(file2);
+    file2.isMainFile = false;
+    SymbolTableBuilder builder2 = SymbolTableBuilder(rm, &file2);
     ASTEntryNode emptyEntry2 = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
     builder2.visit(&emptyEntry2);
-    assert rm2.errorManager.softErrors.getSize() == 0l;
+    assert rm.errorManager.softErrors.getSize() == 0l;
 
     // Declaring main creates its scope with the 'result' symbol, and declaring it twice is rejected
-    Scope root3 = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file3;
-    MockResourceManager rm3;
-    setupMocks(root3, file3, rm3);
-    IGlobalResourceManager& resourceManager3 = rm3;
-    ISourceFile* sourceFile3 = &file3;
-    SymbolTableBuilder builder3 = SymbolTableBuilder(resourceManager3, sourceFile3);
+    rm.errorManager.softErrors.clear();
+    SourceFile file3 = SourceFile(rm, nil<SourceFile*>, String("root3"), FilePath("/tmp/mock-main3.spice"), false);
+    Scope* root3 = createTestGlobalScope(file3);
+    SymbolTableBuilder builder3 = SymbolTableBuilder(rm, &file3);
     ASTStmtLstNode body1 = ASTStmtLstNode(CodeLoc(2l, 1l, "t.spice"));
     ASTMainFctDefNode main1 = ASTMainFctDefNode(CodeLoc(1l, 1l, "t.spice"));
     main1.body = cast<IVisitable*>(&body1);
@@ -1141,8 +1127,8 @@ f<bool> testMainFunctionRules() {
     entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main1));
     entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main2));
     builder3.visit(&entry3);
-    assert rm3.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm3.errorManager, 0l, "Main function is declared twice");
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "Main function is declared twice");
     assert root3.lookupStrict(String("main")) != nil<SymbolTableEntry*>;
     assert root3.lookupStrict(String("main")).used;
     Scope* mainScope = root3.getChildScope(String("fct:main"));
@@ -1150,19 +1136,16 @@ f<bool> testMainFunctionRules() {
     assert mainScope.scopeType == ScopeType::FUNC_PROC_BODY;
     assert mainScope.lookupStrict(String(RETURN_VARIABLE_NAME)) != nil<SymbolTableEntry*>;
     assert main1.bodyScope == mainScope;
-    assert main2.bodyScope == nil<IScope*>; // the duplicate got no scope
+    assert main2.bodyScope == nil<Scope*>; // the duplicate got no scope
     return true;
 }
 
-f<bool> testDefinitionRules() {
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file;
-    MockResourceManager rm;
-    setupMocks(root, file, rm);
-    file.isMain = false;
-    IGlobalResourceManager& resourceManager = rm;
-    ISourceFile* sourceFile = &file;
-    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+f<bool> testDefinitionRules(GlobalResourceManager& rm) {
+    rm.errorManager.softErrors.clear();
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
+    Scope* root = createTestGlobalScope(file);
+    file.isMainFile = false;
+    SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
 
     // A struct gets a scope, an entry and an exported name registry entry. Its fields become symbols of that scope
     ASTFieldNode widthField = ASTFieldNode(CodeLoc(2l, 5l, "t.spice"));
@@ -1185,8 +1168,10 @@ f<bool> testDefinitionRules() {
     assert rect.structScope == rectScope;
     assert rectScope.lookupStrict(String("width")) != nil<SymbolTableEntry*>;
     assert file.hasNameRegistryTarget(String("Rectangle"), rect.entry);
-    assert file.registeredTypeIds.get(0l) == 300l;
-    assert builder.currentScope == &root; // back in the root scope
+    const NameRegistryEntry* rectRegistryEntry = file.getNameRegistryEntry(String("Rectangle"));
+    assert rectRegistryEntry != nil<NameRegistryEntry*>;
+    assert rectRegistryEntry.typeId == 300l;
+    assert builder.currentScope == root; // back in the root scope
 
     // Any other definition may not reuse the name
     ASTStructDefNode duplicateStruct = ASTStructDefNode(CodeLoc(10l, 1l, "t.spice"));
@@ -1240,7 +1225,7 @@ f<bool> testDefinitionRules() {
     builder.visitProcDef(&missingMethod);
     assert rm.errorManager.softErrors.getSize() == 5l;
     assert softErrorContains(rm.errorManager, 4l, "Struct 'Missing' could not be found");
-    assert builder.currentScope == &root;
+    assert builder.currentScope == root;
 
     // Globals: duplicates within the file and across imported files are both rejected
     ASTGlobalVarDefNode global1 = ASTGlobalVarDefNode(CodeLoc(30l, 1l, "t.spice"));
@@ -1252,7 +1237,9 @@ f<bool> testDefinitionRules() {
     builder.visitGlobalVarDef(&global2);
     assert rm.errorManager.softErrors.getSize() == 6l;
     assert softErrorContains(rm.errorManager, 5l, "Duplicate symbol 'LIMIT'");
-    file.dependencyExportedNames.pushBack(String("SHARED"));
+    SourceFile dependency = SourceFile(rm, &file, String("dependency"), FilePath("/tmp/mock-dependency.spice"), false);
+    dependency.addNameRegistryEntry(String("SHARED"), 0l, nil<SymbolTableEntry*>, root, true, nil<SymbolTableEntry*>);
+    file.addDependency(&dependency, String("dependency"));
     ASTGlobalVarDefNode global3 = ASTGlobalVarDefNode(CodeLoc(32l, 1l, "t.spice"));
     global3.varName = String("SHARED");
     builder.visitGlobalVarDef(&global3);
@@ -1292,14 +1279,19 @@ f<bool> testDefinitionRules() {
     return true;
 }
 
-f<bool> testAttributeRules() {
-    Scope root = Scope(nil<Scope*>, nil<ISourceFile*>, ScopeType::GLOBAL, nil<CodeLoc*>);
-    MockSourceFile file;
-    MockResourceManager rm;
-    setupMocks(root, file, rm);
-    IGlobalResourceManager& resourceManager = rm;
-    ISourceFile* sourceFile = &file;
-    SymbolTableBuilder builder = SymbolTableBuilder(resourceManager, sourceFile);
+f<bool> testAttributeRules(GlobalResourceManager& rm) {
+    // SPICE_BOOTSTRAP_DIR must point to src-bootstrap/ (same requirement as the other bootstrap tests)
+    const FilePath bootstrapDir = getBootstrapCompilerDir();
+    assert !bootstrapDir.isEmpty();
+
+    rm.errorManager.softErrors.clear();
+    rm.compileTimeStringValues.clear();
+    rm.linker.linkerFlags.clear();
+    rm.linker.linkedFiles.clear();
+    // The additional source files are resolved relative to the source file, and the linker requires them to exist
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), bootstrapDir / "mock-main.spice", false);
+    Scope* root = createTestGlobalScope(file);
+    SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
 
     // Unknown attribute
     ASTAttrNode unknownAttr = ASTAttrNode(CodeLoc(1l, 1l, "t.spice"));
@@ -1337,10 +1329,10 @@ f<bool> testAttributeRules() {
     assert rm.errorManager.softErrors.getSize() == 3l;
 
     // Module attributes: linker flags (incl. the ones for the current OS only) and additional sources
-    rm.compileTimeStrings.pushBack(String("-lm"));
-    rm.compileTimeStrings.pushBack(String("-ldl"));
-    rm.compileTimeStrings.pushBack(String("-framework Foo"));
-    rm.compileTimeStrings.pushBack(String("extra.c"));
+    rm.compileTimeStringValues.pushBack(String("-lm"));
+    rm.compileTimeStringValues.pushBack(String("-ldl"));
+    rm.compileTimeStringValues.pushBack(String("-framework Foo"));
+    rm.compileTimeStringValues.pushBack(String("driver.spice"));
     ASTConstantNode flagValue = ASTConstantNode(CodeLoc(10l, 1l, "t.spice"));
     flagValue.compileTimeValue.stringValueOffset = 0l;
     ASTConstantNode linuxFlagValue = ASTConstantNode(CodeLoc(11l, 1l, "t.spice"));
@@ -1379,21 +1371,24 @@ f<bool> testAttributeRules() {
     flagAttr.node.visitable = cast<IVisitable*>(&flagAttr);
     builder.visitModAttr(&modAttr);
     assert rm.errorManager.softErrors.getSize() == 3l; // the visited attribute was valid
-    assert rm.linkerFlags.getSize() == 2l; // '-lm' (all OSes) and '-ldl' (linux only), but not the darwin flag
-    assert rm.linkerFlags.get(0l) == "-lm";
-    assert rm.linkerFlags.get(1l) == "-ldl";
+    assert rm.linker.linkerFlags.getSize() == 2l; // '-lm' (all OSes) and '-ldl' (linux only), but not the darwin flag
+    assert rm.linker.linkerFlags.get(0l) == "-lm";
+    assert rm.linker.linkerFlags.get(1l) == "-ldl";
     assert file.sourceLinkerFlags.getSize() == 2l;
-    assert rm.additionalSourcePaths.getSize() == 1l;
-    const FilePath& extraSource = rm.additionalSourcePaths.get(0l);
-    assert String(extraSource.toGenericString()) == "/tmp/extra.c"; // relative to the source file
+    assert rm.linker.linkedFiles.getSize() == 1l;
+    const FilePath& extraSource = rm.linker.linkedFiles.get(0l);
+    assert extraSource.getFileName() == "driver.spice"; // relative to the source file
     assert file.sourceAdditionalSourcePaths.getSize() == 1l;
     return true;
 }
 
 #[test, test.name="SymbolTableBuilder Smoke test"]
 public f<bool> testSymbolTableBuilderSmoke() {
-    assert testMainFunctionRules();
-    assert testDefinitionRules();
-    assert testAttributeRules();
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    assert testMainFunctionRules(rm);
+    assert testDefinitionRules(rm);
+    assert testAttributeRules(rm);
     return true;
 }

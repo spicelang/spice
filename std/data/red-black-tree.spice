@@ -9,6 +9,32 @@ type V dyn;
 // Enums
 type NodeColor enum { RED, BLACK }
 
+// Link external functions
+ext f<int> strcmp(string, string);
+
+/**
+ * Checks if the first key sorts before the second one. The tree orders its keys with this function, because the '<' operator
+ * cannot be overloaded. Key types without a built-in '<' provide an overload of this function.
+ *
+ * @param lhs First key
+ * @param rhs Second key
+ * @return Sorts before or not
+ */
+inline f<bool> isKeyLess<K>(const K& lhs, const K& rhs) {
+    return lhs < rhs;
+}
+
+/**
+ * Checks if the first string sorts lexicographically before the second one
+ *
+ * @param lhs First string
+ * @param rhs Second string
+ * @return Sorts before or not
+ */
+f<bool> isKeyLess(const String& lhs, const String& rhs) {
+    return strcmp(lhs.getRaw(), rhs.getRaw()) < 0;
+}
+
 /**
  * Node of a Red-Black Tree
  */
@@ -109,7 +135,7 @@ public p RedBlackTree.insert(const K& key, const V& value) {
     Node<K, V>* x = this.rootNode;
     while x != nil<Node<K, V>*> {
         y = x;
-        if newNode.key < x.key {
+        if isKeyLess(newNode.key, x.key) {
             x = x.childLeft;
         } else {
             x = x.childRight;
@@ -120,7 +146,7 @@ public p RedBlackTree.insert(const K& key, const V& value) {
     newNode.parent = y;
     if y == nil<Node<K, V>*> {
         this.rootNode = newNode;
-    } else if newNode.key < y.key {
+    } else if isKeyLess(newNode.key, y.key) {
         y.childLeft = newNode;
     } else {
         y.childRight = newNode;
@@ -493,7 +519,7 @@ f<Node<K, V>*> RedBlackTree.search(const K& key) {
     while currentNode != nil<Node<K, V>*> {
         if key == currentNode.key {
             return currentNode;
-        } else if key < currentNode.key {
+        } else if isKeyLess(key, currentNode.key) {
             currentNode = currentNode.childLeft;
         } else {
             currentNode = currentNode.childRight;

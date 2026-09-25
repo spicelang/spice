@@ -80,6 +80,24 @@ public f<T*> BlockAllocator.reserve<T>() {
     return ptr;
 }
 
+/**
+ * Get the total number of bytes, which were allocated for memory blocks
+ *
+ * @return Total allocated size in bytes
+ */
+public f<unsigned long> BlockAllocator.getTotalAllocatedSize() {
+    return cast<unsigned long>(this.memoryBlocks.getSize()) * this.blockSize;
+}
+
+/**
+ * Get the number of objects, which were reserved via this allocator
+ *
+ * @return Number of allocations
+ */
+public f<unsigned long> BlockAllocator.getAllocationCount() {
+    return cast<unsigned long>(this.allocatedObjects.getSize());
+}
+
 public p BlockAllocator.allocateNewBlock() {
     // Allocate a new block and immediately reinterpret it as a plain byte*. The 'memoryManager.allocate'
     // result is a 'heap byte*'; binding it to a named local would make it an owning pointer that is freed
