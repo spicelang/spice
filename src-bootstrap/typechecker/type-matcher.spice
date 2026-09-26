@@ -4,6 +4,8 @@ import "std/data/unordered-map";
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/generic-type";
+import "bootstrap/model/struct";
+import "bootstrap/model/interface";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";

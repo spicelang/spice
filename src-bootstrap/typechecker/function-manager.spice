@@ -8,6 +8,7 @@ import "std/data/pair";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
+import "bootstrap/model/struct";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
@@ -37,7 +38,7 @@ const string MAIN_FUNCTION_NAME = "main";
  * @param nodeFunctionList Optional list to collect all inserted manifestations into (owned by the declaration node)
  * @return The first inserted manifestation
  */
-public f<Function*> insert(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
+public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
     // Open a new manifestation list for the function definition
     const String fctId = baseFunction.name + ":" + baseFunction.declNode.codeLoc.toString();
     insertScope.functions.insert(fctId, FunctionManifestationList());
@@ -197,7 +198,7 @@ public f<Function*> insertSubstantiation(Scope* insertScope, const Function& new
  * @param strictQualifierMatching Match argument and this type qualifiers strictly
  * @return Found function or nil
  */
-public f<const Function*> lookup(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, bool strictQualifierMatching) {
+public f<const Function*> lookupFunction(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, bool strictQualifierMatching) {
     const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT];
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
 
@@ -255,7 +256,7 @@ public f<const Function*> lookup(Scope* matchScope, const String& reqName, const
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nil
  */
-public f<Function*> match(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, const QualTypeList& templateTypeHints, bool strictQualifierMatching, const ASTNode* callNode) {
+public f<Function*> matchFunction(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, const QualTypeList& templateTypeHints, bool strictQualifierMatching, const ASTNode* callNode) {
     const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
 

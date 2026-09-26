@@ -118,7 +118,7 @@ public f<ScopeType> Scope.getScopeType() {
  * Get the number of field symbols in this (struct) scope
  */
 public f<unsigned long> Scope.getFieldCount() {
-    assert this.scopeType == ScopeType::STRUCT;
+    assert this.scopeType == ScopeType::STRUCT || this.scopeType == ScopeType::UNION;
     return this.symbolTable.getFieldCount();
 }
 

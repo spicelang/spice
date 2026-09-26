@@ -231,7 +231,7 @@ public f<Interface*> QualType.getInterface(const ASTNode* node) {
  */
 public f<Union*> QualType.getUnion(const ASTNode* node, const QualTypeList& templateTypes) {
     assert this.is(SuperType::TY_UNION);
-    // ToDo: Wire up to UnionManager.match once the model/typechecker layer is available.
+    // ToDo: Wire up to UnionManager.matchUnion once the model/typechecker layer is available.
     return nil<Union*>;
 }
 

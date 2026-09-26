@@ -7,6 +7,7 @@ import "std/data/pair";
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/struct";
+import "bootstrap/model/interface";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
@@ -26,7 +27,7 @@ public type StructRegistry alias Map</*structId=*/String, /*manifestationList=*/
  * @param nodeStructList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted struct manifestation
  */
-public f<Struct*> insert(Scope* insertScope, Struct& spiceStruct, Vector<Struct*>* nodeStructList) {
+public f<Struct*> insertStruct(Scope* insertScope, Struct& spiceStruct, Vector<Struct*>* nodeStructList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
     const String structId = spiceStruct.name + ":" + spiceStruct.declNode.codeLoc.toString();
     insertScope.structs.insert(structId, StructManifestationList());
@@ -62,7 +63,7 @@ f<Struct*> insertSubstantiation(Scope* insertScope, Struct& newManifestation, co
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nil
  */
-public f<Struct*> match(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
     // Loop over struct registry to find structs, that match the requirements of the instantiation
     Vector<Struct*> matches;
     foreach Pair<const String&, StructManifestationList&> defEntry : matchScope.structs {

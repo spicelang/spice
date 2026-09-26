@@ -41,7 +41,7 @@ public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
                 /*isComposition*/false
             };
         }
-        case SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_STRING, SuperType::TY_BOOL, SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_ARRAY, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
+        case SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_STRING, SuperType::TY_BOOL, SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_ARRAY, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
             return TypeQualifiers{
                 /*isConst=*/false,
                 /*isSigned*/false,

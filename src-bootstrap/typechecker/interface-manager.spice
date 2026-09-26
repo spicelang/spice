@@ -29,7 +29,7 @@ public type InterfaceRegistry alias Map<CodeLoc, InterfaceManifestationList>;
  * @param nodeInterfaceList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted interface manifestation
  */
-public f<Interface*> insert(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
+public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
     insertScope.interfaces.insert(spiceInterface.declNode.codeLoc, InterfaceManifestationList());
 
@@ -63,7 +63,7 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
  * @param node Instantiation AST node for printing error messages
  * @return Matched interface or nil
  */
-public f<Interface*> match(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
     // Loop over interface registry to find interfaces, that match the requirements of the instantiation
     Vector<Interface*> matches;
     foreach Pair<const CodeLoc&, InterfaceManifestationList&> defEntry : matchScope.interfaces {

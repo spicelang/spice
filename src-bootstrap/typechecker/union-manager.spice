@@ -26,7 +26,7 @@ public type UnionRegistry alias Map</*unionId=*/String, /*manifestationList=*/Un
  * @param nodeUnionList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted union manifestation
  */
-public f<Union*> insert(Scope* insertScope, Union& spiceUnion, Vector<Union*>* nodeUnionList) {
+public f<Union*> insertUnion(Scope* insertScope, Union& spiceUnion, Vector<Union*>* nodeUnionList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the union
     const String unionId = spiceUnion.name + ":" + spiceUnion.declNode.codeLoc.toString();
     insertScope.unions.insert(unionId, UnionManifestationList());
@@ -62,7 +62,7 @@ f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, cons
  * @param node Instantiation AST node for printing error messages
  * @return Matched union or nil
  */
-public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
     // Loop over union registry to find unions, that match the requirements of the instantiation
     Vector<Union*> matches;
     foreach Pair<const String&, UnionManifestationList&> defEntry : matchScope.unions {
