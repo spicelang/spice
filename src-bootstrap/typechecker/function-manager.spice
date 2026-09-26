@@ -5,12 +5,20 @@ import "std/data/unordered-map";
 import "std/data/pair";
 
 // Own imports
+import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/function";
+import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/type-matcher";
 
 // Aliases
 public type FunctionManifestationList alias UnorderedMap</*mangledName=*/String, Function>;
 public type FunctionRegistry alias Map</*fctId=*/String, /*manifestaionList=*/FunctionManifestationList>;
+public type Arg alias Pair</*type=*/QualType, /*isTemporary=*/bool>;
+public type ArgList alias Vector<Arg>;
 
 type MatchResult enum {
     MATCHED,
@@ -18,3 +26,733 @@ type MatchResult enum {
     SKIP_FUNCTION
 }
 
+const string MAIN_FUNCTION_NAME = "main";
+
+/**
+ * Insert a function declaration (which may still carry optional parameters) into the given scope, substantiating
+ * it into one manifestation per optional-parameter arity.
+ *
+ * @param insertScope Scope to insert the function into
+ * @param baseFunction Function to insert
+ * @param nodeFunctionList Optional list to collect all inserted manifestations into (owned by the declaration node)
+ * @return The first inserted manifestation
+ */
+public f<Function*> insert(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
+    // Open a new manifestation list for the function definition
+    const String fctId = baseFunction.name + ":" + baseFunction.declNode.codeLoc.toString();
+    insertScope.functions.insert(fctId, FunctionManifestationList());
+
+    // Collect substantiations
+    Vector<Function> manifestations;
+    substantiateOptionalParams(baseFunction, manifestations);
+    assert !manifestations.isEmpty();
+
+    // Save substantiations in declaration node
+    Function* manifestationPtr = nil<Function*>;
+    foreach const Function& manifestation : manifestations {
+        manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);
+        assert manifestationPtr != nil<Function*>;
+        if nodeFunctionList != nil<Vector<Function*>*> {
+            nodeFunctionList.pushBack(manifestationPtr);
+        }
+    }
+
+    if nodeFunctionList == nil<Vector<Function*>*> {
+        return manifestationPtr;
+    }
+
+    assert !nodeFunctionList.isEmpty();
+    return nodeFunctionList.front();
+}
+
+/**
+ * Create definite functions from ambiguous ones, in regard to optional arguments.
+ *
+ * Example:
+ * int testFunc(string, int?, double?)
+ * gets
+ * int testFunc(string)
+ * int testFunc(string, int)
+ * int testFunc(string, int, double)
+ *
+ * This function also accepts functions, that are already definite, but does nothing to them.
+ *
+ * @param baseFunction Ambiguous base function
+ * @param manifestations Vector to store the definite manifestations
+ */
+public p substantiateOptionalParams(const Function& baseFunction, Vector<Function>& manifestations) {
+    // Handle the case of no parameters -> simply return the base function
+    if baseFunction.paramList.isEmpty() {
+        manifestations.pushBack(baseFunction);
+        return;
+    }
+
+    ParamList currentFunctionParamTypes;
+    currentFunctionParamTypes.reserve(cast<unsigned long>(baseFunction.paramList.getSize()));
+    bool metFirstOptionalParam = false;
+    Function manifestation = baseFunction;
+
+    // Loop over all parameters
+    foreach const Param& param : baseFunction.paramList {
+        // Check if we have a mandatory parameter
+        if !param.isOptional {
+            currentFunctionParamTypes.pushBack(Param{param.qualType, false});
+            continue;
+        }
+
+        // Add substantiation without the optional parameter
+        if !metFirstOptionalParam {
+            manifestation.paramList = currentFunctionParamTypes;
+            manifestations.pushBack(manifestation);
+            // Now we cannot accept mandatory parameters anymore
+            metFirstOptionalParam = true;
+        }
+
+        // Add substantiation with the optional parameter
+        currentFunctionParamTypes.pushBack(Param{param.qualType, false});
+        manifestation.paramList = currentFunctionParamTypes;
+        manifestations.pushBack(manifestation);
+    }
+
+    // Ensure at least once manifestation
+    if manifestations.isEmpty() {
+        manifestations.pushBack(baseFunction);
+    }
+}
+
+/**
+ * Build the implicit main function, based on the given parameter types
+ *
+ * @param entry Symbol table entry of the main function
+ * @param paramTypes Parameter types of the main function
+ * @param declNode Declaration AST node
+ * @return The main function
+ */
+public f<Function> createMainFunction(SymbolTableEntry* entry, const QualTypeList& paramTypes, ASTNode* declNode) {
+    ParamList paramList;
+    foreach const QualType& paramType : paramTypes {
+        paramList.pushBack(Param{paramType, false});
+    }
+    Vector<GenericType> noTemplates;
+    return Function(String(MAIN_FUNCTION_NAME), entry, QualType(SuperType::TY_DYN), QualType(SuperType::TY_INT), paramList, noTemplates, declNode);
+}
+
+/**
+ * Search all manifestation lists of the given scope for a function with the given signature
+ *
+ * @param scope Scope to search in
+ * @param signature Signature to search for
+ * @return Found function or nil
+ */
+public f<Function*> findManifestationBySignature(Scope* scope, const String& signature) {
+    foreach Pair<const String&, FunctionManifestationList&> entry : scope.functions {
+        FunctionManifestationList& manifestations = entry.getSecond();
+        if manifestations.contains(signature) {
+            return &manifestations.get(signature);
+        }
+    }
+    return nil<Function*>;
+}
+
+/**
+ * Insert one already-substantiated function manifestation into the given scope
+ *
+ * @param insertScope Scope to insert the function into
+ * @param newManifestation Substantiated function manifestation
+ * @param declNode Declaration AST node
+ * @return Inserted function manifestation
+ */
+public f<Function*> insertSubstantiation(Scope* insertScope, const Function& newManifestation, const ASTNode* declNode) {
+    assert newManifestation.hasSubstantiatedParams();
+
+    const String signature = newManifestation.getSignature(true, true, false, true);
+
+    // Check if the function exists already
+    foreach Pair<const String&, FunctionManifestationList&> entry : insertScope.functions {
+        if entry.getSecond().contains(signature) {
+            // ToDo: Report as a hard error ('<signature> is declared twice') once error propagation for
+            // typechecker passes is designed. For now, fall through and keep the first declaration.
+            return &entry.getSecond().get(signature);
+        }
+    }
+
+    // Retrieve the matching manifestation list of the scope
+    const String fctId = newManifestation.name + ":" + declNode.codeLoc.toString();
+    assert insertScope.functions.contains(fctId);
+    FunctionManifestationList& manifestationList = insertScope.functions.get(fctId);
+
+    // Add substantiated function
+    manifestationList.upsert(signature, newManifestation);
+    return &manifestationList.get(signature);
+}
+
+/**
+ * Checks if a function exists by matching it, but not setting it to used
+ *
+ * @param matchScope Scope to match against
+ * @param reqName Function name requirement
+ * @param reqThisType This type requirement
+ * @param reqArgs Argument requirement
+ * @param strictQualifierMatching Match argument and this type qualifiers strictly
+ * @return Found function or nil
+ */
+public f<const Function*> lookup(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, bool strictQualifierMatching) {
+    const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT];
+    assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
+
+    // Loop over function registry to find functions, that match the requirements of the call
+    Vector<const Function*> matches;
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            const Function& presetFunction = manEntry.getSecond();
+            assert presetFunction.hasSubstantiatedParams(); // No optional params are allowed at this point
+
+            const bool anyArgGeneric = argListHasAnyGenericParts(reqArgs);
+            const bool requestedFullySubstantiated = !reqThisType.hasAnyGenericParts() && !anyArgGeneric;
+
+            // - search for concrete fct: Only match against fully substantiated versions to prevent double matching of a function
+            // - search for generic fct: Only match against generic preset functions
+            if presetFunction.isFullySubstantiated() != requestedFullySubstantiated {
+                continue;
+            }
+
+            // Copy the function to be able to substantiate types
+            Function candidate = presetFunction;
+            candidate.typeMapping.clear();
+
+            bool forceSubstantiation = false;
+            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, nil<const ASTNode*>);
+            if matchResult == MatchResult::SKIP_FUNCTION {
+                break; // Leave the whole function
+            }
+            if matchResult == MatchResult::SKIP_MANIFESTATION {
+                continue; // Leave this manifestation and try the next one
+            }
+
+            // Add to matches
+            matches.pushBack(&matchScope.functions.get(defEntry.getFirst()).get(manEntry.getFirst()));
+
+            break; // Leave the whole manifestation list to not double-match the manifestation
+        }
+    }
+
+    // Return the very match or a nil
+    return matches.isEmpty() ? nil<const Function*> : matches.front();
+}
+
+/**
+ * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
+ * If more than one function matches the requirement, this is reported (see ToDo below).
+ *
+ * @param matchScope Scope to match against
+ * @param reqName Function name requirement
+ * @param reqThisType This type requirement
+ * @param reqArgs Argument requirement
+ * @param templateTypeHints Template type requirement
+ * @param strictQualifierMatching Match argument and this type qualifiers strictly
+ * @param callNode Call AST node for printing error messages
+ * @return Matched function or nil
+ */
+public f<Function*> match(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, const QualTypeList& templateTypeHints, bool strictQualifierMatching, const ASTNode* callNode) {
+    const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
+
+    // Loop over function registry to find functions, that match the requirements of the call
+    Vector<Function*> matches;
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        const String& fctId = defEntry.getFirst();
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            const String& signature = manEntry.getFirst();
+            const Function& presetFunction = manEntry.getSecond();
+            assert presetFunction.hasSubstantiatedParams(); // No optional params are allowed at this point
+
+            // Skip generic and newly inserted substantiations to prevent double matching of a function
+            if presetFunction.isGenericSubstantiation() || presetFunction.isNewlyInserted {
+                continue;
+            }
+
+            // Copy the function to be able to substantiate types
+            Function candidate = presetFunction;
+
+            // Prepare type mapping, based on the given initial type mapping
+            candidate.typeMapping.clear();
+            foreach unsigned long i, const GenericType& candidateTemplateType : candidate.templateTypes {
+                if i >= cast<unsigned long>(templateTypeHints.getSize()) {
+                    break;
+                }
+                // Skip template slots that are not generic (anymore)
+                if !candidateTemplateType.qualType.is(SuperType::TY_GENERIC) {
+                    continue;
+                }
+                const String& typeName = candidateTemplateType.qualType.getSubType();
+                const QualType& templateType = templateTypeHints.get(i);
+                candidate.typeMapping.upsert(typeName, templateType);
+            }
+
+            bool forceSubstantiation = false;
+            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, callNode);
+            if matchResult == MatchResult::SKIP_FUNCTION {
+                break; // Leave the whole function
+            }
+            if matchResult == MatchResult::SKIP_MANIFESTATION {
+                continue; // Leave this manifestation and try the next one
+            }
+
+            // We found a match! -> Set the actual candidate and its entry to used
+            candidate.used = true;
+            candidate.entry.used = true;
+
+            // Check if the function is generic and needs to be substantiated
+            if presetFunction.templateTypes.isEmpty() && !forceSubstantiation {
+                assert matchScope.functions.contains(fctId) && matchScope.functions.get(fctId).contains(signature);
+                Function* fctMatch = &matchScope.functions.get(fctId).get(signature);
+                fctMatch.used = true;
+                matches.pushBack(fctMatch);
+                continue; // Match was successful -> match the next function
+            }
+
+            // Check if we already have this manifestation and can simply re-use it. matchManifestation may have
+            // redirected matchScope from the generic struct scope to the concrete manifestation scope.
+            const String newSignature = candidate.getSignature(true, true, false, true);
+            Function* existingManifestation = findManifestationBySignature(matchScope, newSignature);
+            if existingManifestation != nil<Function*> {
+                existingManifestation.used = true;
+                matches.pushBack(existingManifestation);
+                break; // Leave the whole manifestation list to not double-match the manifestation
+            }
+
+            // Insert the substantiated version if required
+            Function* substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
+            substantiatedFunction.genericPreset = &matchScope.functions.get(fctId).get(signature);
+            substantiatedFunction.alreadyTypeChecked = false;
+            // ToDo: Register the substantiation with declNode->getFctManifestations(reqName) once the AST node
+            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            substantiatedFunction.isNewlyInserted = true; // To not iterate over it in the same matching
+
+            // Copy function entry
+            const String newScopeName = substantiatedFunction.getScopeName();
+            matchScope.lookupStrict(presetFunction.entry.name).used = true;
+            substantiatedFunction.entry = matchScope.symbolTable.copySymbol(presetFunction.entry.name, newScopeName);
+            assert substantiatedFunction.entry != nil<SymbolTableEntry*>;
+
+            // Copy function scope. Interface method declarations have no body and therefore no child scope to copy.
+            const String oldScopeName = presetFunction.getScopeName();
+            if matchScope.children.contains(oldScopeName) {
+                matchScope.copyChildScope(oldScopeName, newScopeName);
+                Scope* childScope = matchScope.getChildScope(newScopeName);
+                assert childScope != nil<Scope*>;
+                childScope.isGenericScope = false;
+                substantiatedFunction.bodyScope = childScope;
+
+                // Insert symbols for generic type names with concrete types into the child block
+                foreach Pair<const String&, QualType&> mapping : substantiatedFunction.typeMapping {
+                    childScope.insertGenericType(mapping.getFirst(), GenericType(mapping.getSecond()));
+                }
+
+                // Substantiate the 'this' entry in the new function scope
+                if presetFunction.isMethod() && !presetFunction.templateTypes.isEmpty() {
+                    SymbolTableEntry* thisEntry = childScope.lookupStrict(String(THIS_VARIABLE_NAME));
+                    assert thisEntry != nil<SymbolTableEntry*>;
+                    thisEntry.updateType(candidate.thisType.toPtr(callNode), /*overwriteExistingType=*/true);
+                }
+            }
+
+            // Add to matched functions
+            matches.pushBack(substantiatedFunction);
+
+            break; // Leave the whole manifestation list to not double-match the manifestation
+        }
+    }
+
+    // If no matches were found, return a nil
+    if matches.isEmpty() {
+        return nil<Function*>;
+    }
+
+    // Tie-breaking: if multiple candidates match, narrow them by qualifier specificity and by preferring
+    // explicitly declared overloads over generic substitutions (see breakOverloadTie).
+    breakOverloadTie(matches, reqArgs);
+
+    // Check if more than one function matches the requirements
+    if matches.getSize() > 1l {
+        // ToDo: Report as a hard error (FUNCTION_AMBIGUITY) once error propagation for typechecker passes is
+        // designed. For now, deterministically pick the first candidate.
+    }
+    Function* matchedFunction = matches.front();
+    matchedFunction.isNewlyInserted = false;
+
+    // ToDo: Trigger revisit in type checker once TypeChecker::requestRevisitIfRequired is ported.
+
+    // Return the very match
+    return matchedFunction;
+}
+
+f<bool> argListHasAnyGenericParts(const ArgList& args) {
+    foreach const Arg& arg : args {
+        if arg.getFirst().hasAnyGenericParts() {
+            return true;
+        }
+    }
+    return false;
+}
+
+f<MatchResult> matchManifestation(Function& candidate, Scope*& matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& forceSubstantiation, const ASTNode* callNode) {
+    // Check name requirement
+    if !matchName(candidate, reqName) {
+        return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
+    }
+
+    // Check 'this' type requirement
+    if !matchThisType(candidate, reqThisType, typeMapping, strictQualifierMatching, callNode) {
+        return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+    }
+
+    // Check arg types requirement
+    if !matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, forceSubstantiation, callNode) {
+        return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+    }
+
+    // Check if there are unresolved generic types
+    unsigned long genericCount = 0ul;
+    foreach const GenericType& templateType : candidate.templateTypes {
+        if templateType.qualType.is(SuperType::TY_GENERIC) {
+            genericCount++;
+        }
+    }
+    if cast<unsigned long>(typeMapping.getSize()) < genericCount {
+        return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+    }
+
+    // Substantiate return type
+    substantiateReturnType(candidate, typeMapping, callNode);
+
+    // Set the match scope to the scope of the concrete substantiation
+    if !candidate.thisType.is(SuperType::TY_DYN) {
+        // If we only have the generic struct scope, lookup the concrete manifestation scope
+        if matchScope.isGenericScope {
+            Struct* spiceStruct = candidate.thisType.getStruct(candidate.declNode);
+            assert spiceStruct != nil<Struct*>;
+            matchScope = spiceStruct.scope;
+        }
+        candidate.thisType = candidate.thisType.getWithBodyScope(matchScope);
+    }
+
+    return MatchResult::MATCHED;
+}
+
+/**
+ * Checks if the matching candidate fulfills the name requirement
+ */
+f<bool> matchName(const Function& candidate, const String& reqName) {
+    return candidate.name == reqName;
+}
+
+/**
+ * Checks if the matching candidate fulfills the 'this' type requirement
+ */
+f<bool> matchThisType(Function& candidate, const QualType& reqThisType, TypeMapping& typeMapping, bool strictQualifierMatching, const ASTNode* callNode) {
+    // Shortcut for procedures
+    if candidate.thisType.is(SuperType::TY_DYN) && reqThisType.is(SuperType::TY_DYN) {
+        return true;
+    }
+
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
+        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
+
+    // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
+    if !matchRequestedToCandidateType(candidate.thisType, reqThisType, typeMapping, genericTypeResolver, strictQualifierMatching) {
+        return false;
+    }
+
+    // Substantiate the candidate param type, based on the type mapping
+    if candidate.thisType.hasAnyGenericParts() {
+        substantiateTypeWithTypeMapping(candidate.thisType, typeMapping, callNode);
+    }
+
+    return true;
+}
+
+/**
+ * Checks if the matching candidate fulfills the argument types requirement
+ */
+f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& needsSubstantiation, const ASTNode* callNode) {
+    // If the number of arguments does not match with the number of params, the matching fails
+    if !candidate.isVararg && reqArgs.getSize() != candidate.paramList.getSize() {
+        return false;
+    }
+    // In the case of a vararg function, we only disallow fewer arguments than parameters
+    if candidate.isVararg && reqArgs.getSize() < candidate.paramList.getSize() {
+        return false;
+    }
+
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
+        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
+
+    // Loop over all parameters
+    foreach unsigned long i, const Arg& arg : reqArgs {
+        // In the case of a vararg function candidate, we can accept additional arguments, that are not defined in
+        // the candidate, but we need to modify the candidate param list to accept them
+        if candidate.isVararg && i >= cast<unsigned long>(candidate.paramList.getSize()) {
+            candidate.paramList.pushBack(Param{arg.getFirst(), false});
+            needsSubstantiation = true; // We need to modify the candidate param types
+            continue;
+        }
+
+        // Retrieve actual and requested types
+        assert !candidate.paramList.get(i).isOptional;
+        QualType& candidateType = candidate.paramList.get(i).qualType;
+        const QualType& requestedType = arg.getFirst();
+        const bool isArgTemporary = arg.getSecond();
+
+        // Check if the requested param type matches the candidate param type. The type mapping may be extended
+        if !matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, strictQualifierMatching) {
+            return false;
+        }
+
+        // Substantiate the candidate param type, based on the type mapping
+        if candidateType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(candidateType, typeMapping, callNode);
+        }
+
+        // Check if we try to bind a non-ref temporary to a non-const ref parameter
+        if !candidateType.canBind(requestedType, isArgTemporary) {
+            // ToDo: Report as a hard error (TEMP_TO_NON_CONST_REF) once error propagation for typechecker
+            // passes is designed.
+            return false;
+        }
+
+        // If we have a function/procedure type we need to take care of the information, if it takes captures
+        const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if requestedType.isOneOf(fctOptions, len(fctOptions)) && requestedType.hasLambdaCaptures() {
+            candidateType = candidateType.getWithLambdaCaptures();
+            needsSubstantiation = true;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Substantiates the candidate return type, based on the given type mapping
+ */
+public p substantiateReturnType(Function& candidate, const TypeMapping& typeMapping, const ASTNode* callNode) {
+    if candidate.returnType.hasAnyGenericParts() {
+        substantiateTypeWithTypeMapping(candidate.returnType, typeMapping, callNode);
+    }
+}
+
+/**
+ * Searches the candidate template types for a generic type object with a certain name and return it
+ */
+f<const GenericType*> getGenericTypeOfCandidateByName(const Function& candidate, const String& templateTypeName) {
+    foreach const GenericType& templateType : candidate.templateTypes {
+        if templateType.qualType.getSubType() == templateTypeName {
+            return &templateType;
+        }
+    }
+    return nil<const GenericType*>;
+}
+
+/**
+ * Narrow a multi-match overload set by preferring the candidate whose parameter qualifiers most closely match
+ * the argument qualifiers. This resolves the typical copy-vs-move ctor ambiguity where both a `const T&`
+ * (copy) and a `T&` (move) ctor match a non-const lvalue argument - we prefer the non-const-ref candidate
+ * (move) since it requires no constification. When the argument is const, we prefer the const-ref candidate
+ * (copy) since binding to a non-const ref would require const-loss. As a secondary criterion, an explicitly
+ * declared (non-generic) overload is preferred over a generic substitution that matches equally well.
+ *
+ * Modifies `matches` in place, removing any candidate that scores worse than the best one. A no-op if there
+ * are fewer than two candidates.
+ */
+public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
+    if matches.getSize() < 2l {
+        return;
+    }
+
+    const int CONSTIFY_PENALTY = 1;
+    const int CONST_LOSS_PENALTY = 100;
+    // An exact type match is always preferred over a match that required an implicit upcast (struct to
+    // implemented interface, or struct to composed base struct). This keeps e.g. 'f(Derived)' preferred
+    // over 'f(Base)' when called with a Derived, instead of reporting an ambiguity.
+    const int UPCAST_PENALTY = 1000;
+
+    int bestScore = 2147483647;
+    foreach const Function* m : matches {
+        const int score = scoreSpecificity(*m, reqArgs, CONSTIFY_PENALTY, CONST_LOSS_PENALTY, UPCAST_PENALTY);
+        if score < bestScore {
+            bestScore = score;
+        }
+    }
+
+    Vector<Function*> filtered;
+    filtered.reserve(cast<unsigned long>(matches.getSize()));
+    foreach Function* m : matches {
+        if scoreSpecificity(*m, reqArgs, CONSTIFY_PENALTY, CONST_LOSS_PENALTY, UPCAST_PENALTY) == bestScore {
+            filtered.pushBack(m);
+        }
+    }
+    matches = filtered;
+
+    // Secondary tie-break: prefer an explicitly declared (non-generic) overload over a generic substitution
+    // when both match equally well, mirroring C++ overload resolution where a non-template wins over a
+    // template specialization.
+    bool anyNonGeneric = false;
+    foreach const Function* m : matches {
+        if !m.isGenericSubstantiation() {
+            anyNonGeneric = true;
+        }
+    }
+    if matches.getSize() > 1l && anyNonGeneric {
+        Vector<Function*> nonGenericMatches;
+        foreach Function* m : matches {
+            if !m.isGenericSubstantiation() {
+                nonGenericMatches.pushBack(m);
+            }
+        }
+        matches = nonGenericMatches;
+    }
+}
+
+f<int> scoreSpecificity(const Function& fct, const ArgList& reqArgs, int constifyPenalty, int constLossPenalty, int upcastPenalty) {
+    int penalty = 0;
+    unsigned long limit = cast<unsigned long>(reqArgs.getSize());
+    if cast<unsigned long>(fct.paramList.getSize()) < limit {
+        limit = cast<unsigned long>(fct.paramList.getSize());
+    }
+    unsigned long i = 0ul;
+    while i < limit {
+        const QualType& paramType = fct.paramList.get(i).qualType;
+        const QualType& argType = reqArgs.get(i).getFirst();
+        const bool paramIsConst = paramType.removeReferenceWrapper().isConst();
+        const bool argIsConst = argType.removeReferenceWrapper().isConst();
+        if paramIsConst && !argIsConst {
+            penalty += constifyPenalty;
+        } else if !paramIsConst && argIsConst {
+            penalty += constLossPenalty;
+        }
+        // Penalize matches that were only possible through an implicit upcast
+        QualType paramBase = paramType;
+        QualType argBase = argType;
+        unwrapBothWithRefWrappers(paramBase, argBase);
+        if !paramBase.matches(argBase, true, true, true) {
+            penalty += upcastPenalty;
+        }
+        i++;
+    }
+    return penalty;
+}
+
+type CtorKind enum {
+    ANY_NON_COPY_NON_MOVE,
+    COPY,
+    MOVE
+}
+
+f<bool> hasCtor(Scope* matchScope, CtorKind kind) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            const Function& function = manEntry.getSecond();
+            if function.name != String(CTOR_FUNCTION_NAME) {
+                continue;
+            }
+            const bool singleSelfRefParam = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
+            const bool isCopyCtor = singleSelfRefParam && function.paramList.get(0ul).qualType.isConstRef();
+            const bool isMoveCtor = singleSelfRefParam && !function.paramList.get(0ul).qualType.isConstRef();
+            if kind == CtorKind::COPY && isCopyCtor {
+                return true;
+            }
+            if kind == CtorKind::MOVE && isMoveCtor {
+                return true;
+            }
+            if kind == CtorKind::ANY_NON_COPY_NON_MOVE && !isCopyCtor && !isMoveCtor {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given scope contains any constructor at all
+ */
+public f<bool> hasAnyCtor(Scope* matchScope) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            if manEntry.getSecond().name == String(CTOR_FUNCTION_NAME) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+public f<bool> hasAnyNonCopyCtor(Scope* matchScope) {
+    return hasCtor(matchScope, CtorKind::ANY_NON_COPY_NON_MOVE);
+}
+
+public f<bool> hasCopyCtor(Scope* matchScope) {
+    return hasCtor(matchScope, CtorKind::COPY);
+}
+
+public f<bool> hasUserCopyCtor(Scope* matchScope) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            const Function& function = manEntry.getSecond();
+            if function.name != String(CTOR_FUNCTION_NAME) || function.implicitDefault {
+                continue;
+            }
+            const bool isCopyCtor = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isConstRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
+            if isCopyCtor {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+public f<bool> hasMoveCtor(Scope* matchScope) {
+    return hasCtor(matchScope, CtorKind::MOVE);
+}
+
+public f<Function*> findMoveCtor(Scope* matchScope) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            Function& function = manEntry.getSecond();
+            if function.name != String(CTOR_FUNCTION_NAME) {
+                continue;
+            }
+            const bool isMoveCtor = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isRef() && !function.paramList.get(0ul).qualType.isConstRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
+            if isMoveCtor {
+                return &function;
+            }
+        }
+    }
+    return nil<Function*>;
+}
+
+public f<bool> hasDefaultCtor(Scope* matchScope) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            const Function& function = manEntry.getSecond();
+            if function.name == String(CTOR_FUNCTION_NAME) && function.paramList.isEmpty() {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+public f<bool> hasDtor(Scope* matchScope) {
+    foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
+        foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
+            if manEntry.getSecond().name == String(DTOR_FUNCTION_NAME) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

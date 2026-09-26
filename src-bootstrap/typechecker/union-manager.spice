@@ -1,0 +1,258 @@
+// Std imports
+import "std/data/map";
+import "std/data/unordered-map";
+import "std/data/vector";
+import "std/data/pair";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/model/union";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/type-matcher";
+
+// Type aliases
+public type UnionManifestationList alias UnorderedMap</*mangledName=*/String, Union>;
+public type UnionRegistry alias Map</*unionId=*/String, /*manifestationList=*/UnionManifestationList>;
+
+/**
+ * Insert a union declaration into the given scope
+ *
+ * @param insertScope Scope to insert the union into
+ * @param spiceUnion Union to insert
+ * @param nodeUnionList List to collect the inserted manifestation into (owned by the declaration node)
+ * @return Inserted union manifestation
+ */
+public f<Union*> insert(Scope* insertScope, Union& spiceUnion, Vector<Union*>* nodeUnionList) {
+    // Open a new manifestation list. Which gets filled by the substantiated manifestations of the union
+    const String unionId = spiceUnion.name + ":" + spiceUnion.declNode.codeLoc.toString();
+    insertScope.unions.insert(unionId, UnionManifestationList());
+
+    // Save substantiation in declaration node
+    Union* substantiation = insertSubstantiation(insertScope, spiceUnion, spiceUnion.declNode);
+    nodeUnionList.pushBack(substantiation);
+
+    return substantiation;
+}
+
+f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, const ASTNode* declNode) {
+    const String signature = newManifestation.structBase.getSignature();
+
+    // Retrieve the matching manifestation list of the scope
+    const String unionId = newManifestation.name + ":" + declNode.codeLoc.toString();
+    assert insertScope.unions.contains(unionId);
+    UnionManifestationList& manifestationList = insertScope.unions.get(unionId);
+
+    // Add substantiated union
+    newManifestation.manifestationIndex = manifestationList.getSize();
+    manifestationList.upsert(signature, newManifestation);
+    return &manifestationList.get(signature);
+}
+
+/**
+ * Check if there is a union in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one union matches the requirement, this is reported (see ToDo below).
+ *
+ * @param matchScope Scope to match against
+ * @param qt Union name requirement
+ * @param reqTemplateTypes Template types to substantiate generic types
+ * @param node Instantiation AST node for printing error messages
+ * @return Matched union or nil
+ */
+public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // Loop over union registry to find unions, that match the requirements of the instantiation
+    Vector<Union*> matches;
+    foreach Pair<const String&, UnionManifestationList&> defEntry : matchScope.unions {
+        const String& unionId = defEntry.getFirst();
+        foreach Pair<const String&, Union&> manEntry : defEntry.getSecond() {
+            const String& mangledName = manEntry.getFirst();
+            const Union& presetUnion = manEntry.getSecond();
+            // Skip generic and newly inserted substantiations to prevent double matching of a union
+            if presetUnion.structBase.isGenericSubstantiation() || presetUnion.isNewlyInserted {
+                continue;
+            }
+
+            // Copy the union to be able to substantiate types
+            Union candidate = presetUnion;
+
+            // Check name requirement
+            if !matchName(candidate, qt) {
+                break; // Leave the whole manifestation list, because all manifestations in this list have the same name
+            }
+
+            // Prepare mapping table from generic type name to concrete type
+            candidate.typeMapping.clear();
+
+            // Check template types requirement
+            if !matchTemplateTypes(candidate, reqTemplateTypes, candidate.typeMapping, node) {
+                continue; // Leave this manifestation and continue with the next one
+            }
+
+            // Map field types from generic to concrete
+            substantiateFieldTypes(candidate, candidate.typeMapping, node);
+
+            // We found a match! -> Set the actual candidate and its entry to used
+            candidate.used = true;
+            candidate.entry.used = true;
+
+            // Check if it needs to be substantiated
+            if presetUnion.templateTypes.isEmpty() {
+                assert matchScope.unions.contains(unionId) && matchScope.unions.get(unionId).contains(mangledName);
+                Union* unionMatch = &matchScope.unions.get(unionId).get(mangledName);
+                unionMatch.used = true;
+                matches.pushBack(unionMatch);
+                continue; // Match was successful -> match the next union
+            }
+
+            // Check if we already have this manifestation and can simply re-use it
+            const String candidateSignature = candidate.structBase.getSignature();
+            if defEntry.getSecond().contains(candidateSignature) {
+                Union& existingManifestation = defEntry.getSecond().get(candidateSignature);
+                existingManifestation.used = true;
+                matches.pushBack(&existingManifestation);
+                break; // Leave the whole manifestation list to not double-match the manifestation
+            }
+
+            // Insert the substantiated version if required
+            Union* substantiatedUnion = insertSubstantiation(matchScope, candidate, presetUnion.declNode);
+            substantiatedUnion.genericPreset = &matchScope.unions.get(unionId).get(mangledName);
+            // ToDo: Register the substantiation with declNode->getUnionManifestations() once the AST node
+            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            substantiatedUnion.isNewlyInserted = true; // To not iterate over it in the same matching
+
+            // Copy union entry
+            const String newSignature = substantiatedUnion.structBase.getSignature();
+            matchScope.lookupStrict(substantiatedUnion.name).used = true;
+            substantiatedUnion.entry = matchScope.symbolTable.copySymbol(substantiatedUnion.name, newSignature);
+            assert substantiatedUnion.entry != nil<SymbolTableEntry*>;
+
+            // Copy union scope
+            const String oldScopeName = presetUnion.getScopeName();
+            const String newScopeName = substantiatedUnion.getScopeName();
+            matchScope.copyChildScope(oldScopeName, newScopeName);
+            substantiatedUnion.scope = matchScope.getChildScope(newScopeName);
+            assert substantiatedUnion.scope != nil<Scope*>;
+            substantiatedUnion.scope.isGenericScope = false;
+
+            // Attach the template types to the new union entry
+            QualType entryType = substantiatedUnion.entry.getQualType().getWithTemplateTypes(substantiatedUnion.structBase.getTemplateTypes()).getWithBodyScope(substantiatedUnion.scope);
+            substantiatedUnion.entry.updateType(entryType, true);
+
+            // Replace symbol types of field entries with concrete types
+            assert substantiatedUnion.scope != nil<Scope*>;
+            const unsigned long fieldCount = cast<unsigned long>(substantiatedUnion.fieldTypes.getSize());
+            const unsigned long explicitFieldsStartIdx = substantiatedUnion.scope.getFieldCount() - fieldCount;
+            unsigned long i = 0ul;
+            while i < fieldCount {
+                // Replace field type with concrete template type
+                SymbolTableEntry* fieldEntry = substantiatedUnion.scope.lookupField(cast<unsigned int>(explicitFieldsStartIdx + i));
+                assert fieldEntry != nil<SymbolTableEntry*> && fieldEntry.isField();
+                QualType& fieldType = substantiatedUnion.fieldTypes.get(i);
+                QualType baseType = fieldType.getBase();
+
+                // Set the body scope of fields that are of type <candidate-union>*
+                if baseType.matches(substantiatedUnion.entry.getQualType(), false, true, true) {
+                    fieldType = fieldType.replaceBaseType(baseType.getWithBodyScope(substantiatedUnion.scope));
+                }
+
+                fieldEntry.updateType(fieldType, /*overwriteExistingType=*/true);
+
+                // Instantiate structs/unions nested by value
+                if baseType.is(SuperType::TY_STRUCT) {
+                    baseType.getStruct(node);
+                } else if baseType.is(SuperType::TY_UNION) {
+                    baseType.getUnion(node);
+                }
+
+                i++;
+            }
+
+            // Add to matched unions
+            matches.pushBack(substantiatedUnion);
+        }
+    }
+
+    // If no matches were found, return a nil
+    if matches.isEmpty() {
+        return nil<Union*>;
+    }
+
+    // Check if more than one union matches the requirements
+    if matches.getSize() > 1l {
+        // ToDo: Report as a hard error (UNION_AMBIGUITY) once error propagation for typechecker passes is
+        // designed. For now, deterministically pick the first candidate.
+    }
+    Union* matchedUnion = matches.front();
+    matchedUnion.isNewlyInserted = false;
+
+    return matchedUnion;
+}
+
+/**
+ * Checks if the matching candidate fulfills the name requirement
+ */
+f<bool> matchName(const Union& candidate, const String& reqName) {
+    return candidate.name == reqName;
+}
+
+/**
+ * Checks if the matching candidate fulfills the template types requirement
+ */
+f<bool> matchTemplateTypes(Union& candidate, const QualTypeList& reqTemplateTypes, TypeMapping& typeMapping, const ASTNode* node) {
+    // Check if the number of types match
+    if reqTemplateTypes.getSize() != candidate.templateTypes.getSize() {
+        return false;
+    }
+
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
+        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
+
+    // Loop over all template types
+    foreach unsigned long i, QualType& candidateType : candidate.templateTypes {
+        const QualType& reqType = reqTemplateTypes.get(i);
+
+        // Check if the requested template type matches the candidate template type. The type mapping may be extended
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false) {
+            return false;
+        }
+
+        // Substantiate the candidate param type, based on the type mapping
+        if candidateType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(candidateType, typeMapping, node);
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Come up with the concrete field types, by applying the type mapping onto the generic field types
+ */
+p substantiateFieldTypes(Union& candidate, const TypeMapping& typeMapping, const ASTNode* node) {
+    // Loop over all explicit field types and substantiate the generic ones
+    foreach unsigned long i, QualType& fieldType : candidate.fieldTypes {
+        if fieldType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
+        }
+    }
+}
+
+/**
+ * Searches the candidate template types for a generic type object with a certain name and return it
+ */
+f<const GenericType*> getGenericTypeOfCandidateByName(const Union& candidate, const String& templateTypeName) {
+    foreach const GenericType& templateType : candidate.templateTypes {
+        if !templateType.qualType.is(SuperType::TY_GENERIC) {
+            continue;
+        }
+        if templateType.qualType.getSubType() == templateTypeName {
+            return &templateType;
+        }
+    }
+    return nil<const GenericType*>;
+}

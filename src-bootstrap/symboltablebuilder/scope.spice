@@ -13,6 +13,7 @@ import "bootstrap/model/generic-type";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
+import "bootstrap/typechecker/union-manager";
 import "bootstrap/source-file";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
@@ -73,6 +74,7 @@ public type Scope struct {
     FunctionRegistry functions
     StructRegistry structs
     InterfaceRegistry interfaces
+    UnionRegistry unions
     UnorderedMap<String, GenericType> genericTypes
     // The memory manager is declared before the allocator so that it outlives it (the allocator keeps a
     // reference to it). Each scope owns the pool its direct child scopes are allocated from.
@@ -139,6 +141,28 @@ public f<SymbolTableEntry*> Scope.insert(const String& name, const ASTNode* decl
  */
 public f<SymbolTableEntry*> Scope.lookupStrict(const String& name) {
     return this.symbolTable.lookupStrict(name);
+}
+
+/**
+ * Look up a field symbol of this (struct or union) scope by its order index
+ *
+ * @param n Order index of the field
+ * @return Field entry, or nil if not found
+ */
+public f<SymbolTableEntry*> Scope.lookupField(const unsigned int n) {
+    assert this.scopeType == ScopeType::STRUCT || this.scopeType == ScopeType::UNION;
+    return this.symbolTable.lookupStrictByIndex(n);
+}
+
+/**
+ * Insert a generic type into the current scope
+ *
+ * @param typeName Name of the generic type
+ * @param genericType Generic type to insert
+ */
+public p Scope.insertGenericType(const String& typeName, const GenericType& genericType) {
+    assert !this.genericTypes.contains(typeName);
+    this.genericTypes.upsert(typeName, genericType);
 }
 
 /**

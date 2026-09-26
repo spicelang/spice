@@ -1,11 +1,243 @@
 // Std imports
 import "std/data/map";
 import "std/data/unordered-map";
+import "std/data/vector";
+import "std/data/pair";
 
 // Own imports
+import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/model/interface";
+import "bootstrap/model/function";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/type-matcher";
+import "bootstrap/typechecker/function-manager";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
 public type InterfaceRegistry alias Map<CodeLoc, InterfaceManifestationList>;
+
+/**
+ * Insert an interface declaration into the given scope
+ *
+ * @param insertScope Scope to insert the interface into
+ * @param spiceInterface Interface to insert
+ * @param nodeInterfaceList List to collect the inserted manifestation into (owned by the declaration node)
+ * @return Inserted interface manifestation
+ */
+public f<Interface*> insert(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
+    // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
+    insertScope.interfaces.insert(spiceInterface.declNode.codeLoc, InterfaceManifestationList());
+
+    // Save substantiation in declaration node
+    Interface* substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);
+    nodeInterfaceList.pushBack(substantiation);
+
+    return substantiation;
+}
+
+f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestation, const ASTNode* declNode) {
+    const String signature = newManifestation.structBase.getSignature();
+
+    // Retrieve the matching manifestation list of the scope
+    assert insertScope.interfaces.contains(declNode.codeLoc);
+    InterfaceManifestationList& manifestationList = insertScope.interfaces.get(declNode.codeLoc);
+
+    // Add substantiated interface
+    newManifestation.manifestationIndex = manifestationList.getSize();
+    manifestationList.upsert(signature, newManifestation);
+    return &manifestationList.get(signature);
+}
+
+/**
+ * Check if there is an interface in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one interface matches the requirement, this is reported (see ToDo below).
+ *
+ * @param matchScope Scope to match against
+ * @param reqName Interface name requirement
+ * @param reqTemplateTypes Template types to substantiate generic types
+ * @param node Instantiation AST node for printing error messages
+ * @return Matched interface or nil
+ */
+public f<Interface*> match(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // Loop over interface registry to find interfaces, that match the requirements of the instantiation
+    Vector<Interface*> matches;
+    foreach Pair<const CodeLoc&, InterfaceManifestationList&> defEntry : matchScope.interfaces {
+        const CodeLoc& defCodeLoc = defEntry.getFirst();
+        foreach Pair<const String&, Interface&> manEntry : defEntry.getSecond() {
+            const String& mangledName = manEntry.getFirst();
+            const Interface& presetInterface = manEntry.getSecond();
+            // Skip generic and newly inserted substantiations to prevent double matching of an interface
+            if presetInterface.structBase.isGenericSubstantiation() || presetInterface.isNewlyInserted {
+                continue;
+            }
+
+            // Copy the interface to be able to substantiate types
+            Interface candidate = presetInterface;
+
+            // Check name requirement
+            if !matchName(candidate, reqName) {
+                break; // Leave the whole manifestation list, because all manifestations in this list have the same name
+            }
+
+            // Prepare mapping table from generic type name to concrete type
+            candidate.typeMapping.clear();
+
+            // Check template types requirement
+            if !matchTemplateTypes(candidate, reqTemplateTypes, candidate.typeMapping, node) {
+                continue; // Leave this manifestation and continue with the next one
+            }
+
+            // Map signatures from generic to concrete
+            substantiateSignatures(candidate, candidate.typeMapping, node);
+
+            // We found a match! -> Set the actual candidate and its entry to used
+            candidate.used = true;
+            candidate.entry.used = true;
+
+            // Check if it needs to be substantiated
+            if presetInterface.templateTypes.isEmpty() {
+                assert matchScope.interfaces.contains(defCodeLoc) && matchScope.interfaces.get(defCodeLoc).contains(mangledName);
+                Interface* ifaceMatch = &matchScope.interfaces.get(defCodeLoc).get(mangledName);
+                ifaceMatch.used = true;
+                matches.pushBack(ifaceMatch);
+                continue; // Match was successful -> match the next interface
+            }
+
+            // Check if we already have this manifestation and can simply re-use it
+            const String candidateSignature = candidate.structBase.getSignature();
+            if defEntry.getSecond().contains(candidateSignature) {
+                Interface& existingManifestation = defEntry.getSecond().get(candidateSignature);
+                existingManifestation.used = true;
+                matches.pushBack(&existingManifestation);
+                break; // Leave the whole manifestation list to not double-match the manifestation
+            }
+
+            // Insert the substantiated version if required
+            Interface* substantiatedInterface = insertSubstantiation(matchScope, candidate, presetInterface.declNode);
+            substantiatedInterface.genericPreset = &matchScope.interfaces.get(defCodeLoc).get(mangledName);
+            // ToDo: Register the substantiation with declNode->getInterfaceManifestations() once the AST node
+            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            substantiatedInterface.isNewlyInserted = true; // To not iterate over it in the same matching
+
+            // Copy interface entry
+            const String newSignature = substantiatedInterface.structBase.getSignature();
+            matchScope.lookupStrict(substantiatedInterface.name).used = true;
+            substantiatedInterface.entry = matchScope.symbolTable.copySymbol(substantiatedInterface.name, newSignature);
+            assert substantiatedInterface.entry != nil<SymbolTableEntry*>;
+
+            // Copy interface scope
+            const String oldScopeName = presetInterface.getScopeName();
+            const String newScopeName = substantiatedInterface.getScopeName();
+            matchScope.copyChildScope(oldScopeName, newScopeName);
+            substantiatedInterface.scope = matchScope.getChildScope(newScopeName);
+            assert substantiatedInterface.scope != nil<Scope*>;
+            substantiatedInterface.scope.isGenericScope = false;
+
+            // Attach the template types to the new interface entry
+            QualType entryType = substantiatedInterface.entry.getQualType().getWithTemplateTypes(substantiatedInterface.structBase.getTemplateTypes()).getWithBodyScope(substantiatedInterface.scope);
+            substantiatedInterface.entry.updateType(entryType, true);
+
+            // Add to matched interfaces
+            matches.pushBack(substantiatedInterface);
+        }
+    }
+
+    // If no matches were found, return a nil
+    if matches.isEmpty() {
+        return nil<Interface*>;
+    }
+
+    // Check if more than one interface matches the requirements
+    if matches.getSize() > 1l {
+        // ToDo: Report as a hard error (INTERFACE_AMBIGUITY) once error propagation for typechecker passes is
+        // designed. For now, deterministically pick the first candidate.
+    }
+    Interface* matchedInterface = matches.front();
+    matchedInterface.isNewlyInserted = false;
+
+    return matchedInterface;
+}
+
+/**
+ * Checks if the matching candidate fulfills the name requirement
+ */
+f<bool> matchName(const Interface& candidate, const String& reqName) {
+    return candidate.name == reqName;
+}
+
+/**
+ * Checks if the matching candidate fulfills the template types requirement
+ */
+f<bool> matchTemplateTypes(Interface& candidate, const QualTypeList& reqTemplateTypes, TypeMapping& typeMapping, const ASTNode* node) {
+    // Check if the number of types match
+    if reqTemplateTypes.getSize() != candidate.templateTypes.getSize() {
+        return false;
+    }
+
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
+        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
+
+    // Loop over all template types
+    foreach unsigned long i, QualType& candidateType : candidate.templateTypes {
+        const QualType& reqType = reqTemplateTypes.get(i);
+
+        // Check if the requested template type matches the candidate template type. The type mapping may be extended
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false) {
+            return false;
+        }
+
+        // Substantiate the candidate param type, based on the type mapping
+        if candidateType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(candidateType, typeMapping, node);
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Come up with the concrete signatures, by applying the type mapping onto the generic signatures
+ */
+p substantiateSignatures(Interface& candidate, const TypeMapping& typeMapping, const ASTNode* node) {
+    // Loop over all signatures and substantiate the generic ones
+    foreach Function* method : candidate.methods {
+        // Skip methods, that are already fully substantiated
+        if method.isFullySubstantiated() {
+            continue;
+        }
+
+        // Substantiate return type
+        if method.isNormalFunction() {
+            substantiateReturnType(*method, typeMapping, node);
+        }
+
+        // Substantiate param types
+        foreach unsigned long i, Param& param : method.paramList {
+            if param.qualType.isBase(SuperType::TY_GENERIC) {
+                substantiateTypeWithTypeMapping(param.qualType, typeMapping, node);
+            }
+        }
+    }
+}
+
+/**
+ * Searches the candidate template types for a generic type object with a certain name and return it
+ */
+f<const GenericType*> getGenericTypeOfCandidateByName(const Interface& candidate, const String& templateTypeName) {
+    foreach const GenericType& templateType : candidate.templateTypes {
+        if !templateType.qualType.is(SuperType::TY_GENERIC) {
+            continue;
+        }
+        if templateType.qualType.getSubType() == templateTypeName {
+            return &templateType;
+        }
+    }
+    return nil<const GenericType*>;
+}

@@ -54,6 +54,18 @@ public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
     return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
 }
 
+/**
+ * Checks if the first code location sorts before the second one. Provided so that CodeLoc can be used as a key
+ * in a Map (see std/data/red-black-tree's isKeyLess): the '<' operator itself cannot be overloaded in Spice.
+ *
+ * @param lhs First code location
+ * @param rhs Second code location
+ * @return Sorts before or not
+ */
+public f<bool> isKeyLess(const CodeLoc& lhs, const CodeLoc& rhs) {
+    return lhs.line == rhs.line ? lhs.col < rhs.col : lhs.line < rhs.line;
+}
+
 #[test, test.name="CodeLoc Smoke test"]
 public f<bool> testCodeLocSmoke() {
     // Constructor without sourceFilePath

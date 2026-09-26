@@ -1,0 +1,245 @@
+// Std imports
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+
+// Type aliases
+public type GenericTypeResolverFct alias f<const GenericType*>(const String&);
+
+/**
+ * Helper functions for FunctionManager, StructManager, InterfaceManager and UnionManager to match generic types.
+ * This is a tricky task, because the types can be indirect or/and nested.
+ */
+
+/**
+ * Match a list of requested types against a list of candidate types, extending the type mapping as needed.
+ *
+ * @param candidateTypes Candidate types
+ * @param reqTypes Requested types
+ * @param typeMapping Concrete template type mapping
+ * @param resolverFct Way to retrieve instances of GenericType by their name
+ * @param strictQualifiers Match qualifiers strictly
+ * @return Fulfilled or not
+ */
+public f<bool> matchRequestedToCandidateTypes(const QualTypeList& candidateTypes, const QualTypeList& reqTypes, TypeMapping& typeMapping, GenericTypeResolverFct resolverFct, bool strictQualifiers) {
+    // Check if the size of template types matches
+    if reqTypes.getSize() != candidateTypes.getSize() {
+        return false;
+    }
+
+    // Loop through both lists at the same time and match each pair of template types individually
+    foreach unsigned long i, const QualType& candidateType : candidateTypes {
+        const QualType& reqType = reqTypes.get(i);
+
+        // Match the pair of template types
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, resolverFct, strictQualifiers) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Check if a requested type matches a candidate type, which may be generic. The type mapping may be extended.
+ *
+ * @param candidateTypeIn Candidate type
+ * @param requestedTypeIn Requested type
+ * @param typeMapping Concrete template type mapping
+ * @param resolverFct Way to retrieve instances of GenericType by their name
+ * @param strictQualifierMatching Match qualifiers strictly
+ * @return Fulfilled or not
+ */
+public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, const QualType& requestedTypeIn, TypeMapping& typeMapping, GenericTypeResolverFct resolverFct, bool strictQualifierMatching) {
+    QualType candidateType = candidateTypeIn;
+    QualType requestedType = requestedTypeIn;
+
+    // Unwrap as far as possible and remove reference wrappers if possible
+    unwrapBothWithRefWrappers(candidateType, requestedType);
+
+    // If the candidate does not contain any generic parts, we can simply check for type equality
+    if !candidateType.hasAnyGenericParts() {
+        // Check if the right one is a struct that implements the interface on the left
+        if candidateType.matchesInterfaceImplementedByStruct(requestedType) {
+            return true;
+        }
+        // Normal equality check
+        return candidateType.matches(requestedType, true, !strictQualifierMatching, true);
+    }
+
+    // Check if the candidate type itself is generic
+    if candidateType.isBase(SuperType::TY_GENERIC) { // The candidate type itself is generic
+        const QualType candidateBaseType = candidateType.getBase();
+        const String& genericTypeName = candidateBaseType.getSubType();
+
+        // Check if we know the concrete type for that generic type name already
+        if typeMapping.contains(genericTypeName) { // This is a known generic type
+            QualType knownConcreteType = typeMapping.get(genericTypeName);
+
+            // Merge qualifiers of candidate type and known concrete type together
+            knownConcreteType.qualifiers = knownConcreteType.qualifiers.merge(candidateType.qualifiers);
+
+            // Remove reference wrapper of candidate type if required
+            if !requestedType.isRef() {
+                knownConcreteType = knownConcreteType.removeReferenceWrapper();
+            }
+
+            if requestedType.isRef() && !knownConcreteType.isRef() {
+                requestedType = requestedType.getContained().toNonConst();
+            }
+
+            // Check if the known concrete type matches the requested type
+            return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
+        } else { // This is an unknown generic type
+            // Retrieve generic candidate type by its name
+            const GenericType* genericCandidateBaseType = resolverFct(genericTypeName);
+            assert genericCandidateBaseType != nil<const GenericType*>;
+
+            // Check if the requested type fulfills all conditions of the generic candidate type
+            QualType newBaseType;
+            if !genericCandidateBaseType.checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching) {
+                return false;
+            }
+
+            QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
+
+            // Remove reference wrapper of candidate type if required
+            if !requestedType.isRef() {
+                substantiatedCandidateType = substantiatedCandidateType.removeReferenceWrapper();
+            }
+
+            if requestedType.isRef() && !substantiatedCandidateType.isRef() {
+                requestedType = requestedType.getContained().toNonConst();
+            }
+
+            if !substantiatedCandidateType.matches(requestedType, true, !strictQualifierMatching, true) {
+                return false;
+            }
+
+            // Zero out all qualifiers in the requested type, that are present in the candidate type
+            // This is to set all qualifiers that are not present in the candidate type to the generic type replacement
+            requestedType.qualifiers.eraseWithMask(substantiatedCandidateType.qualifiers);
+
+            // Add to type mapping
+            const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateBaseType : newBaseType;
+            typeMapping.upsert(genericTypeName, newMappingType);
+
+            return true; // The type was successfully matched, by enriching the type mapping
+        }
+    } else { // The candidate type itself is non-generic, but one or several template or param types are
+        // Check if supertype and subtype are equal
+        if requestedType.getSuperType() != candidateType.getSuperType() {
+            return false;
+        }
+
+        // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
+        const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if candidateType.isOneOf(fctOptions, len(fctOptions)) {
+            // Check param and return types
+            const QualTypeList candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
+            const QualTypeList requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
+            if !matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictQualifierMatching) {
+                return false;
+            }
+        } else {
+            if requestedType.getSubType() != candidateType.getSubType() {
+                return false;
+            }
+            if requestedType.getBodyScope().parent != candidateType.getBodyScope().parent {
+                return false;
+            }
+
+            // Check template types
+            const QualTypeList candidateTTypes = candidateType.getTemplateTypes();
+            const QualTypeList requestedTTypes = requestedType.getTemplateTypes();
+            if !matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictQualifierMatching) {
+                return false;
+            }
+        }
+
+        return true; // All requested template types match to their respective candidate template type -> successfully matched
+    }
+}
+
+/**
+ * Substantiate a list of types with a type mapping in place.
+ *
+ * @param qualTypes Types to substantiate
+ * @param typeMapping Concrete template type mapping
+ * @param node AST node for error messages
+ */
+public p substantiateTypesWithTypeMapping(QualTypeList& qualTypes, const TypeMapping& typeMapping, const ASTNode* node) {
+    foreach unsigned long i, QualType& qualType : qualTypes {
+        if qualType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(qualType, typeMapping, node);
+        }
+    }
+}
+
+/**
+ * Substantiate a single (possibly nested) generic type with a type mapping in place.
+ *
+ * @param type Type to substantiate
+ * @param typeMapping Concrete template type mapping
+ * @param node AST node for error messages
+ */
+public p substantiateTypeWithTypeMapping(QualType& type, const TypeMapping& typeMapping, const ASTNode* node) {
+    assert type.hasAnyGenericParts();
+
+    // Check if the type itself is generic
+    if type.isBase(SuperType::TY_GENERIC) { // The symbol type itself is generic
+        const String& genericTypeName = type.getBase().getSubType();
+        assert typeMapping.contains(genericTypeName);
+        const QualType& replacementType = typeMapping.get(genericTypeName);
+        type = type.replaceBaseType(replacementType);
+        return;
+    }
+
+    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if type.getBase().isOneOf(fctOptions, len(fctOptions)) { // The base type is a function or procedure
+        // Substantiate each param or return type
+        QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
+        foreach unsigned long i, QualType& paramOrReturnType : paramAndReturnTypes {
+            if paramOrReturnType.hasAnyGenericParts() {
+                substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping, node);
+            }
+        }
+        // Attach the list of concrete param types to the symbol type
+        type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+        return;
+    }
+
+    // The base type is a struct or interface
+    assert type.getBase().is(SuperType::TY_STRUCT) || type.getBase().is(SuperType::TY_INTERFACE);
+    // Substantiate each template type
+    const QualType baseType = type.getBase();
+    QualTypeList templateTypes = baseType.getTemplateTypes();
+    foreach unsigned long i, QualType& templateType : templateTypes {
+        if templateType.hasAnyGenericParts() {
+            substantiateTypeWithTypeMapping(templateType, typeMapping, node);
+        }
+    }
+    // Attach the list of concrete template types to the symbol type
+    type = type.getWithBaseTemplateTypes(templateTypes);
+    // Lookup the scope of the concrete struct or interface type
+    // Only do this, if the struct or interface is not self-referencing, because in that case we'd end up in an infinite recursion
+    if !baseType.isSelfReferencingStructType(nil<const QualType*>) {
+        if baseType.is(SuperType::TY_STRUCT) { // Struct
+            Struct* spiceStruct = baseType.getStruct(node, templateTypes);
+            // ToDo: Report as a hard error once error propagation for typechecker passes is designed. For now,
+            // leave the type as is if the struct could not be found (mirrors the many other ToDo'd lookups below it).
+            if spiceStruct != nil<Struct*> {
+                type = type.getWithBodyScope(spiceStruct.scope);
+            }
+        } else { // Interface
+            Interface* spiceInterface = baseType.getInterface(node, templateTypes);
+            if spiceInterface != nil<Interface*> {
+                type = type.getWithBodyScope(spiceInterface.scope);
+            }
+        }
+    }
+}
