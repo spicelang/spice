@@ -100,8 +100,10 @@ public f<Struct*> match(Scope* matchScope, const String& qt, const QualTypeList&
 
             // Check if it needs to be substantiated
             if presetStruct.templateTypes.isEmpty() {
-                assert matchScope.structs.contains(structId) && matchScope.structs.get(structId).contains(mangledName);
-                Struct* structMatch = &matchScope.structs.get(structId).get(mangledName);
+                assert matchScope.structs.contains(structId);
+                StructManifestationList& structManifestations = matchScope.structs.get(structId);
+                assert structManifestations.contains(mangledName);
+                Struct* structMatch = &structManifestations.get(mangledName);
                 structMatch.used = true;
                 matches.pushBack(structMatch);
                 continue; // Match was successful -> match the next struct
@@ -109,8 +111,9 @@ public f<Struct*> match(Scope* matchScope, const String& qt, const QualTypeList&
 
             // Check if we already have this manifestation and can simply re-use it
             const String candidateSignature = candidate.structBase.getSignature();
-            if defEntry.getSecond().contains(candidateSignature) {
-                Struct& existingManifestation = defEntry.getSecond().get(candidateSignature);
+            StructManifestationList& defManifestations = defEntry.getSecond();
+            if defManifestations.contains(candidateSignature) {
+                Struct& existingManifestation = defManifestations.get(candidateSignature);
                 existingManifestation.used = true;
                 matches.pushBack(&existingManifestation);
                 break; // Leave the whole manifestation list to not double-match the manifestation
@@ -118,7 +121,8 @@ public f<Struct*> match(Scope* matchScope, const String& qt, const QualTypeList&
 
             // Insert the substantiated version if required
             Struct* substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
-            substantiatedStruct.genericPreset = &matchScope.structs.get(structId).get(mangledName);
+            StructManifestationList& presetManifestations = matchScope.structs.get(structId);
+            substantiatedStruct.genericPreset = &presetManifestations.get(mangledName);
             // ToDo: Register the substantiation with declNode->getStructManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedStruct.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -138,7 +142,10 @@ public f<Struct*> match(Scope* matchScope, const String& qt, const QualTypeList&
             substantiatedStruct.scope.isGenericScope = false;
 
             // Attach the template types to the new struct entry
-            QualType entryType = substantiatedStruct.entry.getQualType().getWithTemplateTypes(substantiatedStruct.structBase.getTemplateTypes()).getWithBodyScope(substantiatedStruct.scope);
+            const QualType& oldEntryType = substantiatedStruct.entry.getQualType();
+            const QualTypeList concreteTemplateTypes = substantiatedStruct.structBase.getTemplateTypes();
+            const QualType entryTypeWithTemplates = oldEntryType.getWithTemplateTypes(concreteTemplateTypes);
+            const QualType entryType = entryTypeWithTemplates.getWithBodyScope(substantiatedStruct.scope);
             substantiatedStruct.entry.updateType(entryType, true);
 
             // Replace symbol types of field entries with concrete types

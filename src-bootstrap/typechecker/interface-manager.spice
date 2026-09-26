@@ -101,8 +101,10 @@ public f<Interface*> match(Scope* matchScope, const String& reqName, const QualT
 
             // Check if it needs to be substantiated
             if presetInterface.templateTypes.isEmpty() {
-                assert matchScope.interfaces.contains(defCodeLoc) && matchScope.interfaces.get(defCodeLoc).contains(mangledName);
-                Interface* ifaceMatch = &matchScope.interfaces.get(defCodeLoc).get(mangledName);
+                assert matchScope.interfaces.contains(defCodeLoc);
+                InterfaceManifestationList& interfaceManifestations = matchScope.interfaces.get(defCodeLoc);
+                assert interfaceManifestations.contains(mangledName);
+                Interface* ifaceMatch = &interfaceManifestations.get(mangledName);
                 ifaceMatch.used = true;
                 matches.pushBack(ifaceMatch);
                 continue; // Match was successful -> match the next interface
@@ -110,8 +112,9 @@ public f<Interface*> match(Scope* matchScope, const String& reqName, const QualT
 
             // Check if we already have this manifestation and can simply re-use it
             const String candidateSignature = candidate.structBase.getSignature();
-            if defEntry.getSecond().contains(candidateSignature) {
-                Interface& existingManifestation = defEntry.getSecond().get(candidateSignature);
+            InterfaceManifestationList& defManifestations = defEntry.getSecond();
+            if defManifestations.contains(candidateSignature) {
+                Interface& existingManifestation = defManifestations.get(candidateSignature);
                 existingManifestation.used = true;
                 matches.pushBack(&existingManifestation);
                 break; // Leave the whole manifestation list to not double-match the manifestation
@@ -119,7 +122,8 @@ public f<Interface*> match(Scope* matchScope, const String& reqName, const QualT
 
             // Insert the substantiated version if required
             Interface* substantiatedInterface = insertSubstantiation(matchScope, candidate, presetInterface.declNode);
-            substantiatedInterface.genericPreset = &matchScope.interfaces.get(defCodeLoc).get(mangledName);
+            InterfaceManifestationList& presetManifestations = matchScope.interfaces.get(defCodeLoc);
+            substantiatedInterface.genericPreset = &presetManifestations.get(mangledName);
             // ToDo: Register the substantiation with declNode->getInterfaceManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedInterface.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -139,7 +143,10 @@ public f<Interface*> match(Scope* matchScope, const String& reqName, const QualT
             substantiatedInterface.scope.isGenericScope = false;
 
             // Attach the template types to the new interface entry
-            QualType entryType = substantiatedInterface.entry.getQualType().getWithTemplateTypes(substantiatedInterface.structBase.getTemplateTypes()).getWithBodyScope(substantiatedInterface.scope);
+            const QualType& oldEntryType = substantiatedInterface.entry.getQualType();
+            const QualTypeList concreteTemplateTypes = substantiatedInterface.structBase.getTemplateTypes();
+            const QualType entryTypeWithTemplates = oldEntryType.getWithTemplateTypes(concreteTemplateTypes);
+            const QualType entryType = entryTypeWithTemplates.getWithBodyScope(substantiatedInterface.scope);
             substantiatedInterface.entry.updateType(entryType, true);
 
             // Add to matched interfaces

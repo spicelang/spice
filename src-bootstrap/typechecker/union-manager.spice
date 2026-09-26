@@ -100,8 +100,10 @@ public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& 
 
             // Check if it needs to be substantiated
             if presetUnion.templateTypes.isEmpty() {
-                assert matchScope.unions.contains(unionId) && matchScope.unions.get(unionId).contains(mangledName);
-                Union* unionMatch = &matchScope.unions.get(unionId).get(mangledName);
+                assert matchScope.unions.contains(unionId);
+                UnionManifestationList& unionManifestations = matchScope.unions.get(unionId);
+                assert unionManifestations.contains(mangledName);
+                Union* unionMatch = &unionManifestations.get(mangledName);
                 unionMatch.used = true;
                 matches.pushBack(unionMatch);
                 continue; // Match was successful -> match the next union
@@ -109,8 +111,9 @@ public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& 
 
             // Check if we already have this manifestation and can simply re-use it
             const String candidateSignature = candidate.structBase.getSignature();
-            if defEntry.getSecond().contains(candidateSignature) {
-                Union& existingManifestation = defEntry.getSecond().get(candidateSignature);
+            UnionManifestationList& defManifestations = defEntry.getSecond();
+            if defManifestations.contains(candidateSignature) {
+                Union& existingManifestation = defManifestations.get(candidateSignature);
                 existingManifestation.used = true;
                 matches.pushBack(&existingManifestation);
                 break; // Leave the whole manifestation list to not double-match the manifestation
@@ -118,7 +121,8 @@ public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& 
 
             // Insert the substantiated version if required
             Union* substantiatedUnion = insertSubstantiation(matchScope, candidate, presetUnion.declNode);
-            substantiatedUnion.genericPreset = &matchScope.unions.get(unionId).get(mangledName);
+            UnionManifestationList& presetManifestations = matchScope.unions.get(unionId);
+            substantiatedUnion.genericPreset = &presetManifestations.get(mangledName);
             // ToDo: Register the substantiation with declNode->getUnionManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedUnion.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -138,7 +142,10 @@ public f<Union*> match(Scope* matchScope, const String& qt, const QualTypeList& 
             substantiatedUnion.scope.isGenericScope = false;
 
             // Attach the template types to the new union entry
-            QualType entryType = substantiatedUnion.entry.getQualType().getWithTemplateTypes(substantiatedUnion.structBase.getTemplateTypes()).getWithBodyScope(substantiatedUnion.scope);
+            const QualType& oldEntryType = substantiatedUnion.entry.getQualType();
+            const QualTypeList concreteTemplateTypes = substantiatedUnion.structBase.getTemplateTypes();
+            const QualType entryTypeWithTemplates = oldEntryType.getWithTemplateTypes(concreteTemplateTypes);
+            const QualType entryType = entryTypeWithTemplates.getWithBodyScope(substantiatedUnion.scope);
             substantiatedUnion.entry.updateType(entryType, true);
 
             // Replace symbol types of field entries with concrete types

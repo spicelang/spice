@@ -89,7 +89,8 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             }
 
             if requestedType.isRef() && !knownConcreteType.isRef() {
-                requestedType = requestedType.getContained().toNonConst();
+                const QualType containedType = requestedType.getContained();
+                requestedType = containedType.toNonConst();
             }
 
             // Check if the known concrete type matches the requested type
@@ -113,7 +114,8 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             }
 
             if requestedType.isRef() && !substantiatedCandidateType.isRef() {
-                requestedType = requestedType.getContained().toNonConst();
+                const QualType containedType = requestedType.getContained();
+                requestedType = containedType.toNonConst();
             }
 
             if !substantiatedCandidateType.matches(requestedType, true, !strictQualifierMatching, true) {
@@ -187,36 +189,36 @@ public p substantiateTypesWithTypeMapping(QualTypeList& qualTypes, const TypeMap
  * @param typeMapping Concrete template type mapping
  * @param node AST node for error messages
  */
-public p substantiateTypeWithTypeMapping(QualType& type, const TypeMapping& typeMapping, const ASTNode* node) {
-    assert type.hasAnyGenericParts();
+public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& typeMapping, const ASTNode* node) {
+    assert qualType.hasAnyGenericParts();
+    const QualType baseType = qualType.getBase();
 
     // Check if the type itself is generic
-    if type.isBase(SuperType::TY_GENERIC) { // The symbol type itself is generic
-        const String& genericTypeName = type.getBase().getSubType();
+    if baseType.is(SuperType::TY_GENERIC) { // The symbol type itself is generic
+        const String& genericTypeName = baseType.getSubType();
         assert typeMapping.contains(genericTypeName);
         const QualType& replacementType = typeMapping.get(genericTypeName);
-        type = type.replaceBaseType(replacementType);
+        qualType = qualType.replaceBaseType(replacementType);
         return;
     }
 
     const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
-    if type.getBase().isOneOf(fctOptions, len(fctOptions)) { // The base type is a function or procedure
+    if baseType.isOneOf(fctOptions, len(fctOptions)) { // The base type is a function or procedure
         // Substantiate each param or return type
-        QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
+        QualTypeList paramAndReturnTypes = qualType.getFunctionParamAndReturnTypes();
         foreach unsigned long i, QualType& paramOrReturnType : paramAndReturnTypes {
             if paramOrReturnType.hasAnyGenericParts() {
                 substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping, node);
             }
         }
         // Attach the list of concrete param types to the symbol type
-        type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+        qualType = qualType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
         return;
     }
 
     // The base type is a struct or interface
-    assert type.getBase().is(SuperType::TY_STRUCT) || type.getBase().is(SuperType::TY_INTERFACE);
+    assert baseType.is(SuperType::TY_STRUCT) || baseType.is(SuperType::TY_INTERFACE);
     // Substantiate each template type
-    const QualType baseType = type.getBase();
     QualTypeList templateTypes = baseType.getTemplateTypes();
     foreach unsigned long i, QualType& templateType : templateTypes {
         if templateType.hasAnyGenericParts() {
@@ -224,21 +226,21 @@ public p substantiateTypeWithTypeMapping(QualType& type, const TypeMapping& type
         }
     }
     // Attach the list of concrete template types to the symbol type
-    type = type.getWithBaseTemplateTypes(templateTypes);
+    qualType = qualType.getWithBaseTemplateTypes(templateTypes);
     // Lookup the scope of the concrete struct or interface type
     // Only do this, if the struct or interface is not self-referencing, because in that case we'd end up in an infinite recursion
     if !baseType.isSelfReferencingStructType(nil<const QualType*>) {
         if baseType.is(SuperType::TY_STRUCT) { // Struct
             Struct* spiceStruct = baseType.getStruct(node, templateTypes);
-            // ToDo: Report as a hard error once error propagation for typechecker passes is designed. For now,
-            // leave the type as is if the struct could not be found (mirrors the many other ToDo'd lookups below it).
+            // ToDo: Report as a hard error (UNKNOWN_DATATYPE) once error propagation for typechecker passes is designed.
+            // For now, leave the type as is if the struct could not be found.
             if spiceStruct != nil<Struct*> {
-                type = type.getWithBodyScope(spiceStruct.scope);
+                qualType = qualType.getWithBodyScope(spiceStruct.scope);
             }
         } else { // Interface
             Interface* spiceInterface = baseType.getInterface(node, templateTypes);
             if spiceInterface != nil<Interface*> {
-                type = type.getWithBodyScope(spiceInterface.scope);
+                qualType = qualType.getWithBodyScope(spiceInterface.scope);
             }
         }
     }

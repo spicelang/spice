@@ -169,10 +169,11 @@ public f<Function*> insertSubstantiation(Scope* insertScope, const Function& new
 
     // Check if the function exists already
     foreach Pair<const String&, FunctionManifestationList&> entry : insertScope.functions {
-        if entry.getSecond().contains(signature) {
+        FunctionManifestationList& manifestations = entry.getSecond();
+        if manifestations.contains(signature) {
             // ToDo: Report as a hard error ('<signature> is declared twice') once error propagation for
             // typechecker passes is designed. For now, fall through and keep the first declaration.
-            return &entry.getSecond().get(signature);
+            return &manifestations.get(signature);
         }
     }
 
@@ -230,7 +231,8 @@ public f<const Function*> lookup(Scope* matchScope, const String& reqName, const
             }
 
             // Add to matches
-            matches.pushBack(&matchScope.functions.get(defEntry.getFirst()).get(manEntry.getFirst()));
+            FunctionManifestationList& matchManifestations = matchScope.functions.get(defEntry.getFirst());
+            matches.pushBack(&matchManifestations.get(manEntry.getFirst()));
 
             break; // Leave the whole manifestation list to not double-match the manifestation
         }
@@ -304,8 +306,10 @@ public f<Function*> match(Scope* matchScope, const String& reqName, const QualTy
 
             // Check if the function is generic and needs to be substantiated
             if presetFunction.templateTypes.isEmpty() && !forceSubstantiation {
-                assert matchScope.functions.contains(fctId) && matchScope.functions.get(fctId).contains(signature);
-                Function* fctMatch = &matchScope.functions.get(fctId).get(signature);
+                assert matchScope.functions.contains(fctId);
+                FunctionManifestationList& fctManifestations = matchScope.functions.get(fctId);
+                assert fctManifestations.contains(signature);
+                Function* fctMatch = &fctManifestations.get(signature);
                 fctMatch.used = true;
                 matches.pushBack(fctMatch);
                 continue; // Match was successful -> match the next function
@@ -323,7 +327,8 @@ public f<Function*> match(Scope* matchScope, const String& reqName, const QualTy
 
             // Insert the substantiated version if required
             Function* substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
-            substantiatedFunction.genericPreset = &matchScope.functions.get(fctId).get(signature);
+            FunctionManifestationList& presetManifestations = matchScope.functions.get(fctId);
+            substantiatedFunction.genericPreset = &presetManifestations.get(signature);
             substantiatedFunction.alreadyTypeChecked = false;
             // ToDo: Register the substantiation with declNode->getFctManifestations(reqName) once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
@@ -389,7 +394,8 @@ public f<Function*> match(Scope* matchScope, const String& reqName, const QualTy
 
 f<bool> argListHasAnyGenericParts(const ArgList& args) {
     foreach const Arg& arg : args {
-        if arg.getFirst().hasAnyGenericParts() {
+        const QualType& argType = arg.getFirst();
+        if argType.hasAnyGenericParts() {
             return true;
         }
     }
@@ -573,16 +579,16 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
         return;
     }
 
-    const int CONSTIFY_PENALTY = 1;
-    const int CONST_LOSS_PENALTY = 100;
+    const int constifyPenalty = 1;
+    const int constLossPenalty = 100;
     // An exact type match is always preferred over a match that required an implicit upcast (struct to
     // implemented interface, or struct to composed base struct). This keeps e.g. 'f(Derived)' preferred
     // over 'f(Base)' when called with a Derived, instead of reporting an ambiguity.
-    const int UPCAST_PENALTY = 1000;
+    const int upcastPenalty = 1000;
 
     int bestScore = 2147483647;
     foreach const Function* m : matches {
-        const int score = scoreSpecificity(*m, reqArgs, CONSTIFY_PENALTY, CONST_LOSS_PENALTY, UPCAST_PENALTY);
+        const int score = scoreSpecificity(*m, reqArgs, constifyPenalty, constLossPenalty, upcastPenalty);
         if score < bestScore {
             bestScore = score;
         }
@@ -591,7 +597,7 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
     Vector<Function*> filtered;
     filtered.reserve(cast<unsigned long>(matches.getSize()));
     foreach Function* m : matches {
-        if scoreSpecificity(*m, reqArgs, CONSTIFY_PENALTY, CONST_LOSS_PENALTY, UPCAST_PENALTY) == bestScore {
+        if scoreSpecificity(*m, reqArgs, constifyPenalty, constLossPenalty, upcastPenalty) == bestScore {
             filtered.pushBack(m);
         }
     }
@@ -626,9 +632,12 @@ f<int> scoreSpecificity(const Function& fct, const ArgList& reqArgs, int constif
     unsigned long i = 0ul;
     while i < limit {
         const QualType& paramType = fct.paramList.get(i).qualType;
-        const QualType& argType = reqArgs.get(i).getFirst();
-        const bool paramIsConst = paramType.removeReferenceWrapper().isConst();
-        const bool argIsConst = argType.removeReferenceWrapper().isConst();
+        const Arg& arg = reqArgs.get(i);
+        const QualType& argType = arg.getFirst();
+        const QualType unwrappedParamType = paramType.removeReferenceWrapper();
+        const QualType unwrappedArgType = argType.removeReferenceWrapper();
+        const bool paramIsConst = unwrappedParamType.isConst();
+        const bool argIsConst = unwrappedArgType.isConst();
         if paramIsConst && !argIsConst {
             penalty += constifyPenalty;
         } else if !paramIsConst && argIsConst {
@@ -652,6 +661,23 @@ type CtorKind enum {
     MOVE
 }
 
+/**
+ * Checks if the given function takes exactly one parameter, which is a reference to its own 'this' type
+ */
+f<bool> hasSingleSelfRefParam(const Function& function) {
+    if function.paramList.getSize() != 1l {
+        return false;
+    }
+    const QualType& paramType = function.paramList.get(0ul).qualType;
+    const QualType paramBaseType = paramType.getBase();
+    return paramType.isRef() && paramBaseType == function.thisType;
+}
+
+f<bool> isFirstParamConstRef(const Function& function) {
+    const QualType& paramType = function.paramList.get(0ul).qualType;
+    return paramType.isConstRef();
+}
+
 f<bool> hasCtor(Scope* matchScope, CtorKind kind) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -659,9 +685,9 @@ f<bool> hasCtor(Scope* matchScope, CtorKind kind) {
             if function.name != String(CTOR_FUNCTION_NAME) {
                 continue;
             }
-            const bool singleSelfRefParam = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
-            const bool isCopyCtor = singleSelfRefParam && function.paramList.get(0ul).qualType.isConstRef();
-            const bool isMoveCtor = singleSelfRefParam && !function.paramList.get(0ul).qualType.isConstRef();
+            const bool singleSelfRefParam = hasSingleSelfRefParam(function);
+            const bool isCopyCtor = singleSelfRefParam && isFirstParamConstRef(function);
+            const bool isMoveCtor = singleSelfRefParam && !isFirstParamConstRef(function);
             if kind == CtorKind::COPY && isCopyCtor {
                 return true;
             }
@@ -705,7 +731,7 @@ public f<bool> hasUserCopyCtor(Scope* matchScope) {
             if function.name != String(CTOR_FUNCTION_NAME) || function.implicitDefault {
                 continue;
             }
-            const bool isCopyCtor = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isConstRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
+            const bool isCopyCtor = hasSingleSelfRefParam(function) && isFirstParamConstRef(function);
             if isCopyCtor {
                 return true;
             }
@@ -725,7 +751,7 @@ public f<Function*> findMoveCtor(Scope* matchScope) {
             if function.name != String(CTOR_FUNCTION_NAME) {
                 continue;
             }
-            const bool isMoveCtor = function.paramList.getSize() == 1l && function.paramList.get(0ul).qualType.isRef() && !function.paramList.get(0ul).qualType.isConstRef() && function.paramList.get(0ul).qualType.getBase() == function.thisType;
+            const bool isMoveCtor = hasSingleSelfRefParam(function) && !isFirstParamConstRef(function);
             if isMoveCtor {
                 return &function;
             }
