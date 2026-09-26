@@ -671,7 +671,8 @@ f<bool> hasSingleSelfRefParam(const Function& function) {
     }
     const QualType& paramType = function.paramList.get(0ul).qualType;
     const QualType paramBaseType = paramType.getBase();
-    return paramType.isRef() && paramBaseType == function.thisType;
+    // Compare without qualifiers: getBase() keeps the ref's qualifiers, so e.g. the base of 'const Foo&' is a const Foo
+    return paramType.isRef() && paramBaseType.matches(function.thisType, false, true, true);
 }
 
 f<bool> isFirstParamConstRef(const Function& function) {
@@ -705,6 +706,9 @@ f<bool> hasCtor(Scope* matchScope, CtorKind kind) {
 
 /**
  * Check if the given scope contains any constructor at all
+ *
+ * @param matchScope Scope to search in
+ * @return Has any constructor or not
  */
 public f<bool> hasAnyCtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
@@ -717,14 +721,32 @@ public f<bool> hasAnyCtor(Scope* matchScope) {
     return false;
 }
 
+/**
+ * Check if the given scope contains a constructor, that is neither a copy nor a move constructor
+ *
+ * @param matchScope Scope to search in
+ * @return Has such a constructor or not
+ */
 public f<bool> hasAnyNonCopyCtor(Scope* matchScope) {
     return hasCtor(matchScope, CtorKind::ANY_NON_COPY_NON_MOVE);
 }
 
+/**
+ * Check if the given scope contains a copy constructor (taking a single 'const T&' parameter)
+ *
+ * @param matchScope Scope to search in
+ * @return Has a copy constructor or not
+ */
 public f<bool> hasCopyCtor(Scope* matchScope) {
     return hasCtor(matchScope, CtorKind::COPY);
 }
 
+/**
+ * Check if the given scope contains a user-defined (not implicitly generated) copy constructor
+ *
+ * @param matchScope Scope to search in
+ * @return Has a user-defined copy constructor or not
+ */
 public f<bool> hasUserCopyCtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -741,10 +763,22 @@ public f<bool> hasUserCopyCtor(Scope* matchScope) {
     return false;
 }
 
+/**
+ * Check if the given scope contains a move constructor (taking a single non-const 'T&' parameter)
+ *
+ * @param matchScope Scope to search in
+ * @return Has a move constructor or not
+ */
 public f<bool> hasMoveCtor(Scope* matchScope) {
     return hasCtor(matchScope, CtorKind::MOVE);
 }
 
+/**
+ * Find the move constructor (taking a single non-const 'T&' parameter) in the given scope
+ *
+ * @param matchScope Scope to search in
+ * @return Move constructor, or nil if the scope has none
+ */
 public f<Function*> findMoveCtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -761,6 +795,12 @@ public f<Function*> findMoveCtor(Scope* matchScope) {
     return nil<Function*>;
 }
 
+/**
+ * Check if the given scope contains a default constructor (taking no parameters)
+ *
+ * @param matchScope Scope to search in
+ * @return Has a default constructor or not
+ */
 public f<bool> hasDefaultCtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -773,6 +813,12 @@ public f<bool> hasDefaultCtor(Scope* matchScope) {
     return false;
 }
 
+/**
+ * Check if the given scope contains a destructor
+ *
+ * @param matchScope Scope to search in
+ * @return Has a destructor or not
+ */
 public f<bool> hasDtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {

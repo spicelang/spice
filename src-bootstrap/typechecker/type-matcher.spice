@@ -6,6 +6,7 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
+import "bootstrap/model/union";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
@@ -218,8 +219,8 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
         return;
     }
 
-    // The base type is a struct or interface
-    assert baseType.is(SuperType::TY_STRUCT) || baseType.is(SuperType::TY_INTERFACE);
+    // The base type is a struct, interface or union
+    assert baseType.is(SuperType::TY_STRUCT) || baseType.is(SuperType::TY_INTERFACE) || baseType.is(SuperType::TY_UNION);
     // Substantiate each template type
     QualTypeList templateTypes = baseType.getTemplateTypes();
     foreach unsigned long i, QualType& templateType : templateTypes {
@@ -238,6 +239,11 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
             // For now, leave the type as is if the struct could not be found.
             if spiceStruct != nil<Struct*> {
                 qualType = qualType.getWithBodyScope(spiceStruct.scope);
+            }
+        } else if baseType.is(SuperType::TY_UNION) { // Union
+            Union* spiceUnion = baseType.getUnion(node, templateTypes);
+            if spiceUnion != nil<Union*> {
+                qualType = qualType.getWithBodyScope(spiceUnion.scope);
             }
         } else { // Interface
             Interface* spiceInterface = baseType.getInterface(node, templateTypes);
