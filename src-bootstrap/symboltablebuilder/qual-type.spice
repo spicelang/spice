@@ -464,6 +464,19 @@ public f<bool> QualType.isErrorObj() {
 }
 
 /**
+ * Check if the current type is a result object
+ *
+ * @return Result object or not
+ */
+public f<bool> QualType.isResultObj() {
+    if !this.is(SuperType::TY_STRUCT) { return false; }
+    if this.getSubType() != RESULTOBJ_NAME { return false; }
+    const Scope* bodyScope = this.getBodyScope();
+    const SourceFile* sourceFile = bodyScope.getSourceFile();
+    return sourceFile.isStdFile;
+}
+
+/**
  * Check if the current type has any generic parts
  *
  * @return Generic parts or not

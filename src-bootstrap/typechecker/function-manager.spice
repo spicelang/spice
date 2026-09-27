@@ -331,8 +331,8 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
             FunctionManifestationList& presetManifestations = matchScope.functions.get(fctId);
             substantiatedFunction.genericPreset = &presetManifestations.get(signature);
             substantiatedFunction.alreadyTypeChecked = false;
-            // ToDo: Register the substantiation with declNode->getFctManifestations(reqName) once the AST node
-            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            Vector<Function*>* declManifestations = substantiatedFunction.declNode.getFctManifestations(reqName);
+            declManifestations.pushBack(substantiatedFunction);
             substantiatedFunction.isNewlyInserted = true; // To not iterate over it in the same matching
 
             // Copy function entry
@@ -589,6 +589,9 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
     // Secondary tie-break: prefer an explicitly declared (non-generic) overload over a generic substitution
     // when both match equally well, mirroring C++ overload resolution where a non-template wins over a
     // template specialization.
+    // A generic substitution that loses here and was only inserted for this very match is removed from its
+    // declaration's manifestation list again, so the IR generator never emits a manifestation that was never
+    // type-checked (and so we leave no dead code behind).
     bool anyNonGeneric = false;
     foreach const Function* m : matches {
         if !m.isGenericSubstantiation() {
@@ -596,6 +599,11 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
         }
     }
     if matches.getSize() > 1l && anyNonGeneric {
+        foreach Function* m : matches {
+            if m.isGenericSubstantiation() && m.isNewlyInserted {
+                eraseFunction(m.declNode.getFctManifestations(m.name), m);
+            }
+        }
         Vector<Function*> nonGenericMatches;
         foreach Function* m : matches {
             if !m.isGenericSubstantiation() {
@@ -603,6 +611,23 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
             }
         }
         matches = nonGenericMatches;
+    }
+}
+
+/**
+ * Remove all occurrences of a function from a function list (std::erase in the host)
+ *
+ * @param functions Function list
+ * @param fct Function to remove
+ */
+p eraseFunction(Vector<Function*>* functions, const Function* fct) {
+    unsigned long i = 0ul;
+    while i < functions.getSize() {
+        if functions.get(i) == fct {
+            functions.removeAt(i);
+        } else {
+            i++;
+        }
     }
 }
 

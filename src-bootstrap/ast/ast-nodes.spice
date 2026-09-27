@@ -1,6 +1,7 @@
 // Std imports
 import "std/data/vector";
 import "std/data/queue";
+import "std/data/unordered-map";
 import "std/data/pair";
 import "std/type/any";
 
@@ -13,6 +14,7 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/capture";
 import "bootstrap/ast/attributes";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
@@ -738,6 +740,7 @@ public type ASTStructDefNode struct : IVisitable {
     public ASTTypeLstNode* interfaceTypeLst = nil<ASTTypeLstNode*>
     public bool emitVTable = false
     public Vector<Struct*> structManifestations
+    public UnorderedMap<String, Vector<Function*>> defaultFctManifestations
     public Vector<IVisitable*> fields
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
@@ -1627,6 +1630,9 @@ public type ASTTernaryExprNode struct : IVisitable {
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* trueExpr = nil<IVisitable*>
     public IVisitable* falseExpr = nil<IVisitable*>
+    public Function* calledCopyCtor = nil<Function*>
+    public bool trueSideCallsCopyCtor = false
+    public bool falseSideCallsCopyCtor = false
     public bool isShortened = false
 }
 
@@ -1916,8 +1922,13 @@ public type ASTPostfixUnaryExprNode struct : IVisitable {
     public IVisitable* postfixUnaryExpr = nil<IVisitable*>
     public IVisitable* subscriptIndexExpr = nil<IVisitable*>
     public PostfixUnaryOp op = PostfixUnaryOp::OP_NONE
-    public String identifier
     public Vector<Vector<const Function*>> opFct // Operator overloading functions
+    public String identifier // Only set when operator is member access
+    // Only set when operator is error propagation
+    public const Function* errPropIsErrFct = nil<const Function*>  // Result<T>.isErr()
+    public const Function* errPropUnwrapFct = nil<const Function*> // Result<T>.unwrap()
+    public const Function* errPropGetErrFct = nil<const Function*> // Result<T>.getErr()
+    public const Function* errPropCtorFct = nil<const Function*>   // err<U>(const Error&), where Result<U> is the enclosing function's return type
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -1931,6 +1942,12 @@ public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= AtomicExprNode ======================================================
 
+public type VarAccessData struct {
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public Scope* accessScope = nil<Scope*>
+    public Capture* capture = nil<Capture*>
+}
+
 public type ASTAtomicExprNode struct : IVisitable {
     compose public ASTExprNode node
 
@@ -1939,6 +1956,7 @@ public type ASTAtomicExprNode struct : IVisitable {
     public IVisitable* assignExpr = nil<IVisitable*>
     public Vector<String> identifierFragments
     public String fqIdentifier
+    public Vector<VarAccessData> data // Only set if identifier is set as well
 }
 
 public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
@@ -2222,7 +2240,45 @@ public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
     return concreteNode;
 }
 
-// Do node-specific work when the AST gets resized to a number of manifestations
+/**
+ * Get the function manifestation list of a declaration node. Mirrors the host's virtual ASTNode::getFctManifestations().
+ *
+ * @param fctName Name of the function. Only relevant for struct defs, which hold the implicitly created default methods
+ * @return Manifestation list
+ */
+public f<Vector<Function*>*> ASTNode.getFctManifestations(const String& fctName) {
+    Vector<Function*>* manifestations = nil<Vector<Function*>*>;
+    switch this.kind {
+        case ASTNodeKind::FCT_DEF: {
+            ASTFctDefNode* concreteNode = downcast<ASTFctDefNode>(this);
+            manifestations = &concreteNode.node.manifestations;
+        }
+        case ASTNodeKind::PROC_DEF: {
+            ASTProcDefNode* concreteNode = downcast<ASTProcDefNode>(this);
+            manifestations = &concreteNode.node.manifestations;
+        }
+        case ASTNodeKind::EXT_DECL: {
+            ASTExtDeclNode* concreteNode = downcast<ASTExtDeclNode>(this);
+            manifestations = &concreteNode.extFunctionManifestations;
+        }
+        case ASTNodeKind::STRUCT_DEF: {
+            ASTStructDefNode* concreteNode = downcast<ASTStructDefNode>(this);
+            if !concreteNode.defaultFctManifestations.contains(fctName) {
+                concreteNode.defaultFctManifestations.upsert(fctName, Vector<Function*>());
+            }
+            manifestations = &concreteNode.defaultFctManifestations.get(fctName);
+        }
+        case ASTNodeKind::SIGNATURE: {
+            ASTSignatureNode* concreteNode = downcast<ASTSignatureNode>(this);
+            manifestations = &concreteNode.signatureManifestations;
+        }
+        default: {
+            panic(Error("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"));
+        }
+    }
+    return manifestations;
+}
+
 /**
  * Get the operator overloading functions of a node, that supports operator overloading. Equal to the host's
  * ASTNode::getOpFctPointers(), which is overridden by the concrete nodes.
@@ -2296,6 +2352,7 @@ f<bool> hasOpFctPointers(ASTNodeKind kind) {
     }
 }
 
+// Do node-specific work when the AST gets resized to a number of manifestations
 p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     if node.kind == ASTNodeKind::ASSIGN_EXPR {
         ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
@@ -2316,6 +2373,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
         while declStmtNode.entries.getSize() < manifestationCount {
             declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
+        }
+    }
+    if node.kind == ASTNodeKind::ATOMIC_EXPR {
+        ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(node);
+        while atomicExprNode.data.getSize() < manifestationCount {
+            atomicExprNode.data.pushBack(VarAccessData{});
         }
     }
     if node.kind == ASTNodeKind::IF_STMT {
@@ -3052,6 +3115,20 @@ public f<byte*> ASTLambdaFuncNode.getASTNodeAddress() { unsafe { return cast<byt
 public f<byte*> ASTLambdaProcNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
 public f<byte*> ASTLambdaExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
 public f<byte*> ASTFunctionDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+
+/**
+ * Address of an AST node, which is used as key for maps that are keyed by AST node pointer in the host (e.g. nodeToNodeId)
+ *
+ * @param node AST node
+ * @return Address of the node
+ */
+public f<long> getNodeAddress(const ASTNode* node) {
+    long address = 0l;
+    unsafe {
+        address = cast<long>(cast<byte*>(node));
+    }
+    return address;
+}
 
 /**
  * Name of the scope that holds the temporaries of an expression. Equal to the host's ExprNode::getExprScopeId().
