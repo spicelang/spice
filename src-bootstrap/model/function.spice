@@ -17,14 +17,14 @@ import "bootstrap/model/generic-type";
 
 // Helper structs
 public type Param struct {
-    QualType qualType
-    bool isOptional = false
+    public QualType qualType
+    public bool isOptional = false
 }
 
 public type NamedParam struct {
-    string name = nil<string>
-    QualType qualType
-    bool isOptional = false
+    public string name = nil<string>
+    public QualType qualType
+    public bool isOptional = false
 }
 
 // Type aliases

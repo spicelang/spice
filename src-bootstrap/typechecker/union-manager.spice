@@ -122,7 +122,8 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
             // Insert the substantiated version if required
             Union* substantiatedUnion = insertSubstantiation(matchScope, candidate, presetUnion.declNode);
             UnionManifestationList& presetManifestations = matchScope.unions.get(unionId);
-            substantiatedUnion.genericPreset = &presetManifestations.get(mangledName);
+            Union& presetManifestation = presetManifestations.get(mangledName);
+            substantiatedUnion.genericPreset = &presetManifestation.structBase;
             // ToDo: Register the substantiation with declNode->getUnionManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedUnion.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -214,17 +215,14 @@ f<bool> matchTemplateTypes(Union& candidate, const QualTypeList& reqTemplateType
         return false;
     }
 
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
-        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Loop over all template types
-    foreach unsigned long i, QualType& candidateType : candidate.templateTypes {
+    foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
+        QualType& candidateType = candidateTemplateType.qualType;
         const QualType& reqType = reqTemplateTypes.get(i);
 
         // Check if the requested template type matches the candidate template type. The type mapping may be extended
-        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false) {
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, candidate.templateTypes, true, false) {
             return false;
         }
 
@@ -249,17 +247,3 @@ p substantiateFieldTypes(Union& candidate, const TypeMapping& typeMapping, const
     }
 }
 
-/**
- * Searches the candidate template types for a generic type object with a certain name and return it
- */
-f<const GenericType*> getGenericTypeOfCandidateByName(const Union& candidate, const String& templateTypeName) {
-    foreach const GenericType& templateType : candidate.templateTypes {
-        if !templateType.qualType.is(SuperType::TY_GENERIC) {
-            continue;
-        }
-        if templateType.qualType.getSubType() == templateTypeName {
-            return &templateType;
-        }
-    }
-    return nil<const GenericType*>;
-}

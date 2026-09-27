@@ -123,7 +123,8 @@ public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTyp
             // Insert the substantiated version if required
             Struct* substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
             StructManifestationList& presetManifestations = matchScope.structs.get(structId);
-            substantiatedStruct.genericPreset = &presetManifestations.get(mangledName);
+            Struct& presetManifestation = presetManifestations.get(mangledName);
+            substantiatedStruct.genericPreset = &presetManifestation.structBase;
             // ToDo: Register the substantiation with declNode->getStructManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedStruct.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -234,17 +235,14 @@ f<bool> matchTemplateTypes(Struct& candidate, const QualTypeList& reqTemplateTyp
         return false;
     }
 
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
-        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Loop over all template types
-    foreach unsigned long i, QualType& candidateType : candidate.templateTypes {
+    foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
+        QualType& candidateType = candidateTemplateType.qualType;
         const QualType& reqType = reqTemplateTypes.get(i);
 
         // Check if the requested template type matches the candidate template type. The type mapping may be extended
-        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false) {
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, candidate.templateTypes, true, false) {
             return false;
         }
 
@@ -282,17 +280,3 @@ p substantiateFieldTypes(Struct& candidate, const TypeMapping& typeMapping, cons
     }
 }
 
-/**
- * Searches the candidate template types for a generic type object with a certain name and return it
- */
-f<const GenericType*> getGenericTypeOfCandidateByName(const Struct& candidate, const String& templateTypeName) {
-    foreach const GenericType& templateType : candidate.templateTypes {
-        if !templateType.qualType.is(SuperType::TY_GENERIC) {
-            continue;
-        }
-        if templateType.qualType.getSubType() == templateTypeName {
-            return &templateType;
-        }
-    }
-    return nil<const GenericType*>;
-}

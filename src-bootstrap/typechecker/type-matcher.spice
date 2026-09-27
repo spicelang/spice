@@ -1,5 +1,6 @@
 // Std imports
 import "std/data/unordered-map";
+import "std/data/vector";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -11,13 +12,30 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 
-// Type aliases
-public type GenericTypeResolverFct alias f<const GenericType*>(const String&);
-
 /**
  * Helper functions for FunctionManager, StructManager, InterfaceManager and UnionManager to match generic types.
  * This is a tricky task, because the types can be indirect or/and nested.
  */
+
+/**
+ * Search the given candidate template types for a generic type with a certain name
+ *
+ * @param candidateTemplateTypes Template types of the candidate
+ * @param genericTypeName Name of the generic type
+ * @param genericOnly Skip template types that are not generic (anymore)
+ * @return Generic type, or nil if not found
+ */
+public f<const GenericType*> resolveGenericTypeByName(const Vector<GenericType>& candidateTemplateTypes, const String& genericTypeName, bool genericOnly) {
+    foreach const GenericType& templateType : candidateTemplateTypes {
+        if genericOnly && !templateType.qualType.is(SuperType::TY_GENERIC) {
+            continue;
+        }
+        if templateType.qualType.getSubType() == genericTypeName {
+            return &templateType;
+        }
+    }
+    return nil<const GenericType*>;
+}
 
 /**
  * Match a list of requested types against a list of candidate types, extending the type mapping as needed.
@@ -25,11 +43,12 @@ public type GenericTypeResolverFct alias f<const GenericType*>(const String&);
  * @param candidateTypes Candidate types
  * @param reqTypes Requested types
  * @param typeMapping Concrete template type mapping
- * @param resolverFct Way to retrieve instances of GenericType by their name
+ * @param candidateTemplateTypes Template types of the candidate, used to look up generic types by their name
+ * @param genericOnly Only consider template types that are (still) generic when looking them up by name
  * @param strictQualifiers Match qualifiers strictly
  * @return Fulfilled or not
  */
-public f<bool> matchRequestedToCandidateTypes(const QualTypeList& candidateTypes, const QualTypeList& reqTypes, TypeMapping& typeMapping, GenericTypeResolverFct resolverFct, bool strictQualifiers) {
+public f<bool> matchRequestedToCandidateTypes(const QualTypeList& candidateTypes, const QualTypeList& reqTypes, TypeMapping& typeMapping, const Vector<GenericType>& candidateTemplateTypes, bool genericOnly, bool strictQualifiers) {
     // Check if the size of template types matches
     if reqTypes.getSize() != candidateTypes.getSize() {
         return false;
@@ -40,7 +59,7 @@ public f<bool> matchRequestedToCandidateTypes(const QualTypeList& candidateTypes
         const QualType& reqType = reqTypes.get(i);
 
         // Match the pair of template types
-        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, resolverFct, strictQualifiers) {
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, candidateTemplateTypes, genericOnly, strictQualifiers) {
             return false;
         }
     }
@@ -53,11 +72,12 @@ public f<bool> matchRequestedToCandidateTypes(const QualTypeList& candidateTypes
  * @param candidateTypeIn Candidate type
  * @param requestedTypeIn Requested type
  * @param typeMapping Concrete template type mapping
- * @param resolverFct Way to retrieve instances of GenericType by their name
+ * @param candidateTemplateTypes Template types of the candidate, used to look up generic types by their name
+ * @param genericOnly Only consider template types that are (still) generic when looking them up by name
  * @param strictQualifierMatching Match qualifiers strictly
  * @return Fulfilled or not
  */
-public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, const QualType& requestedTypeIn, TypeMapping& typeMapping, GenericTypeResolverFct resolverFct, bool strictQualifierMatching) {
+public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, const QualType& requestedTypeIn, TypeMapping& typeMapping, const Vector<GenericType>& candidateTemplateTypes, bool genericOnly, bool strictQualifierMatching) {
     QualType candidateType = candidateTypeIn;
     QualType requestedType = requestedTypeIn;
 
@@ -100,11 +120,11 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             return knownConcreteType.matches(requestedType, true, !strictQualifierMatching, true);
         } else { // This is an unknown generic type
             // Retrieve generic candidate type by its name
-            const GenericType* genericCandidateBaseType = resolverFct(genericTypeName);
+            const GenericType* genericCandidateBaseType = resolveGenericTypeByName(candidateTemplateTypes, genericTypeName, genericOnly);
             assert genericCandidateBaseType != nil<const GenericType*>;
 
             // Check if the requested type fulfills all conditions of the generic candidate type
-            QualType newBaseType;
+            QualType newBaseType = QualType(SuperType::TY_DYN); // Overwritten by checkConditionsOf
             if !genericCandidateBaseType.checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching) {
                 return false;
             }
@@ -147,7 +167,7 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             // Check param and return types
             const QualTypeList candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
             const QualTypeList requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
-            if !matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictQualifierMatching) {
+            if !matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, candidateTemplateTypes, genericOnly, strictQualifierMatching) {
                 return false;
             }
         } else {
@@ -161,7 +181,7 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             // Check template types
             const QualTypeList candidateTTypes = candidateType.getTemplateTypes();
             const QualTypeList requestedTTypes = requestedType.getTemplateTypes();
-            if !matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictQualifierMatching) {
+            if !matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, candidateTemplateTypes, genericOnly, strictQualifierMatching) {
                 return false;
             }
         }

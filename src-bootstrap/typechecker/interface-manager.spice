@@ -6,7 +6,6 @@ import "std/data/pair";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/reader/code-loc";
 import "bootstrap/model/interface";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
@@ -19,7 +18,9 @@ import "bootstrap/typechecker/function-manager";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
-public type InterfaceRegistry alias Map<CodeLoc, InterfaceManifestationList>;
+// Keyed by the interface name and its declaration code location, like the other registries. The host keys this map by
+// CodeLoc directly, but CodeLoc cannot be ordered by std/data/red-black-tree (Spice cannot overload '<').
+public type InterfaceRegistry alias Map</*interfaceId=*/String, /*manifestationList=*/InterfaceManifestationList>;
 
 /**
  * Insert an interface declaration into the given scope
@@ -31,7 +32,8 @@ public type InterfaceRegistry alias Map<CodeLoc, InterfaceManifestationList>;
  */
 public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
-    insertScope.interfaces.insert(spiceInterface.declNode.codeLoc, InterfaceManifestationList());
+    const String interfaceId = spiceInterface.name + ":" + spiceInterface.declNode.codeLoc.toString();
+    insertScope.interfaces.insert(interfaceId, InterfaceManifestationList());
 
     // Save substantiation in declaration node
     Interface* substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);
@@ -44,8 +46,9 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
     const String signature = newManifestation.structBase.getSignature();
 
     // Retrieve the matching manifestation list of the scope
-    assert insertScope.interfaces.contains(declNode.codeLoc);
-    InterfaceManifestationList& manifestationList = insertScope.interfaces.get(declNode.codeLoc);
+    const String interfaceId = newManifestation.name + ":" + declNode.codeLoc.toString();
+    assert insertScope.interfaces.contains(interfaceId);
+    InterfaceManifestationList& manifestationList = insertScope.interfaces.get(interfaceId);
 
     // Add substantiated interface
     newManifestation.manifestationIndex = manifestationList.getSize();
@@ -66,8 +69,8 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
 public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
     // Loop over interface registry to find interfaces, that match the requirements of the instantiation
     Vector<Interface*> matches;
-    foreach Pair<const CodeLoc&, InterfaceManifestationList&> defEntry : matchScope.interfaces {
-        const CodeLoc& defCodeLoc = defEntry.getFirst();
+    foreach Pair<const String&, InterfaceManifestationList&> defEntry : matchScope.interfaces {
+        const String& interfaceId = defEntry.getFirst();
         foreach Pair<const String&, Interface&> manEntry : defEntry.getSecond() {
             const String& mangledName = manEntry.getFirst();
             const Interface& presetInterface = manEntry.getSecond();
@@ -101,8 +104,8 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
 
             // Check if it needs to be substantiated
             if presetInterface.templateTypes.isEmpty() {
-                assert matchScope.interfaces.contains(defCodeLoc);
-                InterfaceManifestationList& interfaceManifestations = matchScope.interfaces.get(defCodeLoc);
+                assert matchScope.interfaces.contains(interfaceId);
+                InterfaceManifestationList& interfaceManifestations = matchScope.interfaces.get(interfaceId);
                 assert interfaceManifestations.contains(mangledName);
                 Interface* ifaceMatch = &interfaceManifestations.get(mangledName);
                 ifaceMatch.used = true;
@@ -122,8 +125,9 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
 
             // Insert the substantiated version if required
             Interface* substantiatedInterface = insertSubstantiation(matchScope, candidate, presetInterface.declNode);
-            InterfaceManifestationList& presetManifestations = matchScope.interfaces.get(defCodeLoc);
-            substantiatedInterface.genericPreset = &presetManifestations.get(mangledName);
+            InterfaceManifestationList& presetManifestations = matchScope.interfaces.get(interfaceId);
+            Interface& presetManifestation = presetManifestations.get(mangledName);
+            substantiatedInterface.genericPreset = &presetManifestation.structBase;
             // ToDo: Register the substantiation with declNode->getInterfaceManifestations() once the AST node
             // exposes a per-declaration manifestation list (see ast-nodes.spice).
             substantiatedInterface.isNewlyInserted = true; // To not iterate over it in the same matching
@@ -186,17 +190,14 @@ f<bool> matchTemplateTypes(Interface& candidate, const QualTypeList& reqTemplate
         return false;
     }
 
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
-        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Loop over all template types
-    foreach unsigned long i, QualType& candidateType : candidate.templateTypes {
+    foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
+        QualType& candidateType = candidateTemplateType.qualType;
         const QualType& reqType = reqTemplateTypes.get(i);
 
         // Check if the requested template type matches the candidate template type. The type mapping may be extended
-        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false) {
+        if !matchRequestedToCandidateType(candidateType, reqType, typeMapping, candidate.templateTypes, true, false) {
             return false;
         }
 
@@ -234,17 +235,3 @@ p substantiateSignatures(Interface& candidate, const TypeMapping& typeMapping, c
     }
 }
 
-/**
- * Searches the candidate template types for a generic type object with a certain name and return it
- */
-f<const GenericType*> getGenericTypeOfCandidateByName(const Interface& candidate, const String& templateTypeName) {
-    foreach const GenericType& templateType : candidate.templateTypes {
-        if !templateType.qualType.is(SuperType::TY_GENERIC) {
-            continue;
-        }
-        if templateType.qualType.getSubType() == templateTypeName {
-            return &templateType;
-        }
-    }
-    return nil<const GenericType*>;
-}

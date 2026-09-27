@@ -463,13 +463,9 @@ f<bool> matchThisType(Function& candidate, const QualType& reqThisType, TypeMapp
         return true;
     }
 
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
-        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
-    if !matchRequestedToCandidateType(candidate.thisType, reqThisType, typeMapping, genericTypeResolver, strictQualifierMatching) {
+    if !matchRequestedToCandidateType(candidate.thisType, reqThisType, typeMapping, candidate.templateTypes, false, strictQualifierMatching) {
         return false;
     }
 
@@ -494,17 +490,15 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
         return false;
     }
 
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    GenericTypeResolverFct genericTypeResolver = f<const GenericType*>(const String& genericTypeName) {
-        return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Loop over all parameters
     foreach unsigned long i, const Arg& arg : reqArgs {
         // In the case of a vararg function candidate, we can accept additional arguments, that are not defined in
         // the candidate, but we need to modify the candidate param list to accept them
         if candidate.isVararg && i >= cast<unsigned long>(candidate.paramList.getSize()) {
-            candidate.paramList.pushBack(Param{arg.getFirst(), false});
+            // Copy into a value first: instantiating Param{...} from a reference crashes the host compiler's type checker
+            const QualType varargType = arg.getFirst();
+            candidate.paramList.pushBack(Param{varargType, false});
             needsSubstantiation = true; // We need to modify the candidate param types
             continue;
         }
@@ -516,7 +510,7 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
         const bool isArgTemporary = arg.getSecond();
 
         // Check if the requested param type matches the candidate param type. The type mapping may be extended
-        if !matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, strictQualifierMatching) {
+        if !matchRequestedToCandidateType(candidateType, requestedType, typeMapping, candidate.templateTypes, false, strictQualifierMatching) {
             return false;
         }
 
@@ -550,18 +544,6 @@ public p substantiateReturnType(Function& candidate, const TypeMapping& typeMapp
     if candidate.returnType.hasAnyGenericParts() {
         substantiateTypeWithTypeMapping(candidate.returnType, typeMapping, callNode);
     }
-}
-
-/**
- * Searches the candidate template types for a generic type object with a certain name and return it
- */
-f<const GenericType*> getGenericTypeOfCandidateByName(const Function& candidate, const String& templateTypeName) {
-    foreach const GenericType& templateType : candidate.templateTypes {
-        if templateType.qualType.getSubType() == templateTypeName {
-            return &templateType;
-        }
-    }
-    return nil<const GenericType*>;
 }
 
 /**
