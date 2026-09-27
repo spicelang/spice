@@ -2678,6 +2678,12 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                     compileTimeValue.longValue /= operandValue.longValue;
                 } else {
                     assert op == MultiplicativeOp::OP_REM;
+                    // Note: The host does not check for a zero divisor here and crashes with SIGFPE
+                    if operandValue.longValue == 0l {
+                        const SemanticError error = SemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+                        const String& errorMessage = error.getMessage();
+                        panic(Error(errorMessage.getRaw()));
+                    }
                     compileTimeValue.longValue %= operandValue.longValue;
                 }
             }

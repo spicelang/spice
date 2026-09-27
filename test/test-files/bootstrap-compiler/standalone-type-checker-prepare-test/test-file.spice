@@ -58,6 +58,10 @@ f<Length> measure(const Rectangle& rect, Color color) {
 
 p log(string message, heap int* data) {}
 
+f<int> sumBox(Box<int>* box) {
+    return box.slots[0];
+}
+
 f<int> main() {
     return 0;
 }

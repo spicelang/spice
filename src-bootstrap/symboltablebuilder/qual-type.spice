@@ -534,6 +534,7 @@ public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
 
     // If the struct has a copy ctor, it is a non-trivially copyable one
     const Struct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<const Struct*>;
     if hasCopyCtor(spiceStruct.scope) { return false; }
 
     // Check if all member types are trivially copyable
@@ -562,6 +563,7 @@ public f<bool> QualType.isTriviallyDestructible(const ASTNode* node) {
 
     // If the struct has a dtor, it is a non-trivially destructible one
     const Struct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<const Struct*>;
     if hasDtor(spiceStruct.scope) { return false; }
 
     // Check if all member types are trivially destructible
@@ -989,9 +991,7 @@ public f<QualType> QualType.getWithBodyScope(Scope* bodyScope) {
  */
 public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    // ToDo: Switch
-    //const Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
-    const Type* newType = nil<const Type*>;
+    const Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1004,9 +1004,7 @@ public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTyp
  */
 public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    // ToDo: Switch
-    //const Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
-    const Type* newType = nil<const Type*>;
+    const Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }

@@ -706,6 +706,12 @@ public f<const SourceFile*> SourceFile.getRootSourceFile() {
     return this.isMainFile ? this : this.parent.getRootSourceFile();
 }
 
+/**
+ * Check if this source file is the given runtime module itself
+ *
+ * @param runtimeModule Runtime module
+ * @return Is the runtime module or not
+ */
 public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
     const String topLevelName = String(getIdentifyingTopLevelName(runtimeModule));
     if !this.exportedNameRegistry.contains(topLevelName) {
@@ -715,6 +721,7 @@ public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
     return entry.targetEntry.scope == this.globalScope;
 }
 
+// Check if this source file is the string / memory / RTTI runtime module itself
 public inline f<bool> SourceFile.isStringRT() { return this.isRT(RuntimeModule::STRING_RT); }
 public inline f<bool> SourceFile.isMemoryRT() { return this.isRT(RuntimeModule::MEMORY_RT); }
 public inline f<bool> SourceFile.isRttiRT() { return this.isRT(RuntimeModule::RTTI_RT); }

@@ -49,7 +49,7 @@ f<int> main() {
     assert typeChecker.currentScope == root;
 
     ASTEntryNode* entry = file.ast;
-    assert entry.topLevelDefs.getSize() == 19l;
+    assert entry.topLevelDefs.getSize() == 20l;
     ASTInterfaceDefNode* shape = nil<ASTInterfaceDefNode*>;
     ASTStructDefNode* rect = nil<ASTStructDefNode*>;
     ASTProcDefNode* ctor = nil<ASTProcDefNode*>;
@@ -61,6 +61,7 @@ f<int> main() {
     ASTExtDeclNode* printfDecl = nil<ASTExtDeclNode*>;
     ASTFctDefNode* identity = nil<ASTFctDefNode*>;
     ASTFctDefNode* measure = nil<ASTFctDefNode*>;
+    ASTFctDefNode* sumBox = nil<ASTFctDefNode*>;
     unsafe {
         shape = cast<ASTInterfaceDefNode*>(entry.topLevelDefs.get(0l));
         rect = cast<ASTStructDefNode*>(entry.topLevelDefs.get(1l));
@@ -73,6 +74,7 @@ f<int> main() {
         printfDecl = cast<ASTExtDeclNode*>(entry.topLevelDefs.get(14l));
         identity = cast<ASTFctDefNode*>(entry.topLevelDefs.get(15l));
         measure = cast<ASTFctDefNode*>(entry.topLevelDefs.get(16l));
+        sumBox = cast<ASTFctDefNode*>(entry.topLevelDefs.get(18l));
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -233,6 +235,17 @@ f<int> main() {
     assert colorParam.qualType.is(SuperType::TY_INT); // Enums are ints
     const QualType measureType = measure.entry.getQualType();
     assert measureType.is(SuperType::TY_FUNCTION);
+
+    // Usage of a generic struct with a concrete template type
+    assert sumBox.manifestations.getSize() == 1l;
+    Function* sumBoxFct = sumBox.manifestations.front();
+    const Param& boxParam = sumBoxFct.paramList.get(0l);
+    assert boxParam.qualType.isPtrTo(SuperType::TY_STRUCT);
+    const QualType boxParamBaseType = boxParam.qualType.getBase();
+    const QualTypeList boxParamTemplateTypes = boxParamBaseType.getTemplateTypes();
+    assert boxParamTemplateTypes.getSize() == 1l;
+    const QualType& boxParamTemplateType = boxParamTemplateTypes.front();
+    assert boxParamTemplateType.is(SuperType::TY_INT);
 
     const QualType mainType = typeOf(root, "main");
     assert mainType.is(SuperType::TY_FUNCTION);
