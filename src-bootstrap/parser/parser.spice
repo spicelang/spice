@@ -458,7 +458,8 @@ f<bool> Parser.isStructInstantiationAhead() {
 
     // An empty brace group is only a struct instantiation, if the expression can continue after it
     if offset == lbraceOffset + 2l {
-        return !this.isStmtStartToken(this.tokenAt(cast<unsigned long>(offset)));
+        const TokenType afterBraces = this.tokenAt(cast<unsigned long>(offset));
+        return afterBraces != TokenType::ELSE && !this.isStmtStartToken(afterBraces);
     }
     return true;
 }

@@ -70,7 +70,9 @@ f<int> main() {
     int c = compute(m);
     int d = cast<int>(c);
     int e = classify(d);
-    // Builtin calls are lexed as dedicated keyword tokens and parsed like function calls
+    // An empty brace group after an upper-case identifier is the if body here, not a struct instantiation
+    if e == SCALE {} else { e++; }
+    // Builtin calls are lexed as identifiers and parsed like function calls
     int size = sizeof<int>();
     int alignment = alignof<int>();
     printf("results: %d %d %d %d\n", c, d, e, size + alignment);
