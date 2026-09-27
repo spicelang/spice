@@ -122,7 +122,10 @@ public f<QualTypeList> Type.getFunctionParamAndReturnTypes() {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert baseType.isOneOf(options, len(options));
-    return this.typeChain.front().paramTypes;
+    // Copy explicitly: returning the member directly would hand out a list that shares the storage of the type chain
+    const TypeChainElement& front = this.typeChain.front();
+    QualTypeList paramAndReturnTypes = front.paramTypes;
+    return paramAndReturnTypes;
 }
 
 /**
@@ -143,7 +146,10 @@ public f<bool> Type.hasLambdaCaptures() {
  * @return Vector of template types
  */
 public f<QualTypeList> Type.getTemplateTypes() {
-    return this.typeChain.back().templateTypes;
+    // Copy explicitly: returning the member directly would hand out a list that shares the storage of the type chain
+    const TypeChainElement& back = this.typeChain.back();
+    QualTypeList templateTypes = back.templateTypes;
+    return templateTypes;
 }
 
 /**

@@ -33,7 +33,7 @@ public type CompilerWarningType enum {
  * Compiler warning template engine
  */
 public type CompilerWarning struct {
-    String warningMessage
+    public String warningMessage
 }
 
 /**

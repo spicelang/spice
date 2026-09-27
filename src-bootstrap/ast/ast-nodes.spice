@@ -1271,6 +1271,10 @@ public type ASTDeclStmtNode struct : IVisitable {
     public IVisitable* assignExpr = nil<IVisitable*>
     public bool isFctParam = false
     public bool isForEachItem = false
+    public bool isCtorCallRequired = false // For struct, in case there are reference fields, we need to call a user-defined ctor
+    public Vector<SymbolTableEntry*> entries
+    public Function* calledInitCtor = nil<Function*>
+    public Function* calledCopyCtor = nil<Function*>
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
@@ -2209,6 +2213,12 @@ public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
 
 // Do node-specific work when the AST gets resized to a number of manifestations
 p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
+    if node.kind == ASTNodeKind::DECL_STMT {
+        ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
+        while declStmtNode.entries.getSize() < manifestationCount {
+            declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
+        }
+    }
     if node.kind == ASTNodeKind::IF_STMT {
         ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(node);
         while ifStmtNode.compileThenBranch.getSize() < manifestationCount {

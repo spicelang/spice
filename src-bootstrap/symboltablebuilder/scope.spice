@@ -262,24 +262,51 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
  *
  * @param oldName Old name of the child block
  * @param newName New block name
+ * @return New scope
  */
-public p Scope.copyChildScope(const String& oldName, const String& newName) {
+public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
-    // Create copy
-    Scope* child = this.children.get(oldName);
-    Scope* newScope = child.deepCopyScope();
+    // Create copy. The host copy-constructs the scope into a new shared_ptr. Here, the copy is constructed in place in the
+    // pool of this scope, which owns it (no Scope copy).
+    Scope* oldScope = this.children.get(oldName);
+    Scope* newScope = this.childAllocator.reserve<Scope>();
+    unsafe {
+        __placement_new<Scope>(newScope, this, oldScope.sourceFile, oldScope.scopeType, oldScope.codeLoc);
+    }
+    oldScope.deepCopyScope(newScope);
     // Save copy under new name
     this.children.upsert(newName, newScope);
+    return newScope;
 }
 
 /**
- * Deep copy the current scope and all its children
+ * Deep copy the current scope and all its children into the given scope. The target scope must be freshly constructed with
+ * the same parent, source file, scope type and code location as the current scope. The host returns the copy instead, but
+ * Spice scopes are owned by the pool of their parent scope, so the caller allocates the target.
  *
- * @return Deep copy of the current scope
+ * @param newScope Target scope of the copy
  */
-public f<Scope*> Scope.deepCopyScope() {
-    Scope* newScope; // ToDo: Extend
-    return newScope;
+public p Scope.deepCopyScope(Scope* newScope) {
+    // Copy the members, like the copy ctor of the host scope does
+    newScope.symbolTable.copyContentsFrom(this.symbolTable);
+    newScope.isGenericScope = this.isGenericScope;
+    newScope.isAsyncScope = this.isAsyncScope;
+    newScope.isDtorScope = this.isDtorScope;
+    newScope.functions = this.functions;
+    newScope.structs = this.structs;
+    newScope.interfaces = this.interfaces;
+    newScope.unions = this.unions;
+    newScope.genericTypes = this.genericTypes;
+    // Deep copy the children. Their parent and symbol table parent point to the new scope (set by the ctor)
+    foreach Pair<const String&, Scope*&> childEntry : this.children {
+        Scope* oldChild = childEntry.getSecond();
+        Scope* newChild = newScope.childAllocator.reserve<Scope>();
+        unsafe {
+            __placement_new<Scope>(newChild, newScope, oldChild.sourceFile, oldChild.scopeType, oldChild.codeLoc);
+        }
+        oldChild.deepCopyScope(newChild);
+        newScope.children.upsert(childEntry.getFirst(), newChild);
+    }
 }
 
 /**

@@ -137,7 +137,7 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
-    const FilePath filePath = getStdDir() / "runtime" / namePair.fileName / ".spice";
+    const FilePath filePath = getStdDir() / "runtime" / (String(namePair.fileName) + ".spice");
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file

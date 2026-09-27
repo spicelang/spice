@@ -42,6 +42,18 @@ public p SymbolTable.ctor(SymbolTable* parent, Scope* scope) {
 }
 
 /**
+ * Copy the symbols and captures of another symbol table into this one. The parent and scope stay untouched. This mirrors
+ * the member-wise copy of the symbol table, that the host performs when copying a scope.
+ *
+ * @param other Symbol table to copy from
+ */
+public p SymbolTable.copyContentsFrom(const SymbolTable& other) {
+    this.symbols = other.symbols;
+    this.captures = other.captures;
+    this.capturingRequired = other.capturingRequired;
+}
+
+/**
  * Count the number of field symbols in this symbol table (struct scopes). Mirrors the host Scope::getFieldCount:
  * skip anonymous symbols, imports and nested function/struct definitions.
  *

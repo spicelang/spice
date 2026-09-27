@@ -21,6 +21,7 @@ import "bootstrap/global/global-resource-manager";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/exception/error-manager";
+import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
@@ -121,7 +122,7 @@ public type SourceFile struct {
     public Map<String, SourceFile*> dependencies // Has to be an ordered map to keep the compilation order deterministic
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
-    public Vector<const Function*> testFunctions
+    public Vector<const model::Function*> testFunctions
     // Private fields
     GlobalResourceManager& resourceManager
     CliOptions& cliOptions
