@@ -9,6 +9,7 @@ import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/interface";
 import "bootstrap/model/struct";
+import "bootstrap/model/union";
 import "bootstrap/source-file";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/scope";
@@ -49,7 +50,7 @@ f<int> main() {
     assert typeChecker.currentScope == root;
 
     ASTEntryNode* entry = file.ast;
-    assert entry.topLevelDefs.getSize() == 20l;
+    assert entry.topLevelDefs.getSize() == 22l;
     ASTInterfaceDefNode* shape = nil<ASTInterfaceDefNode*>;
     ASTStructDefNode* rect = nil<ASTStructDefNode*>;
     ASTProcDefNode* ctor = nil<ASTProcDefNode*>;
@@ -57,6 +58,8 @@ f<int> main() {
     ASTStructDefNode* box = nil<ASTStructDefNode*>;
     ASTEnumDefNode* color = nil<ASTEnumDefNode*>;
     ASTAliasDefNode* length = nil<ASTAliasDefNode*>;
+    ASTUnionDefNode* numberUnion = nil<ASTUnionDefNode*>;
+    ASTStructDefNode* measurement = nil<ASTStructDefNode*>;
     ASTExtDeclNode* strlenDecl = nil<ASTExtDeclNode*>;
     ASTExtDeclNode* printfDecl = nil<ASTExtDeclNode*>;
     ASTFctDefNode* identity = nil<ASTFctDefNode*>;
@@ -70,11 +73,13 @@ f<int> main() {
         box = cast<ASTStructDefNode*>(entry.topLevelDefs.get(8l));
         color = cast<ASTEnumDefNode*>(entry.topLevelDefs.get(9l));
         length = cast<ASTAliasDefNode*>(entry.topLevelDefs.get(10l));
-        strlenDecl = cast<ASTExtDeclNode*>(entry.topLevelDefs.get(13l));
-        printfDecl = cast<ASTExtDeclNode*>(entry.topLevelDefs.get(14l));
-        identity = cast<ASTFctDefNode*>(entry.topLevelDefs.get(15l));
-        measure = cast<ASTFctDefNode*>(entry.topLevelDefs.get(16l));
-        sumBox = cast<ASTFctDefNode*>(entry.topLevelDefs.get(18l));
+        numberUnion = cast<ASTUnionDefNode*>(entry.topLevelDefs.get(11l));
+        measurement = cast<ASTStructDefNode*>(entry.topLevelDefs.get(12l));
+        strlenDecl = cast<ASTExtDeclNode*>(entry.topLevelDefs.get(15l));
+        printfDecl = cast<ASTExtDeclNode*>(entry.topLevelDefs.get(16l));
+        identity = cast<ASTFctDefNode*>(entry.topLevelDefs.get(17l));
+        measure = cast<ASTFctDefNode*>(entry.topLevelDefs.get(18l));
+        sumBox = cast<ASTFctDefNode*>(entry.topLevelDefs.get(20l));
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -197,6 +202,19 @@ f<int> main() {
     assert length.aliasedTypeContainerEntry.used;
     const QualType lengthContainerType = length.aliasedTypeContainerEntry.getQualType();
     assert lengthContainerType.is(SuperType::TY_INT);
+
+    // Union and a struct with union fields (preparing the struct resolves the union manifestation)
+    const QualType numberType = typeOf(root, "Quantity");
+    assert numberType.is(SuperType::TY_UNION);
+    assert numberType.getBodyScope() == numberUnion.unionScope;
+    assert numberType.getSubType() == "Quantity";
+    assert numberUnion.unionManifestations.getSize() == 1l;
+    Union* numberManifestation = numberUnion.unionManifestations.front();
+    assert numberManifestation.fieldTypes.getSize() == 2l;
+    assert numberType.getUnion(cast<ASTNode*>(numberUnion)) == numberManifestation;
+    assert measurement.structManifestations.getSize() == 1l;
+    const QualType historyType = typeOf(measurement.structScope, "history");
+    assert historyType.isArrayOf(SuperType::TY_UNION);
 
     const QualType limitType = typeOf(root, "LIMIT");
     assert limitType.is(SuperType::TY_INT);

@@ -58,7 +58,7 @@ public f<SuperType> Type.getSuperType() {
  */
 public f<const String&> Type.getSubType() {
     assert !this.typeChain.isEmpty();
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_ENUM, SuperType::TY_GENERIC];
     assert this.isOneOf(options, len(options));
     return this.typeChain.back().subType;
 }
@@ -79,7 +79,7 @@ public f<unsigned int> Type.getArraySize() {
  * @return Body scope
  */
 public f<Scope*> Type.getBodyScope() {
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isOneOf(options, len(options));
     return this.typeChain.back().data.bodyScope;
 }
@@ -214,7 +214,7 @@ public f<bool> Type.isPrimitive() {
  * @return Extended primitive or not
  */
 public f<bool> Type.isExtendedPrimitive() {
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     return this.isPrimitive() || this.isOneOf(options, len(options));
 }
 
@@ -497,7 +497,7 @@ public f<const Type*> Type.getWithLambdaCaptures(bool enabled) {
  */
 public f<const Type*> Type.getWithBodyScope(Scope* bodyScope) {
     const Type* baseType = this.getBase();
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert baseType.isOneOf(options, len(options));
 
     // Create new type chain
@@ -514,7 +514,7 @@ public f<const Type*> Type.getWithBodyScope(Scope* bodyScope) {
  * @return Type with new base template types
  */
 public f<const Type*> Type.getWithTemplateTypes(const QualTypeList& templateTypes) {
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isOneOf(options, len(options));
     return this.getWithBaseTemplateTypes(templateTypes);
 }
@@ -526,7 +526,7 @@ public f<const Type*> Type.getWithTemplateTypes(const QualTypeList& templateType
  */
 public f<const Type*> Type.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
     const Type* baseType = this.getBase();
-    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert baseType.isOneOf(options, len(options));
 
     // Create new type chain
