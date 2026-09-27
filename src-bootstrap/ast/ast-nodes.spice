@@ -1,5 +1,7 @@
 // Std imports
 import "std/data/vector";
+import "std/data/queue";
+import "std/data/pair";
 import "std/type/any";
 
 // Own imports
@@ -9,7 +11,7 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/ast/attributes";
-//import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/qual-type";
 //import "bootstrap/model/function";
 
 // Access tokens used when building type/function/scope signatures
@@ -176,8 +178,20 @@ public p ASTExprNode.ctor(CodeLoc codeLoc) {
 
 // ========================================================== ConstantNode =======================================================
 
+public type PrimitiveValueType enum {
+    TYPE_NONE,
+    TYPE_DOUBLE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_BOOL
+}
+
 public type ASTConstantNode struct : IVisitable {
     compose public ASTExprNode node
+    public PrimitiveValueType primitiveValueType = PrimitiveValueType::TYPE_NONE
     public CompileTimeValue compileTimeValue
 }
 
@@ -312,6 +326,8 @@ public f<Any> ASTQualifierLstNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTCustomDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
+    public IVisitable* templateTypeLst = nil<IVisitable*>
+    public String fqTypeName
     public Vector<String> typeNameFragments
 }
 
@@ -324,9 +340,26 @@ public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== BaseDataTypeNode =====================================================
 
+public type BaseDataTypeType enum {
+    TYPE_NONE,
+    TYPE_DOUBLE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_BYTE,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_DYN,
+    TYPE_CUSTOM,
+    TYPE_FUNCTION
+}
+
 public type ASTBaseDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
     public ASTCustomDataTypeNode* customDataType = nil<ASTCustomDataTypeNode*>
+    public IVisitable* functionDataType = nil<IVisitable*>
+    public BaseDataTypeType baseType = BaseDataTypeType::TYPE_NONE
 }
 
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
@@ -338,9 +371,35 @@ public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== DataTypeNode =======================================================
 
+public type TypeModifierType enum {
+    TYPE_PTR,
+    TYPE_REF,
+    TYPE_ARRAY
+}
+
+public type TypeModifier struct {
+    public TypeModifierType modifierType = TypeModifierType::TYPE_PTR
+    public bool hasSize = false
+    public unsigned int hardcodedSize = 0
+    public String sizeVarName
+}
+
+public p TypeModifier.ctor(TypeModifierType modifierType, bool hasSize, unsigned int hardcodedSize, const String& sizeVarName) {
+    this.modifierType = modifierType;
+    this.hasSize = hasSize;
+    this.hardcodedSize = hardcodedSize;
+    this.sizeVarName = sizeVarName;
+}
+
 public type ASTDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
+    public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public ASTBaseDataTypeNode* baseDataType = nil<ASTBaseDataTypeNode*>
+    public bool isParamType = false
+    public bool isGlobalType = false
+    public bool isFieldType = false
+    public bool isReturnType = false
+    public Queue<TypeModifier> tmQueue
 }
 
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
@@ -420,6 +479,7 @@ public type ASTFctDefBaseNode struct/*: IVisitable*/ {
     public bool hasTemplateTypes = false
     public bool hasParams = false
     public TypeQualifiers qualifiers
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
@@ -436,6 +496,7 @@ public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
 public type ASTFctDefNode struct : IVisitable {
     compose public ASTFctDefBaseNode node
 
+    public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
 }
 
 public p ASTFctDefNode.ctor(CodeLoc codeLoc) {
@@ -479,6 +540,7 @@ public type ASTStructDefNode struct : IVisitable {
     public String structName
     public bool hasTemplateTypes = false
     public bool hasInterfaces = false
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public ASTTypeLstNode* interfaceTypeLst = nil<ASTTypeLstNode*>
     public Vector<IVisitable*> fields
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
@@ -503,6 +565,8 @@ public type ASTInterfaceDefNode struct : IVisitable {
 
     public IVisitable* attrs = nil<IVisitable*>
     public String interfaceName
+    public bool hasTemplateTypes = false
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public Vector<IVisitable*> signatures
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
@@ -527,6 +591,7 @@ public type ASTUnionDefNode struct : IVisitable {
     public IVisitable* attrs = nil<IVisitable*>
     public String unionName
     public bool hasTemplateTypes = false
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public Vector<IVisitable*> fields
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
@@ -571,6 +636,7 @@ public type ASTGenericTypeDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
     public String typeName
+    public IVisitable* typeAltsLst = nil<IVisitable*>
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
@@ -590,6 +656,8 @@ public type ASTAliasDefNode struct : IVisitable {
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
     public String aliasName
+    public String dataTypeString
+    public ASTDataTypeNode* dataType = nil<ASTDataTypeNode*>
     public unsigned long typeId
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public SymbolTableEntry* aliasedTypeContainerEntry = nil<SymbolTableEntry*>
@@ -609,6 +677,9 @@ public type ASTGlobalVarDefNode struct : IVisitable {
     compose public ASTTopLevelDefNode node
 
     public String varName
+    public ASTDataTypeNode* dataType = nil<ASTDataTypeNode*>
+    public ASTConstantNode* constant = nil<ASTConstantNode*>
+    public bool hasValue = false
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
@@ -627,6 +698,9 @@ public type ASTExtDeclNode struct : IVisitable {
 
     public IVisitable* attrs = nil<IVisitable*>
     public String extFunctionName
+    public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
+    public IVisitable* argTypeLst = nil<IVisitable*>
+    public bool hasArgs = false
     public bool hasReturnType = false
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
@@ -689,6 +763,7 @@ public type ASTForLoopNode struct : IVisitable {
 
     public IVisitable* initDecl = nil<IVisitable*>
     public IVisitable* condAssign = nil<IVisitable*>
+    public IVisitable* incAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public Scope* bodyScope = nil<Scope*>
 }
@@ -712,6 +787,7 @@ public type ASTForeachLoopNode struct : IVisitable {
 
     public IVisitable* idxVarDecl = nil<IVisitable*>
     public IVisitable* itemVarDecl = nil<IVisitable*>
+    public IVisitable* iteratorAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public Scope* bodyScope = nil<Scope*>
 }
@@ -823,6 +899,10 @@ public f<String> ASTElseStmtNode.getScopeId() {
 public type ASTSwitchStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public Vector<IVisitable*> caseBranches
+    public IVisitable* defaultBranch = nil<IVisitable*>
+    public bool hasDefaultBranch = false
 }
 
 public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
@@ -838,6 +918,7 @@ public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTCaseBranchNode struct : IVisitable {
     compose public ASTNode node
 
+    public Vector<IVisitable*> caseConstants
     public IVisitable* body = nil<IVisitable*>
     public Scope* bodyScope = nil<Scope*>
 }
@@ -900,7 +981,8 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
-    public Vector<IVisitable*> stmts
+    public Vector<IVisitable*> statements
+    public CodeLoc closingBraceCodeLoc
 }
 
 public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
@@ -916,6 +998,8 @@ public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTTypeLstWithEllipsisNode struct : IVisitable {
     compose public ASTNode node
 
+    public ASTTypeLstNode* typeLst = nil<ASTTypeLstNode*>
+    public bool hasEllipsis = false
 }
 
 public p ASTTypeLstWithEllipsisNode.ctor(CodeLoc codeLoc) {
@@ -931,6 +1015,7 @@ public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTTypeAltsLstNode struct : IVisitable {
     compose public ASTNode node
 
+    public Vector<ASTDataTypeNode*> dataTypes
 }
 
 public p ASTTypeAltsLstNode.ctor(CodeLoc codeLoc) {
@@ -950,9 +1035,11 @@ public type ASTDeclStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
     public String varName
+    public ASTDataTypeNode* dataType = nil<ASTDataTypeNode*>
     public bool hasAssignment = false
     public IVisitable* assignExpr = nil<IVisitable*>
     public bool isFctParam = false
+    public bool isForEachItem = false
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
@@ -983,6 +1070,7 @@ public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTArgLstNode struct : IVisitable {
     compose public ASTNode node
 
+    public Vector<IVisitable*> args
 }
 
 public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
@@ -1036,6 +1124,8 @@ public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTFieldNode struct : IVisitable {
     compose public ASTNode node
     public String fieldName
+    public ASTDataTypeNode* dataType = nil<ASTDataTypeNode*>
+    public IVisitable* defaultValue = nil<IVisitable*>
 }
 
 public p ASTFieldNode.ctor(CodeLoc codeLoc) {
@@ -1048,10 +1138,23 @@ public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= SignatureNode =======================================================
 
+public type SignatureType enum {
+    TYPE_NONE,
+    TYPE_FUNCTION,
+    TYPE_PROCEDURE
+}
+
 public type ASTSignatureNode struct : IVisitable {
     compose public ASTNode node
 
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
+    public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
+    public ASTTypeLstNode* paramTypeLst = nil<ASTTypeLstNode*>
+    public bool hasReturnType = false
+    public bool hasTemplateTypes = false
+    public bool hasParams = false
+    public SignatureType signatureType = SignatureType::TYPE_NONE
     public TypeQualifiers signatureQualifiers
     public String methodName
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
@@ -1133,6 +1236,9 @@ public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTCaseConstantNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTConstantNode* constant = nil<ASTConstantNode*>
+    public Vector<String> identifierFragments
+    public String fqIdentifier
 }
 
 public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
@@ -1148,6 +1254,8 @@ public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTReturnStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public bool hasReturnValue = false
 }
 
 public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
@@ -1163,6 +1271,7 @@ public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBreakStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public int breakTimes = 1
 }
 
 public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
@@ -1178,6 +1287,7 @@ public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTContinueStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public int continueTimes = 1
 }
 
 public p ASTContinueStmtNode.ctor(CodeLoc codeLoc) {
@@ -1208,6 +1318,8 @@ public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTAssertStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public String expressionString
 }
 
 public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
@@ -1220,9 +1332,27 @@ public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= AssignExprNode =======================================================
 
+public type AssignOp enum {
+    OP_NONE,
+    OP_ASSIGN,
+    OP_PLUS_EQUAL,
+    OP_MINUS_EQUAL,
+    OP_MUL_EQUAL,
+    OP_DIV_EQUAL,
+    OP_REM_EQUAL,
+    OP_SHL_EQUAL,
+    OP_SHR_EQUAL,
+    OP_AND_EQUAL,
+    OP_OR_EQUAL,
+    OP_XOR_EQUAL
+}
+
 public type ASTAssignExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public IVisitable* lhs = nil<IVisitable*>
+    public IVisitable* rhs = nil<IVisitable*>
+    public IVisitable* ternaryExpr = nil<IVisitable*>
+    public AssignOp op = AssignOp::OP_NONE
 }
 
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
@@ -1288,7 +1418,7 @@ public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTBitwiseOrExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
 }
 
 public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
@@ -1303,7 +1433,7 @@ public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTBitwiseXorExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
 }
 
 public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
@@ -1318,7 +1448,7 @@ public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTBitwiseAndExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
 }
 
 public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
@@ -1331,9 +1461,16 @@ public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== EqualityExprNode =====================================================
 
+public type EqualityOp enum {
+    OP_NONE,
+    OP_EQUAL,
+    OP_NOT_EQUAL
+}
+
 public type ASTEqualityExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
+    public EqualityOp op = EqualityOp::OP_NONE
 }
 
 public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
@@ -1346,9 +1483,18 @@ public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= RelationalExprNode ====================================================
 
+public type RelationalOp enum {
+    OP_NONE,
+    OP_LESS,
+    OP_GREATER,
+    OP_LESS_EQUAL,
+    OP_GREATER_EQUAL
+}
+
 public type ASTRelationalExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
+    public RelationalOp op = RelationalOp::OP_NONE
 }
 
 public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
@@ -1361,9 +1507,18 @@ public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= ShiftExprNode =======================================================
 
+public type ShiftOp enum {
+    OP_NONE,
+    OP_SHIFT_LEFT,
+    OP_SHIFT_RIGHT
+}
+
+public type ShiftOpQueue alias Queue<Pair<ShiftOp, QualType>>;
+
 public type ASTShiftExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
+    public ShiftOpQueue opQueue
 }
 
 public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
@@ -1376,9 +1531,17 @@ public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== AdditiveExprNode =====================================================
 
+public type AdditiveOp enum {
+    OP_PLUS,
+    OP_MINUS
+}
+
+public type AdditiveOpQueue alias Queue<Pair<AdditiveOp, QualType>>;
+
 public type ASTAdditiveExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
+    public AdditiveOpQueue opQueue
 }
 
 public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
@@ -1391,9 +1554,18 @@ public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
+public type MultiplicativeOp enum {
+    OP_MUL,
+    OP_DIV,
+    OP_REM
+}
+
+public type MultiplicativeOpQueue alias Queue<Pair<MultiplicativeOp, QualType>>;
+
 public type ASTMultiplicativeExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public Vector<IVisitable*> operands
+    public MultiplicativeOpQueue opQueue
 }
 
 public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
@@ -1408,7 +1580,10 @@ public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTCastExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public IVisitable* prefixUnaryExpr = nil<IVisitable*>
+    public ASTDataTypeNode* dataType = nil<ASTDataTypeNode*>
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public bool isCast = false
 }
 
 public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
@@ -1421,9 +1596,22 @@ public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
+public type PrefixUnaryOp enum {
+    OP_NONE,
+    OP_MINUS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS,
+    OP_NOT,
+    OP_BITWISE_NOT,
+    OP_DEREFERENCE,
+    OP_ADDRESS_OF
+}
+
 public type ASTPrefixUnaryExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public IVisitable* prefixUnaryExpr = nil<IVisitable*>
+    public IVisitable* postfixUnaryExpr = nil<IVisitable*>
+    public PrefixUnaryOp op = PrefixUnaryOp::OP_NONE
 }
 
 public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -1436,9 +1624,22 @@ public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
+public type PostfixUnaryOp enum {
+    OP_NONE,
+    OP_SUBSCRIPT,
+    OP_MEMBER_ACCESS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS,
+    OP_ERR_PROPAGATION
+}
+
 public type ASTPostfixUnaryExprNode struct : IVisitable {
     compose public ASTExprNode node
-
+    public IVisitable* atomicExpr = nil<IVisitable*>
+    public IVisitable* postfixUnaryExpr = nil<IVisitable*>
+    public IVisitable* subscriptIndexExpr = nil<IVisitable*>
+    public PostfixUnaryOp op = PostfixUnaryOp::OP_NONE
+    public String identifier
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -1454,6 +1655,11 @@ public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTAtomicExprNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTConstantNode* constant = nil<ASTConstantNode*>
+    public IVisitable* value = nil<IVisitable*>
+    public IVisitable* assignExpr = nil<IVisitable*>
+    public Vector<String> identifierFragments
+    public String fqIdentifier
 }
 
 public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
@@ -1469,6 +1675,14 @@ public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTValueNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public IVisitable* fctCall = nil<IVisitable*>
+    public IVisitable* arrayInitialization = nil<IVisitable*>
+    public IVisitable* structInstantiation = nil<IVisitable*>
+    public IVisitable* lambdaFunc = nil<IVisitable*>
+    public IVisitable* lambdaProc = nil<IVisitable*>
+    public IVisitable* lambdaExpr = nil<IVisitable*>
+    public ASTDataTypeNode* nilType = nil<ASTDataTypeNode*>
+    public bool isNil = false
 }
 
 public p ASTValueNode.ctor(CodeLoc codeLoc) {
@@ -1484,6 +1698,12 @@ public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTFctCallNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
+    public ASTArgLstNode* argLst = nil<ASTArgLstNode*>
+    public bool hasArgs = false
+    public bool hasTemplateTypes = false
+    public String fqFunctionName
+    public Vector<String> functionNameFragments
 }
 
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
@@ -1499,6 +1719,7 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTArrayInitializationNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTArgLstNode* itemLst = nil<ASTArgLstNode*>
 }
 
 public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
@@ -1514,6 +1735,11 @@ public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTStructInstantiationNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
+    public ASTArgLstNode* fieldLst = nil<ASTArgLstNode*>
+    public bool hasTemplateTypes = false
+    public String fqStructName
+    public Vector<String> structNameFragments
 }
 
 public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
@@ -1539,6 +1765,7 @@ public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
 public type ASTLambdaFuncNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
+    public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
     public ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
     public bool hasParams = false
     public IVisitable* paramLst = nil<IVisitable*>
@@ -1610,6 +1837,9 @@ public f<String> ASTLambdaExprNode.getScopeId() {
 public type ASTFunctionDataTypeNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
+    public ASTTypeLstNode* paramTypeLst = nil<ASTTypeLstNode*>
+    public bool isFunction = false // Function or procedure
 }
 
 public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {

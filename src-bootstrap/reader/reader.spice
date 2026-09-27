@@ -10,6 +10,11 @@ public type Reader struct {
     FilePath filePath
     char curChar = '\0'
     CodeLoc curCodeLoc
+    String sourceCode // All chars, that were read so far
+    unsigned long curOffset = 0l // Offset of the current char within the source code
+    // One char lookahead buffer, filled by peekChar()
+    char peekedChar = '\0'
+    bool hasPeekedChar = false
 }
 
 public p Reader.ctor(const FilePath& inputPath) {
@@ -46,17 +51,76 @@ public inline f<CodeLoc&> Reader.getCodeLoc() {
 }
 
 /**
+ * Peek the character after the previously read character without consuming it
+ *
+ * @return char Next character
+ */
+public f<char> Reader.peekChar() {
+    if !this.hasPeekedChar {
+        if this.file.isEOF() {
+            return '\0';
+        }
+        this.peekedChar = this.file.readChar();
+        this.hasPeekedChar = true;
+    }
+    return this.peekedChar;
+}
+
+/**
  * Advance the reader by one character
  */
 public p Reader.advance() {
     assert !this.isEOF();
-    this.curChar = this.file.readChar();
+    if this.hasPeekedChar {
+        this.curChar = this.peekedChar;
+        this.hasPeekedChar = false;
+    } else {
+        this.curChar = this.file.readChar();
+    }
+    // Keep track of the source code, so that parts of it can be retrieved later on
+    this.curOffset = this.sourceCode.getLength();
+    if !this.isEOF() {
+        this.sourceCode += this.curChar;
+    }
     if this.curChar == '\n' {
         this.curCodeLoc.line++;
         this.curCodeLoc.col = 0l;
-    } else {
+    } else if !this.isUtf8ContinuationByte(this.curChar) {
+        // Count code points instead of bytes, like the ANTLR-based lexer of the host compiler
         this.curCodeLoc.col++;
     }
+}
+
+/**
+ * Check if the given char is a continuation byte of a multibyte UTF-8 sequence (0b10xxxxxx)
+ *
+ * @param c Char to check
+ * @return Continuation byte or not
+ */
+inline f<bool> Reader.isUtf8ContinuationByte(char c) {
+    const int byteValue = cast<int>(cast<byte>(c));
+    return (byteValue & 0xC0) == 0x80;
+}
+
+/**
+ * Get the offset of the current char within the source code
+ *
+ * @return Offset in bytes
+ */
+public inline f<unsigned long> Reader.getOffset() {
+    return this.curOffset;
+}
+
+/**
+ * Get a part of the source code, that was read so far
+ *
+ * @param startOffset Offset of the first char
+ * @param endOffset Offset after the last char
+ * @return Source code snippet
+ */
+public f<String> Reader.getSourceCode(unsigned long startOffset, unsigned long endOffset) {
+    assert startOffset <= endOffset;
+    return this.sourceCode.getSubstring(startOffset, cast<long>(endOffset - startOffset));
 }
 
 /**
@@ -75,5 +139,9 @@ public inline p Reader.expect(char c) {
  * @return At the end or not
  */
 public inline f<bool> Reader.isEOF() {
+    // If a char was peeked, the current char is no EOF, even if the file reached its end while peeking
+    if this.hasPeekedChar {
+        return false;
+    }
     return this.file.isEOF();
 }

@@ -10,6 +10,7 @@ import "std/io/filepath";
 import "bootstrap/lexer/token";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
+import "bootstrap/exception/lexer-error";
 
 public type Lexer struct {
     //compose CompilerPass compilerPass
@@ -89,6 +90,55 @@ public p Lexer.advance() {
 }
 
 /**
+ * Get the index of the current token within the token stream
+ *
+ * @return Current token index
+ */
+public f<unsigned long> Lexer.getTokenIndex() {
+    return this.curIdx;
+}
+
+/**
+ * Concatenate the texts of all relevant (non-comment) tokens in the index range [startIdx, endIdx), without whitespace.
+ * This is the equivalent of ANTLR's getText() on a parser rule context.
+ *
+ * @param startIdx Index of the first token
+ * @param endIdx Index after the last token
+ * @return Concatenated token text
+ */
+public f<String> Lexer.getTokenText(unsigned long startIdx, unsigned long endIdx) {
+    String text;
+    for unsigned long i = startIdx; i < endIdx; i++ {
+        const Token& token = this.tokens.get(i);
+        if !this.isIgnoredType(token.tokenType) {
+            text += token.text;
+        }
+    }
+    return text;
+}
+
+/**
+ * Get the source code, that is covered by the relevant (non-comment) tokens in the index range [startIdx, endIdx).
+ * This is the equivalent of ANTLR's getText() on the input stream with the interval of a parser rule context.
+ *
+ * @param startIdx Index of the first token
+ * @param endIdx Index after the last token
+ * @return Source code snippet
+ */
+public f<String> Lexer.getSourceCode(unsigned long startIdx, unsigned long endIdx) {
+    // Skip trailing comment tokens
+    while endIdx > startIdx && this.isIgnoredType(this.tokens.get(endIdx - 1l).tokenType) {
+        endIdx--;
+    }
+    if endIdx <= startIdx {
+        return String();
+    }
+    const Token& firstToken = this.tokens.get(startIdx);
+    const Token& lastToken = this.tokens.get(endIdx - 1l);
+    return this.reader.getSourceCode(firstToken.startOffset, lastToken.endOffset);
+}
+
+/**
  * Look ahead at the k-th upcoming token without consuming it.
  * k=1 refers to the token directly following the current one.
  *
@@ -117,7 +167,12 @@ f<Token> Lexer.readRawToken() {
         this.reader.advance();
     }
 
-    return this.consumeToken();
+    // Consume the token and remember where it is located within the source code
+    const unsigned long startOffset = this.reader.getOffset();
+    Token token = this.consumeToken();
+    token.startOffset = startOffset;
+    token.endOffset = this.reader.getOffset();
+    return token;
 }
 
 public p Lexer.expect(TokenType expectedType) {
@@ -165,6 +220,15 @@ f<Token> Lexer.consumeToken() {
     if isDigit(curChar) {
         // Consume number literal
         Token numericLiteral = this.consumeNumberLiteral(codeLoc);
+        if numericLiteral.tokenType == TokenType::DOUBLE_LIT {
+            return numericLiteral;
+        }
+
+        // Consume the optional unsigned suffix. It stays part of the token text, so that the parser can detect it
+        if this.reader.getChar() == 'u' {
+            numericLiteral.text += 'u';
+            this.reader.advance(); // Consume 'u'
+        }
 
         // Patch token type if suffix is present and consume the suffix character
         const char literalSuffix = this.reader.getChar();
@@ -218,6 +282,9 @@ f<Token> Lexer.consumeToken() {
         if this.reader.getChar() == '|' { // "||"
             this.reader.advance(); // Consume '|'
             return Token(TokenType::LOGICAL_OR, "||", codeLoc);
+        } else if this.reader.getChar() == '=' { // "|="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::OR_EQUAL, "|=", codeLoc);
         } else { // '|'
             return Token(TokenType::BITWISE_OR, "|", codeLoc);
         }
@@ -228,6 +295,9 @@ f<Token> Lexer.consumeToken() {
         if this.reader.getChar() == '&' { // "&&"
             this.reader.advance(); // Consume '&'
             return Token(TokenType::LOGICAL_AND, "&&", codeLoc);
+        } else if this.reader.getChar() == '=' { // "&="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::AND_EQUAL, "&=", codeLoc);
         } else { // '&'
             return Token(TokenType::BITWISE_AND, "&", codeLoc);
         }
@@ -380,6 +450,10 @@ f<Token> Lexer.consumeToken() {
         return Token(TokenType::COMMA, ",", codeLoc);
     }
     if curChar == '.' {
+        // Double literal without integer part, e.g. '.5'
+        if isDigit(this.reader.peekChar()) {
+            return this.consumeNumberLiteral(codeLoc);
+        }
         this.reader.advance(); // Consume '.'
         if this.reader.getChar() == '.' { // ".."
             this.reader.advance(); // Consume second '.'
@@ -399,7 +473,21 @@ f<Token> Lexer.consumeToken() {
         }
     }
 
-    panic(Error("Got unexpected character"));
+    const String message = String("token recognition error at: '") + curChar + "'";
+    this.throwLexerError(codeLoc, message.getRaw());
+    return Token(TokenType::INVALID);
+}
+
+/**
+ * Abort lexing with a lexer error. The bootstrap compiler has no exceptions, so the error is raised as a panic.
+ *
+ * @param codeLoc Code location of the error
+ * @param message Error message suffix
+ */
+p Lexer.throwLexerError(const CodeLoc& codeLoc, string message) {
+    const LexerError lexerError = LexerError(codeLoc, LexerErrorType::TOKENIZING_FAILED, message);
+    const String& errorMessage = lexerError.getMessage();
+    panic(Error(errorMessage.getRaw()));
 }
 
 f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
@@ -417,11 +505,11 @@ f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
         numberStr += '0';
         // Peek the character after '0', which is the base of the number ('x', 'b', 'o' or 'd') if present
         const char base = toLower(this.reader.getChar());
-        if base == 'x' || base == 'b' || base == 'o' || base == 'd' {
+        if base == 'x' || base == 'h' || base == 'b' || base == 'o' || base == 'd' {
             numberStr += this.reader.getChar();
             this.reader.advance(); // Consume the base character
             // Decide what to do, depending on the base
-            if base == 'x' { // Hexadecimal number
+            if base == 'x' || base == 'h' { // Hexadecimal number
                 while isHexDigit(this.reader.getChar()) {
                     numberStr += this.reader.getChar();
                     this.reader.advance();
@@ -442,17 +530,46 @@ f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
                     this.reader.advance();
                 }
             }
-        } else { // Bare '0' or decimal number with leading zero
+            // The correct token type is set a layer above in the parsing functions for int, short, long, etc.
+            return Token(TokenType::INT_LIT, numberStr, codeLoc);
+        }
+    }
+
+    // Decimal number (or the remainder of a decimal number with leading zero)
+    while isDigit(this.reader.getChar()) {
+        numberStr += this.reader.getChar();
+        this.reader.advance();
+    }
+
+    // Check for a double literal: [0-9]*[.][0-9]+([eE][+-]?[0-9]+)?
+    if this.reader.getChar() == '.' && isDigit(this.reader.peekChar()) {
+        numberStr += '.';
+        this.reader.advance(); // Consume '.'
+        while isDigit(this.reader.getChar()) {
+            numberStr += this.reader.getChar();
+            this.reader.advance();
+        }
+        // Check for optional exponent
+        const char exponentChar = this.reader.getChar();
+        const char afterExponentChar = this.reader.peekChar();
+        const bool hasExponentSign = afterExponentChar == '+' || afterExponentChar == '-';
+        if (exponentChar == 'e' || exponentChar == 'E') && (isDigit(afterExponentChar) || hasExponentSign) {
+            numberStr += exponentChar;
+            this.reader.advance(); // Consume 'e' or 'E'
+            if hasExponentSign {
+                numberStr += afterExponentChar;
+                this.reader.advance(); // Consume sign
+            }
+            if !isDigit(this.reader.getChar()) {
+                const String message = "token recognition error at: '" + numberStr + "'";
+                this.throwLexerError(codeLoc, message.getRaw());
+            }
             while isDigit(this.reader.getChar()) {
                 numberStr += this.reader.getChar();
                 this.reader.advance();
             }
         }
-    } else { // Decimal number
-        while isDigit(this.reader.getChar()) {
-            numberStr += this.reader.getChar();
-            this.reader.advance();
-        }
+        return Token(TokenType::DOUBLE_LIT, numberStr, codeLoc);
     }
 
     // The correct token type is set a layer above in the parsing functions for int, short, long, etc.
@@ -464,13 +581,10 @@ f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
     String charStr;
     this.reader.expect('\''); // Consume '\''
     if this.reader.getChar() == '\\' { // Escape sequence
+        // Keep the escape sequence as is. It gets resolved by the parser, like the host compiler does
+        charStr += '\\';
         this.reader.advance(); // Consume '\\'
-        const char nextChar = this.reader.getChar();
-        if nextChar == 'n' || nextChar == 'r' || nextChar == 't' || nextChar == '0' || nextChar == '\'' || nextChar == '"' || nextChar == '\\' {
-            charStr += nextChar;
-        } else {
-            panic(Error("Invalid escape sequence"));
-        }
+        charStr += this.reader.getChar();
         this.reader.advance(); // Consume escaped character
     } else { // Normal character
         charStr += this.reader.getChar();
@@ -485,14 +599,16 @@ f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
     String stringStr;
     this.reader.expect('"'); // Consume '"'
     while this.reader.getChar() != '"' {
+        // A string literal must be terminated in the same line
+        if this.reader.isEOF() || this.reader.getChar() == '\n' {
+            const String message = "token recognition error at: '\"" + stringStr + "'";
+            this.throwLexerError(codeLoc, message.getRaw());
+        }
         if this.reader.getChar() == '\\' { // Escape sequence
+            // Keep the escape sequence as is. It gets resolved by the parser, like the host compiler does
+            stringStr += '\\';
             this.reader.advance(); // Consume '\\'
-            const char nextChar = this.reader.getChar();
-            if nextChar == 'n' || nextChar == 'r' || nextChar == 't' || nextChar == '0' || nextChar == '\'' || nextChar == '"' || nextChar == '\\' {
-                stringStr += nextChar;
-            } else {
-                panic(Error("Invalid escape sequence"));
-            }
+            stringStr += this.reader.getChar();
             this.reader.advance(); // Consume escaped character
         } else { // Normal character
             stringStr += this.reader.getChar();
@@ -619,6 +735,9 @@ f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
     if identifier == "interface" {
         return Token(TokenType::INTERFACE, "interface", codeLoc);
     }
+    if identifier == "union" {
+        return Token(TokenType::UNION, "union", codeLoc);
+    }
     if identifier == "type" {
         return Token(TokenType::TYPE, "type", codeLoc);
     }
@@ -639,21 +758,6 @@ f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
     }
     if identifier == "main" {
         return Token(TokenType::MAIN, "main", codeLoc);
-    }
-    if identifier == "printf" {
-        return Token(TokenType::PRINTF, "printf", codeLoc);
-    }
-    if identifier == "sizeof" {
-        return Token(TokenType::SIZEOF, "sizeof", codeLoc);
-    }
-    if identifier == "alignof" {
-        return Token(TokenType::ALIGNOF, "alignof", codeLoc);
-    }
-    if identifier == "len" {
-        return Token(TokenType::LEN, "len", codeLoc);
-    }
-    if identifier == "panic" {
-        return Token(TokenType::PANIC, "panic", codeLoc);
     }
     if identifier == "ext" {
         return Token(TokenType::EXT, "ext", codeLoc);

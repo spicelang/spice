@@ -182,7 +182,7 @@ public p SourceFile.runParser() {
 
     // Parse the source file
     Lexer lexer = Lexer(this.filePath);
-    Parser parser = Parser(lexer);
+    Parser parser = Parser(lexer, this.isStdFile);
     this.ast = parser.parse();
     assert this.ast != nil<ASTEntryNode*>;
 

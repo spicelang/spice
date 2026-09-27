@@ -1021,7 +1021,7 @@ public f<Any> SymbolTableBuilder.visitLogicalAndExpr(ASTLogicalAndExprNode* node
 }
 
 public f<Any> SymbolTableBuilder.visitStmtLst(ASTStmtLstNode* node) {
-    foreach IVisitable* stmt : node.stmts {
+    foreach IVisitable* stmt : node.statements {
         stmt.accept(cast<IAbstractAstVisitor*>(this));
     }
     return Any();
