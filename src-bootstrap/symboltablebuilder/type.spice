@@ -573,7 +573,9 @@ public f<llvm::Type> Type.toLLVMType(SourceFile* sourceFile) {
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-public p unwrapBoth(const Type*& typeA, const Type*& typeB) {
+// Named unwrapBothTypes instead of unwrapBoth (like the host's Type::unwrapBoth), because the QualType overload in
+// qual-type.spice would shadow it there
+public p unwrapBothTypes(const Type*& typeA, const Type*& typeB) {
     // Unwrap both types as far as possible
     while typeA.isSameContainerTypeAs(typeB) {
         typeA = typeA.getContained();
@@ -598,7 +600,7 @@ public p unwrapBothWithReferenceWrappers(const Type*& typeA, const Type*& typeB)
     }
 
     // Unwrap both types as far as possible
-    unwrapBoth(typeA, typeB);
+    unwrapBothTypes(typeA, typeB);
 }
 
 /**

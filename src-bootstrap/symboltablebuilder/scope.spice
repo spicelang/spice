@@ -215,6 +215,27 @@ public f<Vector<Struct*>> Scope.getAllStructManifestationsInDeclarationOrder() {
 }
 
 /**
+ * Check if this scope is the root scope of its source file
+ *
+ * @return Root scope or not
+ */
+public f<bool> Scope.isRootScope() {
+    return this.parent == nil<Scope*>;
+}
+
+/**
+ * Check if unsafe operations are allowed in this scope. This is the case in unsafe blocks and all scopes within them.
+ *
+ * @return Allowed or not
+ */
+public f<bool> Scope.doesAllowUnsafeOperations() {
+    if this.scopeType == ScopeType::UNSAFE_BODY {
+        return true;
+    }
+    return !this.isRootScope() && this.parent.doesAllowUnsafeOperations();
+}
+
+/**
  * Check if the source file of this scope is imported by the source file of the asking scope
  *
  * @param askingScope Scope, that asks

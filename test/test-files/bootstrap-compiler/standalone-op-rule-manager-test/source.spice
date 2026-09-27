@@ -1,0 +1,223 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "std/data/pair";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/model/function";
+import "bootstrap/reader/code-loc";
+import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/expr-result";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/op-rule-manager";
+import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/pass-test-util";
+
+f<FilePath> getFixturePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-op-rule-manager-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+// Temporary expression exprResult of the given type
+f<ExprResult> temp(const QualType& qualType) {
+    return ExprResult{qualType, nil<SymbolTableEntry*>};
+}
+
+f<int> main() {
+    // -------------------------------------------------------------------------------------------------------------
+    // Run the front end and the prepare stage of the type checker
+    // -------------------------------------------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    // Create the source file via the resource manager like the driver does. The operator overloading lookup iterates the
+    // source files of the resource manager
+    SourceFile* file = rm.createSourceFile(nil<SourceFile*>, String("root"), getFixturePath(), false);
+    file.runFrontEnd();
+    TypeChecker typeChecker = TypeChecker(rm, file, TypeCheckerMode::TC_MODE_PRE);
+    typeChecker.visit(file.ast);
+    assert rm.errorManager.softErrors.isEmpty();
+    Scope* root = file.getGlobalScope();
+    OpRuleManager& opRuleManager = typeChecker.opRuleManager;
+
+    // Node to report errors at and to store operator functions in
+    ASTAdditiveExprNode addNode = ASTAdditiveExprNode(CodeLoc(1ul, 1ul, "test"));
+    ASTNode* node = cast<ASTNode*>(&addNode);
+    node.visitable = cast<IVisitable*>(&addNode); // Done by the parser for parsed nodes
+    node.resizeToNumberOfManifestations(1l);
+
+    // Types
+    const QualType intType = QualType(SuperType::TY_INT);
+    const QualType longType = QualType(SuperType::TY_LONG);
+    const QualType doubleType = QualType(SuperType::TY_DOUBLE);
+    const QualType boolType = QualType(SuperType::TY_BOOL);
+    const QualType stringType = QualType(SuperType::TY_STRING);
+    const QualType intPtrType = intType.toPtr(node);
+    const QualType charType = QualType(SuperType::TY_CHAR);
+    const QualType charPtrType = charType.toPtr(node);
+    QualType unsignedLongType = QualType(SuperType::TY_LONG);
+    unsignedLongType.makeUnsigned(true);
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Binary operators without overloads
+    // -------------------------------------------------------------------------------------------------------------
+    ExprResult exprResult = opRuleManager.getPlusResultType(node, temp(intType), temp(intType), 0l);
+    assert exprResult.ty.is(SuperType::TY_INT);
+    exprResult = opRuleManager.getPlusResultType(node, temp(doubleType), temp(doubleType), 0l);
+    assert exprResult.ty.is(SuperType::TY_DOUBLE);
+    exprResult = opRuleManager.getMulResultType(node, temp(intType), temp(longType), 0l);
+    assert exprResult.ty.is(SuperType::TY_LONG);
+    QualType qualType = opRuleManager.getLogicalAndResultType(node, temp(boolType), temp(boolType));
+    assert qualType.is(SuperType::TY_BOOL);
+    qualType = opRuleManager.getLessResultType(node, temp(intType), temp(longType));
+    assert qualType.is(SuperType::TY_BOOL);
+    exprResult = opRuleManager.getEqualResultType(node, temp(intPtrType), temp(unsignedLongType));
+    assert exprResult.ty.is(SuperType::TY_BOOL);
+    exprResult = opRuleManager.getNotEqualResultType(node, temp(stringType), temp(charPtrType));
+    assert exprResult.ty.is(SuperType::TY_BOOL);
+    qualType = opRuleManager.getGreaterEqualResultType(node, temp(intPtrType), temp(intPtrType));
+    assert qualType.is(SuperType::TY_BOOL);
+    assert rm.errorManager.softErrors.isEmpty();
+
+    // Invalid operand types record a soft error and yield the unresolved type
+    exprResult = opRuleManager.getPlusResultType(node, temp(intType), temp(stringType), 0l);
+    assert exprResult.ty.is(SuperType::TY_UNRESOLVED);
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '+' operator on types int and string");
+    rm.errorManager.softErrors.clear();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Unary operators
+    // -------------------------------------------------------------------------------------------------------------
+    qualType = opRuleManager.getPrefixNotResultType(node, temp(boolType));
+    assert qualType.is(SuperType::TY_BOOL);
+    qualType = opRuleManager.getPrefixMinusResultType(node, temp(doubleType));
+    assert qualType.is(SuperType::TY_DOUBLE);
+    qualType = opRuleManager.getPrefixMulResultType(node, temp(intPtrType));
+    assert qualType.is(SuperType::TY_INT);
+    qualType = opRuleManager.getPrefixBitwiseAndResultType(node, temp(intType));
+    assert qualType.isPtrTo(SuperType::TY_INT);
+    assert rm.errorManager.softErrors.isEmpty();
+    qualType = opRuleManager.getPrefixMulResultType(node, temp(intType));
+    assert qualType.is(SuperType::TY_UNRESOLVED);
+    assert softErrorContains(rm.errorManager, 0l, "Cannot apply de-referencing operator on type int");
+    rm.errorManager.softErrors.clear();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Unsafe operations are only allowed in unsafe blocks
+    // -------------------------------------------------------------------------------------------------------------
+    typeChecker.currentScope = root;
+    exprResult = opRuleManager.getPlusResultType(node, temp(intPtrType), temp(intType), 0l);
+    assert exprResult.ty.isPtrTo(SuperType::TY_INT);
+    assert rm.errorManager.softErrors.getSize() == 1l;
+    assert softErrorContains(rm.errorManager, 0l, "as this is an unsafe operation");
+    rm.errorManager.softErrors.clear();
+
+    Scope* unsafeScope = nil<Scope*>;
+    foreach Pair<const String&, Scope*&> mainScopeEntry : root.children {
+        Scope* mainScope = mainScopeEntry.getSecond();
+        foreach Pair<const String&, Scope*&> childEntry : mainScope.children {
+            Scope* child = childEntry.getSecond();
+            if child.scopeType == ScopeType::UNSAFE_BODY {
+                unsafeScope = child;
+            }
+        }
+    }
+    assert unsafeScope != nil<Scope*>;
+    assert unsafeScope.doesAllowUnsafeOperations();
+    assert !root.doesAllowUnsafeOperations();
+    typeChecker.currentScope = unsafeScope;
+    exprResult = opRuleManager.getPlusResultType(node, temp(intPtrType), temp(intType), 0l);
+    assert exprResult.ty.isPtrTo(SuperType::TY_INT);
+    qualType = opRuleManager.getCastResultType(node, longType, temp(intPtrType));
+    assert qualType.is(SuperType::TY_LONG);
+    assert rm.errorManager.softErrors.isEmpty();
+    typeChecker.currentScope = root;
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Casts
+    // -------------------------------------------------------------------------------------------------------------
+    qualType = opRuleManager.getCastResultType(node, intType, temp(doubleType));
+    assert qualType.is(SuperType::TY_INT);
+    qualType = opRuleManager.getCastResultType(node, charPtrType, temp(stringType));
+    assert qualType.isPtrTo(SuperType::TY_CHAR);
+    assert rm.errorManager.softErrors.isEmpty();
+    qualType = opRuleManager.getCastResultType(node, boolType, temp(intType));
+    assert qualType.is(SuperType::TY_UNRESOLVED);
+    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '(cast)' operator on types bool and int");
+    rm.errorManager.softErrors.clear();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Assignments
+    // -------------------------------------------------------------------------------------------------------------
+    SymbolTableEntry* counterEntry = root.lookupStrict(String("COUNTER"));
+    assert counterEntry != nil<SymbolTableEntry*>;
+    const ExprResult counter = ExprResult{counterEntry.getQualType(), counterEntry};
+    Pair<QualType, Function*> assignResult = opRuleManager.getAssignResultType(node, counter, temp(intType));
+    QualType assignType = assignResult.getFirst();
+    assert assignType.is(SuperType::TY_INT);
+    assert assignResult.getSecond() == nil<Function*>;
+    assert rm.errorManager.softErrors.isEmpty();
+    // Assigning to a temporary
+    assignResult = opRuleManager.getAssignResultType(node, temp(intType), temp(intType));
+    assignType = assignResult.getFirst();
+    assert assignType.is(SuperType::TY_UNRESOLVED);
+    assert softErrorContains(rm.errorManager, 0l, "Cannot assign to a temporary value");
+    rm.errorManager.softErrors.clear();
+    // Assigning to a constant
+    SymbolTableEntry* limitEntry = root.lookupStrict(String("LIMIT"));
+    const ExprResult limit = ExprResult{limitEntry.getQualType(), limitEntry};
+    assignResult = opRuleManager.getAssignResultType(node, limit, temp(intType));
+    assert softErrorContains(rm.errorManager, 0l, "Trying to assign value to an immutable variable of type int");
+    rm.errorManager.softErrors.clear();
+    // Assigning a value of the wrong type
+    assignResult = opRuleManager.getAssignResultType(node, counter, temp(stringType), false, false, ERROR_MSG_RETURN);
+    assignType = assignResult.getFirst();
+    assert assignType.is(SuperType::TY_UNRESOLVED);
+    assert softErrorContains(rm.errorManager, 0l, "Passed wrong data type to return statement. Expected int but got string");
+    rm.errorManager.softErrors.clear();
+    // Compound assignments
+    exprResult = opRuleManager.getPlusEqualResultType(node, counter, temp(longType));
+    assert exprResult.ty.is(SuperType::TY_INT);
+    qualType = opRuleManager.getSHLEqualResultType(node, counter, temp(intType));
+    assert qualType.is(SuperType::TY_INT);
+    assert rm.errorManager.softErrors.isEmpty();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Operator overloading
+    // -------------------------------------------------------------------------------------------------------------
+    SymbolTableEntry* vecEntry = root.lookupStrict(String("Vec"));
+    const QualType vecType = vecEntry.getQualType();
+    assert vecType.is(SuperType::TY_STRUCT);
+    // Temporaries of type Vec bind to the 'const Vec&' params of the operator function
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(vecType, true));
+    args.pushBack(Pair<QualType, bool>(vecType, true));
+    const QualTypeList noTemplateTypeHints;
+    const Function* matchedOpFct = matchFunction(root, String("op.plus"), QualType(SuperType::TY_DYN), args, noTemplateTypeHints, false, node);
+    assert matchedOpFct != nil<const Function*>;
+    exprResult = opRuleManager.getPlusResultType(node, temp(vecType), temp(vecType), 0l);
+    assert exprResult.ty.is(SuperType::TY_STRUCT);
+    assert exprResult.ty.getSubType() == "Vec";
+    assert rm.errorManager.softErrors.isEmpty();
+    // The operator function is stored in the node
+    assert addNode.opFct.getSize() == 1l;
+    Vector<const Function*>& opFcts = addNode.opFct.get(0l);
+    assert opFcts.getSize() == 1l;
+    const Function* opFct = opFcts.get(0l);
+    assert opFct != nil<const Function*>;
+    assert opFct.name == "op.plus";
+    // Without an operator function for the given types, the primitive rules apply
+    exprResult = opRuleManager.getMinusResultType(node, temp(vecType), temp(vecType), 0l);
+    assert exprResult.ty.is(SuperType::TY_UNRESOLVED);
+    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '-' operator on types Vec and Vec");
+    rm.errorManager.softErrors.clear();
+
+    printf("All assertions passed!\n");
+}

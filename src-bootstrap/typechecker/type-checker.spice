@@ -36,6 +36,7 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/typechecker/expr-result";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/interface-manager";
+import "bootstrap/typechecker/op-rule-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/type-matcher";
 import "bootstrap/typechecker/union-manager";
@@ -63,7 +64,7 @@ public type TypeCheckerMode enum {
  */
 public type TypeChecker struct : IAbstractAstVisitor {
     compose public CompilerPass compilerPass
-    // ToDo: OpRuleManager opRuleManager (ported together with the check pass)
+    OpRuleManager opRuleManager
     TypeCheckerMode typeCheckerMode
     Vector<CompilerWarning>* warnings
     TypeMapping typeMapping
@@ -72,6 +73,7 @@ public type TypeChecker struct : IAbstractAstVisitor {
 
 public p TypeChecker.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile, TypeCheckerMode typeCheckerMode) {
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
+    this.opRuleManager = OpRuleManager(this);
     this.typeCheckerMode = typeCheckerMode;
     this.warnings = &sourceFile.compilerOutput.warnings;
 }
@@ -157,7 +159,7 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
  * @param symbolType Local type
  * @return Type in the imported scope
  */
-f<QualType> TypeChecker.mapLocalTypeToImportedScopeType(const Scope* targetScope, const QualType& symbolType) {
+public f<QualType> TypeChecker.mapLocalTypeToImportedScopeType(const Scope* targetScope, const QualType& symbolType) {
     // Skip all types, except structs
     if !symbolType.isBase(SuperType::TY_STRUCT) {
         return symbolType;
@@ -194,6 +196,55 @@ f<QualType> TypeChecker.mapLocalTypeToImportedScopeType(const Scope* targetScope
     const unsigned long targetTypeId = origRegistryEntry.typeId;
     SymbolTableEntry* targetEntry = origRegistryEntry.targetEntry;
     targetSourceFile.addNameRegistryEntry(structName, targetTypeId, targetEntry, origRegistryEntry.targetScope, false, nil<SymbolTableEntry*>);
+
+    return symbolType;
+}
+
+/**
+ * Map a type from an imported scope to the local type. If this source file does not know about the struct, it is shown how
+ * to find the struct.
+ *
+ * @param sourceScope Scope of the imported source file
+ * @param symbolType Type in the imported scope
+ * @return Local type
+ */
+public f<QualType> TypeChecker.mapImportedScopeTypeToLocalType(const Scope* sourceScope, const QualType& symbolType) {
+    // Skip all types, except structs
+    if !symbolType.isBase(SuperType::TY_STRUCT) {
+        return symbolType;
+    }
+
+    // If the given source file is in the current one, we can return the symbol type as is
+    SourceFile* sourceSourceFile = sourceScope.sourceFile;
+    if sourceSourceFile == this.sourceFile {
+        return symbolType;
+    }
+
+    // Match the scope of the symbol type against all scopes in the name registry of this source file
+    const QualType baseType = symbolType.getBase();
+    if isStructKnownByNameRegistry(this.sourceFile, baseType.getBodyScope()) {
+        return symbolType;
+    }
+
+    // This source file does not know about the struct at all
+    // -> show it how to find the struct
+    const String structName = baseType.getSubType();
+    const NameRegistryEntry* origRegistryEntry = sourceSourceFile.getNameRegistryEntry(structName);
+    // If even the source file does not know the struct by its unqualified name (deep transitive import), there is
+    // nothing to copy over. Skip teaching this file; the type identity itself is unaffected, and member access
+    // falls back to the resolved body scope.
+    if origRegistryEntry == nil<const NameRegistryEntry*> {
+        return symbolType;
+    }
+    // Do not clobber an entry this file already has under this name (see mapLocalTypeToImportedScopeType): teaching
+    // with keepNewOnCollision=false would ERASE this file's own same-named struct entry. The QualType identity is
+    // carried by pointer, so an already-taken name needs no (re-)teaching here.
+    if this.sourceFile.exportedNameRegistry.contains(structName) {
+        return symbolType;
+    }
+    const unsigned long typeId = origRegistryEntry.typeId;
+    SymbolTableEntry* targetEntry = origRegistryEntry.targetEntry;
+    this.sourceFile.addNameRegistryEntry(structName, typeId, targetEntry, origRegistryEntry.targetScope, false, nil<SymbolTableEntry*>);
 
     return symbolType;
 }
@@ -251,6 +302,30 @@ p TypeChecker.ensureLoadedRuntimeForFunctionName(const String& functionName) {
     RuntimeModule runtimeModule = RuntimeModule::STRING_RT;
     if getRuntimeModuleForFunctionName(functionName, runtimeModule) && !this.sourceFile.isRT(runtimeModule) {
         this.sourceFile.requestRuntimeModule(runtimeModule);
+    }
+}
+
+/**
+ * Get the operator overloading functions of the given node for the current manifestation
+ *
+ * @param node AST node, that supports operator overloading
+ * @return Operator overloading functions
+ */
+public f<Vector<const Function*>&> TypeChecker.getOpFctPointers(ASTNode* node) {
+    Vector<Vector<const Function*>>* opFctPointers = node.getOpFctPointers();
+    assert opFctPointers.getSize() > cast<long>(this.manIdx);
+    return opFctPointers.get(this.manIdx);
+}
+
+/**
+ * Request a re-visit of the source file of the given function, if the function body was not type-checked yet
+ *
+ * @param fct Function to check
+ */
+public p requestRevisitIfRequired(const Function* fct) {
+    if fct != nil<const Function*> && !fct.alreadyTypeChecked {
+        SourceFile* sourceFile = fct.entry.scope.sourceFile;
+        sourceFile.reVisitRequested = true;
     }
 }
 
@@ -2081,3 +2156,102 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
 public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitLambdaProc(ASTLambdaProcNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
+
+// ============================================================== TypeCheckerImplicit.cpp ========================================
+
+// ToDo: Port the rest of TypeCheckerImplicit.cpp (implicit default ctors/dtors, dtor calls, ...)
+
+/**
+ * Prepare the generation of a call to a method of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the method call
+ * @param methodName Name of the method to call
+ * @param args Provided arguments by the caller
+ * @param node AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructMethod(const SymbolTableEntry* entry, const String& methodName, const ArgList& args, const ASTNode* node) {
+    const QualType entryType = entry.getQualType();
+    const QualType unwrappedType = entryType.removeReferenceWrapper();
+    const QualType thisType = unwrappedType.toNonConst();
+    return this.implicitlyCallStructMethod(thisType, methodName, args, node);
+}
+
+/**
+ * Prepare the generation of a call to a method of a given struct
+ *
+ * @param thisType Struct type to call the method on
+ * @param methodName Name of the method to call
+ * @param args Provided arguments by the caller
+ * @param node AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructMethod(QualType thisType, const String& methodName, const ArgList& args, const ASTNode* node) {
+    assert thisType.is(SuperType::TY_STRUCT);
+    Scope* matchScope = thisType.getBodyScope();
+    assert matchScope.scopeType == ScopeType::STRUCT;
+
+    // Search for dtor
+    if matchScope.isImportedBy(this.rootScope) {
+        thisType = this.mapLocalTypeToImportedScopeType(matchScope, thisType);
+    }
+    const QualTypeList noTemplateTypeHints;
+    return matchFunction(matchScope, methodName, thisType, args, noTemplateTypeHints, true, node);
+}
+
+/**
+ * Prepare the generation of a call to the copy ctor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the copy ctor call
+ * @param node Current AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const SymbolTableEntry* entry, const ASTNode* node) {
+    assert entry != nil<const SymbolTableEntry*>;
+    const QualType entryType = entry.getQualType();
+    const QualType unwrappedType = entryType.removeReferenceWrapper();
+    const QualType thisType = unwrappedType.toNonConst();
+    assert thisType.is(SuperType::TY_STRUCT);
+    return this.implicitlyCallStructCopyCtor(thisType, node);
+}
+
+/**
+ * Prepare the generation of a call to the copy ctor of a given struct
+ *
+ * @param thisType Struct type to call the copy ctor on
+ * @param node Current AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const QualType& thisType, const ASTNode* node) {
+    const QualType unwrappedType = thisType.removeReferenceWrapper();
+    const QualType argType = unwrappedType.toConstRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
+    return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);
+}
+
+/**
+ * Prepare the generation of a call to the move ctor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the move ctor call
+ * @param node Current AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const SymbolTableEntry* entry, const ASTNode* node) {
+    assert entry != nil<const SymbolTableEntry*>;
+    const QualType entryType = entry.getQualType();
+    const QualType unwrappedType = entryType.removeReferenceWrapper();
+    const QualType thisType = unwrappedType.toNonConst();
+    assert thisType.is(SuperType::TY_STRUCT);
+    return this.implicitlyCallStructMoveCtor(thisType, node);
+}
+
+/**
+ * Prepare the generation of a call to the move ctor of a given struct
+ *
+ * @param thisType Struct type to call the move ctor on
+ * @param node Current AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thisType, const ASTNode* node) {
+    const QualType unwrappedType = thisType.removeReferenceWrapper();
+    const QualType nonConstType = unwrappedType.toNonConst();
+    const QualType argType = nonConstType.toRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
+    return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);
+}

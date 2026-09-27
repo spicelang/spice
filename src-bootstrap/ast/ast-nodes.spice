@@ -1606,6 +1606,8 @@ public type ASTAssignExprNode struct : IVisitable {
     public IVisitable* rhs = nil<IVisitable*>
     public IVisitable* ternaryExpr = nil<IVisitable*>
     public AssignOp op = AssignOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
+    public Vector<const Function*> lhsDtorFct // Dtor of the lhs, if it gets overwritten
 }
 
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
@@ -1676,6 +1678,7 @@ public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseOrExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
@@ -1692,6 +1695,7 @@ public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseXorExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
@@ -1708,6 +1712,7 @@ public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseAndExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
@@ -1731,6 +1736,7 @@ public type ASTEqualityExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public EqualityOp op = EqualityOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
@@ -1781,6 +1787,7 @@ public type ASTShiftExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public ShiftOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
@@ -1805,6 +1812,7 @@ public type ASTAdditiveExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public AdditiveOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
@@ -1830,6 +1838,7 @@ public type ASTMultiplicativeExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public MultiplicativeOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
@@ -1878,6 +1887,7 @@ public type ASTPrefixUnaryExprNode struct : IVisitable {
     public IVisitable* prefixUnaryExpr = nil<IVisitable*>
     public IVisitable* postfixUnaryExpr = nil<IVisitable*>
     public PrefixUnaryOp op = PrefixUnaryOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -1907,6 +1917,7 @@ public type ASTPostfixUnaryExprNode struct : IVisitable {
     public IVisitable* subscriptIndexExpr = nil<IVisitable*>
     public PostfixUnaryOp op = PostfixUnaryOp::OP_NONE
     public String identifier
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -2212,7 +2223,95 @@ public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
 }
 
 // Do node-specific work when the AST gets resized to a number of manifestations
+/**
+ * Get the operator overloading functions of a node, that supports operator overloading. Equal to the host's
+ * ASTNode::getOpFctPointers(), which is overridden by the concrete nodes.
+ *
+ * @return Operator overloading functions per manifestation
+ */
+public f<Vector<Vector<const Function*>>*> ASTNode.getOpFctPointers() {
+    Vector<Vector<const Function*>>* opFctPointers = nil<Vector<Vector<const Function*>>*>;
+    switch this.kind {
+        case ASTNodeKind::ASSIGN_EXPR: {
+            ASTAssignExprNode* concreteNode = downcast<ASTAssignExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_OR_EXPR: {
+            ASTBitwiseOrExprNode* concreteNode = downcast<ASTBitwiseOrExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_XOR_EXPR: {
+            ASTBitwiseXorExprNode* concreteNode = downcast<ASTBitwiseXorExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_AND_EXPR: {
+            ASTBitwiseAndExprNode* concreteNode = downcast<ASTBitwiseAndExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::EQUALITY_EXPR: {
+            ASTEqualityExprNode* concreteNode = downcast<ASTEqualityExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::SHIFT_EXPR: {
+            ASTShiftExprNode* concreteNode = downcast<ASTShiftExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::ADDITIVE_EXPR: {
+            ASTAdditiveExprNode* concreteNode = downcast<ASTAdditiveExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::MULTIPLICATIVE_EXPR: {
+            ASTMultiplicativeExprNode* concreteNode = downcast<ASTMultiplicativeExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::PREFIX_UNARY_EXPR: {
+            ASTPrefixUnaryExprNode* concreteNode = downcast<ASTPrefixUnaryExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            ASTPostfixUnaryExprNode* concreteNode = downcast<ASTPostfixUnaryExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        default: {
+            panic(Error("The given node does not overload the getOpFctPointers function"));
+        }
+    }
+    return opFctPointers;
+}
+
+/**
+ * Check if nodes of the given kind store operator overloading functions (getOpFctPointers)
+ *
+ * @param kind Node kind
+ * @return Stores operator overloading functions or not
+ */
+f<bool> hasOpFctPointers(ASTNodeKind kind) {
+    switch kind {
+        case ASTNodeKind::ASSIGN_EXPR, ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR, ASTNodeKind::EQUALITY_EXPR, ASTNodeKind::SHIFT_EXPR, ASTNodeKind::ADDITIVE_EXPR, ASTNodeKind::MULTIPLICATIVE_EXPR, ASTNodeKind::PREFIX_UNARY_EXPR, ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            return true;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
 p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
+    if node.kind == ASTNodeKind::ASSIGN_EXPR {
+        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
+        while assignExprNode.lhsDtorFct.getSize() < manifestationCount {
+            assignExprNode.lhsDtorFct.pushBack(nil<const Function*>);
+        }
+    }
+    if hasOpFctPointers(node.kind) {
+        // Each manifestation starts with one empty operator function slot (host: opFct.resize(manifestationCount, {nullptr}))
+        Vector<Vector<const Function*>>* opFct = node.getOpFctPointers();
+        while opFct.getSize() < manifestationCount {
+            Vector<const Function*> opFctsOfManifestation;
+            opFctsOfManifestation.pushBack(nil<const Function*>);
+            opFct.pushBack(opFctsOfManifestation);
+        }
+    }
     if node.kind == ASTNodeKind::DECL_STMT {
         ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
         while declStmtNode.entries.getSize() < manifestationCount {

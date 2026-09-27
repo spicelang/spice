@@ -1204,8 +1204,12 @@ public f<bool> operator!=(const QualType& lhs, const QualType& rhs) {
  * @param typeB Requested type
  */
 public p unwrapBoth(QualType& typeA, QualType& typeB) {
-    // ToDo: Fix funcion matching problem below
-    //unwrapBoth(typeA.rawType, typeB.rawType);
+    // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
+    const Type* rawTypeA = typeA.rawType;
+    const Type* rawTypeB = typeB.rawType;
+    unwrapBothTypes(rawTypeA, rawTypeB);
+    typeA.rawType = rawTypeA;
+    typeB.rawType = rawTypeB;
 }
 
 /**
@@ -1216,6 +1220,10 @@ public p unwrapBoth(QualType& typeA, QualType& typeB) {
  * @param typeB Requested type
  */
 public p unwrapBothWithRefWrappers(QualType& typeA, QualType& typeB) {
-    // ToDo: Fix funcion matching problem below
-    //unwrapBothWithRefWrappers(typeA.rawType, typeB.rawType);
+    // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
+    const Type* rawTypeA = typeA.rawType;
+    const Type* rawTypeB = typeB.rawType;
+    unwrapBothWithReferenceWrappers(rawTypeA, rawTypeB);
+    typeA.rawType = rawTypeA;
+    typeB.rawType = rawTypeB;
 }

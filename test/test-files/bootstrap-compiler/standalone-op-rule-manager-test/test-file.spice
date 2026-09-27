@@ -1,0 +1,20 @@
+// Input program for the standalone OpRuleManager test. It provides a struct with an overloaded operator, a global variable
+// and an unsafe block, which the test uses to check operator result types.
+
+type Vec struct {
+    int x
+}
+
+public f<Vec> operator+(const Vec& a, const Vec& b) {
+    return Vec{a.x + b.x};
+}
+
+int COUNTER = 0;
+const int LIMIT = 10;
+
+f<int> main() {
+    unsafe {
+        int value = 1;
+    }
+    return COUNTER;
+}
