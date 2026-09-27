@@ -12,6 +12,7 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
+import "bootstrap/model/union";
 import "bootstrap/model/generic-type";
 
 // Constants
@@ -219,6 +220,29 @@ public f<Interface*> QualType.getInterface(const ASTNode* node, const QualTypeLi
  */
 public f<Interface*> QualType.getInterface(const ASTNode* node) {
     return this.getInterface(node, this.getTemplateTypes());
+}
+
+/**
+ * Get the union instance for a union type
+ *
+ * @param node Accessing AST node
+ * @param templateTypes Custom set of template types
+ * @return Union instance
+ */
+public f<Union*> QualType.getUnion(const ASTNode* node, const QualTypeList& templateTypes) {
+    assert this.is(SuperType::TY_UNION);
+    // ToDo: Wire up to UnionManager.matchUnion once the model/typechecker layer is available.
+    return nil<Union*>;
+}
+
+/**
+ * Get the union instance for a union type
+ *
+ * @param node Accessing AST node
+ * @return Union instance
+ */
+public f<Union*> QualType.getUnion(const ASTNode* node) {
+    return this.getUnion(node, this.getTemplateTypes());
 }
 
 /**

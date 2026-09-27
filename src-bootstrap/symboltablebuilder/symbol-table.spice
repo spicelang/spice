@@ -103,8 +103,8 @@ public p SymbolTable.insertAnonymous(const QualType& qualType, ASTNode* declNode
 public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, const String& newName) {
     SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
-    // ToDo
-    return nil<SymbolTableEntry*>;
+    this.symbols.upsert(newName, *entryToCopy);
+    return &this.symbols.get(newName);
 }
 
 /**
@@ -188,7 +188,12 @@ public f<SymbolTableEntry*> SymbolTable.lookupInComposedFields(const String& nam
  * @return Desired symbol / nullptr if the symbol was not found
  */
 public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int orderIndex) {
-    // ToDo
+    foreach Pair<const String&, SymbolTableEntry&> symbolPair : this.symbols {
+        SymbolTableEntry& symbol = symbolPair.getSecond();
+        if symbol.orderIndex == cast<unsigned long>(orderIndex) {
+            return &symbol;
+        }
+    }
     return nil<SymbolTableEntry*>;
 }
 

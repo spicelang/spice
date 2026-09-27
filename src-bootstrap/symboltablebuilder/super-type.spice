@@ -20,7 +20,8 @@ public type SuperType enum {
     TY_ARRAY,
     TY_FUNCTION,
     TY_PROCEDURE,
-    TY_IMPORT
+    TY_IMPORT,
+    TY_UNION
 }
 
 #[test, test.name="SuperType Smoke test"]
