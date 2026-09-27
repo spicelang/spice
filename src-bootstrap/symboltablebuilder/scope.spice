@@ -10,6 +10,7 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/model/generic-type";
+import "bootstrap/model/struct";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
@@ -163,6 +164,64 @@ public f<SymbolTableEntry*> Scope.lookupField(const unsigned int n) {
 public p Scope.insertGenericType(const String& typeName, const GenericType& genericType) {
     assert !this.genericTypes.contains(typeName);
     this.genericTypes.upsert(typeName, genericType);
+}
+
+/**
+ * Look up a generic type by its name in the current scope
+ *
+ * @param typeName Name of the generic type
+ * @return Generic type or nil if not found
+ */
+public f<GenericType*> Scope.lookupGenericTypeStrict(const String& typeName) {
+    if !this.genericTypes.contains(typeName) {
+        return nil<GenericType*>;
+    }
+    return &this.genericTypes.get(typeName);
+}
+
+/**
+ * Retrieve all struct manifestations in this scope in the order of their declaration
+ *
+ * @return All struct manifestations in declaration order
+ */
+public f<Vector<Struct*>> Scope.getAllStructManifestationsInDeclarationOrder() {
+    // Retrieve all struct manifestations in this scope
+    Vector<Struct*> manifestations;
+    foreach Pair<const String&, StructManifestationList&> structEntry : this.structs {
+        foreach Pair<const String&, Struct&> manifestationEntry : structEntry.getSecond() {
+            manifestations.pushBack(&manifestationEntry.getSecond());
+        }
+    }
+
+    // Sort manifestations by declaration code location (insertion sort, the lists are small)
+    for unsigned long i = 1l; i < manifestations.getSize(); i++ {
+        Struct* current = manifestations.get(i);
+        const CodeLoc& currentCodeLoc = current.structBase.getDeclCodeLoc();
+        unsigned long j = i;
+        while j > 0l {
+            Struct* previous = manifestations.get(j - 1l);
+            const CodeLoc& previousCodeLoc = previous.structBase.getDeclCodeLoc();
+            if !currentCodeLoc.isBefore(previousCodeLoc) {
+                break;
+            }
+            Struct*& slot = manifestations.get(j);
+            slot = previous;
+            j--;
+        }
+        Struct*& targetSlot = manifestations.get(j);
+        targetSlot = current;
+    }
+    return manifestations;
+}
+
+/**
+ * Check if the source file of this scope is imported by the source file of the asking scope
+ *
+ * @param askingScope Scope, that asks
+ * @return Imported or not
+ */
+public f<bool> Scope.isImportedBy(const Scope* askingScope) {
+    return askingScope.sourceFile.imports(this.sourceFile);
 }
 
 /**

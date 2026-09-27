@@ -5,11 +5,13 @@ import "std/data/unordered-map";
 import "bootstrap/source-file";
 import "bootstrap/util/system-util";
 import "bootstrap/global/global-resource-manager";
+import "bootstrap/symboltablebuilder/qual-type";
 
 // Constants
 const string STRING_RT_IMPORT_NAME = "__rt_string";
 const string RESULT_RT_IMPORT_NAME = "__rt_result";
 const string ERROR_RT_IMPORT_NAME = "__rt_error";
+const string ERROR_TRACE_RT_IMPORT_NAME = "__rt_error_trace";
 const string MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const string RTTI_RT_IMPORT_NAME = "__rt_rtti";
 const string STACK_TRACE_RT_IMPORT_NAME = "__rt_stack_trace";
@@ -18,9 +20,75 @@ public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
     ERROR_RT  = 4,
-    MEMORY_RT = 8,
-    RTTI_RT   = 16,
-    STACK_TRACE_RT = 32
+    ERROR_TRACE_RT = 8,
+    MEMORY_RT = 16,
+    RTTI_RT   = 32,
+    STACK_TRACE_RT = 64
+}
+
+/**
+ * Get the runtime module, that is required when using the type with the given name
+ *
+ * @param typeName Type name
+ * @param runtimeModule Receives the runtime module, if found
+ * @return True if the type requires a runtime module
+ */
+public f<bool> getRuntimeModuleForTypeName(const String& typeName, RuntimeModule& runtimeModule) {
+    if typeName == STROBJ_NAME {
+        runtimeModule = RuntimeModule::STRING_RT;
+    } else if typeName == RESULTOBJ_NAME {
+        runtimeModule = RuntimeModule::RESULT_RT;
+    } else if typeName == ERROBJ_NAME {
+        runtimeModule = RuntimeModule::ERROR_RT;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Get the runtime module, that is required when calling the function with the given name
+ *
+ * @param functionName Function name
+ * @param runtimeModule Receives the runtime module, if found
+ * @return True if the function requires a runtime module
+ */
+public f<bool> getRuntimeModuleForFunctionName(const String& functionName, RuntimeModule& runtimeModule) {
+    // Memory RT
+    if functionName == "sAlloc" || functionName == "sAllocUnsafe" || functionName == "sRealloc" || functionName == "sReallocUnsafe"
+        || functionName == "sCopy" || functionName == "sCopyUnsafe" || functionName == "sMove" || functionName == "sDestruct"
+        || functionName == "sDealloc" || functionName == "sDelete" || functionName == "sCompare" {
+        runtimeModule = RuntimeModule::MEMORY_RT;
+    } else if functionName == "ok" || functionName == "err" { // Result RT
+        runtimeModule = RuntimeModule::RESULT_RT;
+    } else if functionName == "sErrTraceReset" || functionName == "sErrTracePush" || functionName == "sErrTraceDump" { // Error Trace RT
+        runtimeModule = RuntimeModule::ERROR_TRACE_RT;
+    } else if functionName == "sDumpStacktrace" || functionName == "sGetStacktrace" { // Stack Trace RT
+        runtimeModule = RuntimeModule::STACK_TRACE_RT;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Get the name of a top level definition, that identifies a source file as the given runtime module
+ *
+ * @param runtimeModule Runtime module
+ * @return Identifying top level name
+ */
+public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
+    switch runtimeModule {
+        case RuntimeModule::STRING_RT: { return STROBJ_NAME; } // String struct
+        case RuntimeModule::RESULT_RT: { return RESULTOBJ_NAME; } // Result struct
+        case RuntimeModule::ERROR_RT: { return ERROBJ_NAME; } // Error struct
+        case RuntimeModule::ERROR_TRACE_RT: { return "sErrTracePush"; } // sErrTracePush function
+        case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
+        case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
+        case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
+    }
+    panic(Error("Requested unknown runtime module"));
+    return "";
 }
 
 type ModuleNamePair struct {
@@ -93,6 +161,9 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
         }
         case RuntimeModule::ERROR_RT: {
             return ModuleNamePair{ERROR_RT_IMPORT_NAME, "error_rt"};
+        }
+        case RuntimeModule::ERROR_TRACE_RT: {
+            return ModuleNamePair{ERROR_TRACE_RT_IMPORT_NAME, "error_trace_rt"};
         }
         case RuntimeModule::MEMORY_RT: {
             return ModuleNamePair{MEMORY_RT_IMPORT_NAME, "memory_rt"};

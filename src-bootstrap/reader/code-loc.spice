@@ -50,6 +50,27 @@ public f<String> CodeLoc.toPrettyLineAndColumn() {
     return this.toString();
 }
 
+/**
+ * Check if this code location is located before the given one. This is the equivalent of the host's operator<, since
+ * Spice does not support overloading '<'.
+ *
+ * @param other Other code location
+ * @return Before or not
+ */
+public f<bool> CodeLoc.isBefore(const CodeLoc& other) {
+    return this.line == other.line ? this.col < other.col : this.line < other.line;
+}
+
+/**
+ * Check if this code location is located after the given one. This is the equivalent of the host's operator>.
+ *
+ * @param other Other code location
+ * @return After or not
+ */
+public f<bool> CodeLoc.isAfter(const CodeLoc& other) {
+    return this.line == other.line ? this.col > other.col : this.line > other.line;
+}
+
 public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
     return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
 }

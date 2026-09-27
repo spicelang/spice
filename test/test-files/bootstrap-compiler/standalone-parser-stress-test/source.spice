@@ -4,6 +4,11 @@ import "std/data/vector";
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
 import "bootstrap/ast/ast-nodes";
+import "std/bindings/llvm/llvm" as llvm;
+import "bootstrap/driver";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/source-file";
+import "bootstrap/util/pass-test-util";
 
 // Recursively count the number of nodes in the AST (including the given root).
 f<long> countNodes(ASTNode* node) {
@@ -44,8 +49,12 @@ f<int> main() {
     // The whole tree is walked, which exercises both the parser and the resulting
     // node/child book-keeping under load. The metrics below are deterministic.
     // -------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), filePath, false);
     Lexer lexer = Lexer(filePath);
-    Parser parser = Parser(lexer);
+    Parser parser = Parser(rm, &file, lexer);
     ASTEntryNode* entry = parser.parse();
     assert entry != nil<ASTEntryNode*>;
 
@@ -64,7 +73,7 @@ f<int> main() {
     // -------------------------------------------------------------------------
     for int run = 0; run < 4; run++ {
         Lexer runLexer = Lexer(filePath);
-        Parser runParser = Parser(runLexer);
+        Parser runParser = Parser(rm, &file, runLexer);
         ASTEntryNode* runEntry = runParser.parse();
         ASTNode* runRoot = cast<ASTNode*>(runEntry);
         assert countNodes(runRoot) == 8759l;

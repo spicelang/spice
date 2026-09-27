@@ -8,8 +8,10 @@ import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type";
+import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
@@ -23,6 +25,7 @@ public const string TIOBJ_NAME = "TypeInfo";
 public const string IITERATOR_NAME = "IIterator";
 public const string ARRAY_ITERATOR_NAME = "ArrayIterator";
 public const unsigned long TYPE_ID_ITERATOR_INTERFACE = 255ul;
+public const string ALIAS_CONTAINER_SUFFIX = ".container";
 public const unsigned long TYPE_ID_ITERABLE_INTERFACE = 256ul;
 
 /**
@@ -47,13 +50,23 @@ public type QualType struct {
 
 public type QualTypeList alias Vector<QualType>;
 
-// Note: The context-free QualType(SuperType) ctors cannot intern a type, since they have no access to the type
-// registry (which lives on the GlobalResourceManager). They therefore leave rawType as nil (a "dyn" placeholder).
-// Type creation that needs interning must go through the registry directly. This is resolved once the registry
-// is threaded to the relevant call sites.
-public p QualType.ctor(SuperType superType) {}
+// The context-free QualType(SuperType) ctors intern into the active type registry (see type-registry.spice), like the
+// host's ctors intern into its static TypeRegistry. Without an active registry, rawType stays nil.
+public p QualType.ctor(SuperType superType) {
+    TypeRegistry* registry = getActiveTypeRegistry();
+    if registry != nil<TypeRegistry*> {
+        this.rawType = registry.getOrInsert(superType);
+    }
+    this.qualifiers = getTypeQualifiersOf(superType);
+}
 
-public p QualType.ctor(SuperType superType, const String& subType) {}
+public p QualType.ctor(SuperType superType, const String& subType) {
+    TypeRegistry* registry = getActiveTypeRegistry();
+    if registry != nil<TypeRegistry*> {
+        this.rawType = registry.getOrInsertSub(superType, subType);
+    }
+    this.qualifiers = getTypeQualifiersOf(superType);
+}
 
 public p QualType.ctor(const Type* rawType, TypeQualifiers qualifiers) {
     this.rawType = rawType;
@@ -833,6 +846,21 @@ public f<QualType> QualType.getBase() {
  * @return Aliased type
  */
 // ToDo: getAliased
+
+/**
+ * Get the type, that is aliased by this alias type
+ *
+ * @param aliasEntry Symbol table entry of the alias
+ * @return Aliased type
+ */
+public f<QualType> QualType.getAliased(const SymbolTableEntry* aliasEntry) {
+    assert this.is(SuperType::TY_ALIAS);
+    // Get type of aliased type container entry
+    const String aliasedContainerEntryName = aliasEntry.name + ALIAS_CONTAINER_SUFFIX;
+    const SymbolTableEntry* aliasedTypeContainerEntry = aliasEntry.scope.lookupStrict(aliasedContainerEntryName);
+    assert aliasedTypeContainerEntry != nil<SymbolTableEntry*>;
+    return aliasedTypeContainerEntry.getQualType();
+}
 
 /**
  * Remove reference of this type, if it is a reference

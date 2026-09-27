@@ -6,7 +6,9 @@ import "std/text/format";
 import "std/type/type-conversion";
 
 // Own imports
-//import "bootstrap/compiler-pass";
+import "bootstrap/compiler-pass";
+import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
 import "bootstrap/lexer/lexer";
 import "bootstrap/lexer/token";
 import "bootstrap/reader/code-loc";
@@ -16,8 +18,6 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/exception/parser-error";
-import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
 
 // External functions
 ext f<unsigned long> strtoull(string, char**, int);
@@ -35,36 +35,27 @@ public f<bool> isReservedKeyword(const String& identifier) {
 // Generic types
 type T dyn;
 
+/**
+ * Builds the AST of a source file from its token stream. This is the equivalent of the ANTLR-generated parser and the
+ * ASTBuilder of the host compiler.
+ */
 public type Parser struct {
-    //compose CompilerPass compilerPass
+    compose public CompilerPass compilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack
-    // ToDo: Remove memoryManager + astNodeAlloc and use the allocator from the resource manager via compilerPass.
-    // Until that wiring exists, the parser owns its own memory manager and AST node pool. The memory manager is
-    // declared before the allocator so that it outlives the allocator, which keeps a reference to it.
-    DefaultMemoryManager memoryManager
-    BlockAllocator<ASTNode> astNodeAlloc
     // Number of additional '>' tokens that are still pending due to a previously split SHR ('>>') token.
     // This is needed to close nested generic type lists, since the lexer merges '>>' into a single token.
     unsigned int pendingGreaters = 0
-    // Whether the source file is a std file. Reserved type names may only be used in std files
-    bool isStdFile = false
     // Whether a field data type is currently parsed. Its template types are field types as well
     bool isParsingFieldType = false
 }
 
-public p Parser.ctor(Lexer& lexer, bool isStdFile = false) {
+public p Parser.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile, Lexer& lexer) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
     this.lexer = lexer;
-    this.isStdFile = isStdFile;
-    // Wire up the AST node pool with the parser-owned memory manager
-    this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
     // Make sure the current token is a relevant (non-comment) token
     this.skipIgnoredTokens();
 }
-
-/*public p Parser.ctor(SourceFile* sourceFile, Lexer& lexer) {
-    this.lexer = lexer;
-}*/
 
 f<T*> Parser.createNode<T>() {
     ASTNode* parent = nil<ASTNode*>;
@@ -75,8 +66,7 @@ f<T*> Parser.createNode<T>() {
 
     // Reserve storage in the pool and construct the node in place. We construct in place (instead of
     // copying a prebuilt node) so that AST nodes may hold non-copyable members such as their children.
-    //T* node = this.resourceManager.astNodeAlloc.reserve<T>();
-    T* node = this.astNodeAlloc.reserve<T>();
+    T* node = this.resourceManager.astNodeAlloc.reserve<T>();
     unsafe {
         __placement_new<T>(node, this.lexer.getCodeLoc());
     }
@@ -285,7 +275,7 @@ f<String> Parser.getIdentifier(bool isTypeIdentifier) {
     }
 
     // Check if the identifier is a type identifier and is reserved
-    if isTypeIdentifier && !this.isStdFile && isReservedTypeName(identifier) {
+    if isTypeIdentifier && !this.sourceFile.isStdFile && isReservedTypeName(identifier) {
         const String message = "'" + identifier + "' is a reserved type name. Please use another one instead";
         this.throwParserError(token.codeLoc, ParserErrorType::RESERVED_TYPENAME, message.getRaw());
     }
@@ -833,8 +823,18 @@ f<String> Parser.parseOverloadableOp() {
     return name;
 }
 
+// Override the type id of a struct, interface or union, if the fixed type id attribute is set
+p Parser.applyFixedTypeId(ASTTopLevelDefAttrNode* attrs, unsigned long& typeId) {
+    const String fixedTypeIdKey = String(ATTR_CORE_COMPILER_FIXED_TYPE_ID);
+    if attrs.attrLst.hasAttr(fixedTypeIdKey) {
+        const CompileTimeValue value = attrs.attrLst.getAttrValueByName(fixedTypeIdKey);
+        typeId = cast<unsigned long>(value.intValue);
+    }
+}
+
 f<ASTStructDefNode*> Parser.parseStructDef() {
     dyn structDefNode = this.createNode<ASTStructDefNode>();
+    structDefNode.typeId = this.resourceManager.getNextCustomTypeId();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -844,6 +844,8 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_STRUCT;
         }
+        // Check if a custom type id was set
+        this.applyFixedTypeId(attrs, structDefNode.typeId);
     }
 
     // Parse qualifierLst
@@ -884,6 +886,7 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
 
 f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     dyn interfaceDefNode = this.createNode<ASTInterfaceDefNode>();
+    interfaceDefNode.typeId = this.resourceManager.getNextCustomTypeId();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -893,6 +896,8 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_INTERFACE;
         }
+        // Check if a custom type id was set
+        this.applyFixedTypeId(attrs, interfaceDefNode.typeId);
     }
 
     // Parse qualifierLst
@@ -926,6 +931,7 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
 
 f<ASTUnionDefNode*> Parser.parseUnionDef() {
     dyn unionDefNode = this.createNode<ASTUnionDefNode>();
+    unionDefNode.typeId = this.resourceManager.getNextCustomTypeId();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -935,6 +941,8 @@ f<ASTUnionDefNode*> Parser.parseUnionDef() {
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_UNION;
         }
+        // Check if a custom type id was set
+        this.applyFixedTypeId(attrs, unionDefNode.typeId);
     }
 
     // Parse qualifierLst
@@ -968,6 +976,7 @@ f<ASTUnionDefNode*> Parser.parseUnionDef() {
 
 f<ASTEnumDefNode*> Parser.parseEnumDef() {
     dyn enumDefNode = this.createNode<ASTEnumDefNode>();
+    enumDefNode.typeId = this.resourceManager.getNextCustomTypeId();
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
@@ -1006,6 +1015,7 @@ f<ASTGenericTypeDefNode*> Parser.parseGenericTypeDef() {
 
 f<ASTAliasDefNode*> Parser.parseAliasDef() {
     dyn aliasDefNode = this.createNode<ASTAliasDefNode>();
+    aliasDefNode.typeId = this.resourceManager.getNextCustomTypeId();
 
     // Parse qualifierLst
     if !this.currentTokenIs(TokenType::TYPE) {
@@ -2329,9 +2339,11 @@ f<ASTConstantNode*> Parser.parseConstant() {
         constantNode.compileTimeValue.charValue = this.parseChar(token);
         this.expect(TokenType::CHAR_LIT);
     } else if this.currentTokenIs(TokenType::STRING_LIT) {
+        // Save a pointer to the string in the compile time value
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_STRING;
-        // ToDo: Save the string (see parseString) in GlobalResourceManager.compileTimeStringValues and store its offset in
-        // stringValueOffset, like the host does. This needs the parser to carry a CompilerPass/resourceManager reference.
+        constantNode.compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+        // Add the string to the global compile time string list
+        this.resourceManager.compileTimeStringValues.pushBack(parseString(token.text));
         this.expect(TokenType::STRING_LIT);
     } else if this.currentTokenIs(TokenType::TRUE) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
@@ -2783,6 +2795,93 @@ f<char> Parser.parseChar(const Token& token) {
 
     const String message = "Invalid char literal '" + input + "'";
     this.throwParserError(token.codeLoc, ParserErrorType::INVALID_CHAR_LITERAL, message.getRaw());
+    return '\0';
+}
+
+/**
+ * Resolve the escape sequences of a string literal. The lexer already strips the surrounding quotes.
+ *
+ * @param input String literal content
+ * @return String value
+ */
+f<String> parseString(const String& input) {
+    String stringValue = input;
+    replaceEscapeChars(stringValue);
+    return stringValue;
+}
+
+/**
+ * Replace escape sequences like \n or octal escape sequences like \033 in the given string with their char values
+ *
+ * @param input String to resolve the escape sequences in
+ */
+p replaceEscapeChars(String& input) {
+    String output;
+    unsigned long readIndex = 0l;
+    const unsigned long length = input.getLength();
+
+    while readIndex < length {
+        const char c = input[readIndex];
+        if c == '\\' && readIndex + 1l < length {
+            const char next = input[readIndex + 1l];
+            const char escapedChar = getEscapedChar(next);
+            if escapedChar != '\0' {
+                output += escapedChar;
+                readIndex += 2l;
+                continue;
+            }
+
+            // Handle octal escape sequences (up to 3 digits)
+            if next >= '0' && next <= '7' {
+                int value = 0;
+                unsigned long octalDigits = 0l;
+
+                // Look ahead up to 3 digits
+                for unsigned long i = 1l; i <= 3l && readIndex + i < length; i++ {
+                    const char oc = input[readIndex + i];
+                    if oc < '0' || oc > '7' {
+                        break;
+                    }
+                    value = value << 3 | (cast<int>(oc) - cast<int>('0')); // Multiply by 8 and add digit
+                    octalDigits++;
+                }
+
+                if octalDigits > 0l {
+                    output += cast<char>(value);
+                    readIndex += 1l + octalDigits; // Backslash + octal digits
+                    continue;
+                }
+            }
+        }
+
+        // Copy current character
+        output += c;
+        readIndex++;
+    }
+
+    input = output;
+}
+
+/**
+ * Get the char value of a simple escape sequence like \n
+ *
+ * @param c Char after the backslash
+ * @return Char value or '\0' if this is no simple escape sequence
+ */
+f<char> getEscapedChar(char c) {
+    switch c {
+        case 'a': { return cast<char>(7); } // Bell
+        case 'b': { return '\b'; }
+        case 'f': { return '\f'; }
+        case 'n': { return '\n'; }
+        case 'r': { return '\r'; }
+        case 't': { return '\t'; }
+        case 'v': { return '\v'; }
+        case '\\': { return '\\'; }
+        case '?': { return '?'; }
+        case '\'': { return '\''; }
+        case '"': { return '"'; }
+    }
     return '\0';
 }
 

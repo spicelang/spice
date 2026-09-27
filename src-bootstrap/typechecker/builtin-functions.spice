@@ -1,0 +1,103 @@
+// Constants
+public const unsigned int BUILTIN_UNLIMITED_COUNT = 4294967295u; // Max value of unsigned int
+// Documented builtins
+public const string BUILTIN_FCT_NAME_PRINTF = "printf";
+public const string BUILTIN_FCT_NAME_SIZEOF = "sizeof";
+public const string BUILTIN_FCT_NAME_ALIGNOF = "alignof";
+public const string BUILTIN_FCT_NAME_TYPEID = "typeid";
+public const string BUILTIN_FCT_NAME_TYPENAME = "typename";
+public const string BUILTIN_FCT_NAME_LEN = "len";
+public const string BUILTIN_FCT_NAME_PANIC = "panic";
+public const string BUILTIN_FCT_NAME_SYSCALL = "syscall";
+// Undocumented builtins (intended to be primarily used via std wrapper functions)
+public const string BUILTIN_FCT_NAME_OFFSETOF = "__offsetof";
+public const string BUILTIN_FCT_NAME_IS_SAME = "__is_same";
+public const string BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE = "__implements_interface";
+public const string BUILTIN_FCT_NAME_GET_BUILD_VAR = "__get_build_var";
+public const string BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE = "__is_trivially_constructible";
+public const string BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE = "__is_trivially_copyable";
+public const string BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE = "__is_trivially_destructible";
+public const string BUILTIN_FCT_NAME_IS_HEAP = "__is_heap";
+public const string BUILTIN_FCT_NAME_NEW = "__new";
+public const string BUILTIN_FCT_NAME_PLACEMENT_NEW = "__placement_new";
+public const string BUILTIN_FCT_NAME_SOURCE_FILE = "__source_file";
+public const string BUILTIN_FCT_NAME_SOURCE_LINE = "__source_line";
+public const string BUILTIN_FCT_NAME_SOURCE_COLUMN = "__source_column";
+public const string BUILTIN_FCT_NAME_ERR_TRACE_BUFFER = "__err_trace_buffer";
+public const string BUILTIN_FCT_NAME_STDERR = "__stderr";
+public const string BUILTIN_FCT_NAME_FRAME_ADDRESS = "__frame_address";
+
+/**
+ * Metadata about a builtin function (argument/template counts and flags only, no method pointers)
+ */
+public type BuiltinFunctionInfo struct {
+    public unsigned int minTemplateTypes = 0u
+    public unsigned int maxTemplateTypes = 0u
+    public unsigned int minArgTypes = 0u
+    public unsigned int maxArgTypes = 0u
+    public bool allTemplateTypesOrAllArgTypes = false
+    public bool isFunctionTerminator = false
+}
+
+public p BuiltinFunctionInfo.ctor() {}
+
+public p BuiltinFunctionInfo.ctor(unsigned int minTemplateTypes, unsigned int maxTemplateTypes, unsigned int minArgTypes, unsigned int maxArgTypes, bool allTemplateTypesOrAllArgTypes = false, bool isFunctionTerminator = false) {
+    this.minTemplateTypes = minTemplateTypes;
+    this.maxTemplateTypes = maxTemplateTypes;
+    this.minArgTypes = minArgTypes;
+    this.maxArgTypes = maxArgTypes;
+    this.allTemplateTypesOrAllArgTypes = allTemplateTypesOrAllArgTypes;
+    this.isFunctionTerminator = isFunctionTerminator;
+}
+
+/**
+ * Look up the metadata of a builtin function. This is the equivalent of the host's BUILTIN_FUNCTIONS_MAP.
+ *
+ * @param name Function name
+ * @param info Receives the metadata of the builtin function, if found
+ * @return True if the given name is the name of a builtin function
+ */
+public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& info) {
+    const unsigned int unlimited = BUILTIN_UNLIMITED_COUNT;
+    if name == BUILTIN_FCT_NAME_PRINTF {
+        info = BuiltinFunctionInfo(0u, 0u, 1u, unlimited);
+    } else if name == BUILTIN_FCT_NAME_SIZEOF || name == BUILTIN_FCT_NAME_ALIGNOF || name == BUILTIN_FCT_NAME_TYPEID || name == BUILTIN_FCT_NAME_TYPENAME {
+        info = BuiltinFunctionInfo(0u, 1u, 0u, 1u, true);
+    } else if name == BUILTIN_FCT_NAME_OFFSETOF {
+        info = BuiltinFunctionInfo(0u, 0u, 2u, 2u);
+    } else if name == BUILTIN_FCT_NAME_LEN {
+        info = BuiltinFunctionInfo(0u, 0u, 1u, 1u);
+    } else if name == BUILTIN_FCT_NAME_PANIC {
+        info = BuiltinFunctionInfo(0u, 0u, 1u, 1u, false, true);
+    } else if name == BUILTIN_FCT_NAME_SYSCALL {
+        info = BuiltinFunctionInfo(0u, 0u, 1u, 6u); // According to the Linux syscall constants, a syscall has up to 6 args
+    } else if name == BUILTIN_FCT_NAME_IS_SAME {
+        info = BuiltinFunctionInfo(2u, unlimited, 0u, 0u);
+    } else if name == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE {
+        info = BuiltinFunctionInfo(2u, 2u, 0u, 0u);
+    } else if name == BUILTIN_FCT_NAME_GET_BUILD_VAR {
+        info = BuiltinFunctionInfo(1u, 1u, 1u, 2u);
+    } else if name == BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE || name == BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE || name == BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE || name == BUILTIN_FCT_NAME_IS_HEAP {
+        info = BuiltinFunctionInfo(1u, 1u, 0u, 0u);
+    } else if name == BUILTIN_FCT_NAME_NEW {
+        info = BuiltinFunctionInfo(1u, 1u, 0u, unlimited);
+    } else if name == BUILTIN_FCT_NAME_PLACEMENT_NEW {
+        info = BuiltinFunctionInfo(1u, 1u, 1u, unlimited);
+    } else if name == BUILTIN_FCT_NAME_SOURCE_FILE || name == BUILTIN_FCT_NAME_SOURCE_LINE || name == BUILTIN_FCT_NAME_SOURCE_COLUMN || name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER || name == BUILTIN_FCT_NAME_STDERR || name == BUILTIN_FCT_NAME_FRAME_ADDRESS {
+        info = BuiltinFunctionInfo(0u, 0u, 0u, 0u);
+    } else {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Check if the given name is the name of a builtin function
+ *
+ * @param name Function name
+ * @return Builtin function or not
+ */
+public f<bool> isBuiltinFunction(const String& name) {
+    BuiltinFunctionInfo info;
+    return lookupBuiltinFunction(name, info);
+}

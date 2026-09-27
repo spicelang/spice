@@ -27,6 +27,34 @@ public type TypeRegistry struct {
     unsigned long typeCount = 0ul
 }
 
+// Address of the active type registry. The host's TypeRegistry is a static singleton, which context-free type creation like
+// QualType(TY_INT) relies on. Spice only supports globals of primitive type, so the address is stored as a long.
+long ACTIVE_TYPE_REGISTRY_ADDRESS = 0l;
+
+/**
+ * Make the given type registry the active one. Context-free type creation, e.g. QualType(TY_INT), interns into it.
+ *
+ * @param registry Type registry, which must outlive all types created through it
+ */
+public p setActiveTypeRegistry(TypeRegistry* registry) {
+    unsafe {
+        ACTIVE_TYPE_REGISTRY_ADDRESS = cast<long>(cast<byte*>(registry));
+    }
+}
+
+/**
+ * Get the active type registry
+ *
+ * @return Active type registry or nil if no type registry is active
+ */
+public f<TypeRegistry*> getActiveTypeRegistry() {
+    TypeRegistry* registry = nil<TypeRegistry*>;
+    unsafe {
+        registry = cast<TypeRegistry*>(cast<byte*>(ACTIVE_TYPE_REGISTRY_ADDRESS));
+    }
+    return registry;
+}
+
 public p TypeRegistry.ctor() {
     this.alloc = BlockAllocator<Type>(this.memoryManager);
     this.types = UnorderedMap<Hash, Vector<Type*>>();
@@ -45,6 +73,14 @@ public f<const Type*> TypeRegistry.getOrInsert(SuperType superType) {
  */
 public f<const Type*> TypeRegistry.getOrInsertSub(SuperType superType, const String& subType) {
     Type tmpType = Type(superType, subType);
+    return this.getOrInsertType(tmpType);
+}
+
+/**
+ * Get or insert a type built from a super type, a sub type, a type id, type chain element data and template types
+ */
+public f<const Type*> TypeRegistry.getOrInsert(SuperType superType, const String& subType, unsigned long typeId, const TypeChainElementData& data, const QualTypeList& templateTypes) {
+    Type tmpType = Type(superType, subType, typeId, data, templateTypes);
     return this.getOrInsertType(tmpType);
 }
 
