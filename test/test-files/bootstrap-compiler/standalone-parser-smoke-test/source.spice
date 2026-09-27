@@ -53,8 +53,8 @@ f<int> main() {
     ASTNode* root = cast<ASTNode*>(entry);
     const Vector<ASTNode*>& topLevelDefs = root.getChildren();
     assert topLevelDefs.getSize() == 10l;
-    assert countNodes(root) == 899l;
-    assert maxDepth(root) == 40l;
+    assert countNodes(root) == 248l;
+    assert maxDepth(root) == 10l;
     assert lexer.isEOF();
 
     // -------------------------------------------------------------------------
@@ -67,8 +67,8 @@ f<int> main() {
     ASTNode* root2 = cast<ASTNode*>(entry2);
     const Vector<ASTNode*>& topLevelDefs2 = root2.getChildren();
     assert topLevelDefs2.getSize() == 10l;
-    assert countNodes(root2) == 899l;
-    assert maxDepth(root2) == 40l;
+    assert countNodes(root2) == 248l;
+    assert maxDepth(root2) == 10l;
     assert lexer2.isEOF();
 
     printf("All assertions passed!\n");
