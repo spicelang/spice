@@ -58,6 +58,8 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
     this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
+    // Context-free type creation (e.g. QualType(TY_INT)) interns into the type registry of the resource manager
+    setActiveTypeRegistry(&this.typeRegistry);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {

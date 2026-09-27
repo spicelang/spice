@@ -4,6 +4,11 @@ import "std/data/vector";
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
 import "bootstrap/ast/ast-nodes";
+import "std/bindings/llvm/llvm" as llvm;
+import "bootstrap/driver";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/source-file";
+import "bootstrap/util/pass-test-util";
 
 // Recursively count the number of nodes in the AST (including the given root).
 f<long> countNodes(ASTNode* node) {
@@ -45,8 +50,12 @@ f<int> main() {
     //   * The total node count and tree depth are deterministic for a given input.
     //   * After a complete parse the whole token stream must have been consumed.
     // -------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), filePath, false);
     Lexer lexer = Lexer(filePath);
-    Parser parser = Parser(lexer);
+    Parser parser = Parser(rm, &file, lexer);
     ASTEntryNode* entry = parser.parse();
     assert entry != nil<ASTEntryNode*>;
 
@@ -62,7 +71,7 @@ f<int> main() {
     // input again with a fresh lexer and parser must yield an identical tree.
     // -------------------------------------------------------------------------
     Lexer lexer2 = Lexer(filePath);
-    Parser parser2 = Parser(lexer2);
+    Parser parser2 = Parser(rm, &file, lexer2);
     ASTEntryNode* entry2 = parser2.parse();
     ASTNode* root2 = cast<ASTNode*>(entry2);
     const Vector<ASTNode*>& topLevelDefs2 = root2.getChildren();

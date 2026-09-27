@@ -8,12 +8,18 @@ import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type";
+import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
 import "bootstrap/model/generic-type";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/interface-manager";
+import "bootstrap/typechecker/struct-manager";
+import "bootstrap/typechecker/union-manager";
 
 // Constants
 public const string STROBJ_NAME = "String";
@@ -23,6 +29,7 @@ public const string TIOBJ_NAME = "TypeInfo";
 public const string IITERATOR_NAME = "IIterator";
 public const string ARRAY_ITERATOR_NAME = "ArrayIterator";
 public const unsigned long TYPE_ID_ITERATOR_INTERFACE = 255ul;
+public const string ALIAS_CONTAINER_SUFFIX = ".container";
 public const unsigned long TYPE_ID_ITERABLE_INTERFACE = 256ul;
 
 /**
@@ -47,13 +54,23 @@ public type QualType struct {
 
 public type QualTypeList alias Vector<QualType>;
 
-// Note: The context-free QualType(SuperType) ctors cannot intern a type, since they have no access to the type
-// registry (which lives on the GlobalResourceManager). They therefore leave rawType as nil (a "dyn" placeholder).
-// Type creation that needs interning must go through the registry directly. This is resolved once the registry
-// is threaded to the relevant call sites.
-public p QualType.ctor(SuperType superType) {}
+// The context-free QualType(SuperType) ctors intern into the active type registry (see type-registry.spice), like the
+// host's ctors intern into its static TypeRegistry. Without an active registry, rawType stays nil.
+public p QualType.ctor(SuperType superType) {
+    TypeRegistry* registry = getActiveTypeRegistry();
+    if registry != nil<TypeRegistry*> {
+        this.rawType = registry.getOrInsert(superType);
+    }
+    this.qualifiers = getTypeQualifiersOf(superType);
+}
 
-public p QualType.ctor(SuperType superType, const String& subType) {}
+public p QualType.ctor(SuperType superType, const String& subType) {
+    TypeRegistry* registry = getActiveTypeRegistry();
+    if registry != nil<TypeRegistry*> {
+        this.rawType = registry.getOrInsertSub(superType, subType);
+    }
+    this.qualifiers = getTypeQualifiersOf(superType);
+}
 
 public p QualType.ctor(const Type* rawType, TypeQualifiers qualifiers) {
     this.rawType = rawType;
@@ -169,8 +186,10 @@ public f<QualTypeList> QualType.getTemplateTypes() {
  */
 public f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList &templateTypes) {
     assert this.is(SuperType::TY_STRUCT);
-    // ToDo: Wire up to StructManager.matchStruct once the model/typechecker layer is available.
-    return nil<Struct*>;
+    Scope* bodyScope = this.getBodyScope();
+    Scope* structDefScope = bodyScope.parent;
+    const String& structName = this.getSubType();
+    return matchStruct(structDefScope, structName, templateTypes, node);
 }
 
 /**
@@ -192,10 +211,11 @@ public f<Struct*> QualType.getStruct(const ASTNode* node) {
  * @return Struct instance
  */
 public f<Struct*> QualType.getStructAndAdjustType(const ASTNode* node, const QualTypeList& templateTypes) {
-    const Struct* spiceStruct = this.getStruct(node, templateTypes);
-    this.rawType = this.rawType.getWithBodyScope(spiceStruct.scope);
-    // ToDo: Comment out
-    //this.rawType = this.rawType.getWithTemplateTypes(spiceStruct.getTemplateTypes());
+    Struct* spiceStruct = this.getStruct(node, templateTypes);
+    if spiceStruct != nil<Struct*> {
+        const Type* typeWithBodyScope = this.rawType.getWithBodyScope(spiceStruct.scope);
+        this.rawType = typeWithBodyScope.getWithTemplateTypes(spiceStruct.structBase.getTemplateTypes());
+    }
     return spiceStruct;
 }
 
@@ -219,8 +239,10 @@ public f<Struct*> QualType.getStructAndAdjustType(const ASTNode* node) {
  */
 public f<Interface*> QualType.getInterface(const ASTNode* node, const QualTypeList& templateTypes) {
     assert this.is(SuperType::TY_INTERFACE);
-    // ToDo: Wire up to InterfaceManager.matchInterface once the model/typechecker layer is available.
-    return nil<Interface*>;
+    Scope* bodyScope = this.getBodyScope();
+    Scope* interfaceDefScope = bodyScope.parent;
+    const String structName = this.getSubType();
+    return matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
 /**
@@ -242,8 +264,10 @@ public f<Interface*> QualType.getInterface(const ASTNode* node) {
  */
 public f<Union*> QualType.getUnion(const ASTNode* node, const QualTypeList& templateTypes) {
     assert this.is(SuperType::TY_UNION);
-    // ToDo: Wire up to UnionManager.matchUnion once the model/typechecker layer is available.
-    return nil<Union*>;
+    Scope* bodyScope = this.getBodyScope();
+    Scope* unionDefScope = bodyScope.parent;
+    const String& unionName = this.getSubType();
+    return matchUnion(unionDefScope, unionName, templateTypes, node);
 }
 
 /**
@@ -456,9 +480,6 @@ public f<bool> QualType.hasAnyGenericParts() {
  * @return Trivially constructible or not
  */
 public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
-    // Heap-allocated values require manual allocation, which is done in the default/explicit ctor
-    if this.qualifiers.isHeap { return false; }
-
     // References can't be default initialized
     if this.isRef() { return false; }
 
@@ -469,21 +490,27 @@ public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
     }
 
     // In case of a struct, the member types determine the construction triviality
-    if this.is(SuperType::TY_STRUCT) {
-        // If the struct has a ctor, it is a non-trivially constructible one
-        const Struct* spiceStruct = this.getStruct(node);
-        // ToDo
+    if !this.is(SuperType::TY_STRUCT) { return true; }
 
-        // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
-        // ToDo
+    // If the struct has a ctor, it is a non-trivially constructible one
+    const Struct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<const Struct*>; // Callers must ensure the struct is manifested (see structFullyManifested)
+    if hasAnyNonCopyCtor(spiceStruct.scope) { return false; }
 
-        // If any field has a default value, the struct is non-trivially constructible
-        // ToDo
+    // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
+    ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(spiceStruct.declNode);
+    if structDefNode.emitVTable { return false; }
 
-        // Check if all member types are trivially constructible
-        // ToDo
+    // If any field has a default value, the struct is non-trivially constructible
+    foreach IVisitable* field : structDefNode.fields {
+        ASTFieldNode* fieldNode = downcast<ASTFieldNode>(field);
+        if fieldNode.defaultValue != nil<IVisitable*> { return false; }
     }
 
+    // Check if all member types are trivially constructible
+    foreach const QualType& fieldType : spiceStruct.fieldTypes {
+        if !fieldType.isTriviallyConstructible(node) { return false; }
+    }
     return true;
 }
 
@@ -495,9 +522,6 @@ public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
  * @return Trivially copyable or not
  */
 public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
-    // Heap-allocated values may not be copied via memcpy
-    if this.qualifiers.isHeap { return false; }
-
     // In case of an array, the item type is determining the copy triviality
     if this.isArray() {
         const QualType baseType = this.getBase();
@@ -505,15 +529,18 @@ public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
     }
 
     // In case of a struct, the member types determine the copy triviality
-    if this.is(SuperType::TY_STRUCT) {
-        // If the struct has a copy ctor, it is a non-trivially copyable one
-        const Struct* spiceStruct = this.getStruct(node);
-        // ToDo
+    // Only structs can own a copy ctor
+    if !this.is(SuperType::TY_STRUCT) { return true; }
 
-        // Check if all member types are trivially copyable
-        // ToDo
+    // If the struct has a copy ctor, it is a non-trivially copyable one
+    const Struct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<const Struct*>;
+    if hasCopyCtor(spiceStruct.scope) { return false; }
+
+    // Check if all member types are trivially copyable
+    foreach const QualType& fieldType : spiceStruct.fieldTypes {
+        if !fieldType.isTriviallyCopyable(node) { return false; }
     }
-
     return true;
 }
 
@@ -525,25 +552,24 @@ public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
  * @return Trivially destructible or not
  */
 public f<bool> QualType.isTriviallyDestructible(const ASTNode* node) {
-    // Heap-allocated values require manual de-allocation, which is done in the default/explicit dtor
-    if this.qualifiers.isHeap { return false; }
-
     // In case of an array, the item type is determining the destructing triviality
     if this.isArray() {
         const QualType baseType = this.getBase();
         return baseType.isTriviallyDestructible(node);
     }
 
-    // In case of a struct, the member types determine the destruction triviality
-    if this.is(SuperType::TY_STRUCT) {
-        // If the struct has a dtor, it is a non-trivially destructible one
-        const Struct* spiceStruct = this.getStruct(node);
-        // ToDo
+    // Only structs can own a dtor
+    if !this.is(SuperType::TY_STRUCT) { return true; }
 
-        // Check if all member types are trivially destructible
-        // ToDo
+    // If the struct has a dtor, it is a non-trivially destructible one
+    const Struct* spiceStruct = this.getStruct(node);
+    assert spiceStruct != nil<const Struct*>;
+    if hasDtor(spiceStruct.scope) { return false; }
+
+    // Check if all member types are trivially destructible
+    foreach const QualType& fieldType : spiceStruct.fieldTypes {
+        if !fieldType.isTriviallyDestructible(node) { return false; }
     }
-
     return true;
 }
 
@@ -558,7 +584,10 @@ public f<bool> QualType.doesImplement(const QualType& implementedInterfaceType, 
     assert this.is(SuperType::TY_STRUCT) && implementedInterfaceType.is(SuperType::TY_INTERFACE);
     const Struct* spiceStruct = this.getStruct(node);
     assert spiceStruct != nil<Struct*>;
-    // ToDo: Port interface-implementation check once the model layer is wired up.
+    foreach const QualType& interfaceType : spiceStruct.interfaceTypes {
+        assert interfaceType.is(SuperType::TY_INTERFACE);
+        if implementedInterfaceType.matches(interfaceType, false, false, true) { return true; }
+    }
     return false;
 }
 
@@ -606,9 +635,12 @@ public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize,
  */
 public f<bool> QualType.matchesInterfaceImplementedByStruct(const QualType& structType) {
     if !this.is(SuperType::TY_INTERFACE) || !structType.is(SuperType::TY_STRUCT) { return false; }
-    const Struct* spiceStruct = this.getStruct(nil<const ASTNode*>);
+    // Check if the rhs is a struct type that implements the lhs interface type
+    const Struct* spiceStruct = structType.getStruct(nil<const ASTNode*>);
     assert spiceStruct != nil<Struct*>;
-    // ToDo: Port interface-implementation check once the model layer is wired up.
+    foreach const QualType& interfaceType : spiceStruct.interfaceTypes {
+        if this.matches(interfaceType, false, false, true) { return true; }
+    }
     return false;
 }
 
@@ -622,15 +654,11 @@ public f<bool> QualType.matchesComposedBaseOfStruct(const QualType& structType) 
     if !this.is(SuperType::TY_STRUCT) || !structType.is(SuperType::TY_STRUCT) { return false; }
 
     const Struct* spiceStruct = structType.getStruct(nil<const ASTNode*>);
-    if spiceStruct == nil<Struct*> { return false; }
-    // ToDo: Switch
-    //const Vector<QualType>& fieldTypes = spiceStruct.getFieldTypes();
-    const Vector<QualType> fieldTypes;
-    if fieldTypes.isEmpty() { return false; }
+    if spiceStruct == nil<Struct*> || spiceStruct.fieldTypes.isEmpty() { return false; }
 
-    // Only the first field is guaranteed to be located at offset 0
-    const QualType& firstFieldType = fieldTypes[0];
-    if !firstFieldType.qualifiers.isComposition { return false; }
+    // Only the first field can be a composed base that is reachable along the first-field chain
+    const QualType& firstFieldType = spiceStruct.fieldTypes.front();
+    if !firstFieldType.isComposition() { return false; }
     // The composed field matches the requested base directly (qualifiers like 'compose' are ignored)
     if this.matches(firstFieldType, false, true, true) { return true; }
     // Otherwise follow the composition chain further down
@@ -662,8 +690,18 @@ public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompar
         typeToCompareWith = this;
     }
 
-    Scope* bodyScope = this.getBodyScope();
-    // ToDo: Port self-reference detection once Scope exposes lookupField(i).
+    Scope* baseTypeBodyScope = this.getBodyScope();
+    for unsigned long i = 0l; i < baseTypeBodyScope.getFieldCount(); i++ {
+        const SymbolTableEntry* field = baseTypeBodyScope.lookupField(cast<unsigned int>(i));
+        const QualType& fieldType = field.getQualType();
+        // Check if the base type of the field matches with the current type, which is also a base type
+        // If yes, this is a self-referencing struct type
+        const QualType fieldBaseType = fieldType.getBase();
+        if fieldBaseType == *typeToCompareWith { return true; }
+
+        // If the field is a struct, check if it is a self-referencing struct type
+        if fieldType.isSelfReferencingStructType(typeToCompareWith) { return true; }
+    }
     return false;
 }
 
@@ -674,8 +712,42 @@ public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompar
  * @return Has substantiation or not
  */
 public f<bool> QualType.isCoveredByGenericTypeList(Vector<GenericType>& genericTypeList) {
-    // ToDo: Port generic-coverage check once the model layer is wired up.
-    return true;
+    const QualType baseType = this.getBase();
+    // Check if the symbol type itself is generic
+    if baseType.is(SuperType::TY_GENERIC) {
+        foreach GenericType& genericType : genericTypeList {
+            if baseType.matches(genericType.qualType, true, true, true) {
+                genericType.used = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // If the type is non-generic check template types
+    bool covered = true;
+    // Check template types
+    const QualTypeList baseTemplateTypes = baseType.getTemplateTypes();
+    foreach const QualType& templateType : baseTemplateTypes {
+        if !templateType.isCoveredByGenericTypeList(genericTypeList) {
+            covered = false;
+            break;
+        }
+    }
+
+    // If function/procedure, check param and return types
+    const dyn functionTypes = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if baseType.isOneOf(functionTypes, len(functionTypes)) {
+        const QualTypeList paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
+        foreach const QualType& paramType : paramAndReturnTypes {
+            if !paramType.isCoveredByGenericTypeList(genericTypeList) {
+                covered = false;
+                break;
+            }
+        }
+    }
+
+    return covered;
 }
 
 /**
@@ -835,6 +907,21 @@ public f<QualType> QualType.getBase() {
 // ToDo: getAliased
 
 /**
+ * Get the type, that is aliased by this alias type
+ *
+ * @param aliasEntry Symbol table entry of the alias
+ * @return Aliased type
+ */
+public f<QualType> QualType.getAliased(const SymbolTableEntry* aliasEntry) {
+    assert this.is(SuperType::TY_ALIAS);
+    // Get type of aliased type container entry
+    const String aliasedContainerEntryName = aliasEntry.name + ALIAS_CONTAINER_SUFFIX;
+    const SymbolTableEntry* aliasedTypeContainerEntry = aliasEntry.scope.lookupStrict(aliasedContainerEntryName);
+    assert aliasedTypeContainerEntry != nil<SymbolTableEntry*>;
+    return aliasedTypeContainerEntry.getQualType();
+}
+
+/**
  * Remove reference of this type, if it is a reference
  *
  * @return New type
@@ -904,9 +991,7 @@ public f<QualType> QualType.getWithBodyScope(Scope* bodyScope) {
  */
 public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    // ToDo: Switch
-    //const Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
-    const Type* newType = nil<const Type*>;
+    const Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -919,9 +1004,7 @@ public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTyp
  */
 public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    // ToDo: Switch
-    //const Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
-    const Type* newType = nil<const Type*>;
+    const Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -934,9 +1017,7 @@ public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templat
  */
 public f<QualType> QualType.getWithFunctionParamAndReturnTypes(const QualTypeList& paramAndReturnTypes) {
     // Create new type
-    // ToDo: Switch
-    //const Type* newType = this.rawType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
-    const Type* newType = nil<const Type*>;
+    const Type* newType = this.rawType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -992,7 +1073,7 @@ public f<bool> QualType.isSigned() {
 public f<bool> QualType.isUnsigned() {
     const dyn options = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
     assert this.isOneOf(options, len(options));
-    return !this.qualifiers.isUnsigned;
+    return this.qualifiers.isUnsigned;
 }
 
 /**
@@ -1012,7 +1093,7 @@ public f<bool> QualType.isInline() {
  * @return Is public or not
  */
 public f<bool> QualType.isPublic() {
-    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
     return this.qualifiers.isPublic;
 }
@@ -1062,7 +1143,7 @@ public p QualType.makeUnsigned(bool isUnsigned = true) {
  * @param isPublic Is public or not
  */
 public p QualType.makePublic(bool isPublic = true) {
-    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
     this.qualifiers.isPublic = isPublic;
 }
@@ -1074,6 +1155,24 @@ public p QualType.makePublic(bool isPublic = true) {
  */
 public p QualType.makeHeap(bool isHeap = true) {
     this.qualifiers.isHeap = isHeap;
+}
+
+/**
+ * Get the qualifiers of the current type
+ *
+ * @return Qualifiers
+ */
+public f<TypeQualifiers&> QualType.getQualifiers() {
+    return this.qualifiers;
+}
+
+/**
+ * Set the qualifiers of the current type
+ *
+ * @param newQualifiers New qualifiers
+ */
+public p QualType.setQualifiers(TypeQualifiers newQualifiers) {
+    this.qualifiers = newQualifiers;
 }
 
 /**
@@ -1105,8 +1204,12 @@ public f<bool> operator!=(const QualType& lhs, const QualType& rhs) {
  * @param typeB Requested type
  */
 public p unwrapBoth(QualType& typeA, QualType& typeB) {
-    // ToDo: Fix funcion matching problem below
-    //unwrapBoth(typeA.rawType, typeB.rawType);
+    // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
+    const Type* rawTypeA = typeA.rawType;
+    const Type* rawTypeB = typeB.rawType;
+    unwrapBothTypes(rawTypeA, rawTypeB);
+    typeA.rawType = rawTypeA;
+    typeB.rawType = rawTypeB;
 }
 
 /**
@@ -1117,6 +1220,10 @@ public p unwrapBoth(QualType& typeA, QualType& typeB) {
  * @param typeB Requested type
  */
 public p unwrapBothWithRefWrappers(QualType& typeA, QualType& typeB) {
-    // ToDo: Fix funcion matching problem below
-    //unwrapBothWithRefWrappers(typeA.rawType, typeB.rawType);
+    // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
+    const Type* rawTypeA = typeA.rawType;
+    const Type* rawTypeB = typeB.rawType;
+    unwrapBothWithReferenceWrappers(rawTypeA, rawTypeB);
+    typeA.rawType = rawTypeA;
+    typeB.rawType = rawTypeB;
 }

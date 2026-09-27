@@ -36,8 +36,12 @@ f<int> main() {
     // -------------------------------------------------------------------------------------------------------------
     // Parse the fixture. Every top level definition must land in its list of the entry node.
     // -------------------------------------------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
     Lexer lexer = Lexer(getFixturePath());
-    Parser parser = Parser(lexer);
+    Parser parser = Parser(rm, &file, lexer);
     ASTEntryNode* entry = parser.parse();
     assert entry != nil<ASTEntryNode*>;
     assert entry.modAttrs.getSize() == 0l;
@@ -101,10 +105,6 @@ f<int> main() {
     // -------------------------------------------------------------------------------------------------------------
     // Build the symbol table.
     // -------------------------------------------------------------------------------------------------------------
-    CliOptions cliOptions;
-    setupPassTestOptions(cliOptions);
-    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
-    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
     Scope* root = createTestGlobalScope(file);
     SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
     builder.visit(entry);

@@ -27,7 +27,7 @@ type MatchResult enum {
     SKIP_FUNCTION
 }
 
-const string MAIN_FUNCTION_NAME = "main";
+public const string MAIN_FUNCTION_NAME = "main";
 
 /**
  * Insert a function declaration (which may still carry optional parameters) into the given scope, substantiating

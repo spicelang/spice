@@ -4,6 +4,9 @@ import "std/data/queue";
 import "std/data/pair";
 import "std/type/any";
 
+// Generic types
+type ConcreteNode dyn;
+
 // Own imports
 import "bootstrap/ast/abstract-ast-visitor-intf";
 import "bootstrap/reader/code-loc";
@@ -12,6 +15,13 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/ast/attributes";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/exception/semantic-error";
+import "bootstrap/typechecker/builtin-functions";
+import "bootstrap/model/function";
+import "bootstrap/model/struct";
+import "bootstrap/model/interface";
+import "bootstrap/model/union";
 //import "bootstrap/model/function";
 
 // Access tokens used when building type/function/scope signatures
@@ -58,6 +68,97 @@ public type CompileTimeValue union {
 public type IVisitable interface {
     public f<Any> accept(IAbstractAstVisitor*);
     public f<const CodeLoc&> getCodeLoc();
+    // Address of the composed ASTNode. It is not typed as ASTNode*, because ASTNode is declared after this interface (and
+    // needs it for its 'visitable' field). Use getASTNode(IVisitable*) to retrieve the typed pointer.
+    public f<byte*> getASTNodeAddress();
+}
+
+// ========================================================= ASTNodeKind =========================================================
+
+/**
+ * Kind of a concrete AST node. Spice has no virtual dispatch through a struct, so the functions below, that are virtual methods
+ * in the host (e.g. returnsOnAllControlPaths), switch over the kind of the node instead.
+ */
+public type ASTNodeKind enum {
+    INVALID,
+    ENTRY,
+    CONSTANT,
+    ATTR,
+    ATTR_LST,
+    QUALIFIER,
+    QUALIFIER_LST,
+    CUSTOM_DATA_TYPE,
+    BASE_DATA_TYPE,
+    DATA_TYPE,
+    TYPE_LST,
+    MAIN_FCT_DEF,
+    FCT_NAME,
+    FCT_DEF,
+    PROC_DEF,
+    STRUCT_DEF,
+    INTERFACE_DEF,
+    UNION_DEF,
+    ENUM_DEF,
+    GENERIC_TYPE_DEF,
+    ALIAS_DEF,
+    GLOBAL_VAR_DEF,
+    EXT_DECL,
+    IMPORT_DEF,
+    UNSAFE_BLOCK,
+    FOR_LOOP,
+    FOREACH_LOOP,
+    WHILE_LOOP,
+    DO_WHILE_LOOP,
+    IF_STMT,
+    ELSE_STMT,
+    SWITCH_STMT,
+    CASE_BRANCH,
+    DEFAULT_BRANCH,
+    ANONYMOUS_BLOCK_STMT,
+    STMT_LST,
+    TYPE_LST_WITH_ELLIPSIS,
+    TYPE_ALTS_LST,
+    DECL_STMT,
+    PARAM_LST,
+    ARG_LST,
+    ENUM_ITEM,
+    ENUM_ITEM_LST,
+    FIELD,
+    SIGNATURE,
+    EXPR_STMT,
+    MOD_ATTR,
+    TOP_LEVEL_DEF_ATTR,
+    LAMBDA_ATTR,
+    CASE_CONSTANT,
+    RETURN_STMT,
+    BREAK_STMT,
+    CONTINUE_STMT,
+    FALLTHROUGH_STMT,
+    ASSERT_STMT,
+    ASSIGN_EXPR,
+    TERNARY_EXPR,
+    LOGICAL_OR_EXPR,
+    LOGICAL_AND_EXPR,
+    BITWISE_OR_EXPR,
+    BITWISE_XOR_EXPR,
+    BITWISE_AND_EXPR,
+    EQUALITY_EXPR,
+    RELATIONAL_EXPR,
+    SHIFT_EXPR,
+    ADDITIVE_EXPR,
+    MULTIPLICATIVE_EXPR,
+    CAST_EXPR,
+    PREFIX_UNARY_EXPR,
+    POSTFIX_UNARY_EXPR,
+    ATOMIC_EXPR,
+    VALUE,
+    FCT_CALL,
+    ARRAY_INITIALIZATION,
+    STRUCT_INSTANTIATION,
+    LAMBDA_FUNC,
+    LAMBDA_PROC,
+    LAMBDA_EXPR,
+    FUNCTION_DATA_TYPE
 }
 
 // =========================================================== ASTNode ===========================================================
@@ -69,6 +170,11 @@ public type ASTNode struct/*: IVisitable*/ {
     // The node as an IVisitable*, set by the parser when it creates the node. A plain ASTNode* cannot be dispatched
     // on (Spice has no virtual dispatch through a struct), so generic child traversal goes through this pointer.
     public IVisitable* visitable = nil<IVisitable*>
+    // Kind of the concrete node. Set by the constructor of the concrete node
+    public ASTNodeKind kind = ASTNodeKind::INVALID
+    // Whether the node is an expression / statement node. Set by the constructors of ASTExprNode / ASTStmtNode
+    public bool isExprNode = false
+    public bool isStmtNode = false
 }
 
 public p ASTNode.ctor(const CodeLoc& codeLoc) {
@@ -95,15 +201,6 @@ public p ASTNode.addChild(ASTNode* child) {
 
 public f<const Vector<ASTNode*>&> ASTNode.getChildren() {
     return this.children;
-}
-
-public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
-    // Resize children
-    foreach ASTNode* child : this.children {
-        assert child != nil<ASTNode*>;
-        child.resizeToNumberOfManifestations(manifestationCount);
-    }
-    // Do custom work (override in subclasses to add per-node behavior)
 }
 
 /**
@@ -134,6 +231,7 @@ public type ASTEntryNode struct : IVisitable {
 
 public p ASTEntryNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ENTRY;
 }
 public f<Any> ASTEntryNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEntry(this);
@@ -158,17 +256,95 @@ public type ASTStmtNode struct/*: IVisitable*/ {
 
 public p ASTStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.isStmtNode = true;
 }
 
 // =========================================================== ExprNode ==========================================================
 
 public type ASTExprNode struct/*: IVisitable*/ {
     compose public ASTNode node
-    // ToDo: QualTypeList symbolTypes (blocked on qual-type.spice compiling)
+    QualTypeList symbolTypes
 }
 
 public p ASTExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.isExprNode = true;
+}
+
+// Defined after ASTExprNode, because it accesses the symbol types of expression nodes
+public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount) {
+    // Reserve this node
+    if this.isExprNode {
+        ASTExprNode* exprNode = asExprNode(this);
+        while exprNode.symbolTypes.getSize() < manifestationCount {
+            exprNode.symbolTypes.pushBack(QualType(SuperType::TY_INVALID));
+        }
+    }
+    // Resize children
+    foreach ASTNode* child : this.children {
+        assert child != nil<ASTNode*>;
+        child.resizeToNumberOfManifestations(manifestationCount);
+    }
+    // Do custom work
+    customItemsInitialization(this, manifestationCount);
+}
+
+public f<QualType> ASTExprNode.setEvaluatedSymbolType(const QualType& symbolType, unsigned long idx) {
+    assert this.symbolTypes.getSize() > idx;
+    QualType& slot = this.symbolTypes.get(idx);
+    slot = symbolType;
+    return symbolType;
+}
+
+public f<const QualType&> ASTExprNode.getEvaluatedSymbolType(unsigned long idx) {
+    if !this.symbolTypes.isEmpty() {
+        const QualType& symbolType = this.symbolTypes.get(idx);
+        if !symbolType.is(SuperType::TY_INVALID) {
+            return symbolType;
+        }
+    }
+    if this.children.getSize() != 1l {
+        panic(Error("Cannot deduce evaluated symbol type"));
+    }
+    ASTExprNode* expr = asExprNode(this.children.front());
+    return expr.getEvaluatedSymbolType(idx);
+}
+
+// Id of the expression scope, that holds the temporaries of this expression. Only some expressions have such a scope.
+public f<String> ASTExprNode.getExprScopeId() {
+    return String("expr:") + this.codeLoc.toString();
+}
+
+/**
+ * Get the expression node base of an AST node. ASTExprNode composes ASTNode as its first member and has no interface, so
+ * both share the same address.
+ *
+ * @param node AST node, which must be an expression node
+ * @return Expression node base
+ */
+public f<ASTExprNode*> asExprNode(ASTNode* node) {
+    assert node.isExprNode;
+    ASTExprNode* exprNode = nil<ASTExprNode*>;
+    unsafe {
+        exprNode = cast<ASTExprNode*>(node);
+    }
+    return exprNode;
+}
+
+/**
+ * Get the statement node base of an AST node. ASTStmtNode composes ASTNode as its first member and has no interface, so
+ * both share the same address.
+ *
+ * @param node AST node, which must be a statement node
+ * @return Statement node base
+ */
+public f<ASTStmtNode*> asStmtNode(ASTNode* node) {
+    assert node.isStmtNode;
+    ASTStmtNode* stmtNode = nil<ASTStmtNode*>;
+    unsafe {
+        stmtNode = cast<ASTStmtNode*>(node);
+    }
+    return stmtNode;
 }
 
 // The node types below are declared here, ahead of the top-level-def/stmt nodes that reference them,
@@ -197,6 +373,7 @@ public type ASTConstantNode struct : IVisitable {
 
 public p ASTConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::CONSTANT;
 }
 public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitConstant(this);
@@ -217,6 +394,7 @@ public type ASTAttrNode struct : IVisitable {
 
 public p ASTAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ATTR;
 }
 public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAttr(this);
@@ -240,6 +418,7 @@ public type ASTAttrLstNode struct : IVisitable {
 
 public p ASTAttrLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ATTR_LST;
 }
 public f<Any> ASTAttrLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAttrLst(this);
@@ -303,6 +482,7 @@ public type ASTQualifierNode struct : IVisitable {
 
 public p ASTQualifierNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::QUALIFIER;
 }
 public f<Any> ASTQualifierNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitQualifier(this);
@@ -317,6 +497,7 @@ public type ASTQualifierLstNode struct : IVisitable {
 
 public p ASTQualifierLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::QUALIFIER_LST;
 }
 public f<Any> ASTQualifierLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitQualifierLst(this);
@@ -333,6 +514,7 @@ public type ASTCustomDataTypeNode struct : IVisitable {
 
 public p ASTCustomDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::CUSTOM_DATA_TYPE;
 }
 public f<Any> ASTCustomDataTypeNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCustomDataType(this);
@@ -364,6 +546,7 @@ public type ASTBaseDataTypeNode struct : IVisitable {
 
 public p ASTBaseDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::BASE_DATA_TYPE;
 }
 public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBaseDataType(this);
@@ -404,6 +587,7 @@ public type ASTDataTypeNode struct : IVisitable {
 
 public p ASTDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::DATA_TYPE;
 }
 public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitDataType(this);
@@ -418,6 +602,7 @@ public type ASTTypeLstNode struct : IVisitable {
 
 public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::TYPE_LST;
 }
 public f<Any> ASTTypeLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTypeLst(this);
@@ -438,6 +623,7 @@ public type ASTMainFctDefNode struct : IVisitable {
 
 public p ASTMainFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::MAIN_FCT_DEF;
 }
 public f<Any> ASTMainFctDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitMainFctDef(this);
@@ -461,6 +647,7 @@ public type ASTFctNameNode struct : IVisitable {
 
 public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::FCT_NAME;
 }
 public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFctName(this);
@@ -480,6 +667,7 @@ public type ASTFctDefBaseNode struct/*: IVisitable*/ {
     public bool hasParams = false
     public TypeQualifiers qualifiers
     public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
+    public Vector<Function*> manifestations
     public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
@@ -489,6 +677,10 @@ public type ASTFctDefBaseNode struct/*: IVisitable*/ {
 
 public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+}
+
+public f<String> ASTFctDefBaseNode.getSymbolTableEntryName() {
+    return this.name.name + ":" + this.codeLoc.toString();
 }
 
 // ========================================================== FctDefNode =========================================================
@@ -501,6 +693,7 @@ public type ASTFctDefNode struct : IVisitable {
 
 public p ASTFctDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
+    this.kind = ASTNodeKind::FCT_DEF;
 }
 public f<Any> ASTFctDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFctDef(this);
@@ -521,6 +714,7 @@ public type ASTProcDefNode struct : IVisitable {
 
 public p ASTProcDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTFctDefBaseNode(codeLoc);
+    this.kind = ASTNodeKind::PROC_DEF;
 }
 public f<Any> ASTProcDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitProcDef(this);
@@ -542,6 +736,8 @@ public type ASTStructDefNode struct : IVisitable {
     public bool hasInterfaces = false
     public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public ASTTypeLstNode* interfaceTypeLst = nil<ASTTypeLstNode*>
+    public bool emitVTable = false
+    public Vector<Struct*> structManifestations
     public Vector<IVisitable*> fields
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
@@ -552,6 +748,7 @@ public type ASTStructDefNode struct : IVisitable {
 
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::STRUCT_DEF;
 }
 public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStructDef(this);
@@ -568,6 +765,7 @@ public type ASTInterfaceDefNode struct : IVisitable {
     public bool hasTemplateTypes = false
     public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public Vector<IVisitable*> signatures
+    public Vector<Interface*> interfaceManifestations
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
@@ -577,6 +775,7 @@ public type ASTInterfaceDefNode struct : IVisitable {
 
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::INTERFACE_DEF;
 }
 public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitInterfaceDef(this);
@@ -593,6 +792,7 @@ public type ASTUnionDefNode struct : IVisitable {
     public bool hasTemplateTypes = false
     public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public Vector<IVisitable*> fields
+    public Vector<Union*> unionManifestations
     public ASTQualifierLstNode* qualifierLst = nil<ASTQualifierLstNode*>
     public TypeQualifiers qualifiers
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
@@ -602,6 +802,7 @@ public type ASTUnionDefNode struct : IVisitable {
 
 public p ASTUnionDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::UNION_DEF;
 }
 public f<Any> ASTUnionDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitUnionDef(this);
@@ -624,6 +825,7 @@ public type ASTEnumDefNode struct : IVisitable {
 
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::ENUM_DEF;
 }
 public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumDef(this);
@@ -642,6 +844,7 @@ public type ASTGenericTypeDefNode struct : IVisitable {
 
 public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::GENERIC_TYPE_DEF;
 }
 public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitGenericTypeDef(this);
@@ -665,6 +868,7 @@ public type ASTAliasDefNode struct : IVisitable {
 
 public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::ALIAS_DEF;
 }
 public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAliasDef(this);
@@ -685,6 +889,7 @@ public type ASTGlobalVarDefNode struct : IVisitable {
 
 public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::GLOBAL_VAR_DEF;
 }
 public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitGlobalVarDef(this);
@@ -701,12 +906,15 @@ public type ASTExtDeclNode struct : IVisitable {
     public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
     public IVisitable* argTypeLst = nil<IVisitable*>
     public bool hasArgs = false
+    public Function* extFunction = nil<Function*>
+    public Vector<Function*> extFunctionManifestations
     public bool hasReturnType = false
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTExtDeclNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::EXT_DECL;
 }
 public f<Any> ASTExtDeclNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitExtDecl(this);
@@ -729,6 +937,7 @@ public type ASTImportDefNode struct : IVisitable {
 
 public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.kind = ASTNodeKind::IMPORT_DEF;
 }
 public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitImportDef(this);
@@ -746,6 +955,7 @@ public type ASTUnsafeBlockNode struct : IVisitable {
 
 public p ASTUnsafeBlockNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::UNSAFE_BLOCK;
 }
 public f<Any> ASTUnsafeBlockNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitUnsafeBlock(this);
@@ -770,6 +980,7 @@ public type ASTForLoopNode struct : IVisitable {
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::FOR_LOOP;
 }
 public f<Any> ASTForLoopNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitForLoop(this);
@@ -794,6 +1005,7 @@ public type ASTForeachLoopNode struct : IVisitable {
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::FOREACH_LOOP;
 }
 public f<Any> ASTForeachLoopNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitForeachLoop(this);
@@ -816,6 +1028,7 @@ public type ASTWhileLoopNode struct : IVisitable {
 
 public p ASTWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::WHILE_LOOP;
 }
 public f<Any> ASTWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitWhileLoop(this);
@@ -838,6 +1051,7 @@ public type ASTDoWhileLoopNode struct : IVisitable {
 
 public p ASTDoWhileLoopNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::DO_WHILE_LOOP;
 }
 public f<Any> ASTDoWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitDoWhileLoop(this);
@@ -853,6 +1067,8 @@ public f<String> ASTDoWhileLoopNode.getScopeId() {
 public type ASTIfStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
+    public Vector<bool> compileThenBranch
+    public Vector<bool> compileElseBranch
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* thenBody = nil<IVisitable*>
     public Scope* thenBodyScope = nil<Scope*>
@@ -861,6 +1077,13 @@ public type ASTIfStmtNode struct : IVisitable {
 
 public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::IF_STMT;
+}
+public f<bool> ASTIfStmtNode.doCompileThenBranch(unsigned long manIdx) {
+    return this.compileThenBranch.isEmpty() || this.compileThenBranch.get(manIdx);
+}
+public f<bool> ASTIfStmtNode.doCompileElseBranch(unsigned long manIdx) {
+    return this.compileElseBranch.isEmpty() || this.compileElseBranch.get(manIdx);
 }
 public f<Any> ASTIfStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitIfStmt(this);
@@ -884,6 +1107,7 @@ public type ASTElseStmtNode struct : IVisitable {
 
 public p ASTElseStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::ELSE_STMT;
 }
 public f<Any> ASTElseStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitElseStmt(this);
@@ -907,6 +1131,7 @@ public type ASTSwitchStmtNode struct : IVisitable {
 
 public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::SWITCH_STMT;
 }
 public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitSwitchStmt(this);
@@ -925,6 +1150,7 @@ public type ASTCaseBranchNode struct : IVisitable {
 
 public p ASTCaseBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::CASE_BRANCH;
 }
 public f<Any> ASTCaseBranchNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCaseBranch(this);
@@ -946,6 +1172,7 @@ public type ASTDefaultBranchNode struct : IVisitable {
 
 public p ASTDefaultBranchNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::DEFAULT_BRANCH;
 }
 public f<Any> ASTDefaultBranchNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitDefaultBranch(this);
@@ -967,6 +1194,7 @@ public type ASTAnonymousBlockStmtNode struct : IVisitable {
 
 public p ASTAnonymousBlockStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::ANONYMOUS_BLOCK_STMT;
 }
 public f<Any> ASTAnonymousBlockStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAnonymousBlockStmt(this);
@@ -987,6 +1215,7 @@ public type ASTStmtLstNode struct : IVisitable {
 
 public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::STMT_LST;
 }
 public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStmtLst(this);
@@ -1004,6 +1233,7 @@ public type ASTTypeLstWithEllipsisNode struct : IVisitable {
 
 public p ASTTypeLstWithEllipsisNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::TYPE_LST_WITH_ELLIPSIS;
 }
 public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTypeLstWithEllipsis(this);
@@ -1020,6 +1250,7 @@ public type ASTTypeAltsLstNode struct : IVisitable {
 
 public p ASTTypeAltsLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::TYPE_ALTS_LST;
 }
 public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTypeAltsLst(this);
@@ -1040,10 +1271,15 @@ public type ASTDeclStmtNode struct : IVisitable {
     public IVisitable* assignExpr = nil<IVisitable*>
     public bool isFctParam = false
     public bool isForEachItem = false
+    public bool isCtorCallRequired = false // For struct, in case there are reference fields, we need to call a user-defined ctor
+    public Vector<SymbolTableEntry*> entries
+    public Function* calledInitCtor = nil<Function*>
+    public Function* calledCopyCtor = nil<Function*>
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::DECL_STMT;
 }
 public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitDeclStmt(this);
@@ -1059,6 +1295,7 @@ public type ASTParamLstNode struct : IVisitable {
 
 public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::PARAM_LST;
 }
 public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitParamLst(this);
@@ -1075,6 +1312,7 @@ public type ASTArgLstNode struct : IVisitable {
 
 public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ARG_LST;
 }
 public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitArgLst(this);
@@ -1098,6 +1336,7 @@ public type ASTEnumItemNode struct : IVisitable {
 
 public p ASTEnumItemNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ENUM_ITEM;
 }
 public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumItem(this);
@@ -1113,6 +1352,7 @@ public type ASTEnumItemLstNode struct : IVisitable {
 
 public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::ENUM_ITEM_LST;
 }
 public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumItemLst(this);
@@ -1130,6 +1370,7 @@ public type ASTFieldNode struct : IVisitable {
 
 public p ASTFieldNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::FIELD;
 }
 public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitField(this);
@@ -1156,12 +1397,14 @@ public type ASTSignatureNode struct : IVisitable {
     public bool hasParams = false
     public SignatureType signatureType = SignatureType::TYPE_NONE
     public TypeQualifiers signatureQualifiers
+    public Vector<Function*> signatureManifestations
     public String methodName
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
 }
 
 public p ASTSignatureNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::SIGNATURE;
 }
 public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitSignature(this);
@@ -1180,6 +1423,7 @@ public type ASTExprStmtNode struct : IVisitable {
 
 public p ASTExprStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::EXPR_STMT;
 }
 public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitExprStmt(this);
@@ -1195,6 +1439,7 @@ public type ASTModAttrNode struct : IVisitable {
 
 public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::MOD_ATTR;
 }
 public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitModAttr(this);
@@ -1210,6 +1455,7 @@ public type ASTTopLevelDefAttrNode struct : IVisitable {
 
 public p ASTTopLevelDefAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::TOP_LEVEL_DEF_ATTR;
 }
 public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTopLevelDefinitionAttr(this);
@@ -1225,6 +1471,7 @@ public type ASTLambdaAttrNode struct : IVisitable {
 
 public p ASTLambdaAttrNode.ctor(CodeLoc codeLoc) {
     this.node = ASTNode(codeLoc);
+    this.kind = ASTNodeKind::LAMBDA_ATTR;
 }
 public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLambdaAttr(this);
@@ -1243,6 +1490,7 @@ public type ASTCaseConstantNode struct : IVisitable {
 
 public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::CASE_CONSTANT;
 }
 public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCaseConstant(this);
@@ -1260,6 +1508,7 @@ public type ASTReturnStmtNode struct : IVisitable {
 
 public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::RETURN_STMT;
 }
 public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitReturnStmt(this);
@@ -1276,6 +1525,7 @@ public type ASTBreakStmtNode struct : IVisitable {
 
 public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::BREAK_STMT;
 }
 public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBreakStmt(this);
@@ -1292,6 +1542,7 @@ public type ASTContinueStmtNode struct : IVisitable {
 
 public p ASTContinueStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::CONTINUE_STMT;
 }
 public f<Any> ASTContinueStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitContinueStmt(this);
@@ -1307,6 +1558,7 @@ public type ASTFallthroughStmtNode struct : IVisitable {
 
 public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::FALLTHROUGH_STMT;
 }
 public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFallthroughStmt(this);
@@ -1324,6 +1576,7 @@ public type ASTAssertStmtNode struct : IVisitable {
 
 public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
+    this.kind = ASTNodeKind::ASSERT_STMT;
 }
 public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAssertStmt(this);
@@ -1353,10 +1606,13 @@ public type ASTAssignExprNode struct : IVisitable {
     public IVisitable* rhs = nil<IVisitable*>
     public IVisitable* ternaryExpr = nil<IVisitable*>
     public AssignOp op = AssignOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
+    public Vector<const Function*> lhsDtorFct // Dtor of the lhs, if it gets overwritten
 }
 
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::ASSIGN_EXPR;
 }
 public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAssignExpr(this);
@@ -1376,6 +1632,7 @@ public type ASTTernaryExprNode struct : IVisitable {
 
 public p ASTTernaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::TERNARY_EXPR;
 }
 public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTernaryExpr(this);
@@ -1392,6 +1649,7 @@ public type ASTLogicalOrExprNode struct : IVisitable {
 
 public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::LOGICAL_OR_EXPR;
 }
 public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLogicalOrExpr(this);
@@ -1408,6 +1666,7 @@ public type ASTLogicalAndExprNode struct : IVisitable {
 
 public p ASTLogicalAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::LOGICAL_AND_EXPR;
 }
 public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLogicalAndExpr(this);
@@ -1419,10 +1678,12 @@ public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseOrExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::BITWISE_OR_EXPR;
 }
 public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseOrExpr(this);
@@ -1434,10 +1695,12 @@ public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseXorExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseXorExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::BITWISE_XOR_EXPR;
 }
 public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseXorExpr(this);
@@ -1449,10 +1712,12 @@ public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTBitwiseAndExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::BITWISE_AND_EXPR;
 }
 public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseAndExpr(this);
@@ -1471,10 +1736,12 @@ public type ASTEqualityExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public EqualityOp op = EqualityOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::EQUALITY_EXPR;
 }
 public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEqualityExpr(this);
@@ -1499,6 +1766,7 @@ public type ASTRelationalExprNode struct : IVisitable {
 
 public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::RELATIONAL_EXPR;
 }
 public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitRelationalExpr(this);
@@ -1519,10 +1787,12 @@ public type ASTShiftExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public ShiftOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTShiftExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::SHIFT_EXPR;
 }
 public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitShiftExpr(this);
@@ -1542,10 +1812,12 @@ public type ASTAdditiveExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public AdditiveOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::ADDITIVE_EXPR;
 }
 public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAdditiveExpr(this);
@@ -1566,10 +1838,12 @@ public type ASTMultiplicativeExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public MultiplicativeOpQueue opQueue
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTMultiplicativeExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::MULTIPLICATIVE_EXPR;
 }
 public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitMultiplicativeExpr(this);
@@ -1588,6 +1862,7 @@ public type ASTCastExprNode struct : IVisitable {
 
 public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::CAST_EXPR;
 }
 public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCastExpr(this);
@@ -1612,10 +1887,12 @@ public type ASTPrefixUnaryExprNode struct : IVisitable {
     public IVisitable* prefixUnaryExpr = nil<IVisitable*>
     public IVisitable* postfixUnaryExpr = nil<IVisitable*>
     public PrefixUnaryOp op = PrefixUnaryOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::PREFIX_UNARY_EXPR;
 }
 public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitPrefixUnaryExpr(this);
@@ -1640,10 +1917,12 @@ public type ASTPostfixUnaryExprNode struct : IVisitable {
     public IVisitable* subscriptIndexExpr = nil<IVisitable*>
     public PostfixUnaryOp op = PostfixUnaryOp::OP_NONE
     public String identifier
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::POSTFIX_UNARY_EXPR;
 }
 public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitPostfixUnaryExpr(this);
@@ -1664,6 +1943,7 @@ public type ASTAtomicExprNode struct : IVisitable {
 
 public p ASTAtomicExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::ATOMIC_EXPR;
 }
 public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAtomicExpr(this);
@@ -1687,6 +1967,7 @@ public type ASTValueNode struct : IVisitable {
 
 public p ASTValueNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::VALUE;
 }
 public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitValue(this);
@@ -1708,6 +1989,7 @@ public type ASTFctCallNode struct : IVisitable {
 
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::FCT_CALL;
 }
 public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFctCall(this);
@@ -1724,6 +2006,7 @@ public type ASTArrayInitializationNode struct : IVisitable {
 
 public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::ARRAY_INITIALIZATION;
 }
 public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitArrayInitialization(this);
@@ -1744,6 +2027,7 @@ public type ASTStructInstantiationNode struct : IVisitable {
 
 public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::STRUCT_INSTANTIATION;
 }
 public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStructInstantiation(this);
@@ -1775,6 +2059,7 @@ public type ASTLambdaFuncNode struct : IVisitable {
 
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
+    this.kind = ASTNodeKind::LAMBDA_FUNC;
 }
 public f<Any> ASTLambdaFuncNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLambdaFunc(this);
@@ -1799,6 +2084,7 @@ public type ASTLambdaProcNode struct : IVisitable {
 
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
+    this.kind = ASTNodeKind::LAMBDA_PROC;
 }
 public f<Any> ASTLambdaProcNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLambdaProc(this);
@@ -1822,6 +2108,7 @@ public type ASTLambdaExprNode struct : IVisitable {
 
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
     this.node = ASTLambdaBaseNode(codeLoc);
+    this.kind = ASTNodeKind::LAMBDA_EXPR;
 }
 public f<Any> ASTLambdaExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLambdaExpr(this);
@@ -1844,6 +2131,7 @@ public type ASTFunctionDataTypeNode struct : IVisitable {
 
 public p ASTFunctionDataTypeNode.ctor(CodeLoc codeLoc) {
     this.node = ASTExprNode(codeLoc);
+    this.kind = ASTNodeKind::FUNCTION_DATA_TYPE;
 }
 public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFunctionDataType(this);
@@ -1898,6 +2186,689 @@ public f<bool> testASTNodesSmoke() {
     assert tlAttr.node.codeLoc.line == 3l;
 
     return true;
+}
+
+// ======================================================= Virtual methods =======================================================
+
+// The host implements the following functions as virtual methods of ASTNode, which are overridden by the concrete nodes.
+// Spice has no virtual dispatch through a struct, so they switch over the kind of the node instead. The concrete node is
+// reached via its IVisitable pointer, which has the same address as the concrete node.
+
+/**
+ * Get the concrete node of an AST node
+ *
+ * @param node AST node, which must be of the given concrete node type
+ * @return Concrete node
+ */
+public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
+    ConcreteNode* concreteNode = nil<ConcreteNode*>;
+    unsafe {
+        concreteNode = cast<ConcreteNode*>(node.visitable);
+    }
+    return concreteNode;
+}
+
+/**
+ * Get the concrete node of an AST node, that is stored as IVisitable*
+ *
+ * @param node AST node, which must be of the given concrete node type
+ * @return Concrete node
+ */
+public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
+    ConcreteNode* concreteNode = nil<ConcreteNode*>;
+    unsafe {
+        concreteNode = cast<ConcreteNode*>(node);
+    }
+    return concreteNode;
+}
+
+// Do node-specific work when the AST gets resized to a number of manifestations
+/**
+ * Get the operator overloading functions of a node, that supports operator overloading. Equal to the host's
+ * ASTNode::getOpFctPointers(), which is overridden by the concrete nodes.
+ *
+ * @return Operator overloading functions per manifestation
+ */
+public f<Vector<Vector<const Function*>>*> ASTNode.getOpFctPointers() {
+    Vector<Vector<const Function*>>* opFctPointers = nil<Vector<Vector<const Function*>>*>;
+    switch this.kind {
+        case ASTNodeKind::ASSIGN_EXPR: {
+            ASTAssignExprNode* concreteNode = downcast<ASTAssignExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_OR_EXPR: {
+            ASTBitwiseOrExprNode* concreteNode = downcast<ASTBitwiseOrExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_XOR_EXPR: {
+            ASTBitwiseXorExprNode* concreteNode = downcast<ASTBitwiseXorExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::BITWISE_AND_EXPR: {
+            ASTBitwiseAndExprNode* concreteNode = downcast<ASTBitwiseAndExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::EQUALITY_EXPR: {
+            ASTEqualityExprNode* concreteNode = downcast<ASTEqualityExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::SHIFT_EXPR: {
+            ASTShiftExprNode* concreteNode = downcast<ASTShiftExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::ADDITIVE_EXPR: {
+            ASTAdditiveExprNode* concreteNode = downcast<ASTAdditiveExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::MULTIPLICATIVE_EXPR: {
+            ASTMultiplicativeExprNode* concreteNode = downcast<ASTMultiplicativeExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::PREFIX_UNARY_EXPR: {
+            ASTPrefixUnaryExprNode* concreteNode = downcast<ASTPrefixUnaryExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        case ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            ASTPostfixUnaryExprNode* concreteNode = downcast<ASTPostfixUnaryExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
+        default: {
+            panic(Error("The given node does not overload the getOpFctPointers function"));
+        }
+    }
+    return opFctPointers;
+}
+
+/**
+ * Check if nodes of the given kind store operator overloading functions (getOpFctPointers)
+ *
+ * @param kind Node kind
+ * @return Stores operator overloading functions or not
+ */
+f<bool> hasOpFctPointers(ASTNodeKind kind) {
+    switch kind {
+        case ASTNodeKind::ASSIGN_EXPR, ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR, ASTNodeKind::EQUALITY_EXPR, ASTNodeKind::SHIFT_EXPR, ASTNodeKind::ADDITIVE_EXPR, ASTNodeKind::MULTIPLICATIVE_EXPR, ASTNodeKind::PREFIX_UNARY_EXPR, ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            return true;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
+    if node.kind == ASTNodeKind::ASSIGN_EXPR {
+        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
+        while assignExprNode.lhsDtorFct.getSize() < manifestationCount {
+            assignExprNode.lhsDtorFct.pushBack(nil<const Function*>);
+        }
+    }
+    if hasOpFctPointers(node.kind) {
+        // Each manifestation starts with one empty operator function slot (host: opFct.resize(manifestationCount, {nullptr}))
+        Vector<Vector<const Function*>>* opFct = node.getOpFctPointers();
+        while opFct.getSize() < manifestationCount {
+            Vector<const Function*> opFctsOfManifestation;
+            opFctsOfManifestation.pushBack(nil<const Function*>);
+            opFct.pushBack(opFctsOfManifestation);
+        }
+    }
+    if node.kind == ASTNodeKind::DECL_STMT {
+        ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
+        while declStmtNode.entries.getSize() < manifestationCount {
+            declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
+        }
+    }
+    if node.kind == ASTNodeKind::IF_STMT {
+        ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(node);
+        while ifStmtNode.compileThenBranch.getSize() < manifestationCount {
+            ifStmtNode.compileThenBranch.pushBack(true);
+        }
+        while ifStmtNode.compileElseBranch.getSize() < manifestationCount {
+            ifStmtNode.compileElseBranch.pushBack(true);
+        }
+    }
+}
+
+/**
+ * Check if the given node returns on all control paths
+ *
+ * @param doSetPredecessorsUnreachable Whether statements after a returning statement are marked as unreachable. Can be
+ *                                     reset by the callee, if the return statement is only a modification of the result
+ * @param manIdx Manifestation index
+ * @return Returns on all control paths or not
+ */
+public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachable, unsigned long manIdx) {
+    switch this.kind {
+        case ASTNodeKind::MAIN_FCT_DEF: {
+            ASTMainFctDefNode* mainFctDefNode = downcast<ASTMainFctDefNode>(this);
+            return returnsOnAllControlPaths(mainFctDefNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::FCT_DEF: {
+            ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(this);
+            return returnsOnAllControlPaths(fctDefNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::PROC_DEF: {
+            ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(this);
+            return returnsOnAllControlPaths(procDefNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::FOR_LOOP: {
+            // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
+            // we can assume that the loop itself will always return
+            ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(this);
+            const bool condAlwaysTrue = isAlwaysTrue(forLoopNode.condAssign, manIdx);
+            return condAlwaysTrue && returnsOnAllControlPaths(forLoopNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::WHILE_LOOP: {
+            // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
+            // we can assume that the loop itself will always return
+            ASTWhileLoopNode* whileLoopNode = downcast<ASTWhileLoopNode>(this);
+            const bool condAlwaysTrue = isAlwaysTrue(whileLoopNode.condition, manIdx);
+            return condAlwaysTrue && returnsOnAllControlPaths(whileLoopNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::DO_WHILE_LOOP: {
+            // Do-while loops will always be executed at least once. So if the body returns on all control paths, the loop will as well
+            ASTDoWhileLoopNode* doWhileLoopNode = downcast<ASTDoWhileLoopNode>(this);
+            return returnsOnAllControlPaths(doWhileLoopNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::IF_STMT: {
+            ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(this);
+            // If the condition always evaluates to 'true' the then block must return
+            if !ifStmtNode.doCompileElseBranch(manIdx) {
+                return returnsOnAllControlPaths(ifStmtNode.thenBody, doSetPredecessorsUnreachable, manIdx);
+            }
+            // If the condition always evaluates to 'false' the else block must return
+            const bool hasElseStmt = ifStmtNode.elseStmt != nil<IVisitable*>;
+            if !ifStmtNode.doCompileThenBranch(manIdx) {
+                return hasElseStmt && returnsOnAllControlPaths(ifStmtNode.elseStmt, doSetPredecessorsUnreachable, manIdx);
+            }
+            // If the condition does not always evaluate to 'true' or 'false' we need to check both branches
+            return returnsOnAllControlPaths(ifStmtNode.thenBody, doSetPredecessorsUnreachable, manIdx) && hasElseStmt
+                && returnsOnAllControlPaths(ifStmtNode.elseStmt, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::ELSE_STMT: {
+            ASTElseStmtNode* elseStmtNode = downcast<ASTElseStmtNode>(this);
+            if elseStmtNode.isElseIf {
+                return returnsOnAllControlPaths(elseStmtNode.ifStmt, doSetPredecessorsUnreachable, manIdx);
+            }
+            return returnsOnAllControlPaths(elseStmtNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::SWITCH_STMT: {
+            ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(this);
+            foreach IVisitable* caseBranch : switchStmtNode.caseBranches {
+                if !returnsOnAllControlPaths(caseBranch, doSetPredecessorsUnreachable, manIdx) {
+                    return false;
+                }
+            }
+            const bool hasDefaultBranch = switchStmtNode.defaultBranch != nil<IVisitable*>;
+            return !hasDefaultBranch || returnsOnAllControlPaths(switchStmtNode.defaultBranch, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::CASE_BRANCH: {
+            ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(this);
+            return returnsOnAllControlPaths(caseBranchNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::DEFAULT_BRANCH: {
+            ASTDefaultBranchNode* defaultBranchNode = downcast<ASTDefaultBranchNode>(this);
+            return returnsOnAllControlPaths(defaultBranchNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::STMT_LST: {
+            ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(this);
+            // An empty statement list does not return at all
+            if stmtLstNode.statements.isEmpty() {
+                return false;
+            }
+            // A statement list returns on all control paths, if the one direct child statement returns on all control paths
+            bool returnsOnAllPaths = false;
+            foreach IVisitable* child : stmtLstNode.statements {
+                assert child != nil<IVisitable*>;
+                ASTNode* childNode = getASTNode(child);
+
+                // Prevent marking instructions as unreachable if doSetPredecessorsUnreachable is set to false
+                if returnsOnAllPaths && *doSetPredecessorsUnreachable {
+                    ASTStmtNode* stmtNode = asStmtNode(childNode);
+                    stmtNode.unreachable = true;
+                }
+
+                if childNode.returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx) {
+                    returnsOnAllPaths = true;
+                }
+            }
+            return returnsOnAllPaths;
+        }
+        case ASTNodeKind::RETURN_STMT: {
+            return true;
+        }
+        case ASTNodeKind::ASSIGN_EXPR: {
+            ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(this);
+            // If it's a ternary, do the default thing
+            if assignExprNode.op == AssignOp::OP_NONE {
+                return returnsOnAllControlPaths(assignExprNode.ternaryExpr, doSetPredecessorsUnreachable, manIdx);
+            }
+
+            // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
+            ASTAtomicExprNode* atomicExpr = assignExprNode.getLhsAtomicNode();
+            if atomicExpr != nil<ASTAtomicExprNode*> && atomicExpr.fqIdentifier == RETURN_VARIABLE_NAME {
+                // If we assign the result variable, we technically return from the function, but at the end of the function.
+                // Therefore, the following code is not unreachable, but will be executed in any case.
+                *doSetPredecessorsUnreachable = false;
+                return true;
+            }
+
+            return false;
+        }
+        case ASTNodeKind::FCT_CALL: {
+            // Some builtin functions terminate the control flow, e.g. panic
+            ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
+            BuiltinFunctionInfo builtinFunctionInfo;
+            return lookupBuiltinFunction(fctCallNode.fqFunctionName, builtinFunctionInfo) && builtinFunctionInfo.isFunctionTerminator;
+        }
+        case ASTNodeKind::LAMBDA_FUNC: {
+            ASTLambdaFuncNode* lambdaFuncNode = downcast<ASTLambdaFuncNode>(this);
+            return returnsOnAllControlPaths(lambdaFuncNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+        case ASTNodeKind::LAMBDA_PROC: {
+            ASTLambdaProcNode* lambdaProcNode = downcast<ASTLambdaProcNode>(this);
+            return returnsOnAllControlPaths(lambdaProcNode.body, doSetPredecessorsUnreachable, manIdx);
+        }
+    }
+    // Default behavior: Returns on all control paths if the only child does
+    if this.children.getSize() != 1l {
+        return false;
+    }
+    ASTNode* onlyChild = this.children.front();
+    return onlyChild.returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+}
+
+// Shorthand for calling returnsOnAllControlPaths on a node, that is stored as IVisitable*
+f<bool> returnsOnAllControlPaths(IVisitable* node, bool* doSetPredecessorsUnreachable, unsigned long manIdx) {
+    ASTNode* astNode = getASTNode(node);
+    return astNode.returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
+}
+
+// Check if the given node has a compile time value, which is 'true'
+f<bool> isAlwaysTrue(IVisitable* node, unsigned long manIdx) {
+    ASTNode* astNode = getASTNode(node);
+    if !astNode.hasCompileTimeValue(manIdx) {
+        return false;
+    }
+    const CompileTimeValue compileTimeValue = astNode.getCompileTimeValue(manIdx);
+    return compileTimeValue.boolValue;
+}
+
+/**
+ * Check if the given node has a value, that is known at compile time
+ *
+ * @param manIdx Manifestation index
+ * @return Has compile time value or not
+ */
+public f<bool> ASTNode.hasCompileTimeValue(unsigned long manIdx) {
+    switch this.kind {
+        case ASTNodeKind::CONSTANT: {
+            return true;
+        }
+        case ASTNodeKind::GLOBAL_VAR_DEF: {
+            return true;
+        }
+        case ASTNodeKind::TERNARY_EXPR: {
+            ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(this);
+            const bool trueExprHasCompileTimeValue = ternaryExprNode.trueExpr == nil<IVisitable*> || hasCompileTimeValue(ternaryExprNode.trueExpr, manIdx);
+            const bool falseExprHasCompileTimeValue = ternaryExprNode.falseExpr == nil<IVisitable*> || hasCompileTimeValue(ternaryExprNode.falseExpr, manIdx);
+            return hasCompileTimeValue(ternaryExprNode.condition, manIdx) && trueExprHasCompileTimeValue && falseExprHasCompileTimeValue;
+        }
+        case ASTNodeKind::LOGICAL_OR_EXPR,
+             ASTNodeKind::LOGICAL_AND_EXPR,
+             ASTNodeKind::BITWISE_OR_EXPR,
+             ASTNodeKind::BITWISE_XOR_EXPR,
+             ASTNodeKind::BITWISE_AND_EXPR,
+             ASTNodeKind::EQUALITY_EXPR,
+             ASTNodeKind::RELATIONAL_EXPR,
+             ASTNodeKind::SHIFT_EXPR,
+             ASTNodeKind::ADDITIVE_EXPR,
+             ASTNodeKind::MULTIPLICATIVE_EXPR: {
+            // All operands of these nodes are its children
+            foreach ASTNode* operand : this.children {
+                if !operand.hasCompileTimeValue(manIdx) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        case ASTNodeKind::CAST_EXPR: {
+            ASTCastExprNode* castExprNode = downcast<ASTCastExprNode>(this);
+            return castExprNode.isCast ? hasCompileTimeValue(castExprNode.assignExpr, manIdx) : hasCompileTimeValue(castExprNode.prefixUnaryExpr, manIdx);
+        }
+        case ASTNodeKind::PREFIX_UNARY_EXPR: {
+            ASTPrefixUnaryExprNode* prefixUnaryExprNode = downcast<ASTPrefixUnaryExprNode>(this);
+            if prefixUnaryExprNode.postfixUnaryExpr != nil<IVisitable*> {
+                return hasCompileTimeValue(prefixUnaryExprNode.postfixUnaryExpr, manIdx);
+            }
+            const PrefixUnaryOp op = prefixUnaryExprNode.op;
+            const bool isSupported = op == PrefixUnaryOp::OP_NONE || op == PrefixUnaryOp::OP_MINUS || op == PrefixUnaryOp::OP_PLUS_PLUS
+                || op == PrefixUnaryOp::OP_MINUS_MINUS || op == PrefixUnaryOp::OP_NOT || op == PrefixUnaryOp::OP_BITWISE_NOT;
+            return isSupported && hasCompileTimeValue(prefixUnaryExprNode.prefixUnaryExpr, manIdx);
+        }
+        case ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            ASTPostfixUnaryExprNode* postfixUnaryExprNode = downcast<ASTPostfixUnaryExprNode>(this);
+            if postfixUnaryExprNode.atomicExpr != nil<IVisitable*> {
+                return hasCompileTimeValue(postfixUnaryExprNode.atomicExpr, manIdx);
+            }
+            const PostfixUnaryOp op = postfixUnaryExprNode.op;
+            const bool isSupported = op == PostfixUnaryOp::OP_NONE || op == PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryOp::OP_MINUS_MINUS;
+            return isSupported && hasCompileTimeValue(postfixUnaryExprNode.postfixUnaryExpr, manIdx);
+        }
+        case ASTNodeKind::VALUE: {
+            ASTValueNode* valueNode = downcast<ASTValueNode>(this);
+            if valueNode.isNil {
+                return true;
+            }
+        }
+        case ASTNodeKind::FCT_CALL: {
+            // ToDo: Return true for builtin function calls with a compile time value, once FctCallNode.data is ported
+            return false;
+        }
+    }
+    // Default behavior: Has a compile time value if the only child has one
+    if this.children.getSize() != 1l {
+        return false;
+    }
+    ASTNode* onlyChild = this.children.front();
+    return onlyChild.hasCompileTimeValue(manIdx);
+}
+
+// Shorthand for calling hasCompileTimeValue on a node, that is stored as IVisitable*
+f<bool> hasCompileTimeValue(IVisitable* node, unsigned long manIdx) {
+    ASTNode* astNode = getASTNode(node);
+    return astNode.hasCompileTimeValue(manIdx);
+}
+
+/**
+ * Get the value of the given node, that is known at compile time
+ *
+ * @param manIdx Manifestation index
+ * @return Compile time value
+ */
+public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
+    CompileTimeValue compileTimeValue;
+    switch this.kind {
+        case ASTNodeKind::CONSTANT: {
+            ASTConstantNode* constantNode = downcast<ASTConstantNode>(this);
+            return constantNode.compileTimeValue;
+        }
+        case ASTNodeKind::GLOBAL_VAR_DEF: {
+            ASTGlobalVarDefNode* globalVarDefNode = downcast<ASTGlobalVarDefNode>(this);
+            ASTNode* constantNode = cast<ASTNode*>(globalVarDefNode.constant);
+            return constantNode.getCompileTimeValue(manIdx);
+        }
+        case ASTNodeKind::TERNARY_EXPR: {
+            ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(this);
+            assert ternaryExprNode.condition != nil<IVisitable*>;
+            if ternaryExprNode.trueExpr == nil<IVisitable*> && ternaryExprNode.falseExpr == nil<IVisitable*> {
+                return getCompileTimeValue(ternaryExprNode.condition, manIdx);
+            }
+
+            // If the condition has no compile time value, we do not need to evaluate the true and false values
+            if !hasCompileTimeValue(ternaryExprNode.condition, manIdx) {
+                return compileTimeValue;
+            }
+
+            // Check if the condition always evaluates to 'true'
+            const CompileTimeValue conditionValue = getCompileTimeValue(ternaryExprNode.condition, manIdx);
+            if conditionValue.boolValue {
+                IVisitable* trueValue = ternaryExprNode.isShortened ? ternaryExprNode.condition : ternaryExprNode.trueExpr;
+                assert trueValue != nil<IVisitable*>;
+                return getCompileTimeValue(trueValue, manIdx);
+            }
+
+            assert ternaryExprNode.falseExpr != nil<IVisitable*>;
+            return getCompileTimeValue(ternaryExprNode.falseExpr, manIdx);
+        }
+        case ASTNodeKind::LOGICAL_OR_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            // Check if one expression evaluates to 'true'
+            foreach ASTNode* operand : this.children {
+                assert operand.hasCompileTimeValue(manIdx);
+                // If one operand evaluates to 'true' the whole expression is 'true'
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                if operandValue.boolValue {
+                    compileTimeValue.boolValue = true;
+                    return compileTimeValue;
+                }
+            }
+            // Return 'false'
+            compileTimeValue.boolValue = false;
+            return compileTimeValue;
+        }
+        case ASTNodeKind::LOGICAL_AND_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            // Check if all expressions evaluate to 'true'
+            foreach ASTNode* operand : this.children {
+                assert operand.hasCompileTimeValue(manIdx);
+                // If one operand evaluates to 'false' the whole expression is 'false'
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                if !operandValue.boolValue {
+                    compileTimeValue.boolValue = false;
+                    return compileTimeValue;
+                }
+            }
+            // Return 'false' (mirrors the host)
+            compileTimeValue.boolValue = false;
+            return compileTimeValue;
+        }
+        case ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            compileTimeValue = getChildCompileTimeValue(this, 0l, manIdx);
+            for unsigned long i = 1l; i < this.children.getSize(); i++ {
+                ASTNode* operand = this.children.get(i);
+                assert operand.hasCompileTimeValue(manIdx);
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                if this.kind == ASTNodeKind::BITWISE_OR_EXPR {
+                    compileTimeValue.longValue |= operandValue.longValue;
+                } else if this.kind == ASTNodeKind::BITWISE_XOR_EXPR {
+                    compileTimeValue.longValue ^= operandValue.longValue;
+                } else {
+                    compileTimeValue.longValue &= operandValue.longValue;
+                }
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::EQUALITY_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            ASTEqualityExprNode* equalityExprNode = downcast<ASTEqualityExprNode>(this);
+            const CompileTimeValue op0Value = getChildCompileTimeValue(this, 0l, manIdx);
+            const CompileTimeValue op1Value = getChildCompileTimeValue(this, 1l, manIdx);
+            if equalityExprNode.op == EqualityOp::OP_EQUAL {
+                compileTimeValue.boolValue = op0Value.longValue == op1Value.longValue;
+            } else {
+                assert equalityExprNode.op == EqualityOp::OP_NOT_EQUAL;
+                compileTimeValue.boolValue = op0Value.longValue != op1Value.longValue;
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::RELATIONAL_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            ASTRelationalExprNode* relationalExprNode = downcast<ASTRelationalExprNode>(this);
+            const CompileTimeValue op0Value = getChildCompileTimeValue(this, 0l, manIdx);
+            const CompileTimeValue op1Value = getChildCompileTimeValue(this, 1l, manIdx);
+            const RelationalOp op = relationalExprNode.op;
+            if op == RelationalOp::OP_LESS {
+                compileTimeValue.boolValue = op0Value.longValue < op1Value.longValue;
+            } else if op == RelationalOp::OP_GREATER {
+                compileTimeValue.boolValue = op0Value.longValue > op1Value.longValue;
+            } else if op == RelationalOp::OP_LESS_EQUAL {
+                compileTimeValue.boolValue = op0Value.longValue <= op1Value.longValue;
+            } else {
+                assert op == RelationalOp::OP_GREATER_EQUAL;
+                compileTimeValue.boolValue = op0Value.longValue >= op1Value.longValue;
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::SHIFT_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            ASTShiftExprNode* shiftExprNode = downcast<ASTShiftExprNode>(this);
+            compileTimeValue = getChildCompileTimeValue(this, 0l, manIdx);
+            ShiftOpQueue opQueueCopy = shiftExprNode.opQueue;
+            for unsigned long i = 1l; i < this.children.getSize(); i++ {
+                ASTNode* operand = this.children.get(i);
+                assert operand.hasCompileTimeValue(manIdx);
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                const Pair<ShiftOp, QualType> opEntry = opQueueCopy.pop();
+                if opEntry.getFirst() == ShiftOp::OP_SHIFT_LEFT {
+                    compileTimeValue.longValue <<= operandValue.longValue;
+                } else {
+                    assert opEntry.getFirst() == ShiftOp::OP_SHIFT_RIGHT;
+                    compileTimeValue.longValue >>= operandValue.longValue;
+                }
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::ADDITIVE_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            ASTAdditiveExprNode* additiveExprNode = downcast<ASTAdditiveExprNode>(this);
+            compileTimeValue = getChildCompileTimeValue(this, 0l, manIdx);
+            AdditiveOpQueue opQueueCopy = additiveExprNode.opQueue;
+            for unsigned long i = 1l; i < this.children.getSize(); i++ {
+                ASTNode* operand = this.children.get(i);
+                assert operand.hasCompileTimeValue(manIdx);
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                const Pair<AdditiveOp, QualType> opEntry = opQueueCopy.pop();
+                if opEntry.getFirst() == AdditiveOp::OP_PLUS {
+                    compileTimeValue.longValue += operandValue.longValue;
+                } else {
+                    assert opEntry.getFirst() == AdditiveOp::OP_MINUS;
+                    compileTimeValue.longValue -= operandValue.longValue;
+                }
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::MULTIPLICATIVE_EXPR: {
+            if this.children.getSize() == 1l {
+                return getChildCompileTimeValue(this, 0l, manIdx);
+            }
+            ASTMultiplicativeExprNode* multiplicativeExprNode = downcast<ASTMultiplicativeExprNode>(this);
+            compileTimeValue = getChildCompileTimeValue(this, 0l, manIdx);
+            MultiplicativeOpQueue opQueueCopy = multiplicativeExprNode.opQueue;
+            for unsigned long i = 1l; i < this.children.getSize(); i++ {
+                ASTNode* operand = this.children.get(i);
+                assert operand.hasCompileTimeValue(manIdx);
+                const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
+                const Pair<MultiplicativeOp, QualType> opEntry = opQueueCopy.pop();
+                const MultiplicativeOp op = opEntry.getFirst();
+                if op == MultiplicativeOp::OP_MUL {
+                    compileTimeValue.longValue *= operandValue.longValue;
+                } else if op == MultiplicativeOp::OP_DIV {
+                    if operandValue.longValue == 0l {
+                        const SemanticError error = SemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+                        const String& errorMessage = error.getMessage();
+                        panic(Error(errorMessage.getRaw()));
+                    }
+                    compileTimeValue.longValue /= operandValue.longValue;
+                } else {
+                    assert op == MultiplicativeOp::OP_REM;
+                    // Note: The host does not check for a zero divisor here and crashes with SIGFPE
+                    if operandValue.longValue == 0l {
+                        const SemanticError error = SemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+                        const String& errorMessage = error.getMessage();
+                        panic(Error(errorMessage.getRaw()));
+                    }
+                    compileTimeValue.longValue %= operandValue.longValue;
+                }
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::CAST_EXPR: {
+            ASTCastExprNode* castExprNode = downcast<ASTCastExprNode>(this);
+            return castExprNode.isCast ? getCompileTimeValue(castExprNode.assignExpr, manIdx) : getCompileTimeValue(castExprNode.prefixUnaryExpr, manIdx);
+        }
+        case ASTNodeKind::PREFIX_UNARY_EXPR: {
+            ASTPrefixUnaryExprNode* prefixUnaryExprNode = downcast<ASTPrefixUnaryExprNode>(this);
+            if prefixUnaryExprNode.postfixUnaryExpr != nil<IVisitable*> {
+                return getCompileTimeValue(prefixUnaryExprNode.postfixUnaryExpr, manIdx);
+            }
+            const CompileTimeValue opValue = getCompileTimeValue(prefixUnaryExprNode.prefixUnaryExpr, manIdx);
+            const PrefixUnaryOp op = prefixUnaryExprNode.op;
+            if op == PrefixUnaryOp::OP_MINUS {
+                compileTimeValue.longValue = -opValue.longValue;
+            } else if op == PrefixUnaryOp::OP_PLUS_PLUS {
+                compileTimeValue.longValue = opValue.longValue + 1l;
+            } else if op == PrefixUnaryOp::OP_MINUS_MINUS {
+                compileTimeValue.longValue = opValue.longValue - 1l;
+            } else if op == PrefixUnaryOp::OP_NOT {
+                compileTimeValue.boolValue = !opValue.boolValue;
+            } else {
+                assert op == PrefixUnaryOp::OP_BITWISE_NOT;
+                compileTimeValue.longValue = ~opValue.longValue;
+            }
+            return compileTimeValue;
+        }
+        case ASTNodeKind::POSTFIX_UNARY_EXPR: {
+            ASTPostfixUnaryExprNode* postfixUnaryExprNode = downcast<ASTPostfixUnaryExprNode>(this);
+            if postfixUnaryExprNode.atomicExpr != nil<IVisitable*> {
+                return getCompileTimeValue(postfixUnaryExprNode.atomicExpr, manIdx);
+            }
+            // The postfix operators return the value before the modification
+            const PostfixUnaryOp op = postfixUnaryExprNode.op;
+            assert op == PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryOp::OP_MINUS_MINUS;
+            return getCompileTimeValue(postfixUnaryExprNode.postfixUnaryExpr, manIdx);
+        }
+        case ASTNodeKind::VALUE: {
+            ASTValueNode* valueNode = downcast<ASTValueNode>(this);
+            if valueNode.isNil {
+                compileTimeValue.longValue = 0l;
+                return compileTimeValue;
+            }
+        }
+    }
+    // Default behavior: Take the compile time value of the only child
+    if this.children.getSize() != 1l {
+        return compileTimeValue;
+    }
+    return getChildCompileTimeValue(this, 0l, manIdx);
+}
+
+// Shorthand for getting the compile time value of the child with the given index
+f<CompileTimeValue> getChildCompileTimeValue(ASTNode* node, unsigned long childIdx, unsigned long manIdx) {
+    ASTNode* child = node.children.get(childIdx);
+    return child.getCompileTimeValue(manIdx);
+}
+
+// Shorthand for calling getCompileTimeValue on a node, that is stored as IVisitable*
+f<CompileTimeValue> getCompileTimeValue(IVisitable* node, unsigned long manIdx) {
+    ASTNode* astNode = getASTNode(node);
+    return astNode.getCompileTimeValue(manIdx);
+}
+
+/**
+ * Get the atomic expression on the left hand side of an assignment, if there is one
+ *
+ * @return Atomic expression node or nil
+ */
+public f<ASTAtomicExprNode*> ASTAssignExprNode.getLhsAtomicNode() {
+    ASTNode* lhsNode = getASTNode(this.lhs);
+    if lhsNode.kind == ASTNodeKind::ATOMIC_EXPR {
+        return downcast<ASTAtomicExprNode>(lhsNode);
+    }
+    ASTNode* lastChild = lhsNode.children.back();
+    if lastChild.kind == ASTNodeKind::ATOMIC_EXPR {
+        return downcast<ASTAtomicExprNode>(lastChild);
+    }
+    ASTNode* firstGrandChild = lastChild.children.front();
+    if firstGrandChild.kind == ASTNodeKind::ATOMIC_EXPR {
+        return downcast<ASTAtomicExprNode>(firstGrandChild);
+    }
+    return nil<ASTAtomicExprNode*>;
 }
 
 // ====================================================== IVisitable.getCodeLoc ==================================================
@@ -1983,6 +2954,104 @@ public f<const CodeLoc&> ASTLambdaFuncNode.getCodeLoc() { return this.codeLoc; }
 public f<const CodeLoc&> ASTLambdaProcNode.getCodeLoc() { return this.codeLoc; }
 public f<const CodeLoc&> ASTLambdaExprNode.getCodeLoc() { return this.codeLoc; }
 public f<const CodeLoc&> ASTFunctionDataTypeNode.getCodeLoc() { return this.codeLoc; }
+
+// ====================================================== IVisitable.getASTNode ==================================================
+
+// Every IVisitable node exposes its composed ASTNode. This is required to reach the node base of a child, that is stored as
+// IVisitable* because its type is declared later in this file.
+
+/**
+ * Get the composed ASTNode of a visitable node
+ *
+ * @param node Visitable node
+ * @return Composed ASTNode
+ */
+public f<ASTNode*> getASTNode(IVisitable* node) {
+    ASTNode* astNode = nil<ASTNode*>;
+    unsafe {
+        astNode = cast<ASTNode*>(node.getASTNodeAddress());
+    }
+    return astNode;
+}
+
+public f<byte*> ASTEntryNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTConstantNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAttrNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAttrLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTQualifierNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTQualifierLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTCustomDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTBaseDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTTypeLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTMainFctDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFctNameNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFctDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTProcDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTStructDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTInterfaceDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTUnionDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTEnumDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTGenericTypeDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAliasDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTGlobalVarDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTExtDeclNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTImportDefNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTUnsafeBlockNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTForLoopNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTForeachLoopNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTWhileLoopNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTDoWhileLoopNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTIfStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTElseStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTSwitchStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTCaseBranchNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTDefaultBranchNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAnonymousBlockStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTStmtLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTTypeLstWithEllipsisNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTTypeAltsLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTDeclStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTParamLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTArgLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTEnumItemNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTEnumItemLstNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFieldNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTSignatureNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTExprStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTModAttrNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTTopLevelDefAttrNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLambdaAttrNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTCaseConstantNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTReturnStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTBreakStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTContinueStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFallthroughStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAssertStmtNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAssignExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTTernaryExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLogicalOrExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLogicalAndExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTBitwiseOrExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTBitwiseXorExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTBitwiseAndExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTEqualityExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTRelationalExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTShiftExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAdditiveExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTMultiplicativeExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTCastExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTPrefixUnaryExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTPostfixUnaryExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTAtomicExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTValueNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFctCallNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTArrayInitializationNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTStructInstantiationNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLambdaFuncNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLambdaProcNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTLambdaExprNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
+public f<byte*> ASTFunctionDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
 
 /**
  * Name of the scope that holds the temporaries of an expression. Equal to the host's ExprNode::getExprScopeId().

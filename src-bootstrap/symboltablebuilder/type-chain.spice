@@ -62,6 +62,26 @@ public p TypeChainElement.ctor(const TypeChainElement& other) {
     this.paramTypes = other.paramTypes;
 }
 
+/**
+ * Compare two lists of qualified types element-wise. The equality operator of Vector compares the raw memory, which also
+ * compares the (uninitialized) padding bytes of the QualType elements.
+ *
+ * @param lhs Left list
+ * @param rhs Right list
+ * @return Equal or not
+ */
+f<bool> areQualTypeListsEqual(const QualTypeList& lhs, const QualTypeList& rhs) {
+    if lhs.getSize() != rhs.getSize() {
+        return false;
+    }
+    for unsigned long i = 0ul; i < lhs.getSize(); i++ {
+        if lhs[i] != rhs[i] {
+            return false;
+        }
+    }
+    return true;
+}
+
 public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
     // Check super type
     if lhs.superType != rhs.superType { return false; }
@@ -73,10 +93,14 @@ public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& r
         }
         case SuperType::TY_STRUCT: {
             assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
-            return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
+            return lhs.typeId == rhs.typeId && areQualTypeListsEqual(lhs.templateTypes, rhs.templateTypes);
         }
         case SuperType::TY_INTERFACE: {
             return lhs.typeId == rhs.typeId;
+        }
+        case SuperType::TY_UNION: {
+            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
+            return lhs.typeId == rhs.typeId && areQualTypeListsEqual(lhs.templateTypes, rhs.templateTypes);
         }
         case SuperType::TY_ENUM: {
             assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;

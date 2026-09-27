@@ -1,0 +1,77 @@
+// Input program for the standalone type checker test (prepare stage). It contains every kind of top level definition, whose
+// types the prepare stage of the type checker computes. Function bodies are only checked by the check stage.
+
+type Shape interface {
+    f<int> area();
+    p scale(int);
+}
+
+type Rectangle struct : Shape {
+    int width
+    unsigned long height
+    Rectangle* next
+}
+
+p Rectangle.ctor(int width, int height) {
+    this.width = width;
+    this.height = cast<unsigned long>(height);
+}
+
+f<int> Rectangle.area() {
+    return this.width;
+}
+
+p Rectangle.scale(int factor) {
+    this.width = this.width * factor;
+}
+
+type T dyn;
+type Number int|long;
+type Single short;
+
+type Box<T> struct {
+    T value
+    int[4] slots
+}
+
+type Color enum {
+    RED,
+    GREEN = 5,
+    BLUE
+}
+
+type Length alias int;
+
+type Quantity union {
+    int integer
+    double floating
+}
+
+type Measurement struct {
+    Quantity value
+    Quantity[2] history
+}
+
+const int LIMIT = 10;
+public const long BIG = 5l;
+
+ext f<int> strlen(string);
+ext f<int> printf(string, ...);
+
+f<T> identity<T>(T value) {
+    return value;
+}
+
+f<Length> measure(const Rectangle& rect, Color color) {
+    return rect.width;
+}
+
+p log(string message, heap int* data) {}
+
+f<int> sumBox(Box<int>* box) {
+    return box.slots[0];
+}
+
+f<int> main() {
+    return 0;
+}

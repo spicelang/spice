@@ -10,6 +10,7 @@ public type CompilerWarningType enum {
     UNUSED_METHOD,
     UNUSED_STRUCT,
     UNUSED_INTERFACE,
+    UNUSED_UNION,
     UNUSED_IMPORT,
     UNUSED_FIELD,
     UNUSED_ENUM_ITEM,
@@ -22,6 +23,7 @@ public type CompilerWarningType enum {
     SINGLE_GENERIC_TYPE_CONDITION,
     INEFFECTIVE_GENERIC_TYPE_CONDITION,
     BOOL_ASSIGN_AS_CONDITION,
+    NON_TRIVIAL_TYPE_PASSED_BY_VALUE,
     ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION,
     UNINSTALL_FAILED,
     VERIFIER_DISABLED
@@ -31,7 +33,7 @@ public type CompilerWarningType enum {
  * Compiler warning template engine
  */
 public type CompilerWarning struct {
-    String warningMessage
+    public String warningMessage
 }
 
 /**
@@ -79,6 +81,7 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::UNUSED_METHOD: { return "Unused method"; }
         case CompilerWarningType::UNUSED_STRUCT: { return "Unused struct"; }
         case CompilerWarningType::UNUSED_INTERFACE: { return "Unused interface"; }
+        case CompilerWarningType::UNUSED_UNION: { return "Unused union"; }
         case CompilerWarningType::UNUSED_IMPORT: { return "Unused import"; }
         case CompilerWarningType::UNUSED_FIELD: { return "Unused field"; }
         case CompilerWarningType::UNUSED_ENUM_ITEM: { return "Unused enum item"; }
@@ -91,6 +94,7 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::SINGLE_GENERIC_TYPE_CONDITION: { return "Only one type condition"; }
         case CompilerWarningType::INEFFECTIVE_GENERIC_TYPE_CONDITION: { return "Ineffective type condition"; }
         case CompilerWarningType::BOOL_ASSIGN_AS_CONDITION: { return "Bool assignment as condition"; }
+        case CompilerWarningType::NON_TRIVIAL_TYPE_PASSED_BY_VALUE: { return "Non-trivial type passed by value"; }
         case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rules"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
         case CompilerWarningType::VERIFIER_DISABLED: { return "Verifier disabled"; }

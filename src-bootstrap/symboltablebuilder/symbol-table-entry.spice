@@ -99,6 +99,15 @@ public f<const CodeLoc &> SymbolTableEntry.getDeclCodeLoc() {
 }
 
 /**
+ * Check if this symbol is initialized
+ *
+ * @return Initialized or not
+ */
+public f<bool> SymbolTableEntry.isInitialized() {
+    return this.lifecycle.isInitialized();
+}
+
+/**
  * Check if this symbol is a struct field
  *
  * @return Struct field or not

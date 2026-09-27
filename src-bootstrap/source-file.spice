@@ -21,6 +21,7 @@ import "bootstrap/global/global-resource-manager";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/exception/error-manager";
+import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
@@ -68,7 +69,7 @@ type TimerOutput struct {
 /**
  * Collects the output of the compiler for debugging
  */
-type CompilerOutput struct {
+public type CompilerOutput struct {
     String astString
     String symbolTableString
     String depGraphString
@@ -77,7 +78,7 @@ type CompilerOutput struct {
     String asmString
     String typesString
     String cacheStats
-    Vector<CompilerWarning> warnings
+    public Vector<CompilerWarning> warnings
     TimerOutput times
 }
 
@@ -121,7 +122,7 @@ public type SourceFile struct {
     public Map<String, SourceFile*> dependencies // Has to be an ordered map to keep the compilation order deterministic
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
-    public Vector<const Function*> testFunctions
+    public Vector<const model::Function*> testFunctions
     // Private fields
     GlobalResourceManager& resourceManager
     CliOptions& cliOptions
@@ -182,7 +183,7 @@ public p SourceFile.runParser() {
 
     // Parse the source file
     Lexer lexer = Lexer(this.filePath);
-    Parser parser = Parser(lexer, this.isStdFile);
+    Parser parser = Parser(this.resourceManager, this, lexer);
     this.ast = parser.parse();
     assert this.ast != nil<ASTEntryNode*>;
 
@@ -705,15 +706,25 @@ public f<const SourceFile*> SourceFile.getRootSourceFile() {
     return this.isMainFile ? this : this.parent.getRootSourceFile();
 }
 
-/*public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
-    assert IDENTIFIER_RUNTIME_MODULES.contains(runtimeModule);
-    const string topLevelName = IDENTIFIER_RUNTIME_MODULES.at(runtimeModule);
+/**
+ * Check if this source file is the given runtime module itself
+ *
+ * @param runtimeModule Runtime module
+ * @return Is the runtime module or not
+ */
+public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
+    const String topLevelName = String(getIdentifyingTopLevelName(runtimeModule));
     if !this.exportedNameRegistry.contains(topLevelName) {
         return false;
     }
-    dyn entry = this.exportedNameRegistry.get(topLevelName);
+    const NameRegistryEntry& entry = this.exportedNameRegistry.get(topLevelName);
     return entry.targetEntry.scope == this.globalScope;
-}*/
+}
+
+// Check if this source file is the string / memory / RTTI runtime module itself
+public inline f<bool> SourceFile.isStringRT() { return this.isRT(RuntimeModule::STRING_RT); }
+public inline f<bool> SourceFile.isMemoryRT() { return this.isRT(RuntimeModule::MEMORY_RT); }
+public inline f<bool> SourceFile.isRttiRT() { return this.isRT(RuntimeModule::RTTI_RT); }
 
 f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
     foreach const SourceFile* dependant : this.dependants {

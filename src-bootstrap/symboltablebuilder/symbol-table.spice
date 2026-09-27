@@ -13,6 +13,7 @@ import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/capture";
+import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/function";
 import "bootstrap/model/struct";
@@ -39,6 +40,18 @@ public type SymbolTable struct {
 public p SymbolTable.ctor(SymbolTable* parent, Scope* scope) {
     this.parent = parent;
     this.scope = scope;
+}
+
+/**
+ * Copy the symbols and captures of another symbol table into this one. The parent and scope stay untouched. This mirrors
+ * the member-wise copy of the symbol table, that the host performs when copying a scope.
+ *
+ * @param other Symbol table to copy from
+ */
+public p SymbolTable.copyContentsFrom(const SymbolTable& other) {
+    this.symbols = other.symbols;
+    this.captures = other.captures;
+    this.capturingRequired = other.capturingRequired;
 }
 
 /**
@@ -69,13 +82,22 @@ public f<unsigned long> SymbolTable.getFieldCount() {
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode* declNode) {
+public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode* declNode, bool isAnonymousSymbol = false) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
-    const unsigned long orderIndex = cast<unsigned long>(this.symbols.getSize());
-    // Insert into symbols map. The type is left as an unresolved 'dyn' QualType, because concrete types are
-    // determined by the type checker later on (matches how Function.thisType/returnType default before
-    // being resolved).
-    const QualType qualType = QualType(SuperType::TY_DYN);
+    // Anonymous symbols do not get an order index (SIZE_MAX in the host)
+    unsigned long orderIndex = 18446744073709551615ul;
+    if !isAnonymousSymbol {
+        orderIndex = 0ul;
+        foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbols {
+            const SymbolTableEntry& existingEntry = symbol.getSecond();
+            if !existingEntry.anonymous {
+                orderIndex++;
+            }
+        }
+    }
+    // Insert into symbols map. The type is invalid, because concrete types are determined by the type checker later on
+    // ToDo: Port the DECLARED state update and the shadowed-variable warning of the host
+    const QualType qualType = QualType(SuperType::TY_INVALID);
     SymbolTableEntry entry = SymbolTableEntry(name, qualType, this.scope, cast<ASTNode*>(declNode), orderIndex, isGlobal);
     this.symbols.upsert(name, entry);
     return &this.symbols.get(name);
@@ -89,8 +111,41 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-public p SymbolTable.insertAnonymous(const QualType& qualType, ASTNode* declNode, unsigned long numericSuffix = 0l) {
-    // ToDo: Implement
+public f<SymbolTableEntry*> SymbolTable.insertAnonymous(const QualType& qualType, ASTNode* declNode, unsigned long numericSuffix = 0l) {
+    // Check if the anonymous entry already exists
+    SymbolTableEntry* existingSymbol = this.lookupAnonymous(declNode, numericSuffix);
+    if existingSymbol != nil<SymbolTableEntry*> {
+        return existingSymbol;
+    }
+    // Otherwise, create an anonymous entry
+    const String name = getAnonymousSymbolName(declNode, numericSuffix);
+    SymbolTableEntry* anonSymbol = this.insert(name, declNode, true);
+    anonSymbol.updateType(qualType, false);
+    anonSymbol.updateState(LifecycleState::DECLARED, declNode);
+    anonSymbol.updateState(LifecycleState::INITIALIZED, declNode);
+    anonSymbol.anonymous = true;
+    anonSymbol.used = true;
+    return anonSymbol;
+}
+
+/**
+ * Build the name of an anonymous symbol. It is unique per declaration node and numeric suffix.
+ *
+ * @param declNode AST node where the anonymous symbol is declared
+ * @param numericSuffix Custom numeric suffix
+ * @return Name of the anonymous symbol
+ */
+f<String> getAnonymousSymbolName(const ASTNode* declNode, unsigned long numericSuffix) {
+    long nodeAddress = 0l;
+    unsafe {
+        nodeAddress = cast<long>(cast<byte*>(declNode));
+    }
+    String name = String("anon.") + declNode.codeLoc.toString() + "." + toString(nodeAddress);
+    if numericSuffix > 0l {
+        name += ".";
+        name += toString(cast<long>(numericSuffix));
+    }
+    return name;
 }
 
 /**
@@ -204,12 +259,8 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int o
  * @param numericSuffix Numeric suffix of the anonymous symbol
  * @return Anonymous symbol
  */
-public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc& codeLoc, unsigned long numericSuffix = 0l) {
-    String name = String("anon.") + codeLoc.toString();
-    if numericSuffix > 0l {
-        name += '.';
-        name += toString(numericSuffix);
-    }
+public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const ASTNode* declNode, unsigned long numericSuffix = 0l) {
+    const String name = getAnonymousSymbolName(declNode, numericSuffix);
     return this.lookup(name);
 }
 
@@ -262,7 +313,9 @@ public p SymbolTable.setCapturingRequired() {
  * @param name Anonymous symbol name
  */
 public p SymbolTable.deleteAnonymous(const String& name) {
-    // ToDo
+    if this.symbols.contains(name) {
+        this.symbols.remove(name);
+    }
 }
 
 /**
