@@ -36,7 +36,7 @@ const string MAIN_FUNCTION_NAME = "main";
  * @param insertScope Scope to insert the function into
  * @param baseFunction Function to insert
  * @param nodeFunctionList Optional list to collect all inserted manifestations into (owned by the declaration node)
- * @return The first inserted manifestation
+ * @return The first manifestation if nodeFunctionList is given, otherwise the last inserted one (like the host)
  */
 public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
     // Open a new manifestation list for the function definition
